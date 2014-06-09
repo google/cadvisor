@@ -4,6 +4,8 @@ cAdvisor (Container Advisor) provides container users an understanding of the re
 
 cAdvisor currently supports lmctfy containers as well as Docker containers (those that use the default libcontainer execdriver). Other container backends can also be added. cAdvisor's container abstraction is based on lmctfy's so containers are inherently nested hierarchically.
 
+![cAdvisor](logo.png "cAdvisor")
+
 #### Quick Start: Running cAdvisor in a Docker Container
 
 To quickly tryout cAdvisor on your machine with Docker (version 0.11 or above), we have a Docker image that includes everything you need to get started. Simply run:
