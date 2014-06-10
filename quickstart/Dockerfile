@@ -12,3 +12,4 @@ ADD http://storage.googleapis.com/cadvisor-bin/cadvisor /usr/bin/cadvisor
 RUN chmod +x /usr/bin/lmctfy && chmod +x /usr/bin/cadvisor
 
 EXPOSE 8080
+ENTRYPOINT /usr/bin/cadvisor
