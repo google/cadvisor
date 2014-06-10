@@ -15,8 +15,8 @@ sudo docker run \
   -v /var/run:/var/run:rw \
   -v /sys/fs/cgroup/:/sys/fs/cgroup:ro \
   -v /var/lib/docker/:/var/lib/docker:ro \
-  -p 0.0.0.0:5000:5000 \
-  monnand/cadvisor /usr/bin/cadvisor
+  -p 0.0.0.0:8080:8080 \
+  google/cadvisor
 ```
 
 cAdvisor is now running (in the foreground) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
