@@ -12,14 +12,15 @@ To quickly tryout cAdvisor on your machine with Docker (version 0.11 or above), 
 
 ```
 sudo docker run \
-  -v /var/run:/var/run:rw \
-  -v /sys/fs/cgroup/:/sys/fs/cgroup:ro \
-  -v /var/lib/docker/:/var/lib/docker:ro \
-  -p 0.0.0.0:8080:8080 \
+  --volume=/var/run:/var/run:rw \
+  --volume=/sys/fs/cgroup/:/sys/fs/cgroup:ro \
+  --volume=/var/lib/docker/:/var/lib/docker:ro \
+  --publish=8080:8080 \
+  --detach=true \
   google/cadvisor
 ```
 
-cAdvisor is now running (in the foreground) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
+cAdvisor is now running (in the background) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
 
 If you want to build your own cAdvisor Docker image, take a look at the Dockerfile which can build a cAdvisor docker container under `quickstart/Dockerfile`.
 
