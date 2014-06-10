@@ -12,8 +12,6 @@ To quickly tryout cAdvisor on your machine with Docker (version 0.11 or above), 
 
 ```
 sudo docker run \
-  --interactive=false \
-  --tty=true \
   --volume=/var/run:/var/run:rw \
   --volume=/sys/fs/cgroup/:/sys/fs/cgroup:ro \
   --volume=/var/lib/docker/:/var/lib/docker:ro \
