@@ -65,7 +65,7 @@ The container information is returned as a JSON object containing:
 - Detailed resource usage statistics of the container for the last `N` seconds (`N` is globally configurable in cAdvisor)
 - Histogram of resource usage from the creation of the container
 
-The actual object is the marshalled JSON of the `ContainerInfo` struct found in [cadvisor/info/container.go](cadvisor/info/container.go)
+The actual object is the marshalled JSON of the `ContainerInfo` struct found in [info/container.go](info/container.go)
 
 #### Machine Information
 
@@ -78,7 +78,7 @@ This resource is read-only. The machine information is returned as a JSON object
 - Number of schedulable logical CPU cores
 - Memory capacity (in bytes)
 
-The actual object is the marshalled JSON of the `MachineInfo` struct found in [cadvisor/info/machine.go](cadvisor/info/machine.go)
+The actual object is the marshalled JSON of the `MachineInfo` struct found in [info/machine.go](info/machine.go)
 
 ## Roadmap
 
