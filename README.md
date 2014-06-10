@@ -15,7 +15,7 @@ sudo docker run \
   -v /var/run:/var/run:rw \
   -v /sys/fs/cgroup/:/sys/fs/cgroup:ro \
   -v /var/lib/docker/:/var/lib/docker:ro \
-  -p 0.0.0.0:8080:8080 \
+  -p 0.0.0.0:5000:5000 \
   monnand/cadvisor /usr/bin/cadvisor
 ```
 
