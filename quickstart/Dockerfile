@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:14.04
 MAINTAINER kyurtsever@google.com dengnan@google.com vmarmol@google.com
 
 # Get the lmctfy dependencies.
