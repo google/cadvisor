@@ -10,7 +10,14 @@ cAdvisor currently supports lmctfy containers as well as Docker containers (thos
 
 To quickly tryout cAdvisor on your machine with Docker (version 0.11 or above), we have a Docker image that includes everything you need to get started. Simply run:
 
-`sudo docker run -v /var/run:/var/run:rw -v /sys/fs/cgroup/:/sys/fs/cgroup:ro -v /var/lib/docker/:/var/lib/docker:ro -p 0.0.0.0:8080:8080 monnand/cadvisor /usr/bin/cadvisor`
+```
+sudo docker run \
+  -v /var/run:/var/run:rw \
+  -v /sys/fs/cgroup/:/sys/fs/cgroup:ro \
+  -v /var/lib/docker/:/var/lib/docker:ro \
+  -p 0.0.0.0:8080:8080 \
+  monnand/cadvisor /usr/bin/cadvisor
+```
 
 cAdvisor is now running (in the foreground) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
 
