@@ -65,7 +65,7 @@ The container information is returned as a JSON object containing:
 - Detailed resource usage statistics of the container for the last `N` seconds (`N` is globally configurable in cAdvisor)
 - Histogram of resource usage from the creation of the container
 
-The actual object is the marshalled JSON of the `ContainerInfo` struct found in `cadvisor/info/container.go`
+The actual object is the marshalled JSON of the `ContainerInfo` struct found in [cadvisor/info/container.go](cadvisor/info/container.go)
 
 #### Machine Information
 
@@ -78,4 +78,15 @@ This resource is read-only. The machine information is returned as a JSON object
 - Number of schedulable logical CPU cores
 - Memory capacity (in bytes)
 
-The actual object is the marshalled JSON of the `MachineInfo` struct found in `cadvisor/info/machine.go`
+The actual object is the marshalled JSON of the `MachineInfo` struct found in [cadvisor/info/machine.go](cadvisor/info/machine.go)
+
+## Roadmap
+
+cAdvisor aims to improve the resource usage and performance characteristics of running containers. Today, we gather and expose this information to users. In our roadmap:
+- Advise on the performance of a container (e.g.: when it is being negatively affected by another, when it is not receiving the resources it requires, etc)
+- Auto-tune the performance of the container based on previous advise.
+- Provide usage prediction to cluster schedulers and orchestration layers.
+
+## Community
+
+Contributions, questions, and comments are all welcomed and encouraged! cAdvisor developers hand out in [#google-containers](http://webchat.freenode.net/?channels=google-containers) room on freenode.net.  We also have the [google-containers Google Groups mailing list](https://groups.google.com/forum/#!forum/google-containers).
