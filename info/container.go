@@ -15,6 +15,7 @@
 package info
 
 import (
+	"fmt"
 	"sort"
 	"time"
 )
@@ -186,17 +187,17 @@ type ContainerStatsSummary struct {
 // cumulative.
 // prev should be an earlier observation than current.
 // This method is not thread/goroutine safe.
-func (self *ContainerStatsSummary) AddSample(prev, current *ContainerStats) {
+func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 	if prev == nil || current == nil {
-		return
+		return nil, fmt.Errorf("empty stats")
 	}
 	// Ignore this sample if it is incomplete
 	if prev.Cpu == nil || prev.Memory == nil || current.Cpu == nil || current.Memory == nil {
-		return
+		return nil, fmt.Errorf("incomplete stats")
 	}
 	// prev must be an early observation
 	if !current.Timestamp.After(prev.Timestamp) {
-		return
+		return nil, fmt.Errorf("wrong stats order")
 	}
 	sample := new(ContainerStatsSample)
 	// Caculate the diff to get the CPU usage within the time interval.
@@ -204,8 +205,7 @@ func (self *ContainerStatsSummary) AddSample(prev, current *ContainerStats) {
 	// Memory usage is current memory usage
 	sample.Memory.Usage = current.Memory.Usage
 
-	self.Samples = append(self.Samples, sample)
-	return
+	return sample, nil
 }
 
 type uint64Slice []uint64

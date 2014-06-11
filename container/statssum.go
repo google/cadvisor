@@ -26,6 +26,7 @@ import (
 type statsSummaryContainerHandlerWrapper struct {
 	handler          ContainerHandler
 	currentSummary   *info.ContainerStatsSummary
+	prevStats        *info.ContainerStats
 	totalMemoryUsage *big.Int
 	numStats         uint64
 	sampler          sampling.Sampler

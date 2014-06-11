@@ -85,9 +85,7 @@ func TestPercentiles(t *testing.T) {
 	}
 }
 
-func TestAddSampleNilStats(t *testing.T) {
-	s := &ContainerStatsSummary{}
-
+func TestNewSampleNilStats(t *testing.T) {
 	stats := &ContainerStats{
 		Cpu:    &CpuStats{},
 		Memory: &MemoryStats{},
@@ -97,23 +95,19 @@ func TestAddSampleNilStats(t *testing.T) {
 	stats.Cpu.Usage.System = uint64(2)
 	stats.Cpu.Usage.User = uint64(8)
 	stats.Memory.Usage = uint64(200)
-	s.AddSample(nil, stats)
 
-	if len(s.Samples) != 0 {
-		t.Errorf("added an unexpected sample: %+v", s.Samples)
+	sample, err := NewSample(nil, stats)
+	if err == nil {
+		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
 
-	s.Samples = nil
-	s.AddSample(stats, nil)
-
-	if len(s.Samples) != 0 {
-		t.Errorf("added an unexpected sample: %+v", s.Samples)
+	sample, err = NewSample(nil, stats)
+	if err == nil {
+		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
 }
 
 func TestAddSample(t *testing.T) {
-	s := &ContainerStatsSummary{}
-
 	cpuPrevUsage := uint64(10)
 	cpuCurrentUsage := uint64(15)
 	memCurrentUsage := uint64(200)
@@ -139,24 +133,24 @@ func TestAddSample(t *testing.T) {
 	current.Memory.Usage = memCurrentUsage
 	current.Timestamp = prev.Timestamp.Add(1 * time.Second)
 
-	s.AddSample(prev, current)
-
-	if len(s.Samples) != 1 {
-		t.Fatalf("unexpected samples: %+v", s.Samples)
+	sample, err := NewSample(prev, current)
+	if err != nil {
+		t.Errorf("should be able to generate a sample. but received error: %v", err)
+	}
+	if sample == nil {
+		t.Fatalf("nil sample and nil error. unexpected result!")
 	}
 
-	if s.Samples[0].Memory.Usage != memCurrentUsage {
-		t.Errorf("wrong memory usage: %v. should be %v", s.Samples[0].Memory.Usage, memCurrentUsage)
+	if sample.Memory.Usage != memCurrentUsage {
+		t.Errorf("wrong memory usage: %v. should be %v", sample.Memory.Usage, memCurrentUsage)
 	}
 
-	if s.Samples[0].Cpu.Usage != cpuCurrentUsage-cpuPrevUsage {
-		t.Errorf("wrong CPU usage: %v. should be %v", s.Samples[0].Cpu.Usage, cpuCurrentUsage-cpuPrevUsage)
+	if sample.Cpu.Usage != cpuCurrentUsage-cpuPrevUsage {
+		t.Errorf("wrong CPU usage: %v. should be %v", sample.Cpu.Usage, cpuCurrentUsage-cpuPrevUsage)
 	}
 }
 
 func TestAddSampleIncompleteStats(t *testing.T) {
-	s := &ContainerStatsSummary{}
-
 	cpuPrevUsage := uint64(10)
 	cpuCurrentUsage := uint64(15)
 	memCurrentUsage := uint64(200)
@@ -186,38 +180,30 @@ func TestAddSampleIncompleteStats(t *testing.T) {
 		Cpu:    prev.Cpu,
 		Memory: nil,
 	}
-	s.AddSample(stats, current)
-	if len(s.Samples) != 0 {
-		t.Errorf("added an unexpected sample: %+v", s.Samples)
+	sample, err := NewSample(stats, current)
+	if err == nil {
+		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
-	s.Samples = nil
-
-	s.AddSample(prev, stats)
-	if len(s.Samples) != 0 {
-		t.Errorf("added an unexpected sample: %+v", s.Samples)
+	sample, err = NewSample(prev, stats)
+	if err == nil {
+		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
-	s.Samples = nil
 
 	stats = &ContainerStats{
 		Cpu:    nil,
 		Memory: prev.Memory,
 	}
-	s.AddSample(stats, current)
-	if len(s.Samples) != 0 {
-		t.Errorf("added an unexpected sample: %+v", s.Samples)
+	sample, err = NewSample(stats, current)
+	if err == nil {
+		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
-	s.Samples = nil
-
-	s.AddSample(prev, stats)
-	if len(s.Samples) != 0 {
-		t.Errorf("added an unexpected sample: %+v", s.Samples)
+	sample, err = NewSample(prev, stats)
+	if err == nil {
+		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
-	s.Samples = nil
 }
 
 func TestAddSampleWrongOrder(t *testing.T) {
-	s := &ContainerStatsSummary{}
-
 	cpuPrevUsage := uint64(10)
 	cpuCurrentUsage := uint64(15)
 	memCurrentUsage := uint64(200)
@@ -243,8 +229,8 @@ func TestAddSampleWrongOrder(t *testing.T) {
 	current.Memory.Usage = memCurrentUsage
 	current.Timestamp = prev.Timestamp.Add(1 * time.Second)
 
-	s.AddSample(current, prev)
-	if len(s.Samples) != 0 {
-		t.Errorf("added an unexpected sample: %+v", s.Samples)
+	sample, err := NewSample(current, prev)
+	if err == nil {
+		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
 }
