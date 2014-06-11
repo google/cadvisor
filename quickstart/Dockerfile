@@ -11,5 +11,8 @@ ADD http://storage.googleapis.com/cadvisor-bin/lmctfy/lmctfy /usr/bin/lmctfy
 ADD http://storage.googleapis.com/cadvisor-bin/cadvisor /usr/bin/cadvisor
 RUN chmod +x /usr/bin/lmctfy && chmod +x /usr/bin/cadvisor
 
+# Clean up apt and other locations
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 EXPOSE 8080
-ENTRYPOINT /usr/bin/cadvisor
+ENTRYPOINT ["/usr/bin/cadvisor"]
