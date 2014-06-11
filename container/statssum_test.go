@@ -31,15 +31,15 @@ func init() {
 	rand.Seed(seed)
 }
 
-type randomStatsContainer struct {
+type randomMemoryUsageContainer struct {
 	NoStatsSummary
 }
 
-func (self *randomStatsContainer) GetSpec() (*info.ContainerSpec, error) {
+func (self *randomMemoryUsageContainer) GetSpec() (*info.ContainerSpec, error) {
 	return nil, nil
 }
 
-func (self *randomStatsContainer) GetStats() (*info.ContainerStats, error) {
+func (self *randomMemoryUsageContainer) GetStats() (*info.ContainerStats, error) {
 	stats := new(info.ContainerStats)
 	stats.Cpu = new(info.CpuStats)
 	stats.Memory = new(info.MemoryStats)
@@ -47,21 +47,21 @@ func (self *randomStatsContainer) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
-func (self *randomStatsContainer) ListContainers(listType ListType) ([]string, error) {
+func (self *randomMemoryUsageContainer) ListContainers(listType ListType) ([]string, error) {
 	return nil, nil
 }
 
-func (self *randomStatsContainer) ListThreads(listType ListType) ([]int, error) {
+func (self *randomMemoryUsageContainer) ListThreads(listType ListType) ([]int, error) {
 	return nil, nil
 }
 
-func (self *randomStatsContainer) ListProcesses(listType ListType) ([]int, error) {
+func (self *randomMemoryUsageContainer) ListProcesses(listType ListType) ([]int, error) {
 	return nil, nil
 }
 
 func TestAvgMaxMemoryUsage(t *testing.T) {
 	handler, err := AddStatsSummary(
-		&randomStatsContainer{},
+		&randomMemoryUsageContainer{},
 		&StatsParameter{
 			Sampler:    "uniform",
 			NumSamples: 10,

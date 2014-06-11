@@ -37,6 +37,28 @@ func (self *statsSummaryContainerHandlerWrapper) GetSpec() (*info.ContainerSpec,
 	return self.handler.GetSpec()
 }
 
+func (self *statsSummaryContainerHandlerWrapper) updatePrevStats(stats *info.ContainerStats) {
+	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
+		// discard incomplete stats
+		self.prevStats = nil
+		return
+	}
+	if self.prevStats == nil {
+		self.prevStats = &info.ContainerStats{
+			Cpu:    &info.CpuStats{},
+			Memory: &info.MemoryStats{},
+		}
+	}
+	// make a deep copy.
+	self.prevStats.Timestamp = stats.Timestamp
+	*self.prevStats.Cpu = *stats.Cpu
+	self.prevStats.Cpu.Usage.PerCpu = make([]uint64, len(stats.Cpu.Usage.PerCpu))
+	for i, perCpu := range stats.Cpu.Usage.PerCpu {
+		self.prevStats.Cpu.Usage.PerCpu[i] = perCpu
+	}
+	*self.prevStats.Memory = *stats.Memory
+}
+
 func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStats, error) {
 	stats, err := self.handler.GetStats()
 	if err != nil {
@@ -49,7 +71,11 @@ func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStat
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	self.sampler.Update(stats)
+	sample, err := info.NewSample(self.prevStats, stats)
+	if err == nil && sample != nil {
+		self.sampler.Update(sample)
+	}
+	self.updatePrevStats(stats)
 	if self.currentSummary == nil {
 		self.currentSummary = new(info.ContainerStatsSummary)
 	}
@@ -87,9 +113,9 @@ func (self *statsSummaryContainerHandlerWrapper) ListProcesses(listType ListType
 func (self *statsSummaryContainerHandlerWrapper) StatsSummary() (*info.ContainerStatsSummary, error) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	samples := make([]*info.ContainerStats, 0, self.sampler.Len())
+	samples := make([]*info.ContainerStatsSample, 0, self.sampler.Len())
 	self.sampler.Map(func(d interface{}) {
-		stats := d.(*info.ContainerStats)
+		stats := d.(*info.ContainerStatsSample)
 		samples = append(samples, stats)
 	})
 	self.currentSummary.Samples = samples
