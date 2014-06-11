@@ -67,7 +67,10 @@ func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStat
 	if stats == nil {
 		return nil, nil
 	}
-	stats.Timestamp = time.Now()
+	// Only update timestamp if it is zero.
+	if stats.Timestamp.IsZero() {
+		stats.Timestamp = time.Now()
+	}
 	self.lock.Lock()
 	defer self.lock.Unlock()
 

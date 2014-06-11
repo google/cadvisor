@@ -156,8 +156,11 @@ type ContainerStats struct {
 }
 
 type ContainerStatsSample struct {
+	// Timetamp of the end of the sample period
 	Timestamp time.Time `json:"timestamp"`
-	Cpu       struct {
+	// Duration of the sample period
+	Duration time.Duration `json:"duration"`
+	Cpu      struct {
 		// number of nanoseconds of CPU time used by the container
 		// within one second.
 		Usage uint64 `json:"usage"`
@@ -206,6 +209,7 @@ func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 	// Memory usage is current memory usage
 	sample.Memory.Usage = current.Memory.Usage
 	sample.Timestamp = current.Timestamp
+	sample.Duration = current.Timestamp.Sub(prev.Timestamp)
 
 	return sample, nil
 }
