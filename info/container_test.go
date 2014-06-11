@@ -70,17 +70,17 @@ func TestPercentiles(t *testing.T) {
 	for i := 0; i < N; i++ {
 		data[i] = uint64(i)
 	}
-	ps := []float64{
-		0.8,
-		0.9,
-		0.5,
+	ps := []int{
+		80,
+		90,
+		50,
 	}
 	ss := uint64Slice(data).Percentiles(ps...)
 	for i, s := range ss {
 		p := ps[i]
-		d := uint64(float64(N) * p)
+		d := uint64(float64(N) * (float64(p) / 100.0))
 		if d != s {
-			t.Errorf("%v \\%tile data should be %v, but got %v", p*float64(100), d, s)
+			t.Errorf("%v \\%tile data should be %v, but got %v", float64(p)/100.0, d, s)
 		}
 	}
 }

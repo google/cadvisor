@@ -101,10 +101,22 @@ func (self *ContainerInfo) StatsEndTime() time.Time {
 
 type CpuStats struct {
 	Usage struct {
-		Total  uint64   `json:"total"`
+		// Number of nanoseconds of CPU time used by the container
+		// since the beginning. This is a ccumulative
+		// value, not an instantaneous value.
+		Total uint64 `json:"total"`
+
+		// Per CPU/core usage of the container.
+		// Unit: nanoseconds.
 		PerCpu []uint64 `json:"per_cpu,omitempty"`
-		User   uint64   `json:"user"`
-		System uint64   `json:"system"`
+
+		// How much time was spent in user space since beginning.
+		// Unit: nanoseconds
+		User uint64 `json:"user"`
+
+		// How much time was spent in kernel space since beginning.
+		// Unit: nanoseconds
+		System uint64 `json:"system"`
 	} `json:"usage"`
 	Load int32 `json:"load"`
 }
@@ -142,6 +154,18 @@ type ContainerStats struct {
 	Memory    *MemoryStats `json:"memory,omitempty"`
 }
 
+type ContainerStatsSample struct {
+	Cpu struct {
+		// number of nanoseconds of CPU time used by the container
+		// within one second.
+		Usage uint64 `json:"usage"`
+	} `json:"cpu"`
+	Memory struct {
+		// Units: Bytes.
+		Usage uint64 `json:"usage"`
+	} `json:"memory"`
+}
+
 // This is not exported.
 // Use FillPercentile to calculate percentiles
 type percentile struct {
@@ -151,11 +175,37 @@ type percentile struct {
 
 type ContainerStatsSummary struct {
 	// TODO(dengnan): More things?
-	MaxMemoryUsage         uint64            `json:"max_memory_usage,omitempty"`
-	AvgMemoryUsage         uint64            `json:"avg_memory_usage,omitempty"`
-	Samples                []*ContainerStats `json:"samples,omitempty"`
-	MemoryUsagePercentiles []percentile      `json:"memory_usage_percentiles,omitempty"`
-	CpuUsagePercentiles    []percentile      `json:"cpu_usage_percentiles,omitempty"`
+	MaxMemoryUsage         uint64                  `json:"max_memory_usage,omitempty"`
+	AvgMemoryUsage         uint64                  `json:"avg_memory_usage,omitempty"`
+	Samples                []*ContainerStatsSample `json:"samples,omitempty"`
+	MemoryUsagePercentiles []percentile            `json:"memory_usage_percentiles,omitempty"`
+	CpuUsagePercentiles    []percentile            `json:"cpu_usage_percentiles,omitempty"`
+}
+
+// Each sample needs two stats because the cpu usage in ContainerStats is
+// cumulative.
+// prev should be an earlier observation than current.
+// This method is not thread/goroutine safe.
+func (self *ContainerStatsSummary) AddSample(prev, current *ContainerStats) {
+	if prev == nil || current == nil {
+		return
+	}
+	// Ignore this sample if it is incomplete
+	if prev.Cpu == nil || prev.Memory == nil || current.Cpu == nil || current.Memory == nil {
+		return
+	}
+	// prev must be an early observation
+	if !current.Timestamp.After(prev.Timestamp) {
+		return
+	}
+	sample := new(ContainerStatsSample)
+	// Caculate the diff to get the CPU usage within the time interval.
+	sample.Cpu.Usage = current.Cpu.Usage.Total - prev.Cpu.Usage.Total
+	// Memory usage is current memory usage
+	sample.Memory.Usage = current.Memory.Usage
+
+	self.Samples = append(self.Samples, sample)
+	return
 }
 
 type uint64Slice []uint64
@@ -190,7 +240,7 @@ func (self uint64Slice) Percentiles(ps ...int) []uint64 {
 }
 
 // len(bs) <= len(as)
-func float64Zipuint64(as []int, bs []uint64) []percentile {
+func intZipuint64(as []int, bs []uint64) []percentile {
 	if len(bs) == 0 {
 		return nil
 	}
@@ -216,16 +266,12 @@ func (self *ContainerStatsSummary) FillPercentiles(cpuPercentages, memoryPercent
 		if sample == nil {
 			continue
 		}
-		if sample.Cpu != nil {
-			cpuUsages = append(cpuUsages, sample.Cpu.Usage.Total)
-		}
-		if sample.Memory != nil {
-			memUsages = append(memUsages, sample.Memory.Usage)
-		}
+		cpuUsages = append(cpuUsages, sample.Cpu.Usage)
+		memUsages = append(memUsages, sample.Memory.Usage)
 	}
 
 	cpuPercentiles := uint64Slice(cpuUsages).Percentiles(cpuPercentages...)
 	memPercentiles := uint64Slice(memUsages).Percentiles(memoryPercentages...)
-	self.CpuUsagePercentiles = float64Zipuint64(cpuPercentages, cpuPercentiles)
-	self.MemoryUsagePercentiles = float64Zipuint64(memoryPercentages, memPercentiles)
+	self.CpuUsagePercentiles = intZipuint64(cpuPercentages, cpuPercentiles)
+	self.MemoryUsagePercentiles = intZipuint64(memoryPercentages, memPercentiles)
 }
