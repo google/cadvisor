@@ -15,6 +15,7 @@
 package container
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -64,12 +65,10 @@ func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStat
 		return nil, err
 	}
 	if stats == nil {
-		return nil, nil
+		return nil, fmt.Errorf("container handler returns a nil error and a nil stats")
 	}
-	// update timestamp if it is required. This feature is for testibility.
-	// In some test, we want the underlying handler to set timestamp.
-	if !self.dontSetTimestamp {
-		stats.Timestamp = time.Now()
+	if stats.Timestamp.IsZero() {
+		return nil, fmt.Errorf("container handler did not set timestamp")
 	}
 	self.lock.Lock()
 	defer self.lock.Unlock()
