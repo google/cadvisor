@@ -150,13 +150,6 @@ func TestSampleCpuUsage(t *testing.T) {
 		t.Error(err)
 	}
 
-	// we want to set our own time.
-	if w, ok := handler.(*percentilesContainerHandlerWrapper); ok {
-		w.dontSetTimestamp = true
-	} else {
-		t.Fatal("handler is not an instance of statsSummaryContainerHandlerWrapper")
-	}
-
 	// request stats/obervation N+1 times, so that there will be N samples
 	for i := 0; i < N+1; i++ {
 		_, err = handler.GetStats()

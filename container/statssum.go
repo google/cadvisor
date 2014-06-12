@@ -29,7 +29,6 @@ type percentilesContainerHandlerWrapper struct {
 	prevStats            *info.ContainerStats
 	numStats             uint64
 	sampler              sampling.Sampler
-	dontSetTimestamp     bool
 	lock                 sync.Mutex
 }
 
