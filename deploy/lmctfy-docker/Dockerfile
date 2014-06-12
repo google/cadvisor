@@ -1,8 +1,8 @@
-FROM google/debian:wheezy
+FROM ubuntu:14.04
 MAINTAINER kyurtsever@google.com dengnan@google.com vmarmol@google.com
 
 # Get the lmctfy dependencies.
-RUN apt-get update && apt-get install -y -q --no-install-recommends pkg-config libprotobuf7 libapparmor1
+RUN apt-get update && apt-get install -y -q --no-install-recommends pkg-config libprotobuf8 libapparmor1
 
 # Get the lcmtfy and cAdvisor binaries.
 ADD http://storage.googleapis.com/cadvisor-bin/lmctfy/lmctfy /usr/bin/lmctfy
