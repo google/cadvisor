@@ -100,22 +100,22 @@ func (self *ContainerInfo) StatsEndTime() time.Time {
 	return ret
 }
 
+// All CPU usage metrics are cumulative from the creation of the container
 type CpuStats struct {
 	Usage struct {
-		// Number of nanoseconds of CPU time used by the container
-		// since the beginning. This is a ccumulative
-		// value, not an instantaneous value.
+		// Total CPU usage.
+		// Units: nanoseconds
 		Total uint64 `json:"total"`
 
 		// Per CPU/core usage of the container.
 		// Unit: nanoseconds.
 		PerCpu []uint64 `json:"per_cpu,omitempty"`
 
-		// How much time was spent in user space since beginning.
+		// Time spent in user space.
 		// Unit: nanoseconds
 		User uint64 `json:"user"`
 
-		// How much time was spent in kernel space since beginning.
+		// Time spent in kernel space.
 		// Unit: nanoseconds
 		System uint64 `json:"system"`
 	} `json:"usage"`
@@ -162,7 +162,6 @@ type ContainerStatsSample struct {
 	Duration time.Duration `json:"duration"`
 	Cpu      struct {
 		// number of nanoseconds of CPU time used by the container
-		// within one second.
 		Usage uint64 `json:"usage"`
 	} `json:"cpu"`
 	Memory struct {
