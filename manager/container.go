@@ -39,7 +39,7 @@ type containerInfo struct {
 	Subcontainers []string
 	Spec          *info.ContainerSpec
 	Stats         *list.List
-	StatsSummary  *info.ContainerStatsSummary
+	StatsSummary  *info.ContainerStatsPercentiles
 }
 
 type containerData struct {
