@@ -51,22 +51,15 @@ func (self *notARealContainer) ListProcesses(listType ListType) ([]int, error) {
 	return nil, nil
 }
 
-type randomMemoryUsageContainer struct {
-	NoStatsSummary
-	notARealContainer
-}
-
-func (self *randomMemoryUsageContainer) GetStats() (*info.ContainerStats, error) {
-	stats := new(info.ContainerStats)
-	stats.Cpu = new(info.CpuStats)
-	stats.Memory = new(info.MemoryStats)
-	stats.Memory.Usage = uint64(rand.Intn(2048))
-	return stats, nil
-}
-
 func TestMaxMemoryUsage(t *testing.T) {
+	N := 100
+	memTrace := make([]uint64, N)
+	for i := 0; i < N; i++ {
+		memTrace[i] = uint64(i + 1)
+	}
 	handler, err := AddStatsSummary(
-		&randomMemoryUsageContainer{},
+		// &randomMemoryUsageContainer{},
+		containerWithTrace(1*time.Second, nil, memTrace),
 		&StatsParameter{
 			Sampler:    "uniform",
 			NumSamples: 10,
@@ -76,7 +69,6 @@ func TestMaxMemoryUsage(t *testing.T) {
 		t.Error(err)
 	}
 	var maxUsage uint64
-	N := 100
 	for i := 0; i < N; i++ {
 		stats, err := handler.GetStats()
 		if err != nil {
@@ -96,29 +88,34 @@ func TestMaxMemoryUsage(t *testing.T) {
 	}
 }
 
-type replayCpuTrace struct {
+type replayTrace struct {
 	NoStatsSummary
 	notARealContainer
 	cpuTrace    []uint64
+	memTrace    []uint64
 	totalUsage  uint64
 	currenttime time.Time
 	duration    time.Duration
 	lock        sync.Mutex
 }
 
-func containerWithCpuTrace(duration time.Duration, cpuUsages ...uint64) ContainerHandler {
-	return &replayCpuTrace{
+func containerWithTrace(duration time.Duration, cpuUsages []uint64, memUsages []uint64) ContainerHandler {
+	return &replayTrace{
 		duration:    duration,
 		cpuTrace:    cpuUsages,
+		memTrace:    memUsages,
 		currenttime: time.Now(),
 	}
 }
 
-func (self *replayCpuTrace) GetStats() (*info.ContainerStats, error) {
+func (self *replayTrace) GetStats() (*info.ContainerStats, error) {
 	stats := new(info.ContainerStats)
 	stats.Cpu = new(info.CpuStats)
 	stats.Memory = new(info.MemoryStats)
-	stats.Memory.Usage = uint64(rand.Intn(2048))
+	if len(self.memTrace) > 0 {
+		stats.Memory.Usage = self.memTrace[0]
+		self.memTrace = self.memTrace[1:]
+	}
 
 	self.lock.Lock()
 	defer self.lock.Unlock()
@@ -142,17 +139,20 @@ func TestSampleCpuUsage(t *testing.T) {
 	// Number of samples
 	N := 10
 	cpuTrace := make([]uint64, 0, N)
+	memTrace := make([]uint64, 0, N)
 
 	// We need N+1 observations to get N samples
 	for i := 0; i < N+1; i++ {
-		usage := uint64(rand.Intn(1000))
-		cpuTrace = append(cpuTrace, usage)
+		cpuusage := uint64(rand.Intn(1000))
+		memusage := uint64(rand.Intn(1000))
+		cpuTrace = append(cpuTrace, cpuusage)
+		memTrace = append(memTrace, memusage)
 	}
 
 	samplePeriod := 1 * time.Second
 
 	handler, err := AddStatsSummary(
-		containerWithCpuTrace(samplePeriod, cpuTrace...),
+		containerWithTrace(samplePeriod, cpuTrace, memTrace),
 		&StatsParameter{
 			// Use uniform sampler with sample size of N, so that
 			// we will be guaranteed to store the first N samples.
