@@ -203,6 +203,10 @@ func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 	if !current.Timestamp.After(prev.Timestamp) {
 		return nil, fmt.Errorf("wrong stats order")
 	}
+	// This data is invalid.
+	if current.Cpu.Usage.Total < prev.Cpu.Usage.Total {
+		return nil, fmt.Errorf("current CPU usage is less than prev CPU usage (cumulative).")
+	}
 	sample := new(ContainerStatsSample)
 	// Caculate the diff to get the CPU usage within the time interval.
 	sample.Cpu.Usage = current.Cpu.Usage.Total - prev.Cpu.Usage.Total
