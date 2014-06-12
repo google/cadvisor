@@ -261,7 +261,7 @@ func TestAddSampleWrongCpuUsage(t *testing.T) {
 	current.Memory.Usage = memCurrentUsage
 	current.Timestamp = prev.Timestamp.Add(1 * time.Second)
 
-	sample, err := NewSample(current, prev)
+	sample, err := NewSample(prev, current)
 	if err == nil {
 		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
