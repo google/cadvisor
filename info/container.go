@@ -238,6 +238,9 @@ func (self uint64Slice) Percentiles(requestedPercentiles ...int) []percentile {
 	sort.Sort(self)
 	for _, p := range requestedPercentiles {
 		idx := (len(self) * p / 100) - 1
+		if idx < 0 {
+			idx = 0
+		}
 		ret = append(
 			ret,
 			percentile{
