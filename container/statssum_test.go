@@ -15,8 +15,6 @@
 package container
 
 import (
-	crand "crypto/rand"
-	"encoding/binary"
 	"math/rand"
 	"sync"
 	"testing"
@@ -24,14 +22,6 @@ import (
 
 	"github.com/google/cadvisor/info"
 )
-
-func init() {
-	// NOTE(dengnan): Even if we picked a good random seed,
-	// the random number from math/rand is still not cryptographically secure!
-	var seed int64
-	binary.Read(crand.Reader, binary.LittleEndian, &seed)
-	rand.Seed(seed)
-}
 
 type mockContainer struct {
 }
@@ -58,7 +48,6 @@ func TestMaxMemoryUsage(t *testing.T) {
 		memTrace[i] = uint64(i + 1)
 	}
 	handler, err := AddStatsSummary(
-		// &randomMemoryUsageContainer{},
 		containerWithTrace(1*time.Second, nil, memTrace),
 		&StatsParameter{
 			Sampler:    "uniform",
