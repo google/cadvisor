@@ -50,8 +50,8 @@ var pageTemplate *template.Template
 
 type pageData struct {
 	ContainerName      string
-	ParentContainers   []string
-	Subcontainers      []string
+	ParentContainers   []info.ContainerRef
+	Subcontainers      []info.ContainerRef
 	Spec               *info.ContainerSpec
 	Stats              []*info.ContainerStats
 	MachineInfo        *info.MachineInfo
@@ -69,14 +69,17 @@ func init() {
 }
 
 // TODO(vmarmol): Escape this correctly.
-func containerLink(containerName string, basenameOnly bool, cssClasses string) interface{} {
+func containerLink(containerRef info.ContainerRef, basenameOnly bool, cssClasses string) interface{} {
 	var displayName string
-	if basenameOnly {
-		displayName = path.Base(string(containerName))
+	containerName := containerRef.Name
+	if len(containerRef.Aliases) > 0 {
+		displayName = containerRef.Aliases[0]
+	} else if basenameOnly {
+		displayName = path.Base(string(containerRef.Name))
 	} else {
-		displayName = string(containerName)
+		displayName = string(containerRef.Name)
 	}
-	if containerName == "root" {
+	if containerRef.Name == "root" {
 		containerName = "/"
 	}
 	return template.HTML(fmt.Sprintf("<a class=\"%s\" href=\"%s%s\">%s</a>", cssClasses, ContainersPage[:len(ContainersPage)-1], containerName, displayName))
@@ -167,15 +170,15 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 	}
 
 	// Make a list of the parent containers and their links
-	var parentContainers []string
-	parentContainers = append(parentContainers, string("root"))
+	var parentContainers []info.ContainerRef
+	parentContainers = append(parentContainers, info.ContainerRef{Name: "root"})
 	parentName := ""
 	for _, part := range strings.Split(string(cont.Name), "/") {
 		if part == "" {
 			continue
 		}
 		parentName += "/" + part
-		parentContainers = append(parentContainers, string(parentName))
+		parentContainers = append(parentContainers, info.ContainerRef{Name: parentName})
 	}
 
 	data := &pageData{
