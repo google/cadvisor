@@ -234,3 +234,35 @@ func TestAddSampleWrongOrder(t *testing.T) {
 		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
 }
+
+func TestAddSampleWrongCpuUsage(t *testing.T) {
+	cpuPrevUsage := uint64(15)
+	cpuCurrentUsage := uint64(10)
+	memCurrentUsage := uint64(200)
+
+	prev := &ContainerStats{
+		Cpu:    &CpuStats{},
+		Memory: &MemoryStats{},
+	}
+	prev.Cpu.Usage.PerCpu = []uint64{cpuPrevUsage}
+	prev.Cpu.Usage.Total = cpuPrevUsage
+	prev.Cpu.Usage.System = 0
+	prev.Cpu.Usage.User = cpuPrevUsage
+	prev.Timestamp = time.Now()
+
+	current := &ContainerStats{
+		Cpu:    &CpuStats{},
+		Memory: &MemoryStats{},
+	}
+	current.Cpu.Usage.PerCpu = []uint64{cpuCurrentUsage}
+	current.Cpu.Usage.Total = cpuCurrentUsage
+	current.Cpu.Usage.System = 0
+	current.Cpu.Usage.User = cpuCurrentUsage
+	current.Memory.Usage = memCurrentUsage
+	current.Timestamp = prev.Timestamp.Add(1 * time.Second)
+
+	sample, err := NewSample(current, prev)
+	if err == nil {
+		t.Errorf("generated an unexpected sample: %+v", sample)
+	}
+}
