@@ -64,7 +64,7 @@ func (self *randomMemoryUsageContainer) GetStats() (*info.ContainerStats, error)
 	return stats, nil
 }
 
-func TestAvgMaxMemoryUsage(t *testing.T) {
+func TestMaxMemoryUsage(t *testing.T) {
 	handler, err := AddStatsSummary(
 		&randomMemoryUsageContainer{},
 		&StatsParameter{
@@ -76,7 +76,6 @@ func TestAvgMaxMemoryUsage(t *testing.T) {
 		t.Error(err)
 	}
 	var maxUsage uint64
-	var totalUsage uint64
 	N := 100
 	for i := 0; i < N; i++ {
 		stats, err := handler.GetStats()
@@ -87,7 +86,6 @@ func TestAvgMaxMemoryUsage(t *testing.T) {
 		if stats.Memory.Usage > maxUsage {
 			maxUsage = stats.Memory.Usage
 		}
-		totalUsage += stats.Memory.Usage
 	}
 	summary, err := handler.StatsSummary()
 	if err != nil {
@@ -95,10 +93,6 @@ func TestAvgMaxMemoryUsage(t *testing.T) {
 	}
 	if summary.MaxMemoryUsage != maxUsage {
 		t.Fatalf("Max memory usage should be %v; received %v", maxUsage, summary.MaxMemoryUsage)
-	}
-	avg := totalUsage / uint64(N)
-	if summary.AvgMemoryUsage != avg {
-		t.Fatalf("Avg memory usage should be %v; received %v", avg, summary.AvgMemoryUsage)
 	}
 }
 

@@ -15,7 +15,6 @@
 package container
 
 import (
-	"math/big"
 	"sync"
 	"time"
 
@@ -24,13 +23,12 @@ import (
 )
 
 type statsSummaryContainerHandlerWrapper struct {
-	handler          ContainerHandler
-	currentSummary   *info.ContainerStatsSummary
-	prevStats        *info.ContainerStats
-	totalMemoryUsage *big.Int
-	numStats         uint64
-	sampler          sampling.Sampler
-	lock             sync.Mutex
+	handler        ContainerHandler
+	currentSummary *info.ContainerStatsSummary
+	prevStats      *info.ContainerStats
+	numStats       uint64
+	sampler        sampling.Sampler
+	lock           sync.Mutex
 }
 
 func (self *statsSummaryContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
@@ -87,16 +85,6 @@ func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStat
 		if stats.Memory.Usage > self.currentSummary.MaxMemoryUsage {
 			self.currentSummary.MaxMemoryUsage = stats.Memory.Usage
 		}
-
-		// XXX(dengnan): Very inefficient!
-		if self.totalMemoryUsage == nil {
-			self.totalMemoryUsage = new(big.Int)
-		}
-		usage := (&big.Int{}).SetUint64(stats.Memory.Usage)
-		self.totalMemoryUsage = self.totalMemoryUsage.Add(self.totalMemoryUsage, usage)
-		n := (&big.Int{}).SetUint64(self.numStats)
-		avg := (&big.Int{}).Div(self.totalMemoryUsage, n)
-		self.currentSummary.AvgMemoryUsage = avg.Uint64()
 	}
 	return stats, nil
 }

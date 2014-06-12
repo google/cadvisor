@@ -180,7 +180,6 @@ type percentile struct {
 type ContainerStatsSummary struct {
 	// TODO(dengnan): More things?
 	MaxMemoryUsage         uint64                  `json:"max_memory_usage,omitempty"`
-	AvgMemoryUsage         uint64                  `json:"avg_memory_usage,omitempty"`
 	Samples                []*ContainerStatsSample `json:"samples,omitempty"`
 	MemoryUsagePercentiles []percentile            `json:"memory_usage_percentiles,omitempty"`
 	CpuUsagePercentiles    []percentile            `json:"cpu_usage_percentiles,omitempty"`
