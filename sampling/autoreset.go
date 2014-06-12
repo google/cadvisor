@@ -44,7 +44,7 @@ func (self *autoResetSampler) Update(d interface{}) {
 	self.sampler.Update(d)
 }
 
-func NewPeriodcallyResetSampler(period time.Duration, sampler Sampler) Sampler {
+func NewPeriodicallyResetSampler(period time.Duration, sampler Sampler) Sampler {
 	lastRest := time.Now()
 	shouldReset := func(d interface{}) bool {
 		if time.Now().Sub(lastRest) > period {

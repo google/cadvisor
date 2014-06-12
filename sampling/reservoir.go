@@ -51,7 +51,7 @@ func (self *reservoirSampler) Update(d interface{}) {
 		self.samples = append(self.samples, d)
 		return
 	}
-	// Randomly generates a number between [0, numInances).
+	// Randomly generates a number between [0, numInstances).
 	// Use this random number, j, as an index.  If j is larger than the
 	// reservoir size, we will ignore the current new data.
 	// Otherwise replace the jth element in reservoir with the new data.

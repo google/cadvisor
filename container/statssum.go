@@ -115,7 +115,7 @@ func (self *percentilesContainerHandlerWrapper) StatsSummary() (*info.ContainerS
 		samples = append(samples, stats)
 	})
 	self.containerPercentiles.Samples = samples
-	// XXX(dengnan): propabily add to StatsParameter?
+	// XXX(dengnan): probably add to StatsParameter?
 	self.containerPercentiles.FillPercentiles(
 		[]int{50, 80, 90, 95, 99},
 		[]int{50, 80, 90, 95, 99},

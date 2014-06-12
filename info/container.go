@@ -135,7 +135,7 @@ type MemoryStats struct {
 	Usage uint64 `json:"usage,omitempty"`
 
 	// The amount of working set memory, this includes recently accessed memory,
-	// dirty memory, and kernel memmory. Working set is <= "usage".
+	// dirty memory, and kernel memory. Working set is <= "usage".
 	// Units: Bytes.
 	WorkingSet uint64 `json:"working_set,omitempty"`
 
@@ -206,7 +206,7 @@ func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 		return nil, fmt.Errorf("current CPU usage is less than prev CPU usage (cumulative).")
 	}
 	sample := new(ContainerStatsSample)
-	// Caculate the diff to get the CPU usage within the time interval.
+	// Calculate the diff to get the CPU usage within the time interval.
 	sample.Cpu.Usage = current.Cpu.Usage.Total - prev.Cpu.Usage.Total
 	// Memory usage is current memory usage
 	sample.Memory.Usage = current.Memory.Usage
