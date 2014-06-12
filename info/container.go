@@ -247,6 +247,8 @@ func (self uint64Slice) Percentiles(ps ...int) []uint64 {
 	return ret
 }
 
+// as contains percentages and bs containes the corresponding values.
+// This function will pair values in as and bs to construct a list of percentile.
 // len(bs) <= len(as)
 func intZipuint64(as []int, bs []uint64) []percentile {
 	if len(bs) == 0 {
