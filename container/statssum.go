@@ -25,10 +25,10 @@ import (
 type statsSummaryContainerHandlerWrapper struct {
 	handler        ContainerHandler
 	currentSummary *info.ContainerStatsPercentiles
-	prevStats *info.ContainerStats
-	numStats  uint64
-	sampler   sampling.Sampler
-	lock      sync.Mutex
+	prevStats      *info.ContainerStats
+	numStats       uint64
+	sampler        sampling.Sampler
+	lock           sync.Mutex
 }
 
 func (self *statsSummaryContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
@@ -72,8 +72,8 @@ func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStat
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	sample, err := info.NewSample(self.prevStats, stats)
-	if err == nil && sample != nil {
+	sample, _ := info.NewSample(self.prevStats, stats)
+	if sample != nil {
 		self.sampler.Update(sample)
 	}
 	self.updatePrevStats(stats)
