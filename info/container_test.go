@@ -112,31 +112,28 @@ func TestNewSampleNilStats(t *testing.T) {
 	}
 }
 
+func createStats(cpuUsage, memUsage uint64, timestamp time.Time) *ContainerStats {
+	stats := &ContainerStats{
+		Cpu:    &CpuStats{},
+		Memory: &MemoryStats{},
+	}
+	stats.Cpu.Usage.PerCpu = []uint64{cpuUsage}
+	stats.Cpu.Usage.Total = cpuUsage
+	stats.Cpu.Usage.System = 0
+	stats.Cpu.Usage.User = cpuUsage
+	stats.Memory.Usage = memUsage
+	stats.Timestamp = timestamp
+	return stats
+}
+
 func TestAddSample(t *testing.T) {
 	cpuPrevUsage := uint64(10)
 	cpuCurrentUsage := uint64(15)
 	memCurrentUsage := uint64(200)
+	prevTime := time.Now()
 
-	prev := &ContainerStats{
-		Cpu:    &CpuStats{},
-		Memory: &MemoryStats{},
-	}
-	prev.Cpu.Usage.PerCpu = []uint64{cpuPrevUsage}
-	prev.Cpu.Usage.Total = cpuPrevUsage
-	prev.Cpu.Usage.System = 0
-	prev.Cpu.Usage.User = cpuPrevUsage
-	prev.Timestamp = time.Now()
-
-	current := &ContainerStats{
-		Cpu:    &CpuStats{},
-		Memory: &MemoryStats{},
-	}
-	current.Cpu.Usage.PerCpu = []uint64{cpuCurrentUsage}
-	current.Cpu.Usage.Total = cpuCurrentUsage
-	current.Cpu.Usage.System = 0
-	current.Cpu.Usage.User = cpuCurrentUsage
-	current.Memory.Usage = memCurrentUsage
-	current.Timestamp = prev.Timestamp.Add(1 * time.Second)
+	prev := createStats(cpuPrevUsage, memCurrentUsage, prevTime)
+	current := createStats(cpuCurrentUsage, memCurrentUsage, prevTime.Add(1*time.Second))
 
 	sample, err := NewSample(prev, current)
 	if err != nil {
@@ -159,28 +156,10 @@ func TestAddSampleIncompleteStats(t *testing.T) {
 	cpuPrevUsage := uint64(10)
 	cpuCurrentUsage := uint64(15)
 	memCurrentUsage := uint64(200)
+	prevTime := time.Now()
 
-	prev := &ContainerStats{
-		Cpu:    &CpuStats{},
-		Memory: &MemoryStats{},
-	}
-	prev.Cpu.Usage.PerCpu = []uint64{cpuPrevUsage}
-	prev.Cpu.Usage.Total = cpuPrevUsage
-	prev.Cpu.Usage.System = 0
-	prev.Cpu.Usage.User = cpuPrevUsage
-	prev.Timestamp = time.Now()
-
-	current := &ContainerStats{
-		Cpu:    &CpuStats{},
-		Memory: &MemoryStats{},
-	}
-	current.Cpu.Usage.PerCpu = []uint64{cpuCurrentUsage}
-	current.Cpu.Usage.Total = cpuCurrentUsage
-	current.Cpu.Usage.System = 0
-	current.Cpu.Usage.User = cpuCurrentUsage
-	current.Memory.Usage = memCurrentUsage
-	current.Timestamp = prev.Timestamp.Add(1 * time.Second)
-
+	prev := createStats(cpuPrevUsage, memCurrentUsage, prevTime)
+	current := createStats(cpuCurrentUsage, memCurrentUsage, prevTime.Add(1*time.Second))
 	stats := &ContainerStats{
 		Cpu:    prev.Cpu,
 		Memory: nil,
@@ -212,27 +191,10 @@ func TestAddSampleWrongOrder(t *testing.T) {
 	cpuPrevUsage := uint64(10)
 	cpuCurrentUsage := uint64(15)
 	memCurrentUsage := uint64(200)
+	prevTime := time.Now()
 
-	prev := &ContainerStats{
-		Cpu:    &CpuStats{},
-		Memory: &MemoryStats{},
-	}
-	prev.Cpu.Usage.PerCpu = []uint64{cpuPrevUsage}
-	prev.Cpu.Usage.Total = cpuPrevUsage
-	prev.Cpu.Usage.System = 0
-	prev.Cpu.Usage.User = cpuPrevUsage
-	prev.Timestamp = time.Now()
-
-	current := &ContainerStats{
-		Cpu:    &CpuStats{},
-		Memory: &MemoryStats{},
-	}
-	current.Cpu.Usage.PerCpu = []uint64{cpuCurrentUsage}
-	current.Cpu.Usage.Total = cpuCurrentUsage
-	current.Cpu.Usage.System = 0
-	current.Cpu.Usage.User = cpuCurrentUsage
-	current.Memory.Usage = memCurrentUsage
-	current.Timestamp = prev.Timestamp.Add(1 * time.Second)
+	prev := createStats(cpuPrevUsage, memCurrentUsage, prevTime)
+	current := createStats(cpuCurrentUsage, memCurrentUsage, prevTime.Add(1*time.Second))
 
 	sample, err := NewSample(current, prev)
 	if err == nil {
@@ -244,27 +206,10 @@ func TestAddSampleWrongCpuUsage(t *testing.T) {
 	cpuPrevUsage := uint64(15)
 	cpuCurrentUsage := uint64(10)
 	memCurrentUsage := uint64(200)
+	prevTime := time.Now()
 
-	prev := &ContainerStats{
-		Cpu:    &CpuStats{},
-		Memory: &MemoryStats{},
-	}
-	prev.Cpu.Usage.PerCpu = []uint64{cpuPrevUsage}
-	prev.Cpu.Usage.Total = cpuPrevUsage
-	prev.Cpu.Usage.System = 0
-	prev.Cpu.Usage.User = cpuPrevUsage
-	prev.Timestamp = time.Now()
-
-	current := &ContainerStats{
-		Cpu:    &CpuStats{},
-		Memory: &MemoryStats{},
-	}
-	current.Cpu.Usage.PerCpu = []uint64{cpuCurrentUsage}
-	current.Cpu.Usage.Total = cpuCurrentUsage
-	current.Cpu.Usage.System = 0
-	current.Cpu.Usage.User = cpuCurrentUsage
-	current.Memory.Usage = memCurrentUsage
-	current.Timestamp = prev.Timestamp.Add(1 * time.Second)
+	prev := createStats(cpuPrevUsage, memCurrentUsage, prevTime)
+	current := createStats(cpuCurrentUsage, memCurrentUsage, prevTime.Add(1*time.Second))
 
 	sample, err := NewSample(prev, current)
 	if err == nil {
