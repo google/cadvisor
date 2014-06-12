@@ -57,15 +57,12 @@ func TestMaxMemoryUsage(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	var maxUsage uint64
+	maxUsage := uint64(N)
 	for i := 0; i < N; i++ {
-		stats, err := handler.GetStats()
+		_, err := handler.GetStats()
 		if err != nil {
 			t.Errorf("Error when get stats: %v", err)
 			continue
-		}
-		if stats.Memory.Usage > maxUsage {
-			maxUsage = stats.Memory.Usage
 		}
 	}
 	summary, err := handler.StatsSummary()
