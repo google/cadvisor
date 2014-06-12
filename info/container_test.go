@@ -67,8 +67,8 @@ func TestPercentiles(t *testing.T) {
 	N := 100
 	data := make([]uint64, N)
 
-	for i := 0; i < N; i++ {
-		data[i] = uint64(i)
+	for i := 1; i < N+1; i++ {
+		data[i-1] = uint64(i)
 	}
 	percentages := []int{
 		80,
@@ -76,12 +76,17 @@ func TestPercentiles(t *testing.T) {
 		50,
 	}
 	percentiles := uint64Slice(data).Percentiles(percentages...)
-	for i, s := range percentiles {
-		p := percentages[i]
-		d := uint64(N * p / 100)
-		if d != s {
-			t.Errorf("%v percentile data should be %v, but got %v", p, d, s)
+	for _, s := range percentiles {
+		if s.Value != uint64(s.Percentage) {
+			t.Errorf("%v percentile data should be %v, but got %v", s.Percentage, s.Percentage, s.Value)
 		}
+		/*
+			p := percentages[i]
+			d := uint64(N * p / 100)
+			if d != s {
+				t.Errorf("%v percentile data should be %v, but got %v", p, d, s)
+			}
+		*/
 	}
 }
 

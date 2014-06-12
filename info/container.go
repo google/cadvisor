@@ -230,37 +230,21 @@ func (self uint64Slice) Swap(i, j int) {
 	self[i], self[j] = self[j], self[i]
 }
 
-func (self uint64Slice) Percentiles(ps ...int) []uint64 {
+func (self uint64Slice) Percentiles(requestedPercentiles ...int) []percentile {
 	if len(self) == 0 {
 		return nil
 	}
-	ret := make([]uint64, 0, len(ps))
+	ret := make([]percentile, 0, len(requestedPercentiles))
 	sort.Sort(self)
-	for _, p := range ps {
-		idx := (float64(p) / 100.0) * float64(len(self)+1)
-		if idx > float64(len(self)-1) {
-			ret = append(ret, self[len(self)-1])
-		} else {
-			ret = append(ret, self[int(idx)])
-		}
-	}
-	return ret
-}
-
-// as contains percentages and bs containes the corresponding values.
-// This function will pair values in as and bs to construct a list of percentile.
-// len(bs) <= len(as)
-func intZipuint64(as []int, bs []uint64) []percentile {
-	if len(bs) == 0 {
-		return nil
-	}
-	ret := make([]percentile, len(bs))
-	for i, b := range bs {
-		a := as[i]
-		ret[i] = percentile{
-			Percentage: a,
-			Value:      b,
-		}
+	for _, p := range requestedPercentiles {
+		idx := (len(self) * p / 100) - 1
+		ret = append(
+			ret,
+			percentile{
+				Percentage: p,
+				Value:      self[idx],
+			},
+		)
 	}
 	return ret
 }
@@ -280,8 +264,6 @@ func (self *ContainerStatsPercentiles) FillPercentiles(cpuPercentages, memoryPer
 		memUsages = append(memUsages, sample.Memory.Usage)
 	}
 
-	cpuPercentiles := uint64Slice(cpuUsages).Percentiles(cpuPercentages...)
-	memPercentiles := uint64Slice(memUsages).Percentiles(memoryPercentages...)
-	self.CpuUsagePercentiles = intZipuint64(cpuPercentages, cpuPercentiles)
-	self.MemoryUsagePercentiles = intZipuint64(memoryPercentages, memPercentiles)
+	self.CpuUsagePercentiles = uint64Slice(cpuUsages).Percentiles(cpuPercentages...)
+	self.MemoryUsagePercentiles = uint64Slice(memUsages).Percentiles(memoryPercentages...)
 }
