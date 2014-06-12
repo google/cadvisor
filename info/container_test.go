@@ -80,13 +80,23 @@ func TestPercentiles(t *testing.T) {
 		if s.Value != uint64(s.Percentage) {
 			t.Errorf("%v percentile data should be %v, but got %v", s.Percentage, s.Percentage, s.Value)
 		}
-		/*
-			p := percentages[i]
-			d := uint64(N * p / 100)
-			if d != s {
-				t.Errorf("%v percentile data should be %v, but got %v", p, d, s)
-			}
-		*/
+	}
+}
+
+func TestPercentilesSmallDataSet(t *testing.T) {
+	var value uint64 = 11
+	data := []uint64{value}
+
+	percentages := []int{
+		80,
+		90,
+		50,
+	}
+	percentiles := uint64Slice(data).Percentiles(percentages...)
+	for _, s := range percentiles {
+		if s.Value != value {
+			t.Errorf("%v percentile data should be %v, but got %v", s.Percentage, value, s.Value)
+		}
 	}
 }
 
