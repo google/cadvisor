@@ -62,7 +62,7 @@ type ContainerInfo struct {
 	// Historical statistics gathered from the container.
 	Stats []*ContainerStats `json:"stats,omitempty"`
 
-	StatsSummary *ContainerStatsSummary `json:"stats_summary,omitempty"`
+	StatsSummary *ContainerStatsPercentiles `json:"stats_summary,omitempty"`
 }
 
 func (self *ContainerInfo) StatsAfter(ref time.Time) []*ContainerStats {
@@ -177,7 +177,7 @@ type percentile struct {
 	Value      uint64 `json:"value"`
 }
 
-type ContainerStatsSummary struct {
+type ContainerStatsPercentiles struct {
 	// TODO(dengnan): More things?
 	MaxMemoryUsage         uint64                  `json:"max_memory_usage,omitempty"`
 	Samples                []*ContainerStatsSample `json:"samples,omitempty"`
@@ -263,7 +263,7 @@ func intZipuint64(as []int, bs []uint64) []percentile {
 	return ret
 }
 
-func (self *ContainerStatsSummary) FillPercentiles(cpuPercentages, memoryPercentages []int) {
+func (self *ContainerStatsPercentiles) FillPercentiles(cpuPercentages, memoryPercentages []int) {
 	if len(self.Samples) == 0 {
 		return
 	}

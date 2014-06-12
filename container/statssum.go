@@ -24,11 +24,11 @@ import (
 
 type statsSummaryContainerHandlerWrapper struct {
 	handler        ContainerHandler
-	currentSummary *info.ContainerStatsSummary
-	prevStats      *info.ContainerStats
-	numStats       uint64
-	sampler        sampling.Sampler
-	lock           sync.Mutex
+	currentSummary *info.ContainerStatsPercentiles
+	prevStats *info.ContainerStats
+	numStats  uint64
+	sampler   sampling.Sampler
+	lock      sync.Mutex
 }
 
 func (self *statsSummaryContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
@@ -78,7 +78,7 @@ func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStat
 	}
 	self.updatePrevStats(stats)
 	if self.currentSummary == nil {
-		self.currentSummary = new(info.ContainerStatsSummary)
+		self.currentSummary = new(info.ContainerStatsPercentiles)
 	}
 	self.numStats++
 	if stats.Memory != nil {
@@ -101,7 +101,7 @@ func (self *statsSummaryContainerHandlerWrapper) ListProcesses(listType ListType
 	return self.handler.ListProcesses(listType)
 }
 
-func (self *statsSummaryContainerHandlerWrapper) StatsSummary() (*info.ContainerStatsSummary, error) {
+func (self *statsSummaryContainerHandlerWrapper) StatsSummary() (*info.ContainerStatsPercentiles, error) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	samples := make([]*info.ContainerStatsSample, 0, self.sampler.Len())
@@ -132,7 +132,7 @@ func AddStatsSummary(handler ContainerHandler, parameter *StatsParameter) (Conta
 	}
 	return &statsSummaryContainerHandlerWrapper{
 		handler:        handler,
-		currentSummary: &info.ContainerStatsSummary{},
+		currentSummary: &info.ContainerStatsPercentiles{},
 		sampler:        sampler,
 	}, nil
 }
