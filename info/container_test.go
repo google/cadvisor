@@ -70,14 +70,14 @@ func TestPercentiles(t *testing.T) {
 	for i := 0; i < N; i++ {
 		data[i] = uint64(i)
 	}
-	ps := []int{
+	percentages := []int{
 		80,
 		90,
 		50,
 	}
-	ss := uint64Slice(data).Percentiles(ps...)
-	for i, s := range ss {
-		p := ps[i]
+	percentiles := uint64Slice(data).Percentiles(percentages...)
+	for i, s := range percentiles {
+		p := percentages[i]
 		d := uint64(N * p / 100)
 		if d != s {
 			t.Errorf("%v percentile data should be %v, but got %v", p, d, s)
