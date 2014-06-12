@@ -50,7 +50,7 @@ func main() {
 	if err := lmctfy.Register("/"); err != nil {
 		log.Printf("lmctfy registration failed: %v.", err)
 		log.Print("Running in docker only mode.")
-		if err := docker.Register(containerManager, "/"); err != nil {
+		if err := docker.Register(containerManager, "/docker"); err != nil {
 			log.Printf("Docker registration failed: %v.", err)
 			log.Fatalf("Unable to continue without docker or lmctfy.")
 		}
