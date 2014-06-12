@@ -23,12 +23,13 @@ import (
 )
 
 type statsSummaryContainerHandlerWrapper struct {
-	handler        ContainerHandler
-	currentSummary *info.ContainerStatsPercentiles
-	prevStats      *info.ContainerStats
-	numStats       uint64
-	sampler        sampling.Sampler
-	lock           sync.Mutex
+	handler          ContainerHandler
+	currentSummary   *info.ContainerStatsPercentiles
+	prevStats        *info.ContainerStats
+	numStats         uint64
+	sampler          sampling.Sampler
+	dontSetTimestamp bool
+	lock             sync.Mutex
 }
 
 func (self *statsSummaryContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
@@ -65,8 +66,9 @@ func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStat
 	if stats == nil {
 		return nil, nil
 	}
-	// Only update timestamp if it is zero.
-	if stats.Timestamp.IsZero() {
+	// update timestamp if it is required. This feature is for testibility.
+	// In some test, we want the underlying handler to set timestamp.
+	if !self.dontSetTimestamp {
 		stats.Timestamp = time.Now()
 	}
 	self.lock.Lock()
