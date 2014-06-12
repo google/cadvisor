@@ -101,7 +101,7 @@ func TestNewSampleNilStats(t *testing.T) {
 		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
 
-	sample, err = NewSample(nil, stats)
+	sample, err = NewSample(stats, nil)
 	if err == nil {
 		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
