@@ -37,9 +37,9 @@ func (self *mockContainerHandler) GetStats() (*info.ContainerStats, error) {
 	return args.Get(0).(*info.ContainerStats), args.Error(1)
 }
 
-func (self *mockContainerHandler) ListContainers(listType ListType) ([]string, error) {
+func (self *mockContainerHandler) ListContainers(listType ListType) ([]info.ContainerRef, error) {
 	args := self.Called(listType)
-	return args.Get(0).([]string), args.Error(1)
+	return args.Get(0).([]info.ContainerRef), args.Error(1)
 }
 
 func (self *mockContainerHandler) ListThreads(listType ListType) ([]int, error) {
@@ -55,10 +55,10 @@ func (self *mockContainerHandler) ListProcesses(listType ListType) ([]int, error
 func TestWhiteListContainerFilter(t *testing.T) {
 	mockc := &mockContainerHandler{}
 	mockc.On("ListContainers", LIST_RECURSIVE).Return(
-		[]string{
-			"/docker/ee0103",
-			"/container/created/by/lmctfy",
-			"/user/something",
+		[]info.ContainerRef{
+			info.ContainerRef{Name: "/docker/ee0103"},
+			info.ContainerRef{Name: "/container/created/by/lmctfy"},
+			info.ContainerRef{Name: "/user/something"},
 		},
 		nil,
 	)
@@ -76,7 +76,7 @@ func TestWhiteListContainerFilter(t *testing.T) {
 	for _, c := range containers {
 		legal := false
 		for _, prefix := range filterPaths {
-			if strings.HasPrefix(c, prefix) {
+			if strings.HasPrefix(c.Name, prefix) {
 				legal = true
 			}
 		}
@@ -90,10 +90,10 @@ func TestWhiteListContainerFilter(t *testing.T) {
 func TestBlackListContainerFilter(t *testing.T) {
 	mockc := &mockContainerHandler{}
 	mockc.On("ListContainers", LIST_RECURSIVE).Return(
-		[]string{
-			"/docker/ee0103",
-			"/container/created/by/lmctfy",
-			"/user/something",
+		[]info.ContainerRef{
+			info.ContainerRef{Name: "/docker/ee0103"},
+			info.ContainerRef{Name: "/container/created/by/lmctfy"},
+			info.ContainerRef{Name: "/user/something"},
 		},
 		nil,
 	)
@@ -111,7 +111,7 @@ func TestBlackListContainerFilter(t *testing.T) {
 	for _, c := range containers {
 		legal := true
 		for _, prefix := range filterPaths {
-			if strings.HasPrefix(c, prefix) {
+			if strings.HasPrefix(c.Name, prefix) {
 				legal = false
 			}
 		}

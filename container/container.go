@@ -32,7 +32,7 @@ type ListType int
 type ContainerHandler interface {
 	GetSpec() (*info.ContainerSpec, error)
 	GetStats() (*info.ContainerStats, error)
-	ListContainers(listType ListType) ([]string, error)
+	ListContainers(listType ListType) ([]info.ContainerRef, error)
 	ListThreads(listType ListType) ([]int, error)
 	ListProcesses(listType ListType) ([]int, error)
 	StatsSummary() (*info.ContainerStatsPercentiles, error)

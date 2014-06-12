@@ -30,7 +30,9 @@ func TestStatsStartTime(t *testing.T) {
 		stats = append(stats, s)
 	}
 	cinfo := &ContainerInfo{
-		Name:  "/some/container",
+		ContainerRef: ContainerRef{
+			Name: "/some/container",
+		},
 		Stats: stats,
 	}
 	ref := ct.Add(time.Duration(N-1) * time.Second)
@@ -52,7 +54,9 @@ func TestStatsEndTime(t *testing.T) {
 		stats = append(stats, s)
 	}
 	cinfo := &ContainerInfo{
-		Name:  "/some/container",
+		ContainerRef: ContainerRef{
+			Name: "/some/container",
+		},
 		Stats: stats,
 	}
 	ref := ct
