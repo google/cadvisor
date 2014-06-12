@@ -285,12 +285,12 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 	return
 }
 
-func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]string, error) {
+func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerRef, error) {
 	if self.isDockerContainer() {
 		return nil, nil
 	}
 	if self.isRootContainer() && listType == container.LIST_SELF {
-		return []string{"/docker"}, nil
+		return []info.ContainerRef{info.ContainerRef{Name: "/docker"}}, nil
 	}
 	opt := docker.ListContainersOptions{
 		All: true,
@@ -299,16 +299,21 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]string, 0, len(containers)+1)
+	ret := make([]info.ContainerRef, 0, len(containers)+1)
 	for _, c := range containers {
 		if !strings.HasPrefix(c.Status, "Up ") {
 			continue
 		}
 		path := fmt.Sprintf("/docker/%v", c.ID)
-		ret = append(ret, path)
+		aliases := c.Names
+		ref := info.ContainerRef{
+			Name:    path,
+			Aliases: aliases,
+		}
+		ret = append(ret, ref)
 	}
 	if self.isRootContainer() {
-		ret = append(ret, "/docker")
+		ret = append(ret, info.ContainerRef{Name: "/docker"})
 	}
 	return ret, nil
 }
