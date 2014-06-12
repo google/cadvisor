@@ -15,53 +15,40 @@
 package container
 
 import (
-	crand "crypto/rand"
-	"encoding/binary"
 	"math/rand"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/cadvisor/info"
 )
 
-func init() {
-	// NOTE(dengnan): Even if we picked a good random seed,
-	// the random number from math/rand is still not cryptographically secure!
-	var seed int64
-	binary.Read(crand.Reader, binary.LittleEndian, &seed)
-	rand.Seed(seed)
+type mockContainer struct {
 }
 
-type randomStatsContainer struct {
-	NoStatsSummary
+func (self *mockContainer) GetSpec() (*info.ContainerSpec, error) {
+	return nil, nil
 }
-
-func (self *randomStatsContainer) GetSpec() (*info.ContainerSpec, error) {
+func (self *mockContainer) ListContainers(listType ListType) ([]string, error) {
 	return nil, nil
 }
 
-func (self *randomStatsContainer) GetStats() (*info.ContainerStats, error) {
-	stats := new(info.ContainerStats)
-	stats.Cpu = new(info.CpuStats)
-	stats.Memory = new(info.MemoryStats)
-	stats.Memory.Usage = uint64(rand.Intn(2048))
-	return stats, nil
-}
-
-func (self *randomStatsContainer) ListContainers(listType ListType) ([]string, error) {
+func (self *mockContainer) ListThreads(listType ListType) ([]int, error) {
 	return nil, nil
 }
 
-func (self *randomStatsContainer) ListThreads(listType ListType) ([]int, error) {
+func (self *mockContainer) ListProcesses(listType ListType) ([]int, error) {
 	return nil, nil
 }
 
-func (self *randomStatsContainer) ListProcesses(listType ListType) ([]int, error) {
-	return nil, nil
-}
-
-func TestAvgMaxMemoryUsage(t *testing.T) {
+func TestMaxMemoryUsage(t *testing.T) {
+	N := 100
+	memTrace := make([]uint64, N)
+	for i := 0; i < N; i++ {
+		memTrace[i] = uint64(i + 1)
+	}
 	handler, err := AddStatsSummary(
-		&randomStatsContainer{},
+		containerWithTrace(1*time.Second, nil, memTrace),
 		&StatsParameter{
 			Sampler:    "uniform",
 			NumSamples: 10,
@@ -70,19 +57,13 @@ func TestAvgMaxMemoryUsage(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	var maxUsage uint64
-	var totalUsage uint64
-	N := 100
+	maxUsage := uint64(N)
 	for i := 0; i < N; i++ {
-		stats, err := handler.GetStats()
+		_, err := handler.GetStats()
 		if err != nil {
 			t.Errorf("Error when get stats: %v", err)
 			continue
 		}
-		if stats.Memory.Usage > maxUsage {
-			maxUsage = stats.Memory.Usage
-		}
-		totalUsage += stats.Memory.Usage
 	}
 	summary, err := handler.StatsSummary()
 	if err != nil {
@@ -91,8 +72,109 @@ func TestAvgMaxMemoryUsage(t *testing.T) {
 	if summary.MaxMemoryUsage != maxUsage {
 		t.Fatalf("Max memory usage should be %v; received %v", maxUsage, summary.MaxMemoryUsage)
 	}
-	avg := totalUsage / uint64(N)
-	if summary.AvgMemoryUsage != avg {
-		t.Fatalf("Avg memory usage should be %v; received %v", avg, summary.AvgMemoryUsage)
+}
+
+type replayTrace struct {
+	NoStatsSummary
+	mockContainer
+	cpuTrace    []uint64
+	memTrace    []uint64
+	totalUsage  uint64
+	currenttime time.Time
+	duration    time.Duration
+	lock        sync.Mutex
+}
+
+func containerWithTrace(duration time.Duration, cpuUsages []uint64, memUsages []uint64) ContainerHandler {
+	return &replayTrace{
+		duration:    duration,
+		cpuTrace:    cpuUsages,
+		memTrace:    memUsages,
+		currenttime: time.Now(),
+	}
+}
+
+func (self *replayTrace) GetStats() (*info.ContainerStats, error) {
+	stats := new(info.ContainerStats)
+	stats.Cpu = new(info.CpuStats)
+	stats.Memory = new(info.MemoryStats)
+	if len(self.memTrace) > 0 {
+		stats.Memory.Usage = self.memTrace[0]
+		self.memTrace = self.memTrace[1:]
+	}
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	cpuTrace := self.totalUsage
+	if len(self.cpuTrace) > 0 {
+		cpuTrace += self.cpuTrace[0]
+		self.cpuTrace = self.cpuTrace[1:]
+	}
+	self.totalUsage = cpuTrace
+	stats.Timestamp = self.currenttime
+	self.currenttime = self.currenttime.Add(self.duration)
+	stats.Cpu.Usage.Total = cpuTrace
+	stats.Cpu.Usage.PerCpu = []uint64{cpuTrace}
+	stats.Cpu.Usage.User = cpuTrace
+	stats.Cpu.Usage.System = 0
+	return stats, nil
+}
+
+func TestSampleCpuUsage(t *testing.T) {
+	// Number of samples
+	N := 10
+	cpuTrace := make([]uint64, 0, N)
+	memTrace := make([]uint64, 0, N)
+
+	// We need N+1 observations to get N samples
+	for i := 0; i < N+1; i++ {
+		cpuusage := uint64(rand.Intn(1000))
+		memusage := uint64(rand.Intn(1000))
+		cpuTrace = append(cpuTrace, cpuusage)
+		memTrace = append(memTrace, memusage)
+	}
+
+	samplePeriod := 1 * time.Second
+
+	handler, err := AddStatsSummary(
+		containerWithTrace(samplePeriod, cpuTrace, memTrace),
+		&StatsParameter{
+			// Use uniform sampler with sample size of N, so that
+			// we will be guaranteed to store the first N samples.
+			Sampler:    "uniform",
+			NumSamples: N,
+		},
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// request stats/obervation N+1 times, so that there will be N samples
+	for i := 0; i < N+1; i++ {
+		_, err = handler.GetStats()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	s, err := handler.StatsSummary()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, sample := range s.Samples {
+		if sample.Duration != samplePeriod {
+			t.Errorf("sample duration is %v, not %v", sample.Duration, samplePeriod)
+		}
+		cpuUsage := sample.Cpu.Usage
+		found := false
+		for _, u := range cpuTrace {
+			if u == cpuUsage {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("unable to find cpu usage %v", cpuUsage)
+		}
 	}
 }

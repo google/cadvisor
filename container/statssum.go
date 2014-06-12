@@ -15,7 +15,7 @@
 package container
 
 import (
-	"math/big"
+	"fmt"
 	"sync"
 	"time"
 
@@ -23,81 +23,104 @@ import (
 	"github.com/google/cadvisor/sampling"
 )
 
-type statsSummaryContainerHandlerWrapper struct {
-	handler          ContainerHandler
-	currentSummary   *info.ContainerStatsSummary
-	totalMemoryUsage *big.Int
-	numStats         uint64
-	sampler          sampling.Sampler
-	lock             sync.Mutex
+type percentilesContainerHandlerWrapper struct {
+	handler              ContainerHandler
+	containerPercentiles *info.ContainerStatsPercentiles
+	prevStats            *info.ContainerStats
+	numStats             uint64
+	sampler              sampling.Sampler
+	lock                 sync.Mutex
 }
 
-func (self *statsSummaryContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
+func (self *percentilesContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
 	return self.handler.GetSpec()
 }
 
-func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStats, error) {
+func (self *percentilesContainerHandlerWrapper) updatePrevStats(stats *info.ContainerStats) {
+	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
+		// discard incomplete stats
+		self.prevStats = nil
+		return
+	}
+	if self.prevStats == nil {
+		self.prevStats = &info.ContainerStats{
+			Cpu:    &info.CpuStats{},
+			Memory: &info.MemoryStats{},
+		}
+	}
+	// make a deep copy.
+	self.prevStats.Timestamp = stats.Timestamp
+	*self.prevStats.Cpu = *stats.Cpu
+	self.prevStats.Cpu.Usage.PerCpu = make([]uint64, len(stats.Cpu.Usage.PerCpu))
+	for i, perCpu := range stats.Cpu.Usage.PerCpu {
+		self.prevStats.Cpu.Usage.PerCpu[i] = perCpu
+	}
+	*self.prevStats.Memory = *stats.Memory
+}
+
+func (self *percentilesContainerHandlerWrapper) GetStats() (*info.ContainerStats, error) {
 	stats, err := self.handler.GetStats()
 	if err != nil {
 		return nil, err
 	}
 	if stats == nil {
-		return nil, nil
+		return nil, fmt.Errorf("container handler returns a nil error and a nil stats")
 	}
-	stats.Timestamp = time.Now()
+	if stats.Timestamp.IsZero() {
+		return nil, fmt.Errorf("container handler did not set timestamp")
+	}
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	self.sampler.Update(stats)
-	if self.currentSummary == nil {
-		self.currentSummary = new(info.ContainerStatsSummary)
+	if self.prevStats != nil {
+		sample, err := info.NewSample(self.prevStats, stats)
+		if err != nil {
+			return nil, fmt.Errorf("wrong stats: %v", err)
+		}
+		if sample != nil {
+			self.sampler.Update(sample)
+		}
+	}
+	self.updatePrevStats(stats)
+	if self.containerPercentiles == nil {
+		self.containerPercentiles = new(info.ContainerStatsPercentiles)
 	}
 	self.numStats++
 	if stats.Memory != nil {
-		if stats.Memory.Usage > self.currentSummary.MaxMemoryUsage {
-			self.currentSummary.MaxMemoryUsage = stats.Memory.Usage
+		if stats.Memory.Usage > self.containerPercentiles.MaxMemoryUsage {
+			self.containerPercentiles.MaxMemoryUsage = stats.Memory.Usage
 		}
-
-		// XXX(dengnan): Very inefficient!
-		if self.totalMemoryUsage == nil {
-			self.totalMemoryUsage = new(big.Int)
-		}
-		usage := (&big.Int{}).SetUint64(stats.Memory.Usage)
-		self.totalMemoryUsage = self.totalMemoryUsage.Add(self.totalMemoryUsage, usage)
-		n := (&big.Int{}).SetUint64(self.numStats)
-		avg := (&big.Int{}).Div(self.totalMemoryUsage, n)
-		self.currentSummary.AvgMemoryUsage = avg.Uint64()
 	}
 	return stats, nil
 }
 
-func (self *statsSummaryContainerHandlerWrapper) ListContainers(listType ListType) ([]string, error) {
+func (self *percentilesContainerHandlerWrapper) ListContainers(listType ListType) ([]string, error) {
 	return self.handler.ListContainers(listType)
 }
 
-func (self *statsSummaryContainerHandlerWrapper) ListThreads(listType ListType) ([]int, error) {
+func (self *percentilesContainerHandlerWrapper) ListThreads(listType ListType) ([]int, error) {
 	return self.handler.ListThreads(listType)
 }
 
-func (self *statsSummaryContainerHandlerWrapper) ListProcesses(listType ListType) ([]int, error) {
+func (self *percentilesContainerHandlerWrapper) ListProcesses(listType ListType) ([]int, error) {
 	return self.handler.ListProcesses(listType)
 }
 
-func (self *statsSummaryContainerHandlerWrapper) StatsSummary() (*info.ContainerStatsSummary, error) {
+func (self *percentilesContainerHandlerWrapper) StatsSummary() (*info.ContainerStatsPercentiles, error) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	samples := make([]*info.ContainerStats, 0, self.sampler.Len())
+	samples := make([]*info.ContainerStatsSample, 0, self.sampler.Len())
 	self.sampler.Map(func(d interface{}) {
-		stats := d.(*info.ContainerStats)
+		stats := d.(*info.ContainerStatsSample)
 		samples = append(samples, stats)
 	})
-	self.currentSummary.Samples = samples
+	self.containerPercentiles.Samples = samples
 	// XXX(dengnan): propabily add to StatsParameter?
-	self.currentSummary.FillPercentiles(
+	self.containerPercentiles.FillPercentiles(
 		[]int{50, 80, 90, 95, 99},
 		[]int{50, 80, 90, 95, 99},
 	)
-	return self.currentSummary, nil
+	return self.containerPercentiles, nil
 }
 
 type StatsParameter struct {
@@ -112,9 +135,9 @@ func AddStatsSummary(handler ContainerHandler, parameter *StatsParameter) (Conta
 	if err != nil {
 		return nil, err
 	}
-	return &statsSummaryContainerHandlerWrapper{
-		handler:        handler,
-		currentSummary: &info.ContainerStatsSummary{},
-		sampler:        sampler,
+	return &percentilesContainerHandlerWrapper{
+		handler:              handler,
+		containerPercentiles: &info.ContainerStatsPercentiles{},
+		sampler:              sampler,
 	}, nil
 }

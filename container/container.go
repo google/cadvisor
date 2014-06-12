@@ -35,12 +35,12 @@ type ContainerHandler interface {
 	ListContainers(listType ListType) ([]string, error)
 	ListThreads(listType ListType) ([]int, error)
 	ListProcesses(listType ListType) ([]int, error)
-	StatsSummary() (*info.ContainerStatsSummary, error)
+	StatsSummary() (*info.ContainerStatsPercentiles, error)
 }
 
 type NoStatsSummary struct {
 }
 
-func (self *NoStatsSummary) StatsSummary() (*info.ContainerStatsSummary, error) {
+func (self *NoStatsSummary) StatsSummary() (*info.ContainerStatsPercentiles, error) {
 	return nil, fmt.Errorf("This method (StatsSummary) should never be called")
 }
