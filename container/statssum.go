@@ -23,21 +23,21 @@ import (
 	"github.com/google/cadvisor/sampling"
 )
 
-type statsSummaryContainerHandlerWrapper struct {
-	handler          ContainerHandler
-	currentSummary   *info.ContainerStatsPercentiles
-	prevStats        *info.ContainerStats
-	numStats         uint64
-	sampler          sampling.Sampler
-	dontSetTimestamp bool
-	lock             sync.Mutex
+type percentilesContainerHandlerWrapper struct {
+	handler              ContainerHandler
+	containerPercentiles *info.ContainerStatsPercentiles
+	prevStats            *info.ContainerStats
+	numStats             uint64
+	sampler              sampling.Sampler
+	dontSetTimestamp     bool
+	lock                 sync.Mutex
 }
 
-func (self *statsSummaryContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
+func (self *percentilesContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
 	return self.handler.GetSpec()
 }
 
-func (self *statsSummaryContainerHandlerWrapper) updatePrevStats(stats *info.ContainerStats) {
+func (self *percentilesContainerHandlerWrapper) updatePrevStats(stats *info.ContainerStats) {
 	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
 		// discard incomplete stats
 		self.prevStats = nil
@@ -59,7 +59,7 @@ func (self *statsSummaryContainerHandlerWrapper) updatePrevStats(stats *info.Con
 	*self.prevStats.Memory = *stats.Memory
 }
 
-func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStats, error) {
+func (self *percentilesContainerHandlerWrapper) GetStats() (*info.ContainerStats, error) {
 	stats, err := self.handler.GetStats()
 	if err != nil {
 		return nil, err
@@ -83,31 +83,31 @@ func (self *statsSummaryContainerHandlerWrapper) GetStats() (*info.ContainerStat
 		}
 	}
 	self.updatePrevStats(stats)
-	if self.currentSummary == nil {
-		self.currentSummary = new(info.ContainerStatsPercentiles)
+	if self.containerPercentiles == nil {
+		self.containerPercentiles = new(info.ContainerStatsPercentiles)
 	}
 	self.numStats++
 	if stats.Memory != nil {
-		if stats.Memory.Usage > self.currentSummary.MaxMemoryUsage {
-			self.currentSummary.MaxMemoryUsage = stats.Memory.Usage
+		if stats.Memory.Usage > self.containerPercentiles.MaxMemoryUsage {
+			self.containerPercentiles.MaxMemoryUsage = stats.Memory.Usage
 		}
 	}
 	return stats, nil
 }
 
-func (self *statsSummaryContainerHandlerWrapper) ListContainers(listType ListType) ([]string, error) {
+func (self *percentilesContainerHandlerWrapper) ListContainers(listType ListType) ([]string, error) {
 	return self.handler.ListContainers(listType)
 }
 
-func (self *statsSummaryContainerHandlerWrapper) ListThreads(listType ListType) ([]int, error) {
+func (self *percentilesContainerHandlerWrapper) ListThreads(listType ListType) ([]int, error) {
 	return self.handler.ListThreads(listType)
 }
 
-func (self *statsSummaryContainerHandlerWrapper) ListProcesses(listType ListType) ([]int, error) {
+func (self *percentilesContainerHandlerWrapper) ListProcesses(listType ListType) ([]int, error) {
 	return self.handler.ListProcesses(listType)
 }
 
-func (self *statsSummaryContainerHandlerWrapper) StatsSummary() (*info.ContainerStatsPercentiles, error) {
+func (self *percentilesContainerHandlerWrapper) StatsSummary() (*info.ContainerStatsPercentiles, error) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	samples := make([]*info.ContainerStatsSample, 0, self.sampler.Len())
@@ -115,13 +115,13 @@ func (self *statsSummaryContainerHandlerWrapper) StatsSummary() (*info.Container
 		stats := d.(*info.ContainerStatsSample)
 		samples = append(samples, stats)
 	})
-	self.currentSummary.Samples = samples
+	self.containerPercentiles.Samples = samples
 	// XXX(dengnan): propabily add to StatsParameter?
-	self.currentSummary.FillPercentiles(
+	self.containerPercentiles.FillPercentiles(
 		[]int{50, 80, 90, 95, 99},
 		[]int{50, 80, 90, 95, 99},
 	)
-	return self.currentSummary, nil
+	return self.containerPercentiles, nil
 }
 
 type StatsParameter struct {
@@ -136,9 +136,9 @@ func AddStatsSummary(handler ContainerHandler, parameter *StatsParameter) (Conta
 	if err != nil {
 		return nil, err
 	}
-	return &statsSummaryContainerHandlerWrapper{
-		handler:        handler,
-		currentSummary: &info.ContainerStatsPercentiles{},
-		sampler:        sampler,
+	return &percentilesContainerHandlerWrapper{
+		handler:              handler,
+		containerPercentiles: &info.ContainerStatsPercentiles{},
+		sampler:              sampler,
 	}, nil
 }

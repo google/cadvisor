@@ -33,21 +33,21 @@ func init() {
 	rand.Seed(seed)
 }
 
-type notARealContainer struct {
+type mockContainer struct {
 }
 
-func (self *notARealContainer) GetSpec() (*info.ContainerSpec, error) {
+func (self *mockContainer) GetSpec() (*info.ContainerSpec, error) {
 	return nil, nil
 }
-func (self *notARealContainer) ListContainers(listType ListType) ([]string, error) {
-	return nil, nil
-}
-
-func (self *notARealContainer) ListThreads(listType ListType) ([]int, error) {
+func (self *mockContainer) ListContainers(listType ListType) ([]string, error) {
 	return nil, nil
 }
 
-func (self *notARealContainer) ListProcesses(listType ListType) ([]int, error) {
+func (self *mockContainer) ListThreads(listType ListType) ([]int, error) {
+	return nil, nil
+}
+
+func (self *mockContainer) ListProcesses(listType ListType) ([]int, error) {
 	return nil, nil
 }
 
@@ -90,7 +90,7 @@ func TestMaxMemoryUsage(t *testing.T) {
 
 type replayTrace struct {
 	NoStatsSummary
-	notARealContainer
+	mockContainer
 	cpuTrace    []uint64
 	memTrace    []uint64
 	totalUsage  uint64
@@ -165,7 +165,7 @@ func TestSampleCpuUsage(t *testing.T) {
 	}
 
 	// we want to set our own time.
-	if w, ok := handler.(*statsSummaryContainerHandlerWrapper); ok {
+	if w, ok := handler.(*percentilesContainerHandlerWrapper); ok {
 		w.dontSetTimestamp = true
 	} else {
 		t.Fatal("handler is not an instance of statsSummaryContainerHandlerWrapper")
