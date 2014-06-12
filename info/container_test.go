@@ -78,9 +78,9 @@ func TestPercentiles(t *testing.T) {
 	ss := uint64Slice(data).Percentiles(ps...)
 	for i, s := range ss {
 		p := ps[i]
-		d := uint64(float64(N) * (float64(p) / 100.0))
+		d := uint64(N * p / 100)
 		if d != s {
-			t.Errorf("%v \\%tile data should be %v, but got %v", float64(p)/100.0, d, s)
+			t.Errorf("%v percentile data should be %v, but got %v", p, d, s)
 		}
 	}
 }
