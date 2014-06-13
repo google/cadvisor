@@ -32,6 +32,11 @@ func (self *mockContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 	return args.Get(0).(*info.ContainerSpec), args.Error(1)
 }
 
+func (self *mockContainerHandler) ContainerReference() (info.ContainerReference, error) {
+	args := self.Called()
+	return args.Get(0).(info.ContainerReference), args.Error(1)
+}
+
 func (self *mockContainerHandler) GetStats() (*info.ContainerStats, error) {
 	args := self.Called()
 	return args.Get(0).(*info.ContainerStats), args.Error(1)

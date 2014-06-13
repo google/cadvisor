@@ -47,6 +47,10 @@ func New(name string) (container.ContainerHandler, error) {
 	return el, nil
 }
 
+func (self *lmctfyContainerHandler) ContainerReference() (info.ContainerReference, error) {
+	return info.ContainerReference{Name: self.Name}, nil
+}
+
 func getExitCode(err error) int {
 	msg, ok := err.(*exec.ExitError)
 	if ok {

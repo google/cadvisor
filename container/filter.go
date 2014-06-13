@@ -26,6 +26,10 @@ type containerListFilter struct {
 	NoStatsSummary
 }
 
+func (self *containerListFilter) ContainerReference() (info.ContainerReference, error) {
+	return self.handler.ContainerReference()
+}
+
 func (self *containerListFilter) GetSpec() (*info.ContainerSpec, error) {
 	return self.handler.GetSpec()
 }

@@ -40,11 +40,11 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 	if err != nil {
 		return
 	}
-	handler = &dockerContainerHandler{
-		client:             client,
-		name:               name,
-		machineInfoFactory: self.machineInfoFactory,
-	}
+	handler, err = newDockerContainerHandler(
+		client,
+		name,
+		self.machineInfoFactory,
+	)
 	return
 }
 
