@@ -37,9 +37,9 @@ type containerStat struct {
 type containerInfo struct {
 	info.ContainerReference
 	Subcontainers []info.ContainerReference
-	Spec         *info.ContainerSpec
-	Stats        *list.List
-	StatsSummary *info.ContainerStatsPercentiles
+	Spec          *info.ContainerSpec
+	Stats         *list.List
+	StatsSummary  *info.ContainerStatsPercentiles
 }
 
 type containerData struct {
@@ -100,12 +100,14 @@ func NewContainerData(containerName string) (*containerData, error) {
 
 func (c *containerData) housekeeping() {
 	// Housekeep every second.
-	for true {
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+	for {
 		select {
 		case <-c.stop:
 			// Stop housekeeping when signaled.
 			return
-		case <-time.Tick(time.Second):
+		case <-ticker.C:
 			start := time.Now()
 			c.housekeepingTick()
 
