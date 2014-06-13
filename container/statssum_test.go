@@ -29,7 +29,7 @@ type mockContainer struct {
 func (self *mockContainer) GetSpec() (*info.ContainerSpec, error) {
 	return nil, nil
 }
-func (self *mockContainer) ListContainers(listType ListType) ([]string, error) {
+func (self *mockContainer) ListContainers(listType ListType) ([]info.ContainerReference, error) {
 	return nil, nil
 }
 

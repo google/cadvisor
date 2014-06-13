@@ -49,12 +49,19 @@ type ContainerSpec struct {
 	Memory *MemorySpec `json:"memory,omitempty"`
 }
 
-type ContainerInfo struct {
+// Container reference contains enough information to uniquely identify a container
+type ContainerReference struct {
 	// The absolute name of the container.
 	Name string `json:"name"`
 
+	Aliases []string `json:"aliases,omitempty"`
+}
+
+type ContainerInfo struct {
+	ContainerReference
+
 	// The direct subcontainers of the current container.
-	Subcontainers []string `json:"subcontainers,omitempty"`
+	Subcontainers []ContainerReference `json:"subcontainers,omitempty"`
 
 	// The isolation used in the container.
 	Spec *ContainerSpec `json:"spec,omitempty"`

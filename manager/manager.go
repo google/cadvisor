@@ -111,7 +111,9 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 
 	// Make a copy of the info for the user.
 	ret := &info.ContainerInfo{
-		Name:          cinfo.Name,
+		ContainerReference: info.ContainerReference{
+			Name: cinfo.Name,
+		},
 		Subcontainers: cinfo.Subcontainers,
 		Spec:          cinfo.Spec,
 		StatsSummary:  cinfo.StatsSummary,
@@ -180,10 +182,8 @@ func (m *manager) destroyContainer(containerName string) error {
 	return nil
 }
 
-type empty struct{}
-
 // Detect all containers that have been added or deleted.
-func (m *manager) getContainersDiff() (added []string, removed []string, err error) {
+func (m *manager) getContainersDiff() (added []info.ContainerReference, removed []info.ContainerReference, err error) {
 	// TODO(vmarmol): We probably don't need to lock around / since it will always be there.
 	m.containersLock.RLock()
 	defer m.containersLock.RUnlock()
@@ -197,24 +197,24 @@ func (m *manager) getContainersDiff() (added []string, removed []string, err err
 	if err != nil {
 		return nil, nil, err
 	}
-	allContainers = append(allContainers, "/")
+	allContainers = append(allContainers, info.ContainerReference{Name: "/"})
 
 	// Determine which were added and which were removed.
-	allContainersSet := make(map[string]*empty)
-	for name, _ := range m.containers {
-		allContainersSet[name] = &empty{}
+	allContainersSet := make(map[string]*containerData)
+	for name, d := range m.containers {
+		allContainersSet[name] = d
 	}
-	for _, name := range allContainers {
-		delete(allContainersSet, name)
-		_, ok := m.containers[name]
+	for _, c := range allContainers {
+		delete(allContainersSet, c.Name)
+		_, ok := m.containers[c.Name]
 		if !ok {
-			added = append(added, name)
+			added = append(added, c)
 		}
 	}
 
 	// Removed ones are no longer in the container listing.
-	for name, _ := range allContainersSet {
-		removed = append(removed, name)
+	for _, d := range allContainersSet {
+		removed = append(removed, d.info.ContainerReference)
 	}
 
 	return
@@ -228,18 +228,18 @@ func (m *manager) detectContainers() error {
 	}
 
 	// Add the new containers.
-	for _, name := range added {
-		_, err = m.createContainer(name)
+	for _, container := range added {
+		_, err = m.createContainer(container.Name)
 		if err != nil {
-			return fmt.Errorf("Failed to create existing container: %s: %s", name, err)
+			return fmt.Errorf("Failed to create existing container: %s: %s", container.Name, err)
 		}
 	}
 
 	// Remove the old containers.
-	for _, name := range removed {
-		err = m.destroyContainer(name)
+	for _, container := range removed {
+		err = m.destroyContainer(container.Name)
 		if err != nil {
-			return fmt.Errorf("Failed to destroy existing container: %s: %s", name, err)
+			return fmt.Errorf("Failed to destroy existing container: %s: %s", container.Name, err)
 		}
 	}
 

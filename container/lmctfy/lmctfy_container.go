@@ -157,7 +157,7 @@ func (c *lmctfyContainerHandler) GetStats() (*info.ContainerStats, error) {
 }
 
 // Gets all subcontainers.
-func (c *lmctfyContainerHandler) ListContainers(listType container.ListType) ([]string, error) {
+func (c *lmctfyContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	// Prepare the arguments.
 	args := []string{"list", "containers", "-v"}
 	if listType == container.LIST_RECURSIVE {
@@ -174,13 +174,14 @@ func (c *lmctfyContainerHandler) ListContainers(listType container.ListType) ([]
 
 	// Parse lines as container names.
 	if len(data) == 0 {
-		return []string{}, nil
+		return nil, nil
 	}
 	names := strings.Split(string(data), "\n")
-	containerNames := make([]string, 0, len(names))
+	containerNames := make([]info.ContainerReference, 0, len(names))
 	for _, name := range names {
 		if len(name) != 0 {
-			containerNames = append(containerNames, name)
+			ref := info.ContainerReference{Name: name}
+			containerNames = append(containerNames, ref)
 		}
 	}
 	return containerNames, nil
