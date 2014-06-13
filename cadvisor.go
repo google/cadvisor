@@ -36,6 +36,7 @@ var argResetPeriod = flag.Duration("reset_period", 2*time.Hour, "period to reset
 
 func main() {
 	flag.Parse()
+
 	// XXX(dengnan): Should we allow users to specify which sampler they want to use?
 	container.SetStatsParameter(&container.StatsParameter{
 		Sampler:     "uniform",
