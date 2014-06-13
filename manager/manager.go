@@ -228,18 +228,18 @@ func (m *manager) detectContainers() error {
 	}
 
 	// Add the new containers.
-	for _, c := range added {
-		_, err = m.createContainer(c.Name)
+	for _, container := range added {
+		_, err = m.createContainer(container.Name)
 		if err != nil {
-			return fmt.Errorf("Failed to create existing container: %s: %s", c.Name, err)
+			return fmt.Errorf("Failed to create existing container: %s: %s", container.Name, err)
 		}
 	}
 
 	// Remove the old containers.
-	for _, c := range removed {
-		err = m.destroyContainer(c.Name)
+	for _, container := range removed {
+		err = m.destroyContainer(container.Name)
 		if err != nil {
-			return fmt.Errorf("Failed to destroy existing container: %s: %s", c.Name, err)
+			return fmt.Errorf("Failed to destroy existing container: %s: %s", container.Name, err)
 		}
 	}
 
