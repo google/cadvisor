@@ -82,130 +82,666 @@ func TestGetContainerInfo(t *testing.T) {
 	respStr := `
 {
   "name": "%v",
-  "subcontainers": [
-    "%v/cadvisor",
-    "%v/docker"
-  ],
   "spec": {
     "cpu": {
-      "limit": 1000,
-      "max_limit": 18446744073709551000,
+      "limit": 18446744073709551000,
+      "max_limit": 0,
       "mask": {
         "data": [
-          255
+          18446744073709551000
         ]
       }
     },
     "memory": {
-      "limit": 9223372036854776000,
-      "reservation": 9223372036854776000
+      "limit": 18446744073709551000,
+      "swap_limit": 18446744073709551000
     }
   },
   "stats": [
     {
-      "timestamp": "2014-06-02T19:04:37.112952602Z",
+      "timestamp": "2014-06-13T01:03:26.434981825Z",
       "cpu": {
         "usage": {
-          "total": 39238585820907,
+          "total": 56896502,
           "per_cpu": [
-            6601830440753,
-            5399612248434,
-            4705072360704,
-            4516301677099,
-            4585779804509,
-            4556599077540,
-            4479432306284,
-            4393957905584
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
           ],
-          "user": 14513300000000,
-          "system": 14484560000000
+          "user": 10000000,
+          "system": 30000000
         },
         "load": 0
       },
       "memory": {
-        "limit": 9223372036854776000,
-        "usage": 837984256,
+        "usage": 495616,
         "container_data": {
-          "pgfault": 71601418,
-          "pgmajfault": 664
+          "pgfault": 2279
         },
         "hierarchical_data": {
-          "pgfault": 100135740,
-          "pgmajfault": 1454
+          "pgfault": 2279
         }
       }
     },
     {
-      "timestamp": "2014-06-02T19:04:38.117962404Z",
+      "timestamp": "2014-06-13T01:03:27.538394608Z",
       "cpu": {
         "usage": {
-          "total": 39238651066794,
+          "total": 56896502,
           "per_cpu": [
-            6601838963405,
-            5399619233761,
-            4705084549250,
-            4516308300389,
-            4585786473026,
-            4556607159034,
-            4479432477487,
-            4393973910442
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
           ],
-          "user": 14513320000000,
-          "system": 14484590000000
+          "user": 10000000,
+          "system": 30000000
         },
         "load": 0
       },
       "memory": {
-        "limit": 9223372036854776000,
-        "usage": 838025216,
+        "usage": 495616,
         "container_data": {
-          "pgfault": 71601418,
-          "pgmajfault": 664
+          "pgfault": 2279
         },
         "hierarchical_data": {
-          "pgfault": 100140566,
-          "pgmajfault": 1454
+          "pgfault": 2279
         }
       }
     },
     {
-      "timestamp": "2014-06-02T19:04:39.122826983Z",
+      "timestamp": "2014-06-13T01:03:28.640302072Z",
       "cpu": {
         "usage": {
-          "total": 39238719219625,
+          "total": 56896502,
           "per_cpu": [
-            6601852483847,
-            5399630546695,
-            4705091917507,
-            4516318924052,
-            4585791208645,
-            4556612305230,
-            4479432924370,
-            4393988909279
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
           ],
-          "user": 14513340000000,
-          "system": 14484630000000
+          "user": 10000000,
+          "system": 30000000
         },
         "load": 0
       },
       "memory": {
-        "limit": 9223372036854776000,
-        "usage": 838131712,
+        "usage": 495616,
         "container_data": {
-          "pgfault": 71601418,
-          "pgmajfault": 664
+          "pgfault": 2279
         },
         "hierarchical_data": {
-          "pgfault": 100145700,
-          "pgmajfault": 1454
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:29.74247308Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:30.844494537Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:31.946757066Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:33.050214062Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:34.15222186Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:35.25417391Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:36.355902169Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:37.457585928Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:38.559417379Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:39.662978029Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:40.764671232Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
+        }
+      }
+    },
+    {
+      "timestamp": "2014-06-13T01:03:41.866456459Z",
+      "cpu": {
+        "usage": {
+          "total": 56896502,
+          "per_cpu": [
+            20479682,
+            13579420,
+            6025040,
+            2255123,
+            3635661,
+            2489368,
+            5158288,
+            3273920
+          ],
+          "user": 10000000,
+          "system": 30000000
+        },
+        "load": 0
+      },
+      "memory": {
+        "usage": 495616,
+        "container_data": {
+          "pgfault": 2279
+        },
+        "hierarchical_data": {
+          "pgfault": 2279
         }
       }
     }
-  ]
+  ],
+  "stats_summary": {
+    "max_memory_usage": 495616,
+    "samples": [
+      {
+        "timestamp": "2014-06-13T01:03:27.538394608Z",
+        "duration": 1103412783,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:28.640302072Z",
+        "duration": 1101907464,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:29.74247308Z",
+        "duration": 1102171008,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:30.844494537Z",
+        "duration": 1102021457,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:31.946757066Z",
+        "duration": 1102262529,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:33.050214062Z",
+        "duration": 1103456996,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:34.15222186Z",
+        "duration": 1102007798,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:35.25417391Z",
+        "duration": 1101952050,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:36.355902169Z",
+        "duration": 1101728259,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:37.457585928Z",
+        "duration": 1101683759,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:38.559417379Z",
+        "duration": 1101831451,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:39.662978029Z",
+        "duration": 1103560650,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:40.764671232Z",
+        "duration": 1101693203,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      },
+      {
+        "timestamp": "2014-06-13T01:03:41.866456459Z",
+        "duration": 1101785227,
+        "cpu": {
+          "usage": 0
+        },
+        "memory": {
+          "usage": 495616
+        }
+      }
+    ],
+    "memory_usage_percentiles": [
+      {
+        "percentage": 50,
+        "value": 495616
+      },
+      {
+        "percentage": 80,
+        "value": 495616
+      },
+      {
+        "percentage": 90,
+        "value": 495616
+      },
+      {
+        "percentage": 95,
+        "value": 495616
+      },
+      {
+        "percentage": 99,
+        "value": 495616
+      }
+    ],
+    "cpu_usage_percentiles": [
+      {
+        "percentage": 50,
+        "value": 0
+      },
+      {
+        "percentage": 80,
+        "value": 0
+      },
+      {
+        "percentage": 90,
+        "value": 0
+      },
+      {
+        "percentage": 95,
+        "value": 0
+      },
+      {
+        "percentage": 99,
+        "value": 0
+      }
+    ]
+  }
 }
-	`
+`
 	containerName := "/some/container"
-	respStr = fmt.Sprintf(respStr, containerName, containerName, containerName)
+	respStr = fmt.Sprintf(respStr, containerName)
 	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.0/containers%v", containerName), respStr)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
