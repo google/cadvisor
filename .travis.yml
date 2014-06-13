@@ -1,9 +1,12 @@
 language: go
 go:
- - 1.1 
+ - 1.2
+before_script:
+ - go get github.com/stretchr/testify/mock
+ - go get github.com/kr/pretty
 script:
  - go test -v -race github.com/google/cadvisor/container
- - go test -v -race github.com/google/cadvisor/info
- - go test -v -race github.com/google/cadvisor/client
- - go test -v -race github.com/google/cadvisor/sampling
- - go build -race github.com/google/cadvisor
+ - go test -v github.com/google/cadvisor/info
+ - go test -v github.com/google/cadvisor/client
+ - go test -v github.com/google/cadvisor/sampling
+ - go build github.com/google/cadvisor
