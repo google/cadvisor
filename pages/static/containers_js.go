@@ -50,6 +50,7 @@ function drawLineChart(seriesTitles, data, elementId, unit) {
 		opts = {};
 	}
 	opts.vAxis = {title: unit};
+	opts.legend = {position: 'bottom'};
 	ac.draw(dataTable, window.chartOptions);
 }
 
