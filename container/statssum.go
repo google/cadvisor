@@ -63,10 +63,8 @@ func (self *percentilesContainerHandlerWrapper) GetStats() (*info.ContainerStats
 	if err != nil {
 		return nil, err
 	}
-	// nil stats and nil error is possible for /docker container.
 	if stats == nil {
-		// return nil, fmt.Errorf("container handler returns a nil error and a nil stats")
-		return nil, nil
+		return nil, fmt.Errorf("container handler returns a nil error and a nil stats")
 	}
 	if stats.Timestamp.IsZero() {
 		return nil, fmt.Errorf("container handler did not set timestamp")
