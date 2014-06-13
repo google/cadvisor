@@ -111,7 +111,7 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 
 	// Make a copy of the info for the user.
 	ret := &info.ContainerInfo{
-		ContainerRef: info.ContainerRef{
+		ContainerReference: info.ContainerReference{
 			Name: cinfo.Name,
 		},
 		Subcontainers: cinfo.Subcontainers,
@@ -183,7 +183,7 @@ func (m *manager) destroyContainer(containerName string) error {
 }
 
 // Detect all containers that have been added or deleted.
-func (m *manager) getContainersDiff() (added []info.ContainerRef, removed []info.ContainerRef, err error) {
+func (m *manager) getContainersDiff() (added []info.ContainerReference, removed []info.ContainerReference, err error) {
 	// TODO(vmarmol): We probably don't need to lock around / since it will always be there.
 	m.containersLock.RLock()
 	defer m.containersLock.RUnlock()
@@ -197,7 +197,7 @@ func (m *manager) getContainersDiff() (added []info.ContainerRef, removed []info
 	if err != nil {
 		return nil, nil, err
 	}
-	allContainers = append(allContainers, info.ContainerRef{Name: "/"})
+	allContainers = append(allContainers, info.ContainerReference{Name: "/"})
 
 	// Determine which were added and which were removed.
 	allContainersSet := make(map[string]*containerData)
@@ -214,7 +214,7 @@ func (m *manager) getContainersDiff() (added []info.ContainerRef, removed []info
 
 	// Removed ones are no longer in the container listing.
 	for _, d := range allContainersSet {
-		removed = append(removed, d.info.ContainerRef)
+		removed = append(removed, d.info.ContainerReference)
 	}
 
 	return

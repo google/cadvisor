@@ -50,7 +50,7 @@ type ContainerSpec struct {
 }
 
 // Container reference contains enough information to uniquely identify a container
-type ContainerRef struct {
+type ContainerReference struct {
 	// The absolute name of the container.
 	Name string `json:"name"`
 
@@ -58,10 +58,10 @@ type ContainerRef struct {
 }
 
 type ContainerInfo struct {
-	ContainerRef
+	ContainerReference
 
 	// The direct subcontainers of the current container.
-	Subcontainers []ContainerRef `json:"subcontainers,omitempty"`
+	Subcontainers []ContainerReference `json:"subcontainers,omitempty"`
 
 	// The isolation used in the container.
 	Spec *ContainerSpec `json:"spec,omitempty"`

@@ -34,7 +34,7 @@ func (self *containerListFilter) GetStats() (*info.ContainerStats, error) {
 	return self.handler.GetStats()
 }
 
-func (self *containerListFilter) ListContainers(listType ListType) ([]info.ContainerRef, error) {
+func (self *containerListFilter) ListContainers(listType ListType) ([]info.ContainerReference, error) {
 	containers, err := self.handler.ListContainers(listType)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (self *containerListFilter) ListContainers(listType ListType) ([]info.Conta
 	if len(containers) == 0 {
 		return nil, nil
 	}
-	ret := make([]info.ContainerRef, 0, len(containers))
+	ret := make([]info.ContainerReference, 0, len(containers))
 	for _, c := range containers {
 		if self.filter(c.Name) {
 			ret = append(ret, c)

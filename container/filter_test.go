@@ -37,9 +37,9 @@ func (self *mockContainerHandler) GetStats() (*info.ContainerStats, error) {
 	return args.Get(0).(*info.ContainerStats), args.Error(1)
 }
 
-func (self *mockContainerHandler) ListContainers(listType ListType) ([]info.ContainerRef, error) {
+func (self *mockContainerHandler) ListContainers(listType ListType) ([]info.ContainerReference, error) {
 	args := self.Called(listType)
-	return args.Get(0).([]info.ContainerRef), args.Error(1)
+	return args.Get(0).([]info.ContainerReference), args.Error(1)
 }
 
 func (self *mockContainerHandler) ListThreads(listType ListType) ([]int, error) {
@@ -55,10 +55,10 @@ func (self *mockContainerHandler) ListProcesses(listType ListType) ([]int, error
 func TestWhiteListContainerFilter(t *testing.T) {
 	mockc := &mockContainerHandler{}
 	mockc.On("ListContainers", LIST_RECURSIVE).Return(
-		[]info.ContainerRef{
-			info.ContainerRef{Name: "/docker/ee0103"},
-			info.ContainerRef{Name: "/container/created/by/lmctfy"},
-			info.ContainerRef{Name: "/user/something"},
+		[]info.ContainerReference{
+			info.ContainerReference{Name: "/docker/ee0103"},
+			info.ContainerReference{Name: "/container/created/by/lmctfy"},
+			info.ContainerReference{Name: "/user/something"},
 		},
 		nil,
 	)
@@ -90,10 +90,10 @@ func TestWhiteListContainerFilter(t *testing.T) {
 func TestBlackListContainerFilter(t *testing.T) {
 	mockc := &mockContainerHandler{}
 	mockc.On("ListContainers", LIST_RECURSIVE).Return(
-		[]info.ContainerRef{
-			info.ContainerRef{Name: "/docker/ee0103"},
-			info.ContainerRef{Name: "/container/created/by/lmctfy"},
-			info.ContainerRef{Name: "/user/something"},
+		[]info.ContainerReference{
+			info.ContainerReference{Name: "/docker/ee0103"},
+			info.ContainerReference{Name: "/container/created/by/lmctfy"},
+			info.ContainerReference{Name: "/user/something"},
 		},
 		nil,
 	)

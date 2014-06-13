@@ -35,11 +35,11 @@ type containerStat struct {
 	Data      *info.ContainerStats
 }
 type containerInfo struct {
-	info.ContainerRef
-	Subcontainers []info.ContainerRef
-	Spec          *info.ContainerSpec
-	Stats         *list.List
-	StatsSummary  *info.ContainerStatsPercentiles
+	info.ContainerReference
+	Subcontainers []info.ContainerReference
+	Spec         *info.ContainerSpec
+	Stats        *list.List
+	StatsSummary *info.ContainerStatsPercentiles
 }
 
 type containerData struct {

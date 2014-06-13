@@ -96,7 +96,7 @@ func (self *percentilesContainerHandlerWrapper) GetStats() (*info.ContainerStats
 	return stats, nil
 }
 
-func (self *percentilesContainerHandlerWrapper) ListContainers(listType ListType) ([]info.ContainerRef, error) {
+func (self *percentilesContainerHandlerWrapper) ListContainers(listType ListType) ([]info.ContainerReference, error) {
 	return self.handler.ListContainers(listType)
 }
 

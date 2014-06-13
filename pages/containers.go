@@ -49,9 +49,9 @@ var funcMap = template.FuncMap{
 var pageTemplate *template.Template
 
 type pageData struct {
-	ContainerName      string
-	ParentContainers   []info.ContainerRef
-	Subcontainers      []info.ContainerRef
+	ContainerName    string
+	ParentContainers []info.ContainerReference
+	Subcontainers []info.ContainerReference
 	Spec               *info.ContainerSpec
 	Stats              []*info.ContainerStats
 	MachineInfo        *info.MachineInfo
@@ -69,7 +69,7 @@ func init() {
 }
 
 // TODO(vmarmol): Escape this correctly.
-func containerLink(containerRef info.ContainerRef, basenameOnly bool, cssClasses string) interface{} {
+func containerLink(containerRef info.ContainerReference, basenameOnly bool, cssClasses string) interface{} {
 	var displayName string
 	containerName := containerRef.Name
 	if len(containerRef.Aliases) > 0 {
@@ -170,15 +170,15 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 	}
 
 	// Make a list of the parent containers and their links
-	var parentContainers []info.ContainerRef
-	parentContainers = append(parentContainers, info.ContainerRef{Name: "root"})
+	var parentContainers []info.ContainerReference
+	parentContainers = append(parentContainers, info.ContainerReference{Name: "root"})
 	parentName := ""
 	for _, part := range strings.Split(string(cont.Name), "/") {
 		if part == "" {
 			continue
 		}
 		parentName += "/" + part
-		parentContainers = append(parentContainers, info.ContainerRef{Name: parentName})
+		parentContainers = append(parentContainers, info.ContainerReference{Name: parentName})
 	}
 
 	data := &pageData{
