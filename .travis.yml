@@ -6,3 +6,4 @@ script:
  - go test -v -race github.com/google/cadvisor/info
  - go test -v -race github.com/google/cadvisor/client
  - go test -v -race github.com/google/cadvisor/sampling
+ - go build -race github.com/google/cadvisor
