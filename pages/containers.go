@@ -49,9 +49,9 @@ var funcMap = template.FuncMap{
 var pageTemplate *template.Template
 
 type pageData struct {
-	ContainerName    string
-	ParentContainers []info.ContainerReference
-	Subcontainers []info.ContainerReference
+	ContainerName      string
+	ParentContainers   []info.ContainerReference
+	Subcontainers      []info.ContainerReference
 	Spec               *info.ContainerSpec
 	Stats              []*info.ContainerStats
 	MachineInfo        *info.MachineInfo
@@ -69,17 +69,17 @@ func init() {
 }
 
 // TODO(vmarmol): Escape this correctly.
-func containerLink(containerRef info.ContainerReference, basenameOnly bool, cssClasses string) interface{} {
+func containerLink(container info.ContainerReference, basenameOnly bool, cssClasses string) interface{} {
 	var displayName string
-	containerName := containerRef.Name
-	if len(containerRef.Aliases) > 0 {
-		displayName = containerRef.Aliases[0]
+	containerName := container.Name
+	if len(container.Aliases) > 0 {
+		displayName = container.Aliases[0]
 	} else if basenameOnly {
-		displayName = path.Base(string(containerRef.Name))
+		displayName = path.Base(string(container.Name))
 	} else {
-		displayName = string(containerRef.Name)
+		displayName = string(container.Name)
 	}
-	if containerRef.Name == "root" {
+	if container.Name == "root" {
 		containerName = "/"
 	}
 	return template.HTML(fmt.Sprintf("<a class=\"%s\" href=\"%s%s\">%s</a>", cssClasses, ContainersPage[:len(ContainersPage)-1], containerName, displayName))
