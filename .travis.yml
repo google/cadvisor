@@ -1,9 +1,14 @@
 language: go
 go:
- - 1.1 
  - 1.2
-install:
- - go get -u github.com/google/cadvisor
+# install:
+#  - go get -u github.com/google/cadvisor
+#  - go get github.com/stretchr/testify/mock
+#  - go get github.com/docker/libcontainer/cgroups
+#  - go get github.com/docker/libcontainer/cgroups/fs
+#  - go get github.com/fsouza/go-dockerclient
+#  - go get github.com/kr/pretty
+#  - go get github.com/dotcloud/docker/nat
 script:
  - go test -v -race github.com/google/cadvisor/container
  - go test -v -race github.com/google/cadvisor/info
