@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/libcontainer/cgroups"
+	"github.com/docker/libcontainer/cgroups/fs"
 	"github.com/dotcloud/docker/nat"
-	"github.com/dotcloud/docker/pkg/libcontainer/cgroups"
-	"github.com/dotcloud/docker/pkg/libcontainer/cgroups/fs"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
@@ -260,6 +260,9 @@ func libcontainerToContainerStats(s *cgroups.Stats, mi *info.MachineInfo) *info.
 
 func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
 	if !self.isDockerContainer() {
+		// Return empty stats for root containers.
+		stats = new(info.ContainerStats)
+		stats.Timestamp = time.Now()
 		return
 	}
 	mi, err := self.machineInfoFactory.GetMachineInfo()
