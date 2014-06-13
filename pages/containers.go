@@ -125,25 +125,31 @@ func printMegabytes(bytes uint64) string {
 	return strconv.FormatFloat(megabytes, 'f', 3, 64)
 }
 
-func toMemoryPercent(usage uint64, spec *info.ContainerSpec) int {
-	return int((usage * 100) / (spec.Memory.Limit))
+func toMemoryPercent(usage uint64, spec *info.ContainerSpec, machine *info.MachineInfo) int {
+	// Saturate limit to the machine size.
+	limit := uint64(spec.Memory.Limit)
+	if limit > uint64(machine.MemoryCapacity) {
+		limit = uint64(machine.MemoryCapacity)
+	}
+
+	return int((usage * 100) / limit)
 }
 
 func getMemoryUsage(stats []*info.ContainerStats) string {
 	return strconv.FormatFloat(toMegabytes((stats[len(stats)-1].Memory.Usage)), 'f', 2, 64)
 }
 
-func getMemoryUsagePercent(spec *info.ContainerSpec, stats []*info.ContainerStats) int {
-	return toMemoryPercent((stats[len(stats)-1].Memory.Usage), spec)
+func getMemoryUsagePercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
+	return toMemoryPercent((stats[len(stats)-1].Memory.Usage), spec, machine)
 }
 
-func getHotMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats) int {
-	return toMemoryPercent((stats[len(stats)-1].Memory.WorkingSet), spec)
+func getHotMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
+	return toMemoryPercent((stats[len(stats)-1].Memory.WorkingSet), spec, machine)
 }
 
-func getColdMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats) int {
+func getColdMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
 	latestStats := stats[len(stats)-1].Memory
-	return toMemoryPercent((latestStats.Usage)-(latestStats.WorkingSet), spec)
+	return toMemoryPercent((latestStats.Usage)-(latestStats.WorkingSet), spec, machine)
 }
 
 func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error {

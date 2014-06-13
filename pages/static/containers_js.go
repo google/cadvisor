@@ -154,7 +154,7 @@ function drawCpuUsageBreakdown(elementId, containerInfo) {
 }
 
 // Draw the gauges for overall resource usage.
-function drawOverallUsage(elementId, containerInfo) {
+function drawOverallUsage(elementId, machineInfo, containerInfo) {
 	var cur = containerInfo.stats[containerInfo.stats.length - 1];
 
 	var cpuUsage = 0;
@@ -171,7 +171,13 @@ function drawOverallUsage(elementId, containerInfo) {
 
 	var memoryUsage = 0;
 	if (containerInfo.spec.memory) {
-		memoryUsage = Math.round((cur.memory.usage / containerInfo.spec.memory.limit) * 100);
+		// Saturate to the machine size.
+		var limit = containerInfo.spec.memory.limit;
+		if (limit > machineInfo.memory_capacity) {
+			limit = machineInfo.memory_capacity;
+		}
+
+		memoryUsage = Math.round((cur.memory.usage / limit) * 100);
 	}
 
 	drawGauge(elementId, cpuUsage, memoryUsage);
@@ -236,7 +242,7 @@ function drawCharts(machineInfo, containerInfo) {
 	var steps = [];
 
 	steps.push(function() {
-		drawOverallUsage("usage-gauge", containerInfo)
+		drawOverallUsage("usage-gauge", machineInfo, containerInfo)
 	});
 
 	// CPU.
