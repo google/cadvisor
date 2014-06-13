@@ -1,6 +1,9 @@
 language: go
 go:
  - 1.1 
+ - 1.2
+install:
+ - go get -u github.com/google/cadvisor
 script:
  - go test -v -race github.com/google/cadvisor/container
  - go test -v -race github.com/google/cadvisor/info
