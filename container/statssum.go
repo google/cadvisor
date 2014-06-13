@@ -36,6 +36,10 @@ func (self *percentilesContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, 
 	return self.handler.GetSpec()
 }
 
+func (self *percentilesContainerHandlerWrapper) ContainerReference() (info.ContainerReference, error) {
+	return self.handler.ContainerReference()
+}
+
 func (self *percentilesContainerHandlerWrapper) updatePrevStats(stats *info.ContainerStats) {
 	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
 		// discard incomplete stats
