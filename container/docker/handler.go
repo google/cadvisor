@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/cgroups/fs"
-	"github.com/dotcloud/docker/nat"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
@@ -85,96 +85,17 @@ func (self *dockerContainerHandler) isDockerContainer() bool {
 	return (!self.isDockerRoot()) && (!self.isRootContainer())
 }
 
-type dockerPortBinding struct {
-	HostIp   string
-	HostPort string
-}
-
-type dockerPort string
-type dockerPortMap map[dockerPort][]dockerPortBinding
-
-type dockerNetworkSettings struct {
-	IPAddress   string
-	IPPrefixLen int
-	Gateway     string
-	Bridge      string
-	Ports       dockerPortMap
-}
-
-type dockerContainerConfig struct {
-	Hostname        string
-	Domainname      string
-	User            string
-	Memory          int64  // Memory limit (in bytes)
-	MemorySwap      int64  // Total memory usage (memory + swap); set `-1' to disable swap
-	CpuShares       int64  // CPU shares (relative weight vs. other containers)
-	Cpuset          string // Cpuset 0-2, 0,1
-	AttachStdin     bool
-	AttachStdout    bool
-	AttachStderr    bool
-	PortSpecs       []string // Deprecated - Can be in the format of 8080/tcp
-	ExposedPorts    map[nat.Port]struct{}
-	Tty             bool // Attach standard streams to a tty, including stdin if it is not closed.
-	OpenStdin       bool // Open stdin
-	StdinOnce       bool // If true, close stdin after the 1 attached client disconnects.
-	Env             []string
-	Cmd             []string
-	Image           string // Name of the image as it was passed by the operator (eg. could be symbolic)
-	Volumes         map[string]struct{}
-	WorkingDir      string
-	Entrypoint      []string
-	NetworkDisabled bool
-	OnBuild         []string
-}
-
-type dockerState struct {
-	Running    bool
-	Pid        int
-	ExitCode   int
-	StartedAt  time.Time
-	FinishedAt time.Time
-}
-
-type dockerContainerSpec struct {
-	ID string
-
-	Created time.Time
-
-	Path string
-	Args []string
-
-	Config *dockerContainerConfig
-	State  dockerState
-	Image  string
-
-	NetworkSettings *dockerNetworkSettings
-
-	ResolvConfPath string
-	HostnamePath   string
-	HostsPath      string
-	Name           string
-	Driver         string
-	ExecDriver     string
-
-	MountLabel, ProcessLabel string
-
-	Volumes map[string]string
-	// Store rw/ro in a separate structure to preserve reverse-compatibility on-disk.
-	// Easier than migrating older container configs :)
-	VolumesRW map[string]bool
-	// contains filtered or unexported fields
-}
-
-func readDockerSpec(id string) (spec *dockerContainerSpec, err error) {
-	dir := "/var/lib/docker/containers"
-	configPath := path.Join(dir, id, "config.json")
+// TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
+func readLibcontainerSpec(id string) (spec *libcontainer.Container, err error) {
+	dir := "/var/lib/docker/execdriver/native"
+	configPath := path.Join(dir, id, "container.json")
 	f, err := os.Open(configPath)
 	if err != nil {
 		return
 	}
 	defer f.Close()
 	d := json.NewDecoder(f)
-	ret := new(dockerContainerSpec)
+	ret := new(libcontainer.Container)
 	err = d.Decode(ret)
 	if err != nil {
 		return
@@ -183,29 +104,30 @@ func readDockerSpec(id string) (spec *dockerContainerSpec, err error) {
 	return
 }
 
-func dockerConfigToContainerSpec(config *dockerContainerSpec, mi *info.MachineInfo) *info.ContainerSpec {
+func libcontainerConfigToContainerSpec(config *libcontainer.Container, mi *info.MachineInfo) *info.ContainerSpec {
 	spec := new(info.ContainerSpec)
 	spec.Memory = new(info.MemorySpec)
 	spec.Memory.Limit = math.MaxUint64
 	spec.Memory.SwapLimit = math.MaxUint64
-	if config.Config.Memory > 0 {
-		spec.Memory.Limit = uint64(config.Config.Memory)
+	if config.Cgroups.Memory > 0 {
+		spec.Memory.Limit = uint64(config.Cgroups.Memory)
 	}
-	if config.Config.MemorySwap > 0 {
-		spec.Memory.SwapLimit = uint64(config.Config.MemorySwap - config.Config.Memory)
+	if config.Cgroups.MemorySwap > 0 {
+		spec.Memory.SwapLimit = uint64(config.Cgroups.MemorySwap)
 	}
-	if mi != nil {
-		spec.Cpu = new(info.CpuSpec)
-		spec.Cpu.Limit = math.MaxUint64
-		n := mi.NumCores / 64
-		if mi.NumCores%64 > 0 {
-			n++
-		}
-		spec.Cpu.Mask.Data = make([]uint64, n)
-		for i := 0; i < n; i++ {
-			spec.Cpu.Mask.Data[i] = math.MaxUint64
-		}
+
+	// Get CPU info
+	spec.Cpu = new(info.CpuSpec)
+	spec.Cpu.Limit = 1024
+	if config.Cgroups.CpuShares != 0 {
+		spec.Cpu.Limit = uint64(config.Cgroups.CpuShares)
 	}
+	n := (mi.NumCores + 63) / 64
+	spec.Cpu.Mask.Data = make([]uint64, n)
+	for i := 0; i < n; i++ {
+		spec.Cpu.Mask.Data[i] = math.MaxUint64
+	}
+	// TODO(vmarmol): Get CPUs from config.Cgroups.CpusetCpus
 	return spec
 }
 
@@ -222,12 +144,12 @@ func (self *dockerContainerHandler) GetSpec() (spec *info.ContainerSpec, err err
 	if err != nil {
 		return
 	}
-	dspec, err := readDockerSpec(id)
+	libcontainerSpec, err := readLibcontainerSpec(id)
 	if err != nil {
 		return
 	}
 
-	spec = dockerConfigToContainerSpec(dspec, mi)
+	spec = libcontainerConfigToContainerSpec(libcontainerSpec, mi)
 	return
 }
 
