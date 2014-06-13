@@ -54,7 +54,7 @@ func (self *reservoirSamplerFactory) String() string {
 func (self *reservoirSamplerFactory) NewSampler(param *StatsParameter) (sampling.Sampler, error) {
 	s := sampling.NewReservoirSampler(param.NumSamples)
 	if param.ResetPeriod.Seconds() > 1.0 {
-		s = sampling.NewPeriodcallyResetSampler(param.ResetPeriod, s)
+		s = sampling.NewPeriodicallyResetSampler(param.ResetPeriod, s)
 	}
 	return s, nil
 }
@@ -74,7 +74,7 @@ func (self *esSamplerFactory) NewSampler(param *StatsParameter) (sampling.Sample
 		return delta.Seconds()
 	})
 	if param.ResetPeriod.Seconds() > 1.0 {
-		s = sampling.NewPeriodcallyResetSampler(param.ResetPeriod, s)
+		s = sampling.NewPeriodicallyResetSampler(param.ResetPeriod, s)
 	}
 	return s, nil
 }
@@ -89,7 +89,7 @@ func (self *chainSamplerFactory) String() string {
 func (self *chainSamplerFactory) NewSampler(param *StatsParameter) (sampling.Sampler, error) {
 	s := sampling.NewChainSampler(param.NumSamples, param.WindowSize)
 	if param.ResetPeriod.Seconds() > 1.0 {
-		s = sampling.NewPeriodcallyResetSampler(param.ResetPeriod, s)
+		s = sampling.NewPeriodicallyResetSampler(param.ResetPeriod, s)
 	}
 	return s, nil
 }

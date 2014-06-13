@@ -21,7 +21,7 @@ func randInt64Except(start, end int64, except map[int64]empty) int64 {
 }
 
 // Basic idea:
-// Every obervation will have a sequence number as its id.
+// Every observation will have a sequence number as its id.
 // Suppose we want to sample k observations within latest n observations
 // At first, we generated k random numbers in [0,n). These random numbers
 // will be used as ids of observations that will be sampled.

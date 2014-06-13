@@ -36,7 +36,7 @@ type Sampler interface {
 
 	// Filter() should update in place. Removing elements may or may not
 	// affect the statistical behavior of the sampler, i.e. the probability
-	// that an obervation will be sampled after removing some elements is
+	// that an observation will be sampled after removing some elements is
 	// implementation defined.
 	Filter(filter func(interface{}) bool)
 }
