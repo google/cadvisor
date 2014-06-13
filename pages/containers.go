@@ -37,7 +37,6 @@ var funcMap = template.FuncMap{
 	"printMask":             printMask,
 	"printCores":            printCores,
 	"printMegabytes":        printMegabytes,
-	"containerNameEquals":   containerNameEquals,
 	"getMemoryUsage":        getMemoryUsage,
 	"getMemoryUsagePercent": getMemoryUsagePercent,
 	"getHotMemoryPercent":   getHotMemoryPercent,
@@ -83,10 +82,6 @@ func containerLink(container info.ContainerReference, basenameOnly bool, cssClas
 		containerName = "/"
 	}
 	return template.HTML(fmt.Sprintf("<a class=\"%s\" href=\"%s%s\">%s</a>", cssClasses, ContainersPage[:len(ContainersPage)-1], containerName, displayName))
-}
-
-func containerNameEquals(c1 string, c2 string) bool {
-	return c1 == c2
 }
 
 func printMask(mask *info.CpuSpecMask, numCores int) interface{} {
