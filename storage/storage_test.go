@@ -1,4 +1,4 @@
-package db
+package storage
 
 import (
 	"sync"
@@ -9,7 +9,7 @@ import (
 )
 
 type mockContainerStatsWriter struct {
-	dbName string
+	storageName string
 	mock.Mock
 }
 
@@ -30,10 +30,10 @@ func (self *mockContainerStatsWriterFactory) String() string {
 }
 
 func (self *mockContainerStatsWriterFactory) New(
-	config *DatabaseConfig,
+	config *Config,
 ) (ContainerStatsWriter, error) {
 	mockWriter := &mockContainerStatsWriter{
-		dbName: self.name,
+		storageName: self.name,
 	}
 	return mockWriter, nil
 }
@@ -59,7 +59,7 @@ func TestContainerStatsWriterFactoryManager(t *testing.T) {
 	wg.Wait()
 	for _, name := range factoryNames {
 		wg.Add(1)
-		config := &DatabaseConfig{
+		config := &Config{
 			Engine: name,
 		}
 		go func(n string) {
@@ -69,8 +69,8 @@ func TestContainerStatsWriterFactoryManager(t *testing.T) {
 				t.Error(err)
 			}
 			if mw, ok := writer.(*mockContainerStatsWriter); ok {
-				if mw.dbName != n {
-					t.Errorf("wrong writer. should be %v, got %v", n, mw.dbName)
+				if mw.storageName != n {
+					t.Errorf("wrong writer. should be %v, got %v", n, mw.storageName)
 				}
 			} else {
 				t.Errorf("wrong writer: unknown type")

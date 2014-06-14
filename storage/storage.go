@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package db
+package storage
 
 import (
 	"fmt"
@@ -27,7 +27,7 @@ type ContainerStatsWriter interface {
 
 // Database config which should contain all information used to connect to
 // all/most databases
-type DatabaseConfig struct {
+type Config struct {
 	Engine   string            `json:"engine,omitempty"`
 	Host     string            `json:"host,omitempty"`
 	Port     int               `json:"port,omitempty"`
@@ -39,7 +39,7 @@ type DatabaseConfig struct {
 
 type ContainerStatsWriterFactory interface {
 	String() string
-	New(config *DatabaseConfig) (ContainerStatsWriter, error)
+	New(config *Config) (ContainerStatsWriter, error)
 }
 
 type containerStatsWriterFactoryManager struct {
@@ -58,7 +58,7 @@ func (self *containerStatsWriterFactoryManager) Register(factory ContainerStatsW
 	self.factories[factory.String()] = factory
 }
 
-func (self *containerStatsWriterFactoryManager) New(config *DatabaseConfig) (ContainerStatsWriter, error) {
+func (self *containerStatsWriterFactoryManager) New(config *Config) (ContainerStatsWriter, error) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 
@@ -74,6 +74,6 @@ func RegisterContainerStatsWriterFactory(factory ContainerStatsWriterFactory) {
 	globalContainerStatsWriterFactoryManager.Register(factory)
 }
 
-func NewContainerStatsWriter(config *DatabaseConfig) (ContainerStatsWriter, error) {
+func NewContainerStatsWriter(config *Config) (ContainerStatsWriter, error) {
 	return globalContainerStatsWriterFactoryManager.New(config)
 }

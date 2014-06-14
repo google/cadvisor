@@ -15,12 +15,12 @@
 package container
 
 import (
-	"github.com/google/cadvisor/db"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/storage"
 )
 
 type containerStatsWriter struct {
-	statsWriter db.ContainerStatsWriter
+	statsWriter storage.ContainerStatsWriter
 	handler     ContainerHandler
 }
 
@@ -69,8 +69,8 @@ func (self *containerStatsWriter) StatsSummary() (*info.ContainerStatsPercentile
 }
 
 type containerStatsWriterDecorator struct {
-	dbConfig    *db.DatabaseConfig
-	statsWriter db.ContainerStatsWriter
+	config      *storage.Config
+	statsWriter storage.ContainerStatsWriter
 }
 
 func (self *containerStatsWriterDecorator) Decorate(container ContainerHandler) (ContainerHandler, error) {
@@ -80,13 +80,13 @@ func (self *containerStatsWriterDecorator) Decorate(container ContainerHandler) 
 	}, nil
 }
 
-func NewStatsWriterDecorator(config *db.DatabaseConfig) (ContainerHandlerDecorator, error) {
-	statsWriter, err := db.NewContainerStatsWriter(config)
+func NewStatsWriterDecorator(config *storage.Config) (ContainerHandlerDecorator, error) {
+	statsWriter, err := storage.NewContainerStatsWriter(config)
 	if err != nil {
 		return nil, err
 	}
 	return &containerStatsWriterDecorator{
-		dbConfig:    config,
+		config:      config,
 		statsWriter: statsWriter,
 	}, nil
 }
