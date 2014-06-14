@@ -61,7 +61,7 @@ func newDockerContainerHandler(
 	if err != nil {
 		return nil, fmt.Errorf("unable to inspect container %v: %v", name, err)
 	}
-	handler.aliases = append(handler.aliases, ctnr.Name)
+	handler.aliases = append(handler.aliases, path.Join("/docker", ctnr.Name))
 	return handler, nil
 }
 
