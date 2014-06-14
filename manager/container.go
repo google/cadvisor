@@ -91,7 +91,12 @@ func NewContainerData(containerName string) (*containerData, error) {
 		return nil, err
 	}
 	cont.handler = handler
-	cont.info.Name = containerName
+	ref, err := handler.ContainerReference()
+	if err != nil {
+		return nil, err
+	}
+	cont.info.Name = ref.Name
+	cont.info.Aliases = ref.Aliases
 	cont.info.Stats = list.New()
 	cont.stop = make(chan bool, 1)
 

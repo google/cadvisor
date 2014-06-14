@@ -112,7 +112,8 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 	// Make a copy of the info for the user.
 	ret := &info.ContainerInfo{
 		ContainerReference: info.ContainerReference{
-			Name: cinfo.Name,
+			Name:    cinfo.Name,
+			Aliases: cinfo.Aliases,
 		},
 		Subcontainers: cinfo.Subcontainers,
 		Spec:          cinfo.Spec,
@@ -152,9 +153,13 @@ func (m *manager) createContainer(containerName string) (*containerData, error) 
 		m.containersLock.Lock()
 		defer m.containersLock.Unlock()
 
-		log.Printf("Added container: %s", containerName)
+		// Add the container name and all its aliases.
 		m.containers[containerName] = cont
+		for _, alias := range cont.info.Aliases {
+			m.containers[alias] = cont
+		}
 	}()
+	log.Printf("Added container: %s (aliases: %s)", containerName, cont.info.Aliases)
 
 	// Start the container's housekeeping.
 	cont.Start()
@@ -202,7 +207,10 @@ func (m *manager) getContainersDiff() (added []info.ContainerReference, removed 
 	// Determine which were added and which were removed.
 	allContainersSet := make(map[string]*containerData)
 	for name, d := range m.containers {
-		allContainersSet[name] = d
+		// Only add the canonical name.
+		if d.info.Name == name {
+			allContainersSet[name] = d
+		}
 	}
 	for _, c := range allContainers {
 		delete(allContainersSet, c.Name)
