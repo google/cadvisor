@@ -81,6 +81,9 @@ func containerLink(container info.ContainerReference, basenameOnly bool, cssClas
 	}
 	if container.Name == "root" {
 		containerName = "/"
+	} else if strings.Contains(container.Name, " ") {
+		// If it has a space, it is an a.k.a, so keep the base-name
+		containerName = container.Name[:strings.Index(container.Name, " ")]
 	}
 	return template.HTML(fmt.Sprintf("<a class=\"%s\" href=\"%s%s\">%s</a>", cssClasses, ContainersPage[:len(ContainersPage)-1], containerName, displayName))
 }
@@ -181,8 +184,24 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 		parentContainers = append(parentContainers, info.ContainerReference{Name: parentName})
 	}
 
+	// Pick the shortest name of the container as the display name.
+	displayName := cont.Name
+	for _, alias := range cont.Aliases {
+		if len(displayName) >= len(alias) {
+			displayName = alias
+		}
+	}
+
+	// Replace the last part of the parent containers with the displayName.
+	if displayName != cont.Name {
+		parentContainers[len(parentContainers)-1] = info.ContainerReference{
+			Name: fmt.Sprintf("%s (%s)", displayName, path.Base(cont.Name)),
+		}
+	}
+
 	data := &pageData{
-		ContainerName:      cont.Name,
+		ContainerName: displayName,
+		// TODO(vmarmol): Only use strings for this.
 		ParentContainers:   parentContainers,
 		Subcontainers:      cont.Subcontainers,
 		Spec:               cont.Spec,
