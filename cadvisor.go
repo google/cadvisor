@@ -25,6 +25,7 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/lmctfy"
+	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
@@ -92,6 +93,7 @@ func main() {
 
 	go containerManager.Start()
 
+	log.Printf("Starting cAdvisor version: %q", info.VERSION)
 	log.Print("About to serve on port ", *argPort)
 
 	addr := fmt.Sprintf(":%v", *argPort)
