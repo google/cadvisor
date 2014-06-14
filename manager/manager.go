@@ -181,9 +181,12 @@ func (m *manager) destroyContainer(containerName string) error {
 		return err
 	}
 
-	// Remove the container from our records.
+	// Remove the container from our records (and all its aliases).
 	delete(m.containers, containerName)
-	log.Printf("Destroyed container: %s", containerName)
+	for _, alias := range cont.info.Aliases {
+		delete(m.containers, alias)
+	}
+	log.Printf("Destroyed container: %s (aliases: %s)", containerName, cont.info.Aliases)
 	return nil
 }
 
