@@ -134,14 +134,24 @@ type StatsParameter struct {
 	ResetPeriod time.Duration
 }
 
-func AddStatsSummary(handler ContainerHandler, parameter *StatsParameter) (ContainerHandler, error) {
-	sampler, err := NewSampler(parameter)
+type percentilesContainerHandlerWrapperFactory struct {
+	parameter *StatsParameter
+}
+
+func (self *percentilesContainerHandlerWrapperFactory) Decorate(container ContainerHandler) (ContainerHandler, error) {
+	sampler, err := NewSampler(self.parameter)
 	if err != nil {
 		return nil, err
 	}
 	return &percentilesContainerHandlerWrapper{
-		handler:              handler,
+		handler:              container,
 		containerPercentiles: &info.ContainerStatsPercentiles{},
 		sampler:              sampler,
+	}, nil
+}
+
+func NewPercentilesDecorator(parameter *StatsParameter) (ContainerHandlerDecorator, error) {
+	return &percentilesContainerHandlerWrapperFactory{
+		parameter: parameter,
 	}, nil
 }

@@ -37,12 +37,24 @@ var argResetPeriod = flag.Duration("reset_period", 2*time.Hour, "period to reset
 func main() {
 	flag.Parse()
 
+	decorators := make([]container.ContainerHandlerDecorator, 0, 2)
 	// XXX(dengnan): Should we allow users to specify which sampler they want to use?
-	container.SetStatsParameter(&container.StatsParameter{
+	dec, err := container.NewPercentilesDecorator(&container.StatsParameter{
 		Sampler:     "uniform",
 		NumSamples:  *argSampleSize,
 		ResetPeriod: *argResetPeriod,
 	})
+	if err != nil {
+		log.Fatalf("unalbe to get percentiles decorator: %v", err)
+	}
+	decorators = append(decorators, dec)
+
+	// TODO(dengnan): Add StatsWriterDecorator
+
+	if len(decorators) > 0 {
+		container.RegisterContainerHandlerDecorators(decorators...)
+	}
+
 	containerManager, err := manager.New()
 	if err != nil {
 		log.Fatalf("Failed to create a Container Manager: %s", err)
