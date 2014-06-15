@@ -43,9 +43,10 @@ type containerInfo struct {
 }
 
 type containerData struct {
-	handler container.ContainerHandler
-	info    containerInfo
-	lock    sync.Mutex
+	handler   container.ContainerHandler
+	info      containerInfo
+	statsChan chan<- *ContainerStats
+	lock      sync.Mutex
 
 	// Tells the container to stop.
 	stop chan bool
@@ -84,7 +85,7 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	return &ret, nil
 }
 
-func NewContainerData(containerName string) (*containerData, error) {
+func NewContainerData(containerName string, statsChan chan<- *ContainerStats) (*containerData, error) {
 	cont := &containerData{}
 	handler, err := container.NewContainerHandler(containerName)
 	if err != nil {
@@ -98,6 +99,7 @@ func NewContainerData(containerName string) (*containerData, error) {
 	cont.info.Name = ref.Name
 	cont.info.Aliases = ref.Aliases
 	cont.info.Stats = list.New()
+	cont.statsChan = statsChan
 	cont.stop = make(chan bool, 1)
 
 	return cont, nil
@@ -150,6 +152,15 @@ func (c *containerData) updateStats() error {
 	}
 	if stats == nil {
 		return nil
+	}
+	if c.statsChan != nil {
+		ref, err := c.handler.ContainerReference()
+		if err == nil {
+			c.statsChan <- &ContainerStats{
+				ContainerReference: ref,
+				Stats:              stats,
+			}
+		}
 	}
 	summary, err := c.handler.StatsSummary()
 	if err != nil {

@@ -44,7 +44,9 @@ func main() {
 		NumSamples:  *argSampleSize,
 		ResetPeriod: *argResetPeriod,
 	})
-	containerManager, err := manager.New()
+
+	// TODO(monnand): Add stats writer for manager
+	containerManager, err := manager.New(nil)
 	if err != nil {
 		log.Fatalf("Failed to create a Container Manager: %s", err)
 	}

@@ -15,6 +15,7 @@
 package manager
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/google/cadvisor/info"
@@ -24,31 +25,35 @@ import (
 type ContainerStats struct {
 	ContainerReference info.ContainerReference
 	Stats              *info.ContainerStats
-	ResChan            chan<- error
+
+	// ResChan is nil if the sender wants to ignore the result
+	ResChan chan<- error
 }
 
-type ContainerStatsProcessor interface {
-	StartStatsProcessors(numProcs int) (chan<- *ContainerStats, error)
-	StopAllProcessors()
-}
-
-type containerStatsWriter struct {
-	config *storage.Config
-}
-
-func (self *containerStatsWriter) StartStatsProcessors(numProcs int) (chan<- *ContainerStats, error) {
-	ch := make(chan *ContainerStats)
-	statsWriter, err := storage.NewContainerStatsWriter(self.config)
-	if err != nil {
-		return nil, err
+// Create numWorkers goroutines to write container stats info into the
+// specified storage.  Returns a write-only channel for the caller to write
+// container stats. Closing this channel will stop all workers.
+func StartContainerStatsWriters(
+	numWorkers int,
+	queueLength int,
+	statsWriter storage.ContainerStatsWriter,
+) (chan<- *ContainerStats, error) {
+	if statsWriter == nil {
+		return nil, fmt.Errorf("invalid stats writer")
 	}
-	for i := 0; i < numProcs; i++ {
-		go self.process(statsWriter, ch)
+	var ch chan *ContainerStats
+	if queueLength > 0 {
+		ch = make(chan *ContainerStats, queueLength)
+	} else {
+		ch = make(chan *ContainerStats)
+	}
+	for i := 0; i < numWorkers; i++ {
+		go writeContainerStats(statsWriter, ch)
 	}
 	return ch, nil
 }
 
-func (self *containerStatsWriter) process(statsWriter storage.ContainerStatsWriter, ch <-chan *ContainerStats) {
+func writeContainerStats(statsWriter storage.ContainerStatsWriter, ch <-chan *ContainerStats) {
 	for stats := range ch {
 		err := statsWriter.Write(stats.ContainerReference, stats.Stats)
 		if err != nil {
