@@ -69,8 +69,9 @@ func (self *factoryTreeNode) add(factory ContainerHandlerFactory, elems ...strin
 }
 
 type factoryManager struct {
-	root *factoryTreeNode
-	lock sync.RWMutex
+	root       *factoryTreeNode
+	decorators []ContainerHandlerDecorator
+	lock       sync.RWMutex
 }
 
 func dropEmptyString(elems ...string) []string {
@@ -99,6 +100,25 @@ func (self *factoryManager) Register(path string, factory ContainerHandlerFactor
 	self.root.add(factory, elems...)
 }
 
+func (self *factoryManager) RegisterDecorators(decorators ...ContainerHandlerDecorator) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	self.decorators = decorators
+}
+
+func (self *factoryManager) decorateContianer(container ContainerHandler) (ContainerHandler, error) {
+	handler := container
+	var err error
+	for _, dec := range self.decorators {
+		handler, err = dec.Decorate(handler)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return handler, nil
+}
+
 func (self *factoryManager) NewContainerHandler(path string) (ContainerHandler, error) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
@@ -115,10 +135,20 @@ func (self *factoryManager) NewContainerHandler(path string) (ContainerHandler, 
 		return nil, err
 	}
 	log.Printf("Container handler factory for %v is %v\n", path, factory)
-	return factory.NewContainerHandler(path)
+	container, err := factory.NewContainerHandler(path)
+	if err != nil {
+		return nil, err
+	}
+	return self.decorateContianer(container)
 }
 
 var globalFactoryManager factoryManager
+
+// register decorators which will be applied on all container
+// handlers.
+func RegisterContainerHandlerDecorators(decorators ...ContainerHandlerDecorator) {
+	globalFactoryManager.RegisterDecorators(decorators...)
+}
 
 func RegisterContainerHandlerFactory(path string, factory ContainerHandlerFactory) {
 	globalFactoryManager.Register(path, factory)

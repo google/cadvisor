@@ -47,13 +47,20 @@ func TestMaxMemoryUsage(t *testing.T) {
 	for i := 0; i < N; i++ {
 		memTrace[i] = uint64(i + 1)
 	}
-	handler, err := AddStatsSummary(
-		containerWithTrace(1*time.Second, nil, memTrace),
+
+	decorator, err := NewPercentilesDecorator(
 		&StatsParameter{
 			Sampler:    "uniform",
 			NumSamples: 10,
 		},
 	)
+	if err != nil {
+		t.Error(err)
+	}
+	handler, err := decorator.Decorate(
+		containerWithTrace(1*time.Second, nil, memTrace),
+	)
+
 	if err != nil {
 		t.Error(err)
 	}
@@ -142,9 +149,7 @@ func TestSampleCpuUsage(t *testing.T) {
 	}
 
 	samplePeriod := 1 * time.Second
-
-	handler, err := AddStatsSummary(
-		containerWithTrace(samplePeriod, cpuTrace, memTrace),
+	decorator, err := NewPercentilesDecorator(
 		&StatsParameter{
 			// Use uniform sampler with sample size of N, so that
 			// we will be guaranteed to store the first N samples.
@@ -152,6 +157,13 @@ func TestSampleCpuUsage(t *testing.T) {
 			NumSamples: N,
 		},
 	)
+	if err != nil {
+		t.Error(err)
+	}
+	handler, err := decorator.Decorate(
+		containerWithTrace(samplePeriod, cpuTrace, memTrace),
+	)
+
 	if err != nil {
 		t.Error(err)
 	}

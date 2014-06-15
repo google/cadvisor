@@ -9,4 +9,5 @@ script:
  - go test -v github.com/google/cadvisor/info
  - go test -v github.com/google/cadvisor/client
  - go test -v github.com/google/cadvisor/sampling
+ - go test -v -race github.com/google/cadvisor/storage
  - go build github.com/google/cadvisor
