@@ -39,7 +39,7 @@ type Manager interface {
 	GetVersionInfo() (*info.VersionInfo, error)
 }
 
-func New(statsWriter storage.ContainerStatsWriter) (Manager, error) {
+func New(driver storage.StorageDriver) (Manager, error) {
 	newManager := &manager{}
 	newManager.containers = make(map[string]*containerData)
 
@@ -56,15 +56,7 @@ func New(statsWriter storage.ContainerStatsWriter) (Manager, error) {
 	}
 	newManager.versionInfo = *versionInfo
 	log.Printf("Version: %+v", newManager.versionInfo)
-	if statsWriter != nil {
-		// XXX(monnand): about numWorkers and queueLength, should we make it
-		// configurable?
-		ch, err := StartContainerStatsWriters(16, 64, statsWriter)
-		if err != nil {
-			return nil, err
-		}
-		newManager.statsChan = ch
-	}
+	newManager.storageDriver = driver
 
 	return newManager, nil
 }
@@ -72,7 +64,7 @@ func New(statsWriter storage.ContainerStatsWriter) (Manager, error) {
 type manager struct {
 	containers     map[string]*containerData
 	containersLock sync.RWMutex
-	statsChan      chan<- *ContainerStats
+	storageDriver  storage.StorageDriver
 	machineInfo    info.MachineInfo
 	versionInfo    info.VersionInfo
 }
@@ -171,7 +163,7 @@ func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
 
 // Create a container. This expects to only be called from the global manager thread.
 func (m *manager) createContainer(containerName string) (*containerData, error) {
-	cont, err := NewContainerData(containerName, m.statsChan)
+	cont, err := NewContainerData(containerName, m.storageDriver)
 	if err != nil {
 		return nil, err
 	}

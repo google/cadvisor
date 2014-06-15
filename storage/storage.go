@@ -21,8 +21,8 @@ import (
 	"github.com/google/cadvisor/info"
 )
 
-type ContainerStatsWriter interface {
-	Write(ref info.ContainerReference, stats *info.ContainerStats) error
+type StorageDriver interface {
+	WriteStats(ref info.ContainerReference, stats *info.ContainerStats) error
 }
 
 // Database config which should contain all information used to connect to
@@ -37,28 +37,28 @@ type Config struct {
 	Params   map[string]string `json:"parameters,omitempty"`
 }
 
-type ContainerStatsWriterFactory interface {
+type StorageFactory interface {
 	String() string
-	New(config *Config) (ContainerStatsWriter, error)
+	New(config *Config) (StorageDriver, error)
 }
 
 type containerStatsWriterFactoryManager struct {
 	lock      sync.RWMutex
-	factories map[string]ContainerStatsWriterFactory
+	factories map[string]StorageFactory
 }
 
-func (self *containerStatsWriterFactoryManager) Register(factory ContainerStatsWriterFactory) {
+func (self *containerStatsWriterFactoryManager) Register(factory StorageFactory) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
 	if self.factories == nil {
-		self.factories = make(map[string]ContainerStatsWriterFactory, 8)
+		self.factories = make(map[string]StorageFactory, 8)
 	}
 
 	self.factories[factory.String()] = factory
 }
 
-func (self *containerStatsWriterFactoryManager) New(config *Config) (ContainerStatsWriter, error) {
+func (self *containerStatsWriterFactoryManager) New(config *Config) (StorageDriver, error) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 
@@ -70,10 +70,10 @@ func (self *containerStatsWriterFactoryManager) New(config *Config) (ContainerSt
 
 var globalContainerStatsWriterFactoryManager containerStatsWriterFactoryManager
 
-func RegisterContainerStatsWriterFactory(factory ContainerStatsWriterFactory) {
+func RegisterStorage(factory StorageFactory) {
 	globalContainerStatsWriterFactoryManager.Register(factory)
 }
 
-func NewContainerStatsWriter(config *Config) (ContainerStatsWriter, error) {
+func NewStorage(config *Config) (StorageDriver, error) {
 	return globalContainerStatsWriterFactoryManager.New(config)
 }

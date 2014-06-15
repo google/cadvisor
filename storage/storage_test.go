@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type mockContainerStatsWriter struct {
+type mockStorageDriver struct {
 	storageName string
 	mock.Mock
 }
 
-func (self *mockContainerStatsWriter) Write(
+func (self *mockStorageDriver) WriteStats(
 	ref info.ContainerReference,
 	stats *info.ContainerStats,
 ) error {
@@ -21,18 +21,18 @@ func (self *mockContainerStatsWriter) Write(
 	return args.Error(0)
 }
 
-type mockContainerStatsWriterFactory struct {
+type mockStorageFactory struct {
 	name string
 }
 
-func (self *mockContainerStatsWriterFactory) String() string {
+func (self *mockStorageFactory) String() string {
 	return self.name
 }
 
-func (self *mockContainerStatsWriterFactory) New(
+func (self *mockStorageFactory) New(
 	config *Config,
-) (ContainerStatsWriter, error) {
-	mockWriter := &mockContainerStatsWriter{
+) (StorageDriver, error) {
+	mockWriter := &mockStorageDriver{
 		storageName: self.name,
 	}
 	return mockWriter, nil
@@ -50,10 +50,10 @@ func TestContainerStatsWriterFactoryManager(t *testing.T) {
 		wg.Add(1)
 		go func(n string) {
 			defer wg.Done()
-			factory := &mockContainerStatsWriterFactory{
+			factory := &mockStorageFactory{
 				name: n,
 			}
-			RegisterContainerStatsWriterFactory(factory)
+			RegisterStorage(factory)
 		}(name)
 	}
 	wg.Wait()
@@ -64,11 +64,11 @@ func TestContainerStatsWriterFactoryManager(t *testing.T) {
 		}
 		go func(n string) {
 			defer wg.Done()
-			writer, err := NewContainerStatsWriter(config)
+			writer, err := NewStorage(config)
 			if err != nil {
 				t.Error(err)
 			}
-			if mw, ok := writer.(*mockContainerStatsWriter); ok {
+			if mw, ok := writer.(*mockStorageDriver); ok {
 				if mw.storageName != n {
 					t.Errorf("wrong writer. should be %v, got %v", n, mw.storageName)
 				}

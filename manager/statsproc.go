@@ -36,7 +36,7 @@ type ContainerStats struct {
 func StartContainerStatsWriters(
 	numWorkers int,
 	queueLength int,
-	statsWriter storage.ContainerStatsWriter,
+	statsWriter storage.StorageDriver,
 ) (chan<- *ContainerStats, error) {
 	if statsWriter == nil {
 		return nil, fmt.Errorf("invalid stats writer")
@@ -53,7 +53,7 @@ func StartContainerStatsWriters(
 	return ch, nil
 }
 
-func writeContainerStats(statsWriter storage.ContainerStatsWriter, ch <-chan *ContainerStats) {
+func writeContainerStats(statsWriter storage.StorageDriver, ch <-chan *ContainerStats) {
 	for stats := range ch {
 		err := statsWriter.Write(stats.ContainerReference, stats.Stats)
 		if err != nil {

@@ -25,6 +25,7 @@ import (
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/storage"
 )
 
 var historyDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
@@ -43,10 +44,10 @@ type containerInfo struct {
 }
 
 type containerData struct {
-	handler   container.ContainerHandler
-	info      containerInfo
-	statsChan chan<- *ContainerStats
-	lock      sync.Mutex
+	handler       container.ContainerHandler
+	info          containerInfo
+	storageDriver storage.StorageDriver
+	lock          sync.Mutex
 
 	// Tells the container to stop.
 	stop chan bool
@@ -85,7 +86,7 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	return &ret, nil
 }
 
-func NewContainerData(containerName string, statsChan chan<- *ContainerStats) (*containerData, error) {
+func NewContainerData(containerName string, driver storage.StorageDriver) (*containerData, error) {
 	cont := &containerData{}
 	handler, err := container.NewContainerHandler(containerName)
 	if err != nil {
@@ -99,7 +100,7 @@ func NewContainerData(containerName string, statsChan chan<- *ContainerStats) (*
 	cont.info.Name = ref.Name
 	cont.info.Aliases = ref.Aliases
 	cont.info.Stats = list.New()
-	cont.statsChan = statsChan
+	cont.storageDriver = driver
 	cont.stop = make(chan bool, 1)
 
 	return cont, nil
@@ -153,13 +154,14 @@ func (c *containerData) updateStats() error {
 	if stats == nil {
 		return nil
 	}
-	if c.statsChan != nil {
+	if c.storageDriver != nil {
 		ref, err := c.handler.ContainerReference()
-		if err == nil {
-			c.statsChan <- &ContainerStats{
-				ContainerReference: ref,
-				Stats:              stats,
-			}
+		if err != nil {
+			return err
+		}
+		err = c.storageDriver.WriteStats(ref, stats)
+		if err != nil {
+			return err
 		}
 	}
 	summary, err := c.handler.StatsSummary()
