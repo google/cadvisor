@@ -159,7 +159,7 @@ func (c *containerData) updateStats() error {
 		if err != nil {
 			return err
 		}
-		err = c.storageDriver.WriteStats(ref, stats)
+		err = c.storageDriver.AddStats(ref, stats)
 		if err != nil {
 			return err
 		}
