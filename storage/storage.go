@@ -22,9 +22,9 @@ type StorageDriver interface {
 	// Read most recent stats. numStats indicates max number of stats
 	// returned. The returned stats must be consecutive observed stats. If
 	// numStats < 0, then return all stats stored in the storage.
-	RecentStats(numStats int) ([]*info.ContainerStats, error)
+	RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error)
 
-	Percentiles(cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error)
+	Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error)
 
-	Samples(numSamples int) ([]*info.ContainerStatsSample, error)
+	Samples(containername string, numSamples int) ([]*info.ContainerStatsSample, error)
 }
