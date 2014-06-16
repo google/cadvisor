@@ -14,66 +14,8 @@
 
 package storage
 
-import (
-	"fmt"
-	"sync"
-
-	"github.com/google/cadvisor/info"
-)
+import "github.com/google/cadvisor/info"
 
 type StorageDriver interface {
 	WriteStats(ref info.ContainerReference, stats *info.ContainerStats) error
-}
-
-// Database config which should contain all information used to connect to
-// all/most databases
-type Config struct {
-	Engine   string            `json:"engine,omitempty"`
-	Host     string            `json:"host,omitempty"`
-	Port     int               `json:"port,omitempty"`
-	Username string            `json:"username,omitempty"`
-	Password string            `json:"password,omitempty"`
-	Database string            `json:"database,omitempty"`
-	Params   map[string]string `json:"parameters,omitempty"`
-}
-
-type StorageFactory interface {
-	String() string
-	New(config *Config) (StorageDriver, error)
-}
-
-type containerStatsWriterFactoryManager struct {
-	lock      sync.RWMutex
-	factories map[string]StorageFactory
-}
-
-func (self *containerStatsWriterFactoryManager) Register(factory StorageFactory) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	if self.factories == nil {
-		self.factories = make(map[string]StorageFactory, 8)
-	}
-
-	self.factories[factory.String()] = factory
-}
-
-func (self *containerStatsWriterFactoryManager) New(config *Config) (StorageDriver, error) {
-	self.lock.RLock()
-	defer self.lock.RUnlock()
-
-	if factory, ok := self.factories[config.Engine]; ok {
-		return factory.New(config)
-	}
-	return nil, fmt.Errorf("unknown database %v", config.Engine)
-}
-
-var globalContainerStatsWriterFactoryManager containerStatsWriterFactoryManager
-
-func RegisterStorage(factory StorageFactory) {
-	globalContainerStatsWriterFactoryManager.Register(factory)
-}
-
-func NewStorage(config *Config) (StorageDriver, error) {
-	return globalContainerStatsWriterFactoryManager.New(config)
 }
