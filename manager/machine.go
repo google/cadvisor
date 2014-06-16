@@ -15,11 +15,16 @@
 package manager
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"regexp"
 	"strconv"
+	"strings"
+	"syscall"
 
+	dclient "github.com/fsouza/go-dockerclient"
+	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/info"
 )
 
@@ -58,4 +63,64 @@ func getMachineInfo() (*info.MachineInfo, error) {
 		NumCores:       numCores,
 		MemoryCapacity: memoryCapacity,
 	}, nil
+}
+
+func getVersionInfo() (*info.VersionInfo, error) {
+
+	kernel_version := getKernelVersion()
+	container_os := getContainerOsVersion()
+	docker_version := getDockerVersion()
+
+	return &info.VersionInfo{
+		KernelVersion:      kernel_version,
+		ContainerOsVersion: container_os,
+		DockerVersion:      docker_version,
+	}, nil
+}
+
+func getContainerOsVersion() string {
+	container_os := "Unknown"
+	os_release, err := ioutil.ReadFile("/etc/os-release")
+	if err == nil {
+		// We might be running in a busybox or some hand-crafted image.
+		// It's useful to know why cadvisor didn't come up.
+		for _, line := range strings.Split(string(os_release), "\n") {
+			parsed := strings.Split(line, "\"")
+			if len(parsed) == 3 && parsed[0] == "PRETTY_NAME=" {
+				container_os = parsed[1]
+				break
+			}
+		}
+	}
+	return container_os
+}
+
+func getDockerVersion() string {
+	docker_version := "Unknown"
+	client, err := dclient.NewClient(*docker.ArgDockerEndpoint)
+	if err == nil {
+		version, err := client.Version()
+		if err == nil {
+			docker_version = version.Get("Version")
+		}
+	}
+	return docker_version
+}
+
+func getKernelVersion() string {
+	uname := &syscall.Utsname{}
+
+	if err := syscall.Uname(uname); err != nil {
+		return "Unknown"
+	}
+
+	release := make([]byte, len(uname.Release))
+	i := 0
+	for _, c := range uname.Release {
+		release[i] = byte(c)
+		i++
+	}
+	release = release[:bytes.IndexByte(release, 0)]
+
+	return string(release)
 }

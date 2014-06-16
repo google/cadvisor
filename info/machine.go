@@ -22,6 +22,18 @@ type MachineInfo struct {
 	MemoryCapacity int64 `json:"memory_capacity"`
 }
 
+type VersionInfo struct {
+	// Kernel version.
+	KernelVersion string `json:"kernel_version"`
+
+	// OS image being used for cadvisor container, or host image if running on host directly.
+	ContainerOsVersion string `json:"container_os_version"`
+
+	// Docker version.
+	DockerVersion string `json:"docker_version"`
+}
+
 type MachineInfoFactory interface {
 	GetMachineInfo() (*MachineInfo, error)
+	GetVersionInfo() (*VersionInfo, error)
 }
