@@ -35,8 +35,41 @@ import (
 type dockerContainerHandler struct {
 	client             *docker.Client
 	name               string
+	aliases            []string
 	machineInfoFactory info.MachineInfoFactory
 	container.NoStatsSummary
+}
+
+func newDockerContainerHandler(
+	client *docker.Client,
+	name string,
+	machineInfoFactory info.MachineInfoFactory,
+) (container.ContainerHandler, error) {
+	handler := &dockerContainerHandler{
+		client:             client,
+		name:               name,
+		machineInfoFactory: machineInfoFactory,
+	}
+	if !handler.isDockerContainer() {
+		return handler, nil
+	}
+	_, id, err := handler.splitName()
+	if err != nil {
+		return nil, fmt.Errorf("invalid docker container %v: %v", name, err)
+	}
+	ctnr, err := client.InspectContainer(id)
+	if err != nil {
+		return nil, fmt.Errorf("unable to inspect container %v: %v", name, err)
+	}
+	handler.aliases = append(handler.aliases, path.Join("/docker", ctnr.Name))
+	return handler, nil
+}
+
+func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
+	return info.ContainerReference{
+		Name:    self.name,
+		Aliases: self.aliases,
+	}, nil
 }
 
 func (self *dockerContainerHandler) splitName() (string, string, error) {

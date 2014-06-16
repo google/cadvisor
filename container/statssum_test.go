@@ -94,6 +94,12 @@ func containerWithTrace(duration time.Duration, cpuUsages []uint64, memUsages []
 	}
 }
 
+func (self *replayTrace) ContainerReference() (info.ContainerReference, error) {
+	return info.ContainerReference{
+		Name: "replay",
+	}, nil
+}
+
 func (self *replayTrace) GetStats() (*info.ContainerStats, error) {
 	stats := new(info.ContainerStats)
 	stats.Cpu = new(info.CpuStats)

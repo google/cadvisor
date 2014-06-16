@@ -114,7 +114,7 @@ func (self *factoryManager) NewContainerHandler(path string) (ContainerHandler, 
 		err := fmt.Errorf("nil factory for container %v", path)
 		return nil, err
 	}
-	log.Printf("container handler factory for %v is %v\n", path, factory)
+	log.Printf("Container handler factory for %v is %v\n", path, factory)
 	return factory.NewContainerHandler(path)
 }
 
