@@ -31,6 +31,9 @@ type VersionInfo struct {
 
 	// Docker version.
 	DockerVersion string `json:"docker_version"`
+
+	// cAdvisor version.
+	CadvisorVersion string `json:"cadvisor_version"`
 }
 
 type MachineInfoFactory interface {

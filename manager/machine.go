@@ -75,6 +75,7 @@ func getVersionInfo() (*info.VersionInfo, error) {
 		KernelVersion:      kernel_version,
 		ContainerOsVersion: container_os,
 		DockerVersion:      docker_version,
+		CadvisorVersion:    info.VERSION,
 	}, nil
 }
 
