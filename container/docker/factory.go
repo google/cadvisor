@@ -25,7 +25,7 @@ import (
 	"github.com/google/cadvisor/info"
 )
 
-var argDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
+var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
 
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
@@ -36,7 +36,7 @@ func (self *dockerFactory) String() string {
 }
 
 func (self *dockerFactory) NewContainerHandler(name string) (handler container.ContainerHandler, err error) {
-	client, err := docker.NewClient(*argDockerEndpoint)
+	client, err := docker.NewClient(*ArgDockerEndpoint)
 	if err != nil {
 		return
 	}
@@ -69,7 +69,7 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, paths ...string) error {
-	client, err := docker.NewClient(*argDockerEndpoint)
+	client, err := docker.NewClient(*ArgDockerEndpoint)
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}

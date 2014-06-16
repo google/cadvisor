@@ -33,6 +33,9 @@ type Manager interface {
 
 	// Get information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
+
+	// Get version information about different components we depend on.
+	GetVersionInfo() (*info.VersionInfo, error)
 }
 
 func New() (Manager, error) {
@@ -45,6 +48,14 @@ func New() (Manager, error) {
 	}
 	newManager.machineInfo = *machineInfo
 	log.Printf("Machine: %+v", newManager.machineInfo)
+
+	versionInfo, err := getVersionInfo()
+	if err != nil {
+		return nil, err
+	}
+	newManager.versionInfo = *versionInfo
+	log.Printf("Version: %+v", newManager.versionInfo)
+
 	return newManager, nil
 }
 
@@ -52,6 +63,7 @@ type manager struct {
 	containers     map[string]*containerData
 	containersLock sync.RWMutex
 	machineInfo    info.MachineInfo
+	versionInfo    info.VersionInfo
 }
 
 // Start the container manager.
@@ -138,6 +150,11 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
 	// Copy and return the MachineInfo.
 	ret := m.machineInfo
+	return &ret, nil
+}
+
+func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
+	ret := m.versionInfo
 	return &ret, nil
 }
 
