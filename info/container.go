@@ -69,6 +69,9 @@ type ContainerInfo struct {
 	// Historical statistics gathered from the container.
 	Stats []*ContainerStats `json:"stats,omitempty"`
 
+	// Randomly sampled container states.
+	Samples []*ContainerStatsSample `json:"samples,omitempty"`
+
 	StatsPercentiles *ContainerStatsPercentiles `json:"stats_summary,omitempty"`
 }
 
@@ -177,19 +180,15 @@ type ContainerStatsSample struct {
 	} `json:"memory"`
 }
 
-// This is not exported.
-// Use FillPercentile to calculate percentiles
-type percentile struct {
+type Percentile struct {
 	Percentage int    `json:"percentage"`
 	Value      uint64 `json:"value"`
 }
 
 type ContainerStatsPercentiles struct {
-	// TODO(dengnan): More things?
-	MaxMemoryUsage         uint64                  `json:"max_memory_usage,omitempty"`
-	Samples                []*ContainerStatsSample `json:"samples,omitempty"`
-	MemoryUsagePercentiles []percentile            `json:"memory_usage_percentiles,omitempty"`
-	CpuUsagePercentiles    []percentile            `json:"cpu_usage_percentiles,omitempty"`
+	MaxMemoryUsage         uint64       `json:"max_memory_usage,omitempty"`
+	MemoryUsagePercentiles []Percentile `json:"memory_usage_percentiles,omitempty"`
+	CpuUsagePercentiles    []Percentile `json:"cpu_usage_percentiles,omitempty"`
 }
 
 // Each sample needs two stats because the cpu usage in ContainerStats is
@@ -237,11 +236,11 @@ func (self uint64Slice) Swap(i, j int) {
 	self[i], self[j] = self[j], self[i]
 }
 
-func (self uint64Slice) Percentiles(requestedPercentiles ...int) []percentile {
+func (self uint64Slice) Percentiles(requestedPercentiles ...int) []Percentile {
 	if len(self) == 0 {
 		return nil
 	}
-	ret := make([]percentile, 0, len(requestedPercentiles))
+	ret := make([]Percentile, 0, len(requestedPercentiles))
 	sort.Sort(self)
 	for _, p := range requestedPercentiles {
 		idx := (len(self) * p / 100) - 1
@@ -250,7 +249,7 @@ func (self uint64Slice) Percentiles(requestedPercentiles ...int) []percentile {
 		}
 		ret = append(
 			ret,
-			percentile{
+			Percentile{
 				Percentage: p,
 				Value:      self[idx],
 			},
@@ -259,14 +258,14 @@ func (self uint64Slice) Percentiles(requestedPercentiles ...int) []percentile {
 	return ret
 }
 
-func (self *ContainerStatsPercentiles) FillPercentiles(cpuPercentages, memoryPercentages []int) {
-	if len(self.Samples) == 0 {
+func (self *ContainerStatsPercentiles) FillPercentiles(samples []*ContainerStatsSample, cpuPercentages, memoryPercentages []int) {
+	if len(samples) == 0 {
 		return
 	}
-	cpuUsages := make([]uint64, 0, len(self.Samples))
-	memUsages := make([]uint64, 0, len(self.Samples))
+	cpuUsages := make([]uint64, 0, len(samples))
+	memUsages := make([]uint64, 0, len(samples))
 
-	for _, sample := range self.Samples {
+	for _, sample := range samples {
 		if sample == nil {
 			continue
 		}
