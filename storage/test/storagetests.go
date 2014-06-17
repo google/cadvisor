@@ -59,10 +59,8 @@ func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T)
 
 	// We need N+1 observations to get N samples
 	for i := 0; i < N+1; i++ {
-		cpuusage := uint64(rand.Intn(1000))
-		memusage := uint64(rand.Intn(1000))
-		cpuTrace = append(cpuTrace, cpuusage)
-		memTrace = append(memTrace, memusage)
+		cpuTrace = append(cpuTrace, uint64(rand.Intn(1000)))
+		memTrace = append(memTrace, uint64(rand.Intn(1000)))
 	}
 
 	samplePeriod := 1 * time.Second
