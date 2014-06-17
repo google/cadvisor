@@ -164,7 +164,7 @@ func TestSampleCpuUsage(t *testing.T) {
 		}
 	}
 
-	_, err := handler.StatsPercentiles()
+	_, err = handler.StatsPercentiles()
 	if err != nil {
 		t.Fatal(err)
 	}
