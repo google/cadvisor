@@ -18,4 +18,18 @@ import "github.com/google/cadvisor/info"
 
 type StorageDriver interface {
 	AddStats(ref info.ContainerReference, stats *info.ContainerStats) error
+
+	// Read most recent stats. numStats indicates max number of stats
+	// returned. The returned stats must be consecutive observed stats. If
+	// numStats < 0, then return all stats stored in the storage.
+	RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error)
+
+	// Read the specified percentiles of CPU and memory usage of the container.
+	// The implementation decides which time range to look at.
+	Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error)
+
+	// Returns samples of the container stats. If numSamples < 0, then
+	// the number of returned samples is implementation defined. Otherwise, the driver
+	// should return at most numSamples samples.
+	Samples(containername string, numSamples int) ([]*info.ContainerStatsSample, error)
 }

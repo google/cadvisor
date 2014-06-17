@@ -164,11 +164,13 @@ func TestSampleCpuUsage(t *testing.T) {
 		}
 	}
 
-	s, err := handler.StatsPercentiles()
+	_, err = handler.StatsPercentiles()
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, sample := range s.Samples {
+	hs := handler.(*percentilesContainerHandlerWrapper)
+	hs.sampler.Map(func(d interface{}) {
+		sample := d.(*info.ContainerStatsSample)
 		if sample.Duration != samplePeriod {
 			t.Errorf("sample duration is %v, not %v", sample.Duration, samplePeriod)
 		}
@@ -182,5 +184,5 @@ func TestSampleCpuUsage(t *testing.T) {
 		if !found {
 			t.Errorf("unable to find cpu usage %v", cpuUsage)
 		}
-	}
+	})
 }
