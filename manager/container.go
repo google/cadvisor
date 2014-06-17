@@ -17,6 +17,7 @@
 package manager
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -81,6 +82,9 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 }
 
 func NewContainerData(containerName string, driver storage.StorageDriver) (*containerData, error) {
+	if driver == nil {
+		return nil, fmt.Errorf("nil storage driver")
+	}
 	cont := &containerData{}
 	handler, err := container.NewContainerHandler(containerName)
 	if err != nil {
@@ -147,15 +151,13 @@ func (c *containerData) updateStats() error {
 	if stats == nil {
 		return nil
 	}
-	if c.storageDriver != nil {
-		ref, err := c.handler.ContainerReference()
-		if err != nil {
-			return err
-		}
-		err = c.storageDriver.AddStats(ref, stats)
-		if err != nil {
-			return err
-		}
+	ref, err := c.handler.ContainerReference()
+	if err != nil {
+		return err
+	}
+	err = c.storageDriver.AddStats(ref, stats)
+	if err != nil {
+		return err
 	}
 	return nil
 }
