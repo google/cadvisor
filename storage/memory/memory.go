@@ -207,6 +207,13 @@ func (self *InMemoryStorage) Percentiles(name string, cpuPercentiles, memPercent
 	return cstore.Percentiles(cpuPercentiles, memPercentiles)
 }
 
+func (self *InMemoryStorage) Close() error {
+	self.lock.Lock()
+	self.containerStorageMap = make(map[string]*containerStorage, 32)
+	self.lock.Unlock()
+	return nil
+}
+
 func New(maxNumSamples, maxNumStats int) storage.StorageDriver {
 	ret := &InMemoryStorage{
 		containerStorageMap: make(map[string]*containerStorage, 32),
