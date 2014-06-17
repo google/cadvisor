@@ -110,7 +110,7 @@ func (self *percentilesContainerHandlerWrapper) ListProcesses(listType ListType)
 	return self.handler.ListProcesses(listType)
 }
 
-func (self *percentilesContainerHandlerWrapper) StatsSummary() (*info.ContainerStatsPercentiles, error) {
+func (self *percentilesContainerHandlerWrapper) StatsPercentiles() (*info.ContainerStatsPercentiles, error) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	samples := make([]*info.ContainerStatsSample, 0, self.sampler.Len())

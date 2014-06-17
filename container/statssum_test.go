@@ -65,7 +65,7 @@ func TestMaxMemoryUsage(t *testing.T) {
 			continue
 		}
 	}
-	summary, err := handler.StatsSummary()
+	summary, err := handler.StatsPercentiles()
 	if err != nil {
 		t.Fatalf("Error when get summary: %v", err)
 	}
@@ -164,7 +164,7 @@ func TestSampleCpuUsage(t *testing.T) {
 		}
 	}
 
-	s, err := handler.StatsSummary()
+	s, err := handler.StatsPercentiles()
 	if err != nil {
 		t.Fatal(err)
 	}

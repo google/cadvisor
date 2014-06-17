@@ -69,7 +69,7 @@ type ContainerInfo struct {
 	// Historical statistics gathered from the container.
 	Stats []*ContainerStats `json:"stats,omitempty"`
 
-	StatsSummary *ContainerStatsPercentiles `json:"stats_summary,omitempty"`
+	StatsPercentiles *ContainerStatsPercentiles `json:"stats_summary,omitempty"`
 }
 
 func (self *ContainerInfo) StatsAfter(ref time.Time) []*ContainerStats {

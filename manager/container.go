@@ -37,10 +37,10 @@ type containerStat struct {
 }
 type containerInfo struct {
 	info.ContainerReference
-	Subcontainers []info.ContainerReference
-	Spec          *info.ContainerSpec
-	Stats         *list.List
-	StatsSummary  *info.ContainerStatsPercentiles
+	Subcontainers    []info.ContainerReference
+	Spec             *info.ContainerSpec
+	Stats            *list.List
+	StatsPercentiles *info.ContainerStatsPercentiles
 }
 
 type containerData struct {
@@ -164,7 +164,7 @@ func (c *containerData) updateStats() error {
 			return err
 		}
 	}
-	summary, err := c.handler.StatsSummary()
+	summary, err := c.handler.StatsPercentiles()
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func (c *containerData) updateStats() error {
 		Timestamp: timestamp,
 		Data:      stats,
 	})
-	c.info.StatsSummary = summary
+	c.info.StatsPercentiles = summary
 	return nil
 }
 
