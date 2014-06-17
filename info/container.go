@@ -258,9 +258,9 @@ func (self uint64Slice) Percentiles(requestedPercentiles ...int) []Percentile {
 	return ret
 }
 
-func (self *ContainerStatsPercentiles) FillPercentiles(samples []*ContainerStatsSample, cpuPercentages, memoryPercentages []int) {
+func NewPercentiles(samples []*ContainerStatsSample, cpuPercentages, memoryPercentages []int) *ContainerStatsPercentiles {
 	if len(samples) == 0 {
-		return
+		return nil
 	}
 	cpuUsages := make([]uint64, 0, len(samples))
 	memUsages := make([]uint64, 0, len(samples))
@@ -273,6 +273,8 @@ func (self *ContainerStatsPercentiles) FillPercentiles(samples []*ContainerStats
 		memUsages = append(memUsages, sample.Memory.Usage)
 	}
 
-	self.CpuUsagePercentiles = uint64Slice(cpuUsages).Percentiles(cpuPercentages...)
-	self.MemoryUsagePercentiles = uint64Slice(memUsages).Percentiles(memoryPercentages...)
+	ret := new(ContainerStatsPercentiles)
+	ret.CpuUsagePercentiles = uint64Slice(cpuUsages).Percentiles(cpuPercentages...)
+	ret.MemoryUsagePercentiles = uint64Slice(memUsages).Percentiles(memoryPercentages...)
+	return ret
 }

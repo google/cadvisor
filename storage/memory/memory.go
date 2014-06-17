@@ -26,13 +26,13 @@ import (
 
 // containerStorage is used to store per-container information
 type containerStorage struct {
-	ref            info.ContainerReference
-	prevStats      *info.ContainerStats
-	sampler        sampling.Sampler
-	recentStats    *list.List
-	numRecentStats int
-	maxMemUsage    uint64
-	lock           sync.RWMutex
+	ref         info.ContainerReference
+	prevStats   *info.ContainerStats
+	sampler     sampling.Sampler
+	recentStats *list.List
+	maxNumStats int
+	maxMemUsage uint64
+	lock        sync.RWMutex
 }
 
 func (self *containerStorage) updatePrevStats(stats *info.ContainerStats) {
@@ -74,7 +74,7 @@ func (self *containerStorage) AddStats(stats *info.ContainerStats) error {
 			self.maxMemUsage = stats.Memory.Usage
 		}
 	}
-	if self.recentStats.Len() >= self.numRecentStats {
+	if self.recentStats.Len() >= self.maxNumStats {
 		self.recentStats.Remove(self.recentStats.Front())
 	}
 	self.recentStats.PushBack(stats)
@@ -91,7 +91,10 @@ func (self *containerStorage) RecentStats(numStats int) ([]*info.ContainerStats,
 	ret := make([]*info.ContainerStats, 0, numStats)
 	e := self.recentStats.Front()
 	for i := 0; i < numStats; i++ {
-		data := e.Value.(*info.ContainerStats)
+		data, ok := e.Value.(*info.ContainerStats)
+		if !ok {
+			return nil, fmt.Errorf("The %vth element is not a ContainerStats", i)
+		}
 		ret = append(ret, data)
 		e = e.Next()
 		if e == nil {
@@ -109,13 +112,20 @@ func (self *containerStorage) Samples(numSamples int) ([]*info.ContainerStatsSam
 	}
 	ret := make([]*info.ContainerStatsSample, 0, numSamples)
 
+	var err error
 	self.sampler.Map(func(d interface{}) {
-		if len(ret) >= numSamples {
+		if len(ret) >= numSamples || err != nil {
 			return
 		}
-		sample := d.(*info.ContainerStatsSample)
+		sample, ok := d.(*info.ContainerStatsSample)
+		if !ok {
+			err = fmt.Errorf("An element in the sample is not a ContainerStatsSample")
+		}
 		ret = append(ret, sample)
 	})
+	if err != nil {
+		return nil, err
+	}
 	return ret, nil
 }
 
@@ -124,19 +134,18 @@ func (self *containerStorage) Percentiles(cpuPercentiles, memPercentiles []int) 
 	if err != nil {
 		return nil, err
 	}
-	ret := new(info.ContainerStatsPercentiles)
-	ret.FillPercentiles(samples, cpuPercentiles, memPercentiles)
+	ret := info.NewPercentiles(samples, cpuPercentiles, memPercentiles)
 	ret.MaxMemoryUsage = self.maxMemUsage
 	return ret, nil
 }
 
-func newContainerStore(ref info.ContainerReference, maxNumSamples, numRecentStats int) *containerStorage {
+func newContainerStore(ref info.ContainerReference, maxNumSamples, maxNumStats int) *containerStorage {
 	s := sampling.NewReservoirSampler(maxNumSamples)
 	return &containerStorage{
-		ref:            ref,
-		recentStats:    list.New(),
-		sampler:        s,
-		numRecentStats: numRecentStats,
+		ref:         ref,
+		recentStats: list.New(),
+		sampler:     s,
+		maxNumStats: maxNumStats,
 	}
 }
 
@@ -144,7 +153,7 @@ type InMemoryStorage struct {
 	lock                sync.RWMutex
 	containerStorageMap map[string]*containerStorage
 	maxNumSamples       int
-	numRecentStats      int
+	maxNumStats         int
 }
 
 func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
@@ -152,7 +161,7 @@ func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.C
 	var ok bool
 	self.lock.Lock()
 	if cstore, ok = self.containerStorageMap[ref.Name]; !ok {
-		cstore = newContainerStore(ref, self.maxNumSamples, self.numRecentStats)
+		cstore = newContainerStore(ref, self.maxNumSamples, self.maxNumStats)
 		self.containerStorageMap[ref.Name] = cstore
 	}
 	self.lock.Unlock()
@@ -195,11 +204,11 @@ func (self *InMemoryStorage) Percentiles(name string, cpuPercentiles, memPercent
 	return cstore.Percentiles(cpuPercentiles, memPercentiles)
 }
 
-func New(maxNumSamples, numRecentStats int) storage.StorageDriver {
+func New(maxNumSamples, maxNumStats int) storage.StorageDriver {
 	ret := &InMemoryStorage{
 		containerStorageMap: make(map[string]*containerStorage, 32),
 		maxNumSamples:       maxNumSamples,
-		numRecentStats:      numRecentStats,
+		maxNumStats:         maxNumStats,
 	}
 	return ret
 }
