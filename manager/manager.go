@@ -130,9 +130,9 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 			Name:    cinfo.Name,
 			Aliases: cinfo.Aliases,
 		},
-		Subcontainers: cinfo.Subcontainers,
-		Spec:          cinfo.Spec,
-		StatsSummary:  cinfo.StatsSummary,
+		Subcontainers:    cinfo.Subcontainers,
+		Spec:             cinfo.Spec,
+		StatsPercentiles: cinfo.StatsPercentiles,
 	}
 
 	// Set default value to an actual value
