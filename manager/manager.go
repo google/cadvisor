@@ -126,6 +126,7 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 
 	var percentiles *info.ContainerStatsPercentiles
 	var samples []*info.ContainerStatsSample
+	var stats []*info.ContainerStats
 	if m.storageDriver != nil {
 		// XXX(monnand): These numbers should not be hard coded
 		percentiles, err = m.storageDriver.Percentiles(
@@ -137,6 +138,11 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 			return nil, err
 		}
 		samples, err = m.storageDriver.Samples(cinfo.Name, 1024)
+		if err != nil {
+			return nil, err
+		}
+
+		stats, err = m.storageDriver.RecentStats(cinfo.Name, 1024)
 		if err != nil {
 			return nil, err
 		}
@@ -152,6 +158,7 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 		Spec:             cinfo.Spec,
 		StatsPercentiles: percentiles,
 		Samples:          samples,
+		Stats:            stats,
 	}
 
 	// Set default value to an actual value

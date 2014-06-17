@@ -134,6 +134,9 @@ func (self *containerStorage) Percentiles(cpuPercentiles, memPercentiles []int) 
 	if err != nil {
 		return nil, err
 	}
+	if len(samples) == 0 {
+		return nil, nil
+	}
 	ret := info.NewPercentiles(samples, cpuPercentiles, memPercentiles)
 	ret.MaxMemoryUsage = self.maxMemUsage
 	return ret, nil

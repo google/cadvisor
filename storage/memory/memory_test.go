@@ -129,3 +129,45 @@ func TestMaxMemoryUsage(t *testing.T) {
 		t.Fatalf("Max memory usage should be %v; received %v", maxUsage, percentiles.MaxMemoryUsage)
 	}
 }
+
+func TestSamplesWithoutSample(t *testing.T) {
+	storage := New(10, 10)
+	trace := buildTrace(
+		[]uint64{10},
+		[]uint64{10},
+		1*time.Second)
+	ref := info.ContainerReference{
+		Name: "container",
+	}
+	storage.AddStats(ref, trace[0])
+	samples, err := storage.Samples(ref.Name, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(samples) != 0 {
+		t.Errorf("There should be no sample")
+	}
+}
+
+func TestPercentilesWithoutSample(t *testing.T) {
+	storage := New(10, 10)
+	trace := buildTrace(
+		[]uint64{10},
+		[]uint64{10},
+		1*time.Second)
+	ref := info.ContainerReference{
+		Name: "container",
+	}
+	storage.AddStats(ref, trace[0])
+	percentiles, err := storage.Percentiles(
+		ref.Name,
+		[]int{50},
+		[]int{50},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if percentiles != nil {
+		t.Errorf("There should be no percentiles")
+	}
+}
