@@ -32,4 +32,6 @@ type StorageDriver interface {
 	// the number of returned samples is implementation defined. Otherwise, the driver
 	// should return at most numSamples samples.
 	Samples(containername string, numSamples int) ([]*info.ContainerStatsSample, error)
+
+	Close() error
 }
