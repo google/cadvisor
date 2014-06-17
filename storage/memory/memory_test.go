@@ -21,17 +21,41 @@ import (
 	"github.com/google/cadvisor/storage/test"
 )
 
-func TestInMemoryStorageDriver(t *testing.T) {
+func TestMaxMemoryUsage(t *testing.T) {
 	maxSize := 200
 
 	var driver storage.StorageDriver
 	for N := 10; N < maxSize; N += 10 {
 		driver = New(N, N)
 		test.StorageDriverTestMaxMemoryUsage(driver, t)
+	}
+}
+
+func TestSampleCpuUsage(t *testing.T) {
+	maxSize := 200
+
+	var driver storage.StorageDriver
+	for N := 10; N < maxSize; N += 10 {
 		driver = New(N, N)
 		test.StorageDriverTestSampleCpuUsage(driver, t)
+	}
+}
+
+func TestSamplesWithoutSample(t *testing.T) {
+	maxSize := 200
+
+	var driver storage.StorageDriver
+	for N := 10; N < maxSize; N += 10 {
 		driver = New(N, N)
 		test.StorageDriverTestSamplesWithoutSample(driver, t)
+	}
+}
+
+func TestPercentilessWithoutSample(t *testing.T) {
+	maxSize := 200
+
+	var driver storage.StorageDriver
+	for N := 10; N < maxSize; N += 10 {
 		driver = New(N, N)
 		test.StorageDriverTestPercentilesWithoutSample(driver, t)
 	}
