@@ -24,12 +24,12 @@ import (
 )
 
 type percentilesContainerHandlerWrapper struct {
-	handler              ContainerHandler
-	containerPercentiles *info.ContainerStatsPercentiles
-	prevStats            *info.ContainerStats
-	numStats             uint64
-	sampler              sampling.Sampler
-	lock                 sync.Mutex
+	handler     ContainerHandler
+	prevStats   *info.ContainerStats
+	numStats    uint64
+	maxMemUsage uint64
+	sampler     sampling.Sampler
+	lock        sync.Mutex
 }
 
 func (self *percentilesContainerHandlerWrapper) GetSpec() (*info.ContainerSpec, error) {
@@ -86,13 +86,10 @@ func (self *percentilesContainerHandlerWrapper) GetStats() (*info.ContainerStats
 		}
 	}
 	self.updatePrevStats(stats)
-	if self.containerPercentiles == nil {
-		self.containerPercentiles = new(info.ContainerStatsPercentiles)
-	}
 	self.numStats++
 	if stats.Memory != nil {
-		if stats.Memory.Usage > self.containerPercentiles.MaxMemoryUsage {
-			self.containerPercentiles.MaxMemoryUsage = stats.Memory.Usage
+		if stats.Memory.Usage > self.maxMemUsage {
+			self.maxMemUsage = stats.Memory.Usage
 		}
 	}
 	return stats, nil
@@ -118,13 +115,13 @@ func (self *percentilesContainerHandlerWrapper) StatsPercentiles() (*info.Contai
 		stats := d.(*info.ContainerStatsSample)
 		samples = append(samples, stats)
 	})
-	// XXX(dengnan): probably add to StatsParameter?
-	self.containerPercentiles.FillPercentiles(
+	ret := info.NewPercentiles(
 		samples,
 		[]int{50, 80, 90, 95, 99},
 		[]int{50, 80, 90, 95, 99},
 	)
-	return self.containerPercentiles, nil
+	ret.MaxMemoryUsage = self.maxMemUsage
+	return ret, nil
 }
 
 type StatsParameter struct {
@@ -140,8 +137,7 @@ func AddStatsSummary(handler ContainerHandler, parameter *StatsParameter) (Conta
 		return nil, err
 	}
 	return &percentilesContainerHandlerWrapper{
-		handler:              handler,
-		containerPercentiles: &info.ContainerStatsPercentiles{},
-		sampler:              sampler,
+		handler: handler,
+		sampler: sampler,
 	}, nil
 }
