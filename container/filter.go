@@ -23,7 +23,6 @@ import (
 type containerListFilter struct {
 	filter  func(string) bool
 	handler ContainerHandler
-	NoStatsSummary
 }
 
 func (self *containerListFilter) ContainerReference() (info.ContainerReference, error) {

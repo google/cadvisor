@@ -31,7 +31,6 @@ import (
 type lmctfyContainerHandler struct {
 	// Container name
 	Name string
-	container.NoStatsSummary
 }
 
 const (
