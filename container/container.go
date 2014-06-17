@@ -14,11 +14,7 @@
 
 package container
 
-import (
-	"fmt"
-
-	"github.com/google/cadvisor/info"
-)
+import "github.com/google/cadvisor/info"
 
 // Listing types.
 const (
@@ -36,12 +32,4 @@ type ContainerHandler interface {
 	ListContainers(listType ListType) ([]info.ContainerReference, error)
 	ListThreads(listType ListType) ([]int, error)
 	ListProcesses(listType ListType) ([]int, error)
-	StatsPercentiles() (*info.ContainerStatsPercentiles, error)
-}
-
-type NoStatsSummary struct {
-}
-
-func (self *NoStatsSummary) StatsPercentiles() (*info.ContainerStatsPercentiles, error) {
-	return nil, fmt.Errorf("This method (StatsSummary) should never be called")
 }

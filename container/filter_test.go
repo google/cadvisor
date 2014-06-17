@@ -24,7 +24,6 @@ import (
 
 type mockContainerHandler struct {
 	mock.Mock
-	NoStatsSummary
 }
 
 func (self *mockContainerHandler) GetSpec() (*info.ContainerSpec, error) {

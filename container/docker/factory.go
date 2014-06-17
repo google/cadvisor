@@ -93,12 +93,11 @@ func Register(factory info.MachineInfoFactory, paths ...string) error {
 	f := &dockerFactory{
 		machineInfoFactory: factory,
 	}
-	cf := container.AddStatsSummaryToFactory(f)
 	for _, p := range paths {
 		if p != "/" && p != "/docker" {
 			return fmt.Errorf("%v cannot be managed by docker", p)
 		}
-		container.RegisterContainerHandlerFactory(p, cf)
+		container.RegisterContainerHandlerFactory(p, f)
 	}
 	return nil
 }

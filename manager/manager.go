@@ -124,6 +124,30 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 		return nil, err
 	}
 
+	var percentiles *info.ContainerStatsPercentiles
+	var samples []*info.ContainerStatsSample
+	var stats []*info.ContainerStats
+	if m.storageDriver != nil {
+		// XXX(monnand): These numbers should not be hard coded
+		percentiles, err = m.storageDriver.Percentiles(
+			cinfo.Name,
+			[]int{50, 80, 90, 99},
+			[]int{50, 80, 90, 99},
+		)
+		if err != nil {
+			return nil, err
+		}
+		samples, err = m.storageDriver.Samples(cinfo.Name, 1024)
+		if err != nil {
+			return nil, err
+		}
+
+		stats, err = m.storageDriver.RecentStats(cinfo.Name, 1024)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Make a copy of the info for the user.
 	ret := &info.ContainerInfo{
 		ContainerReference: info.ContainerReference{
@@ -132,7 +156,9 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 		},
 		Subcontainers:    cinfo.Subcontainers,
 		Spec:             cinfo.Spec,
-		StatsPercentiles: cinfo.StatsPercentiles,
+		StatsPercentiles: percentiles,
+		Samples:          samples,
+		Stats:            stats,
 	}
 
 	// Set default value to an actual value
@@ -141,11 +167,6 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 		if ret.Spec.Memory.Limit == 0 {
 			ret.Spec.Memory.Limit = uint64(m.machineInfo.MemoryCapacity)
 		}
-	}
-	ret.Stats = make([]*info.ContainerStats, 0, cinfo.Stats.Len())
-	for e := cinfo.Stats.Front(); e != nil; e = e.Next() {
-		data := e.Value.(*containerStat)
-		ret.Stats = append(ret.Stats, data.Data)
 	}
 	return ret, nil
 }

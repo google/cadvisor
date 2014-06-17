@@ -37,7 +37,6 @@ type dockerContainerHandler struct {
 	name               string
 	aliases            []string
 	machineInfoFactory info.MachineInfoFactory
-	container.NoStatsSummary
 }
 
 func newDockerContainerHandler(

@@ -19,34 +19,27 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/google/cadvisor/api"
-	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/lmctfy"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
+	"github.com/google/cadvisor/storage/memory"
 )
 
 var argPort = flag.Int("port", 8080, "port to listen")
 var argSampleSize = flag.Int("samples", 1024, "number of samples we want to keep")
-var argResetPeriod = flag.Duration("reset_period", 2*time.Hour, "period to reset the samples")
+var argHistoryDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
 
 func main() {
 	flag.Parse()
 
-	// XXX(dengnan): Should we allow users to specify which sampler they want to use?
-	container.SetStatsParameter(&container.StatsParameter{
-		Sampler:     "uniform",
-		NumSamples:  *argSampleSize,
-		ResetPeriod: *argResetPeriod,
-	})
-
+	storage := memory.New(*argSampleSize, *argHistoryDuration)
 	// TODO(monnand): Add stats writer for manager
-	containerManager, err := manager.New(nil)
+	containerManager, err := manager.New(storage)
 	if err != nil {
 		log.Fatalf("Failed to create a Container Manager: %s", err)
 	}

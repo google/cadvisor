@@ -17,8 +17,6 @@
 package manager
 
 import (
-	"container/list"
-	"flag"
 	"log"
 	"sync"
 	"time"
@@ -28,8 +26,6 @@ import (
 	"github.com/google/cadvisor/storage"
 )
 
-var historyDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
-
 // Internal mirror of the external data structure.
 type containerStat struct {
 	Timestamp time.Time
@@ -37,10 +33,8 @@ type containerStat struct {
 }
 type containerInfo struct {
 	info.ContainerReference
-	Subcontainers    []info.ContainerReference
-	Spec             *info.ContainerSpec
-	Stats            *list.List
-	StatsPercentiles *info.ContainerStatsPercentiles
+	Subcontainers []info.ContainerReference
+	Spec          *info.ContainerSpec
 }
 
 type containerData struct {
@@ -99,7 +93,6 @@ func NewContainerData(containerName string, driver storage.StorageDriver) (*cont
 	}
 	cont.info.Name = ref.Name
 	cont.info.Aliases = ref.Aliases
-	cont.info.Stats = list.New()
 	cont.storageDriver = driver
 	cont.stop = make(chan bool, 1)
 
@@ -164,23 +157,6 @@ func (c *containerData) updateStats() error {
 			return err
 		}
 	}
-	summary, err := c.handler.StatsPercentiles()
-	if err != nil {
-		return err
-	}
-	timestamp := time.Now()
-
-	// Remove the front if we go over.
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	if c.info.Stats.Len() >= *historyDuration {
-		c.info.Stats.Remove(c.info.Stats.Front())
-	}
-	c.info.Stats.PushBack(&containerStat{
-		Timestamp: timestamp,
-		Data:      stats,
-	})
-	c.info.StatsPercentiles = summary
 	return nil
 }
 

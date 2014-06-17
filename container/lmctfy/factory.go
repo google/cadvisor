@@ -26,7 +26,7 @@ func Register(paths ...string) error {
 	if _, err := exec.LookPath("lmctfy"); err != nil {
 		return errors.New("cannot find lmctfy")
 	}
-	f := container.AddStatsSummaryToFactory(&lmctfyFactory{})
+	f := &lmctfyFactory{}
 	for _, path := range paths {
 		log.Printf("register lmctfy under %v", path)
 		container.RegisterContainerHandlerFactory(path, f)
