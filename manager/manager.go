@@ -40,6 +40,9 @@ type Manager interface {
 }
 
 func New(driver storage.StorageDriver) (Manager, error) {
+	if driver == nil {
+		return nil, fmt.Errorf("nil storage driver!")
+	}
 	newManager := &manager{}
 	newManager.containers = make(map[string]*containerData)
 
@@ -127,25 +130,23 @@ func (m *manager) GetContainerInfo(containerName string) (*info.ContainerInfo, e
 	var percentiles *info.ContainerStatsPercentiles
 	var samples []*info.ContainerStatsSample
 	var stats []*info.ContainerStats
-	if m.storageDriver != nil {
-		// XXX(monnand): These numbers should not be hard coded
-		percentiles, err = m.storageDriver.Percentiles(
-			cinfo.Name,
-			[]int{50, 80, 90, 99},
-			[]int{50, 80, 90, 99},
-		)
-		if err != nil {
-			return nil, err
-		}
-		samples, err = m.storageDriver.Samples(cinfo.Name, 1024)
-		if err != nil {
-			return nil, err
-		}
+	// TODO(monnand): These numbers should not be hard coded
+	percentiles, err = m.storageDriver.Percentiles(
+		cinfo.Name,
+		[]int{50, 80, 90, 99},
+		[]int{50, 80, 90, 99},
+	)
+	if err != nil {
+		return nil, err
+	}
+	samples, err = m.storageDriver.Samples(cinfo.Name, 1024)
+	if err != nil {
+		return nil, err
+	}
 
-		stats, err = m.storageDriver.RecentStats(cinfo.Name, 1024)
-		if err != nil {
-			return nil, err
-		}
+	stats, err = m.storageDriver.RecentStats(cinfo.Name, 1024)
+	if err != nil {
+		return nil, err
 	}
 
 	// Make a copy of the info for the user.
