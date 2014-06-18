@@ -44,6 +44,7 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 		stats.Cpu.Usage.Total = cpuTotalUsage
 		stats.Cpu.Usage.User = stats.Cpu.Usage.Total
 		stats.Cpu.Usage.System = 0
+		stats.Cpu.Usage.PerCpu = []uint64{cpuUsage}
 
 		stats.Memory.Usage = mem[i]
 
