@@ -16,6 +16,7 @@ package test
 
 import (
 	"math/rand"
+	"reflect"
 	"testing"
 	"time"
 
@@ -171,6 +172,7 @@ func StorageDriverTestPercentilesWithoutSample(driver storage.StorageDriver, t *
 
 // The driver must be able to hold more than 100 samples
 func StorageDriverTestPercentiles(driver storage.StorageDriver, t *testing.T) {
+	defer driver.Close()
 	N := 100
 	cpuTrace := make([]uint64, N)
 	memTrace := make([]uint64, N)
@@ -206,6 +208,49 @@ func StorageDriverTestPercentiles(driver storage.StorageDriver, t *testing.T) {
 		// The value is out of the range of tolerance..
 		if s.Value > uint64(s.Percentage+1) || s.Value < uint64(s.Percentage-1) {
 			t.Errorf("%v percentile data should be %v, but got %v", s.Percentage, s.Percentage, s.Value)
+		}
+	}
+}
+
+// The driver must be albe to hold more than 10 stats
+func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t *testing.T) {
+	defer driver.Close()
+	N := 100
+	memTrace := make([]uint64, N)
+	cpuTrace := make([]uint64, N)
+	for i := 0; i < N; i++ {
+		memTrace[i] = uint64(i + 1)
+		cpuTrace[i] = uint64(1)
+	}
+
+	ref := info.ContainerReference{
+		Name: "container",
+	}
+
+	trace := buildTrace(cpuTrace, memTrace, 1*time.Second)
+
+	for _, stats := range trace {
+		driver.AddStats(ref, stats)
+	}
+
+	recentStats, err := driver.RecentStats(ref.Name, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(recentStats) != 10 {
+		t.Fatalf("returned %v stats, not 10.", len(recentStats))
+	}
+
+	for _, r := range recentStats {
+		found := false
+		for _, s := range trace[len(trace)-10:] {
+			if reflect.DeepEqual(s, r) {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("returned unexpected stats: %+v; %v", r, r.Memory.Usage)
 		}
 	}
 }

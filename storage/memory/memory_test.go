@@ -53,3 +53,7 @@ func TestPercentiles(t *testing.T) {
 	driver := New(N, N)
 	test.StorageDriverTestPercentiles(driver, t)
 }
+
+func TestRetrievePartialRecentStats(t *testing.T) {
+	runStorageTest(test.StorageDriverTestRetrievePartialRecentStats, t)
+}

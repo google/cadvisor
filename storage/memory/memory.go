@@ -75,9 +75,9 @@ func (self *containerStorage) AddStats(stats *info.ContainerStats) error {
 		}
 	}
 	if self.recentStats.Len() >= self.maxNumStats {
-		self.recentStats.Remove(self.recentStats.Front())
+		self.recentStats.Remove(self.recentStats.Back())
 	}
-	self.recentStats.PushBack(stats)
+	self.recentStats.PushFront(stats)
 	self.updatePrevStats(stats)
 	return nil
 }
