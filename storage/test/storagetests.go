@@ -53,9 +53,39 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 	return ret
 }
 
+func samplesInTrace(samples []*info.ContainerStatsSample, cpuTrace, memTrace []uint64, samplePeriod time.Duration, t *testing.T) {
+	for _, sample := range samples {
+		if sample.Duration != samplePeriod {
+			t.Errorf("sample duration is %v, not %v", sample.Duration, samplePeriod)
+		}
+		cpuUsage := sample.Cpu.Usage
+		memUsage := sample.Memory.Usage
+		found := false
+		for _, u := range cpuTrace {
+			if u == cpuUsage {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("unable to find cpu usage %v", cpuUsage)
+		}
+		found = false
+		for _, u := range memTrace {
+			if u == memUsage {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("unable to find mem usage %v", memUsage)
+		}
+	}
+}
+
 func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T) {
 	defer driver.Close()
-	N := 10
+	N := 100
 	cpuTrace := make([]uint64, 0, N)
 	memTrace := make([]uint64, 0, N)
 
@@ -89,21 +119,19 @@ func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T)
 	if err != nil {
 		t.Errorf("unable to sample stats: %v", err)
 	}
-	for _, sample := range samples {
-		if sample.Duration != samplePeriod {
-			t.Errorf("sample duration is %v, not %v", sample.Duration, samplePeriod)
-		}
-		cpuUsage := sample.Cpu.Usage
-		found := false
-		for _, u := range cpuTrace {
-			if u == cpuUsage {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("unable to find cpu usage %v", cpuUsage)
-		}
+	samplesInTrace(samples, cpuTrace, memTrace, samplePeriod, t)
+
+	samples, err = driver.Samples(ref.Name, -1)
+	if err != nil {
+		t.Errorf("unable to sample stats: %v", err)
 	}
+	samplesInTrace(samples, cpuTrace, memTrace, samplePeriod, t)
+
+	samples, err = driver.Samples(ref.Name, N-5)
+	if err != nil {
+		t.Errorf("unable to sample stats: %v", err)
+	}
+	samplesInTrace(samples, cpuTrace, memTrace, samplePeriod, t)
 }
 
 func StorageDriverTestMaxMemoryUsage(driver storage.StorageDriver, t *testing.T) {
