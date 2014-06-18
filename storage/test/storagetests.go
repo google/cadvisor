@@ -242,15 +242,14 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 		t.Fatalf("returned %v stats, not 10.", len(recentStats))
 	}
 
-	for _, r := range recentStats {
-		found := false
-		for _, s := range trace[len(trace)-10:] {
-			if reflect.DeepEqual(s, r) {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("returned unexpected stats: %+v; %v", r, r.Memory.Usage)
+	traceIdx := len(trace) - 1
+	// Latest stats come first
+	for i := 0; i < 10; i++ {
+		r := recentStats[i]
+		s := trace[traceIdx]
+		traceIdx--
+		if !reflect.DeepEqual(s, r) {
+			t.Errorf("The %vth item should be %+v with memory usage %v; got item %+v with memory usage %v", i, s, s.Memory.Usage, r, r.Memory.Usage)
 		}
 	}
 }
@@ -281,15 +280,12 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 		t.Fatal(err)
 	}
 
-	for _, r := range recentStats {
-		found := false
-		for _, s := range trace {
-			if reflect.DeepEqual(s, r) {
-				found = true
-			}
-		}
-		if !found {
-			t.Errorf("returned unexpected stats: %+v; %v", r, r.Memory.Usage)
+	traceIdx := len(trace) - 1
+	for i, r := range recentStats {
+		s := trace[traceIdx]
+		traceIdx--
+		if !reflect.DeepEqual(s, r) {
+			t.Errorf("The %vth item should be %+v with memory usage %v; got item %+v with memory usage %v", i, s, s.Memory.Usage, r, r.Memory.Usage)
 		}
 	}
 }
