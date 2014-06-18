@@ -74,7 +74,15 @@ func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T)
 	trace := buildTrace(cpuTrace, memTrace, samplePeriod)
 
 	for _, stats := range trace {
-		driver.AddStats(ref, stats)
+		err := driver.AddStats(ref, stats)
+		if err != nil {
+			t.Fatalf("unable to add stats: %v", err)
+		}
+		// set the trace to someting else. The stats stored in the
+		// storage should not be affected.
+		stats.Cpu.Usage.Total = 0
+		stats.Cpu.Usage.System = 0
+		stats.Cpu.Usage.User = 0
 	}
 
 	samples, err := driver.Samples(ref.Name, N)
@@ -115,7 +123,16 @@ func StorageDriverTestMaxMemoryUsage(driver storage.StorageDriver, t *testing.T)
 	trace := buildTrace(cpuTrace, memTrace, 1*time.Second)
 
 	for _, stats := range trace {
-		driver.AddStats(ref, stats)
+		err := driver.AddStats(ref, stats)
+		if err != nil {
+			t.Fatalf("unable to add stats: %v", err)
+		}
+		// set the trace to someting else. The stats stored in the
+		// storage should not be affected.
+		stats.Cpu.Usage.Total = 0
+		stats.Cpu.Usage.System = 0
+		stats.Cpu.Usage.User = 0
+		stats.Memory.Usage = 0
 	}
 
 	percentiles, err := driver.Percentiles(ref.Name, []int{50}, []int{50})
