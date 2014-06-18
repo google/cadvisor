@@ -319,3 +319,43 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 		}
 	}
 }
+
+func StorageDriverTestNoRecentStats(driver storage.StorageDriver, t *testing.T) {
+	defer driver.Close()
+	nonExistContainer := "somerandomecontainer"
+	stats, _ := driver.RecentStats(nonExistContainer, -1)
+	if len(stats) > 0 {
+		t.Errorf("RecentStats() returns %v stats on non exist container", len(stats))
+	}
+}
+
+func StorageDriverTestNoSamples(driver storage.StorageDriver, t *testing.T) {
+	defer driver.Close()
+	nonExistContainer := "somerandomecontainer"
+	samples, _ := driver.Samples(nonExistContainer, -1)
+	if len(samples) > 0 {
+		t.Errorf("Samples() returns %v samples on non exist container", len(samples))
+	}
+}
+
+func StorageDriverTestPercentilesWithoutStats(driver storage.StorageDriver, t *testing.T) {
+	defer driver.Close()
+	nonExistContainer := "somerandomecontainer"
+	percentiles, _ := driver.Percentiles(nonExistContainer, []int{50, 80}, []int{50, 80})
+	if percentiles == nil {
+		return
+	}
+	if percentiles.MaxMemoryUsage != 0 {
+		t.Errorf("Percentiles() reports max memory usage > 0 when there's no stats.")
+	}
+	for _, p := range percentiles.CpuUsagePercentiles {
+		if p.Value != 0 {
+			t.Errorf("Percentiles() reports cpu usage is %v when there's no stats.", p.Value)
+		}
+	}
+	for _, p := range percentiles.MemoryUsagePercentiles {
+		if p.Value != 0 {
+			t.Errorf("Percentiles() reports memory usage is %v when there's no stats.", p.Value)
+		}
+	}
+}

@@ -183,6 +183,7 @@ func (self *InMemoryStorage) Samples(name string, numSamples int) ([]*info.Conta
 	var ok bool
 	self.lock.RLock()
 	if cstore, ok = self.containerStorageMap[name]; !ok {
+		self.lock.RUnlock()
 		return nil, fmt.Errorf("unable to find data for container %v", name)
 	}
 	self.lock.RUnlock()
@@ -195,6 +196,7 @@ func (self *InMemoryStorage) RecentStats(name string, numStats int) ([]*info.Con
 	var ok bool
 	self.lock.RLock()
 	if cstore, ok = self.containerStorageMap[name]; !ok {
+		self.lock.RUnlock()
 		return nil, fmt.Errorf("unable to find data for container %v", name)
 	}
 	self.lock.RUnlock()
@@ -207,6 +209,7 @@ func (self *InMemoryStorage) Percentiles(name string, cpuPercentiles, memPercent
 	var ok bool
 	self.lock.RLock()
 	if cstore, ok = self.containerStorageMap[name]; !ok {
+		self.lock.RUnlock()
 		return nil, fmt.Errorf("unable to find data for container %v", name)
 	}
 	self.lock.RUnlock()
