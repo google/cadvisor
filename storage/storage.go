@@ -19,11 +19,9 @@ import "github.com/google/cadvisor/info"
 type StorageDriver interface {
 	AddStats(ref info.ContainerReference, stats *info.ContainerStats) error
 
-	// Read most recent stats. The returned stats must be reverse
-	// chronological ordered. i.e. most recent comes first. numStats
-	// indicates max number of stats returned. The returned stats must be
-	// consecutive observed stats. If numStats < 0, then return all stats
-	// stored in the storage.
+	// Read most recent stats. numStats indicates max number of stats
+	// returned. The returned stats must be consecutive observed stats. If
+	// numStats < 0, then return all stats stored in the storage.
 	RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error)
 
 	// Read the specified percentiles of CPU and memory usage of the container.
