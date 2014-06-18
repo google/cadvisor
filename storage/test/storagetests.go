@@ -52,7 +52,6 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 	return ret
 }
 
-// The underlying driver must be able to hold more than 10 samples.
 func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T) {
 	defer driver.Close()
 	N := 10
@@ -170,7 +169,6 @@ func StorageDriverTestPercentilesWithoutSample(driver storage.StorageDriver, t *
 	}
 }
 
-// The driver must be able to hold more than 100 samples
 func StorageDriverTestPercentiles(driver storage.StorageDriver, t *testing.T) {
 	defer driver.Close()
 	N := 100
@@ -198,21 +196,25 @@ func StorageDriverTestPercentiles(driver storage.StorageDriver, t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, s := range percentiles.CpuUsagePercentiles {
-		// The value is out of the range of tolerance..
-		if s.Value > uint64(s.Percentage+1) || s.Value < uint64(s.Percentage-1) {
-			t.Errorf("%v percentile data should be %v, but got %v", s.Percentage, s.Percentage, s.Value)
+	for _, x := range percentiles.CpuUsagePercentiles {
+		for _, y := range percentiles.CpuUsagePercentiles {
+			// lower percentage, smaller value
+			if x.Percentage < y.Percentage && x.Value > y.Value {
+				t.Errorf("%v percent is %v; while %v percent is %v",
+					x.Percentage, x.Value, y.Percentage, y.Value)
+			}
 		}
 	}
-	for _, s := range percentiles.MemoryUsagePercentiles {
-		// The value is out of the range of tolerance..
-		if s.Value > uint64(s.Percentage+1) || s.Value < uint64(s.Percentage-1) {
-			t.Errorf("%v percentile data should be %v, but got %v", s.Percentage, s.Percentage, s.Value)
+	for _, x := range percentiles.MemoryUsagePercentiles {
+		for _, y := range percentiles.MemoryUsagePercentiles {
+			if x.Percentage < y.Percentage && x.Value > y.Value {
+				t.Errorf("%v percent is %v; while %v percent is %v",
+					x.Percentage, x.Value, y.Percentage, y.Value)
+			}
 		}
 	}
 }
 
-// The driver must be albe to hold more than 10 stats
 func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t *testing.T) {
 	defer driver.Close()
 	N := 100
@@ -238,18 +240,21 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 		t.Fatal(err)
 	}
 
-	if len(recentStats) != 10 {
+	if len(recentStats) > 10 {
 		t.Fatalf("returned %v stats, not 10.", len(recentStats))
 	}
 
-	traceIdx := len(trace) - 1
-	// Latest stats come first
-	for i := 0; i < 10; i++ {
-		r := recentStats[i]
-		s := trace[traceIdx]
-		traceIdx--
-		if !reflect.DeepEqual(s, r) {
-			t.Errorf("The %vth item should be %+v with memory usage %v; got item %+v with memory usage %v", i, s, s.Memory.Usage, r, r.Memory.Usage)
+	actualRecentStats := trace[len(trace)-len(recentStats):]
+
+	for _, r := range recentStats {
+		found := false
+		for _, s := range actualRecentStats {
+			if reflect.DeepEqual(s, r) {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("unexpected stats %+v with memory usage %v", r, r.Memory.Usage)
 		}
 	}
 }
@@ -278,13 +283,21 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(recentStats) > N {
+		t.Fatalf("returned %v stats, not 100.", len(recentStats))
+	}
 
-	traceIdx := len(trace) - 1
-	for i, r := range recentStats {
-		s := trace[traceIdx]
-		traceIdx--
-		if !reflect.DeepEqual(s, r) {
-			t.Errorf("The %vth item should be %+v with memory usage %v; got item %+v with memory usage %v", i, s, s.Memory.Usage, r, r.Memory.Usage)
+	actualRecentStats := trace[len(trace)-len(recentStats):]
+
+	for _, r := range recentStats {
+		found := false
+		for _, s := range actualRecentStats {
+			if reflect.DeepEqual(s, r) {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("unexpected stats %+v with memory usage %v", r, r.Memory.Usage)
 		}
 	}
 }
