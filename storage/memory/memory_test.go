@@ -57,3 +57,7 @@ func TestPercentiles(t *testing.T) {
 func TestRetrievePartialRecentStats(t *testing.T) {
 	runStorageTest(test.StorageDriverTestRetrievePartialRecentStats, t)
 }
+
+func TestRetrieveAllRecentStats(t *testing.T) {
+	runStorageTest(test.StorageDriverTestRetrieveAllRecentStats, t)
+}
