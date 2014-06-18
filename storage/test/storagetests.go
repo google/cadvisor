@@ -254,7 +254,6 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 	}
 }
 
-// The driver must be albe to hold more than 10 stats
 func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *testing.T) {
 	defer driver.Close()
 	N := 100
