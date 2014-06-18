@@ -51,6 +51,7 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 	return ret
 }
 
+// The underlying driver must be able to hold more than 10 samples.
 func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T) {
 	defer driver.Close()
 	N := 10
