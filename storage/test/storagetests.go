@@ -168,3 +168,44 @@ func StorageDriverTestPercentilesWithoutSample(driver storage.StorageDriver, t *
 		t.Errorf("There should be no percentiles")
 	}
 }
+
+// The driver must be able to hold more than 100 samples
+func StorageDriverTestPercentiles(driver storage.StorageDriver, t *testing.T) {
+	N := 100
+	cpuTrace := make([]uint64, N)
+	memTrace := make([]uint64, N)
+	for i := 1; i < N+1; i++ {
+		cpuTrace[i-1] = uint64(i)
+		memTrace[i-1] = uint64(i)
+	}
+
+	trace := buildTrace(cpuTrace, memTrace, 1*time.Second)
+
+	ref := info.ContainerReference{
+		Name: "container",
+	}
+	for _, stats := range trace {
+		driver.AddStats(ref, stats)
+	}
+	percentages := []int{
+		80,
+		90,
+		50,
+	}
+	percentiles, err := driver.Percentiles(ref.Name, percentages, percentages)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range percentiles.CpuUsagePercentiles {
+		// The value is out of the range of tolerance..
+		if s.Value > uint64(s.Percentage+1) || s.Value < uint64(s.Percentage-1) {
+			t.Errorf("%v percentile data should be %v, but got %v", s.Percentage, s.Percentage, s.Value)
+		}
+	}
+	for _, s := range percentiles.MemoryUsagePercentiles {
+		// The value is out of the range of tolerance..
+		if s.Value > uint64(s.Percentage+1) || s.Value < uint64(s.Percentage-1) {
+			t.Errorf("%v percentile data should be %v, but got %v", s.Percentage, s.Percentage, s.Value)
+		}
+	}
+}

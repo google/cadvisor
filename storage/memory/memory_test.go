@@ -44,6 +44,12 @@ func TestSamplesWithoutSample(t *testing.T) {
 	runStorageTest(test.StorageDriverTestSamplesWithoutSample, t)
 }
 
-func TestPercentilessWithoutSample(t *testing.T) {
+func TestPercentilesWithoutSample(t *testing.T) {
 	runStorageTest(test.StorageDriverTestPercentilesWithoutSample, t)
+}
+
+func TestPercentiles(t *testing.T) {
+	N := 100
+	driver := New(N, N)
+	test.StorageDriverTestPercentiles(driver, t)
 }
