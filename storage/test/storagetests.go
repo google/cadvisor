@@ -108,7 +108,7 @@ func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T)
 		if err != nil {
 			t.Fatalf("unable to add stats: %v", err)
 		}
-		// set the trace to someting else. The stats stored in the
+		// set the trace to something else. The stats stored in the
 		// storage should not be affected.
 		stats.Cpu.Usage.Total = 0
 		stats.Cpu.Usage.System = 0
@@ -155,7 +155,7 @@ func StorageDriverTestMaxMemoryUsage(driver storage.StorageDriver, t *testing.T)
 		if err != nil {
 			t.Fatalf("unable to add stats: %v", err)
 		}
-		// set the trace to someting else. The stats stored in the
+		// set the trace to something else. The stats stored in the
 		// storage should not be affected.
 		stats.Cpu.Usage.Total = 0
 		stats.Cpu.Usage.System = 0
