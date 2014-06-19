@@ -95,18 +95,15 @@ func (self *containerStorage) RecentStats(numStats int) ([]*info.ContainerStats,
 	if self.recentStats.Len() < numStats || numStats < 0 {
 		numStats = self.recentStats.Len()
 	}
-	ret := make([]*info.ContainerStats, 0, numStats)
+	ret := make([]*info.ContainerStats, numStats)
 	e := self.recentStats.Front()
-	for i := 0; i < numStats; i++ {
+	for i := numStats - 1; i >= 0; i-- {
 		data, ok := e.Value.(*info.ContainerStats)
 		if !ok {
 			return nil, fmt.Errorf("The %vth element is not a ContainerStats", i)
 		}
-		ret = append(ret, data)
+		ret[i] = data
 		e = e.Next()
-		if e == nil {
-			break
-		}
 	}
 	return ret, nil
 }
