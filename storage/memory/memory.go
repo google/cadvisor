@@ -95,6 +95,16 @@ func (self *containerStorage) RecentStats(numStats int) ([]*info.ContainerStats,
 	if self.recentStats.Len() < numStats || numStats < 0 {
 		numStats = self.recentStats.Len()
 	}
+
+	// Stats in the recentStats list are stored in reverse chronological
+	// order, i.e. most recent stats is in the front.
+	// numStats will always <= recentStats.Len() so that there will be
+	// always at least numStats available stats to retrieve. We traverse
+	// the recentStats list from its head and fill the ret slice in
+	// reverse order so that the returned slice will be in chronological
+	// order. The order of the returned slice is not specified by the
+	// StorageDriver interface, so it is not necessary for other storage
+	// drivers to return the slice in the same order.
 	ret := make([]*info.ContainerStats, numStats)
 	e := self.recentStats.Front()
 	for i := numStats - 1; i >= 0; i-- {
