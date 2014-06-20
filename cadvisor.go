@@ -33,6 +33,7 @@ import (
 var argPort = flag.Int("port", 8080, "port to listen")
 var argSampleSize = flag.Int("samples", 1024, "number of samples we want to keep")
 var argHistoryDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
+var argAllowLmctfy = flag.Bool("allow_lmctfy", true, "whether to allow lmctfy as a container handler")
 
 func main() {
 	flag.Parse()
@@ -44,15 +45,24 @@ func main() {
 		log.Fatalf("Failed to create a Container Manager: %s", err)
 	}
 
-	if err := lmctfy.Register("/"); err != nil {
-		log.Printf("lmctfy registration failed: %v.", err)
-		log.Print("Running in docker only mode.")
-		if err := docker.Register(containerManager, "/"); err != nil {
-			log.Printf("Docker registration failed: %v.", err)
-			log.Fatalf("Unable to continue without docker or lmctfy.")
+	// Register lmctfy for the root if allowed and available.
+	registeredRoot := false
+	if *argAllowLmctfy {
+		if err := lmctfy.Register("/"); err != nil {
+			log.Printf("lmctfy registration failed: %v.", err)
+			log.Print("Running in docker only mode.")
 		}
 	}
 
+	// Register Docker for root if we were unable to register lmctfy.
+	if !registeredRoot {
+		if err := docker.Register(containerManager, "/"); err != nil {
+			log.Printf("Docker registration failed: %v.", err)
+			log.Fatalf("Unable to continue without root handler.")
+		}
+	}
+
+	// Register Docker for all Docker containers.
 	if err := docker.Register(containerManager, "/docker"); err != nil {
 		// Ignore this error because we should work with lmctfy only
 		log.Printf("Docker registration failed: %v.", err)
