@@ -17,7 +17,7 @@ package info
 // This struct describes one type of relationship between containers: One
 // container, antagonist, interferes the performance of other
 // containers, victims.
-type Antagonism struct {
+type Interference struct {
 	// The absolute path of the atagnoism container name. This field should
 	// not be empty.
 	Antagonist string `json:"antagonist"`
@@ -27,12 +27,8 @@ type Antagonism struct {
 
 	// The detector name which detects this agtagonism. This field should
 	// not be empty.
-	Dectory string `json:"detector"`
+	Detector string `json:"detector"`
 
-	// Human readable string
+	// Human readable description of the interference
 	Description string `json:"description,omitempty"`
-}
-
-type Interference struct {
-	Antagonisms []*Antagonism `json:"antagonisms,omitempty"`
 }

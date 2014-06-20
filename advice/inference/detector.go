@@ -16,8 +16,17 @@ package inference
 
 import "github.com/google/cadvisor/info"
 
-type AntagonismDetector interface {
+// InterferenceDectector detects if there's a container which
+// interference with a set of container. The detector monitors
+// a set of container and find the victims and antagnist.
+type InterferenceDetector interface {
+	// Monitor the behavior of the container.
 	AddContainer(ref info.ContainerReference)
-	Detect() ([]*info.Antagonism, error)
+
+	// Returns a list of Interference. The upper layer may take action
+	// based on the interference.
+	Detect() ([]*info.Interference, error)
+
+	// The name of the detector.
 	Name() string
 }
