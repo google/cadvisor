@@ -18,17 +18,17 @@ package info
 // container, antagonist, interferes the performance of other
 // containers, victims.
 type Interference struct {
-	// The absolute path of the antagnoism container name. This field
+	// Absolute name of the antagonist container name. This field
 	// should not be empty.
 	Antagonist string `json:"antagonist"`
 
-	// The absolute path of victims. This field should not be empty.
+	// The absolute path of the victims. This field should not be empty.
 	Victims []string `json:"victims"`
 
 	// The name of the detector used to detect this antagonism. This field
 	// should not be empty
 	Detector string `json:"detector"`
 
-	// Human readable description of the interference
+	// Human readable description of this interference
 	Description string `json:"description,omitempty"`
 }

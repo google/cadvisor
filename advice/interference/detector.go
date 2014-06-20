@@ -17,13 +17,13 @@ package inference
 import "github.com/google/cadvisor/info"
 
 // InterferenceDectector detects if there's a container which
-// interference with a set of container. The detector monitors
-// a set of container and find the victims and antagnist.
+// interferences with a set of containers. The detector tracks
+// a set of containers and find the victims and antagonist.
 type InterferenceDetector interface {
-	// Monitor the behavior of the container.
+	// Tracks the behavior of the container.
 	AddContainer(ref info.ContainerReference)
 
-	// Returns a list of Interference. The upper layer may take action
+	// Returns a list of possible interferences. The upper layer may take action
 	// based on the interference.
 	Detect() ([]*info.Interference, error)
 
