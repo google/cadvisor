@@ -118,7 +118,7 @@ func (self *dockerContainerHandler) isDockerContainer() bool {
 }
 
 // TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
-func readLibcontainerSpec(id string) (spec *libcontainer.Container, err error) {
+func readLibcontainerSpec(id string) (spec *libcontainer.Config, err error) {
 	dir := "/var/lib/docker/execdriver/native"
 	configPath := path.Join(dir, id, "container.json")
 	f, err := os.Open(configPath)
@@ -127,7 +127,7 @@ func readLibcontainerSpec(id string) (spec *libcontainer.Container, err error) {
 	}
 	defer f.Close()
 	d := json.NewDecoder(f)
-	ret := new(libcontainer.Container)
+	ret := new(libcontainer.Config)
 	err = d.Decode(ret)
 	if err != nil {
 		return
@@ -136,7 +136,7 @@ func readLibcontainerSpec(id string) (spec *libcontainer.Container, err error) {
 	return
 }
 
-func libcontainerConfigToContainerSpec(config *libcontainer.Container, mi *info.MachineInfo) *info.ContainerSpec {
+func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.MachineInfo) *info.ContainerSpec {
 	spec := new(info.ContainerSpec)
 	spec.Memory = new(info.MemorySpec)
 	spec.Memory.Limit = math.MaxUint64
