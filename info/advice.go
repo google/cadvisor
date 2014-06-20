@@ -25,8 +25,8 @@ type Interference struct {
 	// The absolute path of victims. This field should not be empty.
 	Victims []string `json:"victims"`
 
-	// The detector name which detects this agtagonism. This field should
-	// not be empty.
+	// The name of the detector used to detect this antagonism. This field
+	// should not be empty
 	Detector string `json:"detector"`
 
 	// Human readable description of the interference
