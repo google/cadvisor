@@ -173,6 +173,9 @@ type ContainerStatsSample struct {
 	Cpu      struct {
 		// number of nanoseconds of CPU time used by the container
 		Usage uint64 `json:"usage"`
+
+		// Per-core usage of the container. (unit: nanoseconds)
+		PerCpu []uint64 `json:"per_cpu,omitempty"`
 	} `json:"cpu"`
 	Memory struct {
 		// Units: Bytes.
@@ -211,9 +214,28 @@ func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 	if current.Cpu.Usage.Total < prev.Cpu.Usage.Total {
 		return nil, fmt.Errorf("current CPU usage is less than prev CPU usage (cumulative).")
 	}
+
+	var percpu []uint64
+
+	if len(current.Cpu.Usage.PerCpu) > 0 {
+		if len(current.Cpu.Usage.PerCpu) != len(prev.Cpu.Usage.PerCpu) {
+			return nil, fmt.Errorf("current number of cores is %v; but there are %v cores in previous stats",
+				len(current.Cpu.Usage.PerCpu), len(prev.Cpu.Usage.PerCpu))
+		}
+		percpu = make([]uint64, len(current.Cpu.Usage.PerCpu))
+
+		for i, curUsage := range current.Cpu.Usage.PerCpu {
+			prevUsage := prev.Cpu.Usage.PerCpu[i]
+			if curUsage < prevUsage {
+				return nil, fmt.Errorf("current per-core CPU usage is less than prev per-core CPU usage (cumulative).")
+			}
+			percpu[i] = curUsage - prevUsage
+		}
+	}
 	sample := new(ContainerStatsSample)
 	// Calculate the diff to get the CPU usage within the time interval.
 	sample.Cpu.Usage = current.Cpu.Usage.Total - prev.Cpu.Usage.Total
+	sample.Cpu.PerCpu = percpu
 	// Memory usage is current memory usage
 	sample.Memory.Usage = current.Memory.Usage
 	sample.Timestamp = current.Timestamp
