@@ -230,3 +230,50 @@ func TestAddSampleWrongCpuUsage(t *testing.T) {
 		t.Errorf("generated an unexpected sample: %+v", sample)
 	}
 }
+
+func TestAddSampleHotPluggingCpu(t *testing.T) {
+	cpuPrevUsage := uint64(10)
+	cpuCurrentUsage := uint64(15)
+	memCurrentUsage := uint64(200)
+	prevTime := time.Now()
+
+	prev := createStats(cpuPrevUsage, memCurrentUsage, prevTime)
+	current := createStats(cpuCurrentUsage, memCurrentUsage, prevTime.Add(1*time.Second))
+	current.Cpu.Usage.PerCpu = append(current.Cpu.Usage.PerCpu, 10)
+
+	sample, err := NewSample(prev, current)
+	if err != nil {
+		t.Errorf("should be able to generate a sample. but received error: %v", err)
+	}
+	if len(sample.Cpu.PerCpuUsage) != 2 {
+		t.Fatalf("Should have 2 cores.")
+	}
+	if sample.Cpu.PerCpuUsage[0] != cpuCurrentUsage-cpuPrevUsage {
+		t.Errorf("First cpu usage is %v. should be %v", sample.Cpu.PerCpuUsage[0], cpuCurrentUsage-cpuPrevUsage)
+	}
+	if sample.Cpu.PerCpuUsage[1] != 10 {
+		t.Errorf("Second cpu usage is %v. should be 10", sample.Cpu.PerCpuUsage[1])
+	}
+}
+
+func TestAddSampleHotUnpluggingCpu(t *testing.T) {
+	cpuPrevUsage := uint64(10)
+	cpuCurrentUsage := uint64(15)
+	memCurrentUsage := uint64(200)
+	prevTime := time.Now()
+
+	prev := createStats(cpuPrevUsage, memCurrentUsage, prevTime)
+	current := createStats(cpuCurrentUsage, memCurrentUsage, prevTime.Add(1*time.Second))
+	prev.Cpu.Usage.PerCpu = append(prev.Cpu.Usage.PerCpu, 10)
+
+	sample, err := NewSample(prev, current)
+	if err != nil {
+		t.Errorf("should be able to generate a sample. but received error: %v", err)
+	}
+	if len(sample.Cpu.PerCpuUsage) != 1 {
+		t.Fatalf("Should have 1 cores.")
+	}
+	if sample.Cpu.PerCpuUsage[0] != cpuCurrentUsage-cpuPrevUsage {
+		t.Errorf("First cpu usage is %v. should be %v", sample.Cpu.PerCpuUsage[0], cpuCurrentUsage-cpuPrevUsage)
+	}
+}
