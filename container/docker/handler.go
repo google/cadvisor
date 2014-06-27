@@ -209,6 +209,12 @@ func libcontainerToContainerStats(s *cgroups.Stats, mi *info.MachineInfo) *info.
 		ret.Memory.ContainerData.Pgmajfault = v
 		ret.Memory.HierarchicalData.Pgmajfault = v
 	}
+	if v, ok := s.MemoryStats.Stats["active_anon"]; ok {
+		ret.Memory.WorkingSet = v
+		if v, ok := s.MemoryStats.Stats["active_file"]; ok {
+			ret.Memory.WorkingSet += v
+		}
+	}
 	return ret
 }
 
