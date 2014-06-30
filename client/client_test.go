@@ -103,7 +103,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -133,7 +133,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -163,7 +163,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -193,7 +193,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -223,7 +223,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -253,7 +253,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -283,7 +283,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -313,7 +313,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -343,7 +343,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -373,7 +373,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -403,7 +403,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -433,7 +433,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -463,7 +463,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -493,7 +493,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
@@ -523,7 +523,7 @@ func TestGetContainerInfo(t *testing.T) {
       "cpu": {
         "usage": {
           "total": 56896502,
-          "per_cpu": [
+          "per_cpu_usage": [
             20479682,
             13579420,
             6025040,
