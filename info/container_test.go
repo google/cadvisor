@@ -15,6 +15,7 @@
 package info
 
 import (
+	"reflect"
 	"testing"
 	"time"
 )
@@ -275,5 +276,23 @@ func TestAddSampleHotUnpluggingCpu(t *testing.T) {
 	}
 	if sample.Cpu.PerCpuUsage[0] != cpuCurrentUsage-cpuPrevUsage {
 		t.Errorf("First cpu usage is %v. should be %v", sample.Cpu.PerCpuUsage[0], cpuCurrentUsage-cpuPrevUsage)
+	}
+}
+
+func TestContainerStatsCopy(t *testing.T) {
+	stats := createStats(100, 101, time.Now())
+	shadowStats := stats.Copy(nil)
+	if !reflect.DeepEqual(stats, shadowStats) {
+		t.Errorf("Copy() returned different object")
+	}
+	stats.Cpu.Usage.PerCpu[0] = shadowStats.Cpu.Usage.PerCpu[0] + 1
+	stats.Cpu.Load = shadowStats.Cpu.Load + 1
+	stats.Memory.Usage = shadowStats.Memory.Usage + 1
+	if reflect.DeepEqual(stats, shadowStats) {
+		t.Errorf("Copy() did not deeply copied the object")
+	}
+	stats = shadowStats.Copy(stats)
+	if !reflect.DeepEqual(stats, shadowStats) {
+		t.Errorf("Copy() returned different object")
 	}
 }
