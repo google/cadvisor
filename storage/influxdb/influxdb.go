@@ -70,56 +70,56 @@ func (self *influxdbStorage) containerStatsToValues(
 ) (columns []string, values []interface{}) {
 
 	// Timestamp
-	columns = append(columns, "timestamp")
+	columns = append(columns, colTimestamp)
 	values = append(values, stats.Timestamp.Format(time.RFC3339Nano))
 
 	// Machine name
-	columns = append(columns, "machine")
+	columns = append(columns, colMachineName)
 	values = append(values, self.machineName)
 
 	// Container name
-	columns = append(columns, "container_name")
+	columns = append(columns, colContainerName)
 	values = append(values, ref.Name)
 
 	// Cumulative Cpu Usage
-	columns = append(columns, "cpu_cumulative_usage")
+	columns = append(columns, colCpuCumulativeUsage)
 	values = append(values, stats.Cpu.Usage.Total)
 
 	// Cumulative Cpu Usage in system mode
-	columns = append(columns, "cpu_cumulative_usage_system")
+	columns = append(columns, colCpuCumulativeUsageSystem)
 	values = append(values, stats.Cpu.Usage.System)
 
 	// Cumulative Cpu Usage in user mode
-	columns = append(columns, "cpu_cumulative_usage_user")
+	columns = append(columns, colCpuCumulativeUsageUser)
 	values = append(values, stats.Cpu.Usage.User)
 
 	// Memory Usage
-	columns = append(columns, "memory_usage")
+	columns = append(columns, colMemoryUsage)
 	values = append(values, stats.Memory.Usage)
 
 	// Working set size
-	columns = append(columns, "memory_working_set")
+	columns = append(columns, colMemoryWorkingSet)
 	values = append(values, stats.Memory.WorkingSet)
 
 	// container page fault
-	columns = append(columns, "memory_container_pgfault")
+	columns = append(columns, colMemoryContainerPgfault)
 	values = append(values, stats.Memory.ContainerData.Pgfault)
 
 	// container major page fault
-	columns = append(columns, "memory_container_pgmajfault")
+	columns = append(columns, colMemoryContainerPgmajfault)
 	values = append(values, stats.Memory.ContainerData.Pgmajfault)
 
 	// hierarchical page fault
-	columns = append(columns, "memory_hierarchical_pgfault")
+	columns = append(columns, colMemoryHierarchicalPgfault)
 	values = append(values, stats.Memory.HierarchicalData.Pgfault)
 
 	// hierarchical major page fault
-	columns = append(columns, "memory_hierarchical_pgmajfault")
+	columns = append(columns, colMemoryHierarchicalPgmajfault)
 	values = append(values, stats.Memory.HierarchicalData.Pgmajfault)
 
 	// per cpu cumulative usage
 	for i, u := range stats.Cpu.Usage.PerCpu {
-		columns = append(columns, fmt.Sprintf("per_core_cumulative_usage_core_%v", i))
+		columns = append(columns, fmt.Sprintf("%v%v", colPerCoreCumulativeUsagePrefix, i))
 		values = append(values, u)
 	}
 
@@ -129,16 +129,16 @@ func (self *influxdbStorage) containerStatsToValues(
 	}
 
 	// Optional: sample duration. Unit: Nanosecond.
-	columns = append(columns, "sample_duration")
+	columns = append(columns, colSampleDuration)
 	values = append(values, sample.Duration.String())
 
 	// Optional: Instant cpu usage
-	columns = append(columns, "cpu_instant_usage")
+	columns = append(columns, colCpuInstantUsage)
 	values = append(values, sample.Cpu.Usage)
 
 	// Optional: Instant per core usage
 	for i, u := range sample.Cpu.PerCpuUsage {
-		columns = append(columns, fmt.Sprintf("per_core_instant_usage_core_%v", i))
+		columns = append(columns, fmt.Sprintf("%v%v", colPerCoreInstantUsagePrefix, i))
 		values = append(values, u)
 	}
 
@@ -187,47 +187,44 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 	var err error
 	for i, col := range columns {
 		v := values[i]
-		switch col {
-		case "timestamp":
+		switch {
+		case col == colTimestamp:
 			if str, ok := v.(string); ok {
 				stats.Timestamp, err = time.Parse(time.RFC3339Nano, str)
 			}
-		case "machine":
+		case col == colMachineName:
 			if v.(string) != self.machineName {
 				return nil, fmt.Errorf("different machine")
 			}
 		// Cumulative Cpu Usage
-		case "cpu_cumulative_usage":
+		case col == colCpuCumulativeUsage:
 			stats.Cpu.Usage.Total, err = convertToUint64(v)
 		// Cumulative Cpu used by the system
-		case "cpu_cumulative_usage_system":
+		case col == colCpuCumulativeUsageSystem:
 			stats.Cpu.Usage.System, err = convertToUint64(v)
 		// Cumulative Cpu Usage in user mode
-		case "cpu_cumulative_usage_user":
+		case col == colCpuCumulativeUsageUser:
 			stats.Cpu.Usage.User, err = convertToUint64(v)
 		// Memory Usage
-		case "memory_usage":
+		case col == colMemoryUsage:
 			stats.Memory.Usage, err = convertToUint64(v)
 		// Working set size
-		case "memory_working_set":
+		case col == colMemoryWorkingSet:
 			stats.Memory.WorkingSet, err = convertToUint64(v)
 		// container page fault
-		case "memory_container_pgfault":
+		case col == colMemoryContainerPgfault:
 			stats.Memory.ContainerData.Pgfault, err = convertToUint64(v)
 		// container major page fault
-		case "memory_container_pgmajfault":
+		case col == colMemoryContainerPgmajfault:
 			stats.Memory.ContainerData.Pgmajfault, err = convertToUint64(v)
 		// hierarchical page fault
-		case "memory_hierarchical_pgfault":
+		case col == colMemoryHierarchicalPgfault:
 			stats.Memory.HierarchicalData.Pgfault, err = convertToUint64(v)
 		// hierarchical major page fault
-		case "memory_hierarchical_pgmajfault":
+		case col == colMemoryHierarchicalPgmajfault:
 			stats.Memory.HierarchicalData.Pgmajfault, err = convertToUint64(v)
-		default:
-			if !strings.HasPrefix(col, "per_core_cumulative_usage_core_") {
-				continue
-			}
-			idxStr := col[len("per_core_cumulative_usage_core_"):]
+		case strings.HasPrefix(col, colPerCoreCumulativeUsagePrefix):
+			idxStr := col[len(colPerCoreCumulativeUsagePrefix):]
 			idx, err := strconv.Atoi(idxStr)
 			if err != nil {
 				continue
@@ -252,29 +249,29 @@ func (self *influxdbStorage) valuesToContainerSample(columns []string, values []
 	for i, col := range columns {
 		v := values[i]
 		switch {
-		case col == "timestamp":
+		case col == colTimestamp:
 			if str, ok := v.(string); ok {
 				sample.Timestamp, err = time.Parse(time.RFC3339Nano, str)
 			}
-		case col == "machine":
+		case col == colMachineName:
 			if v.(string) != self.machineName {
 				return nil, fmt.Errorf("different machine")
 			}
 		// Memory Usage
-		case col == "memory_usage":
+		case col == colMemoryUsage:
 			sample.Memory.Usage, err = convertToUint64(v)
 		// sample duration. Unit: Nanosecond.
-		case col == "sample_duration":
+		case col == colSampleDuration:
 			if v == nil {
 				// this record does not have sample_duration, so it's the first stats.
 				return nil, nil
 			}
 			sample.Duration, err = time.ParseDuration(v.(string))
 		// Instant cpu usage
-		case col == "cpu_instant_usage":
+		case col == colCpuInstantUsage:
 			sample.Cpu.Usage, err = convertToUint64(v)
-		case strings.HasPrefix(col, "per_core_instant_usage_core_"):
-			idxStr := col[len("per_core_instant_usage_core_"):]
+		case strings.HasPrefix(col, colPerCoreInstantUsagePrefix):
+			idxStr := col[len(colPerCoreInstantUsagePrefix):]
 			idx, err := strconv.Atoi(idxStr)
 			if err != nil {
 				continue
@@ -317,7 +314,7 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
 	// TODO(dengnan): select only columns that we need
 	// TODO(dengnan): escape containerName
-	query := fmt.Sprintf("select * from %v where container_name='%v' and machine='%v'", self.tableName, containerName, self.machineName)
+	query := fmt.Sprintf("select * from %v where %v='%v' and %v='%v'", self.tableName, colContainerName, containerName, colMachineName, self.machineName)
 	if numStats > 0 {
 		query = fmt.Sprintf("%v limit %v", query, numStats)
 	}
@@ -344,7 +341,7 @@ func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]
 func (self *influxdbStorage) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
 	// TODO(dengnan): select only columns that we need
 	// TODO(dengnan): escape containerName
-	query := fmt.Sprintf("select * from %v where container_name='%v' and machine='%v'", self.tableName, containerName, self.machineName)
+	query := fmt.Sprintf("select * from %v where %v='%v' and %v='%v'", self.tableName, colContainerName, containerName, colMachineName, self.machineName)
 	if numSamples > 0 {
 		query = fmt.Sprintf("%v limit %v", query, numSamples)
 	}
@@ -381,18 +378,20 @@ func (self *influxdbStorage) Percentiles(
 	// TODO(dengnan): Implement it
 	selectedCol := make([]string, 0, len(cpuUsagePercentiles)+len(memUsagePercentiles)+1)
 
-	selectedCol = append(selectedCol, "max(memory_usage)")
+	selectedCol = append(selectedCol, fmt.Sprintf("max(%v)", colMemoryUsage))
 	for _, p := range cpuUsagePercentiles {
-		selectedCol = append(selectedCol, fmt.Sprintf("percentile(cpu_instant_usage, %v)", p))
+		selectedCol = append(selectedCol, fmt.Sprintf("percentile(%v, %v)", colCpuInstantUsage, p))
 	}
 	for _, p := range memUsagePercentiles {
-		selectedCol = append(selectedCol, fmt.Sprintf("percentile(memory_usage, %v)", p))
+		selectedCol = append(selectedCol, fmt.Sprintf("percentile(%v, %v)", colMemoryUsage, p))
 	}
 
-	query := fmt.Sprintf("select %v from %v where container_name='%v' and machine='%v' and time > now() - %v",
+	query := fmt.Sprintf("select %v from %v where %v='%v' and %v='%v' and time > now() - %v",
 		strings.Join(selectedCol, ","),
 		self.tableName,
+		colContainerName,
 		containerName,
+		colMachineName,
 		self.machineName,
 		fmt.Sprintf("%vs", self.windowLen.Seconds()),
 	)
