@@ -165,7 +165,7 @@ type ContainerStats struct {
 	Memory    *MemoryStats `json:"memory,omitempty"`
 }
 
-// Makes a deep copy of the ContainerStats and returns the pointer to the new
+// Makes a deep copy of the ContainerStats and returns a pointer to the new
 // copy. Copy() will allocate a new ContainerStats object if dst is nil.
 func (self *ContainerStats) Copy(dst *ContainerStats) *ContainerStats {
 	if dst == nil {
