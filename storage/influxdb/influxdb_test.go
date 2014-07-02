@@ -69,3 +69,23 @@ func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 func TestSampleCpuUsage(t *testing.T) {
 	runStorageTest(test.StorageDriverTestSampleCpuUsage, t)
 }
+
+func TestRetrievePartialRecentStats(t *testing.T) {
+	runStorageTest(test.StorageDriverTestRetrievePartialRecentStats, t)
+}
+
+func TestSamplesWithoutSample(t *testing.T) {
+	runStorageTest(test.StorageDriverTestSamplesWithoutSample, t)
+}
+
+func TestRetrieveAllRecentStats(t *testing.T) {
+	runStorageTest(test.StorageDriverTestRetrieveAllRecentStats, t)
+}
+
+func TestNoRecentStats(t *testing.T) {
+	runStorageTest(test.StorageDriverTestNoRecentStats, t)
+}
+
+func TestNoSamples(t *testing.T) {
+	runStorageTest(test.StorageDriverTestNoSamples, t)
+}
