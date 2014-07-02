@@ -41,27 +41,7 @@ func (self *containerStorage) updatePrevStats(stats *info.ContainerStats) {
 		self.prevStats = nil
 		return
 	}
-	if self.prevStats == nil {
-		self.prevStats = &info.ContainerStats{
-			Cpu:    &info.CpuStats{},
-			Memory: &info.MemoryStats{},
-		}
-	}
-	// make a deep copy.
-	self.prevStats.Timestamp = stats.Timestamp
-	// copy the slice first.
-	percpuSlice := self.prevStats.Cpu.Usage.PerCpu
-	*self.prevStats.Cpu = *stats.Cpu
-	// If the old slice is enough to hold the new data, then don't allocate
-	// a new slice.
-	if len(percpuSlice) != len(stats.Cpu.Usage.PerCpu) {
-		percpuSlice = make([]uint64, len(stats.Cpu.Usage.PerCpu))
-	}
-	for i, perCpu := range stats.Cpu.Usage.PerCpu {
-		percpuSlice[i] = perCpu
-	}
-	self.prevStats.Cpu.Usage.PerCpu = percpuSlice
-	*self.prevStats.Memory = *stats.Memory
+	self.prevStats = stats.Copy(self.prevStats)
 }
 
 func (self *containerStorage) AddStats(stats *info.ContainerStats) error {

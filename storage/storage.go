@@ -31,7 +31,7 @@ type StorageDriver interface {
 	// Returns samples of the container stats. If numSamples < 0, then
 	// the number of returned samples is implementation defined. Otherwise, the driver
 	// should return at most numSamples samples.
-	Samples(containername string, numSamples int) ([]*info.ContainerStatsSample, error)
+	Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error)
 
 	// Close will clear the state of the storage driver. The elements
 	// stored in the underlying storage may or may not be deleted depending
