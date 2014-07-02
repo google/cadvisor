@@ -289,7 +289,7 @@ func TestContainerStatsCopy(t *testing.T) {
 	stats.Cpu.Load = shadowStats.Cpu.Load + 1
 	stats.Memory.Usage = shadowStats.Memory.Usage + 1
 	if reflect.DeepEqual(stats, shadowStats) {
-		t.Errorf("Copy() did not deeply copied the object")
+		t.Errorf("Copy() did not deeply copy the object")
 	}
 	stats = shadowStats.Copy(stats)
 	if !reflect.DeepEqual(stats, shadowStats) {

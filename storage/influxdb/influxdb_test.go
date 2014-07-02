@@ -106,3 +106,19 @@ func TestNoRecentStats(t *testing.T) {
 func TestNoSamples(t *testing.T) {
 	runStorageTest(test.StorageDriverTestNoSamples, t)
 }
+
+func TestPercentiles(t *testing.T) {
+	runStorageTest(test.StorageDriverTestPercentiles, t)
+}
+
+func TestMaxMemoryUsage(t *testing.T) {
+	runStorageTest(test.StorageDriverTestMaxMemoryUsage, t)
+}
+
+func TestPercentilesWithoutSample(t *testing.T) {
+	runStorageTest(test.StorageDriverTestPercentilesWithoutSample, t)
+}
+
+func TestPercentilesWithoutStats(t *testing.T) {
+	runStorageTest(test.StorageDriverTestPercentilesWithoutStats, t)
+}
