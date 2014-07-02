@@ -16,6 +16,7 @@ package influxdb
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -25,7 +26,8 @@ import (
 )
 
 func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
-	machineName := "mymachine"
+	// randomly generate a machine name to mimic multi-machine senario.
+	machineName := fmt.Sprintf("machine-%v-%v", time.Now(), rand.Int63())
 	tablename := "t"
 	database := "cadvisor"
 	username := "root"
@@ -63,29 +65,39 @@ func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer driver.Close()
+	// generate another container's data on same machine.
+	test.StorageDriverFillRandomStatsFunc("containerOnSameMachine", 100)(driver, t)
 	f(driver, t)
 }
 
 func TestSampleCpuUsage(t *testing.T) {
+	// we generates more than one container's data.
+	runStorageTest(test.StorageDriverFillRandomStatsFunc("otherContainer", 100), t)
 	runStorageTest(test.StorageDriverTestSampleCpuUsage, t)
 }
 
 func TestRetrievePartialRecentStats(t *testing.T) {
+	runStorageTest(test.StorageDriverFillRandomStatsFunc("otherContainer", 100), t)
 	runStorageTest(test.StorageDriverTestRetrievePartialRecentStats, t)
 }
 
 func TestSamplesWithoutSample(t *testing.T) {
+	runStorageTest(test.StorageDriverFillRandomStatsFunc("otherContainer", 100), t)
 	runStorageTest(test.StorageDriverTestSamplesWithoutSample, t)
 }
 
 func TestRetrieveAllRecentStats(t *testing.T) {
+	runStorageTest(test.StorageDriverFillRandomStatsFunc("otherContainer", 100), t)
 	runStorageTest(test.StorageDriverTestRetrieveAllRecentStats, t)
 }
 
 func TestNoRecentStats(t *testing.T) {
+	runStorageTest(test.StorageDriverFillRandomStatsFunc("otherContainer", 100), t)
 	runStorageTest(test.StorageDriverTestNoRecentStats, t)
 }
 
 func TestNoSamples(t *testing.T) {
+	runStorageTest(test.StorageDriverFillRandomStatsFunc("otherContainer", 100), t)
 	runStorageTest(test.StorageDriverTestNoSamples, t)
 }
