@@ -321,7 +321,7 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 
 func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
 	// TODO(dengnan): select only columns that we need
-	// TODO(dengnan): escape containerName
+	// TODO(dengnan): escape names
 	query := fmt.Sprintf("select * from %v where %v='%v' and %v='%v'", self.tableName, colContainerName, containerName, colMachineName, self.machineName)
 	if numStats > 0 {
 		query = fmt.Sprintf("%v limit %v", query, numStats)
@@ -348,7 +348,7 @@ func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]
 
 func (self *influxdbStorage) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
 	// TODO(dengnan): select only columns that we need
-	// TODO(dengnan): escape containerName
+	// TODO(dengnan): escape names
 	query := fmt.Sprintf("select * from %v where %v='%v' and %v='%v'", self.tableName, colContainerName, containerName, colMachineName, self.machineName)
 	if numSamples > 0 {
 		query = fmt.Sprintf("%v limit %v", query, numSamples)
@@ -383,7 +383,6 @@ func (self *influxdbStorage) Percentiles(
 	cpuUsagePercentiles []int,
 	memUsagePercentiles []int,
 ) (*info.ContainerStatsPercentiles, error) {
-	// TODO(dengnan): Implement it
 	selectedCol := make([]string, 0, len(cpuUsagePercentiles)+len(memUsagePercentiles)+1)
 
 	selectedCol = append(selectedCol, fmt.Sprintf("max(%v)", colMemoryUsage))
