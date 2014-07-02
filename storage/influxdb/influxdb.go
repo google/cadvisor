@@ -54,8 +54,8 @@ func (self *influxdbStorage) containerStatsToValues(
 	columns = append(columns, "cpu_cumulative_usage")
 	values = append(values, stats.Cpu.Usage.Total)
 
-	// Cumulative Cpu Usage in kernel mode
-	columns = append(columns, "cpu_cumulative_usage_kernel")
+	// Cumulative Cpu Usage in system mode
+	columns = append(columns, "cpu_cumulative_usage_system")
 	values = append(values, stats.Cpu.Usage.System)
 
 	// Cumulative Cpu Usage in user mode
@@ -168,8 +168,8 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 		// Cumulative Cpu Usage
 		case "cpu_cumulative_usage":
 			stats.Cpu.Usage.Total, err = convertToUint64(v)
-		// Cumulative Cpu Usage in kernel mode
-		case "cpu_cumulative_usage_kernel":
+		// Cumulative Cpu used by the system
+		case "cpu_cumulative_usage_system":
 			stats.Cpu.Usage.System, err = convertToUint64(v)
 		// Cumulative Cpu Usage in user mode
 		case "cpu_cumulative_usage_user":
@@ -273,6 +273,9 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 		Name: self.tableName,
 		// There's only one point for each stats
 		Points: make([][]interface{}, 1),
+	}
+	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
+		return nil
 	}
 	series.Columns, series.Points[0] = self.containerStatsToValues(ref, stats)
 
