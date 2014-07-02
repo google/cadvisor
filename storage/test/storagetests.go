@@ -83,36 +83,35 @@ func samplesInTrace(samples []*info.ContainerStatsSample, cpuTrace, memTrace []u
 	}
 }
 
-// This function returns a function that will generate random stats and write
-// them into the storage. The returned function will not close the driver of
-// the call, which could be served as a building block to do other works
+// This function will generate random stats and write
+// them into the storage. The function will not close the driver
 func StorageDriverFillRandomStatsFunc(
 	containerName string,
 	N int,
-) func(driver storage.StorageDriver, t *testing.T) {
-	return func(driver storage.StorageDriver, t *testing.T) {
-		cpuTrace := make([]uint64, 0, N)
-		memTrace := make([]uint64, 0, N)
+	driver storage.StorageDriver,
+	t *testing.T,
+) {
+	cpuTrace := make([]uint64, 0, N)
+	memTrace := make([]uint64, 0, N)
 
-		// We need N+1 observations to get N samples
-		for i := 0; i < N+1; i++ {
-			cpuTrace = append(cpuTrace, uint64(rand.Intn(1000)))
-			memTrace = append(memTrace, uint64(rand.Intn(1000)))
-		}
+	// We need N+1 observations to get N samples
+	for i := 0; i < N+1; i++ {
+		cpuTrace = append(cpuTrace, uint64(rand.Intn(1000)))
+		memTrace = append(memTrace, uint64(rand.Intn(1000)))
+	}
 
-		samplePeriod := 1 * time.Second
+	samplePeriod := 1 * time.Second
 
-		ref := info.ContainerReference{
-			Name: containerName,
-		}
+	ref := info.ContainerReference{
+		Name: containerName,
+	}
 
-		trace := buildTrace(cpuTrace, memTrace, samplePeriod)
+	trace := buildTrace(cpuTrace, memTrace, samplePeriod)
 
-		for _, stats := range trace {
-			err := driver.AddStats(ref, stats)
-			if err != nil {
-				t.Fatalf("unable to add stats: %v", err)
-			}
+	for _, stats := range trace {
+		err := driver.AddStats(ref, stats)
+		if err != nil {
+			t.Fatalf("unable to add stats: %v", err)
 		}
 	}
 }

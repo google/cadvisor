@@ -25,8 +25,7 @@ import (
 )
 
 func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
-	// randomly generate a machine name to mimic multi-machine senario.
-	machineName := "machine-A"
+	machineName := "machineA"
 	tablename := "t"
 	database := "cadvisor"
 	username := "root"
@@ -65,7 +64,7 @@ func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 		t.Fatal(err)
 	}
 	// generate another container's data on same machine.
-	test.StorageDriverFillRandomStatsFunc("containerOnSameMachine", 100)(driver, t)
+	test.StorageDriverFillRandomStatsFunc("containerOnSameMachine", 100, driver, t)
 
 	// generate another container's data on another machine.
 	driverForAnotherMachine, err := New("machineB",
@@ -80,7 +79,7 @@ func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 		t.Fatal(err)
 	}
 	defer driverForAnotherMachine.Close()
-	test.StorageDriverFillRandomStatsFunc("containerOnAnotherMachine", 100)(driverForAnotherMachine, t)
+	test.StorageDriverFillRandomStatsFunc("containerOnAnotherMachine", 100, driverForAnotherMachine, t)
 	f(driver, t)
 }
 
@@ -105,6 +104,5 @@ func TestNoRecentStats(t *testing.T) {
 }
 
 func TestNoSamples(t *testing.T) {
-	runStorageTest(test.StorageDriverFillRandomStatsFunc("otherContainer", 100), t)
 	runStorageTest(test.StorageDriverTestNoSamples, t)
 }
