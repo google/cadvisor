@@ -26,7 +26,7 @@ import (
 
 func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 	machineName := "mymachine"
-	tablename := "cadivsorTable"
+	tablename := "t"
 	database := "cadvisor"
 	username := "root"
 	password := "root"
