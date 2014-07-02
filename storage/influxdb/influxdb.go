@@ -23,7 +23,6 @@ import (
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
 	"github.com/influxdb/influxdb-go"
-	"github.com/kr/pretty"
 )
 
 type influxdbStorage struct {
@@ -221,7 +220,6 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 	series.Columns, series.Points[0] = self.containerStatsToValues(ref, stats)
 
 	self.prevStats = stats.Copy(self.prevStats)
-	pretty.Printf("% #v", series)
 	err := self.client.WriteSeries([]*influxdb.Series{series})
 	if err != nil {
 		return err
@@ -232,7 +230,10 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
 	// TODO(dengnan): select only columns that we need
 	// TODO(dengnan): escape containerName
-	query := fmt.Sprintf("select * from %v limit %v where container_path=\"%v\"", self.tableName, numStats, containerName)
+	query := fmt.Sprintf("select * from %v where container_path=\"%v\"", self.tableName, containerName)
+	if numStats > 0 {
+		query = fmt.Sprintf("%v limit %v", query, numStats)
+	}
 	series, err := self.client.Query(query)
 	if err != nil {
 		return nil, err
@@ -248,7 +249,12 @@ func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]
 }
 
 func (self *influxdbStorage) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	query := fmt.Sprintf("select * from %v limit %v where container_path=\"%v\"", self.tableName, numSamples, containerName)
+	// TODO(dengnan): select only columns that we need
+	// TODO(dengnan): escape containerName
+	query := fmt.Sprintf("select * from %v where container_path=\"%v\"", self.tableName, containerName)
+	if numSamples > 0 {
+		query = fmt.Sprintf("%v limit %v", query, numSamples)
+	}
 	series, err := self.client.Query(query)
 	if err != nil {
 		return nil, err
@@ -287,6 +293,7 @@ func New(machineName,
 	username,
 	password,
 	hostname string,
+	isSecure bool,
 	percentilesDuration time.Duration,
 ) (storage.StorageDriver, error) {
 	config := &influxdb.ClientConfig{
@@ -294,12 +301,14 @@ func New(machineName,
 		Username: username,
 		Password: password,
 		Database: database,
-		// IsSecure: true,
+		IsSecure: isSecure,
 	}
 	client, err := influxdb.NewClient(config)
 	if err != nil {
 		return nil, err
 	}
+	// TODO(monnand): With go 1.3, we cannot compress data now.
+	client.DisableCompression()
 	if percentilesDuration.Seconds() < 1.0 {
 		percentilesDuration = 5 * time.Minute
 	}
@@ -308,6 +317,7 @@ func New(machineName,
 		client:      client,
 		windowLen:   percentilesDuration,
 		machineName: machineName,
+		tableName:   tablename,
 	}
 	return ret, nil
 }

@@ -37,33 +37,20 @@ func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 		Username: username,
 		Password: password,
 		Database: database,
-		// IsSecure: true,
+		IsSecure: false,
 	}
 	client, err := influxdb.NewClient(config)
 	if err != nil {
 		t.Fatal(err)
 	}
+	client.DisableCompression()
 	deleteAll := fmt.Sprintf("drop series %v", tablename)
 	_, err = client.Query(deleteAll)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// delete all data by the end of the call
-	defer client.Query(deleteAll)
-
-	/*
-		series := &influxdb.Series{
-			Name:    tablename,
-			Columns: []string{"col1"},
-			Points: [][]interface{}{
-				[]interface{}{1},
-			},
-		}
-		err = client.WriteSeries([]*influxdb.Series{series})
-		if err != nil {
-			t.Fatal(err)
-		}
-	*/
+	// defer client.Query(deleteAll)
 
 	driver, err := New(machineName,
 		tablename,
@@ -71,6 +58,7 @@ func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 		username,
 		password,
 		hostname,
+		false,
 		percentilesDuration)
 	if err != nil {
 		t.Fatal(err)
@@ -78,6 +66,6 @@ func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 	f(driver, t)
 }
 
-func TestMaxMemoryUsage(t *testing.T) {
-	runStorageTest(test.StorageDriverTestMaxMemoryUsage, t)
+func TestSampleCpuUsage(t *testing.T) {
+	runStorageTest(test.StorageDriverTestSampleCpuUsage, t)
 }
