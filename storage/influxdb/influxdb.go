@@ -193,8 +193,12 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 				stats.Timestamp, err = time.Parse(time.RFC3339Nano, str)
 			}
 		case col == colMachineName:
-			if v.(string) != self.machineName {
-				return nil, fmt.Errorf("different machine")
+			if m, ok := v.(string); ok {
+				if m != self.machineName {
+					return nil, fmt.Errorf("different machine")
+				}
+			} else {
+				return nil, fmt.Errorf("machine name field is not a string: %v", v)
 			}
 		// Cumulative Cpu Usage
 		case col == colCpuCumulativeUsage:
@@ -254,8 +258,12 @@ func (self *influxdbStorage) valuesToContainerSample(columns []string, values []
 				sample.Timestamp, err = time.Parse(time.RFC3339Nano, str)
 			}
 		case col == colMachineName:
-			if v.(string) != self.machineName {
-				return nil, fmt.Errorf("different machine")
+			if m, ok := v.(string); ok {
+				if m != self.machineName {
+					return nil, fmt.Errorf("different machine")
+				}
+			} else {
+				return nil, fmt.Errorf("machine name field is not a string: %v", v)
 			}
 		// Memory Usage
 		case col == colMemoryUsage:
