@@ -153,6 +153,9 @@ func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T)
 	if err != nil {
 		t.Errorf("unable to sample stats: %v", err)
 	}
+	if len(samples) == 0 {
+		t.Fatal("should at least store one sample")
+	}
 	samplesInTrace(samples, cpuTrace, memTrace, samplePeriod, t)
 
 	samples, err = driver.Samples(ref.Name, -1)
@@ -319,6 +322,9 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(recentStats) == 0 {
+		t.Fatal("should at least store one stats")
+	}
 
 	if len(recentStats) > 10 {
 		t.Fatalf("returned %v stats, not 10.", len(recentStats))
@@ -362,6 +368,9 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 	recentStats, err := driver.RecentStats(ref.Name, -1)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if len(recentStats) == 0 {
+		t.Fatal("should at least store one stats")
 	}
 	if len(recentStats) > N {
 		t.Fatalf("returned %v stats, not 100.", len(recentStats))
