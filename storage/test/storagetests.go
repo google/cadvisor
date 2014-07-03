@@ -53,6 +53,67 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 	return ret
 }
 
+func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {
+	// t1 should not be later than t2
+	if t1.After(t2) {
+		t1, t2 = t2, t1
+	}
+	diff := t2.Sub(t1)
+	if diff < tolerance {
+		return true
+	}
+	return false
+}
+
+func durationEq(a, b time.Duration, tolerance time.Duration) bool {
+	if a > b {
+		a, b = b, a
+	}
+	diff := a - b
+	if diff < tolerance {
+		return true
+	}
+	return false
+}
+
+const (
+	// 10ms, i.e. 0.01s
+	timePrecision time.Duration = 10000000
+)
+
+// This function is useful because we do not require precise time
+// representation.
+func statsEq(a, b *info.ContainerStats) bool {
+	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	return true
+}
+
+// This function is useful because we do not require precise time
+// representation.
+func sampleEq(a, b *info.ContainerStatsSample) bool {
+	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+		return false
+	}
+	if !durationEq(a.Duration, b.Duration, timePrecision) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	return true
+}
+
 func samplesInTrace(samples []*info.ContainerStatsSample, cpuTrace, memTrace []uint64, samplePeriod time.Duration, t *testing.T) {
 	for _, sample := range samples {
 		if sample.Duration != samplePeriod {
@@ -334,7 +395,7 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 	for _, r := range recentStats {
 		found := false
 		for _, s := range actualRecentStats {
-			if reflect.DeepEqual(s, r) {
+			if statsEq(s, r) {
 				found = true
 			}
 		}
@@ -380,7 +441,7 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 	for _, r := range recentStats {
 		found := false
 		for _, s := range actualRecentStats {
-			if reflect.DeepEqual(s, r) {
+			if statsEq(s, r) {
 				found = true
 			}
 		}

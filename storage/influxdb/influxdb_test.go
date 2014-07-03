@@ -32,6 +32,18 @@ func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
 	password := "root"
 	hostname := "localhost:8086"
 	percentilesDuration := 10 * time.Minute
+	rootConfig := &influxdb.ClientConfig{
+		Host:     hostname,
+		Username: username,
+		Password: password,
+		IsSecure: false,
+	}
+	rootClient, err := influxdb.NewClient(rootConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// create the data base first.
+	rootClient.CreateDatabase(database)
 	config := &influxdb.ClientConfig{
 		Host:     hostname,
 		Username: username,
