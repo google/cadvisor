@@ -56,17 +56,17 @@ func (self *MockContainerHandler) GetStats() (*info.ContainerStats, error) {
 }
 
 func (self *MockContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	args := self.Called()
+	args := self.Called(listType)
 	return args.Get(0).([]info.ContainerReference), args.Error(1)
 }
 
 func (self *MockContainerHandler) ListThreads(listType container.ListType) ([]int, error) {
-	args := self.Called()
+	args := self.Called(listType)
 	return args.Get(0).([]int), args.Error(1)
 }
 
 func (self *MockContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	args := self.Called()
+	args := self.Called(listType)
 	return args.Get(0).([]int), args.Error(1)
 }
 
