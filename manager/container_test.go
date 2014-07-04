@@ -18,6 +18,7 @@ package manager
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -133,4 +134,85 @@ func TestContainerUpdateStats(t *testing.T) {
 	}
 
 	handler.AssertExpectations(t)
+}
+
+func TestContainerUpdateSpec(t *testing.T) {
+	var handler *ctest.MockContainerHandler
+	spec := itest.GenerateRandomContainerSpec(4)
+	cd := createContainerDataAndSetHandler(
+		nil,
+		func(h *ctest.MockContainerHandler) {
+			h.On("GetSpec").Return(
+				spec,
+				nil,
+			)
+			handler = h
+		},
+		t,
+	)
+
+	err := cd.updateSpec()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler.AssertExpectations(t)
+}
+
+func TestContainerGetInfo(t *testing.T) {
+	var handler *ctest.MockContainerHandler
+	spec := itest.GenerateRandomContainerSpec(4)
+	subcontainers := []info.ContainerReference{
+		{Name: "/container/ee0103"},
+		{Name: "/container/abcd"},
+		{Name: "/container/something"},
+	}
+	aliases := []string{"a1", "a2"}
+	cd := createContainerDataAndSetHandler(
+		nil,
+		func(h *ctest.MockContainerHandler) {
+			h.On("GetSpec").Return(
+				spec,
+				nil,
+			)
+			h.On("ListContainers", container.LIST_SELF).Return(
+				subcontainers,
+				nil,
+			)
+			h.Aliases = aliases
+			handler = h
+		},
+		t,
+	)
+
+	info, err := cd.GetInfo()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler.AssertExpectations(t)
+
+	if len(info.Subcontainers) != len(subcontainers) {
+		t.Errorf("Received %v subcontainers, should be %v", len(info.Subcontainers), len(subcontainers))
+	}
+
+	for _, sub := range info.Subcontainers {
+		found := false
+		for _, sub2 := range subcontainers {
+			if sub.Name == sub2.Name {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("Received unknown sub container %v", sub)
+		}
+	}
+
+	if !reflect.DeepEqual(spec, info.Spec) {
+		t.Errorf("received wrong container spec")
+	}
+
+	if info.Name != handler.Name {
+		t.Errorf("received wrong container name: received %v; should be %v", info.Name, handler.Name)
+	}
 }

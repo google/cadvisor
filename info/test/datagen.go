@@ -15,6 +15,7 @@
 package test
 
 import (
+	"math"
 	"math/rand"
 	"time"
 
@@ -46,5 +47,22 @@ func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info
 		stats.Cpu.Usage.System = 0
 		stats.Memory.Usage = uint64(rand.Int63n(4096))
 	}
+	return ret
+}
+
+func GenerateRandomContainerSpec(numCores int) *info.ContainerSpec {
+	ret := &info.ContainerSpec{
+		Cpu:    &info.CpuSpec{},
+		Memory: &info.MemorySpec{},
+	}
+	ret.Cpu.Limit = uint64(1000 + rand.Int63n(2000))
+	ret.Cpu.MaxLimit = uint64(1000 + rand.Int63n(2000))
+	n := (numCores + 63) / 64
+	ret.Cpu.Mask.Data = make([]uint64, n)
+	for i := 0; i < n; i++ {
+		ret.Cpu.Mask.Data[i] = math.MaxUint64
+	}
+
+	ret.Memory.Limit = uint64(4096 + rand.Int63n(4096))
 	return ret
 }
