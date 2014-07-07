@@ -79,6 +79,22 @@ func TestContainerUpdateSubcontainers(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if len(cd.info.Subcontainers) != len(subcontainers) {
+		t.Errorf("Received %v subcontainers, should be %v", len(cd.info.Subcontainers), len(subcontainers))
+	}
+
+	for _, sub := range cd.info.Subcontainers {
+		found := false
+		for _, sub2 := range subcontainers {
+			if sub.Name == sub2.Name {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("Received unknown sub container %v", sub)
+		}
+	}
+
 	handler.AssertExpectations(t)
 }
 
@@ -99,6 +115,9 @@ func TestContainerUpdateSubcontainersWithError(t *testing.T) {
 	err := cd.updateSubcontainers()
 	if err == nil {
 		t.Fatal("updateSubcontainers should return error")
+	}
+	if len(cd.info.Subcontainers) != 0 {
+		t.Errorf("Received %v subcontainers, should be 0", len(cd.info.Subcontainers))
 	}
 
 	handler.AssertExpectations(t)
