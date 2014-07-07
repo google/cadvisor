@@ -53,6 +53,67 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 	return ret
 }
 
+func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {
+	// t1 should not be later than t2
+	if t1.After(t2) {
+		t1, t2 = t2, t1
+	}
+	diff := t2.Sub(t1)
+	if diff <= tolerance {
+		return true
+	}
+	return false
+}
+
+func durationEq(a, b time.Duration, tolerance time.Duration) bool {
+	if a > b {
+		a, b = b, a
+	}
+	diff := a - b
+	if diff <= tolerance {
+		return true
+	}
+	return false
+}
+
+const (
+	// 10ms, i.e. 0.01s
+	timePrecision time.Duration = 10 * time.Millisecond
+)
+
+// This function is useful because we do not require precise time
+// representation.
+func statsEq(a, b *info.ContainerStats) bool {
+	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	return true
+}
+
+// This function is useful because we do not require precise time
+// representation.
+func sampleEq(a, b *info.ContainerStatsSample) bool {
+	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+		return false
+	}
+	if !durationEq(a.Duration, b.Duration, timePrecision) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	return true
+}
+
 func samplesInTrace(samples []*info.ContainerStatsSample, cpuTrace, memTrace []uint64, samplePeriod time.Duration, t *testing.T) {
 	for _, sample := range samples {
 		if sample.Duration != samplePeriod {
@@ -79,6 +140,39 @@ func samplesInTrace(samples []*info.ContainerStatsSample, cpuTrace, memTrace []u
 		}
 		if !found {
 			t.Errorf("unable to find mem usage %v", memUsage)
+		}
+	}
+}
+
+// This function will generate random stats and write
+// them into the storage. The function will not close the driver
+func StorageDriverFillRandomStatsFunc(
+	containerName string,
+	N int,
+	driver storage.StorageDriver,
+	t *testing.T,
+) {
+	cpuTrace := make([]uint64, 0, N)
+	memTrace := make([]uint64, 0, N)
+
+	// We need N+1 observations to get N samples
+	for i := 0; i < N+1; i++ {
+		cpuTrace = append(cpuTrace, uint64(rand.Intn(1000)))
+		memTrace = append(memTrace, uint64(rand.Intn(1000)))
+	}
+
+	samplePeriod := 1 * time.Second
+
+	ref := info.ContainerReference{
+		Name: containerName,
+	}
+
+	trace := buildTrace(cpuTrace, memTrace, samplePeriod)
+
+	for _, stats := range trace {
+		err := driver.AddStats(ref, stats)
+		if err != nil {
+			t.Fatalf("unable to add stats: %v", err)
 		}
 	}
 }
@@ -118,6 +212,9 @@ func StorageDriverTestSampleCpuUsage(driver storage.StorageDriver, t *testing.T)
 	samples, err := driver.Samples(ref.Name, N)
 	if err != nil {
 		t.Errorf("unable to sample stats: %v", err)
+	}
+	if len(samples) == 0 {
+		t.Fatal("should at least store one sample")
 	}
 	samplesInTrace(samples, cpuTrace, memTrace, samplePeriod, t)
 
@@ -285,6 +382,9 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(recentStats) == 0 {
+		t.Fatal("should at least store one stats")
+	}
 
 	if len(recentStats) > 10 {
 		t.Fatalf("returned %v stats, not 10.", len(recentStats))
@@ -295,7 +395,7 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 	for _, r := range recentStats {
 		found := false
 		for _, s := range actualRecentStats {
-			if reflect.DeepEqual(s, r) {
+			if statsEq(s, r) {
 				found = true
 			}
 		}
@@ -329,6 +429,9 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(recentStats) == 0 {
+		t.Fatal("should at least store one stats")
+	}
 	if len(recentStats) > N {
 		t.Fatalf("returned %v stats, not 100.", len(recentStats))
 	}
@@ -338,7 +441,7 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 	for _, r := range recentStats {
 		found := false
 		for _, s := range actualRecentStats {
-			if reflect.DeepEqual(s, r) {
+			if statsEq(s, r) {
 				found = true
 			}
 		}
