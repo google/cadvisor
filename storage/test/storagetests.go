@@ -59,7 +59,7 @@ func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {
 		t1, t2 = t2, t1
 	}
 	diff := t2.Sub(t1)
-	if diff < tolerance {
+	if diff <= tolerance {
 		return true
 	}
 	return false
@@ -70,7 +70,7 @@ func durationEq(a, b time.Duration, tolerance time.Duration) bool {
 		a, b = b, a
 	}
 	diff := a - b
-	if diff < tolerance {
+	if diff <= tolerance {
 		return true
 	}
 	return false
@@ -78,7 +78,7 @@ func durationEq(a, b time.Duration, tolerance time.Duration) bool {
 
 const (
 	// 10ms, i.e. 0.01s
-	timePrecision time.Duration = 10000000
+	timePrecision time.Duration = 10 * time.Millisecond
 )
 
 // This function is useful because we do not require precise time

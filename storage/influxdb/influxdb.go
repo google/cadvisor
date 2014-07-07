@@ -420,7 +420,7 @@ func (self *influxdbStorage) Percentiles(
 	if err != nil {
 		return nil, fmt.Errorf("invalid max memory usage: %v", err)
 	}
-	retrievedCpuPercentiles := point[2:]
+	retrievedCpuPercentiles := point[2 : 2+len(cpuUsagePercentiles)]
 	for i, p := range cpuUsagePercentiles {
 		v, err := convertToUint64(retrievedCpuPercentiles[i])
 		if err != nil {
