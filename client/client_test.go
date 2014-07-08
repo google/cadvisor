@@ -25,6 +25,7 @@ import (
 
 	"github.com/google/cadvisor/info"
 	itest "github.com/google/cadvisor/info/test"
+	"github.com/kr/pretty"
 )
 
 func testGetJsonData(
@@ -36,7 +37,7 @@ func testGetJsonData(
 		return fmt.Errorf("unable to retrieve data: %v", err)
 	}
 	if !reflect.DeepEqual(reply, expected) {
-		return fmt.Errorf("retrieved wrong data: %+v != %+v", reply, expected)
+		return pretty.Errorf("retrieved wrong data: %# v != %# v", reply, expected)
 	}
 	return nil
 }
