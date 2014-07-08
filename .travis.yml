@@ -14,4 +14,5 @@ script:
  - go test -v -race github.com/google/cadvisor/sampling
  - go test -v -race github.com/google/cadvisor/storage/memory
  - go test -v -race github.com/google/cadvisor/storage/influxdb
+ - go test -v -race github.com/google/cadvisor/manager
  - go build github.com/google/cadvisor
