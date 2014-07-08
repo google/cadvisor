@@ -308,6 +308,23 @@ func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 	return sample, nil
 }
 
+func NewSamplesFromStats(stats ...*ContainerStats) ([]*ContainerStatsSample, error) {
+	if len(stats) < 2 {
+		return nil, nil
+	}
+	samples := make([]*ContainerStatsSample, 0, len(stats)-1)
+	for i, s := range stats[1:] {
+		prev := stats[i]
+		sample, err := NewSample(prev, s)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to generate sample from %+v and %+v: %v",
+				prev, s, err)
+		}
+		samples = append(samples, sample)
+	}
+	return samples, nil
+}
+
 type uint64Slice []uint64
 
 func (self uint64Slice) Len() int {

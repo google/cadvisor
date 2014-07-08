@@ -67,3 +67,43 @@ func GenerateRandomContainerSpec(numCores int) *info.ContainerSpec {
 	ret.Memory.Limit = uint64(4096 + rand.Int63n(4096))
 	return ret
 }
+
+func GenerateRandomContainerInfo(containerName string, numCores int, query *info.ContainerInfoQuery, duration time.Duration) *info.ContainerInfo {
+	stats := GenerateRandomStats(query.NumStats, numCores, duration)
+	samples, _ := info.NewSamplesFromStats(stats...)
+	if len(samples) > query.NumSamples {
+		samples = samples[:query.NumSamples]
+	}
+	cpuPercentiles := make([]info.Percentile, 0, len(query.CpuUsagePercentages))
+
+	// TODO(monnand): This will generate percentiles where 50%tile data may
+	// be larger than 90%tile data.
+	for _, p := range query.CpuUsagePercentages {
+		percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
+		cpuPercentiles = append(cpuPercentiles, percentile)
+	}
+	memPercentiles := make([]info.Percentile, 0, len(query.MemoryUsagePercentages))
+	for _, p := range query.MemoryUsagePercentages {
+		percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
+		memPercentiles = append(memPercentiles, percentile)
+	}
+
+	percentiles := &info.ContainerStatsPercentiles{
+		MaxMemoryUsage:         uint64(rand.Int63n(4096)),
+		MemoryUsagePercentiles: memPercentiles,
+		CpuUsagePercentiles:    cpuPercentiles,
+	}
+
+	spec := GenerateRandomContainerSpec(numCores)
+
+	ret := &info.ContainerInfo{
+		ContainerReference: info.ContainerReference{
+			Name: containerName,
+		},
+		Spec:             spec,
+		StatsPercentiles: percentiles,
+		Samples:          samples,
+		Stats:            stats,
+	}
+	return ret
+}

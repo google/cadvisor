@@ -17,8 +17,6 @@
 package manager
 
 import (
-	"fmt"
-	"math/rand"
 	"reflect"
 	"testing"
 	"time"
@@ -73,24 +71,6 @@ func createManagerAndAddContainers(
 	return nil
 }
 
-func randomStatsAndSamples(numStats, numSamples int) ([]*info.ContainerStats, []*info.ContainerStatsSample, error) {
-	stats := itest.GenerateRandomStats(numStats, 4, 1*time.Second)
-	samples := make([]*info.ContainerStatsSample, 0, numSamples)
-	for i, s := range stats[1:] {
-		prev := stats[i]
-		sample, err := info.NewSample(prev, s)
-		if err != nil {
-			return nil, nil, fmt.Errorf("Unable to generate sample from %+v and %+v: %v",
-				prev, s, err)
-		}
-		samples = append(samples, sample)
-		if len(samples) == numSamples {
-			break
-		}
-	}
-	return stats, samples, nil
-}
-
 func TestGetContainerInfo(t *testing.T) {
 	containers := []string{
 		"/c1",
@@ -108,39 +88,7 @@ func TestGetContainerInfo(t *testing.T) {
 	handlerMap := make(map[string]*ctest.MockContainerHandler, len(containers))
 
 	for _, container := range containers {
-		stats, samples, err := randomStatsAndSamples(query.NumStats, query.NumSamples)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		cpuPercentiles := make([]info.Percentile, 0, len(query.CpuUsagePercentages))
-		for _, p := range query.CpuUsagePercentages {
-			percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
-			cpuPercentiles = append(cpuPercentiles, percentile)
-		}
-		memPercentiles := make([]info.Percentile, 0, len(query.MemoryUsagePercentages))
-		for _, p := range query.MemoryUsagePercentages {
-			percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
-			memPercentiles = append(memPercentiles, percentile)
-		}
-
-		percentiles := &info.ContainerStatsPercentiles{
-			MaxMemoryUsage:         uint64(rand.Int63n(4096)),
-			MemoryUsagePercentiles: memPercentiles,
-			CpuUsagePercentiles:    cpuPercentiles,
-		}
-
-		spec := itest.GenerateRandomContainerSpec(4)
-
-		infosMap[container] = &info.ContainerInfo{
-			ContainerReference: info.ContainerReference{
-				Name: container,
-			},
-			Spec:             spec,
-			StatsPercentiles: percentiles,
-			Samples:          samples,
-			Stats:            stats,
-		}
+		infosMap[container] = itest.GenerateRandomContainerInfo(container, 4, query, 1*time.Second)
 	}
 
 	driver := &stest.MockStorageDriver{}
@@ -228,39 +176,7 @@ func TestGetContainerInfoWithDefaultValue(t *testing.T) {
 	handlerMap := make(map[string]*ctest.MockContainerHandler, len(containers))
 
 	for _, container := range containers {
-		stats, samples, err := randomStatsAndSamples(query.NumStats, query.NumSamples)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		cpuPercentiles := make([]info.Percentile, 0, len(query.CpuUsagePercentages))
-		for _, p := range query.CpuUsagePercentages {
-			percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
-			cpuPercentiles = append(cpuPercentiles, percentile)
-		}
-		memPercentiles := make([]info.Percentile, 0, len(query.MemoryUsagePercentages))
-		for _, p := range query.MemoryUsagePercentages {
-			percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
-			memPercentiles = append(memPercentiles, percentile)
-		}
-
-		percentiles := &info.ContainerStatsPercentiles{
-			MaxMemoryUsage:         uint64(rand.Int63n(4096)),
-			MemoryUsagePercentiles: memPercentiles,
-			CpuUsagePercentiles:    cpuPercentiles,
-		}
-
-		spec := itest.GenerateRandomContainerSpec(4)
-
-		infosMap[container] = &info.ContainerInfo{
-			ContainerReference: info.ContainerReference{
-				Name: container,
-			},
-			Spec:             spec,
-			StatsPercentiles: percentiles,
-			Samples:          samples,
-			Stats:            stats,
-		}
+		infosMap[container] = itest.GenerateRandomContainerInfo(container, 4, query, 1*time.Second)
 	}
 
 	driver := &stest.MockStorageDriver{}
