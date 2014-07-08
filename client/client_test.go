@@ -41,15 +41,17 @@ func testGetJsonData(
 	return nil
 }
 
-func cadvisorTestClient(path string, expectedPostObj, expectedPostObjEmpty, replyObj interface{}) (*Client, *httptest.Server, error) {
+func cadvisorTestClient(path string, expectedPostObj, expectedPostObjEmpty, replyObj interface{}, t *testing.T) (*Client, *httptest.Server, error) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == path {
 			if expectedPostObj != nil {
 				decoder := json.NewDecoder(r.Body)
 				err := decoder.Decode(expectedPostObjEmpty)
 				if err != nil {
-					fmt.Fprintf(w, "received invalid json object: %v", err)
-					return
+					t.Errorf("Recived invalid object: %v", err)
+				}
+				if !reflect.DeepEqual(expectedPostObj, expectedPostObjEmpty) {
+					t.Errorf("Recived unexpected object: %+v", expectedPostObjEmpty)
 				}
 			}
 			encoder := json.NewEncoder(w)
@@ -74,7 +76,7 @@ func TestGetMachineinfo(t *testing.T) {
 		NumCores:       8,
 		MemoryCapacity: 31625871360,
 	}
-	client, server, err := cadvisorTestClient("/api/v1.0/machine", nil, nil, minfo)
+	client, server, err := cadvisorTestClient("/api/v1.0/machine", nil, nil, minfo, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
@@ -96,13 +98,13 @@ func TestGetContainerInfo(t *testing.T) {
 	}
 	containerName := "/some/container"
 	cinfo := itest.GenerateRandomContainerInfo(containerName, 4, query, 1*time.Second)
-	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.0/containers%v", containerName), query, &info.ContainerInfoQuery{}, cinfo)
+	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.0/containers%v", containerName), query, &info.ContainerInfoQuery{}, cinfo, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
 	defer server.Close()
 	err = testGetJsonData(cinfo, func() (interface{}, error) {
-		return client.ContainerInfo(containerName, nil)
+		return client.ContainerInfo(containerName, query)
 	})
 	if err != nil {
 		t.Fatal(err)
