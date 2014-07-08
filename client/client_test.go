@@ -37,7 +37,7 @@ func testGetJsonData(
 		return fmt.Errorf("unable to retrieve data: %v", err)
 	}
 	if !reflect.DeepEqual(reply, expected) {
-		return pretty.Errorf("retrieved wrong data: %# v != %# v", reply, expected)
+		return fmt.Errorf("retrieved wrong data: %v != %v", pretty.Sprintf("%# v", reply), pretty.Sprintf("% #v", expected))
 	}
 	return nil
 }
