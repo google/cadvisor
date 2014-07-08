@@ -79,7 +79,7 @@ func main() {
 
 	// Handler for the API.
 	http.HandleFunc(api.ApiResource, func(w http.ResponseWriter, r *http.Request) {
-		err := api.HandleRequest(containerManager, w, r.URL)
+		err := api.HandleRequest(containerManager, w, r)
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 		}

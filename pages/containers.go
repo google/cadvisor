@@ -162,7 +162,7 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 	containerName := u.Path[len(ContainersPage)-1:]
 
 	// Get the container.
-	cont, err := m.GetContainerInfo(containerName)
+	cont, err := m.GetContainerInfo(containerName, nil)
 	if err != nil {
 		return fmt.Errorf("Failed to get container \"%s\" with error: %s", containerName, err)
 	}

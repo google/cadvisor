@@ -57,6 +57,34 @@ type ContainerReference struct {
 	Aliases []string `json:"aliases,omitempty"`
 }
 
+type ContainerInfoQuery struct {
+	NumStats   int `json:"num_stats,omitempty"`
+	NumSamples int `json:"num_samples,omitempty"`
+
+	CpuUsagePercentages    []int `json:"cpu_usage_percentages,omitempty"`
+	MemoryUsagePercentages []int `json:"memory_usage_percentages,omitempty"`
+}
+
+func (self *ContainerInfoQuery) FillWithDefaultValues() *ContainerInfoQuery {
+	ret := self
+	if ret == nil {
+		ret = new(ContainerInfoQuery)
+	}
+	if ret.NumStats <= 0 {
+		ret.NumStats = 1024
+	}
+	if ret.NumSamples <= 0 {
+		ret.NumSamples = 1024
+	}
+	if len(ret.CpuUsagePercentages) == 0 {
+		ret.CpuUsagePercentages = []int{50, 80, 90, 99}
+	}
+	if len(ret.MemoryUsagePercentages) == 0 {
+		ret.MemoryUsagePercentages = []int{50, 80, 90, 99}
+	}
+	return ret
+}
+
 type ContainerInfo struct {
 	ContainerReference
 

@@ -46,6 +46,7 @@ func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info
 		stats.Cpu.Usage.User = stats.Cpu.Usage.Total
 		stats.Cpu.Usage.System = 0
 		stats.Memory.Usage = uint64(rand.Int63n(4096))
+		ret[i] = stats
 	}
 	return ret
 }
