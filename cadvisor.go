@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/container/docker"
@@ -27,6 +29,8 @@ import (
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
+	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/memory"
 )
 
@@ -35,12 +39,51 @@ var argSampleSize = flag.Int("samples", 1024, "number of samples we want to keep
 var argHistoryDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
 var argAllowLmctfy = flag.Bool("allow_lmctfy", true, "whether to allow lmctfy as a container handler")
 
+// database related arguments
+var argDbDriver = flag.String("db", "memory", "database driver name")
+var argDbUsername = flag.String("db.user", "root", "database username")
+var argDbPassword = flag.String("db.password", "root", "database password")
+var argDbHost = flag.String("db.host", "localhost:8086", "database host:port")
+var argDbName = flag.String("db.name", "cadvisor", "database name")
+var argDbIsSecure = flag.Bool("db.secure", false, "use secure connection with database")
+
 func main() {
 	flag.Parse()
 
-	storage := memory.New(*argSampleSize, *argHistoryDuration)
+	var storageDriver storage.StorageDriver
+	var err error
+
+	switch *argDbDriver {
+	case "":
+		// empty string by default is the in memory store
+		fallthrough
+	case "memory":
+		storageDriver = memory.New(*argSampleSize, *argHistoryDuration)
+	case "influxdb":
+		var hostname string
+		hostname, err = os.Hostname()
+		if err == nil {
+			storageDriver, err = influxdb.New(
+				hostname,
+				"cadvisorTable",
+				*argDbName,
+				*argDbUsername,
+				*argDbPassword,
+				*argDbHost,
+				*argDbIsSecure,
+				// TODO(monnand): One hour? Or user-defined?
+				1*time.Hour,
+			)
+		}
+	default:
+		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)
+	}
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %s", err)
+	}
+
 	// TODO(monnand): Add stats writer for manager
-	containerManager, err := manager.New(storage)
+	containerManager, err := manager.New(storageDriver)
 	if err != nil {
 		log.Fatalf("Failed to create a Container Manager: %s", err)
 	}
