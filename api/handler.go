@@ -19,6 +19,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -72,8 +73,8 @@ func HandleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		var query info.ContainerInfoQuery
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&query)
-		if err != nil {
-			fmt.Fprintf(w, "unable to decode the json value: %v", err)
+		if err != nil && err != io.EOF {
+			fmt.Fprintf(w, "unable to decode the json value: ", err)
 			return err
 		}
 		// Get the container.
