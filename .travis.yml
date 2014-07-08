@@ -8,11 +8,5 @@ before_script:
  - sudo dpkg -i influxdb_latest_amd64.deb
  - sudo service influxdb start
 script:
- - go test -v -race github.com/google/cadvisor/container
- - go test -v -race github.com/google/cadvisor/info
- - go test -v -race github.com/google/cadvisor/client
- - go test -v -race github.com/google/cadvisor/sampling
- - go test -v -race github.com/google/cadvisor/storage/memory
- - go test -v -race github.com/google/cadvisor/storage/influxdb
- - go test -v -race github.com/google/cadvisor/manager
+ - go test -v -race github.com/google/cadvisor/...
  - go build github.com/google/cadvisor
