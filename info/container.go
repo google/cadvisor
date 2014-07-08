@@ -16,6 +16,7 @@ package info
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"time"
 )
@@ -245,6 +246,67 @@ type ContainerStatsSample struct {
 		// Units: Bytes.
 		Usage uint64 `json:"usage"`
 	} `json:"memory"`
+}
+
+func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {
+	// t1 should not be later than t2
+	if t1.After(t2) {
+		t1, t2 = t2, t1
+	}
+	diff := t2.Sub(t1)
+	if diff <= tolerance {
+		return true
+	}
+	return false
+}
+
+func durationEq(a, b time.Duration, tolerance time.Duration) bool {
+	if a > b {
+		a, b = b, a
+	}
+	diff := a - b
+	if diff <= tolerance {
+		return true
+	}
+	return false
+}
+
+const (
+	// 10ms, i.e. 0.01s
+	timePrecision time.Duration = 10 * time.Millisecond
+)
+
+// This function is useful because we do not require precise time
+// representation.
+func (a *ContainerStats) Eq(b *ContainerStats) bool {
+	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	return true
+}
+
+// This function is useful because we do not require precise time
+// representation.
+func (a *ContainerStatsSample) Eq(b *ContainerStatsSample) bool {
+	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+		return false
+	}
+	if !durationEq(a.Duration, b.Duration, timePrecision) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	return true
 }
 
 type Percentile struct {

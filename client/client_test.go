@@ -37,7 +37,7 @@ func testGetJsonData(
 		return fmt.Errorf("unable to retrieve data: %v", err)
 	}
 	if !reflect.DeepEqual(reply, expected) {
-		return fmt.Errorf("retrieved wrong data: %v != %v", pretty.Sprintf("%# v", reply), pretty.Sprintf("% #v", expected))
+		return pretty.Errorf("retrieved wrong data: %# v != %# v", reply, expected)
 	}
 	return nil
 }
@@ -82,11 +82,12 @@ func TestGetMachineinfo(t *testing.T) {
 		t.Fatalf("unable to get a client %v", err)
 	}
 	defer server.Close()
-	err = testGetJsonData(minfo, func() (interface{}, error) {
-		return client.MachineInfo()
-	})
+	returned, err := client.MachineInfo()
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(returned, minfo) {
+		t.Fatalf("received unexpected machine info")
 	}
 }
 
@@ -104,10 +105,37 @@ func TestGetContainerInfo(t *testing.T) {
 		t.Fatalf("unable to get a client %v", err)
 	}
 	defer server.Close()
-	err = testGetJsonData(cinfo, func() (interface{}, error) {
-		return client.ContainerInfo(containerName, query)
-	})
+	returned, err := client.ContainerInfo(containerName, query)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// We cannot use DeepEqual() to compare them directly,
+	// because json en/decoded time may have preceision issues.
+	if !reflect.DeepEqual(returned.ContainerReference, cinfo.ContainerReference) {
+		t.Errorf("received unexpected container ref")
+	}
+	if !reflect.DeepEqual(returned.Subcontainers, cinfo.Subcontainers) {
+		t.Errorf("received unexpected subcontainers")
+	}
+	if !reflect.DeepEqual(returned.Spec, cinfo.Spec) {
+		t.Errorf("received unexpected spec")
+	}
+	if !reflect.DeepEqual(returned.StatsPercentiles, cinfo.StatsPercentiles) {
+		t.Errorf("received unexpected spec")
+	}
+
+	for i, expectedStats := range cinfo.Stats {
+		returnedStats := returned.Stats[i]
+		if !expectedStats.Eq(returnedStats) {
+			t.Errorf("received unexpected stats")
+		}
+	}
+
+	for i, expectedSample := range cinfo.Samples {
+		returnedSample := returned.Samples[i]
+		if !expectedSample.Eq(returnedSample) {
+			t.Errorf("received unexpected sample")
+		}
 	}
 }
