@@ -170,7 +170,7 @@ func TestGetContainerInfoWithDefaultValue(t *testing.T) {
 	}
 
 	var query *info.ContainerInfoQuery
-	query = query.FillWithDefaultValues()
+	query = query.FillDefaults()
 
 	infosMap := make(map[string]*info.ContainerInfo, len(containers))
 	handlerMap := make(map[string]*ctest.MockContainerHandler, len(containers))

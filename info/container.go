@@ -67,7 +67,7 @@ type ContainerInfoQuery struct {
 	MemoryUsagePercentages []int `json:"memory_usage_percentiles,omitempty"`
 }
 
-func (self *ContainerInfoQuery) FillWithDefaultValues() *ContainerInfoQuery {
+func (self *ContainerInfoQuery) FillDefaults() *ContainerInfoQuery {
 	ret := self
 	if ret == nil {
 		ret = new(ContainerInfoQuery)
