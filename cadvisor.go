@@ -32,7 +32,7 @@ import (
 var argPort = flag.Int("port", 8080, "port to listen")
 var argAllowLmctfy = flag.Bool("allow_lmctfy", true, "whether to allow lmctfy as a container handler")
 
-var argDbDriver = flag.String("storage_driver", "memory", "database driver name")
+var argDbDriver = flag.String("storage_driver", "memory", "storage driver to use. Options are: memory (default) and influxdb")
 
 func main() {
 	flag.Parse()

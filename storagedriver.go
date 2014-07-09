@@ -27,11 +27,11 @@ import (
 
 var argSampleSize = flag.Int("samples", 1024, "number of samples we want to keep")
 var argHistoryDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
-var argDbUsername = flag.String("storage_driver.user", "root", "database username")
-var argDbPassword = flag.String("storage_driver.password", "root", "database password")
-var argDbHost = flag.String("storage_driver.host", "localhost:8086", "database host:port")
-var argDbName = flag.String("storage_driver.name", "cadvisor", "database name")
-var argDbIsSecure = flag.Bool("storage_driver.secure", false, "use secure connection with database")
+var argDbUsername = flag.String("storage_driver_user", "root", "database username")
+var argDbPassword = flag.String("storage_driver_password", "root", "database password")
+var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
+var argDbName = flag.String("storage_driver_name", "cadvisor", "database name")
+var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
 
 func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 	var storageDriver storage.StorageDriver
