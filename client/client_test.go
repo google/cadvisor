@@ -49,10 +49,10 @@ func cadvisorTestClient(path string, expectedPostObj, expectedPostObjEmpty, repl
 				decoder := json.NewDecoder(r.Body)
 				err := decoder.Decode(expectedPostObjEmpty)
 				if err != nil {
-					t.Errorf("Recived invalid object: %v", err)
+					t.Errorf("Recieved invalid object: %v", err)
 				}
 				if !reflect.DeepEqual(expectedPostObj, expectedPostObjEmpty) {
-					t.Errorf("Recived unexpected object: %+v", expectedPostObjEmpty)
+					t.Errorf("Recieved unexpected object: %+v", expectedPostObjEmpty)
 				}
 			}
 			encoder := json.NewEncoder(w)
@@ -111,7 +111,7 @@ func TestGetContainerInfo(t *testing.T) {
 	}
 
 	// We cannot use DeepEqual() to compare them directly,
-	// because json en/decoded time may have preceision issues.
+	// because json en/decoded time may have precision issues.
 	if !reflect.DeepEqual(returned.ContainerReference, cinfo.ContainerReference) {
 		t.Errorf("received unexpected container ref")
 	}
