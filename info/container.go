@@ -58,7 +58,8 @@ type ContainerReference struct {
 	Aliases []string `json:"aliases,omitempty"`
 }
 
-// ContainerInfoQuery specifies how much data users want to get about a container
+// ContainerInfoQuery is used when users check a container info from the REST api.
+// It specifies how much data users want to get about a container
 type ContainerInfoQuery struct {
 	NumStats   int `json:"num_stats,omitempty"`
 	NumSamples int `json:"num_samples,omitempty"`
