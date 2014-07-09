@@ -27,20 +27,22 @@ import (
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
-	"github.com/google/cadvisor/storage/memory"
 )
 
 var argPort = flag.Int("port", 8080, "port to listen")
-var argSampleSize = flag.Int("samples", 1024, "number of samples we want to keep")
-var argHistoryDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
 var argAllowLmctfy = flag.Bool("allow_lmctfy", true, "whether to allow lmctfy as a container handler")
+
+var argDbDriver = flag.String("storage_driver", "memory", "storage driver to use. Options are: memory (default) and influxdb")
 
 func main() {
 	flag.Parse()
 
-	storage := memory.New(*argSampleSize, *argHistoryDuration)
-	// TODO(monnand): Add stats writer for manager
-	containerManager, err := manager.New(storage)
+	storageDriver, err := NewStorageDriver(*argDbDriver)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %s", err)
+	}
+
+	containerManager, err := manager.New(storageDriver)
 	if err != nil {
 		log.Fatalf("Failed to create a Container Manager: %s", err)
 	}
