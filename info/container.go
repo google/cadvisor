@@ -61,10 +61,14 @@ type ContainerReference struct {
 // ContainerInfoQuery is used when users check a container info from the REST api.
 // It specifies how much data users want to get about a container
 type ContainerInfoRequest struct {
-	NumStats   int `json:"num_stats,omitempty"`
+	// Max number of stats to return.
+	NumStats int `json:"num_stats,omitempty"`
+	// Max number of samples to return.
 	NumSamples int `json:"num_samples,omitempty"`
 
-	CpuUsagePercentiles    []int `json:"cpu_usage_percentiles,omitempty"`
+	// Different percentiles of CPU usage within a period. The values must be within [0, 100]
+	CpuUsagePercentiles []int `json:"cpu_usage_percentiles,omitempty"`
+	// Different percentiles of memory usage within a period. The values must be within [0, 100]
 	MemoryUsagePercentages []int `json:"memory_usage_percentiles,omitempty"`
 }
 
