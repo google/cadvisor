@@ -133,7 +133,7 @@ func (m *manager) GetContainerInfo(containerName string, query *info.ContainerIn
 	query = query.FillWithDefaultValues()
 	percentiles, err = m.storageDriver.Percentiles(
 		cinfo.Name,
-		query.CpuUsagePercentages,
+		query.CpuUsagePercentiles,
 		query.MemoryUsagePercentages,
 	)
 	if err != nil {

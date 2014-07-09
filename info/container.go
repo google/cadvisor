@@ -58,12 +58,13 @@ type ContainerReference struct {
 	Aliases []string `json:"aliases,omitempty"`
 }
 
+// ContainerInfoQuery specifies how much data users want to get about a container
 type ContainerInfoQuery struct {
 	NumStats   int `json:"num_stats,omitempty"`
 	NumSamples int `json:"num_samples,omitempty"`
 
-	CpuUsagePercentages    []int `json:"cpu_usage_percentages,omitempty"`
-	MemoryUsagePercentages []int `json:"memory_usage_percentages,omitempty"`
+	CpuUsagePercentiles    []int `json:"cpu_usage_percentiles,omitempty"`
+	MemoryUsagePercentages []int `json:"memory_usage_percentiles,omitempty"`
 }
 
 func (self *ContainerInfoQuery) FillWithDefaultValues() *ContainerInfoQuery {
@@ -77,8 +78,8 @@ func (self *ContainerInfoQuery) FillWithDefaultValues() *ContainerInfoQuery {
 	if ret.NumSamples <= 0 {
 		ret.NumSamples = 1024
 	}
-	if len(ret.CpuUsagePercentages) == 0 {
-		ret.CpuUsagePercentages = []int{50, 80, 90, 99}
+	if len(ret.CpuUsagePercentiles) == 0 {
+		ret.CpuUsagePercentiles = []int{50, 80, 90, 99}
 	}
 	if len(ret.MemoryUsagePercentages) == 0 {
 		ret.MemoryUsagePercentages = []int{50, 80, 90, 99}

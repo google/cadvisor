@@ -80,7 +80,7 @@ func TestGetContainerInfo(t *testing.T) {
 	query := &info.ContainerInfoQuery{
 		NumStats:               256,
 		NumSamples:             128,
-		CpuUsagePercentages:    []int{10, 50, 90},
+		CpuUsagePercentiles:    []int{10, 50, 90},
 		MemoryUsagePercentages: []int{10, 80, 90},
 	}
 
@@ -104,7 +104,7 @@ func TestGetContainerInfo(t *testing.T) {
 			driver.On(
 				"Percentiles",
 				h.Name,
-				query.CpuUsagePercentages,
+				query.CpuUsagePercentiles,
 				query.MemoryUsagePercentages,
 			).Return(
 				percentiles,
@@ -192,7 +192,7 @@ func TestGetContainerInfoWithDefaultValue(t *testing.T) {
 			driver.On(
 				"Percentiles",
 				h.Name,
-				query.CpuUsagePercentages,
+				query.CpuUsagePercentiles,
 				query.MemoryUsagePercentages,
 			).Return(
 				percentiles,

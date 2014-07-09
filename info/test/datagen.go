@@ -74,11 +74,11 @@ func GenerateRandomContainerInfo(containerName string, numCores int, query *info
 	if len(samples) > query.NumSamples {
 		samples = samples[:query.NumSamples]
 	}
-	cpuPercentiles := make([]info.Percentile, 0, len(query.CpuUsagePercentages))
+	cpuPercentiles := make([]info.Percentile, 0, len(query.CpuUsagePercentiles))
 
 	// TODO(monnand): This will generate percentiles where 50%tile data may
 	// be larger than 90%tile data.
-	for _, p := range query.CpuUsagePercentages {
+	for _, p := range query.CpuUsagePercentiles {
 		percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
 		cpuPercentiles = append(cpuPercentiles, percentile)
 	}

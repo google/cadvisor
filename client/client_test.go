@@ -95,7 +95,7 @@ func TestGetContainerInfo(t *testing.T) {
 	query := &info.ContainerInfoQuery{
 		NumStats:               3,
 		NumSamples:             2,
-		CpuUsagePercentages:    []int{10, 50, 90},
+		CpuUsagePercentiles:    []int{10, 50, 90},
 		MemoryUsagePercentages: []int{10, 80, 90},
 	}
 	containerName := "/some/container"
