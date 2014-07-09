@@ -74,8 +74,7 @@ func HandleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&query)
 		if err != nil && err != io.EOF {
-			fmt.Fprintf(w, "unable to decode the json value: ", err)
-			return err
+			return fmt.Errorf("unable to decode the json value: ", err)
 		}
 		// Get the container.
 		cont, err := m.GetContainerInfo(containerName, &query)
