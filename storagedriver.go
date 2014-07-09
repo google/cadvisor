@@ -25,13 +25,15 @@ import (
 	"github.com/google/cadvisor/storage/memory"
 )
 
-var argDbUsername = flag.String("db.user", "root", "database username")
-var argDbPassword = flag.String("db.password", "root", "database password")
-var argDbHost = flag.String("db.host", "localhost:8086", "database host:port")
-var argDbName = flag.String("db.name", "cadvisor", "database name")
-var argDbIsSecure = flag.Bool("db.secure", false, "use secure connection with database")
+var argSampleSize = flag.Int("samples", 1024, "number of samples we want to keep")
+var argHistoryDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
+var argDbUsername = flag.String("storage_driver.user", "root", "database username")
+var argDbPassword = flag.String("storage_driver.password", "root", "database password")
+var argDbHost = flag.String("storage_driver.host", "localhost:8086", "database host:port")
+var argDbName = flag.String("storage_driver.name", "cadvisor", "database name")
+var argDbIsSecure = flag.Bool("storage_driver.secure", false, "use secure connection with database")
 
-func NewStorage(driverName string) (storage.StorageDriver, error) {
+func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 	var storageDriver storage.StorageDriver
 	var err error
 	switch driverName {
