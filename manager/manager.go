@@ -30,7 +30,7 @@ type Manager interface {
 	Start() error
 
 	// Get information about a container.
-	GetContainerInfo(containerName string, query *info.ContainerInfoQuery) (*info.ContainerInfo, error)
+	GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error)
 
 	// Get information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
@@ -106,7 +106,7 @@ func (m *manager) Start() error {
 }
 
 // Get a container by name.
-func (m *manager) GetContainerInfo(containerName string, query *info.ContainerInfoQuery) (*info.ContainerInfo, error) {
+func (m *manager) GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
 	log.Printf("Get(%s); %+v", containerName, query)
 	var cont *containerData
 	var ok bool

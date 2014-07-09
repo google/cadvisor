@@ -70,7 +70,7 @@ func HandleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 
 		log.Printf("Api - Container(%s)", containerName)
 
-		var query info.ContainerInfoQuery
+		var query info.ContainerInfoRequest
 		decoder := json.NewDecoder(r.Body)
 		err := decoder.Decode(&query)
 		if err != nil && err != io.EOF {

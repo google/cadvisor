@@ -92,7 +92,7 @@ func TestGetMachineinfo(t *testing.T) {
 }
 
 func TestGetContainerInfo(t *testing.T) {
-	query := &info.ContainerInfoQuery{
+	query := &info.ContainerInfoRequest{
 		NumStats:               3,
 		NumSamples:             2,
 		CpuUsagePercentiles:    []int{10, 50, 90},
@@ -100,7 +100,7 @@ func TestGetContainerInfo(t *testing.T) {
 	}
 	containerName := "/some/container"
 	cinfo := itest.GenerateRandomContainerInfo(containerName, 4, query, 1*time.Second)
-	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.0/containers%v", containerName), query, &info.ContainerInfoQuery{}, cinfo, t)
+	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.0/containers%v", containerName), query, &info.ContainerInfoRequest{}, cinfo, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}

@@ -98,8 +98,7 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 
 func (self *Client) ContainerInfo(
 	name string,
-	query *info.ContainerInfoQuery,
-) (cinfo *info.ContainerInfo, err error) {
+	query *info.ContainerInfoRequest) (cinfo *info.ContainerInfo, err error) {
 	u := self.containerInfoUrl(name)
 	ret := new(info.ContainerInfo)
 	err = self.httpGetJsonData(ret, query, u, fmt.Sprintf("container info for %v", name))

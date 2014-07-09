@@ -68,7 +68,7 @@ func GenerateRandomContainerSpec(numCores int) *info.ContainerSpec {
 	return ret
 }
 
-func GenerateRandomContainerInfo(containerName string, numCores int, query *info.ContainerInfoQuery, duration time.Duration) *info.ContainerInfo {
+func GenerateRandomContainerInfo(containerName string, numCores int, query *info.ContainerInfoRequest, duration time.Duration) *info.ContainerInfo {
 	stats := GenerateRandomStats(query.NumStats, numCores, duration)
 	samples, _ := info.NewSamplesFromStats(stats...)
 	if len(samples) > query.NumSamples {

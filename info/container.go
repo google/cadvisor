@@ -60,7 +60,7 @@ type ContainerReference struct {
 
 // ContainerInfoQuery is used when users check a container info from the REST api.
 // It specifies how much data users want to get about a container
-type ContainerInfoQuery struct {
+type ContainerInfoRequest struct {
 	NumStats   int `json:"num_stats,omitempty"`
 	NumSamples int `json:"num_samples,omitempty"`
 
@@ -68,10 +68,10 @@ type ContainerInfoQuery struct {
 	MemoryUsagePercentages []int `json:"memory_usage_percentiles,omitempty"`
 }
 
-func (self *ContainerInfoQuery) FillDefaults() *ContainerInfoQuery {
+func (self *ContainerInfoRequest) FillDefaults() *ContainerInfoRequest {
 	ret := self
 	if ret == nil {
-		ret = new(ContainerInfoQuery)
+		ret = new(ContainerInfoRequest)
 	}
 	if ret.NumStats <= 0 {
 		ret.NumStats = 1024
