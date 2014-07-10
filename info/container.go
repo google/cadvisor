@@ -376,6 +376,7 @@ func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 	return sample, nil
 }
 
+/*
 func NewSamplesFromStats(stats ...*ContainerStats) ([]*ContainerStatsSample, error) {
 	if len(stats) < 2 {
 		return nil, nil
@@ -392,6 +393,7 @@ func NewSamplesFromStats(stats ...*ContainerStats) ([]*ContainerStatsSample, err
 	}
 	return samples, nil
 }
+*/
 
 type uint64Slice []uint64
 

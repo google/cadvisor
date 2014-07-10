@@ -15,6 +15,7 @@
 package test
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -70,7 +71,7 @@ func GenerateRandomContainerSpec(numCores int) *info.ContainerSpec {
 
 func GenerateRandomContainerInfo(containerName string, numCores int, query *info.ContainerInfoRequest, duration time.Duration) *info.ContainerInfo {
 	stats := GenerateRandomStats(query.NumStats, numCores, duration)
-	samples, _ := info.NewSamplesFromStats(stats...)
+	samples, _ := NewSamplesFromStats(stats...)
 	if len(samples) > query.NumSamples {
 		samples = samples[:query.NumSamples]
 	}
@@ -106,4 +107,21 @@ func GenerateRandomContainerInfo(containerName string, numCores int, query *info
 		Stats:            stats,
 	}
 	return ret
+}
+
+func NewSamplesFromStats(stats ...*info.ContainerStats) ([]*info.ContainerStatsSample, error) {
+	if len(stats) < 2 {
+		return nil, nil
+	}
+	samples := make([]*info.ContainerStatsSample, 0, len(stats)-1)
+	for i, s := range stats[1:] {
+		prev := stats[i]
+		sample, err := info.NewSample(prev, s)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to generate sample from %+v and %+v: %v",
+				prev, s, err)
+		}
+		samples = append(samples, sample)
+	}
+	return samples, nil
 }
