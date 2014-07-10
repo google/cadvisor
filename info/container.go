@@ -16,6 +16,7 @@ package info
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 	"time"
 )
@@ -55,6 +56,40 @@ type ContainerReference struct {
 	Name string `json:"name"`
 
 	Aliases []string `json:"aliases,omitempty"`
+}
+
+// ContainerInfoQuery is used when users check a container info from the REST api.
+// It specifies how much data users want to get about a container
+type ContainerInfoRequest struct {
+	// Max number of stats to return.
+	NumStats int `json:"num_stats,omitempty"`
+	// Max number of samples to return.
+	NumSamples int `json:"num_samples,omitempty"`
+
+	// Different percentiles of CPU usage within a period. The values must be within [0, 100]
+	CpuUsagePercentiles []int `json:"cpu_usage_percentiles,omitempty"`
+	// Different percentiles of memory usage within a period. The values must be within [0, 100]
+	MemoryUsagePercentages []int `json:"memory_usage_percentiles,omitempty"`
+}
+
+func (self *ContainerInfoRequest) FillDefaults() *ContainerInfoRequest {
+	ret := self
+	if ret == nil {
+		ret = new(ContainerInfoRequest)
+	}
+	if ret.NumStats <= 0 {
+		ret.NumStats = 1024
+	}
+	if ret.NumSamples <= 0 {
+		ret.NumSamples = 1024
+	}
+	if len(ret.CpuUsagePercentiles) == 0 {
+		ret.CpuUsagePercentiles = []int{50, 80, 90, 99}
+	}
+	if len(ret.MemoryUsagePercentages) == 0 {
+		ret.MemoryUsagePercentages = []int{50, 80, 90, 99}
+	}
+	return ret
 }
 
 type ContainerInfo struct {
@@ -217,6 +252,67 @@ type ContainerStatsSample struct {
 		// Units: Bytes.
 		Usage uint64 `json:"usage"`
 	} `json:"memory"`
+}
+
+func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {
+	// t1 should not be later than t2
+	if t1.After(t2) {
+		t1, t2 = t2, t1
+	}
+	diff := t2.Sub(t1)
+	if diff <= tolerance {
+		return true
+	}
+	return false
+}
+
+func durationEq(a, b time.Duration, tolerance time.Duration) bool {
+	if a > b {
+		a, b = b, a
+	}
+	diff := a - b
+	if diff <= tolerance {
+		return true
+	}
+	return false
+}
+
+const (
+	// 10ms, i.e. 0.01s
+	timePrecision time.Duration = 10 * time.Millisecond
+)
+
+// This function is useful because we do not require precise time
+// representation.
+func (a *ContainerStats) Eq(b *ContainerStats) bool {
+	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	return true
+}
+
+// This function is useful because we do not require precise time
+// representation.
+func (a *ContainerStatsSample) Eq(b *ContainerStatsSample) bool {
+	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+		return false
+	}
+	if !durationEq(a.Duration, b.Duration, timePrecision) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	return true
 }
 
 type Percentile struct {

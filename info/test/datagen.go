@@ -15,6 +15,7 @@
 package test
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -46,6 +47,7 @@ func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info
 		stats.Cpu.Usage.User = stats.Cpu.Usage.Total
 		stats.Cpu.Usage.System = 0
 		stats.Memory.Usage = uint64(rand.Int63n(4096))
+		ret[i] = stats
 	}
 	return ret
 }
@@ -65,4 +67,61 @@ func GenerateRandomContainerSpec(numCores int) *info.ContainerSpec {
 
 	ret.Memory.Limit = uint64(4096 + rand.Int63n(4096))
 	return ret
+}
+
+func GenerateRandomContainerInfo(containerName string, numCores int, query *info.ContainerInfoRequest, duration time.Duration) *info.ContainerInfo {
+	stats := GenerateRandomStats(query.NumStats, numCores, duration)
+	samples, _ := NewSamplesFromStats(stats...)
+	if len(samples) > query.NumSamples {
+		samples = samples[:query.NumSamples]
+	}
+	cpuPercentiles := make([]info.Percentile, 0, len(query.CpuUsagePercentiles))
+
+	// TODO(monnand): This will generate percentiles where 50%tile data may
+	// be larger than 90%tile data.
+	for _, p := range query.CpuUsagePercentiles {
+		percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
+		cpuPercentiles = append(cpuPercentiles, percentile)
+	}
+	memPercentiles := make([]info.Percentile, 0, len(query.MemoryUsagePercentages))
+	for _, p := range query.MemoryUsagePercentages {
+		percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
+		memPercentiles = append(memPercentiles, percentile)
+	}
+
+	percentiles := &info.ContainerStatsPercentiles{
+		MaxMemoryUsage:         uint64(rand.Int63n(4096)),
+		MemoryUsagePercentiles: memPercentiles,
+		CpuUsagePercentiles:    cpuPercentiles,
+	}
+
+	spec := GenerateRandomContainerSpec(numCores)
+
+	ret := &info.ContainerInfo{
+		ContainerReference: info.ContainerReference{
+			Name: containerName,
+		},
+		Spec:             spec,
+		StatsPercentiles: percentiles,
+		Samples:          samples,
+		Stats:            stats,
+	}
+	return ret
+}
+
+func NewSamplesFromStats(stats ...*info.ContainerStats) ([]*info.ContainerStatsSample, error) {
+	if len(stats) < 2 {
+		return nil, nil
+	}
+	samples := make([]*info.ContainerStatsSample, 0, len(stats)-1)
+	for i, s := range stats[1:] {
+		prev := stats[i]
+		sample, err := info.NewSample(prev, s)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to generate sample from %+v and %+v: %v",
+				prev, s, err)
+		}
+		samples = append(samples, sample)
+	}
+	return samples, nil
 }
