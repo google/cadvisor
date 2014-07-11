@@ -53,6 +53,8 @@ func main() {
 		if err := lmctfy.Register("/"); err != nil {
 			log.Printf("lmctfy registration failed: %v.", err)
 			log.Print("Running in docker only mode.")
+		} else {
+			registeredRoot = true
 		}
 	}
 
