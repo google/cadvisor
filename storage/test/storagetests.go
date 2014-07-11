@@ -392,14 +392,10 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 
 	actualRecentStats := trace[len(trace)-len(recentStats):]
 
-	for _, r := range recentStats {
-		found := false
-		for _, s := range actualRecentStats {
-			if statsEq(s, r) {
-				found = true
-			}
-		}
-		if !found {
+	// The returned stats should be sorted in time increasing order
+	for i, s := range actualRecentStats {
+		r := recentStats[i]
+		if !statsEq(s, r) {
 			t.Errorf("unexpected stats %+v with memory usage %v", r, r.Memory.Usage)
 		}
 	}
@@ -438,14 +434,10 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 
 	actualRecentStats := trace[len(trace)-len(recentStats):]
 
-	for _, r := range recentStats {
-		found := false
-		for _, s := range actualRecentStats {
-			if statsEq(s, r) {
-				found = true
-			}
-		}
-		if !found {
+	// The returned stats should be sorted in time increasing order
+	for i, s := range actualRecentStats {
+		r := recentStats[i]
+		if !statsEq(s, r) {
 			t.Errorf("unexpected stats %+v with memory usage %v", r, r.Memory.Usage)
 		}
 	}

@@ -331,8 +331,13 @@ func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]
 		return nil, err
 	}
 	statsList := make([]*info.ContainerStats, 0, len(series))
-	for _, s := range series {
-		for _, values := range s.Points {
+	// By default, influxDB returns data in time descending order.
+	// RecentStats() requires stats in time increasing order,
+	// so we need to go through from the last one to the first one.
+	for i := len(series) - 1; i >= 0; i-- {
+		s := series[i]
+		for j := len(s.Points) - 1; j >= 0; j-- {
+			values := s.Points[j]
 			stats, err := self.valuesToContainerStats(s.Columns, values)
 			if err != nil {
 				return nil, err
@@ -358,8 +363,10 @@ func (self *influxdbStorage) Samples(containerName string, numSamples int) ([]*i
 		return nil, err
 	}
 	sampleList := make([]*info.ContainerStatsSample, 0, len(series))
-	for _, s := range series {
-		for _, values := range s.Points {
+	for i := len(series) - 1; i >= 0; i-- {
+		s := series[i]
+		for j := len(s.Points) - 1; j >= 0; j-- {
+			values := s.Points[j]
 			sample, err := self.valuesToContainerSample(s.Columns, values)
 			if err != nil {
 				return nil, err
