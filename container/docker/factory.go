@@ -17,9 +17,12 @@ package docker
 import (
 	"flag"
 	"fmt"
+	"log"
 	"regexp"
 	"strconv"
+	"strings"
 
+	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
@@ -29,6 +32,9 @@ var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "do
 
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
+
+	// Whether this system is using systemd.
+	hasSystemd bool
 }
 
 func (self *dockerFactory) String() string {
@@ -46,6 +52,15 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 		self.machineInfoFactory,
 	)
 	return
+}
+
+// Docker handles all containers under /docker
+func (self *dockerFactory) CanHandle(name string) bool {
+	// In systemd systems the containers are: /docker-{ID}
+	if self.hasSystemd {
+		return strings.HasPrefix(name, "/docker-")
+	}
+	return name == "/docker" || strings.HasPrefix(name, "/docker/")
 }
 
 func parseDockerVersion(full_version_string string) ([]int, error) {
@@ -68,7 +83,7 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, paths ...string) error {
+func Register(factory info.MachineInfoFactory) error {
 	client, err := docker.NewClient(*ArgDockerEndpoint)
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
@@ -92,12 +107,9 @@ func Register(factory info.MachineInfoFactory, paths ...string) error {
 	}
 	f := &dockerFactory{
 		machineInfoFactory: factory,
+		hasSystemd:         systemd.UseSystemd(),
 	}
-	for _, p := range paths {
-		if p != "/" && p != "/docker" {
-			return fmt.Errorf("%v cannot be managed by docker", p)
-		}
-		container.RegisterContainerHandlerFactory(p, f)
-	}
+	log.Printf("Registering Docker factory")
+	container.RegisterContainerHandlerFactory(f)
 	return nil
 }
