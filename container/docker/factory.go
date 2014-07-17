@@ -34,7 +34,7 @@ type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
 	// Whether this system is using systemd.
-	hasSystemd bool
+	useSystemd bool
 }
 
 func (self *dockerFactory) String() string {
@@ -50,6 +50,7 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 		client,
 		name,
 		self.machineInfoFactory,
+		self.useSystemd,
 	)
 	return
 }
@@ -57,7 +58,7 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 // Docker handles all containers under /docker
 func (self *dockerFactory) CanHandle(name string) bool {
 	// In systemd systems the containers are: /docker-{ID}
-	if self.hasSystemd {
+	if self.useSystemd {
 		return strings.HasPrefix(name, "/docker-")
 	}
 	return name == "/docker" || strings.HasPrefix(name, "/docker/")
@@ -107,7 +108,7 @@ func Register(factory info.MachineInfoFactory) error {
 	}
 	f := &dockerFactory{
 		machineInfoFactory: factory,
-		hasSystemd:         systemd.UseSystemd(),
+		useSystemd:         systemd.UseSystemd(),
 	}
 	log.Printf("Registering Docker factory")
 	container.RegisterContainerHandlerFactory(f)
