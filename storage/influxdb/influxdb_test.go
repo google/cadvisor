@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build ignore
+
 package influxdb
 
 import (
@@ -21,7 +23,7 @@ import (
 
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/test"
-	"github.com/influxdb/influxdb-go"
+	"github.com/influxdb/influxdb/client"
 )
 
 func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
