@@ -33,7 +33,7 @@ type Manager interface {
 	GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error)
 
 	// Get information about the machine.
-	GetMachineInfo() (*info.MachineInfo, error)
+	GetMachineSpec() (*info.MachineSpec, error)
 
 	// Get version information about different components we depend on.
 	GetVersionInfo() (*info.VersionInfo, error)
@@ -46,12 +46,12 @@ func New(driver storage.StorageDriver) (Manager, error) {
 	newManager := &manager{}
 	newManager.containers = make(map[string]*containerData)
 
-	machineInfo, err := getMachineInfo()
+	machineSpec, err := getMachineSpec()
 	if err != nil {
 		return nil, err
 	}
-	newManager.machineInfo = *machineInfo
-	log.Printf("Machine: %+v", newManager.machineInfo)
+	newManager.machineSpec = *machineSpec
+	log.Printf("Machine: %+v", newManager.machineSpec)
 
 	versionInfo, err := getVersionInfo()
 	if err != nil {
@@ -68,7 +68,7 @@ type manager struct {
 	containers     map[string]*containerData
 	containersLock sync.RWMutex
 	storageDriver  storage.StorageDriver
-	machineInfo    info.MachineInfo
+	machineSpec    info.MachineSpec
 	versionInfo    info.VersionInfo
 }
 
@@ -166,15 +166,15 @@ func (m *manager) GetContainerInfo(containerName string, query *info.ContainerIn
 	if ret.Spec.Memory != nil {
 		// Memory.Limit is 0 means there's no limit
 		if ret.Spec.Memory.Limit == 0 {
-			ret.Spec.Memory.Limit = uint64(m.machineInfo.MemoryCapacity)
+			ret.Spec.Memory.Limit = uint64(m.machineSpec.MemoryCapacity)
 		}
 	}
 	return ret, nil
 }
 
-func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
-	// Copy and return the MachineInfo.
-	ret := m.machineInfo
+func (m *manager) GetMachineSpec() (*info.MachineSpec, error) {
+	// Copy and return the MachineSpec.
+	ret := m.machineSpec
 	return &ret, nil
 }
 

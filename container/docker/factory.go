@@ -31,7 +31,7 @@ import (
 var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
 
 type dockerFactory struct {
-	machineInfoFactory info.MachineInfoFactory
+	machineInfoFactory info.MachineSpecFactory
 
 	// Whether this system is using systemd.
 	hasSystemd bool
@@ -83,7 +83,7 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory) error {
+func Register(factory info.MachineSpecFactory) error {
 	client, err := docker.NewClient(*ArgDockerEndpoint)
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)

@@ -74,7 +74,7 @@ const containersHtmlTemplate = `
           <li class="list-group-item"><span class="stat-label">Max Limit</span> {{printCores .Spec.Cpu.MaxLimit}} <span class="unit-label">cores</span></li>
         {{end}}
         {{if .Spec.Cpu.Mask}}
-          <li class="list-group-item"><span class="stat-label">Allowed Cores</span> {{printMask .Spec.Cpu.Mask .MachineInfo.NumCores}}</li>
+          <li class="list-group-item"><span class="stat-label">Allowed Cores</span> {{printMask .Spec.Cpu.Mask .MachineSpec.NumCores}}</li>
         {{end}}
       </ul>
     {{end}}
@@ -132,16 +132,16 @@ const containersHtmlTemplate = `
             <h4>Usage Breakdown</h4>
             <div class="col-sm-9">
               <div class="progress">
-                <div class="progress-bar progress-bar-danger" style="width: {{getHotMemoryPercent .Spec .Stats .MachineInfo}}%">
+                <div class="progress-bar progress-bar-danger" style="width: {{getHotMemoryPercent .Spec .Stats .MachineSpec}}%">
                   <span class="sr-only">Hot Memory</span>
                 </div>
-                <div class="progress-bar progress-bar-info" style="width: {{getColdMemoryPercent .Spec .Stats .MachineInfo}}%">
+                <div class="progress-bar progress-bar-info" style="width: {{getColdMemoryPercent .Spec .Stats .MachineSpec}}%">
                   <span class="sr-only">Cold Memory</span>
                 </div>
               </div>
             </div>
             <div class="col-sm-3">
-              {{ getMemoryUsage .Stats }} MB ({{ getMemoryUsagePercent .Spec .Stats .MachineInfo}}%)
+              {{ getMemoryUsage .Stats }} MB ({{ getMemoryUsagePercent .Spec .Stats .MachineSpec}}%)
             </div>
 	  </div>
           <h4>Page Faults</h4>

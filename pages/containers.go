@@ -53,7 +53,7 @@ type pageData struct {
 	Subcontainers      []info.ContainerReference
 	Spec               *info.ContainerSpec
 	Stats              []*info.ContainerStats
-	MachineInfo        *info.MachineInfo
+	MachineSpec        *info.MachineSpec
 	ResourcesAvailable bool
 	CpuAvailable       bool
 	MemoryAvailable    bool
@@ -128,7 +128,7 @@ func printMegabytes(bytes uint64) string {
 	return strconv.FormatFloat(megabytes, 'f', 3, 64)
 }
 
-func toMemoryPercent(usage uint64, spec *info.ContainerSpec, machine *info.MachineInfo) int {
+func toMemoryPercent(usage uint64, spec *info.ContainerSpec, machine *info.MachineSpec) int {
 	// Saturate limit to the machine size.
 	limit := uint64(spec.Memory.Limit)
 	if limit > uint64(machine.MemoryCapacity) {
@@ -142,15 +142,15 @@ func getMemoryUsage(stats []*info.ContainerStats) string {
 	return strconv.FormatFloat(toMegabytes((stats[len(stats)-1].Memory.Usage)), 'f', 2, 64)
 }
 
-func getMemoryUsagePercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
+func getMemoryUsagePercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineSpec) int {
 	return toMemoryPercent((stats[len(stats)-1].Memory.Usage), spec, machine)
 }
 
-func getHotMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
+func getHotMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineSpec) int {
 	return toMemoryPercent((stats[len(stats)-1].Memory.WorkingSet), spec, machine)
 }
 
-func getColdMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
+func getColdMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineSpec) int {
 	latestStats := stats[len(stats)-1].Memory
 	return toMemoryPercent((latestStats.Usage)-(latestStats.WorkingSet), spec, machine)
 }
@@ -171,8 +171,8 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 		return fmt.Errorf("Failed to get container \"%s\" with error: %s", containerName, err)
 	}
 
-	// Get the MachineInfo
-	machineInfo, err := m.GetMachineInfo()
+	// Get the MachineSpec
+	machineInfo, err := m.GetMachineSpec()
 	if err != nil {
 		return err
 	}
@@ -211,7 +211,7 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 		Subcontainers:      cont.Subcontainers,
 		Spec:               cont.Spec,
 		Stats:              cont.Stats,
-		MachineInfo:        machineInfo,
+		MachineSpec:        machineInfo,
 		ResourcesAvailable: cont.Spec.Cpu != nil || cont.Spec.Memory != nil,
 		CpuAvailable:       cont.Spec.Cpu != nil,
 		MemoryAvailable:    cont.Spec.Memory != nil,

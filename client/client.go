@@ -36,7 +36,7 @@ func NewClient(URL string) (*Client, error) {
 			"api/v1.0",
 		}, "/"),
 	}
-	_, err := c.MachineInfo()
+	_, err := c.MachineSpec()
 	if err != nil {
 		return nil, err
 	}
@@ -47,9 +47,9 @@ func (self *Client) machineInfoUrl() string {
 	return strings.Join([]string{self.baseUrl, "machine"}, "/")
 }
 
-func (self *Client) MachineInfo() (minfo *info.MachineInfo, err error) {
+func (self *Client) MachineSpec() (minfo *info.MachineSpec, err error) {
 	u := self.machineInfoUrl()
-	ret := new(info.MachineInfo)
+	ret := new(info.MachineSpec)
 	err = self.httpGetJsonData(ret, nil, u, "machine info")
 	if err != nil {
 		return

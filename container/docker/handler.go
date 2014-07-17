@@ -38,13 +38,13 @@ type dockerContainerHandler struct {
 	client             *docker.Client
 	name               string
 	aliases            []string
-	machineInfoFactory info.MachineInfoFactory
+	machineInfoFactory info.MachineSpecFactory
 }
 
 func newDockerContainerHandler(
 	client *docker.Client,
 	name string,
-	machineInfoFactory info.MachineInfoFactory,
+	machineInfoFactory info.MachineSpecFactory,
 ) (container.ContainerHandler, error) {
 	handler := &dockerContainerHandler{
 		client:             client,
@@ -141,7 +141,7 @@ func readLibcontainerSpec(id string) (spec *libcontainer.Config, err error) {
 	return
 }
 
-func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.MachineInfo) *info.ContainerSpec {
+func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.MachineSpec) *info.ContainerSpec {
 	spec := new(info.ContainerSpec)
 	spec.Memory = new(info.MemorySpec)
 	spec.Memory.Limit = math.MaxUint64
@@ -173,7 +173,7 @@ func (self *dockerContainerHandler) GetSpec() (spec *info.ContainerSpec, err err
 		spec = new(info.ContainerSpec)
 		return
 	}
-	mi, err := self.machineInfoFactory.GetMachineInfo()
+	mi, err := self.machineInfoFactory.GetMachineSpec()
 	if err != nil {
 		return
 	}
@@ -190,7 +190,7 @@ func (self *dockerContainerHandler) GetSpec() (spec *info.ContainerSpec, err err
 	return
 }
 
-func libcontainerToContainerStats(s *cgroups.Stats, mi *info.MachineInfo) *info.ContainerStats {
+func libcontainerToContainerStats(s *cgroups.Stats, mi *info.MachineSpec) *info.ContainerStats {
 	ret := new(info.ContainerStats)
 	ret.Timestamp = time.Now()
 	ret.Cpu = new(info.CpuStats)
@@ -230,7 +230,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 		stats.Timestamp = time.Now()
 		return
 	}
-	mi, err := self.machineInfoFactory.GetMachineInfo()
+	mi, err := self.machineInfoFactory.GetMachineSpec()
 	if err != nil {
 		return
 	}
