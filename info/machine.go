@@ -36,7 +36,7 @@ type VersionInfo struct {
 	CadvisorVersion string `json:"cadvisor_version"`
 }
 
-type MachineInfoFactory interface {
-	GetMachineInfo() (*MachineSpec, error)
+type MachineSpecFactory interface {
+	GetMachineSpec() (*MachineSpec, error)
 	GetVersionInfo() (*VersionInfo, error)
 }

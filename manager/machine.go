@@ -31,7 +31,7 @@ import (
 var numCpuRegexp = regexp.MustCompile("processor\\t*: +[0-9]+")
 var memoryCapacityRegexp = regexp.MustCompile("MemTotal: *([0-9]+) kB")
 
-func getMachineInfo() (*info.MachineSpec, error) {
+func getMachineSpec() (*info.MachineSpec, error) {
 	// Get the number of CPUs from /proc/cpuinfo.
 	out, err := ioutil.ReadFile("/proc/cpuinfo")
 	if err != nil {

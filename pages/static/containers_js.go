@@ -82,7 +82,7 @@ function drawGauge(elementId, cpuUsage, memoryUsage) {
 }
 
 // Get the machine info.
-function getMachineInfo(callback) {
+function getMachineSpec(callback) {
 	$.getJSON("/api/v1.0/machine", function(data) {
 		callback(data);
 	});
@@ -238,19 +238,19 @@ function stepExecute(steps) {
 }
 
 // Draw all the charts on the page.
-function drawCharts(machineInfo, containerInfo) {
+function drawCharts(machineSpec, containerInfo) {
 	var steps = [];
 
 	steps.push(function() {
-		drawOverallUsage("usage-gauge", machineInfo, containerInfo)
+		drawOverallUsage("usage-gauge", machineSpec, containerInfo)
 	});
 
 	// CPU.
 	steps.push(function() {
-		drawCpuTotalUsage("cpu-total-usage-chart", machineInfo, containerInfo);
+		drawCpuTotalUsage("cpu-total-usage-chart", machineSpec, containerInfo);
 	});
 	steps.push(function() {
-		drawCpuPerCoreUsage("cpu-per-core-usage-chart", machineInfo, containerInfo);
+		drawCpuPerCoreUsage("cpu-per-core-usage-chart", machineSpec, containerInfo);
 	});
 	steps.push(function() {
 		drawCpuUsageBreakdown("cpu-usage-breakdown-chart", containerInfo);
@@ -284,10 +284,10 @@ function startPage(containerName, hasCpu, hasMemory) {
 	window.charts = {};
 
 	// Get machine info, then get the stats every 1s.
-	getMachineInfo(function(machineInfo) {
+	getMachineSpec(function(machineSpec) {
 		setInterval(function() {
 			getStats(containerName, function(stats){
-				drawCharts(machineInfo, stats);
+				drawCharts(machineSpec, stats);
 			});
 		}, 1000);
 	});

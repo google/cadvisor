@@ -171,8 +171,8 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 		return fmt.Errorf("Failed to get container \"%s\" with error: %s", containerName, err)
 	}
 
-	// Get the MachineInfo
-	machineInfo, err := m.GetMachineInfo()
+	// Get the MachineSpec
+	machineInfo, err := m.GetMachineSpec()
 	if err != nil {
 		return err
 	}

@@ -53,15 +53,15 @@ func HandleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 	case requestType == MachineApi:
 		log.Printf("Api - Machine")
 
-		// Get the MachineInfo
-		machineInfo, err := m.GetMachineInfo()
+		// Get the MachineSpec
+		machineInfo, err := m.GetMachineSpec()
 		if err != nil {
 			return err
 		}
 
 		out, err := json.Marshal(machineInfo)
 		if err != nil {
-			fmt.Fprintf(w, "Failed to marshall MachineInfo with error: %s", err)
+			fmt.Fprintf(w, "Failed to marshall MachineSpec with error: %s", err)
 		}
 		w.Write(out)
 	case requestType == ContainersApi:
