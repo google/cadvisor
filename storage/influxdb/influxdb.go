@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build ignore
+
 package influxdb
 
 import (
@@ -22,7 +24,7 @@ import (
 
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
-	"github.com/influxdb/influxdb-go"
+	"github.com/influxdb/influxdb/client"
 )
 
 type influxdbStorage struct {
