@@ -33,7 +33,7 @@ type Manager interface {
 	GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error)
 
 	// Get information about the machine.
-	GetMachineInfo() (*info.MachineInfo, error)
+	GetMachineInfo() (*info.MachineSpec, error)
 
 	// Get version information about different components we depend on.
 	GetVersionInfo() (*info.VersionInfo, error)
@@ -68,7 +68,7 @@ type manager struct {
 	containers     map[string]*containerData
 	containersLock sync.RWMutex
 	storageDriver  storage.StorageDriver
-	machineInfo    info.MachineInfo
+	machineInfo    info.MachineSpec
 	versionInfo    info.VersionInfo
 }
 
@@ -172,7 +172,7 @@ func (m *manager) GetContainerInfo(containerName string, query *info.ContainerIn
 	return ret, nil
 }
 
-func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
+func (m *manager) GetMachineInfo() (*info.MachineSpec, error) {
 	// Copy and return the MachineInfo.
 	ret := m.machineInfo
 	return &ret, nil

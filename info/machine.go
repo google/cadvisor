@@ -14,7 +14,7 @@
 
 package info
 
-type MachineInfo struct {
+type MachineSpec struct {
 	// The number of cores in this machine.
 	NumCores int `json:"num_cores"`
 
@@ -37,6 +37,6 @@ type VersionInfo struct {
 }
 
 type MachineInfoFactory interface {
-	GetMachineInfo() (*MachineInfo, error)
+	GetMachineInfo() (*MachineSpec, error)
 	GetVersionInfo() (*VersionInfo, error)
 }

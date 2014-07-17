@@ -31,7 +31,7 @@ import (
 var numCpuRegexp = regexp.MustCompile("processor\\t*: +[0-9]+")
 var memoryCapacityRegexp = regexp.MustCompile("MemTotal: *([0-9]+) kB")
 
-func getMachineInfo() (*info.MachineInfo, error) {
+func getMachineInfo() (*info.MachineSpec, error) {
 	// Get the number of CPUs from /proc/cpuinfo.
 	out, err := ioutil.ReadFile("/proc/cpuinfo")
 	if err != nil {
@@ -59,7 +59,7 @@ func getMachineInfo() (*info.MachineInfo, error) {
 	// Capacity is in KB, convert it to bytes.
 	memoryCapacity = memoryCapacity * 1024
 
-	return &info.MachineInfo{
+	return &info.MachineSpec{
 		NumCores:       numCores,
 		MemoryCapacity: memoryCapacity,
 	}, nil

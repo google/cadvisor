@@ -73,7 +73,7 @@ func cadvisorTestClient(path string, expectedPostObj, expectedPostObjEmpty, repl
 }
 
 func TestGetMachineinfo(t *testing.T) {
-	minfo := &info.MachineInfo{
+	minfo := &info.MachineSpec{
 		NumCores:       8,
 		MemoryCapacity: 31625871360,
 	}
@@ -82,7 +82,7 @@ func TestGetMachineinfo(t *testing.T) {
 		t.Fatalf("unable to get a client %v", err)
 	}
 	defer server.Close()
-	returned, err := client.MachineInfo()
+	returned, err := client.MachineSpec()
 	if err != nil {
 		t.Fatal(err)
 	}

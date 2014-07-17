@@ -141,7 +141,7 @@ func readLibcontainerSpec(id string) (spec *libcontainer.Config, err error) {
 	return
 }
 
-func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.MachineInfo) *info.ContainerSpec {
+func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.MachineSpec) *info.ContainerSpec {
 	spec := new(info.ContainerSpec)
 	spec.Memory = new(info.MemorySpec)
 	spec.Memory.Limit = math.MaxUint64
@@ -190,7 +190,7 @@ func (self *dockerContainerHandler) GetSpec() (spec *info.ContainerSpec, err err
 	return
 }
 
-func libcontainerToContainerStats(s *cgroups.Stats, mi *info.MachineInfo) *info.ContainerStats {
+func libcontainerToContainerStats(s *cgroups.Stats, mi *info.MachineSpec) *info.ContainerStats {
 	ret := new(info.ContainerStats)
 	ret.Timestamp = time.Now()
 	ret.Cpu = new(info.CpuStats)
