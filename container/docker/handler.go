@@ -27,10 +27,9 @@ import (
 
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
-	"github.com/docker/libcontainer/cgroups/fs"
-	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
+	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
 )
 
@@ -39,17 +38,20 @@ type dockerContainerHandler struct {
 	name               string
 	aliases            []string
 	machineInfoFactory info.MachineInfoFactory
+	useSystemd         bool
 }
 
 func newDockerContainerHandler(
 	client *docker.Client,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
+	useSystemd bool,
 ) (container.ContainerHandler, error) {
 	handler := &dockerContainerHandler{
 		client:             client,
 		name:               name,
 		machineInfoFactory: machineInfoFactory,
+		useSystemd:         useSystemd,
 	}
 	if !handler.isDockerContainer() {
 		return handler, nil
@@ -190,48 +192,11 @@ func (self *dockerContainerHandler) GetSpec() (spec *info.ContainerSpec, err err
 	return
 }
 
-func libcontainerToContainerStats(s *cgroups.Stats, mi *info.MachineInfo) *info.ContainerStats {
-	ret := new(info.ContainerStats)
-	ret.Timestamp = time.Now()
-	ret.Cpu = new(info.CpuStats)
-	ret.Cpu.Usage.User = s.CpuStats.CpuUsage.UsageInUsermode
-	ret.Cpu.Usage.System = s.CpuStats.CpuUsage.UsageInKernelmode
-	n := len(s.CpuStats.CpuUsage.PercpuUsage)
-	ret.Cpu.Usage.PerCpu = make([]uint64, n)
-
-	ret.Cpu.Usage.Total = 0
-	for i := 0; i < n; i++ {
-		ret.Cpu.Usage.PerCpu[i] = s.CpuStats.CpuUsage.PercpuUsage[i]
-		ret.Cpu.Usage.Total += s.CpuStats.CpuUsage.PercpuUsage[i]
-	}
-	ret.Memory = new(info.MemoryStats)
-	ret.Memory.Usage = s.MemoryStats.Usage
-	if v, ok := s.MemoryStats.Stats["pgfault"]; ok {
-		ret.Memory.ContainerData.Pgfault = v
-		ret.Memory.HierarchicalData.Pgfault = v
-	}
-	if v, ok := s.MemoryStats.Stats["pgmajfault"]; ok {
-		ret.Memory.ContainerData.Pgmajfault = v
-		ret.Memory.HierarchicalData.Pgmajfault = v
-	}
-	if v, ok := s.MemoryStats.Stats["total_inactive_anon"]; ok {
-		ret.Memory.WorkingSet = ret.Memory.Usage - v
-		if v, ok := s.MemoryStats.Stats["total_active_file"]; ok {
-			ret.Memory.WorkingSet -= v
-		}
-	}
-	return ret
-}
-
 func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
 	if !self.isDockerContainer() {
 		// Return empty stats for root containers.
 		stats = new(info.ContainerStats)
 		stats.Timestamp = time.Now()
-		return
-	}
-	mi, err := self.machineInfoFactory.GetMachineInfo()
-	if err != nil {
 		return
 	}
 	parent, id, err := self.splitName()
@@ -242,20 +207,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 		Parent: parent,
 		Name:   id,
 	}
-
-	// TODO(vmarmol): Use libcontainer's Stats() in the new API when that is ready.
-	// Use systemd paths if systemd is being used.
-	var s *cgroups.Stats
-	if systemd.UseSystemd() {
-		s, err = systemd.GetStats(cg)
-	} else {
-		s, err = fs.GetStats(cg)
-	}
-	if err != nil {
-		return
-	}
-	stats = libcontainerToContainerStats(s, mi)
-	return
+	return containerLibcontainer.GetStats(cg, self.useSystemd)
 }
 
 func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
