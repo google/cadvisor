@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/container"
-	ctest "github.com/google/cadvisor/container/test"
 	"github.com/google/cadvisor/info"
 	itest "github.com/google/cadvisor/info/test"
 	stest "github.com/google/cadvisor/storage/test"
@@ -31,15 +30,15 @@ import (
 func createManagerAndAddContainers(
 	driver *stest.MockStorageDriver,
 	containers []string,
-	f func(*ctest.MockContainerHandler),
+	f func(*container.MockContainerHandler),
 	t *testing.T,
 ) *manager {
 	if driver == nil {
 		driver = &stest.MockStorageDriver{}
 	}
-	factory := &ctest.FactoryForMockContainerHandler{
+	factory := &container.FactoryForMockContainerHandler{
 		Name: "factoryForManager",
-		PrepareContainerHandlerFunc: func(name string, handler *ctest.MockContainerHandler) {
+		PrepareContainerHandlerFunc: func(name string, handler *container.MockContainerHandler) {
 			handler.Name = name
 			found := false
 			for _, c := range containers {
@@ -53,7 +52,8 @@ func createManagerAndAddContainers(
 			f(handler)
 		},
 	}
-	container.RegisterContainerHandlerFactory("/", factory)
+	container.ClearContainerHandlerFactories()
+	container.RegisterContainerHandlerFactory(factory)
 	mif, err := New(driver)
 	if err != nil {
 		t.Fatal(err)
@@ -85,7 +85,7 @@ func TestGetContainerInfo(t *testing.T) {
 	}
 
 	infosMap := make(map[string]*info.ContainerInfo, len(containers))
-	handlerMap := make(map[string]*ctest.MockContainerHandler, len(containers))
+	handlerMap := make(map[string]*container.MockContainerHandler, len(containers))
 
 	for _, container := range containers {
 		infosMap[container] = itest.GenerateRandomContainerInfo(container, 4, query, 1*time.Second)
@@ -95,7 +95,7 @@ func TestGetContainerInfo(t *testing.T) {
 	m := createManagerAndAddContainers(
 		driver,
 		containers,
-		func(h *ctest.MockContainerHandler) {
+		func(h *container.MockContainerHandler) {
 			cinfo := infosMap[h.Name]
 			stats := cinfo.Stats
 			samples := cinfo.Samples
@@ -173,7 +173,7 @@ func TestGetContainerInfoWithDefaultValue(t *testing.T) {
 	query = query.FillDefaults()
 
 	infosMap := make(map[string]*info.ContainerInfo, len(containers))
-	handlerMap := make(map[string]*ctest.MockContainerHandler, len(containers))
+	handlerMap := make(map[string]*container.MockContainerHandler, len(containers))
 
 	for _, container := range containers {
 		infosMap[container] = itest.GenerateRandomContainerInfo(container, 4, query, 1*time.Second)
@@ -183,7 +183,7 @@ func TestGetContainerInfoWithDefaultValue(t *testing.T) {
 	m := createManagerAndAddContainers(
 		driver,
 		containers,
-		func(h *ctest.MockContainerHandler) {
+		func(h *container.MockContainerHandler) {
 			cinfo := infosMap[h.Name]
 			stats := cinfo.Stats
 			samples := cinfo.Samples

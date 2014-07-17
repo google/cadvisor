@@ -30,7 +30,6 @@ import (
 )
 
 var argPort = flag.Int("port", 8080, "port to listen")
-var argAllowLmctfy = flag.Bool("allow_lmctfy", true, "whether to allow lmctfy as a container handler")
 
 var argDbDriver = flag.String("storage_driver", "memory", "storage driver to use. Options are: memory (default) and influxdb")
 
@@ -47,31 +46,17 @@ func main() {
 		log.Fatalf("Failed to create a Container Manager: %s", err)
 	}
 
-	// Register lmctfy for the root if allowed and available.
-	registeredRoot := false
-	if *argAllowLmctfy {
-		if err := lmctfy.Register("/"); err != nil {
-			log.Printf("lmctfy registration failed: %v.", err)
-			log.Print("Running in docker only mode.")
-		} else {
-			registeredRoot = true
-		}
-	}
-
-	// Register Docker for root if we were unable to register lmctfy.
-	if !registeredRoot {
-		if err := docker.Register(containerManager, "/"); err != nil {
-			log.Printf("Docker registration failed: %v.", err)
-			log.Fatalf("Unable to continue without root handler.")
-		}
-	}
-
-	// Register Docker for all Docker containers.
-	if err := docker.Register(containerManager, "/docker"); err != nil {
-		// Ignore this error because we should work with lmctfy only
+	// Register Docker.
+	if err := docker.Register(containerManager); err != nil {
 		log.Printf("Docker registration failed: %v.", err)
-		log.Print("Running in lmctfy only mode.")
 	}
+
+	// Register lmctfy.
+	if err := lmctfy.Register(); err != nil {
+		log.Fatalf("lmctfy registration failed: %v.", err)
+	}
+
+	// TODO(vmarmol): Have a no-op or "raw" factory.
 
 	// Handler for static content.
 	http.HandleFunc(static.StaticResource, func(w http.ResponseWriter, r *http.Request) {

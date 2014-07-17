@@ -22,15 +22,12 @@ import (
 	"github.com/google/cadvisor/container"
 )
 
-func Register(paths ...string) error {
+func Register() error {
 	if _, err := exec.LookPath("lmctfy"); err != nil {
 		return errors.New("cannot find lmctfy")
 	}
-	f := &lmctfyFactory{}
-	for _, path := range paths {
-		log.Printf("register lmctfy under %v", path)
-		container.RegisterContainerHandlerFactory(path, f)
-	}
+	log.Printf("Registering lmctfy factory")
+	container.RegisterContainerHandlerFactory(&lmctfyFactory{})
 	return nil
 }
 
@@ -49,4 +46,9 @@ func (self *lmctfyFactory) NewContainerHandler(name string) (container.Container
 	// XXX(dengnan): /user is created by ubuntu 14.04. Not sure if we should list it
 	handler := container.NewBlackListFilter(c, "/user")
 	return handler, nil
+}
+
+func (self *lmctfyFactory) CanHandle(name string) bool {
+	// TODO(vmarmol): Try to attach to the container before blindly saying true.
+	return true
 }
