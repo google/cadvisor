@@ -17,8 +17,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/memory"
 )
 
@@ -40,26 +43,24 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 	case "memory":
 		storageDriver = memory.New(*argSampleSize, *argHistoryDuration)
 		return storageDriver, nil
-	/*
-		case "influxdb":
-			var hostname string
-			hostname, err = os.Hostname()
-			if err != nil {
-				return nil, err
-			}
+	case "influxdb":
+		var hostname string
+		hostname, err = os.Hostname()
+		if err != nil {
+			return nil, err
+		}
 
-			storageDriver, err = influxdb.New(
-				hostname,
-				"cadvisorTable",
-				*argDbName,
-				*argDbUsername,
-				*argDbPassword,
-				*argDbHost,
-				*argDbIsSecure,
-				// TODO(monnand): One hour? Or user-defined?
-				1*time.Hour,
-			)
-	*/
+		storageDriver, err = influxdb.New(
+			hostname,
+			"cadvisorTable",
+			*argDbName,
+			*argDbUsername,
+			*argDbPassword,
+			*argDbHost,
+			*argDbIsSecure,
+			// TODO(monnand): One hour? Or user-defined?
+			1*time.Hour,
+		)
 	default:
 		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)
 	}
