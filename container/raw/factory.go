@@ -15,12 +15,20 @@
 package raw
 
 import (
+	"fmt"
 	"log"
 
+	"github.com/docker/libcontainer/cgroups"
 	"github.com/google/cadvisor/container"
 )
 
+type cgroupSubsystems struct {
+	// Cgroup subsystem mounts.
+	mounts []cgroups.Mount
+}
+
 type rawFactory struct {
+	cgroupSubsystems *cgroupSubsystems
 }
 
 func (self *rawFactory) String() string {
@@ -28,7 +36,7 @@ func (self *rawFactory) String() string {
 }
 
 func (self *rawFactory) NewContainerHandler(name string) (container.ContainerHandler, error) {
-	return newRawContainerHandler(name)
+	return newRawContainerHandler(name, self.cgroupSubsystems)
 }
 
 // The raw factory can handle any container.
@@ -37,7 +45,42 @@ func (self *rawFactory) CanHandle(name string) bool {
 }
 
 func Register() error {
+	// Get all cgroup mounts.
+	allCgroups, err := cgroups.GetCgroupMounts()
+	if err != nil {
+		return err
+	}
+	if len(allCgroups) == 0 {
+		return fmt.Errorf("failed to find cgroup mounts for the raw factory")
+	}
+
+	// Trim the mounts to only the subsystems we care about.
+	supportedCgroups := make([]cgroups.Mount, 0, len(allCgroups))
+	for _, mount := range allCgroups {
+		for _, subsystem := range mount.Subsystems {
+			if _, ok := supportedSubsystems[subsystem]; ok {
+				supportedCgroups = append(supportedCgroups, mount)
+			}
+		}
+	}
+	if len(supportedCgroups) == 0 {
+		return fmt.Errorf("failed to find supported cgroup mounts for the raw factory")
+	}
+
 	log.Printf("Registering Raw factory")
-	container.RegisterContainerHandlerFactory(new(rawFactory))
+	factory := &rawFactory{
+		cgroupSubsystems: &cgroupSubsystems{
+			mounts: supportedCgroups,
+		},
+	}
+	container.RegisterContainerHandlerFactory(factory)
 	return nil
+}
+
+// Cgroup susbsystems we support listing (should be the minimal set we need stats from).
+var supportedSubsystems map[string]struct{} = map[string]struct{}{
+	"cpu":     struct{}{},
+	"cpuset":  struct{}{},
+	"cpuacct": struct{}{},
+	"memory":  struct{}{},
 }

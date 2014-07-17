@@ -15,6 +15,9 @@
 package raw
 
 import (
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -22,12 +25,14 @@ import (
 )
 
 type rawContainerHandler struct {
-	name string
+	name             string
+	cgroupSubsystems *cgroupSubsystems
 }
 
-func newRawContainerHandler(name string) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems) (container.ContainerHandler, error) {
 	return &rawContainerHandler{
-		name: name,
+		name:             name,
+		cgroupSubsystems: cgroupSubsystems,
 	}, nil
 }
 
@@ -39,8 +44,12 @@ func (self *rawContainerHandler) ContainerReference() (info.ContainerReference, 
 }
 
 func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
+	ret := new(info.ContainerSpec)
+	ret.Cpu = new(info.CpuSpec)
+	ret.Memory = new(info.MemorySpec)
+
 	// TODO(vmarmol): Implement
-	return new(info.ContainerSpec), nil
+	return ret, nil
 }
 
 func (self *rawContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
@@ -52,9 +61,48 @@ func (self *rawContainerHandler) GetStats() (stats *info.ContainerStats, err err
 	return libcontainer.GetStats(cgroup, false)
 }
 
+// Lists all directories under "path" and outputs the results as children of "parent".
+func listDirectories(path string, parent string, recursive bool, output map[string]struct{}) error {
+	entries, err := ioutil.ReadDir(path)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		// We only grab directories.
+		if entry.IsDir() {
+			name := filepath.Join(parent, entry.Name())
+			output[name] = struct{}{}
+
+			// List subcontainers if asked to.
+			if recursive {
+				err := listDirectories(filepath.Join(path, entry.Name()), name, true, output)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
 func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	// TODO(vmarmol): Implement
-	return make([]info.ContainerReference, 0, 0), nil
+	containers := make(map[string]struct{}, 16)
+	for _, subsystem := range self.cgroupSubsystems.mounts {
+		err := listDirectories(filepath.Join(subsystem.Mountpoint, self.name), self.name, listType == container.LIST_RECURSIVE, containers)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Make into container references.
+	ret := make([]info.ContainerReference, 0, len(containers))
+	for cont, _ := range containers {
+		ret = append(ret, info.ContainerReference{
+			Name: cont,
+		})
+	}
+
+	return ret, nil
 }
 
 func (self *rawContainerHandler) ListThreads(listType container.ListType) ([]int, error) {
