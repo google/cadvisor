@@ -26,12 +26,15 @@ import (
 	"time"
 
 	"github.com/docker/libcontainer"
-	"github.com/docker/libcontainer/cgroups"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
 	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/utils"
 )
+
+// Basepath to all container specific information that libcontainer stores.
+const dockerRootDir = "/var/lib/docker/execdriver/native"
 
 type dockerContainerHandler struct {
 	client             *docker.Client
@@ -61,8 +64,9 @@ func newDockerContainerHandler(
 		return nil, fmt.Errorf("invalid docker container %v: %v", name, err)
 	}
 	ctnr, err := client.InspectContainer(id)
-	if err != nil {
-		return nil, fmt.Errorf("unable to inspect container %v: %v", name, err)
+	// We assume that if Inspect fails then the container is not known to docker.
+	if err != nil || !ctnr.State.Running {
+		return nil, container.NotActive
 	}
 	handler.aliases = append(handler.aliases, path.Join("/docker", ctnr.Name))
 	return handler, nil
@@ -125,21 +129,50 @@ func (self *dockerContainerHandler) isDockerContainer() bool {
 }
 
 // TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
-func readLibcontainerSpec(id string) (spec *libcontainer.Config, err error) {
-	dir := "/var/lib/docker/execdriver/native"
-	configPath := path.Join(dir, id, "container.json")
+func readLibcontainerConfig(id string) (config *libcontainer.Config, err error) {
+	configPath := path.Join(dockerRootDir, id, "container.json")
+	if !utils.FileExists(configPath) {
+		err = container.NotActive
+		return
+	}
 	f, err := os.Open(configPath)
 	if err != nil {
 		return
 	}
 	defer f.Close()
 	d := json.NewDecoder(f)
-	ret := new(libcontainer.Config)
-	err = d.Decode(ret)
+	retConfig := new(libcontainer.Config)
+	err = d.Decode(retConfig)
 	if err != nil {
 		return
 	}
-	spec = ret
+	config = retConfig
+
+	return
+}
+
+func readLibcontainerState(id string) (state *libcontainer.State, err error) {
+	statePath := path.Join(dockerRootDir, id, "state.json")
+	if !utils.FileExists(statePath) {
+		err = container.NotActive
+		return
+	}
+	f, err := os.Open(statePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = container.NotActive
+		}
+		return
+	}
+	defer f.Close()
+	d := json.NewDecoder(f)
+	retState := new(libcontainer.State)
+	err = d.Decode(retState)
+	if err != nil {
+		return
+	}
+	state = retState
+
 	return
 }
 
@@ -183,12 +216,12 @@ func (self *dockerContainerHandler) GetSpec() (spec *info.ContainerSpec, err err
 	if err != nil {
 		return
 	}
-	libcontainerSpec, err := readLibcontainerSpec(id)
+	libcontainerConfig, err := readLibcontainerConfig(id)
 	if err != nil {
 		return
 	}
 
-	spec = libcontainerConfigToContainerSpec(libcontainerSpec, mi)
+	spec = libcontainerConfigToContainerSpec(libcontainerConfig, mi)
 	return
 }
 
@@ -199,15 +232,20 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 		stats.Timestamp = time.Now()
 		return
 	}
-	parent, id, err := self.splitName()
+	_, id, err := self.splitName()
 	if err != nil {
 		return
 	}
-	cg := &cgroups.Cgroup{
-		Parent: parent,
-		Name:   id,
+	config, err := readLibcontainerConfig(id)
+	if err != nil {
+		return
 	}
-	return containerLibcontainer.GetStats(cg, self.useSystemd)
+	state, err := readLibcontainerState(id)
+	if err != nil {
+		return
+	}
+
+	return containerLibcontainer.GetStats(config, state)
 }
 
 func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
@@ -215,7 +253,7 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 		return nil, nil
 	}
 	if self.isRootContainer() && listType == container.LIST_SELF {
-		return []info.ContainerReference{info.ContainerReference{Name: "/docker"}}, nil
+		return []info.ContainerReference{{Name: "/docker"}}, nil
 	}
 	opt := docker.ListContainersOptions{
 		All: true,

@@ -96,7 +96,7 @@ func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]
 
 	// Make into container references.
 	ret := make([]info.ContainerReference, 0, len(containers))
-	for cont, _ := range containers {
+	for cont := range containers {
 		ret = append(ret, info.ContainerReference{
 			Name: cont,
 		})

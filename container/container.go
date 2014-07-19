@@ -14,13 +14,19 @@
 
 package container
 
-import "github.com/google/cadvisor/info"
+import (
+	"errors"
+
+	"github.com/google/cadvisor/info"
+)
 
 // Listing types.
 const (
 	LIST_SELF = iota
 	LIST_RECURSIVE
 )
+
+var NotActive = errors.New("Container is not active")
 
 type ListType int
 

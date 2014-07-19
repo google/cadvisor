@@ -83,11 +83,15 @@ func main() {
 		}
 	})
 
-	go containerManager.Start()
+	errChan := make(chan error)
+	go containerManager.Start(errChan)
 
 	log.Printf("Starting cAdvisor version: %q", info.VERSION)
 	log.Print("About to serve on port ", *argPort)
 
 	addr := fmt.Sprintf(":%v", *argPort)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	go func() {
+		errChan <- http.ListenAndServe(addr, nil)
+	}()
+	log.Fatal(<-errChan)
 }

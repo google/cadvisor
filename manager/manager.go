@@ -27,7 +27,7 @@ import (
 
 type Manager interface {
 	// Start the manager, blocks forever.
-	Start() error
+	Start(chanErr chan error)
 
 	// Get information about a container.
 	GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error)
@@ -73,16 +73,18 @@ type manager struct {
 }
 
 // Start the container manager.
-func (m *manager) Start() error {
+func (m *manager) Start(errChan chan error) {
 	// Create root and then recover all containers.
 	_, err := m.createContainer("/")
 	if err != nil {
-		return err
+		errChan <- err
+		return
 	}
 	log.Printf("Starting recovery of all containers")
 	err = m.detectContainers()
 	if err != nil {
-		return err
+		errChan <- err
+		return
 	}
 	log.Printf("Recovery completed")
 
@@ -102,7 +104,7 @@ func (m *manager) Start() error {
 			log.Printf("Global Housekeeping(%d) took %s", t.Unix(), duration)
 		}
 	}
-	return nil
+	errChan <- nil
 }
 
 // Get a container by name.
@@ -281,18 +283,22 @@ func (m *manager) detectContainers() error {
 	}
 
 	// Add the new containers.
-	for _, container := range added {
-		_, err = m.createContainer(container.Name)
+	for _, cont := range added {
+		_, err = m.createContainer(cont.Name)
 		if err != nil {
-			return fmt.Errorf("Failed to create existing container: %s: %s", container.Name, err)
+			if err != container.NotActive {
+				log.Printf("failed to create existing container: %s: %s", cont.Name, err)
+			}
 		}
 	}
 
 	// Remove the old containers.
-	for _, container := range removed {
-		err = m.destroyContainer(container.Name)
+	for _, cont := range removed {
+		err = m.destroyContainer(cont.Name)
 		if err != nil {
-			return fmt.Errorf("Failed to destroy existing container: %s: %s", container.Name, err)
+			if err != container.NotActive {
+				log.Printf("failed to destroy existing container: %s: %s", cont.Name, err)
+			}
 		}
 	}
 

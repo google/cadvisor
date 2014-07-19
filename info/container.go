@@ -239,11 +239,31 @@ type MemoryStatsMemoryData struct {
 	Pgmajfault uint64 `json:"pgmajfault,omitempty"`
 }
 
+type NetworkStats struct {
+	// Cumulative count of bytes received.
+	RxBytes uint64 `json:"rx_bytes,omitempty"`
+	// Cumulative count of packets received.
+	RxPackets uint64 `json:"rx_packets,omitempty"`
+	// Cumulative count of receive errors encountered.
+	RxErrors uint64 `json:"rx_errors,omitempty"`
+	// Cumulative count of packets dropped while receiving.
+	RxDropped uint64 `json:"rx_dropped,omitempty"`
+	// Cumulative count of bytes transmitted.
+	TxBytes uint64 `json:"tx_bytes,omitempty"`
+	// Cumulative count of packets transmitted.
+	TxPackets uint64 `json:"tx_packets,omitempty"`
+	// Cumulative count of transmit errors encountered.
+	TxErrors uint64 `json:"tx_errors,omitempty"`
+	// Cumulative count of packets dropped while transmitting.
+	TxDropped uint64 `json:"tx_dropped,omitempty"`
+}
+
 type ContainerStats struct {
 	// The time of this stat point.
-	Timestamp time.Time    `json:"timestamp"`
-	Cpu       *CpuStats    `json:"cpu,omitempty"`
-	Memory    *MemoryStats `json:"memory,omitempty"`
+	Timestamp time.Time     `json:"timestamp"`
+	Cpu       *CpuStats     `json:"cpu,omitempty"`
+	Memory    *MemoryStats  `json:"memory,omitempty"`
+	Network   *NetworkStats `json:"network,omitempty"`
 }
 
 // Makes a deep copy of the ContainerStats and returns a pointer to the new
