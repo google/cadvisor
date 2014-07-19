@@ -21,7 +21,7 @@ import (
 
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/test"
-	"github.com/influxdb/influxdb/client"
+	influxdb "github.com/influxdb/influxdb/client"
 )
 
 func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
