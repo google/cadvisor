@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
-	"github.com/influxdb/influxdb/client"
+	influxdb "github.com/influxdb/influxdb/client"
 )
 
 type influxdbStorage struct {
