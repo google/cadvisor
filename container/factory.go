@@ -16,7 +16,6 @@ package container
 
 import (
 	"fmt"
-	"log"
 	"sync"
 )
 
@@ -53,7 +52,6 @@ func NewContainerHandler(name string) (ContainerHandler, error) {
 	// Create the ContainerHandler with the first factory that supports it.
 	for _, factory := range factories {
 		if factory.CanHandle(name) {
-			log.Printf("Using factory %q for container %q", factory.String(), name)
 			return factory.NewContainerHandler(name)
 		}
 	}
