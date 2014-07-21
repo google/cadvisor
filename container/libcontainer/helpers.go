@@ -4,10 +4,13 @@ import (
 	"time"
 
 	"github.com/docker/libcontainer"
+	"github.com/docker/libcontainer/cgroups"
+	"github.com/docker/libcontainer/cgroups/fs"
+	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/google/cadvisor/info"
 )
 
-// Get stats of the specified cgroup
+// Get stats of the specified container
 func GetStats(config *libcontainer.Config, state *libcontainer.State) (*info.ContainerStats, error) {
 	// TODO(vmarmol): Use libcontainer's Stats() in the new API when that is ready.
 	libcontainerStats, err := libcontainer.GetStats(config, state)
@@ -15,6 +18,23 @@ func GetStats(config *libcontainer.Config, state *libcontainer.State) (*info.Con
 		return nil, err
 	}
 	return toContainerStats(libcontainerStats), nil
+}
+
+func GetStatsCgroupOnly(cgroup *cgroups.Cgroup, useSystemd bool) (*info.ContainerStats, error) {
+	var (
+		s   *cgroups.Stats
+		err error
+	)
+	// Use systemd paths if systemd is being used.
+	if useSystemd {
+		s, err = systemd.GetStats(cgroup)
+	} else {
+		s, err = fs.GetStats(cgroup)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return toContainerStats(&libcontainer.ContainerStats{CgroupStats: s}), nil
 }
 
 // Convert libcontainer stats to info.ContainerStats.

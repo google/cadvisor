@@ -58,7 +58,7 @@ func (self *rawContainerHandler) GetStats() (stats *info.ContainerStats, err err
 		Name:   self.name,
 	}
 
-	return libcontainer.GetStats(cgroup, false)
+	return libcontainer.GetStatsCgroupOnly(cgroup, false)
 }
 
 // Lists all directories under "path" and outputs the results as children of "parent".
