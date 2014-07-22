@@ -61,7 +61,7 @@ func (self *dockerFactory) CanHandle(name string) bool {
 	if self.useSystemd {
 		return strings.HasPrefix(name, "/docker-")
 	}
-	return name == "/docker" || strings.HasPrefix(name, "/docker/")
+	return strings.HasPrefix(name, "/docker/")
 }
 
 func parseDockerVersion(full_version_string string) ([]int, error) {

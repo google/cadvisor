@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/container/docker"
-	"github.com/google/cadvisor/container/lmctfy"
+	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
@@ -51,12 +51,10 @@ func main() {
 		log.Printf("Docker registration failed: %v.", err)
 	}
 
-	// Register lmctfy.
-	if err := lmctfy.Register(); err != nil {
-		log.Fatalf("lmctfy registration failed: %v.", err)
+	// Register the raw driver.
+	if err := raw.Register(); err != nil {
+		log.Fatalf("raw registration failed: %v.", err)
 	}
-
-	// TODO(vmarmol): Have a no-op or "raw" factory.
 
 	// Handler for static content.
 	http.HandleFunc(static.StaticResource, func(w http.ResponseWriter, r *http.Request) {
