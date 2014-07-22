@@ -77,10 +77,9 @@ func Register() error {
 	return nil
 }
 
-// Cgroup susbsystems we support listing (should be the minimal set we need stats from).
+// Cgroup subsystems we support listing (should be the minimal set we need stats from).
 var supportedSubsystems map[string]struct{} = map[string]struct{}{
-	"cpu":     struct{}{},
-	"cpuset":  struct{}{},
-	"cpuacct": struct{}{},
-	"memory":  struct{}{},
+	"cpu":     {},
+	"cpuacct": {},
+	"memory":  {},
 }
