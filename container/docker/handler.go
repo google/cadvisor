@@ -21,6 +21,7 @@ import (
 	"math"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/libcontainer"
@@ -215,16 +216,22 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 	if err != nil {
 		return nil, err
 	}
+
+	// On non-systemd systems Docker containers are under /docker.
+	containerPrefix := "/docker"
+	if self.useSystemd {
+		containerPrefix = "/system.slice"
+	}
+
 	ret := make([]info.ContainerReference, 0, len(containers)+1)
 	for _, c := range containers {
 		if !strings.HasPrefix(c.Status, "Up ") {
 			continue
 		}
-		path := fmt.Sprintf("/docker/%v", c.ID)
-		aliases := c.Names
+
 		ref := info.ContainerReference{
-			Name:    path,
-			Aliases: aliases,
+			Name:    filepath.Join(containerPrefix, c.ID),
+			Aliases: c.Names,
 		}
 		ret = append(ret, ref)
 	}
