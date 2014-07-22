@@ -17,7 +17,7 @@ sudo docker run \
   --volume=/var/lib/docker/:/var/lib/docker:ro \
   --publish=8080:8080 \
   --detach=true \
-  google/cadvisor
+  google/cadvisor:latest
 ```
 
 cAdvisor is now running (in the background) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
