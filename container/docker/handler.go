@@ -86,7 +86,6 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 }
 
 func (self *dockerContainerHandler) isDockerRoot() bool {
-	// TODO(dengnan): Should we consider other cases?
 	return self.name == "/docker"
 }
 
@@ -240,6 +239,9 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 }
 
 func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
+	if self.name != "/docker" {
+		return []info.ContainerReference{}, nil
+	}
 	opt := docker.ListContainersOptions{
 		All: true,
 	}
@@ -249,10 +251,6 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 	}
 	ret := make([]info.ContainerReference, 0, len(containers)+1)
 	for _, c := range containers {
-		if c.ID == self.ID {
-			// Skip self.
-			continue
-		}
 		if !strings.HasPrefix(c.Status, "Up ") {
 			continue
 		}

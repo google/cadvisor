@@ -67,11 +67,11 @@ func (self *dockerFactory) CanHandle(name string) bool {
 		}
 	} else if name == "/" {
 		return false
-	} else if !strings.HasPrefix(name, "/docker") {
-		return false
 	} else if name == "/docker" {
 		// We need the docker driver to handle /docker. Otherwise the aggregation at the API level will break.
 		return true
+	} else if !strings.HasPrefix(name, "/docker/") {
+		return false
 	}
 	// Check if the container is known to docker and it is active.
 	_, id, err := splitName(name)
