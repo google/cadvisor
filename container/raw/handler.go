@@ -58,7 +58,7 @@ func (self *rawContainerHandler) GetStats() (stats *info.ContainerStats, err err
 		Name:   self.name,
 	}
 
-	return libcontainer.GetStats(cgroup, false)
+	return libcontainer.GetStatsCgroupOnly(cgroup)
 }
 
 // Lists all directories under "path" and outputs the results as children of "parent".
@@ -96,7 +96,7 @@ func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]
 
 	// Make into container references.
 	ret := make([]info.ContainerReference, 0, len(containers))
-	for cont, _ := range containers {
+	for cont := range containers {
 		ret = append(ret, info.ContainerReference{
 			Name: cont,
 		})

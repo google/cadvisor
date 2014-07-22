@@ -33,8 +33,10 @@ type ContainerHandlerFactory interface {
 
 // TODO(vmarmol): Consider not making this global.
 // Global list of factories.
-var factories []ContainerHandlerFactory
-var factoriesLock sync.RWMutex
+var (
+	factories     []ContainerHandlerFactory
+	factoriesLock sync.RWMutex
+)
 
 // Register a ContainerHandlerFactory. These should be registered from least general to most general
 // as they will be asked in order whether they can handle a particular container.
@@ -58,7 +60,7 @@ func NewContainerHandler(name string) (ContainerHandler, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no known factory can handle creation of container %q", name)
+	return nil, fmt.Errorf("no known factory can handle creation of container")
 }
 
 // Clear the known factories.

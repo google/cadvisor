@@ -17,25 +17,32 @@ package docker
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/docker/libcontainer"
-	"github.com/docker/libcontainer/cgroups"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
 	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/utils"
 )
+
+// Basepath to all container specific information that libcontainer stores.
+const dockerRootDir = "/var/lib/docker/execdriver/native"
+
+var fileNotFound = errors.New("file not found")
 
 type dockerContainerHandler struct {
 	client             *docker.Client
 	name               string
+	parent             string
+	ID                 string
 	aliases            []string
 	machineInfoFactory info.MachineInfoFactory
 	useSystemd         bool
@@ -53,16 +60,19 @@ func newDockerContainerHandler(
 		machineInfoFactory: machineInfoFactory,
 		useSystemd:         useSystemd,
 	}
-	if !handler.isDockerContainer() {
+	if handler.isDockerRoot() {
 		return handler, nil
 	}
-	_, id, err := handler.splitName()
+	parent, id, err := splitName(name)
 	if err != nil {
 		return nil, fmt.Errorf("invalid docker container %v: %v", name, err)
 	}
+	handler.parent = parent
+	handler.ID = id
 	ctnr, err := client.InspectContainer(id)
+	// We assume that if Inspect fails then the container is not known to docker.
 	if err != nil {
-		return nil, fmt.Errorf("unable to inspect container %v: %v", name, err)
+		return nil, fmt.Errorf("failed to inspect container %s - %s\n", id, err)
 	}
 	handler.aliases = append(handler.aliases, path.Join("/docker", ctnr.Name))
 	return handler, nil
@@ -75,8 +85,12 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 	}, nil
 }
 
-func (self *dockerContainerHandler) splitName() (string, string, error) {
-	parent, id := path.Split(self.name)
+func (self *dockerContainerHandler) isDockerRoot() bool {
+	return self.name == "/docker"
+}
+
+func splitName(containerName string) (string, string, error) {
+	parent, id := path.Split(containerName)
 	cgroupSelf, err := os.Open("/proc/self/cgroup")
 	if err != nil {
 		return "", "", err
@@ -111,35 +125,50 @@ func (self *dockerContainerHandler) splitName() (string, string, error) {
 	return parent, id, nil
 }
 
-func (self *dockerContainerHandler) isDockerRoot() bool {
-	// TODO(dengnan): Should we consider other cases?
-	return self.name == "/docker"
-}
-
-func (self *dockerContainerHandler) isRootContainer() bool {
-	return self.name == "/"
-}
-
-func (self *dockerContainerHandler) isDockerContainer() bool {
-	return (!self.isDockerRoot()) && (!self.isRootContainer())
-}
-
 // TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
-func readLibcontainerSpec(id string) (spec *libcontainer.Config, err error) {
-	dir := "/var/lib/docker/execdriver/native"
-	configPath := path.Join(dir, id, "container.json")
+func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontainer.Config, err error) {
+	configPath := path.Join(dockerRootDir, self.ID, "container.json")
+	if !utils.FileExists(configPath) {
+		// TODO(vishh): Return file name as well once we have a better error interface.
+		err = fileNotFound
+		return
+	}
 	f, err := os.Open(configPath)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("failed to open %s - %s\n", configPath, err)
 	}
 	defer f.Close()
 	d := json.NewDecoder(f)
-	ret := new(libcontainer.Config)
-	err = d.Decode(ret)
+	retConfig := new(libcontainer.Config)
+	err = d.Decode(retConfig)
 	if err != nil {
 		return
 	}
-	spec = ret
+	config = retConfig
+
+	return
+}
+
+func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer.State, err error) {
+	statePath := path.Join(dockerRootDir, self.ID, "state.json")
+	if !utils.FileExists(statePath) {
+		// TODO(vishh): Return file name as well once we have a better error interface.
+		err = fileNotFound
+		return
+	}
+	f, err := os.Open(statePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open %s - %s\n", statePath, err)
+	}
+	defer f.Close()
+	d := json.NewDecoder(f)
+	retState := new(libcontainer.State)
+	err = d.Decode(retState)
+	if err != nil {
+		return
+	}
+	state = retState
+
 	return
 }
 
@@ -171,51 +200,47 @@ func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.Mac
 }
 
 func (self *dockerContainerHandler) GetSpec() (spec *info.ContainerSpec, err error) {
-	if !self.isDockerContainer() {
-		spec = new(info.ContainerSpec)
-		return
+	if self.isDockerRoot() {
+		return &info.ContainerSpec{}, nil
 	}
 	mi, err := self.machineInfoFactory.GetMachineInfo()
 	if err != nil {
 		return
 	}
-	_, id, err := self.splitName()
-	if err != nil {
-		return
-	}
-	libcontainerSpec, err := readLibcontainerSpec(id)
+	libcontainerConfig, err := self.readLibcontainerConfig()
 	if err != nil {
 		return
 	}
 
-	spec = libcontainerConfigToContainerSpec(libcontainerSpec, mi)
+	spec = libcontainerConfigToContainerSpec(libcontainerConfig, mi)
 	return
 }
 
 func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
-	if !self.isDockerContainer() {
-		// Return empty stats for root containers.
-		stats = new(info.ContainerStats)
-		stats.Timestamp = time.Now()
-		return
+	if self.isDockerRoot() {
+		return &info.ContainerStats{}, nil
 	}
-	parent, id, err := self.splitName()
+	config, err := self.readLibcontainerConfig()
 	if err != nil {
+		if err == fileNotFound {
+			return &info.ContainerStats{}, nil
+		}
 		return
 	}
-	cg := &cgroups.Cgroup{
-		Parent: parent,
-		Name:   id,
+	state, err := self.readLibcontainerState()
+	if err != nil {
+		if err == fileNotFound {
+			return &info.ContainerStats{}, nil
+		}
+		return
 	}
-	return containerLibcontainer.GetStats(cg, self.useSystemd)
+
+	return containerLibcontainer.GetStats(config, state)
 }
 
 func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	if self.isDockerContainer() {
-		return nil, nil
-	}
-	if self.isRootContainer() && listType == container.LIST_SELF {
-		return []info.ContainerReference{info.ContainerReference{Name: "/docker"}}, nil
+	if self.name != "/docker" {
+		return []info.ContainerReference{}, nil
 	}
 	opt := docker.ListContainersOptions{
 		All: true,
@@ -237,9 +262,7 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 		}
 		ret = append(ret, ref)
 	}
-	if self.isRootContainer() {
-		ret = append(ret, info.ContainerReference{Name: "/docker"})
-	}
+
 	return ret, nil
 }
 

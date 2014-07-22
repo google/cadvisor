@@ -35,6 +35,8 @@ type dockerFactory struct {
 
 	// Whether this system is using systemd.
 	useSystemd bool
+
+	client *docker.Client
 }
 
 func (self *dockerFactory) String() string {
@@ -56,12 +58,34 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 }
 
 // Docker handles all containers under /docker
+// TODO(vishh): Change the CanHandle interface to be able to return errors.
 func (self *dockerFactory) CanHandle(name string) bool {
 	// In systemd systems the containers are: /docker-{ID}
 	if self.useSystemd {
-		return strings.HasPrefix(name, "/docker-")
+		if !strings.HasPrefix(name, "/docker-") {
+			return false
+		}
+	} else if name == "/" {
+		return false
+	} else if name == "/docker" {
+		// We need the docker driver to handle /docker. Otherwise the aggregation at the API level will break.
+		return true
+	} else if !strings.HasPrefix(name, "/docker/") {
+		return false
 	}
-	return strings.HasPrefix(name, "/docker/")
+	// Check if the container is known to docker and it is active.
+	_, id, err := splitName(name)
+	if err != nil {
+		return false
+	}
+	ctnr, err := self.client.InspectContainer(id)
+	// We assume that if Inspect fails then the container is not known to docker.
+	// TODO(vishh): Detect lxc containers and avoid handling them.
+	if err != nil || !ctnr.State.Running {
+		return false
+	}
+
+	return true
 }
 
 func parseDockerVersion(full_version_string string) ([]int, error) {
@@ -109,6 +133,7 @@ func Register(factory info.MachineInfoFactory) error {
 	f := &dockerFactory{
 		machineInfoFactory: factory,
 		useSystemd:         systemd.UseSystemd(),
+		client:             client,
 	}
 	log.Printf("Registering Docker factory")
 	container.RegisterContainerHandlerFactory(f)

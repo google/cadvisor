@@ -3,33 +3,33 @@ package libcontainer
 import (
 	"time"
 
+	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/cgroups/fs"
-	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/google/cadvisor/info"
 )
 
-// Get stats of the specified cgroup
-func GetStats(cgroup *cgroups.Cgroup, useSystemd bool) (*info.ContainerStats, error) {
+// Get stats of the specified container
+func GetStats(config *libcontainer.Config, state *libcontainer.State) (*info.ContainerStats, error) {
 	// TODO(vmarmol): Use libcontainer's Stats() in the new API when that is ready.
-	// Use systemd paths if systemd is being used.
-	var (
-		s   *cgroups.Stats
-		err error
-	)
-	if useSystemd {
-		s, err = systemd.GetStats(cgroup)
-	} else {
-		s, err = fs.GetStats(cgroup)
-	}
+	libcontainerStats, err := libcontainer.GetStats(config, state)
 	if err != nil {
 		return nil, err
 	}
-	return toContainerStats(s), nil
+	return toContainerStats(libcontainerStats), nil
+}
+
+func GetStatsCgroupOnly(cgroup *cgroups.Cgroup) (*info.ContainerStats, error) {
+	s, err := fs.GetStats(cgroup)
+	if err != nil {
+		return nil, err
+	}
+	return toContainerStats(&libcontainer.ContainerStats{CgroupStats: s}), nil
 }
 
 // Convert libcontainer stats to info.ContainerStats.
-func toContainerStats(s *cgroups.Stats) *info.ContainerStats {
+func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.ContainerStats {
+	s := libcontainerStats.CgroupStats
 	ret := new(info.ContainerStats)
 	ret.Timestamp = time.Now()
 	ret.Cpu = new(info.CpuStats)
@@ -59,5 +59,8 @@ func toContainerStats(s *cgroups.Stats) *info.ContainerStats {
 			ret.Memory.WorkingSet -= v
 		}
 	}
+	// TODO(vishh): Perform a deep copy or alias libcontainer network stats.
+	ret.Network = (*info.NetworkStats)(&libcontainerStats.NetworkStats)
+
 	return ret
 }

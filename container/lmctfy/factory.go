@@ -49,6 +49,11 @@ func (self *lmctfyFactory) NewContainerHandler(name string) (container.Container
 }
 
 func (self *lmctfyFactory) CanHandle(name string) bool {
-	// TODO(vmarmol): Try to attach to the container before blindly saying true.
+	cmd := exec.Command(lmctfyBinary, "stats", "summary", name)
+	_, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+
 	return true
 }
