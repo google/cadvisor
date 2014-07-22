@@ -127,7 +127,7 @@ func (c *containerData) housekeeping() {
 
 func (c *containerData) housekeepingTick() {
 	err := c.updateStats()
-	if err != nil && err != container.NotActive {
+	if err != nil {
 		log.Printf("Failed to update stats for container \"%s\": %s", c.info.Name, err)
 	}
 }

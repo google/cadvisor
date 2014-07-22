@@ -28,16 +28,15 @@ import (
 	"github.com/google/cadvisor/info"
 )
 
-var (
-	ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
-	defaultClient     *docker.Client
-)
+var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
 
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
 	// Whether this system is using systemd.
 	useSystemd bool
+
+	client *docker.Client
 }
 
 func (self *dockerFactory) String() string {
@@ -77,10 +76,7 @@ func (self *dockerFactory) CanHandle(name string) bool {
 	if err != nil {
 		return false
 	}
-	if defaultClient == nil {
-		log.Fatal("Default docker client is nil")
-	}
-	ctnr, err := defaultClient.InspectContainer(id)
+	ctnr, err := self.client.InspectContainer(id)
 	// We assume that if Inspect fails then the container is not known to docker.
 	// TODO(vishh): Detect lxc containers and avoid handling them.
 	if err != nil || !ctnr.State.Running {
@@ -110,12 +106,12 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory) (err error) {
-	defaultClient, err = docker.NewClient(*ArgDockerEndpoint)
+func Register(factory info.MachineInfoFactory) error {
+	client, err := docker.NewClient(*ArgDockerEndpoint)
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	if version, err := defaultClient.Version(); err != nil {
+	if version, err := client.Version(); err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	} else {
 		expected_version := []int{0, 11, 1}
@@ -135,6 +131,7 @@ func Register(factory info.MachineInfoFactory) (err error) {
 	f := &dockerFactory{
 		machineInfoFactory: factory,
 		useSystemd:         systemd.UseSystemd(),
+		client:             client,
 	}
 	log.Printf("Registering Docker factory")
 	container.RegisterContainerHandlerFactory(f)

@@ -71,8 +71,8 @@ func newDockerContainerHandler(
 	handler.ID = id
 	ctnr, err := client.InspectContainer(id)
 	// We assume that if Inspect fails then the container is not known to docker.
-	if err != nil || !ctnr.State.Running {
-		return nil, container.NotActive
+	if err != nil {
+		return nil, fmt.Errorf("failed to inspect container %s - %s\n", id, err)
 	}
 	handler.aliases = append(handler.aliases, path.Join("/docker", ctnr.Name))
 	return handler, nil
@@ -126,16 +126,17 @@ func splitName(containerName string) (string, string, error) {
 	return parent, id, nil
 }
 
-// TODO(vmarmol): Switch to getting this from libcontainer once we have a solID API.
+// TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
 func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontainer.Config, err error) {
 	configPath := path.Join(dockerRootDir, self.ID, "container.json")
 	if !utils.FileExists(configPath) {
+		// TODO(vishh): Return file name as well once we have a better error interface.
 		err = fileNotFound
 		return
 	}
 	f, err := os.Open(configPath)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("failed to open %s - %s\n", configPath, err)
 	}
 	defer f.Close()
 	d := json.NewDecoder(f)
@@ -152,15 +153,13 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontain
 func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer.State, err error) {
 	statePath := path.Join(dockerRootDir, self.ID, "state.json")
 	if !utils.FileExists(statePath) {
+		// TODO(vishh): Return file name as well once we have a better error interface.
 		err = fileNotFound
 		return
 	}
 	f, err := os.Open(statePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			err = container.NotActive
-		}
-		return
+		return nil, fmt.Errorf("failed to open %s - %s\n", statePath, err)
 	}
 	defer f.Close()
 	d := json.NewDecoder(f)
