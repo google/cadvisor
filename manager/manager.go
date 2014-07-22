@@ -27,7 +27,7 @@ import (
 
 type Manager interface {
 	// Start the manager, blocks forever.
-	Start(chanErr chan error)
+	Start() error
 
 	// Get information about a container.
 	GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error)
@@ -73,18 +73,16 @@ type manager struct {
 }
 
 // Start the container manager.
-func (m *manager) Start(errChan chan error) {
+func (m *manager) Start() error {
 	// Create root and then recover all containers.
 	_, err := m.createContainer("/")
 	if err != nil {
-		errChan <- err
-		return
+		return err
 	}
 	log.Printf("Starting recovery of all containers")
 	err = m.detectContainers()
 	if err != nil {
-		errChan <- err
-		return
+		return err
 	}
 	log.Printf("Recovery completed")
 
@@ -104,7 +102,7 @@ func (m *manager) Start(errChan chan error) {
 			log.Printf("Global Housekeeping(%d) took %s", t.Unix(), duration)
 		}
 	}
-	errChan <- nil
+	return nil
 }
 
 // Get a container by name.

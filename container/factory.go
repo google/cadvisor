@@ -16,6 +16,7 @@ package container
 
 import (
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -32,8 +33,10 @@ type ContainerHandlerFactory interface {
 
 // TODO(vmarmol): Consider not making this global.
 // Global list of factories.
-var factories []ContainerHandlerFactory
-var factoriesLock sync.RWMutex
+var (
+	factories     []ContainerHandlerFactory
+	factoriesLock sync.RWMutex
+)
 
 // Register a ContainerHandlerFactory. These should be registered from least general to most general
 // as they will be asked in order whether they can handle a particular container.
@@ -52,11 +55,12 @@ func NewContainerHandler(name string) (ContainerHandler, error) {
 	// Create the ContainerHandler with the first factory that supports it.
 	for _, factory := range factories {
 		if factory.CanHandle(name) {
+			log.Printf("Using factory %q for container %q", factory.String(), name)
 			return factory.NewContainerHandler(name)
 		}
 	}
 
-	return nil, fmt.Errorf("no known factory can handle creation of container %q", name)
+	return nil, fmt.Errorf("no known factory can handle creation of container")
 }
 
 // Clear the known factories.

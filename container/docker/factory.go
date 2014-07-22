@@ -28,7 +28,10 @@ import (
 	"github.com/google/cadvisor/info"
 )
 
-var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
+var (
+	ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
+	defaultClient     *docker.Client
+)
 
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
@@ -56,12 +59,35 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 }
 
 // Docker handles all containers under /docker
+// TODO(vishh): Change the CanHandle interface to be able to return errors.
 func (self *dockerFactory) CanHandle(name string) bool {
 	// In systemd systems the containers are: /docker-{ID}
 	if self.useSystemd {
-		return strings.HasPrefix(name, "/docker-")
+		if !strings.HasPrefix(name, "/docker-") {
+			return false
+		}
+	} else if name == "/" {
+		return false
+	} else if name == "/docker" {
+		// We need the docker driver to handle /docker. Otherwise the aggregation at the API level will break.
+		return true
 	}
-	return strings.HasPrefix(name, "/docker/")
+	// Check if the container is known to docker and it is active.
+	_, id, err := splitName(name)
+	if err != nil {
+		return false
+	}
+	if defaultClient == nil {
+		log.Fatal("Default docker client is nil")
+	}
+	ctnr, err := defaultClient.InspectContainer(id)
+	// We assume that if Inspect fails then the container is not known to docker.
+	// TODO(vishh): Detect lxc containers and avoid handling them.
+	if err != nil || !ctnr.State.Running {
+		return false
+	}
+
+	return true
 }
 
 func parseDockerVersion(full_version_string string) ([]int, error) {
@@ -84,12 +110,12 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory) error {
-	client, err := docker.NewClient(*ArgDockerEndpoint)
+func Register(factory info.MachineInfoFactory) (err error) {
+	defaultClient, err = docker.NewClient(*ArgDockerEndpoint)
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	if version, err := client.Version(); err != nil {
+	if version, err := defaultClient.Version(); err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	} else {
 		expected_version := []int{0, 11, 1}

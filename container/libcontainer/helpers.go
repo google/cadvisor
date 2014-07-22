@@ -6,7 +6,6 @@ import (
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/cgroups/fs"
-	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/google/cadvisor/info"
 )
 
@@ -20,17 +19,8 @@ func GetStats(config *libcontainer.Config, state *libcontainer.State) (*info.Con
 	return toContainerStats(libcontainerStats), nil
 }
 
-func GetStatsCgroupOnly(cgroup *cgroups.Cgroup, useSystemd bool) (*info.ContainerStats, error) {
-	var (
-		s   *cgroups.Stats
-		err error
-	)
-	// Use systemd paths if systemd is being used.
-	if useSystemd {
-		s, err = systemd.GetStats(cgroup)
-	} else {
-		s, err = fs.GetStats(cgroup)
-	}
+func GetStatsCgroupOnly(cgroup *cgroups.Cgroup) (*info.ContainerStats, error) {
+	s, err := fs.GetStats(cgroup)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +59,8 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 			ret.Memory.WorkingSet -= v
 		}
 	}
+	// TODO(vishh): Perform a deep copy or alias libcontainer network stats.
 	ret.Network = (*info.NetworkStats)(&libcontainerStats.NetworkStats)
+
 	return ret
 }
