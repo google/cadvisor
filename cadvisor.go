@@ -52,7 +52,7 @@ func main() {
 	}
 
 	// Register the raw driver.
-	if err := raw.Register(); err != nil {
+	if err := raw.Register(containerManager); err != nil {
 		log.Fatalf("raw registration failed: %v.", err)
 	}
 

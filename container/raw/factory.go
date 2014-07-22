@@ -20,15 +20,21 @@ import (
 
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/info"
 )
 
 type cgroupSubsystems struct {
 	// Cgroup subsystem mounts.
 	mounts []cgroups.Mount
+
+	// Cgroup subsystem to their mount location.
+	mountPoints map[string]string
 }
 
 type rawFactory struct {
-	cgroupSubsystems *cgroupSubsystems
+	// Factory for machine information.
+	machineInfoFactory info.MachineInfoFactory
+	cgroupSubsystems   *cgroupSubsystems
 }
 
 func (self *rawFactory) String() string {
@@ -36,7 +42,7 @@ func (self *rawFactory) String() string {
 }
 
 func (self *rawFactory) NewContainerHandler(name string) (container.ContainerHandler, error) {
-	return newRawContainerHandler(name, self.cgroupSubsystems)
+	return newRawContainerHandler(name, self.cgroupSubsystems, self.machineInfoFactory)
 }
 
 // The raw factory can handle any container.
@@ -44,7 +50,7 @@ func (self *rawFactory) CanHandle(name string) bool {
 	return true
 }
 
-func Register() error {
+func Register(machineInfoFactory info.MachineInfoFactory) error {
 	// Get all cgroup mounts.
 	allCgroups, err := cgroups.GetCgroupMounts()
 	if err != nil {
@@ -56,10 +62,12 @@ func Register() error {
 
 	// Trim the mounts to only the subsystems we care about.
 	supportedCgroups := make([]cgroups.Mount, 0, len(allCgroups))
+	mountPoints := make(map[string]string, len(allCgroups))
 	for _, mount := range allCgroups {
 		for _, subsystem := range mount.Subsystems {
 			if _, ok := supportedSubsystems[subsystem]; ok {
 				supportedCgroups = append(supportedCgroups, mount)
+				mountPoints[subsystem] = mount.Mountpoint
 			}
 		}
 	}
@@ -69,8 +77,10 @@ func Register() error {
 
 	log.Printf("Registering Raw factory")
 	factory := &rawFactory{
+		machineInfoFactory: machineInfoFactory,
 		cgroupSubsystems: &cgroupSubsystems{
-			mounts: supportedCgroups,
+			mounts:      supportedCgroups,
+			mountPoints: mountPoints,
 		},
 	}
 	container.RegisterContainerHandlerFactory(factory)
