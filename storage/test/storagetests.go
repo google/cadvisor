@@ -396,7 +396,7 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 	for i, s := range actualRecentStats {
 		r := recentStats[i]
 		if !statsEq(s, r) {
-			t.Errorf("unexpected stats %+v with memory usage %v", r, r.Memory.Usage)
+			t.Errorf("unexpected stats %+v with memory usage %v; should be %+v", r, r.Memory.Usage, s)
 		}
 	}
 }
