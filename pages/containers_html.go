@@ -149,6 +149,14 @@ const containersHtmlTemplate = `
         </div>
       </div>
     {{end}}
+    <div class="panel panel-primary">
+      <div class="panel-heading">
+        <h3 class="panel-title">Network</h3>
+      </div>
+      <div class="panel-body">
+        <div id="network-bytes-chart"></div>
+      </div>
+    </div>
   </div>
   {{end}}
 </div>

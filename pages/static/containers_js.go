@@ -219,6 +219,42 @@ function drawMemoryPageFaults(elementId, containerInfo) {
 	drawLineChart(titles, data, elementId, "Faults");
 }
 
+// Draw the graph for network tx/rx bytes.
+function drawNetworkBytes(elementId, machineInfo, stats) {
+	var titles = ["Time", "Tx bytes", "Rx bytes"];
+	var data = [];
+	for (var i = 1; i < stats.stats.length; i++) {
+		var cur = stats.stats[i];
+		var prev = stats.stats[i - 1];
+
+		// TODO(vmarmol): This assumes we sample every second, use the timestamps.
+		var elements = [];
+		elements.push(cur.timestamp);
+		elements.push(cur.network.tx_bytes - prev.network.tx_bytes);
+		elements.push(cur.network.rx_bytes - prev.network.rx_bytes);
+		data.push(elements);
+	}
+	drawLineChart(titles, data, elementId, "Bytes");
+}
+
+// Draw the graph for network errors
+function drawNetworkErrors(elementId, machineInfo, stats) {
+	var titles = ["Time", "Tx", "Rx"];
+	var data = [];
+	for (var i = 1; i < stats.stats.length; i++) {
+		var cur = stats.stats[i];
+		var prev = stats.stats[i - 1];
+
+		// TODO(vmarmol): This assumes we sample every second, use the timestamps.
+		var elements = [];
+		elements.push(cur.timestamp);
+		elements.push(cur.network.tx_errors - prev.network.tx_errors);
+		elements.push(cur.network.rx_errors - prev.network.rx_errors);
+		data.push(elements);
+	}
+	drawLineChart(titles, data, elementId, "Errors");
+}
+
 // Expects an array of closures to call. After each execution the JS runtime is given control back before continuing.
 // This function returns asynchronously
 function stepExecute(steps) {
@@ -262,6 +298,14 @@ function drawCharts(machineInfo, containerInfo) {
 	});
 	steps.push(function() {
 		drawMemoryPageFaults("memory-page-faults-chart", containerInfo);
+	});
+
+	// Network.
+	steps.push(function() {
+		drawNetworkBytes("network-bytes-chart", machineInfo, containerInfo);
+	});
+	steps.push(function() {
+		drawNetworkErrors("network-errors-chart", machineInfo, containerInfo);
 	});
 
 	stepExecute(steps);
