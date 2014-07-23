@@ -25,6 +25,7 @@ import (
 	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
 )
 
@@ -74,7 +75,7 @@ func (self *dockerFactory) CanHandle(name string) bool {
 		return false
 	}
 	// Check if the container is known to docker and it is active.
-	_, id, err := splitName(name)
+	_, id, err := libcontainer.SplitName(name)
 	if err != nil {
 		return false
 	}
