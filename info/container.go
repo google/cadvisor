@@ -241,21 +241,21 @@ type MemoryStatsMemoryData struct {
 
 type NetworkStats struct {
 	// Cumulative count of bytes received.
-	RxBytes uint64 `json:"rx_bytes,omitempty"`
+	RxBytes uint64 `json:"rx_bytes"`
 	// Cumulative count of packets received.
-	RxPackets uint64 `json:"rx_packets,omitempty"`
+	RxPackets uint64 `json:"rx_packets"`
 	// Cumulative count of receive errors encountered.
-	RxErrors uint64 `json:"rx_errors,omitempty"`
+	RxErrors uint64 `json:"rx_errors"`
 	// Cumulative count of packets dropped while receiving.
-	RxDropped uint64 `json:"rx_dropped,omitempty"`
+	RxDropped uint64 `json:"rx_dropped"`
 	// Cumulative count of bytes transmitted.
-	TxBytes uint64 `json:"tx_bytes,omitempty"`
+	TxBytes uint64 `json:"tx_bytes"`
 	// Cumulative count of packets transmitted.
-	TxPackets uint64 `json:"tx_packets,omitempty"`
+	TxPackets uint64 `json:"tx_packets"`
 	// Cumulative count of transmit errors encountered.
-	TxErrors uint64 `json:"tx_errors,omitempty"`
+	TxErrors uint64 `json:"tx_errors"`
 	// Cumulative count of packets dropped while transmitting.
-	TxDropped uint64 `json:"tx_dropped,omitempty"`
+	TxDropped uint64 `json:"tx_dropped"`
 }
 
 type ContainerStats struct {
