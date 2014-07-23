@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 (2014-07-22)
+- Add network statistics to REST API.
+- Add "raw" driver to handle non-Docker containers.
+- Remove lmctfy in favor of the raw driver.
+- Bugfixes for Docker containers and logging.
+
 ## 0.1.3 (2014-07-14)
 - Add support for systemd systems.
 - Fixes for UI with InfluxDB storage driver.
