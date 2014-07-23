@@ -15,14 +15,12 @@
 package docker
 
 import (
-	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/docker/libcontainer"
@@ -42,7 +40,7 @@ type dockerContainerHandler struct {
 	client             *docker.Client
 	name               string
 	parent             string
-	ID                 string
+	id                 string
 	aliases            []string
 	machineInfoFactory info.MachineInfoFactory
 	useSystemd         bool
@@ -63,12 +61,12 @@ func newDockerContainerHandler(
 	if handler.isDockerRoot() {
 		return handler, nil
 	}
-	parent, id, err := splitName(name)
+	parent, id, err := containerLibcontainer.SplitName(name)
 	if err != nil {
 		return nil, fmt.Errorf("invalid docker container %v: %v", name, err)
 	}
 	handler.parent = parent
-	handler.ID = id
+	handler.id = id
 	ctnr, err := client.InspectContainer(id)
 	// We assume that if Inspect fails then the container is not known to docker.
 	if err != nil {
@@ -89,45 +87,9 @@ func (self *dockerContainerHandler) isDockerRoot() bool {
 	return self.name == "/docker"
 }
 
-func splitName(containerName string) (string, string, error) {
-	parent, id := path.Split(containerName)
-	cgroupSelf, err := os.Open("/proc/self/cgroup")
-	if err != nil {
-		return "", "", err
-	}
-	scanner := bufio.NewScanner(cgroupSelf)
-
-	subsys := []string{"memory", "cpu"}
-	nestedLevels := 0
-	for scanner.Scan() {
-		line := scanner.Text()
-		elems := strings.Split(line, ":")
-		if len(elems) < 3 {
-			continue
-		}
-		for _, s := range subsys {
-			if elems[1] == s {
-				// count how many nested docker containers are there.
-				nestedLevels = strings.Count(elems[2], "/docker")
-				break
-			}
-		}
-	}
-	if nestedLevels > 0 {
-		// we are running inside a docker container
-		upperLevel := strings.Repeat("../../", nestedLevels)
-		parent = filepath.Join(upperLevel, parent)
-	}
-	// Strip the last "/"
-	if parent[len(parent)-1] == '/' {
-		parent = parent[:len(parent)-1]
-	}
-	return parent, id, nil
-}
-
 // TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
 func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontainer.Config, err error) {
-	configPath := path.Join(dockerRootDir, self.ID, "container.json")
+	configPath := path.Join(dockerRootDir, self.id, "container.json")
 	if !utils.FileExists(configPath) {
 		// TODO(vishh): Return file name as well once we have a better error interface.
 		err = fileNotFound
@@ -146,11 +108,15 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontain
 	}
 	config = retConfig
 
+	// Replace cgroup parent and name with our own since we may be running in a different context.
+	config.Cgroups.Parent = self.parent
+	config.Cgroups.Name = self.id
+
 	return
 }
 
 func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer.State, err error) {
-	statePath := path.Join(dockerRootDir, self.ID, "state.json")
+	statePath := path.Join(dockerRootDir, self.id, "state.json")
 	if !utils.FileExists(statePath) {
 		// TODO(vishh): Return file name as well once we have a better error interface.
 		err = fileNotFound

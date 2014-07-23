@@ -31,13 +31,22 @@ import (
 
 type rawContainerHandler struct {
 	name               string
+	cgroup             *cgroups.Cgroup
 	cgroupSubsystems   *cgroupSubsystems
 	machineInfoFactory info.MachineInfoFactory
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
+	parent, id, err := libcontainer.SplitName(name)
+	if err != nil {
+		return nil, err
+	}
 	return &rawContainerHandler{
-		name:               name,
+		name: name,
+		cgroup: &cgroups.Cgroup{
+			Parent: parent,
+			Name:   id,
+		},
 		cgroupSubsystems:   cgroupSubsystems,
 		machineInfoFactory: machineInfoFactory,
 	}, nil
@@ -116,12 +125,7 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 }
 
 func (self *rawContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
-	cgroup := &cgroups.Cgroup{
-		Parent: "/",
-		Name:   self.name,
-	}
-
-	return libcontainer.GetStatsCgroupOnly(cgroup)
+	return libcontainer.GetStatsCgroupOnly(self.cgroup)
 }
 
 // Lists all directories under "path" and outputs the results as children of "parent".
