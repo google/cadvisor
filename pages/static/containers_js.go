@@ -234,7 +234,7 @@ function drawNetworkBytes(elementId, machineInfo, stats) {
 		elements.push(cur.network.rx_bytes - prev.network.rx_bytes);
 		data.push(elements);
 	}
-	drawLineChart(titles, data, elementId, "Bytes");
+	drawLineChart(titles, data, elementId, "Bytes per second");
 }
 
 // Draw the graph for network errors
@@ -252,7 +252,7 @@ function drawNetworkErrors(elementId, machineInfo, stats) {
 		elements.push(cur.network.rx_errors - prev.network.rx_errors);
 		data.push(elements);
 	}
-	drawLineChart(titles, data, elementId, "Errors");
+	drawLineChart(titles, data, elementId, "Errors per second");
 }
 
 // Expects an array of closures to call. After each execution the JS runtime is given control back before continuing.
