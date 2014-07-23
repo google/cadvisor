@@ -61,9 +61,9 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 // Docker handles all containers under /docker
 // TODO(vishh): Change the CanHandle interface to be able to return errors.
 func (self *dockerFactory) CanHandle(name string) bool {
-	// In systemd systems the containers are: /docker-{ID}
+	// In systemd systems the containers are: /system.slice/docker-{ID}
 	if self.useSystemd {
-		if !strings.HasPrefix(name, "/docker-") {
+		if !strings.HasPrefix(name, "/system.slice/docker-") {
 			return false
 		}
 	} else if name == "/" {
@@ -135,6 +135,9 @@ func Register(factory info.MachineInfoFactory) error {
 		machineInfoFactory: factory,
 		useSystemd:         systemd.UseSystemd(),
 		client:             client,
+	}
+	if f.useSystemd {
+		log.Printf("System is using systemd")
 	}
 	log.Printf("Registering Docker factory")
 	container.RegisterContainerHandlerFactory(f)
