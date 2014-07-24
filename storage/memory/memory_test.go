@@ -73,3 +73,11 @@ func TestNoSamples(t *testing.T) {
 func TestPercentilesWithoutStats(t *testing.T) {
 	runStorageTest(test.StorageDriverTestPercentilesWithoutStats, t)
 }
+
+func TestRetrieveZeroStats(t *testing.T) {
+	runStorageTest(test.StorageDriverTestRetrieveZeroRecentStats, t)
+}
+
+func TestRetrieveZeroSamples(t *testing.T) {
+	runStorageTest(test.StorageDriverTestRetrieveZeroSamples, t)
+}

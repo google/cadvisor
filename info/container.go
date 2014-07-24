@@ -69,27 +69,7 @@ type ContainerInfoRequest struct {
 	// Different percentiles of CPU usage within a period. The values must be within [0, 100]
 	CpuUsagePercentiles []int `json:"cpu_usage_percentiles,omitempty"`
 	// Different percentiles of memory usage within a period. The values must be within [0, 100]
-	MemoryUsagePercentages []int `json:"memory_usage_percentiles,omitempty"`
-}
-
-func (self *ContainerInfoRequest) FillDefaults() *ContainerInfoRequest {
-	ret := self
-	if ret == nil {
-		ret = new(ContainerInfoRequest)
-	}
-	if ret.NumStats <= 0 {
-		ret.NumStats = 1024
-	}
-	if ret.NumSamples <= 0 {
-		ret.NumSamples = 1024
-	}
-	if len(ret.CpuUsagePercentiles) == 0 {
-		ret.CpuUsagePercentiles = []int{50, 80, 90, 99}
-	}
-	if len(ret.MemoryUsagePercentages) == 0 {
-		ret.MemoryUsagePercentages = []int{50, 80, 90, 99}
-	}
-	return ret
+	MemoryUsagePercentiles []int `json:"memory_usage_percentiles,omitempty"`
 }
 
 type ContainerInfo struct {

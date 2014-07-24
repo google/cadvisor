@@ -130,11 +130,10 @@ func (m *manager) GetContainerInfo(containerName string, query *info.ContainerIn
 	var percentiles *info.ContainerStatsPercentiles
 	var samples []*info.ContainerStatsSample
 	var stats []*info.ContainerStats
-	query = query.FillDefaults()
 	percentiles, err = m.storageDriver.Percentiles(
 		cinfo.Name,
 		query.CpuUsagePercentiles,
-		query.MemoryUsagePercentages,
+		query.MemoryUsagePercentiles,
 	)
 	if err != nil {
 		return nil, err
