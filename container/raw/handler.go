@@ -116,6 +116,9 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 	// This will fail for non-unified hierarchies. We'll return the whole machine mask in that case.
 	cpusetRoot, ok := self.cgroupSubsystems.mountPoints["cpuset"]
 	if ok {
+		if spec.Cpu == nil {
+			spec.Cpu = new(info.CpuSpec)
+		}
 		cpusetRoot = filepath.Join(cpusetRoot, self.name)
 		if utils.FileExists(cpusetRoot) {
 			spec.Cpu.Mask = readString(cpusetRoot, "cpuset.cpus")
