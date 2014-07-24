@@ -130,6 +130,11 @@ func (self *rawContainerHandler) GetStats() (stats *info.ContainerStats, err err
 
 // Lists all directories under "path" and outputs the results as children of "parent".
 func listDirectories(path string, parent string, recursive bool, output map[string]struct{}) error {
+	// Ignore if this hierarchy does not exist.
+	if !utils.FileExists(path) {
+		return nil
+	}
+
 	entries, err := ioutil.ReadDir(path)
 	if err != nil {
 		return err
