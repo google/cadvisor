@@ -169,8 +169,12 @@ func TestGetContainerInfoWithDefaultValue(t *testing.T) {
 		"/c2",
 	}
 
-	var query *info.ContainerInfoRequest
-	query = query.FillDefaults()
+	query := &info.ContainerInfoRequest{
+		NumStats:               64,
+		NumSamples:             64,
+		CpuUsagePercentiles:    {50, 80, 90},
+		MemoryUsagePercentiles: {50, 80, 90},
+	}
 
 	infosMap := make(map[string]*info.ContainerInfo, len(containers))
 	handlerMap := make(map[string]*container.MockContainerHandler, len(containers))
