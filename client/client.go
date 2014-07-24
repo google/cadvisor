@@ -50,7 +50,6 @@ func (self *Client) MachineInfo() (minfo *info.MachineInfo, err error) {
 		return
 	}
 	minfo = ret
-
 	return
 }
 
