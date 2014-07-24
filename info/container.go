@@ -21,14 +21,10 @@ import (
 	"time"
 )
 
-type CpuSpecMask struct {
-	Data []uint64 `json:"data,omitempty"`
-}
-
 type CpuSpec struct {
-	Limit    uint64      `json:"limit"`
-	MaxLimit uint64      `json:"max_limit"`
-	Mask     CpuSpecMask `json:"mask,omitempty"`
+	Limit    uint64 `json:"limit"`
+	MaxLimit uint64 `json:"max_limit"`
+	Mask     string `json:"mask,omitempty"`
 }
 
 type MemorySpec struct {

@@ -157,12 +157,12 @@ func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.Mac
 	if config.Cgroups.CpuShares != 0 {
 		spec.Cpu.Limit = uint64(config.Cgroups.CpuShares)
 	}
-	n := (mi.NumCores + 63) / 64
-	spec.Cpu.Mask.Data = make([]uint64, n)
-	for i := 0; i < n; i++ {
-		spec.Cpu.Mask.Data[i] = math.MaxUint64
+	if config.Cgroups.CpusetCpus == "" {
+		// All cores are active.
+		spec.Cpu.Mask = fmt.Sprintf("0-%d", mi.NumCores-1)
+	} else {
+		spec.Cpu.Mask = config.Cgroups.CpusetCpus
 	}
-	// TODO(vmarmol): Get CPUs from config.Cgroups.CpusetCpus
 	return spec
 }
 

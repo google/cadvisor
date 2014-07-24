@@ -88,23 +88,45 @@ func containerLink(container info.ContainerReference, basenameOnly bool, cssClas
 	return template.HTML(fmt.Sprintf("<a class=\"%s\" href=\"%s%s\">%s</a>", cssClasses, ContainersPage[:len(ContainersPage)-1], containerName, displayName))
 }
 
-func printMask(mask *info.CpuSpecMask, numCores int) interface{} {
-	// TODO(vmarmol): Detect this correctly.
-	// TODO(vmarmol): Support more than 64 cores.
-	rawMask := uint64(0)
-	if len(mask.Data) > 0 {
-		rawMask = mask.Data[0]
-	}
+func printMask(mask string, numCores int) interface{} {
 	masks := make([]string, numCores)
-	for i := uint(0); i < uint(numCores); i++ {
+	activeCores := getActiveCores(mask)
+	for i := 0; i < numCores; i++ {
 		coreClass := "inactive-cpu"
-		// by default, all cores are active
-		if ((0x1<<i)&rawMask) != 0 || len(mask.Data) == 0 {
+		if activeCores[i] {
 			coreClass = "active-cpu"
 		}
 		masks[i] = fmt.Sprintf("<span class=\"%s\">%d</span>", coreClass, i)
 	}
 	return template.HTML(strings.Join(masks, "&nbsp;"))
+}
+
+func getActiveCores(mask string) map[int]bool {
+	activeCores := make(map[int]bool)
+	for _, corebits := range strings.Split(mask, ",") {
+		cores := strings.Split(corebits, "-")
+		if len(cores) == 1 {
+			index, err := strconv.Atoi(cores[0])
+			if err != nil {
+				// Ignore malformed strings.
+				continue
+			}
+			activeCores[index] = true
+		} else if len(cores) == 2 {
+			start, err := strconv.Atoi(cores[0])
+			if err != nil {
+				continue
+			}
+			end, err := strconv.Atoi(cores[1])
+			if err != nil {
+				continue
+			}
+			for i := start; i <= end; i++ {
+				activeCores[i] = true
+			}
+		}
+	}
+	return activeCores
 }
 
 func printCores(millicores *uint64) string {
