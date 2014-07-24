@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 (2014-07-24)
+- Added network stats to the UI.
+- Added support for CoreOS and RHEL.
+- Bugfixes and reliability fixes.
+
 ## 0.1.4 (2014-07-22)
 - Add network statistics to REST API.
 - Add "raw" driver to handle non-Docker containers.
