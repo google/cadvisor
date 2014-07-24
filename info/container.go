@@ -77,10 +77,10 @@ func (self *ContainerInfoRequest) FillDefaults() *ContainerInfoRequest {
 	if ret == nil {
 		ret = new(ContainerInfoRequest)
 	}
-	if ret.NumStats <= 0 {
+	if ret.NumStats < 0 {
 		ret.NumStats = 1024
 	}
-	if ret.NumSamples <= 0 {
+	if ret.NumSamples < 0 {
 		ret.NumSamples = 1024
 	}
 	if len(ret.CpuUsagePercentiles) == 0 {
