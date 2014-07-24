@@ -69,7 +69,7 @@ type ContainerInfoRequest struct {
 	// Different percentiles of CPU usage within a period. The values must be within [0, 100]
 	CpuUsagePercentiles []int `json:"cpu_usage_percentiles,omitempty"`
 	// Different percentiles of memory usage within a period. The values must be within [0, 100]
-	MemoryUsagePercentages []int `json:"memory_usage_percentiles,omitempty"`
+	MemoryUsagePercentiles []int `json:"memory_usage_percentiles,omitempty"`
 }
 
 type ContainerInfo struct {

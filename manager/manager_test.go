@@ -81,7 +81,7 @@ func TestGetContainerInfo(t *testing.T) {
 		NumStats:               256,
 		NumSamples:             128,
 		CpuUsagePercentiles:    []int{10, 50, 90},
-		MemoryUsagePercentages: []int{10, 80, 90},
+		MemoryUsagePercentiles: []int{10, 80, 90},
 	}
 
 	infosMap := make(map[string]*info.ContainerInfo, len(containers))
@@ -105,7 +105,7 @@ func TestGetContainerInfo(t *testing.T) {
 				"Percentiles",
 				h.Name,
 				query.CpuUsagePercentiles,
-				query.MemoryUsagePercentages,
+				query.MemoryUsagePercentiles,
 			).Return(
 				percentiles,
 				nil,
@@ -172,8 +172,8 @@ func TestGetContainerInfoWithDefaultValue(t *testing.T) {
 	query := &info.ContainerInfoRequest{
 		NumStats:               64,
 		NumSamples:             64,
-		CpuUsagePercentiles:    {50, 80, 90},
-		MemoryUsagePercentiles: {50, 80, 90},
+		CpuUsagePercentiles:    []int{50, 80, 90},
+		MemoryUsagePercentiles: []int{50, 80, 90},
 	}
 
 	infosMap := make(map[string]*info.ContainerInfo, len(containers))
@@ -197,7 +197,7 @@ func TestGetContainerInfoWithDefaultValue(t *testing.T) {
 				"Percentiles",
 				h.Name,
 				query.CpuUsagePercentiles,
-				query.MemoryUsagePercentages,
+				query.MemoryUsagePercentiles,
 			).Return(
 				percentiles,
 				nil,

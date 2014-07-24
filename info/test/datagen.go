@@ -83,8 +83,8 @@ func GenerateRandomContainerInfo(containerName string, numCores int, query *info
 		percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
 		cpuPercentiles = append(cpuPercentiles, percentile)
 	}
-	memPercentiles := make([]info.Percentile, 0, len(query.MemoryUsagePercentages))
-	for _, p := range query.MemoryUsagePercentages {
+	memPercentiles := make([]info.Percentile, 0, len(query.MemoryUsagePercentiles))
+	for _, p := range query.MemoryUsagePercentiles {
 		percentile := info.Percentile{p, uint64(rand.Int63n(1000))}
 		memPercentiles = append(memPercentiles, percentile)
 	}
