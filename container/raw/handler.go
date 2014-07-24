@@ -59,23 +59,32 @@ func (self *rawContainerHandler) ContainerReference() (info.ContainerReference, 
 	}, nil
 }
 
-func readInt64(path string, file string) uint64 {
+func readString(path string, file string) string {
 	cgroupFile := filepath.Join(path, file)
 
 	// Ignore non-existent files
 	if !utils.FileExists(cgroupFile) {
-		return 0
+		return ""
 	}
 
 	// Read
 	out, err := ioutil.ReadFile(cgroupFile)
 	if err != nil {
 		log.Printf("raw driver: Failed to read %q: %s", cgroupFile, err)
+		return ""
+	}
+	return string(out)
+}
+
+func readInt64(path string, file string) uint64 {
+	out := readString(path, file)
+	if out == "" {
 		return 0
 	}
-	val, err := strconv.ParseUint(strings.TrimSpace(string(out)), 10, 64)
+
+	val, err := strconv.ParseUint(strings.TrimSpace(out), 10, 64)
 	if err != nil {
-		log.Printf("raw driver: Failed to parse in %q from file %q: %s", string(out), cgroupFile, err)
+		log.Printf("raw driver: Failed to parse in %q from file %q: %s", out, filepath.Join(path, file), err)
 		return 0
 	}
 
@@ -87,22 +96,35 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 
 	// The raw driver assumes unified hierarchy containers.
 
+	// Get machine info.
+	mi, err := self.machineInfoFactory.GetMachineInfo()
+	if err != nil {
+		return nil, err
+	}
+
 	// CPU.
 	cpuRoot, ok := self.cgroupSubsystems.mountPoints["cpu"]
 	if ok {
 		cpuRoot = filepath.Join(cpuRoot, self.name)
 		if utils.FileExists(cpuRoot) {
-			// Get machine info.
-			mi, err := self.machineInfoFactory.GetMachineInfo()
-			if err != nil {
-				return nil, err
-			}
-
 			spec.Cpu = new(info.CpuSpec)
 			spec.Cpu.Limit = readInt64(cpuRoot, "cpu.shares")
+		}
+	}
 
-			// TODO(vmarmol): Get CPUs from config.Cgroups.CpusetCpus
-			spec.Cpu.Mask = fmt.Sprintf("0-%d", mi.NumCores-1)
+	// Cpu Mask.
+	// This will fail for non-unified hierarchies. We'll return the whole machine mask in that case.
+	cpusetRoot, ok := self.cgroupSubsystems.mountPoints["cpuset"]
+	if ok {
+		if spec.Cpu == nil {
+			spec.Cpu = new(info.CpuSpec)
+		}
+		cpusetRoot = filepath.Join(cpusetRoot, self.name)
+		if utils.FileExists(cpusetRoot) {
+			spec.Cpu.Mask = readString(cpusetRoot, "cpuset.cpus")
+			if spec.Cpu.Mask == "" {
+				spec.Cpu.Mask = fmt.Sprintf("0-%d", mi.NumCores-1)
+			}
 		}
 	}
 
@@ -113,7 +135,7 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 		if utils.FileExists(memoryRoot) {
 			spec.Memory = new(info.MemorySpec)
 			spec.Memory.Limit = readInt64(memoryRoot, "memory.limit_in_bytes")
-			spec.Memory.SwapLimit = readInt64(memoryRoot, "memory.limit_in_bytes")
+			spec.Memory.SwapLimit = readInt64(memoryRoot, "memory.memsw.limit_in_bytes")
 		}
 	}
 
