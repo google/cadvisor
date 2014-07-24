@@ -36,6 +36,7 @@ var funcMap = template.FuncMap{
 	"containerLink":         containerLink,
 	"printMask":             printMask,
 	"printCores":            printCores,
+	"printShares":           printShares,
 	"printMegabytes":        printMegabytes,
 	"getMemoryUsage":        getMemoryUsage,
 	"getMemoryUsagePercent": getMemoryUsagePercent,
@@ -136,6 +137,10 @@ func printCores(millicores *uint64) string {
 	}
 	cores := float64(*millicores) / 1000
 	return strconv.FormatFloat(cores, 'f', 3, 64)
+}
+
+func printShares(shares *uint64) string {
+	return fmt.Sprintf("%d", *shares)
 }
 
 func toMegabytes(bytes uint64) float64 {

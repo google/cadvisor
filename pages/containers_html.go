@@ -68,7 +68,7 @@ const containersHtmlTemplate = `
 	<ul class="list-group">
           <li class="list-group-item active isolation-title panel-title">CPU</li>
           {{if .Spec.Cpu.Limit}}
-          <li class="list-group-item"><span class="stat-label">Limit</span> {{printCores .Spec.Cpu.Limit}} <span class="unit-label">cores</span></li>
+          <li class="list-group-item"><span class="stat-label">Shares</span> {{printShares .Spec.Cpu.Limit}} <span class="unit-label">shares</span></li>
           {{end}}
           {{if .Spec.Cpu.MaxLimit}}
           <li class="list-group-item"><span class="stat-label">Max Limit</span> {{printCores .Spec.Cpu.MaxLimit}} <span class="unit-label">cores</span></li>
