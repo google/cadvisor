@@ -90,9 +90,14 @@ function getMachineInfo(callback) {
 
 // Get the container stats for the specified container.
 function getStats(containerName, callback) {
-	$.getJSON("/api/v1.0/containers" + containerName, function(data) {
-		callback(data);
+	// Request 60s of container history and no samples.
+	var request = JSON.stringify({
+		"num_stats": 60,
+		"num_samples": 0
 	});
+	$.post("/api/v1.0/containers" + containerName, request, function(data) {
+		callback(data);
+	}, "json");
 }
 
 // Draw the graph for CPU usage.
