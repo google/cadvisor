@@ -35,10 +35,6 @@ func NewClient(URL string) (*Client, error) {
 			"api/v1.0",
 		}, "/"),
 	}
-	_, err := c.MachineInfo()
-	if err != nil {
-		return nil, err
-	}
 	return c, nil
 }
 
@@ -54,6 +50,7 @@ func (self *Client) MachineInfo() (minfo *info.MachineInfo, err error) {
 		return
 	}
 	minfo = ret
+
 	return
 }
 
