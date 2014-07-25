@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"os"
 	"path"
@@ -119,6 +120,14 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontain
 func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer.State, err error) {
 	statePath := path.Join(dockerRootDir, self.id, "state.json")
 	if !utils.FileExists(statePath) {
+		// TODO(vmarmol): Remove this once we can depend on a newer Docker.
+		// Libcontainer changed how its state was stored, try the old way of a "pid" file
+		if utils.FileExists(path.Join(dockerRootDir, self.id, "pid")) {
+			// We don't need the old state, return an empty state and we'll gracefully degrade.
+			state = new(libcontainer.State)
+			return
+		}
+
 		// TODO(vishh): Return file name as well once we have a better error interface.
 		err = fileNotFound
 		return
@@ -190,6 +199,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 	config, err := self.readLibcontainerConfig()
 	if err != nil {
 		if err == fileNotFound {
+			log.Printf("Libcontainer config not found for container %q", self.name)
 			return &info.ContainerStats{}, nil
 		}
 		return
@@ -197,6 +207,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 	state, err := self.readLibcontainerState()
 	if err != nil {
 		if err == fileNotFound {
+			log.Printf("Libcontainer state not found for container %q", self.name)
 			return &info.ContainerStats{}, nil
 		}
 		return
