@@ -167,18 +167,30 @@ func toMemoryPercent(usage uint64, spec *info.ContainerSpec, machine *info.Machi
 }
 
 func getMemoryUsage(stats []*info.ContainerStats) string {
+	if len(stats) == 0 {
+		return "0.0"
+	}
 	return strconv.FormatFloat(toMegabytes((stats[len(stats)-1].Memory.Usage)), 'f', 2, 64)
 }
 
 func getMemoryUsagePercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
+	if len(stats) == 0 {
+		return 0
+	}
 	return toMemoryPercent((stats[len(stats)-1].Memory.Usage), spec, machine)
 }
 
 func getHotMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
+	if len(stats) == 0 {
+		return 0
+	}
 	return toMemoryPercent((stats[len(stats)-1].Memory.WorkingSet), spec, machine)
 }
 
 func getColdMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats, machine *info.MachineInfo) int {
+	if len(stats) == 0 {
+		return 0
+	}
 	latestStats := stats[len(stats)-1].Memory
 	return toMemoryPercent((latestStats.Usage)-(latestStats.WorkingSet), spec, machine)
 }
