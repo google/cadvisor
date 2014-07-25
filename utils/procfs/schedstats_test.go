@@ -19,13 +19,18 @@ import (
 	"reflect"
 	"testing"
 
+	"code.google.com/p/gomock/gomock"
+
 	"github.com/google/cadvisor/utils/fs"
 	"github.com/google/cadvisor/utils/fs/mockfs"
 )
 
 func TestReadProcessSchedStat(t *testing.T) {
 
-	mockfs := &mockfs.MockFileSystem{}
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+
+	mfs := mockfs.NewMockFileSystem(mockCtrl)
 
 	pid := 10
 
@@ -38,8 +43,8 @@ func TestReadProcessSchedStat(t *testing.T) {
 
 	path := fmt.Sprintf("/proc/%v/schedstat", pid)
 	content := fmt.Sprintf("%v %v %v\n", stat.Running, stat.RunWait, stat.NumTimeSlices)
-	mockfs.AddTextFile(path, content)
-	fs.ChangeFileSystem(mockfs)
+	mockfs.AddTextFile(mfs, path, content)
+	fs.ChangeFileSystem(mfs)
 
 	receivedStat := &ProcessSchedStat{}
 	err := receivedStat.Add(pid)
