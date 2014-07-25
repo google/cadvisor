@@ -18,8 +18,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"strconv"
+
+	"github.com/google/cadvisor/utils/fs"
 )
 
 type ProcessSchedStat struct {
@@ -66,7 +67,7 @@ func (self *ProcessSchedStat) Add(pid int) error {
 	}
 
 	path := fmt.Sprintf("/proc/%d/schedstat", pid)
-	f, err := os.Open(path)
+	f, err := fs.Open(path)
 	if err != nil {
 		return err
 	}
