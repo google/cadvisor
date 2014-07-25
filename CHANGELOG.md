@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 (2014-07-25)
+- Handle old Docker versions.
+- UI fixes and other bugfixes.
+
 ## 0.2.0 (2014-07-24)
 - Added network stats to the UI.
 - Added support for CoreOS and RHEL.
