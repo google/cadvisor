@@ -1,11 +1,8 @@
 package libcontainer
 
 import (
-	"bufio"
-	"os"
 	"path"
-	"path/filepath"
-	"strings"
+
 	"time"
 
 	"github.com/docker/libcontainer"
@@ -78,44 +75,5 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 // Given a container name, returns the parent and name of the container to be fed to libcontainer.
 func SplitName(containerName string) (string, string, error) {
 	parent, id := path.Split(containerName)
-	cgroupSelf, err := os.Open("/proc/self/cgroup")
-	if err != nil {
-		return "", "", err
-	}
-	scanner := bufio.NewScanner(cgroupSelf)
-
-	// Find how nested we are. Libcontainer takes container names relative to the current process.
-	subsys := []string{"memory", "cpu"}
-	nestedLevels := 0
-	for scanner.Scan() {
-		line := scanner.Text()
-		elems := strings.Split(line, ":")
-		if len(elems) < 3 {
-			continue
-		}
-		for _, s := range subsys {
-			if elems[1] == s {
-				if elems[2] == "/" {
-					// We're running at root, no nesting.
-					nestedLevels = 0
-				} else {
-					// Count how deeply nested we are.
-					nestedLevels = strings.Count(elems[2], "/")
-				}
-				break
-			}
-		}
-	}
-	if nestedLevels > 0 {
-		// we are running inside a docker container
-		upperLevel := strings.Repeat("../", nestedLevels)
-		parent = filepath.Join(upperLevel, parent)
-	}
-
-	// Strip the last "/"
-	if parent[len(parent)-1] == '/' {
-		parent = parent[:len(parent)-1]
-	}
-
 	return parent, id, nil
 }
