@@ -168,7 +168,7 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 		var rawUsage = cur.cpu.usage.total - prev.cpu.usage.total;
 
 		// Convert to millicores and take the percentage
-		cpuUsage = Math.round(((rawUsage / 1000000) / containerInfo.spec.cpu.limit) * 100);
+		cpuUsage = Math.round(((rawUsage / 1000000) / (machineInfo.num_cores * 1000)) * 100);
 		if (cpuUsage > 100) {
 			cpuUsage = 100;
 		}
