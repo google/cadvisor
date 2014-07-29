@@ -78,7 +78,7 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 // Given a container name, returns the parent and name of the container to be fed to libcontainer.
 func SplitName(containerName string) (string, string, error) {
 	parent, id := path.Split(containerName)
-	cgroupSelf, err := os.Open("/proc/self/cgroup")
+	cgroupSelf, err := os.Open("/proc/1/cgroup")
 	if err != nil {
 		return "", "", err
 	}
