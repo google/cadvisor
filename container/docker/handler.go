@@ -26,6 +26,8 @@ import (
 	"strings"
 
 	"github.com/docker/libcontainer"
+	"github.com/docker/libcontainer/cgroups"
+	"github.com/docker/libcontainer/cgroups/fs"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
 	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
@@ -255,5 +257,9 @@ func (self *dockerContainerHandler) ListThreads(listType container.ListType) ([]
 }
 
 func (self *dockerContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	return nil, nil
+	c := &cgroups.Cgroup{
+		Parent: self.parent,
+		Name:   self.id,
+	}
+	return fs.GetPids(c)
 }
