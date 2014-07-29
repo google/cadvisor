@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"path"
@@ -131,10 +132,6 @@ func getActiveCores(mask string) map[int]bool {
 }
 
 func printCores(millicores *uint64) string {
-	// TODO(vmarmol): Detect this correctly
-	if *millicores > 1024*1000 {
-		return "unlimited"
-	}
 	cores := float64(*millicores) / 1000
 	return strconv.FormatFloat(cores, 'f', 3, 64)
 }
@@ -148,8 +145,7 @@ func toMegabytes(bytes uint64) float64 {
 }
 
 func printMegabytes(bytes uint64) string {
-	// TODO(vmarmol): Detect this correctly
-	if bytes > (100 << 30) {
+	if bytes >= math.MaxInt64 {
 		return "unlimited"
 	}
 	megabytes := toMegabytes(bytes)
