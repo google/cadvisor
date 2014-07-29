@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/docker/libcontainer/cgroups"
+	"github.com/docker/libcontainer/cgroups/fs"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
@@ -201,6 +202,5 @@ func (self *rawContainerHandler) ListThreads(listType container.ListType) ([]int
 }
 
 func (self *rawContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	// TODO(vmarmol): Implement
-	return nil, nil
+	return fs.GetPids(self.cgroup)
 }
