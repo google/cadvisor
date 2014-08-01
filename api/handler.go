@@ -22,6 +22,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -30,27 +31,63 @@ import (
 )
 
 const (
-	ApiResource   = "/api/v1.0/"
-	ContainersApi = "containers"
-	MachineApi    = "machine"
+	apiResource      = "/api/"
+	containersApi    = "containers"
+	subcontainersApi = "subcontainers"
+	machineApi       = "machine"
 )
 
-func HandleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+var supportedApiVersions map[string]struct{} = map[string]struct{}{
+	"v1.0": struct{}{},
+}
+
+func RegisterHandlers(m manager.Manager) error {
+	http.HandleFunc(apiResource, func(w http.ResponseWriter, r *http.Request) {
+		err := handleRequest(m, w, r)
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+		}
+	})
+
+	return nil
+}
+
+func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
 
-	u := r.URL
+	request := r.URL.Path
+	requestElements := strings.Split(r.URL.Path, "/")
 
-	// Get API request type.
-	requestType := u.Path[len(ApiResource):]
-	i := strings.Index(requestType, "/")
-	requestArgs := ""
-	if i != -1 {
-		requestArgs = requestType[i:]
-		requestType = requestType[:i]
+	// Verify that we have all the elements we expect:
+	// <empty>/api/<version>/<request type>[/<args...>]
+	// [0]     [1] [2]       [3]             [4...]
+	if len(requestElements) < 4 {
+		return fmt.Errorf("incomplete API request %q", request)
+	}
+
+	// Get all the element parts.
+	emptyElement := requestElements[0]
+	apiElement := requestElements[1]
+	version := requestElements[2]
+	requestType := requestElements[3]
+	requestArgs := []string{}
+	if len(requestElements) > 4 {
+		requestArgs = requestElements[4:]
+	}
+
+	// Check elements.
+	if len(emptyElement) != 0 {
+		return fmt.Errorf("unexpected API request format %q", request)
+	}
+	if apiElement != "api" {
+		return fmt.Errorf("invalid API request format %q", request)
+	}
+	if _, ok := supportedApiVersions[version]; !ok {
+		return fmt.Errorf("unsupported API version %q", version)
 	}
 
 	switch {
-	case requestType == MachineApi:
+	case requestType == machineApi:
 		log.Printf("Api - Machine")
 
 		// Get the MachineInfo
@@ -64,9 +101,9 @@ func HandleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 			fmt.Fprintf(w, "Failed to marshall MachineInfo with error: %s", err)
 		}
 		w.Write(out)
-	case requestType == ContainersApi:
-		// The container name is the path after the requestType
-		containerName := requestArgs
+	case requestType == containersApi:
+		// The container name is the path after the requestType.
+		containerName := path.Join("/", strings.Join(requestArgs, "/"))
 
 		log.Printf("Api - Container(%s)", containerName)
 
