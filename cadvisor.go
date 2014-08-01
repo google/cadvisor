@@ -64,13 +64,10 @@ func main() {
 		}
 	})
 
-	// Handler for the API.
-	http.HandleFunc(api.ApiResource, func(w http.ResponseWriter, r *http.Request) {
-		err := api.HandleRequest(containerManager, w, r)
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-		}
-	})
+	// Register API handler.
+	if err := api.RegisterHandlers(containerManager); err != nil {
+		log.Fatalf("failed to register API handlers: %s", err)
+	}
 
 	// Redirect / to containers page.
 	http.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
