@@ -17,6 +17,8 @@ package manager
 import (
 	"fmt"
 	"log"
+	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,6 +33,9 @@ type Manager interface {
 
 	// Get information about a container.
 	GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error)
+
+	// Get information about all subcontainers of the specified container (includes self).
+	SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error)
 
 	// Get information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
@@ -106,21 +111,24 @@ func (m *manager) Start() error {
 }
 
 // Get a container by name.
-func (m *manager) GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
-	log.Printf("Get(%s); %+v", containerName, query)
+func (self *manager) GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
 	var cont *containerData
 	var ok bool
 	func() {
-		m.containersLock.RLock()
-		defer m.containersLock.RUnlock()
+		self.containersLock.RLock()
+		defer self.containersLock.RUnlock()
 
 		// Ensure we have the container.
-		cont, ok = m.containers[containerName]
+		cont, ok = self.containers[containerName]
 	}()
 	if !ok {
-		return nil, fmt.Errorf("unknown container \"%s\"", containerName)
+		return nil, fmt.Errorf("unknown container %q", containerName)
 	}
 
+	return self.containerDataToContainerInfo(cont, query)
+}
+
+func (self *manager) containerDataToContainerInfo(cont *containerData, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
 	// Get the info from the container.
 	cinfo, err := cont.GetInfo()
 	if err != nil {
@@ -130,7 +138,7 @@ func (m *manager) GetContainerInfo(containerName string, query *info.ContainerIn
 	var percentiles *info.ContainerStatsPercentiles
 	var samples []*info.ContainerStatsSample
 	var stats []*info.ContainerStats
-	percentiles, err = m.storageDriver.Percentiles(
+	percentiles, err = self.storageDriver.Percentiles(
 		cinfo.Name,
 		query.CpuUsagePercentiles,
 		query.MemoryUsagePercentiles,
@@ -138,12 +146,12 @@ func (m *manager) GetContainerInfo(containerName string, query *info.ContainerIn
 	if err != nil {
 		return nil, err
 	}
-	samples, err = m.storageDriver.Samples(cinfo.Name, query.NumSamples)
+	samples, err = self.storageDriver.Samples(cinfo.Name, query.NumSamples)
 	if err != nil {
 		return nil, err
 	}
 
-	stats, err = m.storageDriver.RecentStats(cinfo.Name, query.NumStats)
+	stats, err = self.storageDriver.RecentStats(cinfo.Name, query.NumStats)
 	if err != nil {
 		return nil, err
 	}
@@ -165,10 +173,44 @@ func (m *manager) GetContainerInfo(containerName string, query *info.ContainerIn
 	if ret.Spec.Memory != nil {
 		// Memory.Limit is 0 means there's no limit
 		if ret.Spec.Memory.Limit == 0 {
-			ret.Spec.Memory.Limit = uint64(m.machineInfo.MemoryCapacity)
+			ret.Spec.Memory.Limit = uint64(self.machineInfo.MemoryCapacity)
 		}
 	}
 	return ret, nil
+}
+
+func (self *manager) SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
+	var containers []*containerData
+	func() {
+		self.containersLock.RLock()
+		defer self.containersLock.RUnlock()
+		containers = make([]*containerData, 0, len(self.containers))
+
+		// Get all the subcontainers of the specified container
+		matchedName := path.Join(containerName, "/")
+		for i := range self.containers {
+			name := self.containers[i].info.Name
+			if name == containerName || strings.HasPrefix(name, matchedName) {
+				containers = append(containers, self.containers[i])
+			}
+		}
+	}()
+	if len(containers) == 0 {
+		return nil, fmt.Errorf("unknown container %q", containerName)
+	}
+
+	// Get the info for each container.
+	output := make([]*info.ContainerInfo, 0, len(containers))
+	for i := range containers {
+		cinfo, err := self.containerDataToContainerInfo(containers[i], query)
+		if err != nil {
+			// Skip containers with errors, we try to degrade gracefully.
+			continue
+		}
+		output = append(output, cinfo)
+	}
+
+	return output, nil
 }
 
 func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
@@ -200,7 +242,7 @@ func (m *manager) createContainer(containerName string) (*containerData, error) 
 			m.containers[alias] = cont
 		}
 	}()
-	log.Printf("Added container: %s (aliases: %s)", containerName, cont.info.Aliases)
+	log.Printf("Added container: %q (aliases: %s)", containerName, cont.info.Aliases)
 
 	// Start the container's housekeeping.
 	cont.Start()

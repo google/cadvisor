@@ -35,10 +35,14 @@ const (
 	containersApi    = "containers"
 	subcontainersApi = "subcontainers"
 	machineApi       = "machine"
+
+	version1_0 = "v1.0"
+	version1_1 = "v1.1"
 )
 
 var supportedApiVersions map[string]struct{} = map[string]struct{}{
-	"v1.0": struct{}{},
+	version1_0: struct{}{},
+	version1_1: struct{}{},
 }
 
 func RegisterHandlers(m manager.Manager) error {
@@ -107,28 +111,50 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 
 		log.Printf("Api - Container(%s)", containerName)
 
-		var query info.ContainerInfoRequest
-
-		// If a user does not specify number of stats/samples he wants,
-		// it's 64 by default
-		query.NumStats = 64
-		query.NumSamples = 64
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&query)
-		if err != nil && err != io.EOF {
-			return fmt.Errorf("unable to decode the json value: ", err)
-		}
-		// Get the container.
-		cont, err := m.GetContainerInfo(containerName, &query)
+		// Get the query request.
+		query, err := getContainerInfoRequest(r.Body)
 		if err != nil {
-			fmt.Fprintf(w, "Failed to get container \"%s\" with error: %s", containerName, err)
 			return err
+		}
+
+		// Get the container.
+		cont, err := m.GetContainerInfo(containerName, query)
+		if err != nil {
+			return fmt.Errorf("failed to get container %q with error: %s", containerName, err)
 		}
 
 		// Only output the container as JSON.
 		out, err := json.Marshal(cont)
 		if err != nil {
-			fmt.Fprintf(w, "Failed to marshall container %q with error: %s", containerName, err)
+			return fmt.Errorf("failed to marshall container %q with error: %s", containerName, err)
+		}
+		w.Write(out)
+	case requestType == subcontainersApi:
+		if version == version1_0 {
+			return fmt.Errorf("request type of %q not supported in API version %q", requestType, version)
+		}
+
+		// The container name is the path after the requestType.
+		containerName := path.Join("/", strings.Join(requestArgs, "/"))
+
+		log.Printf("Api - Subcontainers(%s)", containerName)
+
+		// Get the query request.
+		query, err := getContainerInfoRequest(r.Body)
+		if err != nil {
+			return err
+		}
+
+		// Get the subcontainers.
+		containers, err := m.SubcontainersInfo(containerName, query)
+		if err != nil {
+			return fmt.Errorf("failed to get subcontainers for container %q with error: %s", containerName, err)
+		}
+
+		// Only output the containers as JSON.
+		out, err := json.Marshal(containers)
+		if err != nil {
+			return fmt.Errorf("failed to marshall container %q with error: %s", containerName, err)
 		}
 		w.Write(out)
 	default:
@@ -137,4 +163,20 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 
 	log.Printf("Request took %s", time.Since(start))
 	return nil
+}
+
+func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, error) {
+	var query info.ContainerInfoRequest
+
+	// Default stats and samples is 64.
+	query.NumStats = 64
+	query.NumSamples = 64
+
+	decoder := json.NewDecoder(body)
+	err := decoder.Decode(&query)
+	if err != nil && err != io.EOF {
+		return nil, fmt.Errorf("unable to decode the json value: %s", err)
+	}
+
+	return &query, nil
 }

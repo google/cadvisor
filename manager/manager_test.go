@@ -71,19 +71,9 @@ func createManagerAndAddContainers(
 	return nil
 }
 
-func TestGetContainerInfo(t *testing.T) {
-	containers := []string{
-		"/c1",
-		"/c2",
-	}
-
-	query := &info.ContainerInfoRequest{
-		NumStats:               256,
-		NumSamples:             128,
-		CpuUsagePercentiles:    []int{10, 50, 90},
-		MemoryUsagePercentiles: []int{10, 80, 90},
-	}
-
+// Expect a manager with the specified containers and query. Returns the manager, map of ContainerInfo objects,
+// and map of MockContainerHandler objects.}
+func expectManagerWithContainers(containers []string, query *info.ContainerInfoRequest, t *testing.T) (*manager, map[string]*info.ContainerInfo, map[string]*container.MockContainerHandler) {
 	infosMap := make(map[string]*info.ContainerInfo, len(containers))
 	handlerMap := make(map[string]*container.MockContainerHandler, len(containers))
 
@@ -142,6 +132,24 @@ func TestGetContainerInfo(t *testing.T) {
 		t,
 	)
 
+	return m, infosMap, handlerMap
+}
+
+func TestGetContainerInfo(t *testing.T) {
+	containers := []string{
+		"/c1",
+		"/c2",
+	}
+
+	query := &info.ContainerInfoRequest{
+		NumStats:               256,
+		NumSamples:             128,
+		CpuUsagePercentiles:    []int{10, 50, 90},
+		MemoryUsagePercentiles: []int{10, 80, 90},
+	}
+
+	m, infosMap, handlerMap := expectManagerWithContainers(containers, query, t)
+
 	returnedInfos := make(map[string]*info.ContainerInfo, len(containers))
 
 	for _, container := range containers {
@@ -161,4 +169,40 @@ func TestGetContainerInfo(t *testing.T) {
 		}
 	}
 
+}
+
+func TestSubcontainersInfo(t *testing.T) {
+	containers := []string{
+		"/c1",
+		"/c2",
+	}
+
+	query := &info.ContainerInfoRequest{
+		NumStats:               64,
+		NumSamples:             64,
+		CpuUsagePercentiles:    []int{10, 50, 90},
+		MemoryUsagePercentiles: []int{10, 80, 90},
+	}
+
+	m, _, _ := expectManagerWithContainers(containers, query, t)
+
+	result, err := m.SubcontainersInfo("/", query)
+	if err != nil {
+		t.Fatalf("expected to succeed: %s", err)
+	}
+	if len(result) != len(containers) {
+		t.Errorf("expected to received containers: %v, but received: %v", containers, result)
+	}
+	for _, res := range result {
+		found := false
+		for _, name := range containers {
+			if res.Name == name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("unexpected container %q in result, expected one of %v", res.Name, containers)
+		}
+	}
 }
