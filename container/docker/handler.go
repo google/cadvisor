@@ -65,11 +65,8 @@ func newDockerContainerHandler(
 	if handler.isDockerRoot() {
 		return handler, nil
 	}
-	parent, id, err := containerLibcontainer.SplitName(name)
-	if err != nil {
-		return nil, fmt.Errorf("invalid docker container %v: %v", name, err)
-	}
-	handler.parent = parent
+	id := path.Base(name)
+	handler.parent = path.Dir(name)
 	handler.id = id
 	ctnr, err := client.InspectContainer(id)
 	// We assume that if Inspect fails then the container is not known to docker.
