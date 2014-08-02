@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -25,7 +26,6 @@ import (
 	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
 )
 
@@ -75,10 +75,7 @@ func (self *dockerFactory) CanHandle(name string) bool {
 		return false
 	}
 	// Check if the container is known to docker and it is active.
-	_, id, err := libcontainer.SplitName(name)
-	if err != nil {
-		return false
-	}
+	id := path.Base(name)
 	ctnr, err := self.client.InspectContainer(id)
 	// We assume that if Inspect fails then the container is not known to docker.
 	// TODO(vishh): Detect lxc containers and avoid handling them.

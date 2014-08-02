@@ -38,15 +38,11 @@ type rawContainerHandler struct {
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
-	parent, id, err := libcontainer.SplitName(name)
-	if err != nil {
-		return nil, err
-	}
 	return &rawContainerHandler{
 		name: name,
 		cgroup: &cgroups.Cgroup{
-			Parent: parent,
-			Name:   id,
+			Parent: "/",
+			Name:   name,
 		},
 		cgroupSubsystems:   cgroupSubsystems,
 		machineInfoFactory: machineInfoFactory,
