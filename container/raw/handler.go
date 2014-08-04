@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"path/filepath"
+	"path"
 	"strconv"
 	"strings"
 
@@ -56,8 +56,8 @@ func (self *rawContainerHandler) ContainerReference() (info.ContainerReference, 
 	}, nil
 }
 
-func readString(path string, file string) string {
-	cgroupFile := filepath.Join(path, file)
+func readString(dirpath string, file string) string {
+	cgroupFile := path.Join(dirpath, file)
 
 	// Ignore non-existent files
 	if !utils.FileExists(cgroupFile) {
@@ -73,15 +73,15 @@ func readString(path string, file string) string {
 	return string(out)
 }
 
-func readInt64(path string, file string) uint64 {
-	out := readString(path, file)
+func readInt64(dirpath string, file string) uint64 {
+	out := readString(dirpath, file)
 	if out == "" {
 		return 0
 	}
 
 	val, err := strconv.ParseUint(strings.TrimSpace(out), 10, 64)
 	if err != nil {
-		log.Printf("raw driver: Failed to parse in %q from file %q: %s", out, filepath.Join(path, file), err)
+		log.Printf("raw driver: Failed to parse in %q from file %q: %s", out, path.Join(dirpath, file), err)
 		return 0
 	}
 
@@ -102,7 +102,7 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 	// CPU.
 	cpuRoot, ok := self.cgroupSubsystems.mountPoints["cpu"]
 	if ok {
-		cpuRoot = filepath.Join(cpuRoot, self.name)
+		cpuRoot = path.Join(cpuRoot, self.name)
 		if utils.FileExists(cpuRoot) {
 			spec.Cpu = new(info.CpuSpec)
 			spec.Cpu.Limit = readInt64(cpuRoot, "cpu.shares")
@@ -116,7 +116,7 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 		if spec.Cpu == nil {
 			spec.Cpu = new(info.CpuSpec)
 		}
-		cpusetRoot = filepath.Join(cpusetRoot, self.name)
+		cpusetRoot = path.Join(cpusetRoot, self.name)
 		if utils.FileExists(cpusetRoot) {
 			spec.Cpu.Mask = readString(cpusetRoot, "cpuset.cpus")
 			if spec.Cpu.Mask == "" {
@@ -128,7 +128,7 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 	// Memory.
 	memoryRoot, ok := self.cgroupSubsystems.mountPoints["memory"]
 	if ok {
-		memoryRoot = filepath.Join(memoryRoot, self.name)
+		memoryRoot = path.Join(memoryRoot, self.name)
 		if utils.FileExists(memoryRoot) {
 			spec.Memory = new(info.MemorySpec)
 			spec.Memory.Limit = readInt64(memoryRoot, "memory.limit_in_bytes")
@@ -144,25 +144,25 @@ func (self *rawContainerHandler) GetStats() (stats *info.ContainerStats, err err
 }
 
 // Lists all directories under "path" and outputs the results as children of "parent".
-func listDirectories(path string, parent string, recursive bool, output map[string]struct{}) error {
+func listDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}) error {
 	// Ignore if this hierarchy does not exist.
-	if !utils.FileExists(path) {
+	if !utils.FileExists(dirpath) {
 		return nil
 	}
 
-	entries, err := ioutil.ReadDir(path)
+	entries, err := ioutil.ReadDir(dirpath)
 	if err != nil {
 		return err
 	}
 	for _, entry := range entries {
 		// We only grab directories.
 		if entry.IsDir() {
-			name := filepath.Join(parent, entry.Name())
+			name := path.Join(parent, entry.Name())
 			output[name] = struct{}{}
 
 			// List subcontainers if asked to.
 			if recursive {
-				err := listDirectories(filepath.Join(path, entry.Name()), name, true, output)
+				err := listDirectories(path.Join(dirpath, entry.Name()), name, true, output)
 				if err != nil {
 					return err
 				}
@@ -175,7 +175,7 @@ func listDirectories(path string, parent string, recursive bool, output map[stri
 func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	containers := make(map[string]struct{}, 16)
 	for _, subsystem := range self.cgroupSubsystems.mounts {
-		err := listDirectories(filepath.Join(subsystem.Mountpoint, self.name), self.name, listType == container.LIST_RECURSIVE, containers)
+		err := listDirectories(path.Join(subsystem.Mountpoint, self.name), self.name, listType == container.LIST_RECURSIVE, containers)
 		if err != nil {
 			return nil, err
 		}

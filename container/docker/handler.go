@@ -22,7 +22,6 @@ import (
 	"math"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/docker/libcontainer"
@@ -240,7 +239,7 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 		}
 
 		ref := info.ContainerReference{
-			Name:    filepath.Join(containerPrefix, c.ID),
+			Name:    path.Join(containerPrefix, c.ID),
 			Aliases: c.Names,
 		}
 		ret = append(ret, ref)
