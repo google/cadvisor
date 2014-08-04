@@ -213,11 +213,11 @@ func TestAddSampleWrongOrder(t *testing.T) {
 
 	sample, err := NewSample(current, prev)
 	if err == nil {
-		t.Errorf("generated an unexpected sample: %+v", sample)
+		t.Errorf("generated an unexpected sample: %v", sample)
 	}
 }
 
-func TestAddSampleWrongCpuUsage(t *testing.T) {
+func TestAddSampleNegativeCpuUsage(t *testing.T) {
 	cpuPrevUsage := uint64(15)
 	cpuCurrentUsage := uint64(10)
 	memCurrentUsage := uint64(200)
@@ -227,8 +227,11 @@ func TestAddSampleWrongCpuUsage(t *testing.T) {
 	current := createStats(cpuCurrentUsage, memCurrentUsage, prevTime.Add(1*time.Second))
 
 	sample, err := NewSample(prev, current)
-	if err == nil {
-		t.Errorf("generated an unexpected sample: %+v", sample)
+	if err != nil {
+		t.Errorf("expected to sample without error %+v", err)
+	}
+	if sample.Cpu.Usage != 0 || sample.Cpu.PerCpuUsage[0] != 0 {
+		t.Errorf("expected usage to saturate to 0: %+v", sample)
 	}
 }
 

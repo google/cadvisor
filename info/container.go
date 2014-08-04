@@ -368,6 +368,14 @@ type ContainerStatsPercentiles struct {
 	CpuUsagePercentiles    []Percentile `json:"cpu_usage_percentiles,omitempty"`
 }
 
+// Saturate CPU usage to 0.
+func calculateCpuUsage(prev, cur uint64) uint64 {
+	if prev > cur {
+		return 0
+	}
+	return cur - prev
+}
+
 // Each sample needs two stats because the cpu usage in ContainerStats is
 // cumulative.
 // prev should be an earlier observation than current.
@@ -384,10 +392,6 @@ func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 	if !current.Timestamp.After(prev.Timestamp) {
 		return nil, fmt.Errorf("wrong stats order")
 	}
-	// This data is invalid.
-	if current.Cpu.Usage.Total < prev.Cpu.Usage.Total {
-		return nil, fmt.Errorf("current CPU usage is less than prev CPU usage (cumulative).")
-	}
 
 	var percpu []uint64
 
@@ -400,15 +404,13 @@ func NewSample(prev, current *ContainerStats) (*ContainerStatsSample, error) {
 			if i < len(prev.Cpu.Usage.PerCpu) {
 				prevUsage = prev.Cpu.Usage.PerCpu[i]
 			}
-			if currUsage < prevUsage {
-				return nil, fmt.Errorf("current per-core CPU usage is less than prev per-core CPU usage (cumulative).")
-			}
-			percpu[i] = currUsage - prevUsage
+
+			percpu[i] = calculateCpuUsage(prevUsage, currUsage)
 		}
 	}
 	sample := new(ContainerStatsSample)
 	// Calculate the diff to get the CPU usage within the time interval.
-	sample.Cpu.Usage = current.Cpu.Usage.Total - prev.Cpu.Usage.Total
+	sample.Cpu.Usage = calculateCpuUsage(prev.Cpu.Usage.Total, current.Cpu.Usage.Total)
 	sample.Cpu.PerCpuUsage = percpu
 	// Memory usage is current memory usage
 	sample.Memory.Usage = current.Memory.Usage
