@@ -25,6 +25,17 @@ cAdvisor is now running (in the background) on `http://localhost:8080`. The setu
 
 If you want to build your own cAdvisor Docker image, take a look at the Dockerfile which can build a cAdvisor docker container under `quickstart/Dockerfile`.
 
+#### Using [InfluxDB](http://influxdb.com) as backend storage
+
+cAdvisor now also supports [InfluxDB](http://influxdb.com) to store stats. To use InfluxDB, you need to pass some additional flag to cadvisor telling it where the InfluxDB is running:
+
+- ``-storage_driver``: storage driver to use. Options are: memory (default) and influxdb.
+- ``-storage_driver_host``: The *host:port* of the data base.
+- ``-storage_driver_name``: database name.
+- ``-storage_driver_user``: database username.
+- ``-storage_driver_password``: database password.
+- ``-storage_driver_secure``: use secure connection with database. False by default
+
 ## Web UI
 
 cAdvisor exposes a web UI at its port:
