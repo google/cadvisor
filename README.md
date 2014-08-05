@@ -27,10 +27,10 @@ If you want to build your own cAdvisor Docker image, take a look at the Dockerfi
 
 #### Using [InfluxDB](http://influxdb.com) as backend storage
 
-cAdvisor now also supports [InfluxDB](http://influxdb.com) to store stats. To use InfluxDB, you need to pass some additional flag to cadvisor telling it where the InfluxDB is running:
+cAdvisor now also supports [InfluxDB](http://influxdb.com) to store stats. To use InfluxDB, you need to pass some additional flags to cAdvisor:
 
-- ``-storage_driver``: storage driver to use. Options are: memory (default) and influxdb.
-- ``-storage_driver_host``: The *host:port* of the data base.
+- ``-storage_driver``: storage driver to use. Options are: memory (default) and influxdb. Use influxdb.
+- ``-storage_driver_host``: The *host:port* of the database.
 - ``-storage_driver_name``: database name.
 - ``-storage_driver_user``: database username.
 - ``-storage_driver_password``: database password.
@@ -48,7 +48,19 @@ cAdvisor exposes its raw and processed stats via a versioned remote REST API:
 
 `http://<hostname>:<port>/api/<version>/<request>`
 
-The current (and only) version of the API is `v1.0`.
+The current version of the API is `v1.1`.
+
+### Version 1.1
+
+This version exposes the same endpoints as `v1.0` with one additional read-only endpoint.
+
+#### Subcontainer Information
+
+The resource name for subcontainer information is as follows:
+
+`/api/v1.1/subcontainers/<absolute container name>`
+
+Where the absolute container name follows the lmctfy naming convention (described bellow). It returns the information of the specified container and all subcontainers (recursively). The information is returned as a list of serialized `ContainerInfo` JSON objects (found in [info/container.go](info/container.go)).
 
 ### Version 1.0
 
