@@ -27,13 +27,13 @@ type ProcessSchedStat struct {
 	// Number of processes
 	NumProcesses int
 
-	// Total time spent on the cpu (Unit: jiffy)
+	// Total time spent on the cpu (Unit: nanoseconds)
 	Running uint64
 
-	// Total time spent waiting on a runqueue (Unit: jiffy)
+	// Total time spent waiting on a runqueue (Unit: nanoseconds)
 	RunWait uint64
 
-	// # of timeslices run on this cpu (Unit: jiffy)
+	// # of timeslices run on this cpu. i.e. # of times run on the cpu
 	NumTimeSlices uint64
 }
 
