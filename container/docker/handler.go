@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"os"
 	"path"
@@ -28,6 +27,7 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/cgroups/fs"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
@@ -197,7 +197,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 	config, err := self.readLibcontainerConfig()
 	if err != nil {
 		if err == fileNotFound {
-			log.Printf("Libcontainer config not found for container %q", self.name)
+			glog.Errorf("Libcontainer config not found for container %q", self.name)
 			return &info.ContainerStats{}, nil
 		}
 		return
@@ -205,7 +205,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 	state, err := self.readLibcontainerState()
 	if err != nil {
 		if err == fileNotFound {
-			log.Printf("Libcontainer state not found for container %q", self.name)
+			glog.Errorf("Libcontainer state not found for container %q", self.name)
 			return &info.ContainerStats{}, nil
 		}
 		return

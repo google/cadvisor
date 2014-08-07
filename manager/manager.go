@@ -16,12 +16,12 @@ package manager
 
 import (
 	"fmt"
-	"log"
 	"path"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
@@ -56,14 +56,14 @@ func New(driver storage.StorageDriver) (Manager, error) {
 		return nil, err
 	}
 	newManager.machineInfo = *machineInfo
-	log.Printf("Machine: %+v", newManager.machineInfo)
+	glog.Infof("Machine: %+v", newManager.machineInfo)
 
 	versionInfo, err := getVersionInfo()
 	if err != nil {
 		return nil, err
 	}
 	newManager.versionInfo = *versionInfo
-	log.Printf("Version: %+v", newManager.versionInfo)
+	glog.Infof("Version: %+v", newManager.versionInfo)
 	newManager.storageDriver = driver
 
 	return newManager, nil
@@ -84,12 +84,12 @@ func (m *manager) Start() error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Starting recovery of all containers")
+	glog.Infof("Starting recovery of all containers")
 	err = m.detectContainers()
 	if err != nil {
 		return err
 	}
-	log.Printf("Recovery completed")
+	glog.Infof("Recovery completed")
 
 	// Look for new containers in the main housekeeping thread.
 	for t := range time.Tick(time.Second) {
@@ -98,13 +98,13 @@ func (m *manager) Start() error {
 		// Check for new containers.
 		err = m.detectContainers()
 		if err != nil {
-			log.Printf("Failed to detect containers: %s", err)
+			glog.Errorf("Failed to detect containers: %s", err)
 		}
 
 		// Log if housekeeping took more than 100ms.
 		duration := time.Since(start)
 		if duration >= 100*time.Millisecond {
-			log.Printf("Global Housekeeping(%d) took %s", t.Unix(), duration)
+			glog.V(1).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
 		}
 	}
 	return nil
@@ -242,7 +242,7 @@ func (m *manager) createContainer(containerName string) (*containerData, error) 
 			m.containers[alias] = cont
 		}
 	}()
-	log.Printf("Added container: %q (aliases: %s)", containerName, cont.info.Aliases)
+	glog.Infof("Added container: %q (aliases: %s)", containerName, cont.info.Aliases)
 
 	// Start the container's housekeeping.
 	cont.Start()
@@ -269,7 +269,7 @@ func (m *manager) destroyContainer(containerName string) error {
 	for _, alias := range cont.info.Aliases {
 		delete(m.containers, alias)
 	}
-	log.Printf("Destroyed container: %s (aliases: %s)", containerName, cont.info.Aliases)
+	glog.Infof("Destroyed container: %s (aliases: %s)", containerName, cont.info.Aliases)
 	return nil
 }
 
@@ -325,7 +325,7 @@ func (m *manager) detectContainers() error {
 	for _, cont := range added {
 		_, err = m.createContainer(cont.Name)
 		if err != nil {
-			log.Printf("failed to create existing container: %s: %s", cont.Name, err)
+			glog.Errorf("failed to create existing container: %s: %s", cont.Name, err)
 		}
 	}
 
@@ -333,7 +333,7 @@ func (m *manager) detectContainers() error {
 	for _, cont := range removed {
 		err = m.destroyContainer(cont.Name)
 		if err != nil {
-			log.Printf("failed to destroy existing container: %s: %s", cont.Name, err)
+			glog.Errorf("failed to destroy existing container: %s: %s", cont.Name, err)
 		}
 	}
 

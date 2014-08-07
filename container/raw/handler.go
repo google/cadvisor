@@ -17,13 +17,13 @@ package raw
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path"
 	"strconv"
 	"strings"
 
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/cgroups/fs"
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
@@ -67,7 +67,7 @@ func readString(dirpath string, file string) string {
 	// Read
 	out, err := ioutil.ReadFile(cgroupFile)
 	if err != nil {
-		log.Printf("raw driver: Failed to read %q: %s", cgroupFile, err)
+		glog.Errorf("raw driver: Failed to read %q: %s", cgroupFile, err)
 		return ""
 	}
 	return string(out)
@@ -81,7 +81,7 @@ func readInt64(dirpath string, file string) uint64 {
 
 	val, err := strconv.ParseUint(strings.TrimSpace(out), 10, 64)
 	if err != nil {
-		log.Printf("raw driver: Failed to parse in %q from file %q: %s", out, path.Join(dirpath, file), err)
+		glog.Errorf("raw driver: Failed to parse int %q from file %q: %s", out, path.Join(dirpath, file), err)
 		return 0
 	}
 

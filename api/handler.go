@@ -20,12 +20,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"path"
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 )
@@ -41,8 +41,8 @@ const (
 )
 
 var supportedApiVersions map[string]struct{} = map[string]struct{}{
-	version1_0: struct{}{},
-	version1_1: struct{}{},
+	version1_0: {},
+	version1_1: {},
 }
 
 func RegisterHandlers(m manager.Manager) error {
@@ -92,7 +92,7 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 
 	switch {
 	case requestType == machineApi:
-		log.Printf("Api - Machine")
+		glog.V(2).Infof("Api - Machine")
 
 		// Get the MachineInfo
 		machineInfo, err := m.GetMachineInfo()
@@ -109,7 +109,7 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		// The container name is the path after the requestType.
 		containerName := path.Join("/", strings.Join(requestArgs, "/"))
 
-		log.Printf("Api - Container(%s)", containerName)
+		glog.V(2).Infof("Api - Container(%s)", containerName)
 
 		// Get the query request.
 		query, err := getContainerInfoRequest(r.Body)
@@ -137,7 +137,7 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		// The container name is the path after the requestType.
 		containerName := path.Join("/", strings.Join(requestArgs, "/"))
 
-		log.Printf("Api - Subcontainers(%s)", containerName)
+		glog.V(2).Infof("Api - Subcontainers(%s)", containerName)
 
 		// Get the query request.
 		query, err := getContainerInfoRequest(r.Body)
@@ -161,7 +161,7 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		return fmt.Errorf("unknown API request type %q", requestType)
 	}
 
-	log.Printf("Request took %s", time.Since(start))
+	glog.V(2).Infof("Request took %s", time.Since(start))
 	return nil
 }
 

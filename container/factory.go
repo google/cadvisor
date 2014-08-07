@@ -16,8 +16,9 @@ package container
 
 import (
 	"fmt"
-	"log"
 	"sync"
+
+	"github.com/golang/glog"
 )
 
 type ContainerHandlerFactory interface {
@@ -55,7 +56,7 @@ func NewContainerHandler(name string) (ContainerHandler, error) {
 	// Create the ContainerHandler with the first factory that supports it.
 	for _, factory := range factories {
 		if factory.CanHandle(name) {
-			log.Printf("Using factory %q for container %q", factory.String(), name)
+			glog.V(1).Infof("Using factory %q for container %q", factory.String(), name)
 			return factory.NewContainerHandler(name)
 		}
 	}

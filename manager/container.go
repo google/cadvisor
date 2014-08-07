@@ -18,10 +18,10 @@ package manager
 
 import (
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
@@ -51,7 +51,7 @@ type containerData struct {
 func (c *containerData) Start() error {
 	// Force the first update.
 	c.housekeepingTick()
-	log.Printf("Start housekeeping for container %q\n", c.info.Name)
+	glog.Infof("Start housekeeping for container %q\n", c.info.Name)
 
 	go c.housekeeping()
 	return nil
@@ -119,7 +119,7 @@ func (c *containerData) housekeeping() {
 			// Log if housekeeping took longer than 120ms.
 			duration := time.Since(start)
 			if duration >= 120*time.Millisecond {
-				log.Printf("Housekeeping(%s) took %s", c.info.Name, duration)
+				glog.V(2).Infof("Housekeeping(%s) took %s", c.info.Name, duration)
 			}
 		}
 	}
@@ -128,7 +128,7 @@ func (c *containerData) housekeeping() {
 func (c *containerData) housekeepingTick() {
 	err := c.updateStats()
 	if err != nil {
-		log.Printf("Failed to update stats for container \"%s\": %s", c.info.Name, err)
+		glog.Infof("Failed to update stats for container \"%s\": %s", c.info.Name, err)
 	}
 }
 

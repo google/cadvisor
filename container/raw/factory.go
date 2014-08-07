@@ -16,9 +16,9 @@ package raw
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/docker/libcontainer/cgroups"
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
 )
@@ -75,7 +75,7 @@ func Register(machineInfoFactory info.MachineInfoFactory) error {
 		return fmt.Errorf("failed to find supported cgroup mounts for the raw factory")
 	}
 
-	log.Printf("Registering Raw factory")
+	glog.Infof("Registering Raw factory")
 	factory := &rawFactory{
 		machineInfoFactory: machineInfoFactory,
 		cgroupSubsystems: &cgroupSubsystems{
