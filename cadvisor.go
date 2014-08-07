@@ -17,9 +17,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
@@ -38,22 +38,22 @@ func main() {
 
 	storageDriver, err := NewStorageDriver(*argDbDriver)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %s", err)
+		glog.Fatalf("Failed to connect to database: %s", err)
 	}
 
 	containerManager, err := manager.New(storageDriver)
 	if err != nil {
-		log.Fatalf("Failed to create a Container Manager: %s", err)
+		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
 
 	// Register Docker.
 	if err := docker.Register(containerManager); err != nil {
-		log.Printf("Docker registration failed: %v.", err)
+		glog.Errorf("Docker registration failed: %v.", err)
 	}
 
 	// Register the raw driver.
 	if err := raw.Register(containerManager); err != nil {
-		log.Fatalf("raw registration failed: %v.", err)
+		glog.Fatalf("raw registration failed: %v.", err)
 	}
 
 	// Handler for static content.
@@ -66,7 +66,7 @@ func main() {
 
 	// Register API handler.
 	if err := api.RegisterHandlers(containerManager); err != nil {
-		log.Fatalf("failed to register API handlers: %s", err)
+		glog.Fatalf("failed to register API handlers: %s", err)
 	}
 
 	// Redirect / to containers page.
@@ -80,14 +80,16 @@ func main() {
 		}
 	})
 
+	defer glog.Flush()
+
 	go func() {
-		log.Fatal(containerManager.Start())
+		glog.Fatal(containerManager.Start())
 	}()
 
-	log.Printf("Starting cAdvisor version: %q", info.VERSION)
-	log.Print("About to serve on port ", *argPort)
+	glog.Infof("Starting cAdvisor version: %q", info.VERSION)
+	glog.Infof("About to serve on port ", *argPort)
 
 	addr := fmt.Sprintf(":%v", *argPort)
 
-	log.Fatal(http.ListenAndServe(addr, nil))
+	glog.Fatal(http.ListenAndServe(addr, nil))
 }

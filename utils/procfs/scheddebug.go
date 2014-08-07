@@ -100,7 +100,7 @@ func (self simpleSchedulerLoadReader) Load(container string) ([]int, error) {
 
 func (self simpleSchedulerLoadReader) AllContainers() ([]string, error) {
 	ret := make([]string, 0, len(self))
-	for c, _ := range self {
+	for c := range self {
 		ret = append(ret, c)
 	}
 	return ret, nil

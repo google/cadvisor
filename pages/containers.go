@@ -18,7 +18,6 @@ package pages
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"math"
 	"net/http"
 	"net/url"
@@ -27,6 +26,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 )
@@ -66,7 +66,7 @@ func init() {
 	pageTemplate = template.New("containersTemplate").Funcs(funcMap)
 	_, err := pageTemplate.Parse(containersHtmlTemplate)
 	if err != nil {
-		log.Fatalf("Failed to parse template: %s", err)
+		glog.Fatalf("Failed to parse template: %s", err)
 	}
 }
 
@@ -263,9 +263,9 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 	}
 	err = pageTemplate.Execute(w, data)
 	if err != nil {
-		log.Printf("Failed to apply template: %s", err)
+		glog.Errorf("Failed to apply template: %s", err)
 	}
 
-	log.Printf("Request took %s", time.Since(start))
+	glog.V(1).Infof("Request took %s", time.Since(start))
 	return nil
 }

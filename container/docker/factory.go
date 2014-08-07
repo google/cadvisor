@@ -17,7 +17,6 @@ package docker
 import (
 	"flag"
 	"fmt"
-	"log"
 	"path"
 	"regexp"
 	"strconv"
@@ -25,6 +24,7 @@ import (
 
 	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
 )
@@ -134,9 +134,9 @@ func Register(factory info.MachineInfoFactory) error {
 		client:             client,
 	}
 	if f.useSystemd {
-		log.Printf("System is using systemd")
+		glog.Infof("System is using systemd")
 	}
-	log.Printf("Registering Docker factory")
+	glog.Infof("Registering Docker factory")
 	container.RegisterContainerHandlerFactory(f)
 	return nil
 }
