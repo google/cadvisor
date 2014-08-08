@@ -325,7 +325,7 @@ func (m *manager) detectContainers() error {
 	for _, cont := range added {
 		_, err = m.createContainer(cont.Name)
 		if err != nil {
-			glog.Errorf("failed to create existing container: %s: %s", cont.Name, err)
+			glog.Errorf("Failed to create existing container: %s: %s", cont.Name, err)
 		}
 	}
 
@@ -333,7 +333,7 @@ func (m *manager) detectContainers() error {
 	for _, cont := range removed {
 		err = m.destroyContainer(cont.Name)
 		if err != nil {
-			glog.Errorf("failed to destroy existing container: %s: %s", cont.Name, err)
+			glog.Errorf("Failed to destroy existing container: %s: %s", cont.Name, err)
 		}
 	}
 
