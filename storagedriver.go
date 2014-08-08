@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/storage/cache"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/memory"
 )
@@ -61,6 +62,7 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			// TODO(monnand): One hour? Or user-defined?
 			1*time.Hour,
 		)
+		storageDriver = cache.MemoryCache(*argHistoryDuration, *argHistoryDuration, storageDriver)
 	default:
 		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)
 	}
