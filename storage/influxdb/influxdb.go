@@ -62,6 +62,22 @@ const (
 	colCpuInstantUsage string = "cpu_instant_usage"
 	// Optional: Instant per core usage
 	colPerCoreInstantUsagePrefix string = "per_core_instant_usage_core_"
+	// Cumulative count of bytes received.
+	colRxBytes string = "rx_bytes"
+	// Cumulative count of packets received.
+	colRxPackets string = "rx_packets"
+	// Cumulative count of receive errors encountered.
+	colRxErrors string = "rx_errors"
+	// Cumulative count of packets dropped while receiving.
+	colRxDropped string = "rx_dropped"
+	// Cumulative count of bytes transmitted.
+	colTxBytes string = "tx_bytes"
+	// Cumulative count of packets transmitted.
+	colTxPackets string = "tx_packets"
+	// Cumulative count of transmit errors encountered.
+	colTxErrors string = "tx_errors"
+	// Cumulative count of packets dropped while transmitting.
+	colTxDropped string = "tx_dropped"
 )
 
 func (self *influxdbStorage) containerStatsToValues(
@@ -79,7 +95,11 @@ func (self *influxdbStorage) containerStatsToValues(
 
 	// Container name
 	columns = append(columns, colContainerName)
-	values = append(values, ref.Name)
+	if len(ref.Aliases) > 0 {
+		values = append(values, ref.Aliases[0])
+	} else {
+		values = append(values, ref.Name)
+	}
 
 	// Cumulative Cpu Usage
 	columns = append(columns, colCpuCumulativeUsage)
@@ -142,6 +162,33 @@ func (self *influxdbStorage) containerStatsToValues(
 		values = append(values, u)
 	}
 
+	// Network stats.
+	if stats.Network != nil {
+		columns = append(columns, colRxBytes)
+		values = append(values, stats.Network.RxBytes)
+
+		columns = append(columns, colRxPackets)
+		values = append(values, stats.Network.RxPackets)
+
+		columns = append(columns, colRxErrors)
+		values = append(values, stats.Network.RxErrors)
+
+		columns = append(columns, colRxDropped)
+		values = append(values, stats.Network.RxDropped)
+
+		columns = append(columns, colTxBytes)
+		values = append(values, stats.Network.TxBytes)
+
+		columns = append(columns, colTxPackets)
+		values = append(values, stats.Network.TxPackets)
+
+		columns = append(columns, colTxErrors)
+		values = append(values, stats.Network.TxErrors)
+
+		columns = append(columns, colTxDropped)
+		values = append(values, stats.Network.TxDropped)
+	}
+
 	return columns, values
 }
 
@@ -180,8 +227,9 @@ func convertToUint64(v interface{}) (uint64, error) {
 
 func (self *influxdbStorage) valuesToContainerStats(columns []string, values []interface{}) (*info.ContainerStats, error) {
 	stats := &info.ContainerStats{
-		Cpu:    &info.CpuStats{},
-		Memory: &info.MemoryStats{},
+		Cpu:     &info.CpuStats{},
+		Memory:  &info.MemoryStats{},
+		Network: &info.NetworkStats{},
 	}
 	perCoreUsage := make(map[int]uint64, 32)
 	var err error
@@ -227,6 +275,22 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 		// hierarchical major page fault
 		case col == colMemoryHierarchicalPgmajfault:
 			stats.Memory.HierarchicalData.Pgmajfault, err = convertToUint64(v)
+		case col == colRxBytes:
+			stats.Network.RxBytes, err = convertToUint64(v)
+		case col == colRxPackets:
+			stats.Network.RxPackets, err = convertToUint64(v)
+		case col == colRxErrors:
+			stats.Network.RxErrors, err = convertToUint64(v)
+		case col == colRxDropped:
+			stats.Network.RxDropped, err = convertToUint64(v)
+		case col == colTxBytes:
+			stats.Network.TxBytes, err = convertToUint64(v)
+		case col == colTxPackets:
+			stats.Network.TxPackets, err = convertToUint64(v)
+		case col == colTxErrors:
+			stats.Network.TxErrors, err = convertToUint64(v)
+		case col == colTxDropped:
+			stats.Network.TxDropped, err = convertToUint64(v)
 		case strings.HasPrefix(col, colPerCoreCumulativeUsagePrefix):
 			idxStr := col[len(colPerCoreCumulativeUsagePrefix):]
 			idx, err := strconv.Atoi(idxStr)
