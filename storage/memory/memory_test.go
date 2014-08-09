@@ -21,13 +21,16 @@ import (
 	"github.com/google/cadvisor/storage/test"
 )
 
-func runStorageTest(f func(storage.StorageDriver, *testing.T), t *testing.T) {
+func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 	maxSize := 200
 
 	var driver storage.StorageDriver
+	var testDriver test.TestStorageDriver
+	testDriver.StatsEq = test.DefaultStatsEq
 	for N := 10; N < maxSize; N += 10 {
 		driver = New(N, N)
-		f(driver, t)
+		testDriver.Driver = driver
+		f(testDriver, t)
 	}
 
 }
@@ -51,7 +54,8 @@ func TestPercentilesWithoutSample(t *testing.T) {
 func TestPercentiles(t *testing.T) {
 	N := 100
 	driver := New(N, N)
-	test.StorageDriverTestPercentiles(driver, t)
+	testDriver := test.TestStorageDriver{Driver: driver, StatsEq: test.DefaultStatsEq}
+	test.StorageDriverTestPercentiles(testDriver, t)
 }
 
 func TestRetrievePartialRecentStats(t *testing.T) {
