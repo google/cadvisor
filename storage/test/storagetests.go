@@ -53,6 +53,11 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 
 		stats.Memory.Usage = mem[i]
 
+		stats.Network = new(info.NetworkStats)
+		stats.Network.RxBytes = uint64(rand.Intn(10000))
+		stats.Network.RxErrors = uint64(rand.Intn(1000))
+		stats.Network.TxBytes = uint64(rand.Intn(100000))
+		stats.Network.TxErrors = uint64(rand.Intn(1000))
 		ret[i] = stats
 	}
 	return ret
@@ -96,6 +101,9 @@ func DefaultStatsEq(a, b *info.ContainerStats) bool {
 		return false
 	}
 	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Network, b.Network) {
 		return false
 	}
 	return true
@@ -433,11 +441,11 @@ func StorageDriverTestRetrieveAllRecentStats(driver TestStorageDriver, t *testin
 	if len(recentStats) == 0 {
 		t.Fatal("should at least store one stats")
 	}
-	if len(recentStats) > N {
-		t.Fatalf("returned %v stats, not 100.", len(recentStats))
+	if len(recentStats) != N {
+		t.Fatalf("returned %v stats, not %d.", len(recentStats), N)
 	}
 
-	actualRecentStats := trace[len(trace)-len(recentStats):]
+	actualRecentStats := trace //len(trace)-len(recentStats):]
 
 	// The returned stats should be sorted in time increasing order
 	for i, s := range actualRecentStats {
