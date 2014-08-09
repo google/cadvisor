@@ -48,8 +48,13 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 
 		stats.Memory.Usage = mem[i]
 
+		stats.Network = new(info.NetworkStats)
+		stats.Network.RxBytes = uint64(rand.Intn(10000))
+		stats.Network.RxErrors = uint64(rand.Intn(1000))
+		stats.Network.TxBytes = uint64(rand.Intn(100000))
+		stats.Network.TxErrors = uint64(rand.Intn(1000))
 		ret[i] = stats
-	}
+	}	
 	return ret
 }
 
@@ -91,6 +96,9 @@ func statsEq(a, b *info.ContainerStats) bool {
 		return false
 	}
 	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Network, b.Network) {
 		return false
 	}
 	return true
@@ -403,7 +411,7 @@ func StorageDriverTestRetrievePartialRecentStats(driver storage.StorageDriver, t
 
 func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *testing.T) {
 	defer driver.Close()
-	N := 100
+	N := 10
 	memTrace := make([]uint64, N)
 	cpuTrace := make([]uint64, N)
 	for i := 0; i < N; i++ {
@@ -428,17 +436,17 @@ func StorageDriverTestRetrieveAllRecentStats(driver storage.StorageDriver, t *te
 	if len(recentStats) == 0 {
 		t.Fatal("should at least store one stats")
 	}
-	if len(recentStats) > N {
-		t.Fatalf("returned %v stats, not 100.", len(recentStats))
+	if len(recentStats) != N {
+		t.Fatalf("returned %v stats, not %d.", len(recentStats), N)
 	}
 
-	actualRecentStats := trace[len(trace)-len(recentStats):]
-
+	actualRecentStats := trace //len(trace)-len(recentStats):]
+	
 	// The returned stats should be sorted in time increasing order
 	for i, s := range actualRecentStats {
 		r := recentStats[i]
 		if !statsEq(s, r) {
-			t.Errorf("unexpected stats %+v with memory usage %v", r, r.Memory.Usage)
+			t.Fatalf("unexpected stats %d %+v with network: %+v expected %+v with network: %+v", i, r, r.Network, s, s.Network)
 		}
 	}
 }
