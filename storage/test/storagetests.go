@@ -441,11 +441,11 @@ func StorageDriverTestRetrieveAllRecentStats(driver TestStorageDriver, t *testin
 	if len(recentStats) == 0 {
 		t.Fatal("should at least store one stats")
 	}
-	if len(recentStats) != N {
+	if len(recentStats) > N {
 		t.Fatalf("returned %v stats, not %d.", len(recentStats), N)
 	}
 
-	actualRecentStats := trace //len(trace)-len(recentStats):]
+	actualRecentStats := trace[len(trace)-len(recentStats):]
 
 	// The returned stats should be sorted in time increasing order
 	for i, s := range actualRecentStats {
