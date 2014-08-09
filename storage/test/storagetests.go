@@ -63,7 +63,7 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 	return ret
 }
 
-func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {
+func TimeEq(t1, t2 time.Time, tolerance time.Duration) bool {
 	// t1 should not be later than t2
 	if t1.After(t2) {
 		t1, t2 = t2, t1
@@ -94,7 +94,7 @@ const (
 // This function is useful because we do not require precise time
 // representation.
 func DefaultStatsEq(a, b *info.ContainerStats) bool {
-	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+	if !TimeEq(a.Timestamp, b.Timestamp, timePrecision) {
 		return false
 	}
 	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
@@ -112,7 +112,7 @@ func DefaultStatsEq(a, b *info.ContainerStats) bool {
 // This function is useful because we do not require precise time
 // representation.
 func sampleEq(a, b *info.ContainerStatsSample) bool {
-	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
+	if !TimeEq(a.Timestamp, b.Timestamp, timePrecision) {
 		return false
 	}
 	if !durationEq(a.Duration, b.Duration, timePrecision) {
