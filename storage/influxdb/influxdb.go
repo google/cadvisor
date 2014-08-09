@@ -64,20 +64,12 @@ const (
 	colPerCoreInstantUsagePrefix string = "per_core_instant_usage_core_"
 	// Cumulative count of bytes received.
 	colRxBytes string = "rx_bytes"
-	// Cumulative count of packets received.
-	colRxPackets string = "rx_packets"
 	// Cumulative count of receive errors encountered.
 	colRxErrors string = "rx_errors"
-	// Cumulative count of packets dropped while receiving.
-	colRxDropped string = "rx_dropped"
 	// Cumulative count of bytes transmitted.
 	colTxBytes string = "tx_bytes"
-	// Cumulative count of packets transmitted.
-	colTxPackets string = "tx_packets"
 	// Cumulative count of transmit errors encountered.
 	colTxErrors string = "tx_errors"
-	// Cumulative count of packets dropped while transmitting.
-	colTxDropped string = "tx_dropped"
 )
 
 func (self *influxdbStorage) containerStatsToValues(
@@ -137,6 +129,21 @@ func (self *influxdbStorage) containerStatsToValues(
 	columns = append(columns, colMemoryHierarchicalPgmajfault)
 	values = append(values, stats.Memory.HierarchicalData.Pgmajfault)
 
+	// Optional: Network stats.
+	if stats.Network != nil {
+		columns = append(columns, colRxBytes)
+		values = append(values, stats.Network.RxBytes)
+
+		columns = append(columns, colRxErrors)
+		values = append(values, stats.Network.RxErrors)
+
+		columns = append(columns, colTxBytes)
+		values = append(values, stats.Network.TxBytes)
+
+		columns = append(columns, colTxErrors)
+		values = append(values, stats.Network.TxErrors)
+	}
+
 	// per cpu cumulative usage
 	for i, u := range stats.Cpu.Usage.PerCpu {
 		columns = append(columns, fmt.Sprintf("%v%v", colPerCoreCumulativeUsagePrefix, i))
@@ -147,6 +154,7 @@ func (self *influxdbStorage) containerStatsToValues(
 	if err != nil || sample == nil {
 		return columns, values
 	}
+	// DO NOT ADD ANY STATS BELOW THAT ARE NOT PART OF SAMPLING
 
 	// Optional: sample duration. Unit: Nanosecond.
 	columns = append(columns, colSampleDuration)
@@ -160,33 +168,6 @@ func (self *influxdbStorage) containerStatsToValues(
 	for i, u := range sample.Cpu.PerCpuUsage {
 		columns = append(columns, fmt.Sprintf("%v%v", colPerCoreInstantUsagePrefix, i))
 		values = append(values, u)
-	}
-
-	// Network stats.
-	if stats.Network != nil {
-		columns = append(columns, colRxBytes)
-		values = append(values, stats.Network.RxBytes)
-
-		columns = append(columns, colRxPackets)
-		values = append(values, stats.Network.RxPackets)
-
-		columns = append(columns, colRxErrors)
-		values = append(values, stats.Network.RxErrors)
-
-		columns = append(columns, colRxDropped)
-		values = append(values, stats.Network.RxDropped)
-
-		columns = append(columns, colTxBytes)
-		values = append(values, stats.Network.TxBytes)
-
-		columns = append(columns, colTxPackets)
-		values = append(values, stats.Network.TxPackets)
-
-		columns = append(columns, colTxErrors)
-		values = append(values, stats.Network.TxErrors)
-
-		columns = append(columns, colTxDropped)
-		values = append(values, stats.Network.TxDropped)
 	}
 
 	return columns, values
@@ -277,20 +258,12 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 			stats.Memory.HierarchicalData.Pgmajfault, err = convertToUint64(v)
 		case col == colRxBytes:
 			stats.Network.RxBytes, err = convertToUint64(v)
-		case col == colRxPackets:
-			stats.Network.RxPackets, err = convertToUint64(v)
 		case col == colRxErrors:
 			stats.Network.RxErrors, err = convertToUint64(v)
-		case col == colRxDropped:
-			stats.Network.RxDropped, err = convertToUint64(v)
 		case col == colTxBytes:
 			stats.Network.TxBytes, err = convertToUint64(v)
-		case col == colTxPackets:
-			stats.Network.TxPackets, err = convertToUint64(v)
 		case col == colTxErrors:
 			stats.Network.TxErrors, err = convertToUint64(v)
-		case col == colTxDropped:
-			stats.Network.TxDropped, err = convertToUint64(v)
 		case strings.HasPrefix(col, colPerCoreCumulativeUsagePrefix):
 			idxStr := col[len(colPerCoreCumulativeUsagePrefix):]
 			idx, err := strconv.Atoi(idxStr)
@@ -374,7 +347,6 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 		return nil
 	}
 	series.Columns, series.Points[0] = self.containerStatsToValues(ref, stats)
-
 	self.prevStats = stats.Copy(self.prevStats)
 	err := self.client.WriteSeries([]*influxdb.Series{series})
 	if err != nil {
