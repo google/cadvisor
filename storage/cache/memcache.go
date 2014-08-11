@@ -40,7 +40,7 @@ func (self *cachedStorageDriver) AddStats(ref info.ContainerReference, stats *in
 }
 
 func (self *cachedStorageDriver) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
-	if numStats < self.maxNumStatsInCache {
+	if numStats <= self.maxNumStatsInCache {
 		return self.cache.RecentStats(containerName, numStats)
 	}
 	return self.backend.RecentStats(containerName, numStats)
@@ -51,7 +51,7 @@ func (self *cachedStorageDriver) Percentiles(containerName string, cpuUsagePerce
 }
 
 func (self *cachedStorageDriver) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	if numSamples < self.maxNumSamplesInCache {
+	if numSamples <= self.maxNumSamplesInCache {
 		return self.cache.Samples(containerName, numSamples)
 	}
 	return self.backend.Samples(containerName, numSamples)
