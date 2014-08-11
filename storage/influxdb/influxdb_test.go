@@ -16,12 +16,37 @@ package influxdb
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage/test"
 	influxdb "github.com/influxdb/influxdb/client"
 )
+
+func StatsEq(a, b *info.ContainerStats) bool {
+	if !test.TimeEq(a.Timestamp, b.Timestamp, 10*time.Millisecond) {
+		return false
+	}
+	// Check only the stats populated in influxdb.
+	if a.Cpu.Usage.Total != b.Cpu.Usage.Total {
+		return false
+	}
+
+	if a.Memory.Usage != b.Memory.Usage {
+		return false
+	}
+
+	if a.Memory.WorkingSet != b.Memory.WorkingSet {
+		return false
+	}
+
+	if !reflect.DeepEqual(a.Network, b.Network) {
+		return false
+	}
+	return true
+}
 
 func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 	machineName := "machineA"
@@ -75,7 +100,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testDriver := test.TestStorageDriver{Driver: driver, StatsEq: test.DefaultStatsEq}
+	testDriver := test.TestStorageDriver{Driver: driver, StatsEq: StatsEq}
 	// generate another container's data on same machine.
 	test.StorageDriverFillRandomStatsFunc("containerOnSameMachine", 100, testDriver, t)
 
@@ -92,7 +117,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 		t.Fatal(err)
 	}
 	defer driverForAnotherMachine.Close()
-	testDriverOtherMachine := test.TestStorageDriver{Driver: driverForAnotherMachine, StatsEq: test.DefaultStatsEq}
+	testDriverOtherMachine := test.TestStorageDriver{Driver: driverForAnotherMachine, StatsEq: StatsEq}
 	test.StorageDriverFillRandomStatsFunc("containerOnAnotherMachine", 100, testDriverOtherMachine, t)
 	f(testDriver, t)
 }
