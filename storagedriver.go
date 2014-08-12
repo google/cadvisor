@@ -31,7 +31,7 @@ var argHistoryDuration = flag.Int("history_duration", 60, "number of seconds of 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
 var argDbPassword = flag.String("storage_driver_password", "root", "database password")
 var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
-var argDbName = flag.String("storage_driver_name", "cadvisor", "database name")
+var argDbName = flag.String("storage_driver_db", "cadvisor", "database name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
 
 func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
@@ -53,7 +53,7 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 
 		storageDriver, err = influxdb.New(
 			hostname,
-			"cadvisorTable",
+			"stats",
 			*argDbName,
 			*argDbUsername,
 			*argDbPassword,
