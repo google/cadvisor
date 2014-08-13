@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2 (2014-08-13)
+- Improvements to influxDB plugin.
+	Table name is now 'stats'.
+	Network stats added.
+	Detailed cpu and memory stats are no longer exported to reduce the load on the DB.
+	Docker container alias now exported - It is now possible to aggregate stats across multiple nodes.
+- Make the UI independent of the storage backend by caching recent stats in memory.
+- Switched to glog.
+- Bugfixes and performance improvements.
+
 ## 0.2.1 (2014-07-25)
 - Handle old Docker versions.
 - UI fixes and other bugfixes.
