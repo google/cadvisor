@@ -128,4 +128,4 @@ cAdvisor aims to improve the resource usage and performance characteristics of r
 
 ## Community
 
-Contributions, questions, and comments are all welcomed and encouraged! cAdvisor developers hand out in [#google-containers](http://webchat.freenode.net/?channels=google-containers) room on freenode.net.  We also have the [google-containers Google Groups mailing list](https://groups.google.com/forum/#!forum/google-containers).
+Contributions, questions, and comments are all welcomed and encouraged! cAdvisor developers hang out in [#google-containers](http://webchat.freenode.net/?channels=google-containers) room on freenode.net.  We also have the [google-containers Google Groups mailing list](https://groups.google.com/forum/#!forum/google-containers).
