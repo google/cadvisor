@@ -9,6 +9,7 @@
 - Make the UI independent of the storage backend by caching recent stats in memory.
 - Switched to glog.
 - Bugfixes and performance improvements.
+- Introduced v1.1 remote API with new "subcontainers" resource.
 
 ## 0.2.1 (2014-07-25)
 - Handle old Docker versions.
