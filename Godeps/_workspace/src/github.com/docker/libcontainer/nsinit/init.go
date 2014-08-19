@@ -1,8 +1,9 @@
-package nsinit
+package main
 
 import (
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 
 	"github.com/codegangsta/cli"
@@ -23,7 +24,9 @@ var (
 )
 
 func initAction(context *cli.Context) {
-	container, err := loadContainer()
+	runtime.LockOSThread()
+
+	container, err := loadConfig()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -5,11 +5,9 @@ package namespaces
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 	"syscall"
 
-	"github.com/docker/docker/pkg/user"
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/apparmor"
 	"github.com/docker/libcontainer/console"
@@ -21,6 +19,7 @@ import (
 	"github.com/docker/libcontainer/security/restrict"
 	"github.com/docker/libcontainer/syncpipe"
 	"github.com/docker/libcontainer/system"
+	"github.com/docker/libcontainer/user"
 	"github.com/docker/libcontainer/utils"
 )
 
@@ -28,6 +27,8 @@ import (
 // Move this to libcontainer package.
 // Init is the init process that first runs inside a new namespace to setup mounts, users, networking,
 // and other options required for the new container.
+// The caller of Init function has to ensure that the go runtime is locked to an OS thread
+// (using runtime.LockOSThread) else system calls like setns called within Init may not work as intended.
 func Init(container *libcontainer.Config, uncleanRootfs, consolePath string, syncPipe *syncpipe.SyncPipe, args []string) (err error) {
 	defer func() {
 		if err != nil {
@@ -47,8 +48,8 @@ func Init(container *libcontainer.Config, uncleanRootfs, consolePath string, syn
 	}
 
 	// We always read this as it is a way to sync with the parent as well
-	networkState, err := syncPipe.ReadFromParent()
-	if err != nil {
+	var networkState *network.NetworkState
+	if err := syncPipe.ReadFromParent(&networkState); err != nil {
 		return err
 	}
 
@@ -87,8 +88,6 @@ func Init(container *libcontainer.Config, uncleanRootfs, consolePath string, syn
 		}
 	}
 
-	runtime.LockOSThread()
-
 	if err := apparmor.ApplyProfile(container.AppArmorProfile); err != nil {
 		return fmt.Errorf("set apparmor profile %s: %s", container.AppArmorProfile, err)
 	}
@@ -119,7 +118,7 @@ func Init(container *libcontainer.Config, uncleanRootfs, consolePath string, syn
 		return fmt.Errorf("restore parent death signal %s", err)
 	}
 
-	return system.Execv(args[0], args[0:], container.Env)
+	return system.Execv(args[0], args[0:], os.Environ())
 }
 
 // RestoreParentDeathSignal sets the parent death signal to old.
@@ -152,7 +151,7 @@ func RestoreParentDeathSignal(old int) error {
 
 // SetupUser changes the groups, gid, and uid for the user inside the container
 func SetupUser(u string) error {
-	uid, gid, suppGids, err := user.GetUserGroupSupplementary(u, syscall.Getuid(), syscall.Getgid())
+	uid, gid, suppGids, home, err := user.GetUserGroupSupplementaryHome(u, syscall.Getuid(), syscall.Getgid(), "/")
 	if err != nil {
 		return fmt.Errorf("get supplementary groups %s", err)
 	}
@@ -167,6 +166,13 @@ func SetupUser(u string) error {
 
 	if err := syscall.Setuid(uid); err != nil {
 		return fmt.Errorf("setuid %s", err)
+	}
+
+	// if we didn't get HOME already, set it based on the user's HOME
+	if envHome := os.Getenv("HOME"); envHome == "" {
+		if err := os.Setenv("HOME", home); err != nil {
+			return fmt.Errorf("set HOME %s", err)
+		}
 	}
 
 	return nil
