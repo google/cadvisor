@@ -1,4 +1,4 @@
-package nsinit
+package main
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
+	"text/tabwriter"
 
 	"github.com/codegangsta/cli"
 	"github.com/docker/docker/pkg/term"
@@ -20,12 +21,29 @@ var execCommand = cli.Command{
 	Name:   "exec",
 	Usage:  "execute a new command inside a container",
 	Action: execAction,
+	Flags: []cli.Flag{
+		cli.BoolFlag{Name: "list", Usage: "list all registered exec functions"},
+		cli.StringFlag{Name: "func", Value: "exec", Usage: "function name to exec inside a container"},
+	},
 }
 
 func execAction(context *cli.Context) {
+	if context.Bool("list") {
+		w := tabwriter.NewWriter(os.Stdout, 10, 1, 3, ' ', 0)
+		fmt.Fprint(w, "NAME\tUSAGE\n")
+
+		for k, f := range argvs {
+			fmt.Fprintf(w, "%s\t%s\n", k, f.Usage)
+		}
+
+		w.Flush()
+
+		return
+	}
+
 	var exitCode int
 
-	container, err := loadContainer()
+	container, err := loadConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +54,7 @@ func execAction(context *cli.Context) {
 	}
 
 	if state != nil {
-		exitCode, err = runIn(container, state, []string(context.Args()))
+		exitCode, err = startInExistingContainer(container, state, context.String("func"), context)
 	} else {
 		exitCode, err = startContainer(container, dataPath, []string(context.Args()))
 	}
@@ -48,28 +66,32 @@ func execAction(context *cli.Context) {
 	os.Exit(exitCode)
 }
 
-func runIn(container *libcontainer.Config, state *libcontainer.State, args []string) (int, error) {
+// the process for execing a new process inside an existing container is that we have to exec ourself
+// with the nsenter argument so that the C code can setns an the namespaces that we require.  Then that
+// code path will drop us into the path that we can do the final setup of the namespace and exec the users
+// application.
+func startInExistingContainer(config *libcontainer.Config, state *libcontainer.State, action string, context *cli.Context) (int, error) {
 	var (
 		master  *os.File
 		console string
 		err     error
 
+		sigc = make(chan os.Signal, 10)
+
 		stdin  = os.Stdin
 		stdout = os.Stdout
 		stderr = os.Stderr
-		sigc   = make(chan os.Signal, 10)
 	)
-
 	signal.Notify(sigc)
 
-	if container.Tty {
+	if config.Tty {
 		stdin = nil
 		stdout = nil
 		stderr = nil
 
 		master, console, err = consolepkg.CreateMasterAndConsole()
 		if err != nil {
-			log.Fatal(err)
+			return -1, err
 		}
 
 		go io.Copy(master, os.Stdin)
@@ -77,7 +99,7 @@ func runIn(container *libcontainer.Config, state *libcontainer.State, args []str
 
 		state, err := term.SetRawTerminal(os.Stdin.Fd())
 		if err != nil {
-			log.Fatal(err)
+			return -1, err
 		}
 
 		defer term.RestoreTerminal(os.Stdin.Fd(), state)
@@ -98,7 +120,7 @@ func runIn(container *libcontainer.Config, state *libcontainer.State, args []str
 		}()
 	}
 
-	return namespaces.RunIn(container, state, args, os.Args[0], stdin, stdout, stderr, console, startCallback)
+	return namespaces.ExecIn(config, state, context.Args(), os.Args[0], action, stdin, stdout, stderr, console, startCallback)
 }
 
 // startContainer starts the container. Returns the exit status or -1 and an

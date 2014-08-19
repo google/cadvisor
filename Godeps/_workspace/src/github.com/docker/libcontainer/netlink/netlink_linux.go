@@ -189,13 +189,15 @@ func newRtAttrChild(parent *RtAttr, attrType int, data []byte) *RtAttr {
 }
 
 func (a *RtAttr) Len() int {
+	if len(a.children) == 0 {
+		return (syscall.SizeofRtAttr + len(a.Data))
+	}
+
 	l := 0
 	for _, child := range a.children {
-		l += child.Len() + syscall.SizeofRtAttr
+		l += child.Len()
 	}
-	if l == 0 {
-		l++
-	}
+	l += syscall.SizeofRtAttr
 	return rtaAlignOf(l + len(a.Data))
 }
 
@@ -203,7 +205,7 @@ func (a *RtAttr) ToWireFormat() []byte {
 	native := nativeEndian()
 
 	length := a.Len()
-	buf := make([]byte, rtaAlignOf(length+syscall.SizeofRtAttr))
+	buf := make([]byte, rtaAlignOf(length))
 
 	if a.Data != nil {
 		copy(buf[4:], a.Data)
@@ -216,11 +218,10 @@ func (a *RtAttr) ToWireFormat() []byte {
 		}
 	}
 
-	if l := uint16(rtaAlignOf(length)); l != 0 {
-		native.PutUint16(buf[0:2], l+1)
+	if l := uint16(length); l != 0 {
+		native.PutUint16(buf[0:2], l)
 	}
 	native.PutUint16(buf[2:4], a.Type)
-
 	return buf
 }
 
@@ -650,30 +651,28 @@ func NetworkSetNsFd(iface *net.Interface, fd int) error {
 	return s.HandleAck(wb.Seq)
 }
 
-// Add an Ip address to an interface. This is identical to:
-// ip addr add $ip/$ipNet dev $iface
-func NetworkLinkAddIp(iface *net.Interface, ip net.IP, ipNet *net.IPNet) error {
+func networkLinkIpAction(action, flags int, ifa IfAddr) error {
 	s, err := getNetlinkSocket()
 	if err != nil {
 		return err
 	}
 	defer s.Close()
 
-	family := getIpFamily(ip)
+	family := getIpFamily(ifa.IP)
 
-	wb := newNetlinkRequest(syscall.RTM_NEWADDR, syscall.NLM_F_CREATE|syscall.NLM_F_EXCL|syscall.NLM_F_ACK)
+	wb := newNetlinkRequest(action, flags)
 
 	msg := newIfAddrmsg(family)
-	msg.Index = uint32(iface.Index)
-	prefixLen, _ := ipNet.Mask.Size()
+	msg.Index = uint32(ifa.Iface.Index)
+	prefixLen, _ := ifa.IPNet.Mask.Size()
 	msg.Prefixlen = uint8(prefixLen)
 	wb.AddData(msg)
 
 	var ipData []byte
 	if family == syscall.AF_INET {
-		ipData = ip.To4()
+		ipData = ifa.IP.To4()
 	} else {
-		ipData = ip.To16()
+		ipData = ifa.IP.To16()
 	}
 
 	localData := newRtAttr(syscall.IFA_LOCAL, ipData)
@@ -689,6 +688,26 @@ func NetworkLinkAddIp(iface *net.Interface, ip net.IP, ipNet *net.IPNet) error {
 	return s.HandleAck(wb.Seq)
 }
 
+// Delete an IP address from an interface. This is identical to:
+// ip addr del $ip/$ipNet dev $iface
+func NetworkLinkDelIp(iface *net.Interface, ip net.IP, ipNet *net.IPNet) error {
+	return networkLinkIpAction(
+		syscall.RTM_DELADDR,
+		syscall.NLM_F_ACK,
+		IfAddr{iface, ip, ipNet},
+	)
+}
+
+// Add an Ip address to an interface. This is identical to:
+// ip addr add $ip/$ipNet dev $iface
+func NetworkLinkAddIp(iface *net.Interface, ip net.IP, ipNet *net.IPNet) error {
+	return networkLinkIpAction(
+		syscall.RTM_NEWADDR,
+		syscall.NLM_F_CREATE|syscall.NLM_F_EXCL|syscall.NLM_F_ACK,
+		IfAddr{iface, ip, ipNet},
+	)
+}
+
 func zeroTerminated(s string) []byte {
 	return []byte(s + "\000")
 }
@@ -700,6 +719,10 @@ func nonZeroTerminated(s string) []byte {
 // Add a new network link of a specified type. This is identical to
 // running: ip add link $name type $linkType
 func NetworkLinkAdd(name string, linkType string) error {
+	if name == "" || linkType == "" {
+		return fmt.Errorf("Neither link name nor link type can be empty!")
+	}
+
 	s, err := getNetlinkSocket()
 	if err != nil {
 		return err
@@ -711,15 +734,43 @@ func NetworkLinkAdd(name string, linkType string) error {
 	msg := newIfInfomsg(syscall.AF_UNSPEC)
 	wb.AddData(msg)
 
-	if name != "" {
-		nameData := newRtAttr(syscall.IFLA_IFNAME, zeroTerminated(name))
-		wb.AddData(nameData)
+	linkInfo := newRtAttr(syscall.IFLA_LINKINFO, nil)
+	newRtAttrChild(linkInfo, IFLA_INFO_KIND, nonZeroTerminated(linkType))
+	wb.AddData(linkInfo)
+
+	nameData := newRtAttr(syscall.IFLA_IFNAME, zeroTerminated(name))
+	wb.AddData(nameData)
+
+	if err := s.Send(wb); err != nil {
+		return err
 	}
 
-	kindData := newRtAttr(IFLA_INFO_KIND, nonZeroTerminated(linkType))
+	return s.HandleAck(wb.Seq)
+}
 
-	infoData := newRtAttr(syscall.IFLA_LINKINFO, kindData.ToWireFormat())
-	wb.AddData(infoData)
+// Delete a network link. This is identical to
+// running: ip link del $name
+func NetworkLinkDel(name string) error {
+	if name == "" {
+		return fmt.Errorf("Network link name can not be empty!")
+	}
+
+	s, err := getNetlinkSocket()
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	iface, err := net.InterfaceByName(name)
+	if err != nil {
+		return err
+	}
+
+	wb := newNetlinkRequest(syscall.RTM_DELLINK, syscall.NLM_F_ACK)
+
+	msg := newIfInfomsg(syscall.AF_UNSPEC)
+	msg.Index = int32(iface.Index)
+	wb.AddData(msg)
 
 	if err := s.Send(wb); err != nil {
 		return err
