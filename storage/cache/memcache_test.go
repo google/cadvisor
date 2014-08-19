@@ -17,21 +17,47 @@ package cache
 import (
 	"testing"
 
+	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/storage/test"
 )
 
+type cacheTestStorageDriver struct {
+	base storage.StorageDriver
+}
+
+func (self *cacheTestStorageDriver) StatsEq(a, b *info.ContainerStats) bool {
+	return test.DefaultStatsEq(a, b)
+}
+
+func (self *cacheTestStorageDriver) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+	return self.base.AddStats(ref, stats)
+}
+
+func (self *cacheTestStorageDriver) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
+	return self.base.RecentStats(containerName, numStats)
+}
+
+func (self *cacheTestStorageDriver) Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error) {
+	return self.base.Percentiles(containerName, cpuUsagePercentiles, memUsagePercentiles)
+}
+
+func (self *cacheTestStorageDriver) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
+	return self.base.Samples(containerName, numSamples)
+}
+
+func (self *cacheTestStorageDriver) Close() error {
+	return self.base.Close()
+}
+
 func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 	maxSize := 200
 
-	var driver storage.StorageDriver
-	var testDriver test.TestStorageDriver
-	testDriver.StatsEq = test.DefaultStatsEq
 	for N := 10; N < maxSize; N += 10 {
+		testDriver := &cacheTestStorageDriver{}
 		backend := memory.New(N*2, N*2)
-		driver = MemoryCache(N, N, backend)
-		testDriver.Driver = driver
+		testDriver.base = MemoryCache(N, N, backend)
 		f(testDriver, t)
 	}
 
@@ -55,9 +81,9 @@ func TestPercentilesWithoutSample(t *testing.T) {
 
 func TestPercentiles(t *testing.T) {
 	N := 100
+	testDriver := &cacheTestStorageDriver{}
 	backend := memory.New(N*2, N*2)
-	driver := MemoryCache(N, N, backend)
-	testDriver := test.TestStorageDriver{Driver: driver, StatsEq: test.DefaultStatsEq}
+	testDriver.base = MemoryCache(N, N, backend)
 	test.StorageDriverTestPercentiles(testDriver, t)
 }
 
