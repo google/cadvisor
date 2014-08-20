@@ -31,7 +31,7 @@ import (
 
 var argPort = flag.Int("port", 8080, "port to listen")
 
-var argDbDriver = flag.String("storage_driver", "memory", "storage driver to use. Options are: memory (default) and influxdb")
+var argDbDriver = flag.String("storage_driver", "memory", "storage driver to use. Options are: memory (default), bigquery, and influxdb")
 
 func main() {
 	flag.Parse()

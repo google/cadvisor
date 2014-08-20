@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/storage/bigquery"
 	"github.com/google/cadvisor/storage/cache"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/memory"
@@ -53,13 +54,26 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 
 		storageDriver, err = influxdb.New(
 			hostname,
-			"cadvisorTable",
+			"cadvisor",
 			*argDbName,
 			*argDbUsername,
 			*argDbPassword,
 			*argDbHost,
 			*argDbIsSecure,
 			// TODO(monnand): One hour? Or user-defined?
+			1*time.Hour,
+		)
+		storageDriver = cache.MemoryCache(*argHistoryDuration, *argHistoryDuration, storageDriver)
+	case "bigquery":
+		var hostname string
+		hostname, err = os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+		storageDriver, err = bigquery.New(
+			hostname,
+			"cadvisor",
+			*argDbName,
 			1*time.Hour,
 		)
 		storageDriver = cache.MemoryCache(*argHistoryDuration, *argHistoryDuration, storageDriver)
