@@ -27,12 +27,12 @@ import (
 )
 
 var argSampleSize = flag.Int("samples", 1024, "number of samples we want to keep")
-var argHistoryDuration = flag.Int("history_duration", 60, "number of seconds of container history to keep")
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
 var argDbPassword = flag.String("storage_driver_password", "root", "database password")
 var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
 var argDbName = flag.String("storage_driver_db", "cadvisor", "database name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
+var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60, "Writes in the storage driver will be bufferd for this duration (in seconds), and committed to the non memory backends as a single transaction")
 
 func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 	var storageDriver storage.StorageDriver
@@ -42,7 +42,7 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 		// empty string by default is the in memory store
 		fallthrough
 	case "memory":
-		storageDriver = memory.New(*argSampleSize, *argHistoryDuration)
+		storageDriver = memory.New(*argSampleSize, int(*argDbBufferDuration))
 		return storageDriver, nil
 	case "influxdb":
 		var hostname string
@@ -59,10 +59,11 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			*argDbPassword,
 			*argDbHost,
 			*argDbIsSecure,
+			*argDbBufferDuration*time.Second,
 			// TODO(monnand): One hour? Or user-defined?
 			1*time.Hour,
 		)
-		storageDriver = cache.MemoryCache(*argHistoryDuration, *argHistoryDuration, storageDriver)
+		storageDriver = cache.MemoryCache(int(*argDbBufferDuration), int(*argDbBufferDuration), storageDriver)
 	default:
 		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)
 	}

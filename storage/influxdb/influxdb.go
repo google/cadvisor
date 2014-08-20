@@ -17,19 +17,24 @@ package influxdb
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/cadvisor/info"
-	"github.com/google/cadvisor/storage"
 	influxdb "github.com/influxdb/influxdb/client"
 )
 
 type influxdbStorage struct {
-	client      *influxdb.Client
-	prevStats   *info.ContainerStats
-	machineName string
-	tableName   string
-	windowLen   time.Duration
+	client         *influxdb.Client
+	prevStats      *info.ContainerStats
+	machineName    string
+	tableName      string
+	windowLen      time.Duration
+	bufferDuration time.Duration
+	lastWrite      time.Time
+	series         []*influxdb.Series
+	lock           sync.Mutex
+	readyToFlush   func() bool
 }
 
 const (
@@ -242,21 +247,39 @@ func (self *influxdbStorage) valuesToContainerSample(columns []string, values []
 	return sample, nil
 }
 
+func (self *influxdbStorage) OverrideReadyToFlush(readyToFlush func() bool) {
+	self.readyToFlush = readyToFlush
+}
+
+func (self *influxdbStorage) defaultReadyToFlush() bool {
+	return time.Since(self.lastWrite) >= self.bufferDuration
+}
+
 func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
-	series := &influxdb.Series{
-		Name: self.tableName,
-		// There's only one point for each stats
-		Points: make([][]interface{}, 1),
-	}
 	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
 		return nil
 	}
-	series.Columns, series.Points[0] = self.containerStatsToValues(ref, stats)
-	self.prevStats = stats.Copy(self.prevStats)
-	err := self.client.WriteSeries([]*influxdb.Series{series})
-	if err != nil {
-		return err
+	// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
+	var seriesToFlush []*influxdb.Series
+	func() {
+		self.lock.Lock()
+		defer self.lock.Unlock()
+		series := self.newSeries(self.containerStatsToValues(ref, stats))
+		self.series = append(self.series, series)
+		self.prevStats = stats.Copy(self.prevStats)
+		if self.readyToFlush() {
+			seriesToFlush = self.series
+			self.series = make([]*influxdb.Series, 0)
+			self.lastWrite = time.Now()
+		}
+	}()
+	if len(seriesToFlush) > 0 {
+		err := self.client.WriteSeries(seriesToFlush)
+		if err != nil {
+			return fmt.Errorf("failed to write stats to influxDb - %s", err)
+		}
 	}
+
 	return nil
 }
 
@@ -405,6 +428,18 @@ func (self *influxdbStorage) Percentiles(
 	return ret, nil
 }
 
+// Returns a new influxdb series.
+func (self *influxdbStorage) newSeries(columns []string, points []interface{}) *influxdb.Series {
+	out := &influxdb.Series{
+		Name:    self.tableName,
+		Columns: columns,
+		// There's only one point for each stats
+		Points: make([][]interface{}, 1),
+	}
+	out.Points[0] = points
+	return out
+}
+
 // machineName: A unique identifier to identify the host that current cAdvisor
 // instance is running on.
 // influxdbHost: The host which runs influxdb.
@@ -416,8 +451,9 @@ func New(machineName,
 	password,
 	influxdbHost string,
 	isSecure bool,
+	bufferDuration time.Duration,
 	percentilesDuration time.Duration,
-) (storage.StorageDriver, error) {
+) (*influxdbStorage, error) {
 	config := &influxdb.ClientConfig{
 		Host:     influxdbHost,
 		Username: username,
@@ -436,10 +472,14 @@ func New(machineName,
 	}
 
 	ret := &influxdbStorage{
-		client:      client,
-		windowLen:   percentilesDuration,
-		machineName: machineName,
-		tableName:   tablename,
+		client:         client,
+		windowLen:      percentilesDuration,
+		machineName:    machineName,
+		tableName:      tablename,
+		bufferDuration: bufferDuration,
+		lastWrite:      time.Now(),
+		series:         make([]*influxdb.Series, 0),
 	}
+	ret.readyToFlush = ret.defaultReadyToFlush
 	return ret, nil
 }
