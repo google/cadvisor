@@ -16,14 +16,77 @@ package influxdb
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/test"
 	influxdb "github.com/influxdb/influxdb/client"
 )
 
-func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
+// The duration in seconds for which stats will be buffered in the influxdb driver.
+const kCacheDuration = 1
+
+type influxDbTestStorageDriver struct {
+	count  int
+	buffer int
+	base   storage.StorageDriver
+}
+
+func (self *influxDbTestStorageDriver) readyToFlush() bool {
+	if self.count >= self.buffer {
+		return true
+	}
+	return false
+}
+
+func (self *influxDbTestStorageDriver) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+	self.count++
+	return self.base.AddStats(ref, stats)
+}
+
+func (self *influxDbTestStorageDriver) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
+	return self.base.RecentStats(containerName, numStats)
+}
+
+func (self *influxDbTestStorageDriver) Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error) {
+	return self.base.Percentiles(containerName, cpuUsagePercentiles, memUsagePercentiles)
+}
+
+func (self *influxDbTestStorageDriver) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
+	return self.base.Samples(containerName, numSamples)
+}
+
+func (self *influxDbTestStorageDriver) Close() error {
+	return self.base.Close()
+}
+
+func (self *influxDbTestStorageDriver) StatsEq(a, b *info.ContainerStats) bool {
+	if !test.TimeEq(a.Timestamp, b.Timestamp, 10*time.Millisecond) {
+		return false
+	}
+	// Check only the stats populated in influxdb.
+	if a.Cpu.Usage.Total != b.Cpu.Usage.Total {
+		return false
+	}
+
+	if a.Memory.Usage != b.Memory.Usage {
+		return false
+	}
+
+	if a.Memory.WorkingSet != b.Memory.WorkingSet {
+		return false
+	}
+
+	if !reflect.DeepEqual(a.Network, b.Network) {
+		return false
+	}
+	return true
+}
+
+func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bufferCount int) {
 	machineName := "machineA"
 	tablename := "t"
 	database := "cadvisor"
@@ -70,12 +133,15 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 		password,
 		hostname,
 		false,
+		time.Duration(bufferCount),
 		percentilesDuration)
 	if err != nil {
 		t.Fatal(err)
 	}
+	testDriver := &influxDbTestStorageDriver{buffer: bufferCount}
+	driver.OverrideReadyToFlush(testDriver.readyToFlush)
+	testDriver.base = driver
 
-	testDriver := test.TestStorageDriver{Driver: driver, StatsEq: test.DefaultStatsEq}
 	// generate another container's data on same machine.
 	test.StorageDriverFillRandomStatsFunc("containerOnSameMachine", 100, testDriver, t)
 
@@ -87,62 +153,66 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 		password,
 		hostname,
 		false,
+		time.Duration(bufferCount),
 		percentilesDuration)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer driverForAnotherMachine.Close()
-	testDriverOtherMachine := test.TestStorageDriver{Driver: driverForAnotherMachine, StatsEq: test.DefaultStatsEq}
+	testDriverOtherMachine := &influxDbTestStorageDriver{buffer: bufferCount}
+	driverForAnotherMachine.OverrideReadyToFlush(testDriverOtherMachine.readyToFlush)
+	testDriverOtherMachine.base = driverForAnotherMachine
+
 	test.StorageDriverFillRandomStatsFunc("containerOnAnotherMachine", 100, testDriverOtherMachine, t)
 	f(testDriver, t)
 }
 
 func TestSampleCpuUsage(t *testing.T) {
-	runStorageTest(test.StorageDriverTestSampleCpuUsage, t)
+	runStorageTest(test.StorageDriverTestSampleCpuUsage, t, kCacheDuration)
 }
 
 func TestRetrievePartialRecentStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestRetrievePartialRecentStats, t)
+	runStorageTest(test.StorageDriverTestRetrievePartialRecentStats, t, 20)
 }
 
 func TestSamplesWithoutSample(t *testing.T) {
-	runStorageTest(test.StorageDriverTestSamplesWithoutSample, t)
+	runStorageTest(test.StorageDriverTestSamplesWithoutSample, t, kCacheDuration)
 }
 
 func TestRetrieveAllRecentStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestRetrieveAllRecentStats, t)
+	runStorageTest(test.StorageDriverTestRetrieveAllRecentStats, t, 10)
 }
 
 func TestNoRecentStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestNoRecentStats, t)
+	runStorageTest(test.StorageDriverTestNoRecentStats, t, kCacheDuration)
 }
 
 func TestNoSamples(t *testing.T) {
-	runStorageTest(test.StorageDriverTestNoSamples, t)
+	runStorageTest(test.StorageDriverTestNoSamples, t, kCacheDuration)
 }
 
 func TestPercentiles(t *testing.T) {
-	runStorageTest(test.StorageDriverTestPercentiles, t)
+	runStorageTest(test.StorageDriverTestPercentiles, t, kCacheDuration)
 }
 
 func TestMaxMemoryUsage(t *testing.T) {
-	runStorageTest(test.StorageDriverTestMaxMemoryUsage, t)
+	runStorageTest(test.StorageDriverTestMaxMemoryUsage, t, kCacheDuration)
 }
 
 func TestPercentilesWithoutSample(t *testing.T) {
-	runStorageTest(test.StorageDriverTestPercentilesWithoutSample, t)
+	runStorageTest(test.StorageDriverTestPercentilesWithoutSample, t, kCacheDuration)
 }
 
 func TestPercentilesWithoutStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestPercentilesWithoutStats, t)
+	runStorageTest(test.StorageDriverTestPercentilesWithoutStats, t, kCacheDuration)
 }
 
 func TestRetrieveZeroStats(t *testing.T) {
 	t.SkipNow()
-	runStorageTest(test.StorageDriverTestRetrieveZeroRecentStats, t)
+	runStorageTest(test.StorageDriverTestRetrieveZeroRecentStats, t, kCacheDuration)
 }
 
 func TestRetrieveZeroSamples(t *testing.T) {
 	t.SkipNow()
-	runStorageTest(test.StorageDriverTestRetrieveZeroSamples, t)
+	runStorageTest(test.StorageDriverTestRetrieveZeroSamples, t, kCacheDuration)
 }

@@ -29,12 +29,26 @@ If you want to build your own cAdvisor Docker image, take a look at the Dockerfi
 
 cAdvisor now also supports [InfluxDB](http://influxdb.com) to store stats. To use InfluxDB, you need to pass some additional flags to cAdvisor:
 
-- ``-storage_driver``: storage driver to use. Options are: memory (default) and influxdb. Use influxdb.
-- ``-storage_driver_host``: The *host:port* of the database.
-- ``-storage_driver_name``: database name.
-- ``-storage_driver_user``: database username.
-- ``-storage_driver_password``: database password.
-- ``-storage_driver_secure``: use secure connection with database. False by default
+**Required**
+```
+ # storage driver to use. Options are: memory (default) and influxdb
+ -storage_driver=influxdb
+ # Required to make glog work
+ -log_dir=/
+```
+**Optional**
+```
+ # The *ip:port* of the database. Default is 'localhost:8086'
+ -storage_driver_host=ip:port
+ # database name. Uses db 'cadvisor' by default
+ -storage_driver_name
+ # database username. Default is 'root'
+ -storage_driver_user
+ # database password. Default is 'root'
+ -storage_driver_password
+ # Use secure connection with database. False by default
+ -storage_driver_secure
+```
 
 ## Web UI
 

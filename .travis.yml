@@ -4,9 +4,13 @@ go:
 before_script:
  - go get github.com/stretchr/testify/mock
  - go get github.com/kr/pretty
+ - go get code.google.com/p/go.tools/cmd/vet
+ - go get github.com/kr/godep
  - wget http://s3.amazonaws.com/influxdb/influxdb_latest_amd64.deb
  - sudo dpkg -i influxdb_latest_amd64.deb
  - sudo service influxdb start
 script:
- - go test -v -race github.com/google/cadvisor/...
- - go build github.com/google/cadvisor
+ - export PATH=$PATH:$HOME/gopath/bin
+ - godep go test -v -race github.com/google/cadvisor/...
+ - godep go build github.com/google/cadvisor
+ - go vet github.com/google/cadvisor

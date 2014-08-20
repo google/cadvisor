@@ -17,22 +17,47 @@ package memory
 import (
 	"testing"
 
+	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/test"
 )
 
+type memoryTestStorageDriver struct {
+	base storage.StorageDriver
+}
+
+func (self *memoryTestStorageDriver) StatsEq(a, b *info.ContainerStats) bool {
+	return test.DefaultStatsEq(a, b)
+}
+
+func (self *memoryTestStorageDriver) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+	return self.base.AddStats(ref, stats)
+}
+
+func (self *memoryTestStorageDriver) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
+	return self.base.RecentStats(containerName, numStats)
+}
+
+func (self *memoryTestStorageDriver) Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error) {
+	return self.base.Percentiles(containerName, cpuUsagePercentiles, memUsagePercentiles)
+}
+
+func (self *memoryTestStorageDriver) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
+	return self.base.Samples(containerName, numSamples)
+}
+
+func (self *memoryTestStorageDriver) Close() error {
+	return self.base.Close()
+}
+
 func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 	maxSize := 200
 
-	var driver storage.StorageDriver
-	var testDriver test.TestStorageDriver
-	testDriver.StatsEq = test.DefaultStatsEq
 	for N := 10; N < maxSize; N += 10 {
-		driver = New(N, N)
-		testDriver.Driver = driver
+		testDriver := &memoryTestStorageDriver{}
+		testDriver.base = New(N, N)
 		f(testDriver, t)
 	}
-
 }
 
 func TestMaxMemoryUsage(t *testing.T) {
@@ -53,8 +78,8 @@ func TestPercentilesWithoutSample(t *testing.T) {
 
 func TestPercentiles(t *testing.T) {
 	N := 100
-	driver := New(N, N)
-	testDriver := test.TestStorageDriver{Driver: driver, StatsEq: test.DefaultStatsEq}
+	testDriver := &memoryTestStorageDriver{}
+	testDriver.base = New(N, N)
 	test.StorageDriverTestPercentiles(testDriver, t)
 }
 

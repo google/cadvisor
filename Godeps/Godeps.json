@@ -1,0 +1,47 @@
+{
+	"ImportPath": "github.com/google/cadvisor",
+	"GoVersion": "go1.3",
+	"Deps": [
+		{
+			"ImportPath": "github.com/docker/docker/pkg/mount",
+			"Comment": "v1.1.1-402-g487a417",
+			"Rev": "487a417d9fd074d0e78876072c7d1ebfd398ea7a"
+		},
+		{
+			"ImportPath": "github.com/docker/libcontainer",
+			"Comment": "v1.1.0-194-gedfe81a",
+			"Rev": "edfe81a08b2780ad75b63e60b6cb9eb3a17c671f"
+		},
+		{
+			"ImportPath": "github.com/fsouza/go-dockerclient",
+			"Comment": "0.2.1-185-g4fc0e0d",
+			"Rev": "4fc0e0dbba85f2f799aa77cea594d40267f5bd5a"
+		},
+		{
+			"ImportPath": "github.com/influxdb/influxdb/client",
+			"Comment": "v0.8.0-rc.3-9-g3284662",
+			"Rev": "3284662b350688b651359f9124928856071bd3f5"
+		},
+		{
+			"ImportPath": "github.com/kr/pretty",
+			"Comment": "go.weekly.2011-12-22-20-g088c856",
+			"Rev": "088c856450c08c03eb32f7a6c221e6eefaa10e6f"
+		},
+		{
+			"ImportPath": "github.com/kr/text",
+			"Rev": "6807e777504f54ad073ecef66747de158294b639"
+		},
+		{
+			"ImportPath": "github.com/stretchr/objx",
+			"Rev": "cbeaeb16a013161a98496fad62933b1d21786672"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Rev": "ed6ea184117f7ae3168d1c05dbdbde1a86e2be68"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/mock",
+			"Rev": "ed6ea184117f7ae3168d1c05dbdbde1a86e2be68"
+		}
+	]
+}

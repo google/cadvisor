@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"runtime"
 
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
@@ -30,11 +31,14 @@ import (
 )
 
 var argPort = flag.Int("port", 8080, "port to listen")
+var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
 
 var argDbDriver = flag.String("storage_driver", "memory", "storage driver to use. Options are: memory (default), bigquery, and influxdb")
 
 func main() {
 	flag.Parse()
+
+	setMaxProcs()
 
 	storageDriver, err := NewStorageDriver(*argDbDriver)
 	if err != nil {
@@ -92,4 +96,22 @@ func main() {
 	addr := fmt.Sprintf(":%v", *argPort)
 
 	glog.Fatal(http.ListenAndServe(addr, nil))
+}
+
+func setMaxProcs() {
+	// TODO(vmarmol): Consider limiting if we have a CPU mask in effect.
+	// Allow as many threads as we have cores unless the user specified a value.
+	var numProcs int
+	if *maxProcs < 1 {
+		numProcs = runtime.NumCPU()
+	} else {
+		numProcs = *maxProcs
+	}
+	runtime.GOMAXPROCS(numProcs)
+
+	// Check if the setting was successful.
+	actualNumProcs := runtime.GOMAXPROCS(0)
+	if actualNumProcs != numProcs {
+		glog.Warningf("Specified max procs of %v but using %v", numProcs, actualNumProcs)
+	}
 }

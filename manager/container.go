@@ -27,6 +27,9 @@ import (
 	"github.com/google/cadvisor/storage"
 )
 
+// Housekeeping duration
+const HousekeepingTick = 1 * time.Second
+
 // Internal mirror of the external data structure.
 type containerStat struct {
 	Timestamp time.Time
@@ -105,7 +108,7 @@ func NewContainerData(containerName string, driver storage.StorageDriver) (*cont
 
 func (c *containerData) housekeeping() {
 	// Housekeep every second.
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(HousekeepingTick)
 	defer ticker.Stop()
 	for {
 		select {
