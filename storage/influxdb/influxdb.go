@@ -260,22 +260,26 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 		return nil
 	}
 	// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
-	self.lock.Lock()
-	series := self.newSeries(self.containerStatsToValues(ref, stats))
-	self.series = append(self.series, series)
-	self.prevStats = stats.Copy(self.prevStats)
-	if self.readyToFlush() {
-		series := self.series
-		self.series = make([]*influxdb.Series, 0)
-		self.lastWrite = time.Now()
-		self.lock.Unlock()
-		err := self.client.WriteSeries(series)
+	var seriesToFlush []*influxdb.Series
+	func() {
+		self.lock.Lock()
+		defer self.lock.Unlock()
+		series := self.newSeries(self.containerStatsToValues(ref, stats))
+		self.series = append(self.series, series)
+		self.prevStats = stats.Copy(self.prevStats)
+		if self.readyToFlush() {
+			seriesToFlush = self.series
+			self.series = make([]*influxdb.Series, 0)
+			self.lastWrite = time.Now()
+		}
+	}()
+	if len(seriesToFlush) > 0 {
+		err := self.client.WriteSeries(seriesToFlush)
 		if err != nil {
 			return fmt.Errorf("failed to write stats to influxDb - %s", err)
 		}
-	} else {
-		self.lock.Unlock()
 	}
+
 	return nil
 }
 
