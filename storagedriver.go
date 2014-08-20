@@ -20,6 +20,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang/glog"
+	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/cache"
 	"github.com/google/cadvisor/storage/influxdb"
@@ -32,7 +34,9 @@ var argDbPassword = flag.String("storage_driver_password", "root", "database pas
 var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
 var argDbName = flag.String("storage_driver_db", "cadvisor", "database name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
-var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60, "Writes in the storage driver will be bufferd for this duration (in seconds), and committed to the non memory backends as a single transaction")
+var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*time.Second, "Writes in the storage driver will be bufferd for this duration, and committed to the non memory backends as a single transaction")
+
+const statsRequestedByUI = 60
 
 func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 	var storageDriver storage.StorageDriver
@@ -63,7 +67,13 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			// TODO(monnand): One hour? Or user-defined?
 			1*time.Hour,
 		)
-		storageDriver = cache.MemoryCache(int(*argDbBufferDuration), int(*argDbBufferDuration), storageDriver)
+		samplesToCache := int(*argDbBufferDuration / manager.HousekeepingTick)
+		if samplesToCache < statsRequestedByUI {
+			// The UI requests the most recent 60 stats by default.
+			samplesToCache = statsRequestedByUI
+		}
+		glog.V(2).Infof("Caching %d recent stats in memory\n", samplesToCache)
+		storageDriver = cache.MemoryCache(samplesToCache, samplesToCache, storageDriver)
 	default:
 		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)
 	}
