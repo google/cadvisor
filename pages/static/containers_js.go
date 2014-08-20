@@ -92,6 +92,7 @@ function getMachineInfo(callback) {
 function getStats(containerName, callback) {
 	// Request 60s of container history and no samples.
 	var request = JSON.stringify({
+                // Update main.statsRequestedByUI while updating "num_stats" here.
 		"num_stats": 60,
 		"num_samples": 0
 	});
