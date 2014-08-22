@@ -144,8 +144,6 @@ const containersHtmlTemplate = `
 		{{ getMemoryUsage .Stats }} MB ({{ getMemoryUsagePercent .Spec .Stats .MachineInfo}}%)
               </div>
 	    </div>
-            <h4>Page Faults</h4>
-	    <div id="memory-page-faults-chart"></div>
           </div>
 	</div>
 	{{end}}
