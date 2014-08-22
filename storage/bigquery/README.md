@@ -1,7 +1,7 @@
 BigQuery Storage Driver
 =======
 
-[EXPERIMENTAL] Support for bigquery backend as cAdvisor storage driver.
+[EXPERIMENTAL] Support for BigQuery backend as cAdvisor storage driver.
 The current implementation takes bunch of BigQuery specific flags for authentication.
 These will be merged into a single backend config.
 
