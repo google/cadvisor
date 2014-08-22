@@ -206,25 +206,6 @@ function drawMemoryUsage(elementId, containerInfo) {
 	drawLineChart(titles, data, elementId, "Megabytes");
 }
 
-function drawMemoryPageFaults(elementId, containerInfo) {
-	var titles = ["Time", "Faults", "Major Faults"];
-	var data = [];
-	for (var i = 1; i < containerInfo.stats.length; i++) {
-		var cur = containerInfo.stats[i];
-		var prev = containerInfo.stats[i - 1];
-
-		// TODO(vmarmol): This assumes we sample every second, use the timestamps.
-		var elements = [];
-		elements.push(cur.timestamp);
-		elements.push(cur.memory.hierarchical_data.pgfault - prev.memory.hierarchical_data.pgfault);
-		// TODO(vmarmol): Fix to expose this data.
-		//elements.push(cur.memory.hierarchical_data.pgmajfault - prev.memory.hierarchical_data.pgmajfault);
-		elements.push(0);
-		data.push(elements);
-	}
-	drawLineChart(titles, data, elementId, "Faults");
-}
-
 // Draw the graph for network tx/rx bytes.
 function drawNetworkBytes(elementId, machineInfo, stats) {
 	var titles = ["Time", "Tx bytes", "Rx bytes"];
@@ -301,9 +282,6 @@ function drawCharts(machineInfo, containerInfo) {
 	// Memory.
 	steps.push(function() {
 		drawMemoryUsage("memory-usage-chart", containerInfo);
-	});
-	steps.push(function() {
-		drawMemoryPageFaults("memory-page-faults-chart", containerInfo);
 	});
 
 	// Network.
