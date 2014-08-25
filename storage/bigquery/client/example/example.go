@@ -17,9 +17,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
+
 	"github.com/SeanDolphin/bqschema"
 	"github.com/google/cadvisor/storage/bigquery/client"
-	"time"
 )
 
 type container struct {

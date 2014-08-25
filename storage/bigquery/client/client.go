@@ -15,14 +15,15 @@
 package client
 
 import (
-	"code.google.com/p/goauth2/oauth"
-	"code.google.com/p/goauth2/oauth/jwt"
-	bigquery "code.google.com/p/google-api-go-client/bigquery/v2"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"code.google.com/p/goauth2/oauth"
+	"code.google.com/p/goauth2/oauth/jwt"
+	bigquery "code.google.com/p/google-api-go-client/bigquery/v2"
 )
 
 var (
@@ -46,6 +47,7 @@ type Client struct {
 	tableId   string
 }
 
+// Helper method to create an authenticated connection.
 func connect() (*oauth.Token, *bigquery.Service, error) {
 	if *clientId == "" {
 		return nil, nil, fmt.Errorf("No client id specified")
@@ -94,6 +96,7 @@ func connect() (*oauth.Token, *bigquery.Service, error) {
 	return token, service, nil
 }
 
+// Creates a new client instance with an authenticated connection to bigquery.
 func NewClient() (*Client, error) {
 	token, service, err := connect()
 	if err != nil {
@@ -111,6 +114,8 @@ func (c *Client) Close() error {
 	return nil
 }
 
+// Helper method to return the bigquery service connection.
+// Expired connection is refreshed.
 func (c *Client) getService() (*bigquery.Service, error) {
 	if c.token == nil || c.service == nil {
 		return nil, fmt.Errorf("Service not initialized")
@@ -162,6 +167,8 @@ func (c *Client) CreateDataset(datasetId string) error {
 	return nil
 }
 
+// Create a table with provided table ID and schema.
+// Schema is currently not updated if the table already exists.
 func (c *Client) CreateTable(tableId string, schema *bigquery.TableSchema) error {
 	if c.service == nil || c.datasetId == "" {
 		return fmt.Errorf("No dataset created")
@@ -186,6 +193,7 @@ func (c *Client) CreateTable(tableId string, schema *bigquery.TableSchema) error
 	return nil
 }
 
+// Add a row to the connected table.
 func (c *Client) InsertRow(rowData map[string]interface{}) error {
 	service, _ := c.getService()
 	if service == nil || c.datasetId == "" || c.tableId == "" {
@@ -215,6 +223,7 @@ func (c *Client) InsertRow(rowData map[string]interface{}) error {
 	return nil
 }
 
+// Returns a bigtable table name (format: datasetID.tableID)
 func (c *Client) GetTableName() (string, error) {
 	if c.service == nil || c.datasetId == "" || c.tableId == "" {
 		return "", fmt.Errorf("Table not setup")
@@ -222,6 +231,8 @@ func (c *Client) GetTableName() (string, error) {
 	return fmt.Sprintf("%s.%s", c.datasetId, c.tableId), nil
 }
 
+// Do a synchronous query on bigtable and return a header and data rows.
+// Number of rows are capped to queryLimit.
 func (c *Client) Query(query string) ([]string, [][]interface{}, error) {
 	service, err := c.getService()
 	if err != nil {
