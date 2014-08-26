@@ -192,7 +192,7 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 var oneMegabyte = 1024 * 1024;
 
 function drawMemoryUsage(elementId, containerInfo) {
-	var titles = ["Time", "Total"];
+	var titles = ["Time", "Total", "Hot"];
 	var data = [];
 	for (var i = 0; i < containerInfo.stats.length; i++) {
 		var cur = containerInfo.stats[i];
@@ -201,6 +201,7 @@ function drawMemoryUsage(elementId, containerInfo) {
 		var elements = [];
 		elements.push(cur.timestamp);
 		elements.push(cur.memory.usage / oneMegabyte);
+		elements.push(cur.memory.working_set / oneMegabyte);
 		data.push(elements);
 	}
 	drawLineChart(titles, data, elementId, "Megabytes");
