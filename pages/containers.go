@@ -18,6 +18,7 @@ package pages
 import (
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"net/url"
 	"path"
@@ -55,26 +56,35 @@ const (
 	YB
 )
 
-func (b ByteSize) String() string {
+func (b ByteSize) Size() string {
+	for _, i := range [...]ByteSize{YB, ZB, EB, PB, TB, GB, MB, KB} {
+		if b >= i {
+			return fmt.Sprintf("%.2f", b/i)
+		}
+	}
+	return fmt.Sprintf("%.2f", b)
+}
+
+func (b ByteSize) Unit() string {
 	switch {
 	case b >= YB:
-		return fmt.Sprintf("%.2fYB", b/YB)
+		return "YB"
 	case b >= ZB:
-		return fmt.Sprintf("%.2fZB", b/ZB)
+		return "ZB"
 	case b >= EB:
-		return fmt.Sprintf("%.2fEB", b/EB)
+		return "EB"
 	case b >= PB:
-		return fmt.Sprintf("%.2fPB", b/PB)
+		return "PB"
 	case b >= TB:
-		return fmt.Sprintf("%.2fTB", b/TB)
+		return "TB"
 	case b >= GB:
-		return fmt.Sprintf("%.2fGB", b/GB)
+		return "GB"
 	case b >= MB:
-		return fmt.Sprintf("%.2fMB", b/MB)
+		return "MB"
 	case b >= KB:
-		return fmt.Sprintf("%.2fKB", b/KB)
+		return "KB"
 	}
-	return fmt.Sprintf("%.2fB", b)
+	return "B"
 }
 
 var funcMap = template.FuncMap{
@@ -83,6 +93,7 @@ var funcMap = template.FuncMap{
 	"printCores":            printCores,
 	"printShares":           printShares,
 	"printSize":             printSize,
+	"printUnit":             printUnit,
 	"getMemoryUsage":        getMemoryUsage,
 	"getMemoryUsagePercent": getMemoryUsagePercent,
 	"getHotMemoryPercent":   getHotMemoryPercent,
@@ -189,7 +200,17 @@ func toMegabytes(bytes uint64) float64 {
 }
 
 func printSize(bytes uint64) string {
-	return ByteSize(bytes).String()
+	if bytes >= math.MaxInt64 {
+		return "unlimited"
+	}
+	return ByteSize(bytes).Size()
+}
+
+func printUnit(bytes uint64) string {
+	if bytes >= math.MaxInt64 {
+		return ""
+	}
+	return ByteSize(bytes).Unit()
 }
 
 func toMemoryPercent(usage uint64, spec *info.ContainerSpec, machine *info.MachineInfo) int {
