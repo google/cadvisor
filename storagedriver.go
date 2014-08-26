@@ -23,6 +23,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/storage/bigquery"
 	"github.com/google/cadvisor/storage/cache"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/memory"
@@ -41,6 +42,11 @@ const statsRequestedByUI = 60
 func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 	var storageDriver storage.StorageDriver
 	var err error
+	samplesToCache := int(*argDbBufferDuration / manager.HousekeepingTick)
+	if samplesToCache < statsRequestedByUI {
+		// The UI requests the most recent 60 stats by default.
+		samplesToCache = statsRequestedByUI
+	}
 	switch driverName {
 	case "":
 		// empty string by default is the in memory store
@@ -67,13 +73,23 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			// TODO(monnand): One hour? Or user-defined?
 			1*time.Hour,
 		)
-		samplesToCache := int(*argDbBufferDuration / manager.HousekeepingTick)
-		if samplesToCache < statsRequestedByUI {
-			// The UI requests the most recent 60 stats by default.
-			samplesToCache = statsRequestedByUI
-		}
 		glog.V(2).Infof("Caching %d recent stats in memory\n", samplesToCache)
 		storageDriver = cache.MemoryCache(samplesToCache, samplesToCache, storageDriver)
+	case "bigquery":
+		var hostname string
+		hostname, err = os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+		storageDriver, err = bigquery.New(
+			hostname,
+			"cadvisor",
+			*argDbName,
+			1*time.Hour,
+		)
+		glog.V(2).Infof("Caching %d recent stats in memory\n", samplesToCache)
+		storageDriver = cache.MemoryCache(samplesToCache, samplesToCache, storageDriver)
+
 	default:
 		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)
 	}

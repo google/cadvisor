@@ -33,7 +33,7 @@ import (
 var argPort = flag.Int("port", 8080, "port to listen")
 var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
 
-var argDbDriver = flag.String("storage_driver", "memory", "storage driver to use. Options are: memory (default) and influxdb")
+var argDbDriver = flag.String("storage_driver", "memory", "storage driver to use. Options are: memory (default), bigquery, and influxdb")
 
 func main() {
 	flag.Parse()
