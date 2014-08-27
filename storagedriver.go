@@ -35,7 +35,7 @@ var argDbPassword = flag.String("storage_driver_password", "root", "database pas
 var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
 var argDbName = flag.String("storage_driver_db", "cadvisor", "database name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
-var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*time.Second, "Writes in the storage driver will be bufferd for this duration, and committed to the non memory backends as a single transaction")
+var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*time.Second, "Writes in the storage driver will be buffered for this duration, and committed to the non memory backends as a single transaction")
 
 const statsRequestedByUI = 60
 
@@ -69,7 +69,7 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			*argDbPassword,
 			*argDbHost,
 			*argDbIsSecure,
-			*argDbBufferDuration*time.Second,
+			*argDbBufferDuration,
 			// TODO(monnand): One hour? Or user-defined?
 			1*time.Hour,
 		)
