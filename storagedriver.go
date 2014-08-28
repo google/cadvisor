@@ -69,12 +69,18 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			*argDbPassword,
 			*argDbHost,
 			*argDbIsSecure,
-			*argDbBufferDuration,
+			// TODO(monnand): Remove buffer from influxdb.
+			0*time.Second,
 			// TODO(monnand): One hour? Or user-defined?
 			1*time.Hour,
 		)
 		glog.V(2).Infof("Caching %d recent stats in memory\n", samplesToCache)
-		storageDriver = cache.MemoryCache(samplesToCache, samplesToCache, storageDriver)
+		storageDriver = cache.MemoryCache(
+			samplesToCache,
+			samplesToCache,
+			*argDbBufferDuration,
+			storageDriver,
+		)
 	case "bigquery":
 		var hostname string
 		hostname, err = os.Hostname()
@@ -88,7 +94,12 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			1*time.Hour,
 		)
 		glog.V(2).Infof("Caching %d recent stats in memory\n", samplesToCache)
-		storageDriver = cache.MemoryCache(samplesToCache, samplesToCache, storageDriver)
+		storageDriver = cache.MemoryCache(
+			samplesToCache,
+			samplesToCache,
+			*argDbBufferDuration,
+			storageDriver,
+		)
 
 	default:
 		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)

@@ -114,12 +114,17 @@ func (self *cachedStorageDriver) Close() error {
 }
 
 // TODO(vishh): Cache all samples for a given duration and do not cap the maximum number of samples. This is useful if we happen to change the housekeeping duration.
-func MemoryCache(maxNumSamplesInCache, maxNumStatsInCache int, driver storage.StorageDriver) storage.StorageDriver {
+func MemoryCache(
+	maxNumSamplesInCache,
+	maxNumStatsInCache int,
+	bufferDuration time.Duration,
+	driver storage.StorageDriver,
+) storage.StorageDriver {
 	return &cachedStorageDriver{
 		maxNumStatsInCache:   maxNumStatsInCache,
 		maxNumSamplesInCache: maxNumSamplesInCache,
 		// TODO(monnand): Let this period to be adjustable
-		writePeriod: 1 * time.Minute,
+		writePeriod: bufferDuration,
 		cache:       memory.New(maxNumSamplesInCache, maxNumStatsInCache),
 		backend:     driver,
 		lastWrite:   time.Now(),
