@@ -43,6 +43,10 @@ type cachedStorageDriver struct {
 func (self *cachedStorageDriver) Flush() error {
 	self.lock.Lock()
 	defer self.lock.Unlock()
+	return self.flushUnsafe()
+}
+
+func (self *cachedStorageDriver) flushUnsafe() error {
 	var err error
 	for _, pair := range self.dirtyStats {
 		err = self.backend.AddStats(pair.ref, pair.stats)
@@ -61,12 +65,10 @@ func (self *cachedStorageDriver) AddStats(ref info.ContainerReference, stats *in
 		return err
 	}
 	self.lock.Lock()
+	defer self.lock.Unlock()
 	self.dirtyStats = append(self.dirtyStats, containerStatsRefPair{ref, stats.Copy(nil)})
 	if time.Now().Sub(self.lastWrite) >= self.writePeriod {
-		self.lock.Unlock()
-		return self.Flush()
-	} else {
-		self.lock.Unlock()
+		return self.flushUnsafe()
 	}
 	return nil
 }
@@ -120,5 +122,6 @@ func MemoryCache(maxNumSamplesInCache, maxNumStatsInCache int, driver storage.St
 		writePeriod: 1 * time.Minute,
 		cache:       memory.New(maxNumSamplesInCache, maxNumStatsInCache),
 		backend:     driver,
+		lastWrite:   time.Now(),
 	}
 }
