@@ -15,16 +15,41 @@
 package cache
 
 import (
+	"fmt"
+	"sync"
+
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/memory"
 )
 
+type containerStatsRefPair struct {
+	ref   info.ContainerReference
+	stats *info.ContainerStats
+}
+
 type cachedStorageDriver struct {
 	maxNumStatsInCache   int
 	maxNumSamplesInCache int
+	maxNumDirtyStats     int
+	dirtyStats           []containerStatsRefPair
 	cache                storage.StorageDriver
 	backend              storage.StorageDriver
+	lock                 sync.RWMutex
+}
+
+func (self *cachedStorageDriver) Flush() error {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	var err error
+	for _, pair := range self.dirtyStats {
+		err = self.backend.AddStats(pair.ref, pair.stats)
+		if err != nil {
+			return fmt.Errorf("error when writing stats for container %v: %v", pair.ref.Name, err)
+		}
+	}
+	self.dirtyStats = self.dirtyStats[:0]
+	return nil
 }
 
 func (self *cachedStorageDriver) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
@@ -32,9 +57,13 @@ func (self *cachedStorageDriver) AddStats(ref info.ContainerReference, stats *in
 	if err != nil {
 		return err
 	}
-	err = self.backend.AddStats(ref, stats)
-	if err != nil {
-		return err
+	self.lock.Lock()
+	self.dirtyStats = append(self.dirtyStats, containerStatsRefPair{ref, stats.Copy(nil)})
+	if len(self.dirtyStats) >= self.maxNumDirtyStats {
+		self.lock.Unlock()
+		return self.Flush()
+	} else {
+		self.lock.Unlock()
 	}
 	return nil
 }
@@ -48,6 +77,10 @@ func (self *cachedStorageDriver) RecentStats(containerName string, numStats int)
 
 // TODO(vishh): Calculate percentiles from cached stats instead of reaching the DB. This will make the UI truly independent of the backend storage.
 func (self *cachedStorageDriver) Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error) {
+	err := self.Flush()
+	if err != nil {
+		return nil, fmt.Errorf("unable to query percentiles: %v", err)
+	}
 	return self.backend.Percentiles(containerName, cpuUsagePercentiles, memUsagePercentiles)
 }
 
@@ -68,6 +101,7 @@ func MemoryCache(maxNumSamplesInCache, maxNumStatsInCache int, driver storage.St
 	return &cachedStorageDriver{
 		maxNumStatsInCache:   maxNumStatsInCache,
 		maxNumSamplesInCache: maxNumSamplesInCache,
+		maxNumDirtyStats:     maxNumStatsInCache,
 		cache:                memory.New(maxNumSamplesInCache, maxNumStatsInCache),
 		backend:              driver,
 	}
