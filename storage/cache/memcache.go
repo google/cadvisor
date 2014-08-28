@@ -121,6 +121,8 @@ func MemoryCache(
 	driver storage.StorageDriver,
 ) storage.StorageDriver {
 	return &cachedStorageDriver{
+		// TODO(monnand): Use precision and bufferDuration to derive
+		// maxNumStatsInCache automatically.
 		maxNumStatsInCache:   maxNumStatsInCache,
 		maxNumSamplesInCache: maxNumSamplesInCache,
 		bufferDuration:       bufferDuration,
