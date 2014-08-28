@@ -17,6 +17,7 @@ package cache
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
@@ -31,8 +32,9 @@ type containerStatsRefPair struct {
 type cachedStorageDriver struct {
 	maxNumStatsInCache   int
 	maxNumSamplesInCache int
-	maxNumDirtyStats     int
+	writePeriod          time.Duration
 	dirtyStats           []containerStatsRefPair
+	lastWrite            time.Time
 	cache                storage.StorageDriver
 	backend              storage.StorageDriver
 	lock                 sync.RWMutex
@@ -49,6 +51,7 @@ func (self *cachedStorageDriver) Flush() error {
 		}
 	}
 	self.dirtyStats = self.dirtyStats[:0]
+	self.lastWrite = time.Now()
 	return nil
 }
 
@@ -59,7 +62,7 @@ func (self *cachedStorageDriver) AddStats(ref info.ContainerReference, stats *in
 	}
 	self.lock.Lock()
 	self.dirtyStats = append(self.dirtyStats, containerStatsRefPair{ref, stats.Copy(nil)})
-	if len(self.dirtyStats) >= self.maxNumDirtyStats {
+	if time.Now().Sub(self.lastWrite) >= self.writePeriod {
 		self.lock.Unlock()
 		return self.Flush()
 	} else {
@@ -71,6 +74,10 @@ func (self *cachedStorageDriver) AddStats(ref info.ContainerReference, stats *in
 func (self *cachedStorageDriver) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
 	if numStats <= self.maxNumStatsInCache {
 		return self.cache.RecentStats(containerName, numStats)
+	}
+	err := self.Flush()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve most recent stats, error on flush: %v")
 	}
 	return self.backend.RecentStats(containerName, numStats)
 }
@@ -88,11 +95,16 @@ func (self *cachedStorageDriver) Samples(containerName string, numSamples int) (
 	if numSamples <= self.maxNumSamplesInCache {
 		return self.cache.Samples(containerName, numSamples)
 	}
+	err := self.Flush()
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve samples, error on flush: %v")
+	}
 	return self.backend.Samples(containerName, numSamples)
 }
 
 func (self *cachedStorageDriver) Close() error {
 	self.cache.Close()
+	self.Flush()
 	return self.backend.Close()
 }
 
@@ -101,8 +113,9 @@ func MemoryCache(maxNumSamplesInCache, maxNumStatsInCache int, driver storage.St
 	return &cachedStorageDriver{
 		maxNumStatsInCache:   maxNumStatsInCache,
 		maxNumSamplesInCache: maxNumSamplesInCache,
-		maxNumDirtyStats:     maxNumStatsInCache,
-		cache:                memory.New(maxNumSamplesInCache, maxNumStatsInCache),
-		backend:              driver,
+		// TODO(monnand): Let this period to be adjustable
+		writePeriod: 1 * time.Minute,
+		cache:       memory.New(maxNumSamplesInCache, maxNumStatsInCache),
+		backend:     driver,
 	}
 }
