@@ -38,7 +38,7 @@ type influxdbStorage struct {
 }
 
 const (
-	colTimestamp          string = "timestamp"
+	colTimestamp          string = "time"
 	colMachineName        string = "machine"
 	colContainerName      string = "container_name"
 	colCpuCumulativeUsage string = "cpu_cumulative_usage"
@@ -67,7 +67,7 @@ func (self *influxdbStorage) containerStatsToValues(
 
 	// Timestamp
 	columns = append(columns, colTimestamp)
-	values = append(values, stats.Timestamp.Format(time.RFC3339Nano))
+	values = append(values, stats.Timestamp.Unix())
 
 	// Machine name
 	columns = append(columns, colMachineName)
@@ -274,7 +274,7 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 		}
 	}()
 	if len(seriesToFlush) > 0 {
-		err := self.client.WriteSeries(seriesToFlush)
+		err := self.client.WriteSeriesWithTimePrecision(seriesToFlush, influxdb.Second)
 		if err != nil {
 			return fmt.Errorf("failed to write stats to influxDb - %s", err)
 		}
