@@ -84,6 +84,9 @@ func (self *cachedStorageDriver) RecentStats(containerName string, numStats int)
 
 // TODO(vishh): Calculate percentiles from cached stats instead of reaching the DB. This will make the UI truly independent of the backend storage.
 func (self *cachedStorageDriver) Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error) {
+	if len(cpuUsagePercentiles) == 0 && len(memUsagePercentiles) == 0 {
+		return nil, nil
+	}
 	err := self.Flush()
 	if err != nil {
 		return nil, fmt.Errorf("unable to query percentiles: %v", err)
