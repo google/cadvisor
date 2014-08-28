@@ -123,10 +123,9 @@ func MemoryCache(
 	return &cachedStorageDriver{
 		maxNumStatsInCache:   maxNumStatsInCache,
 		maxNumSamplesInCache: maxNumSamplesInCache,
-		// TODO(monnand): Let this period to be adjustable
-		writePeriod: bufferDuration,
-		cache:       memory.New(maxNumSamplesInCache, maxNumStatsInCache),
-		backend:     driver,
-		lastWrite:   time.Now(),
+		writePeriod:          bufferDuration,
+		cache:                memory.New(maxNumSamplesInCache, maxNumStatsInCache),
+		backend:              driver,
+		lastWrite:            time.Now(),
 	}
 }
