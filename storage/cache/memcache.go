@@ -40,7 +40,7 @@ type cachedStorageDriver struct {
 	lock                 sync.RWMutex
 }
 
-func (self *cachedStorageDriver) Flush() error {
+func (self *cachedStorageDriver) flush() error {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	return self.flushUnsafe()
