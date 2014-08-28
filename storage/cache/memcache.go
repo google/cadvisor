@@ -32,7 +32,7 @@ type containerStatsRefPair struct {
 type cachedStorageDriver struct {
 	maxNumStatsInCache   int
 	maxNumSamplesInCache int
-	writePeriod          time.Duration
+	bufferDuration       time.Duration
 	dirtyStats           []containerStatsRefPair
 	lastWrite            time.Time
 	cache                storage.StorageDriver
@@ -67,7 +67,7 @@ func (self *cachedStorageDriver) AddStats(ref info.ContainerReference, stats *in
 	self.lock.Lock()
 	defer self.lock.Unlock()
 	self.dirtyStats = append(self.dirtyStats, containerStatsRefPair{ref, stats.Copy(nil)})
-	if time.Now().Sub(self.lastWrite) >= self.writePeriod {
+	if time.Now().Sub(self.lastWrite) >= self.bufferDuration {
 		return self.flushUnsafe()
 	}
 	return nil
@@ -123,7 +123,7 @@ func MemoryCache(
 	return &cachedStorageDriver{
 		maxNumStatsInCache:   maxNumStatsInCache,
 		maxNumSamplesInCache: maxNumSamplesInCache,
-		writePeriod:          bufferDuration,
+		bufferDuration:       bufferDuration,
 		cache:                memory.New(maxNumSamplesInCache, maxNumStatsInCache),
 		backend:              driver,
 		lastWrite:            time.Now(),
