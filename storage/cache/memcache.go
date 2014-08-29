@@ -77,7 +77,7 @@ func (self *cachedStorageDriver) RecentStats(containerName string, numStats int)
 	if numStats <= self.maxNumStatsInCache {
 		return self.cache.RecentStats(containerName, numStats)
 	}
-	err := self.Flush()
+	err := self.flush()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve most recent stats, error on flush: %v")
 	}
@@ -89,7 +89,7 @@ func (self *cachedStorageDriver) Percentiles(containerName string, cpuUsagePerce
 	if len(cpuUsagePercentiles) == 0 && len(memUsagePercentiles) == 0 {
 		return nil, nil
 	}
-	err := self.Flush()
+	err := self.flush()
 	if err != nil {
 		return nil, fmt.Errorf("unable to query percentiles: %v", err)
 	}
@@ -100,7 +100,7 @@ func (self *cachedStorageDriver) Samples(containerName string, numSamples int) (
 	if numSamples <= self.maxNumSamplesInCache {
 		return self.cache.Samples(containerName, numSamples)
 	}
-	err := self.Flush()
+	err := self.flush()
 	if err != nil {
 		return nil, fmt.Errorf("unable to retrieve samples, error on flush: %v")
 	}
@@ -109,7 +109,7 @@ func (self *cachedStorageDriver) Samples(containerName string, numSamples int) (
 
 func (self *cachedStorageDriver) Close() error {
 	self.cache.Close()
-	self.Flush()
+	self.flush()
 	return self.backend.Close()
 }
 
