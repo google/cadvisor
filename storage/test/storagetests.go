@@ -183,7 +183,7 @@ func StorageDriverFillRandomStatsFunc(
 	trace := buildTrace(cpuTrace, memTrace, samplePeriod)
 
 	for _, stats := range trace {
-		err := driver.AddStats(ref, stats)
+		err := driver.AddStats(storage.ContainerRefStatsPair{ref, []*info.ContainerStats{stats}})
 		if err != nil {
 			t.Fatalf("unable to add stats: %v", err)
 		}
@@ -211,7 +211,7 @@ func StorageDriverTestSampleCpuUsage(driver TestStorageDriver, t *testing.T) {
 	trace := buildTrace(cpuTrace, memTrace, samplePeriod)
 
 	for _, stats := range trace {
-		err := driver.AddStats(ref, stats)
+		err := driver.AddStats(storage.ContainerRefStatsPair{ref, []*info.ContainerStats{stats}})
 		if err != nil {
 			t.Fatalf("unable to add stats: %v", err)
 		}
@@ -261,7 +261,7 @@ func StorageDriverTestMaxMemoryUsage(driver TestStorageDriver, t *testing.T) {
 	trace := buildTrace(cpuTrace, memTrace, 1*time.Second)
 
 	for _, stats := range trace {
-		err := driver.AddStats(ref, stats)
+		err := driver.AddStats(storage.ContainerRefStatsPair{ref, []*info.ContainerStats{stats}})
 		if err != nil {
 			t.Fatalf("unable to add stats: %v", err)
 		}
@@ -292,7 +292,10 @@ func StorageDriverTestSamplesWithoutSample(driver TestStorageDriver, t *testing.
 	ref := info.ContainerReference{
 		Name: "container",
 	}
-	driver.AddStats(ref, trace[0])
+	err := driver.AddStats(storage.ContainerRefStatsPair{ref, trace})
+	if err != nil {
+		t.Fatal(err)
+	}
 	samples, err := driver.Samples(ref.Name, -1)
 	if err != nil {
 		t.Fatal(err)
@@ -311,7 +314,10 @@ func StorageDriverTestPercentilesWithoutSample(driver TestStorageDriver, t *test
 	ref := info.ContainerReference{
 		Name: "container",
 	}
-	driver.AddStats(ref, trace[0])
+	err := driver.AddStats(storage.ContainerRefStatsPair{ref, trace})
+	if err != nil {
+		t.Fatal(err)
+	}
 	percentiles, err := driver.Percentiles(
 		ref.Name,
 		[]int{50},
@@ -340,8 +346,9 @@ func StorageDriverTestPercentiles(driver TestStorageDriver, t *testing.T) {
 	ref := info.ContainerReference{
 		Name: "container",
 	}
-	for _, stats := range trace {
-		driver.AddStats(ref, stats)
+	err := driver.AddStats(storage.ContainerRefStatsPair{ref, trace})
+	if err != nil {
+		t.Fatal(err)
 	}
 	percentages := []int{
 		80,
@@ -387,8 +394,9 @@ func StorageDriverTestRetrievePartialRecentStats(driver TestStorageDriver, t *te
 
 	trace := buildTrace(cpuTrace, memTrace, 1*time.Second)
 
-	for _, stats := range trace {
-		driver.AddStats(ref, stats)
+	err := driver.AddStats(storage.ContainerRefStatsPair{ref, trace})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	recentStats, err := driver.RecentStats(ref.Name, 10)
@@ -430,8 +438,9 @@ func StorageDriverTestRetrieveAllRecentStats(driver TestStorageDriver, t *testin
 
 	trace := buildTrace(cpuTrace, memTrace, 1*time.Second)
 
-	for _, stats := range trace {
-		driver.AddStats(ref, stats)
+	err := driver.AddStats(storage.ContainerRefStatsPair{ref, trace})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	recentStats, err := driver.RecentStats(ref.Name, -1)
@@ -511,9 +520,9 @@ func StorageDriverTestRetrieveZeroRecentStats(driver TestStorageDriver, t *testi
 	}
 
 	trace := buildTrace(cpuTrace, memTrace, 1*time.Second)
-
-	for _, stats := range trace {
-		driver.AddStats(ref, stats)
+	err := driver.AddStats(storage.ContainerRefStatsPair{ref, trace})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	recentStats, err := driver.RecentStats(ref.Name, 0)
@@ -541,8 +550,9 @@ func StorageDriverTestRetrieveZeroSamples(driver TestStorageDriver, t *testing.T
 
 	trace := buildTrace(cpuTrace, memTrace, 1*time.Second)
 
-	for _, stats := range trace {
-		driver.AddStats(ref, stats)
+	err := driver.AddStats(storage.ContainerRefStatsPair{ref, trace})
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	samples, err := driver.Samples(ref.Name, 0)

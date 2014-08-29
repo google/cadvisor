@@ -16,8 +16,18 @@ package storage
 
 import "github.com/google/cadvisor/info"
 
+type ContainerRefStatsPair struct {
+	Reference info.ContainerReference
+	Stats     []*info.ContainerStats
+}
+
 type StorageDriver interface {
-	AddStats(ref info.ContainerReference, stats *info.ContainerStats) error
+	// Write a series of stats into the storage. This method could be
+	// either an atomic operation (i.e. all or nothing), or a sequence of
+	// write operations depending on the underlying storage driver
+	// implementation. This means it may write partial data into the
+	// storage and return an error.
+	AddStats(pairs ...ContainerRefStatsPair) error
 
 	// Read most recent stats. numStats indicates max number of stats
 	// returned. The returned stats must be consecutive observed stats. If

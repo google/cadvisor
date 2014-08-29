@@ -16,6 +16,7 @@ package test
 
 import (
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/storage"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -24,8 +25,8 @@ type MockStorageDriver struct {
 	MockCloseMethod bool
 }
 
-func (self *MockStorageDriver) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
-	args := self.Called(ref, stats)
+func (self *MockStorageDriver) AddStats(pairs ...storage.ContainerRefStatsPair) error {
+	args := self.Called(pairs)
 	return args.Error(0)
 }
 

@@ -153,19 +153,27 @@ type InMemoryStorage struct {
 	maxNumStats         int
 }
 
-func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (self *InMemoryStorage) AddStats(pairs ...storage.ContainerRefStatsPair) error {
 	var cstore *containerStorage
 	var ok bool
 
-	func() {
+	for _, pair := range pairs {
+		ref := pair.Reference
+		stats := pair.Stats
 		self.lock.Lock()
-		defer self.lock.Unlock()
 		if cstore, ok = self.containerStorageMap[ref.Name]; !ok {
 			cstore = newContainerStore(ref, self.maxNumSamples, self.maxNumStats)
 			self.containerStorageMap[ref.Name] = cstore
 		}
-	}()
-	return cstore.AddStats(stats)
+		self.lock.Unlock()
+		for _, stat := range stats {
+			err := cstore.AddStats(stat)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (self *InMemoryStorage) Samples(name string, numSamples int) ([]*info.ContainerStatsSample, error) {
