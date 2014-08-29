@@ -31,6 +31,9 @@ import (
 
 var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
 
+// Basepath to all container specific information that libcontainer stores.
+var dockerRootDir = flag.String("docker_root", "/var/lib/docker", "Absolute path to the Docker state root directory (default: /var/lib/docker)")
+
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
@@ -54,6 +57,7 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 		name,
 		self.machineInfoFactory,
 		self.useSystemd,
+		*dockerRootDir,
 	)
 	return
 }

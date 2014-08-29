@@ -34,19 +34,20 @@ import (
 	"github.com/google/cadvisor/utils"
 )
 
-// Basepath to all container specific information that libcontainer stores.
-const dockerRootDir = "/var/lib/docker/execdriver/native"
+// Relative path from Docker root to the libcontainer per-container state.
+const pathToLibcontainerState = "execdriver/native"
 
 var fileNotFound = errors.New("file not found")
 
 type dockerContainerHandler struct {
-	client             *docker.Client
-	name               string
-	parent             string
-	id                 string
-	aliases            []string
-	machineInfoFactory info.MachineInfoFactory
-	useSystemd         bool
+	client               *docker.Client
+	name                 string
+	parent               string
+	id                   string
+	aliases              []string
+	machineInfoFactory   info.MachineInfoFactory
+	useSystemd           bool
+	libcontainerStateDir string
 }
 
 func newDockerContainerHandler(
@@ -54,12 +55,14 @@ func newDockerContainerHandler(
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
 	useSystemd bool,
+	dockerRootDir string,
 ) (container.ContainerHandler, error) {
 	handler := &dockerContainerHandler{
-		client:             client,
-		name:               name,
-		machineInfoFactory: machineInfoFactory,
-		useSystemd:         useSystemd,
+		client:               client,
+		name:                 name,
+		machineInfoFactory:   machineInfoFactory,
+		useSystemd:           useSystemd,
+		libcontainerStateDir: path.Join(dockerRootDir, pathToLibcontainerState),
 	}
 	if handler.isDockerRoot() {
 		return handler, nil
@@ -89,7 +92,7 @@ func (self *dockerContainerHandler) isDockerRoot() bool {
 
 // TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
 func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontainer.Config, err error) {
-	configPath := path.Join(dockerRootDir, self.id, "container.json")
+	configPath := path.Join(self.libcontainerStateDir, self.id, "container.json")
 	if !utils.FileExists(configPath) {
 		// TODO(vishh): Return file name as well once we have a better error interface.
 		err = fileNotFound
@@ -116,11 +119,11 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontain
 }
 
 func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer.State, err error) {
-	statePath := path.Join(dockerRootDir, self.id, "state.json")
+	statePath := path.Join(self.libcontainerStateDir, self.id, "state.json")
 	if !utils.FileExists(statePath) {
 		// TODO(vmarmol): Remove this once we can depend on a newer Docker.
 		// Libcontainer changed how its state was stored, try the old way of a "pid" file
-		if utils.FileExists(path.Join(dockerRootDir, self.id, "pid")) {
+		if utils.FileExists(path.Join(self.libcontainerStateDir, self.id, "pid")) {
 			// We don't need the old state, return an empty state and we'll gracefully degrade.
 			state = new(libcontainer.State)
 			return
