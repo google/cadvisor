@@ -24,6 +24,7 @@ import (
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
+	"github.com/google/cadvisor/healthz"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
@@ -58,6 +59,11 @@ func main() {
 	// Register the raw driver.
 	if err := raw.Register(containerManager); err != nil {
 		glog.Fatalf("raw registration failed: %v.", err)
+	}
+
+	// Basic health handler.
+	if err := healthz.RegisterHandler(); err != nil {
+		glog.Fatalf("failed to register healthz handler: %s", err)
 	}
 
 	// Handler for static content.
