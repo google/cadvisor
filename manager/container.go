@@ -17,6 +17,7 @@
 package manager
 
 import (
+	"flag"
 	"fmt"
 	"sync"
 	"time"
@@ -27,8 +28,8 @@ import (
 	"github.com/google/cadvisor/storage"
 )
 
-// Housekeeping duration
-const HousekeepingTick = 1 * time.Second
+// Housekeeping interval.
+var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 
 // Internal mirror of the external data structure.
 type containerStat struct {
@@ -107,8 +108,14 @@ func NewContainerData(containerName string, driver storage.StorageDriver) (*cont
 }
 
 func (c *containerData) housekeeping() {
+	// Long housekeeping is either 100ms or half of the housekeeping interval.
+	longHousekeeping := 100 * time.Millisecond
+	if *HousekeepingInterval/2 < longHousekeeping {
+		longHousekeeping = *HousekeepingInterval / 2
+	}
+
 	// Housekeep every second.
-	ticker := time.NewTicker(HousekeepingTick)
+	ticker := time.NewTicker(*HousekeepingInterval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -119,10 +126,10 @@ func (c *containerData) housekeeping() {
 			start := time.Now()
 			c.housekeepingTick()
 
-			// Log if housekeeping took longer than 120ms.
+			// Log if housekeeping took too long.
 			duration := time.Since(start)
-			if duration >= 120*time.Millisecond {
-				glog.V(2).Infof("Housekeeping(%s) took %s", c.info.Name, duration)
+			if duration >= longHousekeeping {
+				glog.V(1).Infof("Housekeeping(%s) took %s", c.info.Name, duration)
 			}
 		}
 	}
