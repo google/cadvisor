@@ -42,7 +42,8 @@ const statsRequestedByUI = 60
 func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 	var storageDriver storage.StorageDriver
 	var err error
-	samplesToCache := int(*argDbBufferDuration / manager.HousekeepingTick)
+	// TODO(vmarmol): We shouldn't need the housekeeping interval here and it shouldn't be public.
+	samplesToCache := int(*argDbBufferDuration / *manager.HousekeepingInterval)
 	if samplesToCache < statsRequestedByUI {
 		// The UI requests the most recent 60 stats by default.
 		samplesToCache = statsRequestedByUI

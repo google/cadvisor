@@ -15,6 +15,7 @@
 package manager
 
 import (
+	"flag"
 	"fmt"
 	"path"
 	"strings"
@@ -26,6 +27,8 @@ import (
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
 )
+
+var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Second, "Interval between global housekeepings")
 
 type Manager interface {
 	// Start the manager, blocks forever.
@@ -70,11 +73,13 @@ func New(driver storage.StorageDriver) (Manager, error) {
 }
 
 type manager struct {
-	containers     map[string]*containerData
-	containersLock sync.RWMutex
-	storageDriver  storage.StorageDriver
-	machineInfo    info.MachineInfo
-	versionInfo    info.VersionInfo
+	containers                    map[string]*containerData
+	containersLock                sync.RWMutex
+	storageDriver                 storage.StorageDriver
+	machineInfo                   info.MachineInfo
+	versionInfo                   info.VersionInfo
+	globalHousekeepingInterval    time.Duration
+	containerHousekeepingInterval time.Duration
 }
 
 // Start the container manager.
@@ -91,8 +96,15 @@ func (m *manager) Start() error {
 	}
 	glog.Infof("Recovery completed")
 
+	// Long housekeeping is either 100ms or half of the housekeeping interval.
+	longHousekeeping := 100 * time.Millisecond
+	if *globalHousekeepingInterval/2 < longHousekeeping {
+		longHousekeeping = *globalHousekeepingInterval / 2
+	}
+
 	// Look for new containers in the main housekeeping thread.
-	for t := range time.Tick(time.Second) {
+	ticker := time.Tick(*globalHousekeepingInterval)
+	for t := range ticker {
 		start := time.Now()
 
 		// Check for new containers.
@@ -103,7 +115,7 @@ func (m *manager) Start() error {
 
 		// Log if housekeeping took more than 100ms.
 		duration := time.Since(start)
-		if duration >= 100*time.Millisecond {
+		if duration >= longHousekeeping {
 			glog.V(1).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
 		}
 	}
