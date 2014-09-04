@@ -54,6 +54,15 @@ function drawLineChart(seriesTitles, data, elementId, unit) {
 	ac.draw(dataTable, window.chartOptions);
 }
 
+// Gets the length of the interval in nanoseconds.
+function getInterval(current, previous) {
+	var cur = new Date(current);
+	var prev = new Date(previous);
+
+	// ms -> ns.
+	return (cur.getTime() - prev.getTime()) * 1000000;
+}
+
 // Draw a gauge.
 function drawGauge(elementId, cpuUsage, memoryUsage) {
 	var gauges = [['Label', 'Value']];
@@ -108,11 +117,11 @@ function drawCpuTotalUsage(elementId, machineInfo, stats) {
 	for (var i = 1; i < stats.stats.length; i++) {
 		var cur = stats.stats[i];
 		var prev = stats.stats[i - 1];
+		var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
 
-		// TODO(vmarmol): This assumes we sample every second, use the timestamps.
 		var elements = [];
 		elements.push(cur.timestamp);
-		elements.push((cur.cpu.usage.total - prev.cpu.usage.total) / 1000000000);
+		elements.push((cur.cpu.usage.total - prev.cpu.usage.total) / intervalInNs);
 		data.push(elements);
 	}
 	drawLineChart(titles, data, elementId, "Cores");
@@ -129,12 +138,12 @@ function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
 	for (var i = 1; i < stats.stats.length; i++) {
 		var cur = stats.stats[i];
 		var prev = stats.stats[i - 1];
+		var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
 
 		var elements = [];
 		elements.push(cur.timestamp);
 		for (var j = 0; j < machineInfo.num_cores; j++) {
-			// TODO(vmarmol): This assumes we sample every second, use the timestamps.
-			elements.push((cur.cpu.usage.per_cpu_usage[j] - prev.cpu.usage.per_cpu_usage[j]) / 1000000000);
+			elements.push((cur.cpu.usage.per_cpu_usage[j] - prev.cpu.usage.per_cpu_usage[j]) / intervalInNs);
 		}
 		data.push(elements);
 	}
@@ -148,12 +157,12 @@ function drawCpuUsageBreakdown(elementId, containerInfo) {
 	for (var i = 1; i < containerInfo.stats.length; i++) {
 		var cur = containerInfo.stats[i];
 		var prev = containerInfo.stats[i - 1];
+		var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
 
-		// TODO(vmarmol): This assumes we sample every second, use the timestamps.
 		var elements = [];
 		elements.push(cur.timestamp);
-		elements.push((cur.cpu.usage.user - prev.cpu.usage.user) / 1000000000);
-		elements.push((cur.cpu.usage.system - prev.cpu.usage.system) / 1000000000);
+		elements.push((cur.cpu.usage.user - prev.cpu.usage.user) / intervalInNs);
+		elements.push((cur.cpu.usage.system - prev.cpu.usage.system) / intervalInNs);
 		data.push(elements);
 	}
 	drawLineChart(titles, data, elementId, "Cores");
@@ -167,9 +176,10 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 	if (containerInfo.spec.cpu && containerInfo.stats.length >= 2) {
 		var prev = containerInfo.stats[containerInfo.stats.length - 2];
 		var rawUsage = cur.cpu.usage.total - prev.cpu.usage.total;
+		var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
 
 		// Convert to millicores and take the percentage
-		cpuUsage = Math.round(((rawUsage / 1000000) / (machineInfo.num_cores * 1000)) * 100);
+		cpuUsage = Math.round(((rawUsage / intervalInNs) / machineInfo.num_cores) * 100);
 		if (cpuUsage > 100) {
 			cpuUsage = 100;
 		}
@@ -197,7 +207,6 @@ function drawMemoryUsage(elementId, containerInfo) {
 	for (var i = 0; i < containerInfo.stats.length; i++) {
 		var cur = containerInfo.stats[i];
 
-		// TODO(vmarmol): This assumes we sample every second, use the timestamps.
 		var elements = [];
 		elements.push(cur.timestamp);
 		elements.push(cur.memory.usage / oneMegabyte);
@@ -214,12 +223,12 @@ function drawNetworkBytes(elementId, machineInfo, stats) {
 	for (var i = 1; i < stats.stats.length; i++) {
 		var cur = stats.stats[i];
 		var prev = stats.stats[i - 1];
+		var intervalInSec = getInterval(cur.timestamp, prev.timestamp) / 1000000000;
 
-		// TODO(vmarmol): This assumes we sample every second, use the timestamps.
 		var elements = [];
 		elements.push(cur.timestamp);
-		elements.push(cur.network.tx_bytes - prev.network.tx_bytes);
-		elements.push(cur.network.rx_bytes - prev.network.rx_bytes);
+		elements.push((cur.network.tx_bytes - prev.network.tx_bytes) / intervalInSec);
+		elements.push((cur.network.rx_bytes - prev.network.rx_bytes) / intervalInSec);
 		data.push(elements);
 	}
 	drawLineChart(titles, data, elementId, "Bytes per second");
@@ -232,12 +241,12 @@ function drawNetworkErrors(elementId, machineInfo, stats) {
 	for (var i = 1; i < stats.stats.length; i++) {
 		var cur = stats.stats[i];
 		var prev = stats.stats[i - 1];
+		var intervalInSec = getInterval(cur.timestamp, prev.timestamp) / 1000000000;
 
-		// TODO(vmarmol): This assumes we sample every second, use the timestamps.
 		var elements = [];
 		elements.push(cur.timestamp);
-		elements.push(cur.network.tx_errors - prev.network.tx_errors);
-		elements.push(cur.network.rx_errors - prev.network.rx_errors);
+		elements.push((cur.network.tx_errors - prev.network.tx_errors) / intervalInSec);
+		elements.push((cur.network.rx_errors - prev.network.rx_errors) / intervalInSec);
 		data.push(elements);
 	}
 	drawLineChart(titles, data, elementId, "Errors per second");
