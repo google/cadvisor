@@ -97,7 +97,7 @@ func main() {
 	}()
 
 	glog.Infof("Starting cAdvisor version: %q", info.VERSION)
-	glog.Infof("About to serve on port ", *argPort)
+	glog.Infof("About to serve on port %d", *argPort)
 
 	addr := fmt.Sprintf(":%v", *argPort)
 
