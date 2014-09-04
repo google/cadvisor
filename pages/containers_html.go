@@ -82,13 +82,13 @@ const containersHtmlTemplate = `
 	<ul class="list-group">
           <li class="list-group-item active isolation-title panel-title">Memory</li>
           {{if .Spec.Memory.Reservation}}
-          <li class="list-group-item"><span class="stat-label">Reservation</span> {{printMegabytes .Spec.Memory.Reservation}} <span class="unit-label">MB</span></li>
+          <li class="list-group-item"><span class="stat-label">Reservation</span> {{printSize .Spec.Memory.Reservation}} <span class="unit-label">{{printUnit .Spec.Memory.Reservation}}</span></li>
           {{end}}
           {{if .Spec.Memory.Limit}}
-          <li class="list-group-item"><span class="stat-label">Limit</span> {{printMegabytes .Spec.Memory.Limit}} <span class="unit-label">MB</span></li>
+          <li class="list-group-item"><span class="stat-label">Limit</span> {{printSize .Spec.Memory.Limit}} <span class="unit-label">{{printUnit .Spec.Memory.Limit}}</span></li>
           {{end}}
           {{if .Spec.Memory.SwapLimit}}
-          <li class="list-group-item"><span class="stat-label">Swap Limit</span> {{printMegabytes .Spec.Memory.SwapLimit}} <span class="unit-label">MB</span></li>
+          <li class="list-group-item"><span class="stat-label">Swap Limit</span> {{printSize .Spec.Memory.SwapLimit}} <span class="unit-label">{{printUnit .Spec.Memory.SwapLimit}}</span></li>
           {{end}}
 	</ul>
 	{{end}}

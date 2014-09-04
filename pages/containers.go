@@ -33,12 +33,67 @@ import (
 
 const ContainersPage = "/containers/"
 
+// from http://golang.org/doc/effective_go.html#constants
+type ByteSize float64
+
+const (
+	_ = iota
+	// KB - kilobyte
+	KB ByteSize = 1 << (10 * iota)
+	// MB - megabyte
+	MB
+	// GB - gigabyte
+	GB
+	// TB - terabyte
+	TB
+	// PB - petabyte
+	PB
+	// EB - exabyte
+	EB
+	// ZB - zettabyte
+	ZB
+	// YB - yottabyte
+	YB
+)
+
+func (b ByteSize) Size() string {
+	for _, i := range [...]ByteSize{YB, ZB, EB, PB, TB, GB, MB, KB} {
+		if b >= i {
+			return fmt.Sprintf("%.2f", b/i)
+		}
+	}
+	return fmt.Sprintf("%.2f", b)
+}
+
+func (b ByteSize) Unit() string {
+	switch {
+	case b >= YB:
+		return "YB"
+	case b >= ZB:
+		return "ZB"
+	case b >= EB:
+		return "EB"
+	case b >= PB:
+		return "PB"
+	case b >= TB:
+		return "TB"
+	case b >= GB:
+		return "GB"
+	case b >= MB:
+		return "MB"
+	case b >= KB:
+		return "KB"
+	}
+	return "B"
+}
+
 var funcMap = template.FuncMap{
 	"containerLink":         containerLink,
 	"printMask":             printMask,
 	"printCores":            printCores,
 	"printShares":           printShares,
-	"printMegabytes":        printMegabytes,
+	"printSize":             printSize,
+	"printUnit":             printUnit,
 	"getMemoryUsage":        getMemoryUsage,
 	"getMemoryUsagePercent": getMemoryUsagePercent,
 	"getHotMemoryPercent":   getHotMemoryPercent,
@@ -144,12 +199,18 @@ func toMegabytes(bytes uint64) float64 {
 	return float64(bytes) / (1 << 20)
 }
 
-func printMegabytes(bytes uint64) string {
+func printSize(bytes uint64) string {
 	if bytes >= math.MaxInt64 {
 		return "unlimited"
 	}
-	megabytes := toMegabytes(bytes)
-	return strconv.FormatFloat(megabytes, 'f', 3, 64)
+	return ByteSize(bytes).Size()
+}
+
+func printUnit(bytes uint64) string {
+	if bytes >= math.MaxInt64 {
+		return ""
+	}
+	return ByteSize(bytes).Unit()
 }
 
 func toMemoryPercent(usage uint64, spec *info.ContainerSpec, machine *info.MachineInfo) int {
