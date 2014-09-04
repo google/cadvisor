@@ -53,10 +53,6 @@ type containerData struct {
 }
 
 func (c *containerData) Start() error {
-	// Force the first update.
-	c.housekeepingTick()
-	glog.Infof("Start housekeeping for container %q\n", c.info.Name)
-
 	go c.housekeeping()
 	return nil
 }
@@ -113,6 +109,10 @@ func (c *containerData) housekeeping() {
 	if *HousekeepingInterval/2 < longHousekeeping {
 		longHousekeeping = *HousekeepingInterval / 2
 	}
+
+	// Force the first update.
+	c.housekeepingTick()
+	glog.Infof("Start housekeeping for container %q\n", c.info.Name)
 
 	// Housekeep every second.
 	ticker := time.NewTicker(*HousekeepingInterval)
