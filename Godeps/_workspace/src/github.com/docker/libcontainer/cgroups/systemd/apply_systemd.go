@@ -166,7 +166,7 @@ func (c *systemdCgroup) Paths() (map[string]string, error) {
 		subsystemPath, err := getSubsystemPath(c.cgroup, sysname)
 		if err != nil {
 			// Don't fail if a cgroup hierarchy was not found, just skip this subsystem
-			if err == cgroups.ErrNotFound {
+			if cgroups.IsNotFound(err) {
 				continue
 			}
 
@@ -274,7 +274,7 @@ func GetStats(c *cgroups.Cgroup) (*cgroups.Stats, error) {
 		subsystemPath, err := getSubsystemPath(c, sysname)
 		if err != nil {
 			// Don't fail if a cgroup hierarchy was not found, just skip this subsystem
-			if err == cgroups.ErrNotFound {
+			if cgroups.IsNotFound(err) {
 				continue
 			}
 
