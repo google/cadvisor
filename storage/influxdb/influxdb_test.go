@@ -1,4 +1,3 @@
-//+build ignore
 // Copyright 2014 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// +build influxdb_test
+// To run unit test: go test -tags influxdb_test
 
 package influxdb
 
@@ -125,7 +127,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 		t.Fatal(err)
 	}
 	// delete all data by the end of the call
-	defer client.Query(deleteAll)
+	// defer client.Query(deleteAll)
 
 	driver, err := New(machineName,
 		tablename,
@@ -168,16 +170,8 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	f(testDriver, t)
 }
 
-func TestSampleCpuUsage(t *testing.T) {
-	runStorageTest(test.StorageDriverTestSampleCpuUsage, t, kCacheDuration)
-}
-
 func TestRetrievePartialRecentStats(t *testing.T) {
 	runStorageTest(test.StorageDriverTestRetrievePartialRecentStats, t, 20)
-}
-
-func TestSamplesWithoutSample(t *testing.T) {
-	runStorageTest(test.StorageDriverTestSamplesWithoutSample, t, kCacheDuration)
 }
 
 func TestRetrieveAllRecentStats(t *testing.T) {
@@ -186,34 +180,4 @@ func TestRetrieveAllRecentStats(t *testing.T) {
 
 func TestNoRecentStats(t *testing.T) {
 	runStorageTest(test.StorageDriverTestNoRecentStats, t, kCacheDuration)
-}
-
-func TestNoSamples(t *testing.T) {
-	runStorageTest(test.StorageDriverTestNoSamples, t, kCacheDuration)
-}
-
-func TestPercentiles(t *testing.T) {
-	runStorageTest(test.StorageDriverTestPercentiles, t, kCacheDuration)
-}
-
-func TestMaxMemoryUsage(t *testing.T) {
-	runStorageTest(test.StorageDriverTestMaxMemoryUsage, t, kCacheDuration)
-}
-
-func TestPercentilesWithoutSample(t *testing.T) {
-	runStorageTest(test.StorageDriverTestPercentilesWithoutSample, t, kCacheDuration)
-}
-
-func TestPercentilesWithoutStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestPercentilesWithoutStats, t, kCacheDuration)
-}
-
-func TestRetrieveZeroStats(t *testing.T) {
-	t.SkipNow()
-	runStorageTest(test.StorageDriverTestRetrieveZeroRecentStats, t, kCacheDuration)
-}
-
-func TestRetrieveZeroSamples(t *testing.T) {
-	t.SkipNow()
-	runStorageTest(test.StorageDriverTestRetrieveZeroSamples, t, kCacheDuration)
 }
