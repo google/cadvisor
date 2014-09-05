@@ -132,6 +132,23 @@ func Register(factory info.MachineInfoFactory) error {
 			}
 		}
 	}
+
+	// Check that the libcontainer execdriver is used.
+	information, err := client.Info()
+	if err != nil {
+		return fmt.Errorf("failed to detect Docker info: %v", err)
+	}
+	usesNativeDriver := false
+	for _, val := range *information {
+		if strings.Contains(val, "ExecutionDriver=") && strings.Contains(val, "native") {
+			usesNativeDriver = true
+			break
+		}
+	}
+	if !usesNativeDriver {
+		return fmt.Errorf("Docker found, but not using native exec driver")
+	}
+
 	f := &dockerFactory{
 		machineInfoFactory: factory,
 		useSystemd:         systemd.UseSystemd(),
