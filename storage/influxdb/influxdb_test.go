@@ -127,7 +127,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 		t.Fatal(err)
 	}
 	// delete all data by the end of the call
-	// defer client.Query(deleteAll)
+	defer client.Query(deleteAll)
 
 	driver, err := New(machineName,
 		tablename,
