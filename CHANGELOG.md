@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 (2014-09-05)
+- Support for Docker with LXC backend.
+- Added BigQuery storage driver.
+- Performance and stability fixes for InfluxDB storage driver.
+- UI fixes and improvements.
+- Configurable stats gathering interval (default: 1s).
+- Improvements to startup and CPU utilization.
+- Added /healthz endpoint for determining whether cAdvisor is healthy.
+- Bugfixes and performance improvements.
+
 ## 0.2.2 (2014-08-13)
 - Improvements to influxDB plugin.
 	Table name is now 'stats'.
