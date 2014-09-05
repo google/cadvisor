@@ -106,7 +106,6 @@ func (self *influxdbStorage) containerStatsToValues(
 		values = append(values, stats.Network.TxErrors)
 	}
 
-	// DO NOT ADD ANY STATS BELOW THAT ARE NOT PART OF SAMPLING
 	return columns, values
 }
 
@@ -155,14 +154,11 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 		switch {
 		case col == colTimestamp:
 			if f64sec, ok := v.(float64); ok && stats.Timestamp.IsZero() {
-				// now := time.Now()
-				// fmt.Printf("time now: %vns; %vs; infludb time: %v\n", now.UnixNano(), now.Unix(), int64(f64sec))
 				stats.Timestamp = time.Unix(int64(f64sec)/1E3, int64(f64sec)%1E3*1E6)
 			}
 		case col == colTimestampStr:
 			if str, ok := v.(string); ok {
 				stats.Timestamp, err = time.Parse(time.RFC3339Nano, str)
-				fmt.Printf("timestamp: %v; str: %v\n", stats.Timestamp, str)
 			}
 		case col == colMachineName:
 			if m, ok := v.(string); ok {
@@ -252,7 +248,6 @@ func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]
 	// so we need to go through from the last one to the first one.
 	for i := len(series) - 1; i >= 0; i-- {
 		s := series[i]
-		fmt.Printf("query=%v; len(s.Points) %+v\n", query, len(s.Points))
 
 		for j := len(s.Points) - 1; j >= 0; j-- {
 			values := s.Points[j]
