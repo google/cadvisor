@@ -63,6 +63,11 @@ function getInterval(current, previous) {
 	return (cur.getTime() - prev.getTime()) * 1000000;
 }
 
+// Checks if the specified stats include the specified resource.
+function hasResource(stats, resource) {
+	return stats.stats.length > 0 && stats.stats[0][resource];
+}
+
 // Draw a gauge.
 function drawGauge(elementId, cpuUsage, memoryUsage) {
 	var gauges = [['Label', 'Value']];
@@ -112,6 +117,10 @@ function getStats(containerName, callback) {
 
 // Draw the graph for CPU usage.
 function drawCpuTotalUsage(elementId, machineInfo, stats) {
+	if (!hasResource(stats, "cpu")) {
+		return;
+	}
+
 	var titles = ["Time", "Total"];
 	var data = [];
 	for (var i = 1; i < stats.stats.length; i++) {
@@ -129,6 +138,10 @@ function drawCpuTotalUsage(elementId, machineInfo, stats) {
 
 // Draw the graph for per-core CPU usage.
 function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
+	if (!hasResource(stats, "cpu")) {
+		return;
+	}
+
 	// Add a title for each core.
 	var titles = ["Time"];
 	for (var i = 0; i < machineInfo.num_cores; i++) {
@@ -152,6 +165,10 @@ function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
 
 // Draw the graph for CPU usage breakdown.
 function drawCpuUsageBreakdown(elementId, containerInfo) {
+	if (!hasResource(containerInfo, "cpu")) {
+		return;
+	}
+
 	var titles = ["Time", "User", "Kernel"];
 	var data = [];
 	for (var i = 1; i < containerInfo.stats.length; i++) {
@@ -202,6 +219,10 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 var oneMegabyte = 1024 * 1024;
 
 function drawMemoryUsage(elementId, containerInfo) {
+	if (!hasResource(containerInfo, "memory")) {
+		return;
+	}
+
 	var titles = ["Time", "Total", "Hot"];
 	var data = [];
 	for (var i = 0; i < containerInfo.stats.length; i++) {
@@ -218,6 +239,10 @@ function drawMemoryUsage(elementId, containerInfo) {
 
 // Draw the graph for network tx/rx bytes.
 function drawNetworkBytes(elementId, machineInfo, stats) {
+	if (!hasResource(stats, "network")) {
+		return;
+	}
+
 	var titles = ["Time", "Tx bytes", "Rx bytes"];
 	var data = [];
 	for (var i = 1; i < stats.stats.length; i++) {
@@ -236,6 +261,10 @@ function drawNetworkBytes(elementId, machineInfo, stats) {
 
 // Draw the graph for network errors
 function drawNetworkErrors(elementId, machineInfo, stats) {
+	if (!hasResource(stats, "network")) {
+		return;
+	}
+
 	var titles = ["Time", "Tx", "Rx"];
 	var data = [];
 	for (var i = 1; i < stats.stats.length; i++) {
