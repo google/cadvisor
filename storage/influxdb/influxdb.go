@@ -37,7 +37,6 @@ type influxdbStorage struct {
 
 const (
 	colTimestamp          string = "time"
-	colTimestampStr       string = "timestamp_str"
 	colMachineName        string = "machine"
 	colContainerName      string = "container_name"
 	colCpuCumulativeUsage string = "cpu_cumulative_usage"
@@ -60,12 +59,9 @@ func (self *influxdbStorage) containerStatsToValues(
 	stats *info.ContainerStats,
 ) (columns []string, values []interface{}) {
 
-	columns = append(columns, colTimestampStr)
-	values = append(values, stats.Timestamp.Format(time.RFC3339Nano))
-
 	// Timestamp
 	columns = append(columns, colTimestamp)
-	values = append(values, stats.Timestamp.Unix())
+	values = append(values, stats.Timestamp.UnixNano()/1E3)
 
 	// Machine name
 	columns = append(columns, colMachineName)
@@ -156,10 +152,6 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 			if f64sec, ok := v.(float64); ok && stats.Timestamp.IsZero() {
 				stats.Timestamp = time.Unix(int64(f64sec)/1E3, int64(f64sec)%1E3*1E6)
 			}
-		case col == colTimestampStr:
-			if str, ok := v.(string); ok {
-				stats.Timestamp, err = time.Parse(time.RFC3339Nano, str)
-			}
 		case col == colMachineName:
 			if m, ok := v.(string); ok {
 				if m != self.machineName {
@@ -219,7 +211,7 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 		}
 	}()
 	if len(seriesToFlush) > 0 {
-		err := self.client.WriteSeriesWithTimePrecision(seriesToFlush, influxdb.Second)
+		err := self.client.WriteSeriesWithTimePrecision(seriesToFlush, influxdb.Microsecond)
 		if err != nil {
 			return fmt.Errorf("failed to write stats to influxDb - %s", err)
 		}
