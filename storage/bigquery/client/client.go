@@ -218,7 +218,13 @@ func (c *Client) InsertRow(rowData map[string]interface{}) error {
 	}
 
 	if len(result.InsertErrors) > 0 {
-		return fmt.Errorf("Insertion for %d rows failed")
+		errstr := fmt.Sprintf("Insertion for %d rows failed\n", len(result.InsertErrors))
+		for _, errors := range result.InsertErrors {
+			for _, errorproto := range errors.Errors {
+				errstr += fmt.Sprintf("Error inserting row %d: %+v\n", errors.Index, errorproto)
+			}
+		}
+		return fmt.Errorf(errstr)
 	}
 	return nil
 }
