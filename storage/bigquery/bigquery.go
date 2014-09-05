@@ -436,7 +436,7 @@ func (self *bigqueryStorage) RecentStats(containerName string, numStats int) ([]
 }
 
 func (self *bigqueryStorage) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	panic("will be removed")
+	return nil, fmt.Errorf("will be removed")
 }
 
 func (self *bigqueryStorage) Close() error {
@@ -450,7 +450,7 @@ func (self *bigqueryStorage) Percentiles(
 	cpuUsagePercentiles []int,
 	memUsagePercentiles []int,
 ) (*info.ContainerStatsPercentiles, error) {
-	panic("will be removed")
+	return nil, fmt.Errorf("will be removed")
 }
 
 // Create a new bigquery storage driver.

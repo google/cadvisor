@@ -270,7 +270,7 @@ func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]
 }
 
 func (self *influxdbStorage) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	panic("should not implement")
+	return nil, fmt.Errorf("will be removed")
 }
 
 func (self *influxdbStorage) Close() error {
@@ -283,7 +283,7 @@ func (self *influxdbStorage) Percentiles(
 	cpuUsagePercentiles []int,
 	memUsagePercentiles []int,
 ) (*info.ContainerStatsPercentiles, error) {
-	panic("should not implement")
+	return nil, fmt.Errorf("will be removed")
 }
 
 // Returns a new influxdb series.
