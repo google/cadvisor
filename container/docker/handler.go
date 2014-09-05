@@ -42,12 +42,12 @@ var fileNotFound = errors.New("file not found")
 type dockerContainerHandler struct {
 	client               *docker.Client
 	name                 string
-	parent               string
 	id                   string
 	aliases              []string
 	machineInfoFactory   info.MachineInfoFactory
 	useSystemd           bool
 	libcontainerStateDir string
+	cgroup               cgroups.Cgroup
 }
 
 func newDockerContainerHandler(
@@ -63,12 +63,15 @@ func newDockerContainerHandler(
 		machineInfoFactory:   machineInfoFactory,
 		useSystemd:           useSystemd,
 		libcontainerStateDir: path.Join(dockerRootDir, pathToLibcontainerState),
+		cgroup: cgroups.Cgroup{
+			Parent: "/",
+			Name:   name,
+		},
 	}
 	if handler.isDockerRoot() {
 		return handler, nil
 	}
-	id := path.Base(name)
-	handler.parent = path.Dir(name)
+	id := containerNameToDockerId(name, useSystemd)
 	handler.id = id
 	ctnr, err := client.InspectContainer(id)
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -77,6 +80,25 @@ func newDockerContainerHandler(
 	}
 	handler.aliases = append(handler.aliases, path.Join("/docker", ctnr.Name))
 	return handler, nil
+}
+
+func containerNameToDockerId(name string, useSystemd bool) string {
+	id := path.Base(name)
+
+	// Turn systemd cgroup name into Docker ID.
+	if useSystemd {
+		const systemdDockerPrefix = "docker-"
+		if strings.HasPrefix(id, systemdDockerPrefix) {
+			id = id[len(systemdDockerPrefix):]
+		}
+
+		const systemdScopeSuffix = ".scope"
+		if strings.HasSuffix(id, systemdScopeSuffix) {
+			id = id[:len(id)-len(systemdScopeSuffix)]
+		}
+	}
+
+	return id
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
@@ -112,8 +134,7 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontain
 	config = retConfig
 
 	// Replace cgroup parent and name with our own since we may be running in a different context.
-	config.Cgroups.Parent = self.parent
-	config.Cgroups.Name = self.id
+	*config.Cgroups = self.cgroup
 
 	return
 }
@@ -199,14 +220,6 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 	if self.isDockerRoot() {
 		return &info.ContainerStats{}, nil
 	}
-	config, err := self.readLibcontainerConfig()
-	if err != nil {
-		if err == fileNotFound {
-			glog.Errorf("Libcontainer config not found for container %q", self.name)
-			return &info.ContainerStats{}, nil
-		}
-		return
-	}
 	state, err := self.readLibcontainerState()
 	if err != nil {
 		if err == fileNotFound {
@@ -216,7 +229,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 		return
 	}
 
-	return containerLibcontainer.GetStats(config, state)
+	return containerLibcontainer.GetStats(&self.cgroup, state)
 }
 
 func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
@@ -258,11 +271,7 @@ func (self *dockerContainerHandler) ListThreads(listType container.ListType) ([]
 }
 
 func (self *dockerContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	c := &cgroups.Cgroup{
-		Parent: self.parent,
-		Name:   self.id,
-	}
-	return fs.GetPids(c)
+	return fs.GetPids(&self.cgroup)
 }
 
 func (self *dockerContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {

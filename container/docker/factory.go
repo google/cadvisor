@@ -17,7 +17,6 @@ package docker
 import (
 	"flag"
 	"fmt"
-	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -78,11 +77,12 @@ func (self *dockerFactory) CanHandle(name string) bool {
 	} else if !strings.HasPrefix(name, "/docker/") {
 		return false
 	}
+
 	// Check if the container is known to docker and it is active.
-	id := path.Base(name)
-	ctnr, err := self.client.InspectContainer(id)
+	id := containerNameToDockerId(name, self.useSystemd)
+
 	// We assume that if Inspect fails then the container is not known to docker.
-	// TODO(vishh): Detect lxc containers and avoid handling them.
+	ctnr, err := self.client.InspectContainer(id)
 	if err != nil || !ctnr.State.Running {
 		return false
 	}
@@ -157,7 +157,6 @@ func Register(factory info.MachineInfoFactory) error {
 	if f.useSystemd {
 		glog.Infof("System is using systemd")
 	}
-	glog.Infof("Registering Docker factory")
 	container.RegisterContainerHandlerFactory(f)
 	return nil
 }
