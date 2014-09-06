@@ -150,7 +150,7 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 		switch {
 		case col == colTimestamp:
 			if f64sec, ok := v.(float64); ok && stats.Timestamp.IsZero() {
-				stats.Timestamp = time.Unix(int64(f64sec)/1E3, int64(f64sec)%1E3*1E6)
+				stats.Timestamp = time.Unix(int64(f64sec)/1E3, (int64(f64sec)%1E3)*1E6)
 			}
 		case col == colMachineName:
 			if m, ok := v.(string); ok {
