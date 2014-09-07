@@ -16,6 +16,7 @@ package cache
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
@@ -57,7 +58,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 	for N := 10; N < maxSize; N += 10 {
 		testDriver := &cacheTestStorageDriver{}
 		backend := memory.New(N*2, N*2)
-		testDriver.base = MemoryCache(N, N, backend)
+		testDriver.base = MemoryCache(N, N, 100*time.Millisecond, backend)
 		f(testDriver, t)
 	}
 
@@ -83,7 +84,7 @@ func TestPercentiles(t *testing.T) {
 	N := 100
 	testDriver := &cacheTestStorageDriver{}
 	backend := memory.New(N*2, N*2)
-	testDriver.base = MemoryCache(N, N, backend)
+	testDriver.base = MemoryCache(N, N, 100*time.Millisecond, backend)
 	test.StorageDriverTestPercentiles(testDriver, t)
 }
 
