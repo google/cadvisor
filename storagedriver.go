@@ -24,7 +24,6 @@ import (
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/bigquery"
-	"github.com/google/cadvisor/storage/cache"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/memory"
 )
@@ -39,8 +38,9 @@ var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*tim
 
 const statsRequestedByUI = 60
 
-func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
-	var storageDriver storage.StorageDriver
+func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
+	var storageDriver *memory.InMemoryStorage
+	var backendStorage storage.StorageDriver
 	var err error
 	// TODO(vmarmol): We shouldn't need the housekeeping interval here and it shouldn't be public.
 	samplesToCache := int(*argDbBufferDuration / *manager.HousekeepingInterval)
@@ -49,12 +49,6 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 		samplesToCache = statsRequestedByUI
 	}
 	switch driverName {
-	case "":
-		// empty string by default is the in memory store
-		fallthrough
-	case "memory":
-		storageDriver = memory.New(*argSampleSize, int(*argDbBufferDuration))
-		return storageDriver, nil
 	case "influxdb":
 		var hostname string
 		hostname, err = os.Hostname()
@@ -62,7 +56,7 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			return nil, err
 		}
 
-		storageDriver, err = influxdb.New(
+		backendStorage, err = influxdb.New(
 			hostname,
 			"stats",
 			*argDbName,
@@ -74,22 +68,18 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 			// TODO(monnand): One hour? Or user-defined?
 			1*time.Hour,
 		)
-		glog.V(2).Infof("Caching %d recent stats in memory\n", samplesToCache)
-		storageDriver = cache.MemoryCache(samplesToCache, samplesToCache, storageDriver)
 	case "bigquery":
 		var hostname string
 		hostname, err = os.Hostname()
 		if err != nil {
 			return nil, err
 		}
-		storageDriver, err = bigquery.New(
+		backendStorage, err = bigquery.New(
 			hostname,
 			"cadvisor",
 			*argDbName,
 			1*time.Hour,
 		)
-		glog.V(2).Infof("Caching %d recent stats in memory\n", samplesToCache)
-		storageDriver = cache.MemoryCache(samplesToCache, samplesToCache, storageDriver)
 
 	default:
 		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)
@@ -97,5 +87,7 @@ func NewStorageDriver(driverName string) (storage.StorageDriver, error) {
 	if err != nil {
 		return nil, err
 	}
+	glog.Infof("Caching %d recent stats in memory; using %v storage driver\n", samplesToCache, driverName)
+	storageDriver = memory.New(samplesToCache, samplesToCache, backendStorage)
 	return storageDriver, nil
 }

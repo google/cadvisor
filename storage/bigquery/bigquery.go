@@ -17,7 +17,6 @@ package bigquery
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	bigquery "code.google.com/p/google-api-go-client/bigquery/v2"
@@ -437,25 +436,7 @@ func (self *bigqueryStorage) RecentStats(containerName string, numStats int) ([]
 }
 
 func (self *bigqueryStorage) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	if numSamples == 0 {
-		return nil, nil
-	}
-	header, rows, err := self.getRecentRows(containerName, numSamples)
-	if err != nil {
-		return nil, err
-	}
-	sampleList := make([]*info.ContainerStatsSample, 0, len(rows))
-	for _, row := range rows {
-		sample, err := self.valuesToContainerSample(header, row)
-		if err != nil {
-			return nil, err
-		}
-		if sample == nil {
-			continue
-		}
-		sampleList = append(sampleList, sample)
-	}
-	return sampleList, nil
+	return nil, fmt.Errorf("will be removed")
 }
 
 func (self *bigqueryStorage) Close() error {
@@ -469,74 +450,7 @@ func (self *bigqueryStorage) Percentiles(
 	cpuUsagePercentiles []int,
 	memUsagePercentiles []int,
 ) (*info.ContainerStatsPercentiles, error) {
-	selectedCol := make([]string, 0, len(cpuUsagePercentiles)+len(memUsagePercentiles)+1)
-
-	selectedCol = append(selectedCol, fmt.Sprintf("max(%v)", colMemoryUsage))
-	for _, p := range cpuUsagePercentiles {
-		selectedCol = append(selectedCol, fmt.Sprintf("percentile(%v, %v)", colCpuInstantUsage, p))
-	}
-	for _, p := range memUsagePercentiles {
-		selectedCol = append(selectedCol, fmt.Sprintf("percentile(%v, %v)", colMemoryUsage, p))
-	}
-
-	tableName, err := self.client.GetTableName()
-	if err != nil {
-		return nil, err
-	}
-	query := fmt.Sprintf("SELECT %v FROM %v WHERE %v='%v' AND %v='%v' AND timestamp > DATE_ADD(CURRENT_TIMESTAMP(), -%v, 'SECOND')",
-		strings.Join(selectedCol, ","),
-		tableName,
-		colContainerName,
-		containerName,
-		colMachineName,
-		self.machineName,
-		self.windowLen.Seconds(),
-	)
-	_, rows, err := self.client.Query(query)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(rows) != 1 {
-		return nil, nil
-	}
-
-	point := rows[0]
-
-	ret := new(info.ContainerStatsPercentiles)
-	ret.MaxMemoryUsage, err = convertToUint64(point[0])
-	if err != nil {
-		return nil, fmt.Errorf("invalid max memory usage: %v", err)
-	}
-	retrievedCpuPercentiles := point[1 : 1+len(cpuUsagePercentiles)]
-	for i, p := range cpuUsagePercentiles {
-		v, err := convertToUint64(retrievedCpuPercentiles[i])
-		if err != nil {
-			return nil, fmt.Errorf("invalid cpu usage: %v", err)
-		}
-		ret.CpuUsagePercentiles = append(
-			ret.CpuUsagePercentiles,
-			info.Percentile{
-				Percentage: p,
-				Value:      v,
-			},
-		)
-	}
-	retrievedMemoryPercentiles := point[1+len(cpuUsagePercentiles):]
-	for i, p := range memUsagePercentiles {
-		v, err := convertToUint64(retrievedMemoryPercentiles[i])
-		if err != nil {
-			return nil, fmt.Errorf("invalid memory usage: %v", err)
-		}
-		ret.MemoryUsagePercentiles = append(
-			ret.MemoryUsagePercentiles,
-			info.Percentile{
-				Percentage: p,
-				Value:      v,
-			},
-		)
-	}
-	return ret, nil
+	return nil, fmt.Errorf("will be removed")
 }
 
 // Create a new bigquery storage driver.

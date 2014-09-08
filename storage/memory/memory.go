@@ -151,6 +151,7 @@ type InMemoryStorage struct {
 	containerStorageMap map[string]*containerStorage
 	maxNumSamples       int
 	maxNumStats         int
+	backend             storage.StorageDriver
 }
 
 func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
@@ -165,6 +166,13 @@ func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.C
 			self.containerStorageMap[ref.Name] = cstore
 		}
 	}()
+
+	if self.backend != nil {
+		// TODO(monnand): To deal with long delay write operations, we
+		// may want to start a pool of goroutines to do write
+		// operations.
+		self.backend.AddStats(ref, stats)
+	}
 	return cstore.AddStats(stats)
 }
 
@@ -231,11 +239,16 @@ func (self *InMemoryStorage) Close() error {
 	return nil
 }
 
-func New(maxNumSamples, maxNumStats int) storage.StorageDriver {
+func New(
+	maxNumSamples,
+	maxNumStats int,
+	backend storage.StorageDriver,
+) *InMemoryStorage {
 	ret := &InMemoryStorage{
 		containerStorageMap: make(map[string]*containerStorage, 32),
 		maxNumSamples:       maxNumSamples,
 		maxNumStats:         maxNumStats,
+		backend:             backend,
 	}
 	return ret
 }
