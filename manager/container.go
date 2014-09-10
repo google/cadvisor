@@ -103,6 +103,14 @@ func NewContainerData(containerName string, driver storage.StorageDriver) (*cont
 	return cont, nil
 }
 
+// Determine when the next housekeeping should occur.
+func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Time {
+	// For now, we just want to housekeep even HousekeepingInterval.
+	// TODO(vmarmol): Housekeep less if there are no change in stats.
+	// TODO(vishnuk): Housekeep less if there are no processes.
+	return lastHousekeeping.Add(*HousekeepingInterval)
+}
+
 func (c *containerData) housekeeping() {
 	// Long housekeeping is either 100ms or half of the housekeeping interval.
 	longHousekeeping := 100 * time.Millisecond
@@ -110,19 +118,16 @@ func (c *containerData) housekeeping() {
 		longHousekeeping = *HousekeepingInterval / 2
 	}
 
-	// Force the first update.
-	c.housekeepingTick()
-	glog.Infof("Start housekeeping for container %q\n", c.info.Name)
-
 	// Housekeep every second.
-	ticker := time.NewTicker(*HousekeepingInterval)
-	defer ticker.Stop()
+	glog.Infof("Start housekeeping for container %q\n", c.info.Name)
+	lastHousekeeping := time.Now()
 	for {
 		select {
 		case <-c.stop:
 			// Stop housekeeping when signaled.
 			return
-		case <-ticker.C:
+		default:
+			// Perform housekeeping.
 			start := time.Now()
 			c.housekeepingTick()
 
@@ -132,6 +137,14 @@ func (c *containerData) housekeeping() {
 				glog.V(1).Infof("Housekeeping(%s) took %s", c.info.Name, duration)
 			}
 		}
+
+		// Schedule the next housekeeping. Sleep until that time.
+		nextHousekeeping := c.nextHousekeeping(lastHousekeeping)
+		if time.Now().Before(nextHousekeeping) {
+			time.Sleep(nextHousekeeping.Sub(time.Now()))
+		}
+		lastHousekeeping = nextHousekeeping
+
 	}
 }
 
