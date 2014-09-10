@@ -19,11 +19,31 @@ google.load("visualization", "1", {packages: ["corechart", "gauge"]});
 
 // Draw a line chart.
 function drawLineChart(seriesTitles, data, elementId, unit) {
-	// Convert the first column to a Date.
+	var min = Infinity;
+	var max = -Infinity;
 	for (var i = 0; i < data.length; i++) {
+		// Convert the first column to a Date.
 		if (data[i] != null) {
 			data[i][0] = new Date(data[i][0]);
 		}
+
+		// Find min, max.
+		for (var j = 1; j < data[i].length; j++) {
+			var val = data[i][j];
+			if (val < min) {
+				min = val;
+			}
+			if (val > max) {
+				max = val;
+			}
+		}
+	}
+
+	// We don't want to show any values less than 0 so cap the min value at that.
+	// At the same time, show 10% of the graph below the min value if we can.
+	var minWindow = min - (max - min) / 10;
+	if (minWindow < 0) {
+		minWindow = 0;
 	}
 
 	// Add the definition of each column and the necessary data.
@@ -35,23 +55,28 @@ function drawLineChart(seriesTitles, data, elementId, unit) {
 	dataTable.addRows(data);
 
 	// Create and draw the visualization.
-	var ac = null;
-	var opts = null;
-	// TODO(vmarmol): Remove this hack, it is to support the old charts and the new charts during the transition.
-	if (window.charts) {
-		if (!(elementId in window.charts)) {
-			ac = new google.visualization.LineChart(document.getElementById(elementId));
-			window.charts[elementId] = ac;
-		}
-		ac = window.charts[elementId];
-		opts = window.chartOptions;
-	} else {
-		ac = new google.visualization.LineChart(document.getElementById(elementId));
-		opts = {};
+	if (!(elementId in window.charts)) {
+		window.charts[elementId] = new google.visualization.LineChart(document.getElementById(elementId));
 	}
-	opts.vAxis = {title: unit};
-	opts.legend = {position: 'bottom'};
-	ac.draw(dataTable, window.chartOptions);
+
+	// TODO(vmarmol): Look into changing the view window to get a smoother animation.
+	var opts = {
+		curveType: 'function',
+		height: 300,
+		legend:{position:"none"},
+		focusTarget: "category",
+		vAxis: {
+			title: unit,
+			viewWindow: {
+				min: minWindow,
+			},
+		},
+		legend: {
+			position: 'bottom',
+		},
+	};
+
+	window.charts[elementId].draw(dataTable, opts);
 }
 
 // Gets the length of the interval in nanoseconds.
@@ -79,7 +104,7 @@ function drawGauge(elementId, cpuUsage, memoryUsage) {
 	}
 	// Create and populate the data table.
 	var data = google.visualization.arrayToDataTable(gauges);
-	
+
 	// Create and draw the visualization.
 	var options = {
 		width: 400, height: 120,
@@ -341,13 +366,6 @@ function startPage(containerName, hasCpu, hasMemory) {
 		return;
 	}
 
-	// TODO(vmarmol): Look into changing the view window to get a smoother animation.
-	window.chartOptions = {
-		curveType: 'function',
-		height: 300,
-		legend:{position:"none"},
-		focusTarget: "category",
-	};
 	window.charts = {};
 
 	// Get machine info, then get the stats every 1s.
