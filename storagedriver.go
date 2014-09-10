@@ -49,6 +49,8 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 		samplesToCache = statsRequestedByUI
 	}
 	switch driverName {
+	case "":
+		backendStorage = nil
 	case "influxdb":
 		var hostname string
 		hostname, err = os.Hostname()
@@ -87,7 +89,7 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	glog.Infof("Caching %d recent stats in memory; using %v storage driver\n", samplesToCache, driverName)
+	glog.Infof("Caching %d recent stats in memory; using \"%v\" storage driver\n", samplesToCache, driverName)
 	storageDriver = memory.New(samplesToCache, samplesToCache, backendStorage)
 	return storageDriver, nil
 }
