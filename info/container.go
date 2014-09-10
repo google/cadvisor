@@ -330,6 +330,11 @@ func (a *ContainerStats) Eq(b *ContainerStats) bool {
 	if !timeEq(a.Timestamp, b.Timestamp, timePrecision) {
 		return false
 	}
+	return a.StatsEq(b)
+}
+
+// Checks equality of the stats values.
+func (a *ContainerStats) StatsEq(b *ContainerStats) bool {
 	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
 		return false
 	}

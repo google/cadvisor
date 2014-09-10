@@ -30,6 +30,7 @@ import (
 
 // Housekeeping interval.
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
+var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
 
 // Internal mirror of the external data structure.
 type containerStat struct {
@@ -43,10 +44,11 @@ type containerInfo struct {
 }
 
 type containerData struct {
-	handler       container.ContainerHandler
-	info          containerInfo
-	storageDriver storage.StorageDriver
-	lock          sync.Mutex
+	handler              container.ContainerHandler
+	info                 containerInfo
+	storageDriver        storage.StorageDriver
+	lock                 sync.Mutex
+	housekeepingInterval time.Duration
 
 	// Tells the container to stop.
 	stop chan bool
@@ -98,6 +100,7 @@ func NewContainerData(containerName string, driver storage.StorageDriver) (*cont
 	cont.info.Name = ref.Name
 	cont.info.Aliases = ref.Aliases
 	cont.storageDriver = driver
+	cont.housekeepingInterval = *HousekeepingInterval
 	cont.stop = make(chan bool, 1)
 
 	return cont, nil
@@ -105,10 +108,26 @@ func NewContainerData(containerName string, driver storage.StorageDriver) (*cont
 
 // Determine when the next housekeeping should occur.
 func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Time {
-	// For now, we just want to housekeep even HousekeepingInterval.
-	// TODO(vmarmol): Housekeep less if there are no change in stats.
-	// TODO(vishnuk): Housekeep less if there are no processes.
-	return lastHousekeeping.Add(*HousekeepingInterval)
+	stats, err := self.storageDriver.RecentStats(self.info.Name, 2)
+	if err != nil {
+		glog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
+	} else if len(stats) == 2 {
+		// TODO(vishnuk): Use no processes as a signal.
+		// Raise the interval if usage hasn't changed in the last housekeeping.
+		if stats[0].StatsEq(stats[1]) && (self.housekeepingInterval < *maxHousekeepingInterval) {
+			self.housekeepingInterval *= 2
+			if self.housekeepingInterval > *maxHousekeepingInterval {
+				self.housekeepingInterval = *maxHousekeepingInterval
+			}
+			glog.V(2).Infof("Raising housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
+		} else if self.housekeepingInterval != *HousekeepingInterval {
+			// Lower interval back to the baseline.
+			self.housekeepingInterval = *HousekeepingInterval
+			glog.V(1).Infof("Lowering housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
+		}
+	}
+
+	return lastHousekeeping.Add(self.housekeepingInterval)
 }
 
 func (c *containerData) housekeeping() {
@@ -134,7 +153,7 @@ func (c *containerData) housekeeping() {
 			// Log if housekeeping took too long.
 			duration := time.Since(start)
 			if duration >= longHousekeeping {
-				glog.V(1).Infof("Housekeeping(%s) took %s", c.info.Name, duration)
+				glog.V(2).Infof("Housekeeping(%s) took %s", c.info.Name, duration)
 			}
 		}
 
