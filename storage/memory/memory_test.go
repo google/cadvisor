@@ -35,32 +35,9 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
 
 	for N := 10; N < maxSize; N += 10 {
 		testDriver := &memoryTestStorageDriver{}
-		testDriver.StorageDriver = New(N, N, nil)
+		testDriver.StorageDriver = New(N, nil)
 		f(testDriver, t)
 	}
-}
-
-func TestMaxMemoryUsage(t *testing.T) {
-	runStorageTest(test.StorageDriverTestMaxMemoryUsage, t)
-}
-
-func TestSampleCpuUsage(t *testing.T) {
-	runStorageTest(test.StorageDriverTestSampleCpuUsage, t)
-}
-
-func TestSamplesWithoutSample(t *testing.T) {
-	runStorageTest(test.StorageDriverTestSamplesWithoutSample, t)
-}
-
-func TestPercentilesWithoutSample(t *testing.T) {
-	runStorageTest(test.StorageDriverTestPercentilesWithoutSample, t)
-}
-
-func TestPercentiles(t *testing.T) {
-	N := 100
-	testDriver := &memoryTestStorageDriver{}
-	testDriver.StorageDriver = New(N, N, nil)
-	test.StorageDriverTestPercentiles(testDriver, t)
 }
 
 func TestRetrievePartialRecentStats(t *testing.T) {
@@ -75,18 +52,6 @@ func TestNoRecentStats(t *testing.T) {
 	runStorageTest(test.StorageDriverTestNoRecentStats, t)
 }
 
-func TestNoSamples(t *testing.T) {
-	runStorageTest(test.StorageDriverTestNoSamples, t)
-}
-
-func TestPercentilesWithoutStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestPercentilesWithoutStats, t)
-}
-
 func TestRetrieveZeroStats(t *testing.T) {
 	runStorageTest(test.StorageDriverTestRetrieveZeroRecentStats, t)
-}
-
-func TestRetrieveZeroSamples(t *testing.T) {
-	runStorageTest(test.StorageDriverTestRetrieveZeroSamples, t)
 }

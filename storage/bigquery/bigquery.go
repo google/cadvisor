@@ -27,9 +27,7 @@ import (
 
 type bigqueryStorage struct {
 	client      *client.Client
-	prevStats   *info.ContainerStats
 	machineName string
-	windowLen   time.Duration
 }
 
 const (
@@ -57,10 +55,6 @@ const (
 	colMemoryHierarchicalPgfault string = "memory_hierarchical_pgfault"
 	// Hierarchical major page fault
 	colMemoryHierarchicalPgmajfault string = "memory_hierarchical_pgmajfault"
-	// Optional: sample duration. Unit: nanoseconds.
-	colSampleDuration string = "sample_duration"
-	// Optional: Instant cpu usage.
-	colCpuInstantUsage string = "cpu_instant_usage"
 	// Cumulative count of bytes received.
 	colRxBytes string = "rx_bytes"
 	// Cumulative count of receive errors encountered.
@@ -136,16 +130,6 @@ func (self *bigqueryStorage) GetSchema() *bigquery.TableSchema {
 	fields[i] = &bigquery.TableFieldSchema{
 		Type: typeInteger,
 		Name: colMemoryHierarchicalPgmajfault,
-	}
-	i++
-	fields[i] = &bigquery.TableFieldSchema{
-		Type: typeInteger,
-		Name: colSampleDuration,
-	}
-	i++
-	fields[i] = &bigquery.TableFieldSchema{
-		Type: typeInteger,
-		Name: colCpuInstantUsage,
 	}
 	i++
 	fields[i] = &bigquery.TableFieldSchema{
@@ -227,16 +211,7 @@ func (self *bigqueryStorage) containerStatsToValues(
 		row[colTxErrors] = stats.Network.TxErrors
 	}
 
-	sample, err := info.NewSample(self.prevStats, stats)
-	if err != nil || sample == nil {
-		return
-	}
 	// TODO(jnagal): Handle per-cpu stats.
-
-	// Optional: sample duration. Unit: Nanosecond.
-	row[colSampleDuration] = sample.Duration
-	// Optional: Instant cpu usage
-	row[colCpuInstantUsage] = sample.Cpu.Usage
 
 	return
 }
@@ -342,55 +317,12 @@ func (self *bigqueryStorage) valuesToContainerStats(columns []string, values []i
 	return stats, nil
 }
 
-func (self *bigqueryStorage) valuesToContainerSample(columns []string, values []interface{}) (*info.ContainerStatsSample, error) {
-	sample := &info.ContainerStatsSample{}
-	var err error
-	for i, col := range columns {
-		v := values[i]
-		switch {
-		case col == colTimestamp:
-			if t, ok := v.(time.Time); ok {
-				sample.Timestamp = t
-			}
-		case col == colMachineName:
-			if m, ok := v.(string); ok {
-				if m != self.machineName {
-					return nil, fmt.Errorf("different machine")
-				}
-			} else {
-				return nil, fmt.Errorf("machine name field is not a string: %v", v)
-			}
-		// Memory Usage
-		case col == colMemoryUsage:
-			sample.Memory.Usage, err = convertToUint64(v)
-		// sample duration. Unit: Nanosecond.
-		case col == colSampleDuration:
-			if v == nil {
-				// this record does not have sample_duration, so it's the first stats.
-				return nil, nil
-			}
-			sample.Duration = time.Duration(v.(int64))
-			// Instant cpu usage
-		case col == colCpuInstantUsage:
-			sample.Cpu.Usage, err = convertToUint64(v)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("column %v has invalid value %v: %v", col, v, err)
-		}
-	}
-	if sample.Duration.Nanoseconds() == 0 {
-		return nil, nil
-	}
-	return sample, nil
-}
-
 func (self *bigqueryStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
 	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
 		return nil
 	}
 
 	row := self.containerStatsToValues(ref, stats)
-	self.prevStats = stats.Copy(self.prevStats)
 
 	err := self.client.InsertRow(row)
 	if err != nil {
@@ -435,33 +367,19 @@ func (self *bigqueryStorage) RecentStats(containerName string, numStats int) ([]
 	return statsList, nil
 }
 
-func (self *bigqueryStorage) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	return nil, fmt.Errorf("will be removed")
-}
-
 func (self *bigqueryStorage) Close() error {
 	self.client.Close()
 	self.client = nil
 	return nil
 }
 
-func (self *bigqueryStorage) Percentiles(
-	containerName string,
-	cpuUsagePercentiles []int,
-	memUsagePercentiles []int,
-) (*info.ContainerStatsPercentiles, error) {
-	return nil, fmt.Errorf("will be removed")
-}
-
 // Create a new bigquery storage driver.
 // machineName: A unique identifier to identify the host that current cAdvisor
 // instance is running on.
 // tableName: BigQuery table used for storing stats.
-// percentilesDuration: Time window which will be considered when calls Percentiles()
 func New(machineName,
 	datasetId,
 	tableName string,
-	percentilesDuration time.Duration,
 ) (storage.StorageDriver, error) {
 	bqClient, err := client.NewClient()
 	if err != nil {
@@ -471,13 +389,9 @@ func New(machineName,
 	if err != nil {
 		return nil, err
 	}
-	if percentilesDuration.Seconds() < 1.0 {
-		percentilesDuration = 5 * time.Minute
-	}
 
 	ret := &bigqueryStorage{
 		client:      bqClient,
-		windowLen:   percentilesDuration,
 		machineName: machineName,
 	}
 	schema := ret.GetSchema()

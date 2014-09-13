@@ -34,20 +34,6 @@ func (self *MockStorageDriver) RecentStats(containerName string, numStats int) (
 	return args.Get(0).([]*info.ContainerStats), args.Error(1)
 }
 
-func (self *MockStorageDriver) Percentiles(
-	containerName string,
-	cpuUsagePercentiles []int,
-	memUsagePercentiles []int,
-) (*info.ContainerStatsPercentiles, error) {
-	args := self.Called(containerName, cpuUsagePercentiles, memUsagePercentiles)
-	return args.Get(0).(*info.ContainerStatsPercentiles), args.Error(1)
-}
-
-func (self *MockStorageDriver) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	args := self.Called(containerName, numSamples)
-	return args.Get(0).([]*info.ContainerStatsSample), args.Error(1)
-}
-
 func (self *MockStorageDriver) Close() error {
 	if self.MockCloseMethod {
 		args := self.Called()

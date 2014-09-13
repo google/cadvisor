@@ -20,52 +20,26 @@ import (
 	"sync"
 
 	"github.com/google/cadvisor/info"
-	"github.com/google/cadvisor/sampling"
 	"github.com/google/cadvisor/storage"
 )
 
 // containerStorage is used to store per-container information
 type containerStorage struct {
 	ref         info.ContainerReference
-	prevStats   *info.ContainerStats
-	sampler     sampling.Sampler
 	recentStats *list.List
 	maxNumStats int
-	maxMemUsage uint64
 	lock        sync.RWMutex
-}
-
-func (self *containerStorage) updatePrevStats(stats *info.ContainerStats) {
-	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
-		// discard incomplete stats
-		self.prevStats = nil
-		return
-	}
-	self.prevStats = stats.Copy(self.prevStats)
 }
 
 func (self *containerStorage) AddStats(stats *info.ContainerStats) error {
 	self.lock.Lock()
 	defer self.lock.Unlock()
-	if self.prevStats != nil {
-		sample, err := info.NewSample(self.prevStats, stats)
-		if err != nil {
-			return fmt.Errorf("wrong stats: %v", err)
-		}
-		if sample != nil {
-			self.sampler.Update(sample)
-		}
-	}
-	if stats.Memory != nil {
-		if self.maxMemUsage < stats.Memory.Usage {
-			self.maxMemUsage = stats.Memory.Usage
-		}
-	}
+
+	// Add the stat to storage.
 	if self.recentStats.Len() >= self.maxNumStats {
 		self.recentStats.Remove(self.recentStats.Back())
 	}
 	self.recentStats.PushFront(stats)
-	self.updatePrevStats(stats)
 	return nil
 }
 
@@ -98,50 +72,10 @@ func (self *containerStorage) RecentStats(numStats int) ([]*info.ContainerStats,
 	return ret, nil
 }
 
-func (self *containerStorage) Samples(numSamples int) ([]*info.ContainerStatsSample, error) {
-	self.lock.RLock()
-	defer self.lock.RUnlock()
-	if self.sampler.Len() < numSamples || numSamples < 0 {
-		numSamples = self.sampler.Len()
-	}
-	ret := make([]*info.ContainerStatsSample, 0, numSamples)
-
-	var err error
-	self.sampler.Map(func(d interface{}) {
-		if len(ret) >= numSamples || err != nil {
-			return
-		}
-		sample, ok := d.(*info.ContainerStatsSample)
-		if !ok {
-			err = fmt.Errorf("An element in the sample is not a ContainerStatsSample")
-		}
-		ret = append(ret, sample)
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
-}
-
-func (self *containerStorage) Percentiles(cpuPercentiles, memPercentiles []int) (*info.ContainerStatsPercentiles, error) {
-	samples, err := self.Samples(-1)
-	if err != nil {
-		return nil, err
-	}
-	if len(samples) == 0 {
-		return nil, nil
-	}
-	ret := info.NewPercentiles(samples, cpuPercentiles, memPercentiles)
-	ret.MaxMemoryUsage = self.maxMemUsage
-	return ret, nil
-}
-
-func newContainerStore(ref info.ContainerReference, maxNumSamples, maxNumStats int) *containerStorage {
-	s := sampling.NewReservoirSampler(maxNumSamples)
+func newContainerStore(ref info.ContainerReference, maxNumStats int) *containerStorage {
 	return &containerStorage{
 		ref:         ref,
 		recentStats: list.New(),
-		sampler:     s,
 		maxNumStats: maxNumStats,
 	}
 }
@@ -149,7 +83,6 @@ func newContainerStore(ref info.ContainerReference, maxNumSamples, maxNumStats i
 type InMemoryStorage struct {
 	lock                sync.RWMutex
 	containerStorageMap map[string]*containerStorage
-	maxNumSamples       int
 	maxNumStats         int
 	backend             storage.StorageDriver
 }
@@ -162,7 +95,7 @@ func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.C
 		self.lock.Lock()
 		defer self.lock.Unlock()
 		if cstore, ok = self.containerStorageMap[ref.Name]; !ok {
-			cstore = newContainerStore(ref, self.maxNumSamples, self.maxNumStats)
+			cstore = newContainerStore(ref, self.maxNumStats)
 			self.containerStorageMap[ref.Name] = cstore
 		}
 	}()
@@ -174,26 +107,6 @@ func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.C
 		self.backend.AddStats(ref, stats)
 	}
 	return cstore.AddStats(stats)
-}
-
-func (self *InMemoryStorage) Samples(name string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	var cstore *containerStorage
-	var ok bool
-
-	err := func() error {
-		self.lock.RLock()
-		defer self.lock.RUnlock()
-		if cstore, ok = self.containerStorageMap[name]; !ok {
-			return fmt.Errorf("unable to find data for container %v", name)
-		}
-		return nil
-	}()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return cstore.Samples(numSamples)
 }
 
 func (self *InMemoryStorage) RecentStats(name string, numStats int) ([]*info.ContainerStats, error) {
@@ -214,24 +127,6 @@ func (self *InMemoryStorage) RecentStats(name string, numStats int) ([]*info.Con
 	return cstore.RecentStats(numStats)
 }
 
-func (self *InMemoryStorage) Percentiles(name string, cpuPercentiles, memPercentiles []int) (*info.ContainerStatsPercentiles, error) {
-	var cstore *containerStorage
-	var ok bool
-	err := func() error {
-		self.lock.RLock()
-		defer self.lock.RUnlock()
-		if cstore, ok = self.containerStorageMap[name]; !ok {
-			return fmt.Errorf("unable to find data for container %v", name)
-		}
-		return nil
-	}()
-	if err != nil {
-		return nil, err
-	}
-
-	return cstore.Percentiles(cpuPercentiles, memPercentiles)
-}
-
 func (self *InMemoryStorage) Close() error {
 	self.lock.Lock()
 	self.containerStorageMap = make(map[string]*containerStorage, 32)
@@ -240,13 +135,11 @@ func (self *InMemoryStorage) Close() error {
 }
 
 func New(
-	maxNumSamples,
 	maxNumStats int,
 	backend storage.StorageDriver,
 ) *InMemoryStorage {
 	ret := &InMemoryStorage{
 		containerStorageMap: make(map[string]*containerStorage, 32),
-		maxNumSamples:       maxNumSamples,
 		maxNumStats:         maxNumStats,
 		backend:             backend,
 	}
