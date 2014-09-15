@@ -170,7 +170,6 @@ func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, er
 
 	// Default stats and samples is 64.
 	query.NumStats = 64
-	query.NumSamples = 64
 
 	decoder := json.NewDecoder(body)
 	err := decoder.Decode(&query)
