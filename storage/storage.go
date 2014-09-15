@@ -26,15 +26,6 @@ type StorageDriver interface {
 	// recent stats should be the last.
 	RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error)
 
-	// Read the specified percentiles of CPU and memory usage of the container.
-	// The implementation decides which time range to look at.
-	Percentiles(containerName string, cpuUsagePercentiles []int, memUsagePercentiles []int) (*info.ContainerStatsPercentiles, error)
-
-	// Returns samples of the container stats. If numSamples < 0, then
-	// the number of returned samples is implementation defined. Otherwise, the driver
-	// should return at most numSamples samples.
-	Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error)
-
 	// Close will clear the state of the storage driver. The elements
 	// stored in the underlying storage may or may not be deleted depending
 	// on the implementation of the storage driver.

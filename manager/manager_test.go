@@ -88,28 +88,7 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 		func(h *container.MockContainerHandler) {
 			cinfo := infosMap[h.Name]
 			stats := cinfo.Stats
-			samples := cinfo.Samples
-			percentiles := cinfo.StatsPercentiles
 			spec := cinfo.Spec
-			driver.On(
-				"Percentiles",
-				h.Name,
-				query.CpuUsagePercentiles,
-				query.MemoryUsagePercentiles,
-			).Return(
-				percentiles,
-				nil,
-			)
-
-			driver.On(
-				"Samples",
-				h.Name,
-				query.NumSamples,
-			).Return(
-				samples,
-				nil,
-			)
-
 			driver.On(
 				"RecentStats",
 				h.Name,
@@ -142,10 +121,8 @@ func TestGetContainerInfo(t *testing.T) {
 	}
 
 	query := &info.ContainerInfoRequest{
-		NumStats:               256,
-		NumSamples:             128,
-		CpuUsagePercentiles:    []int{10, 50, 90},
-		MemoryUsagePercentiles: []int{10, 80, 90},
+		NumStats:   256,
+		NumSamples: 128,
 	}
 
 	m, infosMap, handlerMap := expectManagerWithContainers(containers, query, t)
@@ -178,10 +155,8 @@ func TestSubcontainersInfo(t *testing.T) {
 	}
 
 	query := &info.ContainerInfoRequest{
-		NumStats:               64,
-		NumSamples:             64,
-		CpuUsagePercentiles:    []int{10, 50, 90},
-		MemoryUsagePercentiles: []int{10, 80, 90},
+		NumStats:   64,
+		NumSamples: 64,
 	}
 
 	m, _, _ := expectManagerWithContainers(containers, query, t)

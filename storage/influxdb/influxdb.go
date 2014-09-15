@@ -27,7 +27,6 @@ type influxdbStorage struct {
 	client         *influxdb.Client
 	machineName    string
 	tableName      string
-	windowLen      time.Duration
 	bufferDuration time.Duration
 	lastWrite      time.Time
 	series         []*influxdb.Series
@@ -256,21 +255,9 @@ func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]
 	return statsList, nil
 }
 
-func (self *influxdbStorage) Samples(containerName string, numSamples int) ([]*info.ContainerStatsSample, error) {
-	return nil, fmt.Errorf("will be removed")
-}
-
 func (self *influxdbStorage) Close() error {
 	self.client = nil
 	return nil
-}
-
-func (self *influxdbStorage) Percentiles(
-	containerName string,
-	cpuUsagePercentiles []int,
-	memUsagePercentiles []int,
-) (*info.ContainerStatsPercentiles, error) {
-	return nil, fmt.Errorf("will be removed")
 }
 
 // Returns a new influxdb series.
@@ -288,7 +275,6 @@ func (self *influxdbStorage) newSeries(columns []string, points []interface{}) *
 // machineName: A unique identifier to identify the host that current cAdvisor
 // instance is running on.
 // influxdbHost: The host which runs influxdb.
-// percentilesDuration: Time window which will be considered when calls Percentiles()
 func New(machineName,
 	tablename,
 	database,
@@ -297,7 +283,6 @@ func New(machineName,
 	influxdbHost string,
 	isSecure bool,
 	bufferDuration time.Duration,
-	percentilesDuration time.Duration,
 ) (*influxdbStorage, error) {
 	config := &influxdb.ClientConfig{
 		Host:     influxdbHost,
@@ -312,13 +297,9 @@ func New(machineName,
 	}
 	// TODO(monnand): With go 1.3, we cannot compress data now.
 	client.DisableCompression()
-	if percentilesDuration.Seconds() < 1.0 {
-		percentilesDuration = 5 * time.Minute
-	}
 
 	ret := &influxdbStorage{
 		client:         client,
-		windowLen:      percentilesDuration,
 		machineName:    machineName,
 		tableName:      tablename,
 		bufferDuration: bufferDuration,

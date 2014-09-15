@@ -147,23 +147,7 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 		return nil, err
 	}
 
-	var percentiles *info.ContainerStatsPercentiles
-	var samples []*info.ContainerStatsSample
-	var stats []*info.ContainerStats
-	percentiles, err = self.storageDriver.Percentiles(
-		cinfo.Name,
-		query.CpuUsagePercentiles,
-		query.MemoryUsagePercentiles,
-	)
-	if err != nil {
-		return nil, err
-	}
-	samples, err = self.storageDriver.Samples(cinfo.Name, query.NumSamples)
-	if err != nil {
-		return nil, err
-	}
-
-	stats, err = self.storageDriver.RecentStats(cinfo.Name, query.NumStats)
+	stats, err := self.storageDriver.RecentStats(cinfo.Name, query.NumStats)
 	if err != nil {
 		return nil, err
 	}
@@ -174,11 +158,9 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 			Name:    cinfo.Name,
 			Aliases: cinfo.Aliases,
 		},
-		Subcontainers:    cinfo.Subcontainers,
-		Spec:             cinfo.Spec,
-		StatsPercentiles: percentiles,
-		Samples:          samples,
-		Stats:            stats,
+		Subcontainers: cinfo.Subcontainers,
+		Spec:          cinfo.Spec,
+		Stats:         stats,
 	}
 
 	// Set default value to an actual value

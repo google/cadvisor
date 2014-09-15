@@ -43,10 +43,10 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 	var backendStorage storage.StorageDriver
 	var err error
 	// TODO(vmarmol): We shouldn't need the housekeeping interval here and it shouldn't be public.
-	samplesToCache := int(*argDbBufferDuration / *manager.HousekeepingInterval)
-	if samplesToCache < statsRequestedByUI {
+	statsToCache := int(*argDbBufferDuration / *manager.HousekeepingInterval)
+	if statsToCache < statsRequestedByUI {
 		// The UI requests the most recent 60 stats by default.
-		samplesToCache = statsRequestedByUI
+		statsToCache = statsRequestedByUI
 	}
 	switch driverName {
 	case "":
@@ -67,8 +67,6 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 			*argDbHost,
 			*argDbIsSecure,
 			*argDbBufferDuration,
-			// TODO(monnand): One hour? Or user-defined?
-			1*time.Hour,
 		)
 	case "bigquery":
 		var hostname string
@@ -80,7 +78,6 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 			hostname,
 			"cadvisor",
 			*argDbName,
-			1*time.Hour,
 		)
 
 	default:
@@ -89,7 +86,7 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 	if err != nil {
 		return nil, err
 	}
-	glog.Infof("Caching %d recent stats in memory; using \"%v\" storage driver\n", samplesToCache, driverName)
-	storageDriver = memory.New(samplesToCache, samplesToCache, backendStorage)
+	glog.Infof("Caching %d recent stats in memory; using \"%v\" storage driver\n", statsToCache, driverName)
+	storageDriver = memory.New(statsToCache, backendStorage)
 	return storageDriver, nil
 }
