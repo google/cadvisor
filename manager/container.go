@@ -31,6 +31,7 @@ import (
 // Housekeeping interval.
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
+var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
 
 // Internal mirror of the external data structure.
 type containerStat struct {
@@ -108,22 +109,24 @@ func NewContainerData(containerName string, driver storage.StorageDriver) (*cont
 
 // Determine when the next housekeeping should occur.
 func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Time {
-	stats, err := self.storageDriver.RecentStats(self.info.Name, 2)
-	if err != nil {
-		glog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
-	} else if len(stats) == 2 {
-		// TODO(vishnuk): Use no processes as a signal.
-		// Raise the interval if usage hasn't changed in the last housekeeping.
-		if stats[0].StatsEq(stats[1]) && (self.housekeepingInterval < *maxHousekeepingInterval) {
-			self.housekeepingInterval *= 2
-			if self.housekeepingInterval > *maxHousekeepingInterval {
-				self.housekeepingInterval = *maxHousekeepingInterval
+	if *allowDynamicHousekeeping {
+		stats, err := self.storageDriver.RecentStats(self.info.Name, 2)
+		if err != nil {
+			glog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
+		} else if len(stats) == 2 {
+			// TODO(vishnuk): Use no processes as a signal.
+			// Raise the interval if usage hasn't changed in the last housekeeping.
+			if stats[0].StatsEq(stats[1]) && (self.housekeepingInterval < *maxHousekeepingInterval) {
+				self.housekeepingInterval *= 2
+				if self.housekeepingInterval > *maxHousekeepingInterval {
+					self.housekeepingInterval = *maxHousekeepingInterval
+				}
+				glog.V(2).Infof("Raising housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
+			} else if self.housekeepingInterval != *HousekeepingInterval {
+				// Lower interval back to the baseline.
+				self.housekeepingInterval = *HousekeepingInterval
+				glog.V(1).Infof("Lowering housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
 			}
-			glog.V(2).Infof("Raising housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
-		} else if self.housekeepingInterval != *HousekeepingInterval {
-			// Lower interval back to the baseline.
-			self.housekeepingInterval = *HousekeepingInterval
-			glog.V(1).Infof("Lowering housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
 		}
 	}
 
