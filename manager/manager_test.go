@@ -121,8 +121,7 @@ func TestGetContainerInfo(t *testing.T) {
 	}
 
 	query := &info.ContainerInfoRequest{
-		NumStats:   256,
-		NumSamples: 128,
+		NumStats: 256,
 	}
 
 	m, infosMap, handlerMap := expectManagerWithContainers(containers, query, t)
@@ -155,8 +154,7 @@ func TestSubcontainersInfo(t *testing.T) {
 	}
 
 	query := &info.ContainerInfoRequest{
-		NumStats:   64,
-		NumSamples: 64,
+		NumStats: 64,
 	}
 
 	m, _, _ := expectManagerWithContainers(containers, query, t)

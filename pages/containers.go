@@ -260,8 +260,7 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 
 	// Get the container.
 	reqParams := info.ContainerInfoRequest{
-		NumStats:   60,
-		NumSamples: 60,
+		NumStats: 60,
 	}
 	cont, err := m.GetContainerInfo(containerName, &reqParams)
 	if err != nil {
