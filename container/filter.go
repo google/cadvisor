@@ -62,6 +62,10 @@ func (self *containerListFilter) ListProcesses(listType ListType) ([]int, error)
 	return self.handler.ListProcesses(listType)
 }
 
+func (self *containerListFilter) WatchSubcontainers(events chan SubcontainerEvent) error {
+	return self.handler.WatchSubcontainers(events)
+}
+
 func NewWhiteListFilter(handler ContainerHandler, acceptedPaths ...string) ContainerHandler {
 	filter := func(p string) bool {
 		for _, path := range acceptedPaths {

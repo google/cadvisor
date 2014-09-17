@@ -28,7 +28,7 @@ import (
 	"github.com/google/cadvisor/storage"
 )
 
-var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Second, "Interval between global housekeepings")
+var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
 
 type Manager interface {
 	// Start the manager, blocks forever.
@@ -73,24 +73,22 @@ func New(driver storage.StorageDriver) (Manager, error) {
 }
 
 type manager struct {
-	containers                    map[string]*containerData
-	containersLock                sync.RWMutex
-	storageDriver                 storage.StorageDriver
-	machineInfo                   info.MachineInfo
-	versionInfo                   info.VersionInfo
-	globalHousekeepingInterval    time.Duration
-	containerHousekeepingInterval time.Duration
+	containers     map[string]*containerData
+	containersLock sync.RWMutex
+	storageDriver  storage.StorageDriver
+	machineInfo    info.MachineInfo
+	versionInfo    info.VersionInfo
 }
 
 // Start the container manager.
-func (m *manager) Start() error {
+func (self *manager) Start() error {
 	// Create root and then recover all containers.
-	_, err := m.createContainer("/")
+	err := self.createContainer("/")
 	if err != nil {
 		return err
 	}
 	glog.Infof("Starting recovery of all containers")
-	err = m.detectContainers()
+	err = self.detectSubcontainers("/")
 	if err != nil {
 		return err
 	}
@@ -102,13 +100,16 @@ func (m *manager) Start() error {
 		longHousekeeping = *globalHousekeepingInterval / 2
 	}
 
+	// Watch for new container.
+	go self.watchForNewContainers()
+
 	// Look for new containers in the main housekeeping thread.
 	ticker := time.Tick(*globalHousekeepingInterval)
 	for t := range ticker {
 		start := time.Now()
 
 		// Check for new containers.
-		err = m.detectContainers()
+		err = self.detectSubcontainers("/")
 		if err != nil {
 			glog.Errorf("Failed to detect containers: %s", err)
 		}
@@ -119,6 +120,7 @@ func (m *manager) Start() error {
 			glog.V(1).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
 		}
 	}
+
 	return nil
 }
 
@@ -218,29 +220,40 @@ func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
 	return &ret, nil
 }
 
-// Create a container. This expects to only be called from the global manager thread.
-func (m *manager) createContainer(containerName string) (*containerData, error) {
+// Create a container.
+func (m *manager) createContainer(containerName string) error {
 	cont, err := NewContainerData(containerName, m.storageDriver)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Add to the containers map.
-	func() {
+	alreadyExists := func() bool {
 		m.containersLock.Lock()
 		defer m.containersLock.Unlock()
+
+		// Check that the container didn't already exist
+		_, ok := m.containers[containerName]
+		if ok {
+			return true
+		}
 
 		// Add the container name and all its aliases.
 		m.containers[containerName] = cont
 		for _, alias := range cont.info.Aliases {
 			m.containers[alias] = cont
 		}
+
+		return false
 	}()
+	if alreadyExists {
+		return nil
+	}
 	glog.Infof("Added container: %q (aliases: %s)", containerName, cont.info.Aliases)
 
 	// Start the container's housekeeping.
 	cont.Start()
-	return cont, nil
+	return nil
 }
 
 func (m *manager) destroyContainer(containerName string) error {
@@ -249,7 +262,8 @@ func (m *manager) destroyContainer(containerName string) error {
 
 	cont, ok := m.containers[containerName]
 	if !ok {
-		return fmt.Errorf("Expected container \"%s\" to exist during destroy", containerName)
+		// Already destroyed, done.
+		return nil
 	}
 
 	// Tell the container to stop.
@@ -267,22 +281,21 @@ func (m *manager) destroyContainer(containerName string) error {
 	return nil
 }
 
-// Detect all containers that have been added or deleted.
-func (m *manager) getContainersDiff() (added []info.ContainerReference, removed []info.ContainerReference, err error) {
-	// TODO(vmarmol): We probably don't need to lock around / since it will always be there.
+// Detect all containers that have been added or deleted from the specified container.
+func (m *manager) getContainersDiff(containerName string) (added []info.ContainerReference, removed []info.ContainerReference, err error) {
 	m.containersLock.RLock()
 	defer m.containersLock.RUnlock()
 
-	// Get all containers on the system.
-	cont, ok := m.containers["/"]
+	// Get all subcontainers recursively.
+	cont, ok := m.containers[containerName]
 	if !ok {
-		return nil, nil, fmt.Errorf("Failed to find container \"/\" while checking for new containers")
+		return nil, nil, fmt.Errorf("Failed to find container %q while checking for new containers", containerName)
 	}
 	allContainers, err := cont.handler.ListContainers(container.LIST_RECURSIVE)
 	if err != nil {
 		return nil, nil, err
 	}
-	allContainers = append(allContainers, info.ContainerReference{Name: "/"})
+	allContainers = append(allContainers, info.ContainerReference{Name: containerName})
 
 	// Determine which were added and which were removed.
 	allContainersSet := make(map[string]*containerData)
@@ -292,6 +305,8 @@ func (m *manager) getContainersDiff() (added []info.ContainerReference, removed 
 			allContainersSet[name] = d
 		}
 	}
+
+	// Added containers
 	for _, c := range allContainers {
 		delete(allContainersSet, c.Name)
 		_, ok := m.containers[c.Name]
@@ -308,16 +323,16 @@ func (m *manager) getContainersDiff() (added []info.ContainerReference, removed 
 	return
 }
 
-// Detect the existing containers and reflect the setup here.
-func (m *manager) detectContainers() error {
-	added, removed, err := m.getContainersDiff()
+// Detect the existing subcontainers and reflect the setup here.
+func (m *manager) detectSubcontainers(containerName string) error {
+	added, removed, err := m.getContainersDiff(containerName)
 	if err != nil {
 		return err
 	}
 
 	// Add the new containers.
 	for _, cont := range added {
-		_, err = m.createContainer(cont.Name)
+		err = m.createContainer(cont.Name)
 		if err != nil {
 			glog.Errorf("Failed to create existing container: %s: %s", cont.Name, err)
 		}
@@ -328,6 +343,53 @@ func (m *manager) detectContainers() error {
 		err = m.destroyContainer(cont.Name)
 		if err != nil {
 			glog.Errorf("Failed to destroy existing container: %s: %s", cont.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (self *manager) processEvent(event container.SubcontainerEvent) error {
+	var err error = nil
+	return err
+}
+
+// Watches for new containers started in the system. Runs forever unless there is a setup error.
+func (self *manager) watchForNewContainers() error {
+	var root *containerData
+	var ok bool
+	func() {
+		self.containersLock.RLock()
+		defer self.containersLock.RUnlock()
+		root, ok = self.containers["/"]
+	}()
+	if !ok {
+		return fmt.Errorf("root container does not exist when watching for new containers")
+	}
+
+	// Register for new subcontainers.
+	events := make(chan container.SubcontainerEvent, 16)
+	err := root.handler.WatchSubcontainers(events)
+	if err != nil {
+		return err
+	}
+
+	// There is a race between starting the watch and new container creation so we do a detection before we read new containers.
+	err = self.detectSubcontainers("/")
+	if err != nil {
+		return err
+	}
+
+	// Listen to events from the container handler.
+	for event := range events {
+		switch {
+		case event.EventType == container.SUBCONTAINER_ADD:
+			err = self.createContainer(event.Name)
+		case event.EventType == container.SUBCONTAINER_DELETE:
+			err = self.destroyContainer(event.Name)
+		}
+		if err != nil {
+			glog.Warning("Failed to process watch event: %v", err)
 		}
 	}
 

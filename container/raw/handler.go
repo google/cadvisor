@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.google.com/p/go.exp/inotify"
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/cgroups/fs"
 	"github.com/golang/glog"
@@ -35,6 +36,8 @@ type rawContainerHandler struct {
 	cgroup             *cgroups.Cgroup
 	cgroupSubsystems   *cgroupSubsystems
 	machineInfoFactory info.MachineInfoFactory
+	watcher            *inotify.Watcher
+	watches            map[string]struct{}
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
@@ -46,6 +49,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		},
 		cgroupSubsystems:   cgroupSubsystems,
 		machineInfoFactory: machineInfoFactory,
+		watches:            make(map[string]struct{}),
 	}, nil
 }
 
@@ -173,7 +177,7 @@ func listDirectories(dirpath string, parent string, recursive bool, output map[s
 }
 
 func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	containers := make(map[string]struct{}, 16)
+	containers := make(map[string]struct{})
 	for _, subsystem := range self.cgroupSubsystems.mounts {
 		err := listDirectories(path.Join(subsystem.Mountpoint, self.name), self.name, listType == container.LIST_RECURSIVE, containers)
 		if err != nil {
@@ -199,4 +203,131 @@ func (self *rawContainerHandler) ListThreads(listType container.ListType) ([]int
 
 func (self *rawContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
 	return fs.GetPids(self.cgroup)
+}
+
+func (self *rawContainerHandler) watchDirectory(dir string, containerName string) error {
+	err := self.watcher.AddWatch(dir, inotify.IN_CREATE|inotify.IN_DELETE|inotify.IN_MOVE)
+	if err != nil {
+		return err
+	}
+	self.watches[containerName] = struct{}{}
+
+	// Watch subdirectories as well.
+	entries, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			err = self.watchDirectory(path.Join(dir, entry.Name()), path.Join(containerName, entry.Name()))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan container.SubcontainerEvent) error {
+	// Convert the inotify event type to a container create or delete.
+	var eventType int
+	switch {
+	case (event.Mask & inotify.IN_CREATE) > 0:
+		eventType = container.SUBCONTAINER_ADD
+	case (event.Mask & inotify.IN_DELETE) > 0:
+		eventType = container.SUBCONTAINER_DELETE
+	case (event.Mask & inotify.IN_MOVED_FROM) > 0:
+		eventType = container.SUBCONTAINER_DELETE
+	case (event.Mask & inotify.IN_MOVED_TO) > 0:
+		eventType = container.SUBCONTAINER_ADD
+	default:
+		// Ignore other events.
+		return nil
+	}
+
+	// Derive the container name from the path name.
+	var containerName string
+	for _, mount := range self.cgroupSubsystems.mounts {
+		mountLocation := path.Clean(mount.Mountpoint) + "/"
+		if strings.HasPrefix(event.Name, mountLocation) {
+			containerName = event.Name[len(mountLocation)-1:]
+			break
+		}
+	}
+	if containerName == "" {
+		return fmt.Errorf("unable to detect container from watch event on directory %q", event.Name)
+	}
+
+	// Maintain the watch for the new or deleted container.
+	switch {
+	case eventType == container.SUBCONTAINER_ADD:
+		// If we've already seen this event, return.
+		if _, ok := self.watches[containerName]; ok {
+			return nil
+		}
+
+		// New container was created, watch it.
+		err := self.watchDirectory(event.Name, containerName)
+		if err != nil {
+			return err
+		}
+	case eventType == container.SUBCONTAINER_DELETE:
+		// If we've already seen this event, return.
+		if _, ok := self.watches[containerName]; !ok {
+			return nil
+		}
+		delete(self.watches, containerName)
+
+		// Container was deleted, stop watching for it.
+		err := self.watcher.RemoveWatch(event.Name)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unknown event type %v", eventType)
+	}
+
+	// Deliver the event.
+	events <- container.SubcontainerEvent{
+		EventType: eventType,
+		Name:      containerName,
+	}
+
+	return nil
+}
+
+func (self *rawContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {
+	// Lazily initialize the watcher so we don't use it when not asked to.
+	if self.watcher == nil {
+		w, err := inotify.NewWatcher()
+		if err != nil {
+			return err
+		}
+		self.watcher = w
+	}
+
+	// Watch this container (all its cgroups) and all subdirectories.
+	for _, mnt := range self.cgroupSubsystems.mounts {
+		err := self.watchDirectory(path.Join(mnt.Mountpoint, self.name), self.name)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Process the events received from the kernel.
+	go func() {
+		for {
+			select {
+			case event := <-self.watcher.Event:
+				err := self.processEvent(event, events)
+				if err != nil {
+					glog.Warning("Error while processing event (%+v): %v", event, err)
+				}
+			case err := <-self.watcher.Error:
+				glog.Warning("Error while watching %q:", self.name, err)
+			}
+		}
+	}()
+
+	return nil
 }
