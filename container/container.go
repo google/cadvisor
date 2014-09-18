@@ -31,10 +31,10 @@ const (
 )
 
 type SubcontainerEvent struct {
-	// The type of event that occured.
+	// The type of event that occurred.
 	EventType int
 
-	// The container to which the event occured.
+	// The full container name of the container where the event occurred.
 	Name string
 }
 
