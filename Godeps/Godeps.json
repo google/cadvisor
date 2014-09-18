@@ -1,9 +1,45 @@
 {
 	"ImportPath": "github.com/google/cadvisor",
 	"GoVersion": "go1.3",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
+			"ImportPath": "code.google.com/p/goauth2/oauth",
+			"Comment": "weekly-56",
+			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
+		},
+		{
+			"ImportPath": "code.google.com/p/gomock/gomock",
+			"Rev": "5d0b59c9f277f888d2c70b00908236a30ab90f45"
+		},
+		{
+			"ImportPath": "code.google.com/p/google-api-go-client/bigquery/v2",
+			"Comment": "release-101",
+			"Rev": "e1c259484b495133836706f46319f5897f1e9bf6"
+		},
+		{
+			"ImportPath": "code.google.com/p/google-api-go-client/googleapi",
+			"Comment": "release-101",
+			"Rev": "e1c259484b495133836706f46319f5897f1e9bf6"
+		},
+		{
+			"ImportPath": "github.com/SeanDolphin/bqschema",
+			"Rev": "a713d26df274e999ec10e9bbc7e73a1c4791053c"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-systemd/dbus",
+			"Comment": "v2-27-g97e243d",
+			"Rev": "97e243d21a8e232e9d8af38ba2366dfcfceebeba"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/mount",
+			"Comment": "v1.1.1-402-g487a417",
+			"Rev": "487a417d9fd074d0e78876072c7d1ebfd398ea7a"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/symlink",
 			"Comment": "v1.1.1-402-g487a417",
 			"Rev": "487a417d9fd074d0e78876072c7d1ebfd398ea7a"
 		},
@@ -16,6 +52,15 @@
 			"ImportPath": "github.com/fsouza/go-dockerclient",
 			"Comment": "0.2.1-185-g4fc0e0d",
 			"Rev": "4fc0e0dbba85f2f799aa77cea594d40267f5bd5a"
+		},
+		{
+			"ImportPath": "github.com/godbus/dbus",
+			"Comment": "0-7-g939230d",
+			"Rev": "939230d2086a4f1870e04c52e0a376c25bae0ec4"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "d1c4472bf2efd3826f2b5bdcc02d8416798d678c"
 		},
 		{
 			"ImportPath": "github.com/influxdb/influxdb/client",
