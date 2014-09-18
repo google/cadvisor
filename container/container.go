@@ -24,6 +24,20 @@ const (
 
 type ListType int
 
+// SubcontainerEvent types.
+const (
+	SUBCONTAINER_ADD = iota
+	SUBCONTAINER_DELETE
+)
+
+type SubcontainerEvent struct {
+	// The type of event that occurred.
+	EventType int
+
+	// The full container name of the container where the event occurred.
+	Name string
+}
+
 // Interface for container operation handlers.
 type ContainerHandler interface {
 	ContainerReference() (info.ContainerReference, error)
@@ -32,4 +46,5 @@ type ContainerHandler interface {
 	ListContainers(listType ListType) ([]info.ContainerReference, error)
 	ListThreads(listType ListType) ([]int, error)
 	ListProcesses(listType ListType) ([]int, error)
+	WatchSubcontainers(events chan SubcontainerEvent) error
 }

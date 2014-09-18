@@ -69,6 +69,11 @@ func (self *MockContainerHandler) ListProcesses(listType ListType) ([]int, error
 	return args.Get(0).([]int), args.Error(1)
 }
 
+func (self *MockContainerHandler) WatchSubcontainers(events chan SubcontainerEvent) error {
+	args := self.Called(events)
+	return args.Error(0)
+}
+
 type FactoryForMockContainerHandler struct {
 	Name                        string
 	PrepareContainerHandlerFunc func(name string, handler *MockContainerHandler)
