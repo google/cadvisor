@@ -93,8 +93,9 @@ func main() {
 
 	defer glog.Flush()
 
+	errChan := make(chan error)
 	go func() {
-		glog.Fatal(containerManager.Start())
+		errChan <- containerManager.Start()
 	}()
 
 	glog.Infof("Starting cAdvisor version: %q", info.VERSION)
@@ -102,7 +103,13 @@ func main() {
 
 	addr := fmt.Sprintf(":%v", *argPort)
 
-	glog.Fatal(http.ListenAndServe(addr, nil))
+	go func() {
+		errChan <- http.ListenAndServe(addr, nil)
+	}()
+	select {
+	case err := <-errChan:
+		glog.Fatal(err)
+	}
 }
 
 func setMaxProcs() {

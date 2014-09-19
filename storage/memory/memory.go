@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
 )
@@ -104,7 +105,9 @@ func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.C
 		// TODO(monnand): To deal with long delay write operations, we
 		// may want to start a pool of goroutines to do write
 		// operations.
-		self.backend.AddStats(ref, stats)
+		if err := self.backend.AddStats(ref, stats); err != nil {
+			glog.Error(err)
+		}
 	}
 	return cstore.AddStats(stats)
 }
