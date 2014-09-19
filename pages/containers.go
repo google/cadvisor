@@ -108,7 +108,7 @@ type pageData struct {
 	ContainerName      string
 	ParentContainers   []info.ContainerReference
 	Subcontainers      []info.ContainerReference
-	Spec               *info.ContainerSpec
+	Spec               info.ContainerSpec
 	Stats              []*info.ContainerStats
 	MachineInfo        *info.MachineInfo
 	ResourcesAvailable bool
@@ -300,14 +300,6 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 		}
 	}
 
-	networkStatsAvailable := false
-	for _, stat := range cont.Stats {
-		if stat.Network != nil {
-			networkStatsAvailable = true
-			break
-		}
-	}
-
 	data := &pageData{
 		ContainerName: displayName,
 		// TODO(vmarmol): Only use strings for this.
@@ -316,10 +308,10 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 		Spec:               cont.Spec,
 		Stats:              cont.Stats,
 		MachineInfo:        machineInfo,
-		ResourcesAvailable: cont.Spec.Cpu != nil || cont.Spec.Memory != nil,
-		CpuAvailable:       cont.Spec.Cpu != nil,
-		MemoryAvailable:    cont.Spec.Memory != nil,
-		NetworkAvailable:   networkStatsAvailable,
+		ResourcesAvailable: cont.Spec.HasCpu || cont.Spec.HasMemory || cont.Spec.HasNetwork,
+		CpuAvailable:       cont.Spec.HasCpu,
+		MemoryAvailable:    cont.Spec.HasMemory,
+		NetworkAvailable:   cont.Spec.HasNetwork,
 	}
 	err = pageTemplate.Execute(w, data)
 	if err != nil {

@@ -41,7 +41,7 @@ type SubcontainerEvent struct {
 // Interface for container operation handlers.
 type ContainerHandler interface {
 	ContainerReference() (info.ContainerReference, error)
-	GetSpec() (*info.ContainerSpec, error)
+	GetSpec() (info.ContainerSpec, error)
 	GetStats() (*info.ContainerStats, error)
 	ListContainers(listType ListType) ([]info.ContainerReference, error)
 	ListThreads(listType ListType) ([]int, error)

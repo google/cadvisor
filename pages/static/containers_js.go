@@ -142,7 +142,7 @@ function getStats(containerName, callback) {
 
 // Draw the graph for CPU usage.
 function drawCpuTotalUsage(elementId, machineInfo, stats) {
-	if (!hasResource(stats, "cpu")) {
+	if (stats.spec.has_cpu && !hasResource(stats, "cpu")) {
 		return;
 	}
 
@@ -163,7 +163,7 @@ function drawCpuTotalUsage(elementId, machineInfo, stats) {
 
 // Draw the graph for per-core CPU usage.
 function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
-	if (!hasResource(stats, "cpu")) {
+	if (stats.spec.has_cpu && !hasResource(stats, "cpu")) {
 		return;
 	}
 
@@ -190,7 +190,7 @@ function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
 
 // Draw the graph for CPU usage breakdown.
 function drawCpuUsageBreakdown(elementId, containerInfo) {
-	if (!hasResource(containerInfo, "cpu")) {
+	if (containerInfo.spec.has_cpu && !hasResource(containerInfo, "cpu")) {
 		return;
 	}
 
@@ -215,7 +215,7 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 	var cur = containerInfo.stats[containerInfo.stats.length - 1];
 
 	var cpuUsage = 0;
-	if (containerInfo.spec.cpu && containerInfo.stats.length >= 2) {
+	if (containerInfo.spec.has_cpu && containerInfo.stats.length >= 2) {
 		var prev = containerInfo.stats[containerInfo.stats.length - 2];
 		var rawUsage = cur.cpu.usage.total - prev.cpu.usage.total;
 		var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
@@ -228,7 +228,7 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 	}
 
 	var memoryUsage = 0;
-	if (containerInfo.spec.memory) {
+	if (containerInfo.spec.has_memory) {
 		// Saturate to the machine size.
 		var limit = containerInfo.spec.memory.limit;
 		if (limit > machineInfo.memory_capacity) {
@@ -244,7 +244,7 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 var oneMegabyte = 1024 * 1024;
 
 function drawMemoryUsage(elementId, containerInfo) {
-	if (!hasResource(containerInfo, "memory")) {
+	if (containerInfo.spec.has_memory && !hasResource(containerInfo, "memory")) {
 		return;
 	}
 
@@ -264,7 +264,7 @@ function drawMemoryUsage(elementId, containerInfo) {
 
 // Draw the graph for network tx/rx bytes.
 function drawNetworkBytes(elementId, machineInfo, stats) {
-	if (!hasResource(stats, "network")) {
+	if (stats.spec.has_network && !hasResource(stats, "network")) {
 		return;
 	}
 
@@ -286,7 +286,7 @@ function drawNetworkBytes(elementId, machineInfo, stats) {
 
 // Draw the graph for network errors
 function drawNetworkErrors(elementId, machineInfo, stats) {
-	if (!hasResource(stats, "network")) {
+	if (stats.spec.has_network && !hasResource(stats, "network")) {
 		return;
 	}
 
@@ -328,33 +328,41 @@ function stepExecute(steps) {
 function drawCharts(machineInfo, containerInfo) {
 	var steps = [];
 
-	steps.push(function() {
-		drawOverallUsage("usage-gauge", machineInfo, containerInfo)
-	});
+	if (containerInfo.spec.has_cpu || containerInfo.spec.has_memory) {
+		steps.push(function() {
+			drawOverallUsage("usage-gauge", machineInfo, containerInfo)
+		});
+	}
 
 	// CPU.
-	steps.push(function() {
-		drawCpuTotalUsage("cpu-total-usage-chart", machineInfo, containerInfo);
-	});
-	steps.push(function() {
-		drawCpuPerCoreUsage("cpu-per-core-usage-chart", machineInfo, containerInfo);
-	});
-	steps.push(function() {
-		drawCpuUsageBreakdown("cpu-usage-breakdown-chart", containerInfo);
-	});
+	if (containerInfo.spec.has_cpu) {
+		steps.push(function() {
+			drawCpuTotalUsage("cpu-total-usage-chart", machineInfo, containerInfo);
+		});
+		steps.push(function() {
+			drawCpuPerCoreUsage("cpu-per-core-usage-chart", machineInfo, containerInfo);
+		});
+		steps.push(function() {
+			drawCpuUsageBreakdown("cpu-usage-breakdown-chart", containerInfo);
+		});
+	}
 
 	// Memory.
-	steps.push(function() {
-		drawMemoryUsage("memory-usage-chart", containerInfo);
-	});
+	if (containerInfo.spec.has_memory) {
+		steps.push(function() {
+			drawMemoryUsage("memory-usage-chart", containerInfo);
+		});
+	}
 
 	// Network.
-	steps.push(function() {
-		drawNetworkBytes("network-bytes-chart", machineInfo, containerInfo);
-	});
-	steps.push(function() {
-		drawNetworkErrors("network-errors-chart", machineInfo, containerInfo);
-	});
+	if (containerInfo.spec.has_network) {
+		steps.push(function() {
+			drawNetworkBytes("network-bytes-chart", machineInfo, containerInfo);
+		});
+		steps.push(function() {
+			drawNetworkErrors("network-errors-chart", machineInfo, containerInfo);
+		});
+	}
 
 	stepExecute(steps);
 }
