@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 (2014-09-19)
+- Various performance enhancements: brings CPU usage down 85%+
+- Implemented dynamic sampling through dynamic housekeeping.
+- Memory storage driver is always on, BigQuery and InfluxDB are now optional storage backends.
+- Fix for DNS resolution crashes when contacting InfluxDB.
+- New containers are now detected using inotify.
+- Added pprof HTTP endpoint.
+- UI bugfixes.
+
 ## 0.3.0 (2014-09-05)
 - Support for Docker with LXC backend.
 - Added BigQuery storage driver.
