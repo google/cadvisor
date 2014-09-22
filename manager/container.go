@@ -41,7 +41,7 @@ type containerStat struct {
 type containerInfo struct {
 	info.ContainerReference
 	Subcontainers []info.ContainerReference
-	Spec          *info.ContainerSpec
+	Spec          info.ContainerSpec
 }
 
 type containerData struct {
@@ -166,7 +166,6 @@ func (c *containerData) housekeeping() {
 			time.Sleep(nextHousekeeping.Sub(time.Now()))
 		}
 		lastHousekeeping = nextHousekeeping
-
 	}
 }
 

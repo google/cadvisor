@@ -40,8 +40,13 @@ type MemorySpec struct {
 }
 
 type ContainerSpec struct {
-	Cpu    *CpuSpec    `json:"cpu,omitempty"`
-	Memory *MemorySpec `json:"memory,omitempty"`
+	HasCpu bool    `json:"has_cpu"`
+	Cpu    CpuSpec `json:"cpu,omitempty"`
+
+	HasMemory bool       `json:"has_memory"`
+	Memory    MemorySpec `json:"memory,omitempty"`
+
+	HasNetwork bool `json:"has_network"`
 }
 
 // Container reference contains enough information to uniquely identify a container
@@ -66,7 +71,7 @@ type ContainerInfo struct {
 	Subcontainers []ContainerReference `json:"subcontainers,omitempty"`
 
 	// The isolation used in the container.
-	Spec *ContainerSpec `json:"spec,omitempty"`
+	Spec ContainerSpec `json:"spec,omitempty"`
 
 	// Historical statistics gathered from the container.
 	Stats []*ContainerStats `json:"stats,omitempty"`

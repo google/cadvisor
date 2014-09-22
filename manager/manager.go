@@ -166,7 +166,7 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 	}
 
 	// Set default value to an actual value
-	if ret.Spec.Memory != nil {
+	if ret.Spec.HasMemory {
 		// Memory.Limit is 0 means there's no limit
 		if ret.Spec.Memory.Limit == 0 {
 			ret.Spec.Memory.Limit = uint64(self.machineInfo.MemoryCapacity)

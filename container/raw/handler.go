@@ -92,15 +92,15 @@ func readInt64(dirpath string, file string) uint64 {
 	return val
 }
 
-func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
-	spec := new(info.ContainerSpec)
+func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
+	var spec info.ContainerSpec
 
 	// The raw driver assumes unified hierarchy containers.
 
 	// Get machine info.
 	mi, err := self.machineInfoFactory.GetMachineInfo()
 	if err != nil {
-		return nil, err
+		return spec, err
 	}
 
 	// CPU.
@@ -108,7 +108,7 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 	if ok {
 		cpuRoot = path.Join(cpuRoot, self.name)
 		if utils.FileExists(cpuRoot) {
-			spec.Cpu = new(info.CpuSpec)
+			spec.HasCpu = true
 			spec.Cpu.Limit = readInt64(cpuRoot, "cpu.shares")
 		}
 	}
@@ -117,11 +117,9 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 	// This will fail for non-unified hierarchies. We'll return the whole machine mask in that case.
 	cpusetRoot, ok := self.cgroupSubsystems.mountPoints["cpuset"]
 	if ok {
-		if spec.Cpu == nil {
-			spec.Cpu = new(info.CpuSpec)
-		}
 		cpusetRoot = path.Join(cpusetRoot, self.name)
 		if utils.FileExists(cpusetRoot) {
+			spec.HasCpu = true
 			spec.Cpu.Mask = readString(cpusetRoot, "cpuset.cpus")
 			if spec.Cpu.Mask == "" {
 				spec.Cpu.Mask = fmt.Sprintf("0-%d", mi.NumCores-1)
@@ -134,7 +132,7 @@ func (self *rawContainerHandler) GetSpec() (*info.ContainerSpec, error) {
 	if ok {
 		memoryRoot = path.Join(memoryRoot, self.name)
 		if utils.FileExists(memoryRoot) {
-			spec.Memory = new(info.MemorySpec)
+			spec.HasMemory = true
 			spec.Memory.Limit = readInt64(memoryRoot, "memory.limit_in_bytes")
 			spec.Memory.SwapLimit = readInt64(memoryRoot, "memory.memsw.limit_in_bytes")
 		}

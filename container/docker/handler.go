@@ -149,9 +149,9 @@ func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer
 	return
 }
 
-func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.MachineInfo) *info.ContainerSpec {
-	spec := new(info.ContainerSpec)
-	spec.Memory = new(info.MemorySpec)
+func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.MachineInfo) info.ContainerSpec {
+	var spec info.ContainerSpec
+	spec.HasMemory = true
 	spec.Memory.Limit = math.MaxUint64
 	spec.Memory.SwapLimit = math.MaxUint64
 	if config.Cgroups.Memory > 0 {
@@ -162,7 +162,7 @@ func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.Mac
 	}
 
 	// Get CPU info
-	spec.Cpu = new(info.CpuSpec)
+	spec.HasCpu = true
 	spec.Cpu.Limit = 1024
 	if config.Cgroups.CpuShares != 0 {
 		spec.Cpu.Limit = uint64(config.Cgroups.CpuShares)
@@ -173,12 +173,14 @@ func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.Mac
 	} else {
 		spec.Cpu.Mask = config.Cgroups.CpusetCpus
 	}
+
+	spec.HasNetwork = true
 	return spec
 }
 
-func (self *dockerContainerHandler) GetSpec() (spec *info.ContainerSpec, err error) {
+func (self *dockerContainerHandler) GetSpec() (spec info.ContainerSpec, err error) {
 	if self.isDockerRoot() {
-		return &info.ContainerSpec{}, nil
+		return info.ContainerSpec{}, nil
 	}
 	mi, err := self.machineInfoFactory.GetMachineInfo()
 	if err != nil {
