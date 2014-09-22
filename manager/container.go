@@ -84,15 +84,15 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	return &ret, nil
 }
 
-func NewContainerData(containerName string, driver storage.StorageDriver) (*containerData, error) {
+func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler) (*containerData, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver")
 	}
-	cont := &containerData{}
-	handler, err := container.NewContainerHandler(containerName)
-	if err != nil {
-		return nil, err
+	if handler == nil {
+		return nil, fmt.Errorf("nil container handler")
 	}
+
+	cont := &containerData{}
 	cont.handler = handler
 	ref, err := handler.ContainerReference()
 	if err != nil {
