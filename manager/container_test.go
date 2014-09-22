@@ -25,53 +25,32 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
 	itest "github.com/google/cadvisor/info/test"
-	"github.com/google/cadvisor/storage"
 	stest "github.com/google/cadvisor/storage/test"
 )
 
-func createContainerDataAndSetHandler(
-	driver storage.StorageDriver,
-	f func(*container.MockContainerHandler),
-	t *testing.T,
-) *containerData {
-	factory := &container.FactoryForMockContainerHandler{
-		Name: "factoryForMockContainer",
-		PrepareContainerHandlerFunc: func(name string, handler *container.MockContainerHandler) {
-			handler.Name = name
-			f(handler)
-		},
-	}
-	container.ClearContainerHandlerFactories()
-	container.RegisterContainerHandlerFactory(factory)
+const containerName = "/container"
 
-	if driver == nil {
-		driver = &stest.MockStorageDriver{}
-	}
-
-	ret, err := NewContainerData("/container", driver)
+// Create a containerData instance for a test. Optionsl storage driver may be specified (one is made otherwise).
+func newTestContainerData(t *testing.T) (*containerData, *container.MockContainerHandler, *stest.MockStorageDriver) {
+	mockHandler := container.NewMockContainerHandler(containerName)
+	mockDriver := &stest.MockStorageDriver{}
+	ret, err := newContainerData(containerName, mockDriver, mockHandler)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return ret
+	return ret, mockHandler, mockDriver
 }
 
-func TestContainerUpdateSubcontainers(t *testing.T) {
-	var handler *container.MockContainerHandler
+func TestUpdateSubcontainers(t *testing.T) {
 	subcontainers := []info.ContainerReference{
 		{Name: "/container/ee0103"},
 		{Name: "/container/abcd"},
 		{Name: "/container/something"},
 	}
-	cd := createContainerDataAndSetHandler(
+	cd, mockHandler, _ := newTestContainerData(t)
+	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+		subcontainers,
 		nil,
-		func(h *container.MockContainerHandler) {
-			h.On("ListContainers", container.LIST_SELF).Return(
-				subcontainers,
-				nil,
-			)
-			handler = h
-		},
-		t,
 	)
 
 	err := cd.updateSubcontainers()
@@ -95,21 +74,14 @@ func TestContainerUpdateSubcontainers(t *testing.T) {
 		}
 	}
 
-	handler.AssertExpectations(t)
+	mockHandler.AssertExpectations(t)
 }
 
-func TestContainerUpdateSubcontainersWithError(t *testing.T) {
-	var handler *container.MockContainerHandler
-	cd := createContainerDataAndSetHandler(
-		nil,
-		func(h *container.MockContainerHandler) {
-			h.On("ListContainers", container.LIST_SELF).Return(
-				[]info.ContainerReference{},
-				fmt.Errorf("some error"),
-			)
-			handler = h
-		},
-		t,
+func TestUpdateSubcontainersWithError(t *testing.T) {
+	cd, mockHandler, _ := newTestContainerData(t)
+	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+		[]info.ContainerReference{},
+		fmt.Errorf("some error"),
 	)
 
 	err := cd.updateSubcontainers()
@@ -120,54 +92,35 @@ func TestContainerUpdateSubcontainersWithError(t *testing.T) {
 		t.Errorf("Received %v subcontainers, should be 0", len(cd.info.Subcontainers))
 	}
 
-	handler.AssertExpectations(t)
+	mockHandler.AssertExpectations(t)
 }
 
-func TestContainerUpdateStats(t *testing.T) {
-	var handler *container.MockContainerHandler
-	var ref info.ContainerReference
-
-	driver := &stest.MockStorageDriver{}
-
+func TestUpdateStats(t *testing.T) {
 	statsList := itest.GenerateRandomStats(1, 4, 1*time.Second)
 	stats := statsList[0]
 
-	cd := createContainerDataAndSetHandler(
-		driver,
-		func(h *container.MockContainerHandler) {
-			h.On("GetStats").Return(
-				stats,
-				nil,
-			)
-			handler = h
-			ref.Name = h.Name
-		},
-		t,
+	cd, mockHandler, mockDriver := newTestContainerData(t)
+	mockHandler.On("GetStats").Return(
+		stats,
+		nil,
 	)
 
-	driver.On("AddStats", ref, stats).Return(nil)
+	mockDriver.On("AddStats", info.ContainerReference{Name: mockHandler.Name}, stats).Return(nil)
 
 	err := cd.updateStats()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	handler.AssertExpectations(t)
+	mockHandler.AssertExpectations(t)
 }
 
-func TestContainerUpdateSpec(t *testing.T) {
-	var handler *container.MockContainerHandler
+func TestUpdateSpec(t *testing.T) {
 	spec := itest.GenerateRandomContainerSpec(4)
-	cd := createContainerDataAndSetHandler(
+	cd, mockHandler, _ := newTestContainerData(t)
+	mockHandler.On("GetSpec").Return(
+		spec,
 		nil,
-		func(h *container.MockContainerHandler) {
-			h.On("GetSpec").Return(
-				spec,
-				nil,
-			)
-			handler = h
-		},
-		t,
 	)
 
 	err := cd.updateSpec()
@@ -175,41 +128,33 @@ func TestContainerUpdateSpec(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler.AssertExpectations(t)
+	mockHandler.AssertExpectations(t)
 }
 
-func TestContainerGetInfo(t *testing.T) {
-	var handler *container.MockContainerHandler
+func TestGetInfo(t *testing.T) {
 	spec := itest.GenerateRandomContainerSpec(4)
 	subcontainers := []info.ContainerReference{
 		{Name: "/container/ee0103"},
 		{Name: "/container/abcd"},
 		{Name: "/container/something"},
 	}
-	aliases := []string{"a1", "a2"}
-	cd := createContainerDataAndSetHandler(
+	cd, mockHandler, _ := newTestContainerData(t)
+	mockHandler.On("GetSpec").Return(
+		spec,
 		nil,
-		func(h *container.MockContainerHandler) {
-			h.On("GetSpec").Return(
-				spec,
-				nil,
-			)
-			h.On("ListContainers", container.LIST_SELF).Return(
-				subcontainers,
-				nil,
-			)
-			h.Aliases = aliases
-			handler = h
-		},
-		t,
 	)
+	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+		subcontainers,
+		nil,
+	)
+	mockHandler.Aliases = []string{"a1", "a2"}
 
 	info, err := cd.GetInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	handler.AssertExpectations(t)
+	mockHandler.AssertExpectations(t)
 
 	if len(info.Subcontainers) != len(subcontainers) {
 		t.Errorf("Received %v subcontainers, should be %v", len(info.Subcontainers), len(subcontainers))
@@ -231,7 +176,7 @@ func TestContainerGetInfo(t *testing.T) {
 		t.Errorf("received wrong container spec")
 	}
 
-	if info.Name != handler.Name {
-		t.Errorf("received wrong container name: received %v; should be %v", info.Name, handler.Name)
+	if info.Name != mockHandler.Name {
+		t.Errorf("received wrong container name: received %v; should be %v", info.Name, mockHandler.Name)
 	}
 }

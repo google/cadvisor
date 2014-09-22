@@ -36,34 +36,19 @@ func createManagerAndAddContainers(
 	if driver == nil {
 		driver = &stest.MockStorageDriver{}
 	}
-	factory := &container.FactoryForMockContainerHandler{
-		Name: "factoryForManager",
-		PrepareContainerHandlerFunc: func(name string, handler *container.MockContainerHandler) {
-			handler.Name = name
-			found := false
-			for _, c := range containers {
-				if c == name {
-					found = true
-				}
-			}
-			if !found {
-				t.Errorf("Asked to create a container with name %v, which is unknown.", name)
-			}
-			f(handler)
-		},
-	}
 	container.ClearContainerHandlerFactories()
-	container.RegisterContainerHandlerFactory(factory)
 	mif, err := New(driver)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if ret, ok := mif.(*manager); ok {
-		for _, container := range containers {
-			ret.containers[container], err = NewContainerData(container, driver)
+		for _, name := range containers {
+			mockHandler := container.NewMockContainerHandler(name)
+			ret.containers[name], err = newContainerData(name, driver, mockHandler)
 			if err != nil {
 				t.Fatal(err)
 			}
+			f(mockHandler)
 		}
 		return ret
 	}
@@ -177,5 +162,22 @@ func TestSubcontainersInfo(t *testing.T) {
 		if !found {
 			t.Errorf("unexpected container %q in result, expected one of %v", res.Name, containers)
 		}
+	}
+}
+
+func TestNew(t *testing.T) {
+	manager, err := New(&stest.MockStorageDriver{})
+	if err != nil {
+		t.Fatalf("Expected manager.New to succeed: %s", err)
+	}
+	if manager == nil {
+		t.Fatalf("Expected returned manager to not be nil")
+	}
+}
+
+func TestNewNilManager(t *testing.T) {
+	_, err := New(nil)
+	if err == nil {
+		t.Fatalf("Expected nil manager to return error")
 	}
 }

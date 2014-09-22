@@ -222,7 +222,11 @@ func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
 
 // Create a container.
 func (m *manager) createContainer(containerName string) error {
-	cont, err := NewContainerData(containerName, m.storageDriver)
+	handler, err := container.NewContainerHandler(containerName)
+	if err != nil {
+		return err
+	}
+	cont, err := newContainerData(containerName, m.storageDriver, handler)
 	if err != nil {
 		return err
 	}

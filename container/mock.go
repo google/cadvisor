@@ -26,6 +26,12 @@ type MockContainerHandler struct {
 	Aliases []string
 }
 
+func NewMockContainerHandler(containerName string) *MockContainerHandler {
+	return &MockContainerHandler{
+		Name: containerName,
+	}
+}
+
 // If self.Name is not empty, then ContainerReference() will return self.Name and self.Aliases.
 // Otherwise, it will use the value provided by .On().Return().
 func (self *MockContainerHandler) ContainerReference() (info.ContainerReference, error) {
