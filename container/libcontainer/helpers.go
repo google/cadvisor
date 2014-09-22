@@ -15,7 +15,6 @@
 package libcontainer
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/docker/libcontainer"
@@ -46,12 +45,19 @@ func DiskStatsCopy(blkio_stats []cgroups.BlkioStatEntry) (stat []info.PerDiskSta
 	if len(blkio_stats) == 0 {
 		return
 	}
-	disk_stat := make(map[string]*info.PerDiskStats)
+	type DiskKey struct {
+		Major uint64
+		Minor uint64
+	}
+	disk_stat := make(map[DiskKey]*info.PerDiskStats)
 	for i := range blkio_stats {
 		major := blkio_stats[i].Major
 		minor := blkio_stats[i].Minor
-		device_string := fmt.Sprintf("%d:%d", major, minor)
-		diskp, ok := disk_stat[device_string]
+		disk_key := DiskKey{
+			Major: major,
+			Minor: minor,
+		}
+		diskp, ok := disk_stat[disk_key]
 		if !ok {
 			disk := info.PerDiskStats{
 				Major: major,
@@ -59,7 +65,7 @@ func DiskStatsCopy(blkio_stats []cgroups.BlkioStatEntry) (stat []info.PerDiskSta
 			}
 			disk.Stats = make(map[string]uint64)
 			diskp = &disk
-			disk_stat[device_string] = diskp
+			disk_stat[disk_key] = diskp
 		}
 		op := blkio_stats[i].Op
 		if op == "" {
@@ -95,7 +101,6 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 			ret.Cpu.Usage.Total += s.CpuStats.CpuUsage.PercpuUsage[i]
 		}
 
-		ret.DiskIo = new(info.DiskIoStats)
 		ret.DiskIo.IoServiceBytes = DiskStatsCopy(s.BlkioStats.IoServiceBytesRecursive)
 		ret.DiskIo.IoServiced = DiskStatsCopy(s.BlkioStats.IoServicedRecursive)
 		ret.DiskIo.IoQueued = DiskStatsCopy(s.BlkioStats.IoQueuedRecursive)

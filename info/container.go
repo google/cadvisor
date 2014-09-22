@@ -228,7 +228,7 @@ type ContainerStats struct {
 	// The time of this stat point.
 	Timestamp time.Time     `json:"timestamp"`
 	Cpu       *CpuStats     `json:"cpu,omitempty"`
-	DiskIo    *DiskIoStats  `json:"diskio,omitempty"`
+	DiskIo    DiskIoStats   `json:"diskio,omitempty"`
 	Memory    *MemoryStats  `json:"memory,omitempty"`
 	Network   *NetworkStats `json:"network,omitempty"`
 }
