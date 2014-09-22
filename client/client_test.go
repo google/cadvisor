@@ -72,7 +72,7 @@ func cadvisorTestClient(path string, expectedPostObj, expectedPostObjEmpty, repl
 }
 
 // TestGetMachineInfo performs one test to check if MachineInfo()
-// in a cAdvisor cliernt returns the correct result.
+// in a cAdvisor client returns the correct result.
 func TestGetMachineinfo(t *testing.T) {
 	minfo := &info.MachineInfo{
 		NumCores:       8,
