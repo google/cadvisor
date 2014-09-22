@@ -172,8 +172,7 @@ func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, er
 	query.NumStats = 64
 
 	decoder := json.NewDecoder(body)
-	err := decoder.Decode(&query)
-	if err != nil && err != io.EOF {
+	if err := decoder.Decode(&query); err != nil && err != io.EOF {
 		return nil, fmt.Errorf("unable to decode the json value: %s", err)
 	}
 
