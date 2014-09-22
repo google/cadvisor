@@ -47,8 +47,7 @@ func cadvisorTestClient(path string, expectedPostObj, expectedPostObjEmpty, repl
 		if r.URL.Path == path {
 			if expectedPostObj != nil {
 				decoder := json.NewDecoder(r.Body)
-				err := decoder.Decode(expectedPostObjEmpty)
-				if err != nil {
+				if err := decoder.Decode(expectedPostObjEmpty); err != nil {
 					t.Errorf("Received invalid object: %v", err)
 				}
 				if !reflect.DeepEqual(expectedPostObj, expectedPostObjEmpty) {
@@ -72,6 +71,8 @@ func cadvisorTestClient(path string, expectedPostObj, expectedPostObjEmpty, repl
 	return client, ts, err
 }
 
+// TestGetMachineInfo peforms one test to check if MachineInfo()
+// in a cAdvisor cliernt returns the correct result.
 func TestGetMachineinfo(t *testing.T) {
 	minfo := &info.MachineInfo{
 		NumCores:       8,
@@ -91,6 +92,8 @@ func TestGetMachineinfo(t *testing.T) {
 	}
 }
 
+// TestGetContainerInfo generates a random container information object
+// and then checks that ContainerInfo returns the expected result.
 func TestGetContainerInfo(t *testing.T) {
 	query := &info.ContainerInfoRequest{
 		NumStats: 3,

@@ -25,29 +25,33 @@ import (
 	"github.com/google/cadvisor/info"
 )
 
+// Client represents the base URL for a cAdvisor client.
 type Client struct {
 	baseUrl string
 }
 
+// NewClient returns a new client with the specified base URL.
+// TODO(cAdvisor): Currently the error result is always nil.
 func NewClient(URL string) (*Client, error) {
-	c := &Client{
+	return &Client{
 		baseUrl: strings.Join([]string{
 			URL,
 			"api/v1.0",
 		}, "/"),
-	}
-	return c, nil
+	}, nil
 }
 
 func (self *Client) machineInfoUrl() string {
 	return strings.Join([]string{self.baseUrl, "machine"}, "/")
 }
 
+// MachineInfo returns the JSON machine information for this client.
+// A non-nil error result indicates a problem with obtaining
+// the JSON machine information data.
 func (self *Client) MachineInfo() (minfo *info.MachineInfo, err error) {
 	u := self.machineInfoUrl()
 	ret := new(info.MachineInfo)
-	err = self.httpGetJsonData(ret, nil, u, "machine info")
-	if err != nil {
+	if err = self.httpGetJsonData(ret, nil, u, "machine info"); err != nil {
 		return
 	}
 	minfo = ret
@@ -84,21 +88,20 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 		err = fmt.Errorf("unable to read all %v: %v", infoName, err)
 		return err
 	}
-	err = json.Unmarshal(body, data)
-	if err != nil {
+	if err = json.Unmarshal(body, data); err != nil {
 		err = fmt.Errorf("unable to unmarshal %v (%v): %v", infoName, string(body), err)
 		return err
 	}
 	return nil
 }
 
-func (self *Client) ContainerInfo(
-	name string,
+// ContainerInfo returns the JSON container information for the specified
+// container and request.
+func (self *Client) ContainerInfo(name string,
 	query *info.ContainerInfoRequest) (cinfo *info.ContainerInfo, err error) {
 	u := self.containerInfoUrl(name)
 	ret := new(info.ContainerInfo)
-	err = self.httpGetJsonData(ret, query, u, fmt.Sprintf("container info for %v", name))
-	if err != nil {
+	if err = self.httpGetJsonData(ret, query, u, fmt.Sprintf("container info for %v", name)); err != nil {
 		return
 	}
 	cinfo = ret
