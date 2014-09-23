@@ -34,6 +34,7 @@ import (
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
+	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/validate"
 )
 
@@ -65,7 +66,12 @@ func main() {
 		glog.Fatalf("Failed to connect to database: %s", err)
 	}
 
-	containerManager, err := manager.New(storageDriver)
+	sysFs, err := sysfs.NewRealSysFs()
+	if err != nil {
+		glog.Fatalf("Failed to create a system interface: %s", err)
+	}
+
+	containerManager, err := manager.New(storageDriver, sysFs)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
