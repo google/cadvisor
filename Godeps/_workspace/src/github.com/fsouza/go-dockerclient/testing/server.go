@@ -12,9 +12,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fsouza/go-dockerclient"
-	"github.com/fsouza/go-dockerclient/utils"
-	"github.com/gorilla/mux"
 	mathrand "math/rand"
 	"net"
 	"net/http"
@@ -23,6 +20,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fsouza/go-dockerclient"
+	"github.com/gorilla/mux"
 )
 
 // DockerServer represents a programmable, concurrent (not much), HTTP server
@@ -31,7 +31,7 @@ import (
 // It can used in standalone mode, listening for connections or as an arbitrary
 // HTTP handler.
 //
-// For more details on the remote API, check http://goo.gl/yMI1S.
+// For more details on the remote API, check http://goo.gl/G3plxW.
 type DockerServer struct {
 	containers     []*docker.Container
 	cMut           sync.RWMutex
@@ -103,6 +103,8 @@ func (s *DockerServer) buildMuxer() {
 	s.mux.Path("/images/{name:.*}/push").Methods("POST").HandlerFunc(s.handlerWrapper(s.pushImage))
 	s.mux.Path("/events").Methods("GET").HandlerFunc(s.listEvents)
 	s.mux.Path("/_ping").Methods("GET").HandlerFunc(s.handlerWrapper(s.pingDocker))
+	s.mux.Path("/images/load").Methods("POST").HandlerFunc(s.handlerWrapper(s.loadImage))
+	s.mux.Path("/images/{id:.*}/get").Methods("GET").HandlerFunc(s.handlerWrapper(s.getImage))
 }
 
 // PrepareFailure adds a new expected failure based on a URL regexp it receives
@@ -223,6 +225,11 @@ func (s *DockerServer) listImages(w http.ResponseWriter, r *http.Request) {
 		result[i] = docker.APIImages{
 			ID:      image.ID,
 			Created: image.Created.Unix(),
+		}
+		for tag, id := range s.imgIDs {
+			if id == image.ID {
+				result[i].RepoTags = append(result[i].RepoTags, tag)
+			}
 		}
 	}
 	s.cMut.RUnlock()
@@ -408,7 +415,7 @@ func (s *DockerServer) attachContainer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	outStream := utils.NewStdWriter(w, utils.Stdout)
+	outStream := newStdWriter(w, stdout)
 	fmt.Fprintf(outStream, "HTTP/1.1 200 OK\r\nContent-Type: application/vnd.docker.raw-stream\r\n\r\n")
 	if container.State.Running {
 		fmt.Fprintf(outStream, "Container %q is running\n", container.ID)
@@ -648,4 +655,14 @@ func (s *DockerServer) generateEvent() *docker.APIEvents {
 		From:   "mybase:latest",
 		Time:   time.Now().Unix(),
 	}
+}
+
+func (s *DockerServer) loadImage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *DockerServer) getImage(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/tar")
+
 }

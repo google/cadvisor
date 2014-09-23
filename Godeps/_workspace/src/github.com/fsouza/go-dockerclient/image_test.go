@@ -21,9 +21,9 @@ func newTestClient(rt *FakeRoundTripper) Client {
 	endpoint := "http://localhost:4243"
 	u, _ := parseEndpoint("http://localhost:4243")
 	client := Client{
+		HTTPClient:             &http.Client{Transport: rt},
 		endpoint:               endpoint,
 		endpointURL:            u,
-		client:                 &http.Client{Transport: rt},
 		SkipServerVersionCheck: true,
 	}
 	return client
@@ -119,6 +119,48 @@ func TestListImagesParameters(t *testing.T) {
 	req = fakeRT.requests[0]
 	if all := req.URL.Query().Get("all"); all != "1" {
 		t.Errorf("ListImages(true): Wrong parameter. Want all=1. Got all=%s", all)
+	}
+}
+
+func TestImageHistory(t *testing.T) {
+	body := `[
+	{
+		"Id": "25daec02219d2d852f7526137213a9b199926b4b24e732eab5b8bc6c49bd470e",
+		"Tags": [
+			"debian:7.6",
+			"debian:latest",
+			"debian:7",
+			"debian:wheezy"
+		],
+		"Created": 1409856216,
+		"CreatedBy": "/bin/sh -c #(nop) CMD [/bin/bash]"
+	},
+	{
+		"Id": "41026a5347fb5be6ed16115bf22df8569697139f246186de9ae8d4f67c335dce",
+		"Created": 1409856213,
+		"CreatedBy": "/bin/sh -c #(nop) ADD file:1ee9e97209d00e3416a4543b23574cc7259684741a46bbcbc755909b8a053a38 in /",
+		"Size": 85178663
+	},
+	{
+		"Id": "511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158",
+		"Tags": [
+			"scratch:latest"
+		],
+		"Created": 1371157430
+	}
+]`
+	var expected []ImageHistory
+	err := json.Unmarshal([]byte(body), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
+	history, err := client.ImageHistory("debian:latest")
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(history, expected) {
+		t.Errorf("ImageHistory: Wrong return value. Want %#v. Got %#v.", expected, history)
 	}
 }
 
@@ -306,6 +348,33 @@ func TestPullImage(t *testing.T) {
 	expectedQuery := "fromImage=base"
 	if query := req.URL.Query().Encode(); query != expectedQuery {
 		t.Errorf("PullImage: Wrong query strin. Want %q. Got %q.", expectedQuery, query)
+	}
+}
+
+func TestPullImageWithRawJSON(t *testing.T) {
+	body := `
+	{"status":"Pulling..."}
+	{"status":"Pulling", "progress":"1 B/ 100 B", "progressDetail":{"current":1, "total":100}}
+	`
+	fakeRT := &FakeRoundTripper{
+		message: body,
+		status:  http.StatusOK,
+		header: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	err := client.PullImage(PullImageOptions{
+		Repository:    "base",
+		OutputStream:  &buf,
+		RawJSONStream: true,
+	}, AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if buf.String() != body {
+		t.Errorf("PullImage: Wrong raw output. Want %q. Got %q", body, buf.String())
 	}
 }
 
@@ -514,19 +583,20 @@ func TestBuildImageParameters(t *testing.T) {
 	client := newTestClient(fakeRT)
 	var buf bytes.Buffer
 	opts := BuildImageOptions{
-		Name:           "testImage",
-		NoCache:        true,
-		SuppressOutput: true,
-		RmTmpContainer: true,
-		InputStream:    &buf,
-		OutputStream:   &buf,
+		Name:                "testImage",
+		NoCache:             true,
+		SuppressOutput:      true,
+		RmTmpContainer:      true,
+		ForceRmTmpContainer: true,
+		InputStream:         &buf,
+		OutputStream:        &buf,
 	}
 	err := client.BuildImage(opts)
 	if err != nil && strings.Index(err.Error(), "build image fail") == -1 {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
-	expected := map[string][]string{"t": {opts.Name}, "nocache": {"1"}, "q": {"1"}, "rm": {"1"}}
+	expected := map[string][]string{"t": {opts.Name}, "nocache": {"1"}, "q": {"1"}, "rm": {"1"}, "forcerm": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
@@ -551,7 +621,7 @@ func TestBuildImageParametersForRemoteBuild(t *testing.T) {
 	expected := map[string][]string{"t": {opts.Name}, "remote": {opts.Remote}, "q": {"1"}}
 	got := map[string][]string(req.URL.Query())
 	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("ImportImage: wrong query string. Want %#v. Got %#v.", expected, got)
+		t.Errorf("BuildImage: wrong query string. Want %#v. Got %#v.", expected, got)
 	}
 }
 
@@ -577,6 +647,44 @@ func TestBuildImageMissingOutputStream(t *testing.T) {
 	err := client.BuildImage(opts)
 	if err != ErrMissingOutputStream {
 		t.Errorf("BuildImage: wrong error returned. Want %#v. Got %#v.", ErrMissingOutputStream, err)
+	}
+}
+
+func TestBuildImageWithRawJSON(t *testing.T) {
+	body := `
+	{"stream":"Step 0 : FROM ubuntu:latest\n"}
+	{"stream":" ---\u003e 4300eb9d3c8d\n"}
+	{"stream":"Step 1 : MAINTAINER docker <eng@docker.com>\n"}
+	{"stream":" ---\u003e Using cache\n"}
+	{"stream":" ---\u003e 3a3ed758c370\n"}
+	{"stream":"Step 2 : CMD /usr/bin/top\n"}
+	{"stream":" ---\u003e Running in 36b1479cc2e4\n"}
+	{"stream":" ---\u003e 4b6188aebe39\n"}
+	{"stream":"Removing intermediate container 36b1479cc2e4\n"}
+	{"stream":"Successfully built 4b6188aebe39\n"}
+    `
+	fakeRT := &FakeRoundTripper{
+		message: body,
+		status:  http.StatusOK,
+		header: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+	opts := BuildImageOptions{
+		Name:           "testImage",
+		RmTmpContainer: true,
+		InputStream:    &buf,
+		OutputStream:   &buf,
+		RawJSONStream:  true,
+	}
+	err := client.BuildImage(opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if buf.String() != body {
+		t.Errorf("BuildImage: Wrong raw output. Want %q. Got %q.", body, buf.String())
 	}
 }
 
@@ -638,5 +746,47 @@ func TestIsUrl(t *testing.T) {
 	result = isURL(url)
 	if result {
 		t.Errorf("isURL: wrong match. Expected %#v to not be a url. Got %#v", url, result)
+	}
+}
+
+func TestLoadImage(t *testing.T) {
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	tar, err := os.Open("testing/data/container.tar")
+	if err != nil {
+		t.Fatal(err)
+	} else {
+		defer tar.Close()
+	}
+	opts := LoadImageOptions{InputStream: tar}
+	err = client.LoadImage(opts)
+	if nil != err {
+		t.Error(err)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "POST" {
+		t.Errorf("LoadImage: wrong method. Expected %q. Got %q.", "POST", req.Method)
+	}
+	if req.URL.Path != "/images/load" {
+		t.Errorf("LoadImage: wrong URL. Expected %q. Got %q.", "/images/load", req.URL.Path)
+	}
+}
+
+func TestExportImage(t *testing.T) {
+	var buf bytes.Buffer
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := ExportImageOptions{Name: "testimage", OutputStream: &buf}
+	err := client.ExportImage(opts)
+	if nil != err {
+		t.Error(err)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "GET" {
+		t.Errorf("ExportImage: wrong method. Expected %q. Got %q.", "GET", req.Method)
+	}
+	expectedPath := "/images/testimage/get"
+	if req.URL.Path != expectedPath {
+		t.Errorf("ExportIMage: wrong path. Expected %q. Got %q.", expectedPath, req.URL.Path)
 	}
 }

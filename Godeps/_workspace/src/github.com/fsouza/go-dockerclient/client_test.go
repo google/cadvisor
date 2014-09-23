@@ -24,10 +24,9 @@ func TestNewAPIClient(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
-	if client.client != http.DefaultClient {
-		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.client)
+	if client.HTTPClient != http.DefaultClient {
+		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.HTTPClient)
 	}
-
 	// test unix socket endpoints
 	endpoint = "unix:///var/run/docker.sock"
 	client, err = NewClient(endpoint)
@@ -54,8 +53,8 @@ func TestNewVersionedClient(t *testing.T) {
 	if client.endpoint != endpoint {
 		t.Errorf("Expected endpoint %s. Got %s.", endpoint, client.endpoint)
 	}
-	if client.client != http.DefaultClient {
-		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.client)
+	if client.HTTPClient != http.DefaultClient {
+		t.Errorf("Expected http.Client %#v. Got %#v.", http.DefaultClient, client.HTTPClient)
 	}
 	if reqVersion := client.requestedApiVersion.String(); reqVersion != "1.12" {
 		t.Errorf("Wrong requestApiVersion. Want %q. Got %q.", "1.12", reqVersion)
@@ -249,16 +248,22 @@ func TestPingFailingWrongStatus(t *testing.T) {
 type FakeRoundTripper struct {
 	message  string
 	status   int
+	header   map[string]string
 	requests []*http.Request
 }
 
 func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	body := strings.NewReader(rt.message)
 	rt.requests = append(rt.requests, r)
-	return &http.Response{
+	res := &http.Response{
 		StatusCode: rt.status,
 		Body:       ioutil.NopCloser(body),
-	}, nil
+		Header:     make(http.Header),
+	}
+	for k, v := range rt.header {
+		res.Header.Set(k, v)
+	}
+	return res, nil
 }
 
 func (rt *FakeRoundTripper) Reset() {
