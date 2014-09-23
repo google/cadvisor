@@ -37,6 +37,7 @@ type rawContainerHandler struct {
 	cgroupSubsystems   *cgroupSubsystems
 	machineInfoFactory info.MachineInfoFactory
 	watcher            *inotify.Watcher
+	stopWatcher        chan error
 	watches            map[string]struct{}
 }
 
@@ -49,6 +50,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		},
 		cgroupSubsystems:   cgroupSubsystems,
 		machineInfoFactory: machineInfoFactory,
+		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
 	}, nil
 }
@@ -319,13 +321,30 @@ func (self *rawContainerHandler) WatchSubcontainers(events chan container.Subcon
 			case event := <-self.watcher.Event:
 				err := self.processEvent(event, events)
 				if err != nil {
-					glog.Warning("Error while processing event (%+v): %v", event, err)
+					glog.Warningf("Error while processing event (%+v): %v", event, err)
 				}
 			case err := <-self.watcher.Error:
-				glog.Warning("Error while watching %q:", self.name, err)
+				glog.Warningf("Error while watching %q:", self.name, err)
+			case <-self.stopWatcher:
+				err := self.watcher.Close()
+				if err == nil {
+					self.stopWatcher <- err
+					self.watcher = nil
+					return
+				}
 			}
 		}
 	}()
 
 	return nil
+}
+
+func (self *rawContainerHandler) StopWatchingSubcontainers() error {
+	if self.watcher == nil {
+		return fmt.Errorf("can't stop watch that has not started for container %q", self.name)
+	}
+
+	// Rendezvous with the watcher thread.
+	self.stopWatcher <- nil
+	return <-self.stopWatcher
 }

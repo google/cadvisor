@@ -47,4 +47,5 @@ type ContainerHandler interface {
 	ListThreads(listType ListType) ([]int, error)
 	ListProcesses(listType ListType) ([]int, error)
 	WatchSubcontainers(events chan SubcontainerEvent) error
+	StopWatchingSubcontainers() error
 }
