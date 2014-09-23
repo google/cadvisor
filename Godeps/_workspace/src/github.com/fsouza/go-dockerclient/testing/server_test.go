@@ -7,7 +7,6 @@ package testing
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/fsouza/go-dockerclient"
 	"math/rand"
 	"net"
 	"net/http"
@@ -17,6 +16,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/fsouza/go-dockerclient"
 )
 
 func TestNewServer(t *testing.T) {
@@ -780,7 +781,7 @@ func addImages(server *DockerServer, n int, repo bool) {
 
 func TestListImages(t *testing.T) {
 	server := DockerServer{}
-	addImages(&server, 2, false)
+	addImages(&server, 2, true)
 	server.buildMuxer()
 	recorder := httptest.NewRecorder()
 	request, _ := http.NewRequest("GET", "/images/json?all=1", nil)
@@ -791,8 +792,9 @@ func TestListImages(t *testing.T) {
 	expected := make([]docker.APIImages, 2)
 	for i, image := range server.images {
 		expected[i] = docker.APIImages{
-			ID:      image.ID,
-			Created: image.Created.Unix(),
+			ID:       image.ID,
+			Created:  image.Created.Unix(),
+			RepoTags: []string{"docker/python-" + image.ID},
 		}
 	}
 	var got []docker.APIImages

@@ -50,8 +50,8 @@
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Comment": "0.2.1-185-g4fc0e0d",
-			"Rev": "4fc0e0dbba85f2f799aa77cea594d40267f5bd5a"
+			"Comment": "0.2.1-251-g2e21eae",
+			"Rev": "2e21eaef5e7d46f002e259eb7cde39ed3680a7b4"
 		},
 		{
 			"ImportPath": "github.com/godbus/dbus",
