@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
+	"os/signal"
 	"runtime"
 
 	"github.com/golang/glog"
@@ -38,6 +40,7 @@ var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used sim
 var argDbDriver = flag.String("storage_driver", "", "storage driver to use. Empty means none. Options are: <empty> (default), bigquery, and influxdb")
 
 func main() {
+	defer glog.Flush()
 	flag.Parse()
 
 	setMaxProcs()
@@ -91,25 +94,18 @@ func main() {
 		}
 	})
 
-	defer glog.Flush()
+	// Start the manager.
+	if err := containerManager.Start(); err != nil {
+		glog.Fatalf("Failed to start container manager: %v", err)
+	}
 
-	errChan := make(chan error)
-	go func() {
-		errChan <- containerManager.Start()
-	}()
+	// Install signal handler.
+	installSignalHandler(containerManager)
 
-	glog.Infof("Starting cAdvisor version: %q", info.VERSION)
-	glog.Infof("About to serve on port %d", *argPort)
+	glog.Infof("Starting cAdvisor version: %q on port %d", info.VERSION, *argPort)
 
 	addr := fmt.Sprintf(":%v", *argPort)
-
-	go func() {
-		errChan <- http.ListenAndServe(addr, nil)
-	}()
-	select {
-	case err := <-errChan:
-		glog.Fatal(err)
-	}
+	glog.Fatal(http.ListenAndServe(addr, nil))
 }
 
 func setMaxProcs() {
@@ -128,4 +124,19 @@ func setMaxProcs() {
 	if actualNumProcs != numProcs {
 		glog.Warningf("Specified max procs of %v but using %v", numProcs, actualNumProcs)
 	}
+}
+
+func installSignalHandler(containerManager manager.Manager) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+
+	// Block until a signal is received.
+	go func() {
+		sig := <-c
+		if err := containerManager.Stop(); err != nil {
+			glog.Errorf("Failed to stop container manager: %v", err)
+		}
+		glog.Infof("Exiting given signal: %v", sig)
+		os.Exit(0)
+	}()
 }

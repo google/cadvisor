@@ -31,8 +31,11 @@ import (
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
 
 type Manager interface {
-	// Start the manager, blocks forever.
+	// Start the manager.
 	Start() error
+
+	// Stops the manager.
+	Stop() error
 
 	// Get information about a container.
 	GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error)
@@ -51,8 +54,11 @@ func New(driver storage.StorageDriver) (Manager, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver!")
 	}
-	newManager := &manager{}
-	newManager.containers = make(map[string]*containerData)
+	newManager := &manager{
+		containers:    make(map[string]*containerData),
+		quitChannels:  make([]chan error, 0, 2),
+		storageDriver: driver,
+	}
 
 	machineInfo, err := getMachineInfo()
 	if err != nil {
@@ -78,6 +84,7 @@ type manager struct {
 	storageDriver  storage.StorageDriver
 	machineInfo    info.MachineInfo
 	versionInfo    info.VersionInfo
+	quitChannels   []chan error
 }
 
 // Start the container manager.
@@ -94,34 +101,69 @@ func (self *manager) Start() error {
 	}
 	glog.Infof("Recovery completed")
 
+	// Watch for new container.
+	quitWatcher := make(chan error)
+	err = self.watchForNewContainers(quitWatcher)
+	if err != nil {
+		return err
+	}
+	self.quitChannels = append(self.quitChannels, quitWatcher)
+
+	// Look for new containers in the main housekeeping thread.
+	quitGlobalHousekeeping := make(chan error)
+	self.quitChannels = append(self.quitChannels, quitGlobalHousekeeping)
+	go self.globalHousekeeping(quitGlobalHousekeeping)
+
+	return nil
+}
+
+func (self *manager) Stop() error {
+	// Stop and wait on all quit channels.
+	for i, c := range self.quitChannels {
+		// Send the exit signal and wait on the thread to exit (by closing the channel).
+		c <- nil
+		err := <-c
+		if err != nil {
+			// Remove the channels that quit successfully.
+			self.quitChannels = self.quitChannels[i:]
+			return err
+		}
+	}
+	self.quitChannels = make([]chan error, 0, 2)
+	return nil
+}
+
+func (self *manager) globalHousekeeping(quit chan error) {
 	// Long housekeeping is either 100ms or half of the housekeeping interval.
 	longHousekeeping := 100 * time.Millisecond
 	if *globalHousekeepingInterval/2 < longHousekeeping {
 		longHousekeeping = *globalHousekeepingInterval / 2
 	}
 
-	// Watch for new container.
-	go self.watchForNewContainers()
-
-	// Look for new containers in the main housekeeping thread.
 	ticker := time.Tick(*globalHousekeepingInterval)
-	for t := range ticker {
-		start := time.Now()
+	for {
+		select {
+		case t := <-ticker:
+			start := time.Now()
 
-		// Check for new containers.
-		err = self.detectSubcontainers("/")
-		if err != nil {
-			glog.Errorf("Failed to detect containers: %s", err)
-		}
+			// Check for new containers.
+			err := self.detectSubcontainers("/")
+			if err != nil {
+				glog.Errorf("Failed to detect containers: %s", err)
+			}
 
-		// Log if housekeeping took more than 100ms.
-		duration := time.Since(start)
-		if duration >= longHousekeeping {
-			glog.V(1).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
+			// Log if housekeeping took too long.
+			duration := time.Since(start)
+			if duration >= longHousekeeping {
+				glog.V(1).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
+			}
+		case <-quit:
+			// Quit if asked to do so.
+			quit <- nil
+			glog.Infof("Exiting global housekeeping thread")
+			return
 		}
 	}
-
-	return nil
 }
 
 // Get a container by name.
@@ -359,7 +401,7 @@ func (self *manager) processEvent(event container.SubcontainerEvent) error {
 }
 
 // Watches for new containers started in the system. Runs forever unless there is a setup error.
-func (self *manager) watchForNewContainers() error {
+func (self *manager) watchForNewContainers(quit chan error) error {
 	var root *containerData
 	var ok bool
 	func() {
@@ -385,17 +427,29 @@ func (self *manager) watchForNewContainers() error {
 	}
 
 	// Listen to events from the container handler.
-	for event := range events {
-		switch {
-		case event.EventType == container.SUBCONTAINER_ADD:
-			err = self.createContainer(event.Name)
-		case event.EventType == container.SUBCONTAINER_DELETE:
-			err = self.destroyContainer(event.Name)
+	go func() {
+		for {
+			select {
+			case event := <-events:
+				switch {
+				case event.EventType == container.SUBCONTAINER_ADD:
+					err = self.createContainer(event.Name)
+				case event.EventType == container.SUBCONTAINER_DELETE:
+					err = self.destroyContainer(event.Name)
+				}
+				if err != nil {
+					glog.Warning("Failed to process watch event: %v", err)
+				}
+			case <-quit:
+				// Stop processing events if asked to quit.
+				err := root.handler.StopWatchingSubcontainers()
+				quit <- err
+				if err == nil {
+					glog.Infof("Exiting thread watching subcontainers")
+					return
+				}
+			}
 		}
-		if err != nil {
-			glog.Warning("Failed to process watch event: %v", err)
-		}
-	}
-
+	}()
 	return nil
 }

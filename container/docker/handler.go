@@ -268,3 +268,8 @@ func (self *dockerContainerHandler) ListProcesses(listType container.ListType) (
 func (self *dockerContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {
 	return fmt.Errorf("watch is unimplemented in the Docker container driver")
 }
+
+func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
+	// No-op for Docker driver.
+	return nil
+}

@@ -80,6 +80,11 @@ func (self *MockContainerHandler) WatchSubcontainers(events chan SubcontainerEve
 	return args.Error(0)
 }
 
+func (self *MockContainerHandler) StopWatchingSubcontainers() error {
+	args := self.Called()
+	return args.Error(0)
+}
+
 type FactoryForMockContainerHandler struct {
 	Name                        string
 	PrepareContainerHandlerFunc func(name string, handler *MockContainerHandler)
