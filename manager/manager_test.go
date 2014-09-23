@@ -83,7 +83,7 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 				nil,
 			)
 
-			h.On("ListContainers", container.LIST_SELF).Return(
+			h.On("ListContainers", container.ListSelf).Return(
 				[]info.ContainerReference(nil),
 				nil,
 			)
@@ -176,8 +176,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewNilManager(t *testing.T) {
-	_, err := New(nil)
-	if err == nil {
+	if _, err := New(nil); err == nil {
 		t.Fatalf("Expected nil manager to return error")
 	}
 }
