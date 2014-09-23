@@ -41,6 +41,47 @@ func GetStatsCgroupOnly(cgroup *cgroups.Cgroup) (*info.ContainerStats, error) {
 	return toContainerStats(&libcontainer.ContainerStats{CgroupStats: s}), nil
 }
 
+func DiskStatsCopy(blkio_stats []cgroups.BlkioStatEntry) (stat []info.PerDiskStats) {
+	if len(blkio_stats) == 0 {
+		return
+	}
+	type DiskKey struct {
+		Major uint64
+		Minor uint64
+	}
+	disk_stat := make(map[DiskKey]*info.PerDiskStats)
+	for i := range blkio_stats {
+		major := blkio_stats[i].Major
+		minor := blkio_stats[i].Minor
+		disk_key := DiskKey{
+			Major: major,
+			Minor: minor,
+		}
+		diskp, ok := disk_stat[disk_key]
+		if !ok {
+			disk := info.PerDiskStats{
+				Major: major,
+				Minor: minor,
+			}
+			disk.Stats = make(map[string]uint64)
+			diskp = &disk
+			disk_stat[disk_key] = diskp
+		}
+		op := blkio_stats[i].Op
+		if op == "" {
+			op = "Count"
+		}
+		diskp.Stats[op] = blkio_stats[i].Value
+	}
+	i := 0
+	stat = make([]info.PerDiskStats, len(disk_stat))
+	for _, disk := range disk_stat {
+		stat[i] = *disk
+		i++
+	}
+	return
+}
+
 // Convert libcontainer stats to info.ContainerStats.
 func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.ContainerStats {
 	s := libcontainerStats.CgroupStats
@@ -59,6 +100,12 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 			ret.Cpu.Usage.PerCpu[i] = s.CpuStats.CpuUsage.PercpuUsage[i]
 			ret.Cpu.Usage.Total += s.CpuStats.CpuUsage.PercpuUsage[i]
 		}
+
+		ret.DiskIo.IoServiceBytes = DiskStatsCopy(s.BlkioStats.IoServiceBytesRecursive)
+		ret.DiskIo.IoServiced = DiskStatsCopy(s.BlkioStats.IoServicedRecursive)
+		ret.DiskIo.IoQueued = DiskStatsCopy(s.BlkioStats.IoQueuedRecursive)
+		ret.DiskIo.Sectors = DiskStatsCopy(s.BlkioStats.SectorsRecursive)
+
 		ret.Memory = new(info.MemoryStats)
 		ret.Memory.Usage = s.MemoryStats.Usage
 		if v, ok := s.MemoryStats.Stats["pgfault"]; ok {

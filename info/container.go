@@ -171,6 +171,19 @@ type CpuStats struct {
 	Load int32 `json:"load"`
 }
 
+type PerDiskStats struct {
+	Major uint64            `json:"major"`
+	Minor uint64            `json:"minor"`
+	Stats map[string]uint64 `json:"stats"`
+}
+
+type DiskIoStats struct {
+	IoServiceBytes []PerDiskStats `json:"io_service_bytes,omitempty"`
+	IoServiced     []PerDiskStats `json:"io_serviced,omitempty"`
+	IoQueued       []PerDiskStats `json:"io_queued,omitempty"`
+	Sectors        []PerDiskStats `json"sectors,omitempty"`
+}
+
 type MemoryStats struct {
 	// Memory limit, equivalent to "limit" in MemorySpec.
 	// Units: Bytes.
@@ -220,6 +233,7 @@ type ContainerStats struct {
 	// The time of this stat point.
 	Timestamp time.Time     `json:"timestamp"`
 	Cpu       *CpuStats     `json:"cpu,omitempty"`
+	DiskIo    DiskIoStats   `json:"diskio,omitempty"`
 	Memory    *MemoryStats  `json:"memory,omitempty"`
 	Network   *NetworkStats `json:"network,omitempty"`
 }
