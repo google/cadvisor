@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Handler for /api/
-
+// Package api provides a handler for /api/
 package api
 
 import (
@@ -47,8 +46,7 @@ var supportedApiVersions map[string]struct{} = map[string]struct{}{
 
 func RegisterHandlers(m manager.Manager) error {
 	http.HandleFunc(apiResource, func(w http.ResponseWriter, r *http.Request) {
-		err := handleRequest(m, w, r)
-		if err != nil {
+		if err := handleRequest(m, w, r); err != nil {
 			fmt.Fprintf(w, "%s", err)
 		}
 	})

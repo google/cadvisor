@@ -48,13 +48,12 @@ func TestUpdateSubcontainers(t *testing.T) {
 		{Name: "/container/something"},
 	}
 	cd, mockHandler, _ := newTestContainerData(t)
-	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+	mockHandler.On("ListContainers", container.ListSelf).Return(
 		subcontainers,
 		nil,
 	)
 
-	err := cd.updateSubcontainers()
-	if err != nil {
+	if err := cd.updateSubcontainers(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -79,13 +78,12 @@ func TestUpdateSubcontainers(t *testing.T) {
 
 func TestUpdateSubcontainersWithError(t *testing.T) {
 	cd, mockHandler, _ := newTestContainerData(t)
-	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+	mockHandler.On("ListContainers", container.ListSelf).Return(
 		[]info.ContainerReference{},
 		fmt.Errorf("some error"),
 	)
 
-	err := cd.updateSubcontainers()
-	if err == nil {
+	if err := cd.updateSubcontainers(); err == nil {
 		t.Fatal("updateSubcontainers should return error")
 	}
 	if len(cd.info.Subcontainers) != 0 {
@@ -107,8 +105,7 @@ func TestUpdateStats(t *testing.T) {
 
 	mockDriver.On("AddStats", info.ContainerReference{Name: mockHandler.Name}, stats).Return(nil)
 
-	err := cd.updateStats()
-	if err != nil {
+	if err := cd.updateStats(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -143,7 +140,7 @@ func TestGetInfo(t *testing.T) {
 		spec,
 		nil,
 	)
-	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+	mockHandler.On("ListContainers", container.ListSelf).Return(
 		subcontainers,
 		nil,
 	)
