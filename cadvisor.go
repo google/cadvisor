@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"syscall"
 
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
@@ -128,7 +129,7 @@ func setMaxProcs() {
 
 func installSignalHandler(containerManager manager.Manager) {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	// Block until a signal is received.
 	go func() {
