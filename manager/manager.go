@@ -381,7 +381,7 @@ func (self *manager) watchForNewContainers() error {
 	}
 
 	// There is a race between starting the watch and new container creation so we do a detection before we read new containers.
-	err := self.detectSubcontainers("/")
+	err = self.detectSubcontainers("/")
 	if err != nil {
 		return err
 	}
