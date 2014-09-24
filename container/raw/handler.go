@@ -280,7 +280,8 @@ func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan 
 		delete(self.watches, containerName)
 
 		// Container was deleted, stop watching for it.
-		if err := self.watcher.RemoveWatch(event.Name); err != nil {
+		err := self.watcher.RemoveWatch(event.Name)
+		if err != nil {
 			return err
 		}
 	default:
