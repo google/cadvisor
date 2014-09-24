@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(cAdvosor): Package comment.
+// TODO(cAdvisor): Package comment.
 package raw
 
 import (
@@ -167,7 +167,8 @@ func listDirectories(dirpath string, parent string, recursive bool, output map[s
 
 			// List subcontainers if asked to.
 			if recursive {
-				if err := listDirectories(path.Join(dirpath, entry.Name()), name, true, output); err != nil {
+				err := listDirectories(path.Join(dirpath, entry.Name()), name, true, output)
+				if err != nil {
 					return err
 				}
 			}
@@ -206,7 +207,8 @@ func (self *rawContainerHandler) ListProcesses(listType container.ListType) ([]i
 }
 
 func (self *rawContainerHandler) watchDirectory(dir string, containerName string) error {
-	if err := self.watcher.AddWatch(dir, inotify.IN_CREATE|inotify.IN_DELETE|inotify.IN_MOVE); err != nil {
+	err := self.watcher.AddWatch(dir, inotify.IN_CREATE|inotify.IN_DELETE|inotify.IN_MOVE)
+	if err != nil {
 		return err
 	}
 	self.watches[containerName] = struct{}{}
@@ -266,7 +268,8 @@ func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan 
 		}
 
 		// New container was created, watch it.
-		if err := self.watchDirectory(event.Name, containerName); err != nil {
+		err := self.watchDirectory(event.Name, containerName)
+		if err != nil {
 			return err
 		}
 	case eventType == container.SubcontainerDelete:
@@ -305,7 +308,8 @@ func (self *rawContainerHandler) WatchSubcontainers(events chan container.Subcon
 
 	// Watch this container (all its cgroups) and all subdirectories.
 	for _, mnt := range self.cgroupSubsystems.mounts {
-		if err := self.watchDirectory(path.Join(mnt.Mountpoint, self.name), self.name); err != nil {
+		err := self.watchDirectory(path.Join(mnt.Mountpoint, self.name), self.name)
+		if err != nil {
 			return err
 		}
 	}

@@ -94,11 +94,13 @@ type manager struct {
 // Start the container manager.
 func (self *manager) Start() error {
 	// Create root and then recover all containers.
-	if err := self.createContainer("/"); err != nil {
+	err := self.createContainer("/")
+	if err != nil {
 		return err
 	}
 	glog.Infof("Starting recovery of all containers")
-	if err := self.detectSubcontainers("/"); err != nil {
+	err = self.detectSubcontainers("/")
+	if err != nil {
 		return err
 	}
 	glog.Infof("Recovery completed")
@@ -143,6 +145,7 @@ func (self *manager) globalHousekeeping(quit chan error) {
 	}
 
 	ticker := time.Tick(*globalHousekeepingInterval)
+<<<<<<< HEAD
 	for {
 		select {
 		case t := <-ticker:
@@ -153,6 +156,16 @@ func (self *manager) globalHousekeeping(quit chan error) {
 			if err != nil {
 				glog.Errorf("Failed to detect containers: %s", err)
 			}
+=======
+	for t := range ticker {
+		start := time.Now()
+
+		// Check for new containers.
+		err := self.detectSubcontainers("/")
+		if err != nil {
+			glog.Errorf("Failed to detect containers: %s", err)
+		}
+>>>>>>> Undo changes to if statements as requested by vmarmol. Fix typos in my changes.
 
 			// Log if housekeeping took too long.
 			duration := time.Since(start)
@@ -278,8 +291,9 @@ func (m *manager) createContainer(containerName string) error {
 		m.containersLock.Lock()
 		defer m.containersLock.Unlock()
 
-		// Check that the container didn't already exist
-		if _, ok := m.containers[containerName]; ok {
+		// Check that the container didn't already exist\
+		_, ok := m.containers[containerName]
+		if ok {
 			return true
 		}
 
@@ -354,7 +368,8 @@ func (m *manager) getContainersDiff(containerName string) (added []info.Containe
 	// Added containers
 	for _, c := range allContainers {
 		delete(allContainersSet, c.Name)
-		if _, ok := m.containers[c.Name]; !ok {
+		_, ok := m.containers[c.Name]
+		if !ok {
 			added = append(added, c)
 		}
 	}
@@ -384,7 +399,8 @@ func (m *manager) detectSubcontainers(containerName string) error {
 
 	// Remove the old containers.
 	for _, cont := range removed {
-		if err = m.destroyContainer(cont.Name); err != nil {
+		err = m.destroyContainer(cont.Name)
+		if err != nil {
 			glog.Errorf("failed to destroy existing container: %s: %s", cont.Name, err)
 		}
 	}
@@ -412,7 +428,8 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 
 	// Register for new subcontainers.
 	events := make(chan container.SubcontainerEvent, 16)
-	if err := root.handler.WatchSubcontainers(events); err != nil {
+	err := root.handler.WatchSubcontainers(events)
+	if err != nil {
 		return err
 	}
 
@@ -422,6 +439,7 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 	}
 
 	// Listen to events from the container handler.
+<<<<<<< HEAD
 	go func() {
 		for {
 			select {
@@ -444,6 +462,17 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 					return
 				}
 			}
+=======
+	for event := range events {
+		switch {
+		case event.EventType == container.SubcontainerAdd:
+			err = self.createContainer(event.Name)
+		case event.EventType == container.SubcontainerDelete:
+			err = self.destroyContainer(event.Name)
+		}
+		if err != nil {
+			glog.Warning("failed to process watch event: %v", err)
+>>>>>>> Undo changes to if statements as requested by vmarmol. Fix typos in my changes.
 		}
 	}()
 	return nil

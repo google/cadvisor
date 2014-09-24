@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mananger provides per-container manager support.
 package manager
 
 import (
@@ -197,7 +196,8 @@ func (c *containerData) updateStats() error {
 	if err != nil {
 		return err
 	}
-	if err = c.storageDriver.AddStats(ref, stats); err != nil {
+	err = c.storageDriver.AddStats(ref, stats)
+	if err != nil {
 		return err
 	}
 	return nil

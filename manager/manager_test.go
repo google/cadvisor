@@ -176,7 +176,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewNilManager(t *testing.T) {
-	if _, err := New(nil); err == nil {
+	_, err := New(nil)
+	if err == nil {
 		t.Fatalf("Expected nil manager to return error")
 	}
 }

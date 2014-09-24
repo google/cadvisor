@@ -83,7 +83,8 @@ func TestUpdateSubcontainersWithError(t *testing.T) {
 		fmt.Errorf("some error"),
 	)
 
-	if err := cd.updateSubcontainers(); err == nil {
+	err := cd.updateSubcontainers()
+	if err == nil {
 		t.Fatal("updateSubcontainers should return error")
 	}
 	if len(cd.info.Subcontainers) != 0 {
@@ -105,7 +106,8 @@ func TestUpdateStats(t *testing.T) {
 
 	mockDriver.On("AddStats", info.ContainerReference{Name: mockHandler.Name}, stats).Return(nil)
 
-	if err := cd.updateStats(); err != nil {
+	err := cd.updateStats()
+	if err != nil {
 		t.Fatal(err)
 	}
 
