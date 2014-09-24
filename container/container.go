@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Pacakge container defines types for sub-container events and also
+// Package container defines types for sub-container events and also
 // defines an interface for container operation handlers.
 package container
 
 import "github.com/google/cadvisor/info"
 
 // ListType describes whether listing should be just for a
-// specific container or performed recurisvely.
+// specific container or performed recursively.
 type ListType int
 
 const (
@@ -27,8 +27,7 @@ const (
 	ListRecursive
 )
 
-// SubcontainerEventType indicated whether the event
-// specifies an addition or deletion.
+// SubcontainerEventType indicates an addition or deletion event.
 type SubcontainerEventType int
 
 const (
