@@ -53,7 +53,8 @@ func TestUpdateSubcontainers(t *testing.T) {
 		nil,
 	)
 
-	if err := cd.updateSubcontainers(); err != nil {
+	err := cd.updateSubcontainers()
+	if err != nil {
 		t.Fatal(err)
 	}
 
