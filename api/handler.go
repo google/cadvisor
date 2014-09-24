@@ -46,7 +46,8 @@ var supportedApiVersions map[string]struct{} = map[string]struct{}{
 
 func RegisterHandlers(m manager.Manager) error {
 	http.HandleFunc(apiResource, func(w http.ResponseWriter, r *http.Request) {
-		if err := handleRequest(m, w, r); err != nil {
+		err := handleRequest(m, w, r)
+		if err != nil {
 			fmt.Fprintf(w, "%s", err)
 		}
 	})
@@ -170,7 +171,8 @@ func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, er
 	query.NumStats = 64
 
 	decoder := json.NewDecoder(body)
-	if err := decoder.Decode(&query); err != nil && err != io.EOF {
+	err := decoder.Decode(&query)
+	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("unable to decode the json value: %s", err)
 	}
 
