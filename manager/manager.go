@@ -370,7 +370,7 @@ func (self *manager) watchForNewContainers() error {
 		root, ok = self.containers["/"]
 	}()
 	if !ok {
-		return fmt.Errorf("root container does not exist when watching for new containers")
+		return fmt.Errorf("Root container does not exist when watching for new containers")
 	}
 
 	// Register for new subcontainers.
@@ -394,7 +394,7 @@ func (self *manager) watchForNewContainers() error {
 			err = self.destroyContainer(event.Name)
 		}
 		if err != nil {
-			glog.Warning("failed to process watch event: %v", err)
+			glog.Warning("Failed to process watch event: %v", err)
 		}
 	}
 
