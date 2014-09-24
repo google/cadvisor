@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Handler for /api/
-
+// Package api provides a handler for /api/
 package api
 
 import (
@@ -172,7 +171,8 @@ func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, er
 	query.NumStats = 64
 
 	decoder := json.NewDecoder(body)
-	if err := decoder.Decode(&query); err != nil && err != io.EOF {
+	err := decoder.Decode(&query)
+	if err != nil && err != io.EOF {
 		return nil, fmt.Errorf("unable to decode the json value: %s", err)
 	}
 

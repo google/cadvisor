@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(cAdvisor): Package comment.
 package manager
 
 import (
@@ -30,6 +31,8 @@ import (
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
 
+// The Manager interface defines operations for starting a manager and getting
+// container and machine information.
 type Manager interface {
 	// Start the manager.
 	Start() error
@@ -50,6 +53,7 @@ type Manager interface {
 	GetVersionInfo() (*info.VersionInfo, error)
 }
 
+// New takes a driver and returns a new manager.
 func New(driver storage.StorageDriver) (Manager, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver!")
@@ -253,13 +257,11 @@ func (self *manager) SubcontainersInfo(containerName string, query *info.Contain
 
 func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
 	// Copy and return the MachineInfo.
-	ret := m.machineInfo
-	return &ret, nil
+	return &m.machineInfo, nil
 }
 
 func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
-	ret := m.versionInfo
-	return &ret, nil
+	return &m.versionInfo, nil
 }
 
 // Create a container.
@@ -278,7 +280,7 @@ func (m *manager) createContainer(containerName string) error {
 		m.containersLock.Lock()
 		defer m.containersLock.Unlock()
 
-		// Check that the container didn't already exist
+		// Check that the container didn't already exist\
 		_, ok := m.containers[containerName]
 		if ok {
 			return true
@@ -335,9 +337,9 @@ func (m *manager) getContainersDiff(containerName string) (added []info.Containe
 	// Get all subcontainers recursively.
 	cont, ok := m.containers[containerName]
 	if !ok {
-		return nil, nil, fmt.Errorf("Failed to find container %q while checking for new containers", containerName)
+		return nil, nil, fmt.Errorf("failed to find container %q while checking for new containers", containerName)
 	}
-	allContainers, err := cont.handler.ListContainers(container.LIST_RECURSIVE)
+	allContainers, err := cont.handler.ListContainers(container.ListRecursive)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -396,8 +398,8 @@ func (m *manager) detectSubcontainers(containerName string) error {
 }
 
 func (self *manager) processEvent(event container.SubcontainerEvent) error {
-	var err error = nil
-	return err
+	// TODO(cAdvisor): Why does this method always return nil? [satnam6502]
+	return nil
 }
 
 // Watches for new containers started in the system. Runs forever unless there is a setup error.
@@ -410,7 +412,7 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 		root, ok = self.containers["/"]
 	}()
 	if !ok {
-		return fmt.Errorf("root container does not exist when watching for new containers")
+		return fmt.Errorf("Root container does not exist when watching for new containers")
 	}
 
 	// Register for new subcontainers.
@@ -432,9 +434,9 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 			select {
 			case event := <-events:
 				switch {
-				case event.EventType == container.SUBCONTAINER_ADD:
+				case event.EventType == container.SubcontainerAdd:
 					err = self.createContainer(event.Name)
-				case event.EventType == container.SUBCONTAINER_DELETE:
+				case event.EventType == container.SubcontainerDelete:
 					err = self.destroyContainer(event.Name)
 				}
 				if err != nil {

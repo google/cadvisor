@@ -48,7 +48,7 @@ func TestUpdateSubcontainers(t *testing.T) {
 		{Name: "/container/something"},
 	}
 	cd, mockHandler, _ := newTestContainerData(t)
-	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+	mockHandler.On("ListContainers", container.ListSelf).Return(
 		subcontainers,
 		nil,
 	)
@@ -79,7 +79,7 @@ func TestUpdateSubcontainers(t *testing.T) {
 
 func TestUpdateSubcontainersWithError(t *testing.T) {
 	cd, mockHandler, _ := newTestContainerData(t)
-	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+	mockHandler.On("ListContainers", container.ListSelf).Return(
 		[]info.ContainerReference{},
 		fmt.Errorf("some error"),
 	)
@@ -143,7 +143,7 @@ func TestGetInfo(t *testing.T) {
 		spec,
 		nil,
 	)
-	mockHandler.On("ListContainers", container.LIST_SELF).Return(
+	mockHandler.On("ListContainers", container.ListSelf).Return(
 		subcontainers,
 		nil,
 	)

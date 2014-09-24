@@ -12,27 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package container defines types for sub-container events and also
+// defines an interface for container operation handlers.
 package container
 
 import "github.com/google/cadvisor/info"
 
-// Listing types.
-const (
-	LIST_SELF = iota
-	LIST_RECURSIVE
-)
-
+// ListType describes whether listing should be just for a
+// specific container or performed recursively.
 type ListType int
 
-// SubcontainerEvent types.
 const (
-	SUBCONTAINER_ADD = iota
-	SUBCONTAINER_DELETE
+	ListSelf ListType = iota
+	ListRecursive
 )
 
+// SubcontainerEventType indicates an addition or deletion event.
+type SubcontainerEventType int
+
+const (
+	SubcontainerAdd SubcontainerEventType = iota
+	SubcontainerDelete
+)
+
+// SubcontainerEvent represents a
 type SubcontainerEvent struct {
 	// The type of event that occurred.
-	EventType int
+	EventType SubcontainerEventType
 
 	// The full container name of the container where the event occurred.
 	Name string

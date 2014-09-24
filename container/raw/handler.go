@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO(cAdvisor): Package comment.
 package raw
 
 import (
@@ -179,7 +180,7 @@ func listDirectories(dirpath string, parent string, recursive bool, output map[s
 func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	containers := make(map[string]struct{})
 	for _, subsystem := range self.cgroupSubsystems.mounts {
-		err := listDirectories(path.Join(subsystem.Mountpoint, self.name), self.name, listType == container.LIST_RECURSIVE, containers)
+		err := listDirectories(path.Join(subsystem.Mountpoint, self.name), self.name, listType == container.ListRecursive, containers)
 		if err != nil {
 			return nil, err
 		}
@@ -230,16 +231,16 @@ func (self *rawContainerHandler) watchDirectory(dir string, containerName string
 
 func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan container.SubcontainerEvent) error {
 	// Convert the inotify event type to a container create or delete.
-	var eventType int
+	var eventType container.SubcontainerEventType
 	switch {
 	case (event.Mask & inotify.IN_CREATE) > 0:
-		eventType = container.SUBCONTAINER_ADD
+		eventType = container.SubcontainerAdd
 	case (event.Mask & inotify.IN_DELETE) > 0:
-		eventType = container.SUBCONTAINER_DELETE
+		eventType = container.SubcontainerDelete
 	case (event.Mask & inotify.IN_MOVED_FROM) > 0:
-		eventType = container.SUBCONTAINER_DELETE
+		eventType = container.SubcontainerDelete
 	case (event.Mask & inotify.IN_MOVED_TO) > 0:
-		eventType = container.SUBCONTAINER_ADD
+		eventType = container.SubcontainerAdd
 	default:
 		// Ignore other events.
 		return nil
@@ -260,7 +261,7 @@ func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan 
 
 	// Maintain the watch for the new or deleted container.
 	switch {
-	case eventType == container.SUBCONTAINER_ADD:
+	case eventType == container.SubcontainerAdd:
 		// If we've already seen this event, return.
 		if _, ok := self.watches[containerName]; ok {
 			return nil
@@ -271,7 +272,7 @@ func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan 
 		if err != nil {
 			return err
 		}
-	case eventType == container.SUBCONTAINER_DELETE:
+	case eventType == container.SubcontainerDelete:
 		// If we've already seen this event, return.
 		if _, ok := self.watches[containerName]; !ok {
 			return nil

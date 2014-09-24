@@ -83,7 +83,7 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 				nil,
 			)
 
-			h.On("ListContainers", container.LIST_SELF).Return(
+			h.On("ListContainers", container.ListSelf).Return(
 				[]info.ContainerReference(nil),
 				nil,
 			)

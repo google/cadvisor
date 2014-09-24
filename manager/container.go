@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Per-container manager.
-
 package manager
 
 import (
@@ -80,8 +78,7 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	// Make a copy of the info for the user.
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	ret := c.info
-	return &ret, nil
+	return &c.info, nil
 }
 
 func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler) (*containerData, error) {
@@ -207,7 +204,7 @@ func (c *containerData) updateStats() error {
 }
 
 func (c *containerData) updateSubcontainers() error {
-	subcontainers, err := c.handler.ListContainers(container.LIST_SELF)
+	subcontainers, err := c.handler.ListContainers(container.ListSelf)
 	if err != nil {
 		return err
 	}
