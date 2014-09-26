@@ -2,7 +2,7 @@ language: go
 go:
  - 1.3
 install:
- - go get -d ./...
+ - true
 before_script:
  - go get code.google.com/p/go.tools/cmd/vet
  - go get github.com/kr/godep
