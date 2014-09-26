@@ -83,7 +83,7 @@ func (self *dockerFactory) CanHandle(name string) (bool, error) {
 	// We assume that if Inspect fails then the container is not known to docker.
 	// TODO(vishh): Detect lxc containers and avoid handling them.
 	if err != nil || !ctnr.State.Running {
-		return false, fmt.Errorf("Error inspecting container: %v", err)
+		return false, fmt.Errorf("error inspecting container: %v", err)
 	}
 
 	return true, nil
@@ -94,14 +94,14 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 	version_re := regexp.MustCompile(version_regexp_string)
 	matches := version_re.FindAllStringSubmatch(full_version_string, -1)
 	if len(matches) != 1 {
-		return nil, fmt.Errorf("Version string \"%v\" doesn't match expected regular expression: \"%v\"", full_version_string, version_regexp_string)
+		return nil, fmt.Errorf("version string \"%v\" doesn't match expected regular expression: \"%v\"", full_version_string, version_regexp_string)
 	}
 	version_string_array := matches[0][1:]
 	version_array := make([]int, 3)
 	for index, version_string := range version_string_array {
 		version, err := strconv.Atoi(version_string)
 		if err != nil {
-			return nil, fmt.Errorf("Error while parsing \"%v\" in \"%v\"", version_string, full_version_string)
+			return nil, fmt.Errorf("error while parsing \"%v\" in \"%v\"", version_string, full_version_string)
 		}
 		version_array[index] = version
 	}
@@ -121,7 +121,7 @@ func Register(factory info.MachineInfoFactory) error {
 		version_string := version.Get("Version")
 		version, err := parseDockerVersion(version_string)
 		if err != nil {
-			return fmt.Errorf("Couldn't parse docker version: %v", err)
+			return fmt.Errorf("couldn't parse docker version: %v", err)
 		}
 		for index, number := range version {
 			if number > expected_version[index] {
