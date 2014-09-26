@@ -46,8 +46,8 @@ func (self *rawFactory) NewContainerHandler(name string) (container.ContainerHan
 }
 
 // The raw factory can handle any container.
-func (self *rawFactory) CanHandle(name string) bool {
-	return true
+func (self *rawFactory) CanHandle(name string) (bool, error) {
+	return true, nil
 }
 
 func Register(machineInfoFactory info.MachineInfoFactory) error {

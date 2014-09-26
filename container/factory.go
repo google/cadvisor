@@ -26,7 +26,7 @@ type ContainerHandlerFactory interface {
 	NewContainerHandler(name string) (ContainerHandler, error)
 
 	// Returns whether this factory can handle the specified container.
-	CanHandle(name string) bool
+	CanHandle(name string) (bool, error)
 
 	// Name of the factory.
 	String() string
@@ -55,7 +55,11 @@ func NewContainerHandler(name string) (ContainerHandler, error) {
 
 	// Create the ContainerHandler with the first factory that supports it.
 	for _, factory := range factories {
-		if factory.CanHandle(name) {
+		canHandle, err := factory.CanHandle(name)
+		if err != nil {
+			return nil, fmt.Errorf("Error trying to work out if we can hande %s: %v", name, err)
+		}
+		if canHandle {
 			glog.V(1).Infof("Using factory %q for container %q", factory.String(), name)
 			return factory.NewContainerHandler(name)
 		}

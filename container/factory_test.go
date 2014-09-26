@@ -30,8 +30,8 @@ func (self *mockContainerHandlerFactory) String() string {
 	return self.Name
 }
 
-func (self *mockContainerHandlerFactory) CanHandle(name string) bool {
-	return self.CanHandleValue
+func (self *mockContainerHandlerFactory) CanHandle(name string) (bool, error) {
+	return self.CanHandleValue, nil
 }
 
 func (self *mockContainerHandlerFactory) NewContainerHandler(name string) (ContainerHandler, error) {
