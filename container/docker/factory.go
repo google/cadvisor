@@ -67,7 +67,7 @@ func (self *dockerFactory) CanHandle(name string) (bool, error) {
 	// In systemd systems the containers are: /system.slice/docker-{ID}
 	if self.useSystemd {
 		if !strings.HasPrefix(name, "/system.slice/docker-") {
-			return false, fmt.Errorf("Expected path prefix /system.slice/docker- but got %s", name)
+			return false, nil
 		}
 	} else if name == "/" {
 		return false, nil
