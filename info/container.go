@@ -17,6 +17,8 @@ package info
 import (
 	"reflect"
 	"time"
+	
+	"github.com/google/cadvisor/fs"
 )
 
 type CpuSpec struct {
@@ -236,6 +238,8 @@ type ContainerStats struct {
 	DiskIo    DiskIoStats   `json:"diskio,omitempty"`
 	Memory    *MemoryStats  `json:"memory,omitempty"`
 	Network   *NetworkStats `json:"network,omitempty"`
+	// Filesystem statistics
+	FsStats []fs.FsStat `json:"fs_stats,omitempty"`
 }
 
 // Makes a deep copy of the ContainerStats and returns a pointer to the new

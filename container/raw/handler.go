@@ -24,10 +24,11 @@ import (
 
 	"code.google.com/p/go.exp/inotify"
 	"github.com/docker/libcontainer/cgroups"
-	"github.com/docker/libcontainer/cgroups/fs"
+	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
+	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/utils"
 )
@@ -40,6 +41,7 @@ type rawContainerHandler struct {
 	watcher            *inotify.Watcher
 	stopWatcher        chan error
 	watches            map[string]struct{}
+	fsInfo fs.FsInfo
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
@@ -53,6 +55,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		machineInfoFactory: machineInfoFactory,
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
+		fsInfo: fs.NewFsInfo(),
 	}, nil
 }
 
@@ -144,8 +147,18 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	return spec, nil
 }
 
-func (self *rawContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
-	return libcontainer.GetStatsCgroupOnly(self.cgroup)
+func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
+	stats, err := libcontainer.GetStatsCgroupOnly(self.cgroup)
+	if err != nil {
+		return nil, err
+	}
+	// Get Filesystem information
+	fsStats, err := self.fsInfo.GetFsStats(self.name)
+	if err != nil {
+		return nil, err
+	}
+	stats.FsStats = fsStats
+	return stats, nil
 }
 
 // Lists all directories under "path" and outputs the results as children of "parent".
@@ -203,7 +216,7 @@ func (self *rawContainerHandler) ListThreads(listType container.ListType) ([]int
 }
 
 func (self *rawContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	return fs.GetPids(self.cgroup)
+	return cgroup_fs.GetPids(self.cgroup)
 }
 
 func (self *rawContainerHandler) watchDirectory(dir string, containerName string) error {
