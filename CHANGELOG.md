@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1 (2014-09-29)
+- Support for Docker containers in systemd systems.
+- Adding DiskIO stats
+- Misc bugfixes and cleanups
+
 ## 0.4.0 (2014-09-19)
 - Various performance enhancements: brings CPU usage down 85%+
 - Implemented dynamic sampling through dynamic housekeeping.
