@@ -17,7 +17,7 @@ package info
 import (
 	"reflect"
 	"time"
-	
+
 	"github.com/google/cadvisor/fs"
 )
 
@@ -49,6 +49,8 @@ type ContainerSpec struct {
 	Memory    MemorySpec `json:"memory,omitempty"`
 
 	HasNetwork bool `json:"has_network"`
+
+	HasFs bool `json:"has_fs"`
 }
 
 // Container reference contains enough information to uniquely identify a container
@@ -239,7 +241,7 @@ type ContainerStats struct {
 	Memory    *MemoryStats  `json:"memory,omitempty"`
 	Network   *NetworkStats `json:"network,omitempty"`
 	// Filesystem statistics
-	FsStats []fs.FsStat `json:"fs_stats,omitempty"`
+	Fs []fs.FsStat `json:"fs,omitempty"`
 }
 
 // Makes a deep copy of the ContainerStats and returns a pointer to the new

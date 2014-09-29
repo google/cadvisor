@@ -10,6 +10,7 @@ package fs
 import "C"
 
 import (
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -17,33 +18,41 @@ import (
 	"github.com/golang/glog"
 )
 
-const EXT_SUPER_MAGIC = 0xEF53
-
 type FsInfoImpl struct{}
 
 func NewFsInfo() FsInfo {
 	return &FsInfoImpl{}
 }
 
-func (*FsInfoImpl) GetFsStats(containerName string) ([]FsStat, error) {
+func (*FsInfoImpl) GetFsStats() ([]FsStat, error) {
 	filesystems := make([]FsStat, 0)
-	if containerName != "/" {
-		return filesystems, nil
-	}
 	mounts, err := mount.GetMounts()
 	if err != nil {
 		return nil, err
 	}
+	processedPartitions := make(map[string]bool, 0)
 	for _, mount := range mounts {
-		if !strings.HasPrefix("ext", mount.FsType) || mount.Mountpoint != mount.Root {
+		if !strings.HasPrefix(mount.Fstype, "ext") {
+			continue
+		}
+		// Avoid bind mounts.
+		if _, ok := processedPartitions[mount.Source]; ok {
 			continue
 		}
 		total, free, err := getVfsStats(mount.Mountpoint)
 		if err != nil {
 			glog.Errorf("Statvfs failed. Error: %v", err)
 		} else {
-			glog.V(1).Infof("%s is an ext partition at %s. Total: %d, Free: %d", mount.Source, mount.Mountpoint, total, free)
-			filesystems = append(filesystems, FsStat{mount.Source, total, free})
+			glog.V(1).Infof("%s is an %s partition at %s. Total: %d, Free: %d", mount.Source, mount.Fstype, mount.Mountpoint, total, free)
+			fsStat := FsStat{
+				Device:   mount.Source,
+				Major:    uint(mount.Major),
+				Minor:    uint(mount.Minor),
+				Capacity: total,
+				Free:     free,
+			}
+			filesystems = append(filesystems, fsStat)
+			processedPartitions[mount.Source] = true
 		}
 	}
 	return filesystems, nil
