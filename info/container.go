@@ -181,7 +181,7 @@ type DiskIoStats struct {
 	IoServiceBytes []PerDiskStats `json:"io_service_bytes,omitempty"`
 	IoServiced     []PerDiskStats `json:"io_serviced,omitempty"`
 	IoQueued       []PerDiskStats `json:"io_queued,omitempty"`
-	Sectors        []PerDiskStats `json"sectors,omitempty"`
+	Sectors        []PerDiskStats `json:"sectors,omitempty"`
 }
 
 type MemoryStats struct {
