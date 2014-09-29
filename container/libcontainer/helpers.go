@@ -20,17 +20,23 @@ import (
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	cgroupfs "github.com/docker/libcontainer/cgroups/fs"
+	"github.com/docker/libcontainer/network"
 	"github.com/google/cadvisor/info"
 )
 
 // Get stats of the specified container
-func GetStats(config *libcontainer.Config, state *libcontainer.State) (*info.ContainerStats, error) {
+func GetStats(cgroup *cgroups.Cgroup, state *libcontainer.State) (*info.ContainerStats, error) {
 	// TODO(vmarmol): Use libcontainer's Stats() in the new API when that is ready.
-	libcontainerStats, err := libcontainer.GetStats(config, state)
+	stats := &libcontainer.ContainerStats{}
+
+	var err error
+	stats.CgroupStats, err = cgroupfs.GetStats(cgroup)
 	if err != nil {
-		return nil, err
+		return &info.ContainerStats{}, err
 	}
-	return toContainerStats(libcontainerStats), nil
+
+	stats.NetworkStats, err = network.GetStats(&state.NetworkState)
+	return toContainerStats(stats), nil
 }
 
 func GetStatsCgroupOnly(cgroup *cgroups.Cgroup) (*info.ContainerStats, error) {
