@@ -50,7 +50,7 @@ type ContainerSpec struct {
 
 	HasNetwork bool `json:"has_network"`
 
-	HasFs bool `json:"has_fs"`
+	HasFilesystem bool `json:"has_filesystem"`
 }
 
 // Container reference contains enough information to uniquely identify a container
@@ -241,7 +241,7 @@ type ContainerStats struct {
 	Memory    *MemoryStats  `json:"memory,omitempty"`
 	Network   *NetworkStats `json:"network,omitempty"`
 	// Filesystem statistics
-	Fs []fs.FsStat `json:"fs,omitempty"`
+	Filesystem []fs.FsStats `json:"filesystem,omitempty"`
 }
 
 // Makes a deep copy of the ContainerStats and returns a pointer to the new

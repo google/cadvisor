@@ -45,6 +45,10 @@ type rawContainerHandler struct {
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
+	fsInfo, err := fs.NewFsInfo()
+	if err != nil {
+		return nil, err
+	}
 	return &rawContainerHandler{
 		name: name,
 		cgroup: &cgroups.Cgroup{
@@ -55,7 +59,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		machineInfoFactory: machineInfoFactory,
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
-		fsInfo:             fs.NewFsInfo(),
+		fsInfo:             fsInfo,
 	}, nil
 }
 
@@ -146,7 +150,7 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 
 	// Fs.
 	if self.name == "/" {
-		spec.HasFs = true
+		spec.HasFilesystem = true
 	}
 	return spec, nil
 }
@@ -158,7 +162,7 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 	}
 	// Get Filesystem information only for the root cgroup.
 	if self.name == "/" {
-		stats.Fs, err = self.fsInfo.GetFsStats()
+		stats.Filesystem, err = self.fsInfo.GetFsStats()
 		if err != nil {
 			return nil, err
 		}

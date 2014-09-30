@@ -18,41 +18,50 @@ import (
 	"github.com/golang/glog"
 )
 
-type FsInfoImpl struct{}
-
-func NewFsInfo() FsInfo {
-	return &FsInfoImpl{}
+type partition struct {
+	mountpoint string
+	major      uint32
+	minor      uint32
 }
 
-func (*FsInfoImpl) GetFsStats() ([]FsStat, error) {
-	filesystems := make([]FsStat, 0)
+type FsInfoImpl struct {
+	partitions map[string]partition
+}
+
+func NewFsInfo() (FsInfo, error) {
 	mounts, err := mount.GetMounts()
 	if err != nil {
 		return nil, err
 	}
-	processedPartitions := make(map[string]bool, 0)
+	partitions := make(map[string]partition, 0)
 	for _, mount := range mounts {
 		if !strings.HasPrefix(mount.Fstype, "ext") {
 			continue
 		}
 		// Avoid bind mounts.
-		if _, ok := processedPartitions[mount.Source]; ok {
+		if _, ok := partitions[mount.Source]; ok {
 			continue
 		}
-		total, free, err := getVfsStats(mount.Mountpoint)
+		partitions[mount.Source] = partition{mount.Mountpoint, uint32(mount.Major), uint32(mount.Minor)}
+	}
+	return &FsInfoImpl{partitions}, nil
+}
+
+func (self *FsInfoImpl) GetFsStats() ([]FsStats, error) {
+	filesystems := make([]FsStats, 0)
+	for device, partition := range self.partitions {
+		total, free, err := getVfsStats(partition.mountpoint)
 		if err != nil {
 			glog.Errorf("Statvfs failed. Error: %v", err)
 		} else {
-			glog.V(1).Infof("%s is an %s partition at %s. Total: %d, Free: %d", mount.Source, mount.Fstype, mount.Mountpoint, total, free)
-			fsStat := FsStat{
-				Device:   mount.Source,
-				Major:    uint(mount.Major),
-				Minor:    uint(mount.Minor),
+			fsStat := FsStats{
+				Device:   device,
+				Major:    uint(partition.major),
+				Minor:    uint(partition.minor),
 				Capacity: total,
 				Free:     free,
 			}
 			filesystems = append(filesystems, fsStat)
-			processedPartitions[mount.Source] = true
 		}
 	}
 	return filesystems, nil
