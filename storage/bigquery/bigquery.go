@@ -63,6 +63,12 @@ const (
 	colTxBytes string = "tx_bytes"
 	// Cumulative count of transmit errors encountered.
 	colTxErrors string = "tx_errors"
+	// Filesystem device.
+	colFsDevice = "fs_device"
+	// Filesystem capacity.
+	colFsCapacity = "fs_capacity"
+	// Filesystem available space.
+	colFsFree = "fs_free"
 )
 
 // TODO(jnagal): Infer schema through reflection. (See bigquery/client/example)
@@ -151,16 +157,30 @@ func (self *bigqueryStorage) GetSchema() *bigquery.TableSchema {
 		Type: typeInteger,
 		Name: colTxErrors,
 	}
+	i++
+	fields[i] = &bigquery.TableFieldSchema{
+		Type: typeString,
+		Name: colFsDevice,
+	}
+	i++
+	fields[i] = &bigquery.TableFieldSchema{
+		Type: typeInteger,
+		Name: colFsCapacity,
+	}
+	i++
+	fields[i] = &bigquery.TableFieldSchema{
+		Type: typeInteger,
+		Name: colFsFree,
+	}
 	return &bigquery.TableSchema{
 		Fields: fields,
 	}
 }
 
-func (self *bigqueryStorage) containerStatsToValues(
+func (self *bigqueryStorage) containerStatsToRows(
 	ref info.ContainerReference,
 	stats *info.ContainerStats,
 ) (row map[string]interface{}) {
-
 	row = make(map[string]interface{})
 
 	// Timestamp
@@ -216,6 +236,20 @@ func (self *bigqueryStorage) containerStatsToValues(
 	return
 }
 
+func (self *bigqueryStorage) containerFilesystemStatsToRows(
+	ref info.ContainerReference,
+	stats *info.ContainerStats,
+) (rows []map[string]interface{}) {
+	for _, fsStat := range stats.Filesystem {
+		row := make(map[string]interface{}, 0)
+		row[colFsDevice] = fsStat.Device
+		row[colFsCapacity] = fsStat.Capacity
+		row[colFsFree] = fsStat.Free
+		rows = append(rows, row)
+	}
+	return rows
+}
+
 func convertToUint64(v interface{}) (uint64, error) {
 	if v == nil {
 		return 0, nil
@@ -254,9 +288,10 @@ func convertToUint64(v interface{}) (uint64, error) {
 
 func (self *bigqueryStorage) valuesToContainerStats(columns []string, values []interface{}) (*info.ContainerStats, error) {
 	stats := &info.ContainerStats{
-		Cpu:     &info.CpuStats{},
-		Memory:  &info.MemoryStats{},
-		Network: &info.NetworkStats{},
+		Cpu:        &info.CpuStats{},
+		Memory:     &info.MemoryStats{},
+		Network:    &info.NetworkStats{},
+		Filesystem: make([]info.FsStats, 0),
 	}
 	var err error
 	for i, col := range columns {
@@ -309,6 +344,36 @@ func (self *bigqueryStorage) valuesToContainerStats(columns []string, values []i
 			stats.Network.TxBytes, err = convertToUint64(v)
 		case col == colTxErrors:
 			stats.Network.TxErrors, err = convertToUint64(v)
+		case col == colFsDevice:
+			device, ok := v.(string)
+			if !ok {
+				return nil, fmt.Errorf("filesystem name field is not a string: %+v", v)
+			}
+			if len(stats.Filesystem) == 0 {
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Device: device})
+			} else {
+				stats.Filesystem[0].Device = device
+			}
+		case col == colFsCapacity:
+			capacity, err := convertToUint64(v)
+			if err != nil {
+				return nil, fmt.Errorf("filesystem capacity field %+v invalid: %s", v, err)
+			}
+			if len(stats.Filesystem) == 0 {
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Capacity: capacity})
+			} else {
+				stats.Filesystem[0].Capacity = capacity
+			}
+		case col == colFsFree:
+			free, err := convertToUint64(v)
+			if err != nil {
+				return nil, fmt.Errorf("filesystem free field %+v invalid: %s", v, err)
+			}
+			if len(stats.Filesystem) == 0 {
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Free: free})
+			} else {
+				stats.Filesystem[0].Free = free
+			}
 		}
 		if err != nil {
 			return nil, fmt.Errorf("column %v has invalid value %v: %v", col, v, err)
@@ -321,12 +386,14 @@ func (self *bigqueryStorage) AddStats(ref info.ContainerReference, stats *info.C
 	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
 		return nil
 	}
-
-	row := self.containerStatsToValues(ref, stats)
-
-	err := self.client.InsertRow(row)
-	if err != nil {
-		return err
+	rows := make([]map[string]interface{}, 0)
+	rows = append(rows, self.containerStatsToRows(ref, stats))
+	rows = append(rows, self.containerFilesystemStatsToRows(ref, stats)...)
+	for _, row := range rows {
+		err := self.client.InsertRow(row)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

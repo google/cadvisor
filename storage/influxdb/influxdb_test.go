@@ -86,6 +86,10 @@ func (self *influxDbTestStorageDriver) StatsEq(a, b *info.ContainerStats) bool {
 	if !reflect.DeepEqual(a.Network, b.Network) {
 		return false
 	}
+
+	if !reflect.DeepEqual(a.Filesystem, b.Filesystem) {
+		return false
+	}
 	return true
 }
 

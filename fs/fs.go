@@ -16,6 +16,7 @@ import (
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/info"
 )
 
 type partition struct {
@@ -47,14 +48,14 @@ func NewFsInfo() (FsInfo, error) {
 	return &FsInfoImpl{partitions}, nil
 }
 
-func (self *FsInfoImpl) GetFsStats() ([]FsStats, error) {
-	filesystems := make([]FsStats, 0)
+func (self *FsInfoImpl) GetFsStats() ([]info.FsStats, error) {
+	filesystems := make([]info.FsStats, 0)
 	for device, partition := range self.partitions {
 		total, free, err := getVfsStats(partition.mountpoint)
 		if err != nil {
 			glog.Errorf("Statvfs failed. Error: %v", err)
 		} else {
-			fsStat := FsStats{
+			fsStat := info.FsStats{
 				Device:   device,
 				Major:    uint(partition.major),
 				Minor:    uint(partition.minor),

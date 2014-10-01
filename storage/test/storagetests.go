@@ -58,6 +58,11 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 		stats.Network.RxErrors = uint64(rand.Intn(1000))
 		stats.Network.TxBytes = uint64(rand.Intn(100000))
 		stats.Network.TxErrors = uint64(rand.Intn(1000))
+
+		stats.Filesystem = make([]info.FsStats, 1)
+		stats.Filesystem[0].Device = "/dev/sda1"
+		stats.Filesystem[0].Capacity = 1024000000
+		stats.Filesystem[0].Free = 1024000
 		ret[i] = stats
 	}
 	return ret
@@ -106,6 +111,10 @@ func DefaultStatsEq(a, b *info.ContainerStats) bool {
 	if !reflect.DeepEqual(a.Network, b.Network) {
 		return false
 	}
+	if !reflect.DeepEqual(a.Filesystem, b.Filesystem) {
+		return false
+	}
+
 	return true
 }
 

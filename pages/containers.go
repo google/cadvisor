@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 )
@@ -256,9 +255,9 @@ func getColdMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats
 	return toMemoryPercent((latestStats.Usage)-(latestStats.WorkingSet), spec, machine)
 }
 
-func getFsStats(stats []*info.ContainerStats) []fs.FsStats {
+func getFsStats(stats []*info.ContainerStats) []info.FsStats {
 	if len(stats) == 0 {
-		return []fs.FsStats{}
+		return []info.FsStats{}
 	}
 	return stats[len(stats)-1].Filesystem
 }

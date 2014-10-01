@@ -51,13 +51,19 @@ const (
 	colTxBytes string = "tx_bytes"
 	// Cumulative count of transmit errors encountered.
 	colTxErrors string = "tx_errors"
+	// Filesystem device.
+	colFsDevice = "fs_device"
+	// Filesystem capacity.
+	colFsCapacity = "fs_capacity"
+	// Filesystem available space.
+	colFsFree = "fs_free"
 )
 
-func (self *influxdbStorage) containerStatsToValues(
+func (self *influxdbStorage) getSeriesDefaultValues(
 	ref info.ContainerReference,
 	stats *info.ContainerStats,
-) (columns []string, values []interface{}) {
-
+	columns []string,
+	values []interface{}) {
 	// Timestamp
 	columns = append(columns, colTimestamp)
 	values = append(values, stats.Timestamp.UnixNano()/1E3)
@@ -73,7 +79,38 @@ func (self *influxdbStorage) containerStatsToValues(
 	} else {
 		values = append(values, ref.Name)
 	}
+}
 
+// In order to maintain a fixed column format, we add a new series for each filesystem partition.
+func (self *influxdbStorage) containerFilesystemStatsToSeries(
+	ref info.ContainerReference,
+	stats *info.ContainerStats) (series []*influxdb.Series) {
+	if len(stats.Filesystem) == 0 {
+		return series
+	}
+	for _, fsStat := range stats.Filesystem {
+		columns := make([]string, 0)
+		values := make([]interface{}, 0)
+		self.getSeriesDefaultValues(ref, stats, columns, values)
+
+		columns = append(columns, colFsDevice)
+		values = append(values, fsStat.Device)
+
+		columns = append(columns, colFsCapacity)
+		values = append(values, fsStat.Capacity)
+
+		columns = append(columns, colFsFree)
+		values = append(values, fsStat.Free)
+		series = append(series, self.newSeries(columns, values))
+	}
+	return series
+}
+
+func (self *influxdbStorage) containerStatsToValues(
+	ref info.ContainerReference,
+	stats *info.ContainerStats,
+) (columns []string, values []interface{}) {
+	self.getSeriesDefaultValues(ref, stats, columns, values)
 	// Cumulative Cpu Usage
 	columns = append(columns, colCpuCumulativeUsage)
 	values = append(values, stats.Cpu.Usage.Total)
@@ -139,9 +176,10 @@ func convertToUint64(v interface{}) (uint64, error) {
 
 func (self *influxdbStorage) valuesToContainerStats(columns []string, values []interface{}) (*info.ContainerStats, error) {
 	stats := &info.ContainerStats{
-		Cpu:     &info.CpuStats{},
-		Memory:  &info.MemoryStats{},
-		Network: &info.NetworkStats{},
+		Cpu:        &info.CpuStats{},
+		Memory:     &info.MemoryStats{},
+		Network:    &info.NetworkStats{},
+		Filesystem: make([]info.FsStats, 0),
 	}
 	var err error
 	for i, col := range columns {
@@ -176,6 +214,36 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 			stats.Network.TxBytes, err = convertToUint64(v)
 		case col == colTxErrors:
 			stats.Network.TxErrors, err = convertToUint64(v)
+		case col == colFsDevice:
+			device, ok := v.(string)
+			if !ok {
+				return nil, fmt.Errorf("filesystem name field is not a string: %+v", v)
+			}
+			if len(stats.Filesystem) == 0 {
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Device: device})
+			} else {
+				stats.Filesystem[0].Device = device
+			}
+		case col == colFsCapacity:
+			capacity, err := convertToUint64(v)
+			if err != nil {
+				return nil, fmt.Errorf("filesystem capacity field %+v invalid: %s", v, err)
+			}
+			if len(stats.Filesystem) == 0 {
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Capacity: capacity})
+			} else {
+				stats.Filesystem[0].Capacity = capacity
+			}
+		case col == colFsFree:
+			free, err := convertToUint64(v)
+			if err != nil {
+				return nil, fmt.Errorf("filesystem free field %+v invalid: %s", v, err)
+			}
+			if len(stats.Filesystem) == 0 {
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Free: free})
+			} else {
+				stats.Filesystem[0].Free = free
+			}
 		}
 		if err != nil {
 			return nil, fmt.Errorf("column %v has invalid value %v: %v", col, v, err)
@@ -196,13 +264,14 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
 		return nil
 	}
-	// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
 	var seriesToFlush []*influxdb.Series
 	func() {
+		// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
 		self.lock.Lock()
 		defer self.lock.Unlock()
-		series := self.newSeries(self.containerStatsToValues(ref, stats))
-		self.series = append(self.series, series)
+
+		self.series = append(self.series, self.newSeries(self.containerStatsToValues(ref, stats)))
+		self.series = append(self.series, self.containerFilesystemStatsToSeries(ref, stats)...)
 		if self.readyToFlush() {
 			seriesToFlush = self.series
 			self.series = make([]*influxdb.Series, 0)
