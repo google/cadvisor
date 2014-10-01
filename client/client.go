@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/google/cadvisor/info"
@@ -32,18 +33,14 @@ type Client struct {
 }
 
 // NewClient returns a new client with the specified base URL.
-// TODO(cAdvisor): Currently the error result is always nil.
-func NewClient(URL string) (*Client, error) {
-	return &Client{
-		baseUrl: strings.Join([]string{
-			URL,
-			"api/v1.0",
-		}, "/"),
-	}, nil
-}
+func NewClient(url string) (*Client, error) {
+	if !strings.HasSuffix(url, "/") {
+		url += "/"
+	}
 
-func (self *Client) machineInfoUrl() string {
-	return strings.Join([]string{self.baseUrl, "machine"}, "/")
+	return &Client{
+		baseUrl: fmt.Sprintf("%sapi/v1.1/", url),
+	}, nil
 }
 
 // MachineInfo returns the JSON machine information for this client.
@@ -59,11 +56,40 @@ func (self *Client) MachineInfo() (minfo *info.MachineInfo, err error) {
 	return
 }
 
-func (self *Client) containerInfoUrl(name string) string {
-	if name[0] == '/' {
-		name = name[1:]
+// ContainerInfo returns the JSON container information for the specified
+// container and request.
+func (self *Client) ContainerInfo(name string, query *info.ContainerInfoRequest) (cinfo *info.ContainerInfo, err error) {
+	u := self.containerInfoUrl(name)
+	ret := new(info.ContainerInfo)
+	if err = self.httpGetJsonData(ret, query, u, fmt.Sprintf("container info for %q", name)); err != nil {
+		return
 	}
-	return strings.Join([]string{self.baseUrl, "containers", name}, "/")
+	cinfo = ret
+	return
+}
+
+// Returns the information about all subcontainers (recursive) of the specified container (including itself).
+func (self *Client) SubcontainersInfo(name string, query *info.ContainerInfoRequest) ([]info.ContainerInfo, error) {
+	var response []info.ContainerInfo
+	url := self.subcontainersInfoUrl(name)
+	err := self.httpGetJsonData(&response, query, url, fmt.Sprintf("subcontainers container info for %q", name))
+	if err != nil {
+		return []info.ContainerInfo{}, err
+
+	}
+	return response, nil
+}
+
+func (self *Client) machineInfoUrl() string {
+	return self.baseUrl + path.Join("machine")
+}
+
+func (self *Client) containerInfoUrl(name string) string {
+	return self.baseUrl + path.Join("containers", name)
+}
+
+func (self *Client) subcontainersInfoUrl(name string) string {
+	return self.baseUrl + path.Join("subcontainers", name)
 }
 
 func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName string) error {
@@ -94,17 +120,4 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 		return err
 	}
 	return nil
-}
-
-// ContainerInfo returns the JSON container information for the specified
-// container and request.
-func (self *Client) ContainerInfo(name string,
-	query *info.ContainerInfoRequest) (cinfo *info.ContainerInfo, err error) {
-	u := self.containerInfoUrl(name)
-	ret := new(info.ContainerInfo)
-	if err = self.httpGetJsonData(ret, query, u, fmt.Sprintf("container info for %v", name)); err != nil {
-		return
-	}
-	cinfo = ret
-	return
 }
