@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 )
@@ -98,6 +99,8 @@ var funcMap = template.FuncMap{
 	"getMemoryUsagePercent": getMemoryUsagePercent,
 	"getHotMemoryPercent":   getHotMemoryPercent,
 	"getColdMemoryPercent":  getColdMemoryPercent,
+	"getFsStats":            getFsStats,
+	"getFsUsagePercent":     getFsUsagePercent,
 }
 
 // TODO(vmarmol): Consider housekeeping Spec too so we can show changes through time. We probably don't need it ever second though.
@@ -115,6 +118,7 @@ type pageData struct {
 	CpuAvailable       bool
 	MemoryAvailable    bool
 	NetworkAvailable   bool
+	FsAvailable        bool
 }
 
 func init() {
@@ -252,6 +256,17 @@ func getColdMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats
 	return toMemoryPercent((latestStats.Usage)-(latestStats.WorkingSet), spec, machine)
 }
 
+func getFsStats(stats []*info.ContainerStats) []fs.FsStats {
+	if len(stats) == 0 {
+		return []fs.FsStats{}
+	}
+	return stats[len(stats)-1].Filesystem
+}
+
+func getFsUsagePercent(capacity, free uint64) uint64 {
+	return uint64((float64(capacity-free) / float64(capacity)) * 100)
+}
+
 func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error {
 	start := time.Now()
 
@@ -312,6 +327,7 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 		CpuAvailable:       cont.Spec.HasCpu,
 		MemoryAvailable:    cont.Spec.HasMemory,
 		NetworkAvailable:   cont.Spec.HasNetwork,
+		FsAvailable:        cont.Spec.HasFilesystem,
 	}
 	err = pageTemplate.Execute(w, data)
 	if err != nil {

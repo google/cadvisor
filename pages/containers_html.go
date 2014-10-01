@@ -147,6 +147,32 @@ const containersHtmlTemplate = `
           </div>
 	</div>
 	{{end}}
+	{{if .FsAvailable}}
+	<div class="panel panel-primary">
+          <div class="panel-heading">
+            <h3 class="panel-title">Filesystem</h3>
+          </div>
+          <div class="panel-body">
+            {{with getFsStats .Stats}}
+	    {{range .}}
+            <div class="row col-sm-12">
+              <h4>Partition: {{.Device}}</h4>
+            </div>
+            <div class="col-sm-9">
+	      <div class="progress">
+	        <div id="memory-usage-chart"></div>
+                <div class="progress-bar progress-bar-danger" style="width: {{getFsUsagePercent .Capacity .Free}}%">
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-3"> 
+	      {{printSize .Capacity}} {{printUnit .Capacity}} ({{getFsUsagePercent .Capacity .Free}}%)
+	    </div>
+	    {{end}}
+	    {{end}}
+          </div>
+        </div>
+	{{end}}
 	{{if .NetworkAvailable}}
 	<div class="panel panel-primary">
 	  <div class="panel-heading">
