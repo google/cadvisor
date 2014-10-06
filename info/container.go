@@ -232,11 +232,14 @@ type NetworkStats struct {
 }
 
 type FsStats struct {
-	Device   string `json:"device,omitempty"`
-	Major    uint   `json:"major"`
-	Minor    uint   `json:"minor"`
-	Capacity uint64 `json:"capacity"`
-	Free     uint64 `json:"free"`
+	// The block device name associated with the filesystem.
+	Device string `json:"device,omitempty"`
+
+	// Number of bytes that can be consumed by the container on this filesystem.
+	Limit uint64 `json:"capacity"`
+
+	// Number of bytes that is consumed by the container on this filesystem.
+	Usage uint64 `json:"free"`
 }
 
 type ContainerStats struct {

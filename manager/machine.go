@@ -25,6 +25,7 @@ import (
 
 	dclient "github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container/docker"
+	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
 )
 
@@ -59,10 +60,24 @@ func getMachineInfo() (*info.MachineInfo, error) {
 	// Capacity is in KB, convert it to bytes.
 	memoryCapacity = memoryCapacity * 1024
 
-	return &info.MachineInfo{
+	fsInfo, err := fs.NewFsInfo()
+	if err != nil {
+		return nil, err
+	}
+	filesystems, err := fsInfo.GetGlobalFsInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
 		MemoryCapacity: memoryCapacity,
-	}, nil
+	}
+	for _, fs := range filesystems {
+		machineInfo.Filesystems = append(machineInfo.Filesystems, info.FsInfo{fs.Device, fs.Capacity})
+	}
+
+	return machineInfo, nil
 }
 
 func getVersionInfo() (*info.VersionInfo, error) {

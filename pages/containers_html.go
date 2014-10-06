@@ -161,12 +161,12 @@ const containersHtmlTemplate = `
             <div class="col-sm-9">
 	      <div class="progress">
 	        <div id="memory-usage-chart"></div>
-                <div class="progress-bar progress-bar-danger" style="width: {{getFsUsagePercent .Capacity .Free}}%">
+                <div class="progress-bar progress-bar-danger" style="width: {{getFsUsagePercent .Limit .Usage}}%">
                 </div>
               </div>
             </div>
             <div class="col-sm-3"> 
-	      {{printSize .Capacity}} {{printUnit .Capacity}} ({{getFsUsagePercent .Capacity .Free}}%)
+	      {{printSize .Limit}} {{printUnit .Limit}} ({{getFsUsagePercent .Limit .Usage}}%)
 	    </div>
 	    {{end}}
 	    {{end}}
