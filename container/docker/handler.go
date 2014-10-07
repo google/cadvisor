@@ -54,6 +54,7 @@ type dockerContainerHandler struct {
 	useSystemd           bool
 	libcontainerStateDir string
 	cgroup               cgroups.Cgroup
+	usesAufsDriver       bool
 	fsInfo               fs.FsInfo
 	storageDirs          []string
 }
@@ -64,6 +65,7 @@ func newDockerContainerHandler(
 	machineInfoFactory info.MachineInfoFactory,
 	useSystemd bool,
 	dockerRootDir string,
+	usesAufsDriver bool,
 ) (container.ContainerHandler, error) {
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
@@ -79,7 +81,8 @@ func newDockerContainerHandler(
 			Parent: "/",
 			Name:   name,
 		},
-		fsInfo: fsInfo,
+		usesAufsDriver: usesAufsDriver,
+		fsInfo:         fsInfo,
 	}
 	handler.storageDirs = append(handler.storageDirs, path.Join(dockerRootDir, pathToAufsDir, path.Base(name)))
 	if handler.isDockerRoot() {
@@ -228,12 +231,19 @@ func (self *dockerContainerHandler) GetSpec() (spec info.ContainerSpec, err erro
 
 	spec = libcontainerConfigToContainerSpec(libcontainerConfig, mi)
 
-	spec.HasFilesystem = true
+	if self.usesAufsDriver {
+		spec.HasFilesystem = true
+	}
 
 	return
 }
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
+	// No support for non-aufs storage drivers.
+	if !self.usesAufsDriver {
+		return nil
+	}
+
 	// As of now we assume that all the storage dirs are on the same device.
 	// The first storage dir will be that of the image layers.
 	deviceInfo, err := self.fsInfo.GetDirFsDevice(self.storageDirs[0])

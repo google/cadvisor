@@ -61,8 +61,8 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 
 		stats.Filesystem = make([]info.FsStats, 1)
 		stats.Filesystem[0].Device = "/dev/sda1"
-		stats.Filesystem[0].Capacity = 1024000000
-		stats.Filesystem[0].Free = 1024000
+		stats.Filesystem[0].Limit = 1024000000
+		stats.Filesystem[0].Usage = 1024000
 		ret[i] = stats
 	}
 	return ret

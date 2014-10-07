@@ -239,7 +239,7 @@ type FsStats struct {
 	Limit uint64 `json:"capacity"`
 
 	// Number of bytes that is consumed by the container on this filesystem.
-	Usage uint64 `json:"free"`
+	Usage uint64 `json:"usage"`
 }
 
 type ContainerStats struct {

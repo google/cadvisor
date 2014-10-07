@@ -39,6 +39,9 @@ type dockerFactory struct {
 	// Whether this system is using systemd.
 	useSystemd bool
 
+	// Whether docker is running with AUFS storage driver.
+	usesAufsDriver bool
+
 	client *docker.Client
 }
 
@@ -57,6 +60,7 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 		self.machineInfoFactory,
 		self.useSystemd,
 		*dockerRootDir,
+		self.usesAufsDriver,
 	)
 	return
 }
@@ -148,10 +152,19 @@ func Register(factory info.MachineInfoFactory) error {
 		return fmt.Errorf("Docker found, but not using native exec driver")
 	}
 
+	usesAufsDriver := false
+	for _, val := range *information {
+		if strings.Contains(val, "Driver=") && strings.Contains(val, "aufs") {
+			usesAufsDriver = true
+			break
+		}
+	}
+
 	f := &dockerFactory{
 		machineInfoFactory: factory,
 		useSystemd:         systemd.UseSystemd(),
 		client:             client,
+		usesAufsDriver:     usesAufsDriver,
 	}
 	if f.useSystemd {
 		glog.Infof("System is using systemd")
