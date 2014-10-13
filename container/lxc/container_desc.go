@@ -29,7 +29,13 @@ type ContainersDesc struct {
 
 type ContainerDesc struct {
 	Id                string
-	Network_interface string
+	Network_interface *NetworkInterface
+}
+
+type NetworkInterface struct {
+	VethHost  string
+	VethChild string
+	NsPath    string
 }
 
 func Unmarshal(containerDescFile string) (ContainersDesc, error) {

@@ -17,7 +17,10 @@
       "role": "compute_node",
       "net": null,
       "netinit": "false",
-      "network_interface": "veth7ASIQc",
+      "network_interface": {
+        "VethChild": "eth1",
+        "VethHost": "veth24031eth1"
+      },
       "mounts": [
         {
           "host-dir": "/var/run/nm-sdc1",

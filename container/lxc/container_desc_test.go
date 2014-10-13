@@ -11,7 +11,8 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	t.Logf("Cdesc: %s", cDesc)
-	if cDesc.All_hosts[0].Network_interface != "veth7ASIQc" {
+	if cDesc.All_hosts[0].Network_interface.VethHost != "veth24031eth1" &&
+		cDesc.All_hosts[0].Network_interface.VethChild != "eth1" {
 		t.Errorf("Cannot find network interface in %s", cDesc)
 	}
 }
