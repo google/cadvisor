@@ -47,7 +47,7 @@ type lxcContainerHandler struct {
 	stopWatcher        chan error
 	watches            map[string]struct{}
 	fsInfo             fs.FsInfo
-	network_interface  string
+	network_interface  *NetworkInterface
 }
 
 func newLxcContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
@@ -56,7 +56,7 @@ func newLxcContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		return nil, err
 	}
 	cDesc, err := Unmarshal(*containersDesc)
-	var network_interface string
+	var network_interface *NetworkInterface
 	for _, container := range cDesc.All_hosts {
 		cName := "/lxc/" + container.Id
 		glog.Infof("container %s Name %s \n\n", container, name)
@@ -176,8 +176,8 @@ func (self *lxcContainerHandler) GetSpec() (info.ContainerSpec, error) {
 func (self *lxcContainerHandler) GetStats() (*info.ContainerStats, error) {
 	var stats *info.ContainerStats
 	var err error
-	if len(self.network_interface) > 0 {
-		n := network.NetworkState{VethHost: self.network_interface, VethChild: "unknown", NsPath: "unknown"}
+	if self.network_interface != nil {
+		n := network.NetworkState{VethHost: self.network_interface.VethHost, VethChild: self.network_interface.VethChild, NsPath: "unknown"}
 		s := dockerlibcontainer.State{NetworkState: n}
 		stats, err = libcontainer.GetStats(self.cgroup, &s)
 	} else {
