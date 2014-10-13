@@ -20,6 +20,10 @@ import (
 	"code.google.com/p/go.exp/inotify"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"path"
+	"strconv"
+	"strings"
 	dockerlibcontainer "github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
@@ -30,10 +34,6 @@ import (
 	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/utils"
-	"io/ioutil"
-	"path"
-	"strconv"
-	"strings"
 )
 
 var containersDesc = flag.String("cDesc", "/etc/docker/cdesc.json", "container description file")

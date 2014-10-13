@@ -62,7 +62,7 @@ func main() {
 		glog.Errorf("Docker registration failed: %v.", err)
 	}
 
-	// Register the raw driver.
+	// Register the lxc driver.
 	if err := lxc.Register(containerManager); err != nil {
 		glog.Fatalf("lxc registration failed: %v.", err)
 	}
