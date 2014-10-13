@@ -17,11 +17,11 @@ package lxc
 
 import (
 	"fmt"
+	"strings"
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
-	"strings"
 )
 
 type cgroupSubsystems struct {
@@ -47,7 +47,7 @@ func (self *lxcFactory) NewContainerHandler(name string) (container.ContainerHan
 	return newLxcContainerHandler(name, self.cgroupSubsystems, self.machineInfoFactory)
 }
 
-// The raw factory can handle any container.
+// The lxc factory can handle any container.
 func (self *lxcFactory) CanHandle(name string) (bool, error) {
 	if name == "/lxc" {
 		return true, nil
