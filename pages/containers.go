@@ -262,8 +262,8 @@ func getFsStats(stats []*info.ContainerStats) []info.FsStats {
 	return stats[len(stats)-1].Filesystem
 }
 
-func getFsUsagePercent(capacity, free uint64) uint64 {
-	return uint64((float64(capacity-free) / float64(capacity)) * 100)
+func getFsUsagePercent(limit, used uint64) uint64 {
+	return uint64((float64(used) / float64(limit)) * 100)
 }
 
 func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error {

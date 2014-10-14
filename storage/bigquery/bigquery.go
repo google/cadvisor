@@ -65,10 +65,10 @@ const (
 	colTxErrors string = "tx_errors"
 	// Filesystem device.
 	colFsDevice = "fs_device"
-	// Filesystem capacity.
-	colFsCapacity = "fs_capacity"
+	// Filesystem limit.
+	colFsLimit = "fs_limit"
 	// Filesystem available space.
-	colFsFree = "fs_free"
+	colFsUsage = "fs_usage"
 )
 
 // TODO(jnagal): Infer schema through reflection. (See bigquery/client/example)
@@ -165,12 +165,12 @@ func (self *bigqueryStorage) GetSchema() *bigquery.TableSchema {
 	i++
 	fields[i] = &bigquery.TableFieldSchema{
 		Type: typeInteger,
-		Name: colFsCapacity,
+		Name: colFsLimit,
 	}
 	i++
 	fields[i] = &bigquery.TableFieldSchema{
 		Type: typeInteger,
-		Name: colFsFree,
+		Name: colFsUsage,
 	}
 	return &bigquery.TableSchema{
 		Fields: fields,
@@ -243,8 +243,8 @@ func (self *bigqueryStorage) containerFilesystemStatsToRows(
 	for _, fsStat := range stats.Filesystem {
 		row := make(map[string]interface{}, 0)
 		row[colFsDevice] = fsStat.Device
-		row[colFsCapacity] = fsStat.Capacity
-		row[colFsFree] = fsStat.Free
+		row[colFsLimit] = fsStat.Limit
+		row[colFsUsage] = fsStat.Usage
 		rows = append(rows, row)
 	}
 	return rows
@@ -354,25 +354,25 @@ func (self *bigqueryStorage) valuesToContainerStats(columns []string, values []i
 			} else {
 				stats.Filesystem[0].Device = device
 			}
-		case col == colFsCapacity:
-			capacity, err := convertToUint64(v)
+		case col == colFsLimit:
+			limit, err := convertToUint64(v)
 			if err != nil {
-				return nil, fmt.Errorf("filesystem capacity field %+v invalid: %s", v, err)
+				return nil, fmt.Errorf("filesystem limit field %+v invalid: %s", v, err)
 			}
 			if len(stats.Filesystem) == 0 {
-				stats.Filesystem = append(stats.Filesystem, info.FsStats{Capacity: capacity})
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Limit: limit})
 			} else {
-				stats.Filesystem[0].Capacity = capacity
+				stats.Filesystem[0].Limit = limit
 			}
-		case col == colFsFree:
-			free, err := convertToUint64(v)
+		case col == colFsUsage:
+			usage, err := convertToUint64(v)
 			if err != nil {
-				return nil, fmt.Errorf("filesystem free field %+v invalid: %s", v, err)
+				return nil, fmt.Errorf("filesystem usage field %+v invalid: %s", v, err)
 			}
 			if len(stats.Filesystem) == 0 {
-				stats.Filesystem = append(stats.Filesystem, info.FsStats{Free: free})
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Usage: usage})
 			} else {
-				stats.Filesystem[0].Free = free
+				stats.Filesystem[0].Usage = usage
 			}
 		}
 		if err != nil {

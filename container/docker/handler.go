@@ -25,17 +25,23 @@ import (
 
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
-	"github.com/docker/libcontainer/cgroups/fs"
+	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
+	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/utils"
 )
 
 // Relative path from Docker root to the libcontainer per-container state.
 const pathToLibcontainerState = "execdriver/native"
+
+// Path to aufs dir where all the files exist.
+// aufs/layers is ignored here since it does not hold a lot of data.
+// aufs/mnt contains the mount points used to compose the rootfs. Hence it is also ignored.
+var pathToAufsDir = "aufs/diff"
 
 var fileNotFound = errors.New("file not found")
 
@@ -48,6 +54,9 @@ type dockerContainerHandler struct {
 	useSystemd           bool
 	libcontainerStateDir string
 	cgroup               cgroups.Cgroup
+	usesAufsDriver       bool
+	fsInfo               fs.FsInfo
+	storageDirs          []string
 }
 
 func newDockerContainerHandler(
@@ -56,7 +65,12 @@ func newDockerContainerHandler(
 	machineInfoFactory info.MachineInfoFactory,
 	useSystemd bool,
 	dockerRootDir string,
+	usesAufsDriver bool,
 ) (container.ContainerHandler, error) {
+	fsInfo, err := fs.NewFsInfo()
+	if err != nil {
+		return nil, err
+	}
 	handler := &dockerContainerHandler{
 		client:               client,
 		name:                 name,
@@ -67,7 +81,10 @@ func newDockerContainerHandler(
 			Parent: "/",
 			Name:   name,
 		},
+		usesAufsDriver: usesAufsDriver,
+		fsInfo:         fsInfo,
 	}
+	handler.storageDirs = append(handler.storageDirs, path.Join(dockerRootDir, pathToAufsDir, path.Base(name)))
 	if handler.isDockerRoot() {
 		return handler, nil
 	}
@@ -213,7 +230,55 @@ func (self *dockerContainerHandler) GetSpec() (spec info.ContainerSpec, err erro
 	}
 
 	spec = libcontainerConfigToContainerSpec(libcontainerConfig, mi)
+
+	if self.usesAufsDriver {
+		spec.HasFilesystem = true
+	}
+
 	return
+}
+
+func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
+	// No support for non-aufs storage drivers.
+	if !self.usesAufsDriver {
+		return nil
+	}
+
+	// As of now we assume that all the storage dirs are on the same device.
+	// The first storage dir will be that of the image layers.
+	deviceInfo, err := self.fsInfo.GetDirFsDevice(self.storageDirs[0])
+	if err != nil {
+		return err
+	}
+
+	mi, err := self.machineInfoFactory.GetMachineInfo()
+	if err != nil {
+		return err
+	}
+	var limit uint64 = 0
+	// Docker does not impose any filesystem limits for containers. So use capacity as limit.
+	for _, fs := range mi.Filesystems {
+		if fs.Device == deviceInfo.Device {
+			limit = fs.Capacity
+			break
+		}
+	}
+
+	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
+
+	var usage uint64 = 0
+	for _, dir := range self.storageDirs {
+		// TODO(Vishh): Add support for external mounts.
+		dirUsage, err := self.fsInfo.GetDirUsage(dir)
+		if err != nil {
+			return err
+		}
+		usage += dirUsage
+	}
+	fsStat.Usage = usage
+	stats.Filesystem = append(stats.Filesystem, fsStat)
+
+	return nil
 }
 
 func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
@@ -229,7 +294,16 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 		return
 	}
 
-	return containerLibcontainer.GetStats(&self.cgroup, state)
+	stats, err = containerLibcontainer.GetStats(&self.cgroup, state)
+	if err != nil {
+		return
+	}
+	err = self.getFsStats(stats)
+	if err != nil {
+		return
+	}
+
+	return stats, nil
 }
 
 func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
@@ -271,7 +345,7 @@ func (self *dockerContainerHandler) ListThreads(listType container.ListType) ([]
 }
 
 func (self *dockerContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	return fs.GetPids(&self.cgroup)
+	return cgroup_fs.GetPids(&self.cgroup)
 }
 
 func (self *dockerContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {

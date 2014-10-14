@@ -53,10 +53,10 @@ const (
 	colTxErrors string = "tx_errors"
 	// Filesystem device.
 	colFsDevice = "fs_device"
-	// Filesystem capacity.
-	colFsCapacity = "fs_capacity"
-	// Filesystem available space.
-	colFsFree = "fs_free"
+	// Filesystem limit.
+	colFsLimit = "fs_limit"
+	// Filesystem usage.
+	colFsUsage = "fs_usage"
 )
 
 func (self *influxdbStorage) getSeriesDefaultValues(
@@ -96,11 +96,11 @@ func (self *influxdbStorage) containerFilesystemStatsToSeries(
 		columns = append(columns, colFsDevice)
 		values = append(values, fsStat.Device)
 
-		columns = append(columns, colFsCapacity)
-		values = append(values, fsStat.Capacity)
+		columns = append(columns, colFsLimit)
+		values = append(values, fsStat.Limit)
 
-		columns = append(columns, colFsFree)
-		values = append(values, fsStat.Free)
+		columns = append(columns, colFsUsage)
+		values = append(values, fsStat.Usage)
 		series = append(series, self.newSeries(columns, values))
 	}
 	return series
@@ -224,25 +224,25 @@ func (self *influxdbStorage) valuesToContainerStats(columns []string, values []i
 			} else {
 				stats.Filesystem[0].Device = device
 			}
-		case col == colFsCapacity:
-			capacity, err := convertToUint64(v)
+		case col == colFsLimit:
+			limit, err := convertToUint64(v)
 			if err != nil {
-				return nil, fmt.Errorf("filesystem capacity field %+v invalid: %s", v, err)
+				return nil, fmt.Errorf("filesystem limit field %+v invalid: %s", v, err)
 			}
 			if len(stats.Filesystem) == 0 {
-				stats.Filesystem = append(stats.Filesystem, info.FsStats{Capacity: capacity})
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Limit: limit})
 			} else {
-				stats.Filesystem[0].Capacity = capacity
+				stats.Filesystem[0].Limit = limit
 			}
-		case col == colFsFree:
-			free, err := convertToUint64(v)
+		case col == colFsUsage:
+			usage, err := convertToUint64(v)
 			if err != nil {
-				return nil, fmt.Errorf("filesystem free field %+v invalid: %s", v, err)
+				return nil, fmt.Errorf("filesystem usage field %+v invalid: %s", v, err)
 			}
 			if len(stats.Filesystem) == 0 {
-				stats.Filesystem = append(stats.Filesystem, info.FsStats{Free: free})
+				stats.Filesystem = append(stats.Filesystem, info.FsStats{Usage: usage})
 			} else {
-				stats.Filesystem[0].Free = free
+				stats.Filesystem[0].Usage = usage
 			}
 		}
 		if err != nil {
