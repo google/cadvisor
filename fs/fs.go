@@ -50,23 +50,31 @@ func NewFsInfo() (FsInfo, error) {
 	return &RealFsInfo{partitions}, nil
 }
 
-func (self *RealFsInfo) GetGlobalFsInfo() ([]Fs, error) {
+func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]bool) ([]Fs, error) {
 	filesystems := make([]Fs, 0)
+	deviceSet := make(map[string]bool)
 	for device, partition := range self.partitions {
-		total, free, err := getVfsStats(partition.mountpoint)
-		if err != nil {
-			glog.Errorf("Statvfs failed. Error: %v", err)
-		} else {
-			deviceInfo := DeviceInfo{
-				Device: device,
-				Major:  uint(partition.major),
-				Minor:  uint(partition.minor),
+		if mountSet == nil || mountSet[partition.mountpoint] == true {
+			total, free, err := getVfsStats(partition.mountpoint)
+			if err != nil {
+				glog.Errorf("Statvfs failed. Error: %v", err)
+			} else if deviceSet[device] == false {
+				deviceSet[device] = true
+				deviceInfo := DeviceInfo{
+					Device: device,
+					Major:  uint(partition.major),
+					Minor:  uint(partition.minor),
+				}
+				fs := Fs{deviceInfo, total, free}
+				filesystems = append(filesystems, fs)
 			}
-			fs := Fs{deviceInfo, total, free}
-			filesystems = append(filesystems, fs)
 		}
 	}
 	return filesystems, nil
+}
+
+func (self *RealFsInfo) GetGlobalFsInfo() ([]Fs, error) {
+	return self.GetFsInfoForPath(nil)
 }
 
 func major(devNumber uint64) uint {

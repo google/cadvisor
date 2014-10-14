@@ -32,8 +32,14 @@ type containerHints struct {
 }
 
 type containerHint struct {
-	FullName         string            `json:"full_path,omitempty"`
-	NetworkInterface *networkInterface `json:"network_interface,omitempty"`
+	FullName                string `json:"full_path,omitempty"`
+	NetworkInterface        *networkInterface `json:"network_interface,omitempty"`
+	Mounts                  []mount `json:"mounts,omitempty"`
+}
+
+type mount struct {
+	HostDir string `json:"host-dir,omitempty"`
+	ContainerDir string `json:"container-dir,omitempty"`
 }
 
 type networkInterface struct {
