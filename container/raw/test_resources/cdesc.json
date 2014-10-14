@@ -5,8 +5,6 @@
     {
       "name": "10-10-10-27",
       "ip": "10.10.10.27/24",
-      "image": "registry.test.altiscale.com:5000/prometheus-init-201405270218",
-      "public_key": "/root/.ssh/authorized_keys",
       "publish": null,
       "gateway": null,
       "hostname": "10-10-10-27.local.altiscale.com",
@@ -14,7 +12,6 @@
       "init": null,
       "cpu": null,
       "memory": null,
-      "role": "compute_node",
       "net": null,
       "netinit": "false",
       "network_interface": {
@@ -48,14 +45,7 @@
           "permission": "rw"
         }
       ],
-      "host": {
-        "hostname": "localhost",
-        "ip": "127.0.0.1",
-        "bridge": "alti0",
-        "key": ""
-      },
-      "id": "18a4585950db428e4d5a65c216a5d708d241254709626f4cb300ee963fb4b144",
-      "initpid": "10741"
+      "id": "18a4585950db428e4d5a65c216a5d708d241254709626f4cb300ee963fb4b144"
     }
   ]
 }

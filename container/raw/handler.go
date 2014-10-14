@@ -177,12 +177,12 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 	if self.network_interface != nil {
 		n := network.NetworkState{VethHost: self.network_interface.VethHost, VethChild: self.network_interface.VethChild, NsPath: "unknown"}
 		s := dockerlibcontainer.State{NetworkState: n}
-	stats, err = libcontainer.GetStats(self.cgroup, &s)
+		stats, err = libcontainer.GetStats(self.cgroup, &s)
 	} else {
-	stats, err = libcontainer.GetStatsCgroupOnly(self.cgroup)
+		stats, err = libcontainer.GetStatsCgroupOnly(self.cgroup)
 	}
 	if err != nil {
-	  return nil, err
+		return nil, err
 	}
 	// Get Filesystem information only for the root cgroup.
 	if self.name == "/" {
