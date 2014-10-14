@@ -52,20 +52,16 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 	if err != nil {
 		return nil, err
 	}
-	cDesc, err := Unmarshal(*argContainerHints)
+	cHints, err := getContainerHintsFromFile(*argContainerHints)
 	if err != nil {
-		return nil, err
+		glog.Fatalf("Error unmarshalling json %s Error: %s", *argContainerHints, err)
 	}
 	var networkInterface *networkInterface
-	for _, container := range cDesc.All_hosts {
-		var cName string
-		if strings.Contains(container.Id, "/") {
-			cName = name
-		} else {
-			names := strings.SplitAfter(name, "/")
-			cName = names[len(names)-1]
+	for _, container := range cHints.AllHosts {
+		if !strings.Contains(container.FullPath, "/") {
+			glog.Fatalf("Invalid container fullPath %s", container.FullPath)
 		}
-		if cName == container.Id {
+		if name == container.FullPath {
 			networkInterface = container.NetworkInterface
 			break
 		}

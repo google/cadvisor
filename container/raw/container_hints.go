@@ -23,27 +23,29 @@ import (
 	"encoding/json"
 	"io/ioutil"
 )
-var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_description.json", "container hints file")
+var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_hints.json", "container hints file")
 type containerHints struct {
-	All_hosts []containerHint `json:"all_hosts,omitempty"`
+	AllHosts []containerHint `json:"all_hosts,omitempty"`
 }
 
 type containerHint struct {
-	Id                string `json:"id,omitempty"`
+	FullPath                string `json:"full_path,omitempty"`
 	NetworkInterface *networkInterface `json:"network_interface,omitempty"`
 }
 
 type networkInterface struct {
-	VethHost  string `json:"VethHost,omitempty"`
-	VethChild string `json:"VethChild,omitempty"`
-	NsPath    string `json:"NsPath,omitempty"`
+	VethHost  string `json:"veth_host,omitempty"`
+	VethChild string `json:"veth_child,omitempty"`
+	NsPath    string `json:"ns_path,omitempty"`
 }
 
-func Unmarshal(containerHintsFile string) (containerHints, error) {
+func getContainerHintsFromFile(containerHintsFile string) (containerHints, error) {
 	dat, err := ioutil.ReadFile(containerHintsFile)
-	var cDesc containerHints
+
+	var cHints containerHints
 	if err == nil {
-		err = json.Unmarshal(dat, &cDesc)
+		err = json.Unmarshal(dat, &cHints)
 	}
-	return cDesc, err
+
+	return cHints, err
 }

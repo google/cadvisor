@@ -1,22 +1,11 @@
 {
-  "name": "Container specification",
-  "description": "Container specification",
+  "name": "Container Hints",
+  "description": "Container hints file",
   "all_hosts": [
     {
-      "name": "10-10-10-27",
-      "ip": "10.10.10.27/24",
-      "publish": null,
-      "gateway": null,
-      "hostname": "10-10-10-27.local.altiscale.com",
-      "privileged": "true",
-      "init": null,
-      "cpu": null,
-      "memory": null,
-      "net": null,
-      "netinit": "false",
       "network_interface": {
-        "VethChild": "eth1",
-        "VethHost": "veth24031eth1"
+        "veth_child": "eth1",
+        "veth_host": "veth24031eth1"
       },
       "mounts": [
         {
@@ -45,7 +34,7 @@
           "permission": "rw"
         }
       ],
-      "id": "18a4585950db428e4d5a65c216a5d708d241254709626f4cb300ee963fb4b144"
+      "full_path": "18a4585950db428e4d5a65c216a5d708d241254709626f4cb300ee963fb4b144"
     }
   ]
 }
