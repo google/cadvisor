@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Unmarshal's a Containers description json file. The json file contains
-// an array of ContainerDesc structs, each with a container's id and network_interface
+// an array of ContainerHint structs, each with a container's id and networkInterface
 // This allows collecting stats about network interfaces configured outside docker
 // and lxc
 package raw
@@ -23,25 +23,25 @@ import (
 	"encoding/json"
 	"io/ioutil"
 )
-var argContainersDesc = flag.String("cDescription", "/etc/docker/cdesc.json", "container description file")
-type containersDesc struct {
-	All_hosts []containerDesc
+var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_description.json", "container hints file")
+type containerHints struct {
+	All_hosts []containerHint `json:"all_hosts,omitempty"`
 }
 
-type containerDesc struct {
-	Id                string
-	Network_interface *networkInterface
+type containerHint struct {
+	Id                string `json:"id,omitempty"`
+	NetworkInterface *networkInterface `json:"network_interface,omitempty"`
 }
 
 type networkInterface struct {
-	VethHost  string
-	VethChild string
-	NsPath    string
+	VethHost  string `json:"VethHost,omitempty"`
+	VethChild string `json:"VethChild,omitempty"`
+	NsPath    string `json:"NsPath,omitempty"`
 }
 
-func Unmarshal(containerDescFile string) (containersDesc, error) {
-	dat, err := ioutil.ReadFile(containerDescFile)
-	var cDesc containersDesc
+func Unmarshal(containerHintsFile string) (containerHints, error) {
+	dat, err := ioutil.ReadFile(containerHintsFile)
+	var cDesc containerHints
 	if err == nil {
 		err = json.Unmarshal(dat, &cDesc)
 	}

@@ -44,7 +44,7 @@ type rawContainerHandler struct {
 	stopWatcher        chan error
 	watches            map[string]struct{}
 	fsInfo             fs.FsInfo
-	network_interface  *networkInterface
+	networkInterface  *networkInterface
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
@@ -52,15 +52,21 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 	if err != nil {
 		return nil, err
 	}
-	cDesc, err := Unmarshal(*argContainersDesc)
-	var network_interface *networkInterface
+	cDesc, err := Unmarshal(*argContainerHints)
+	if err != nil {
+		return nil, err
+	}
+	var networkInterface *networkInterface
 	for _, container := range cDesc.All_hosts {
-		names := strings.SplitAfter(name, "/")
-		cName := names[len(names) - 1]
-		glog.Infof("container %s Name %s \n\n", container, name)
+		var cName string
+		if strings.Contains(container.Id, "/") {
+			cName = name
+		} else {
+			names := strings.SplitAfter(name, "/")
+			cName = names[len(names)-1]
+		}
 		if cName == container.Id {
-			network_interface = container.Network_interface
-			fmt.Printf("Found network interface %s \n\n", network_interface)
+			networkInterface = container.NetworkInterface
 			break
 		}
 	}
@@ -75,7 +81,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
 		fsInfo:             fsInfo,
-		network_interface:  network_interface,
+		networkInterface:  networkInterface,
 	}, nil
 }
 
@@ -174,10 +180,16 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 	var stats *info.ContainerStats
 	var err error
-	if self.network_interface != nil {
-		n := network.NetworkState{VethHost: self.network_interface.VethHost, VethChild: self.network_interface.VethChild, NsPath: "unknown"}
-		s := dockerlibcontainer.State{NetworkState: n}
-		stats, err = libcontainer.GetStats(self.cgroup, &s)
+	if self.networkInterface != nil {
+		state := dockerlibcontainer.State{
+			NetworkState: network.NetworkState{
+				VethHost: self.networkInterface.VethHost,
+				VethChild: self.networkInterface.VethChild,
+				NsPath: "unknown",
+			},
+		}
+
+		stats, err = libcontainer.GetStats(self.cgroup, &state)
 	} else {
 		stats, err = libcontainer.GetStatsCgroupOnly(self.cgroup)
 	}
