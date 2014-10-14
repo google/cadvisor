@@ -16,31 +16,32 @@
 // an array of ContainerDesc structs, each with a container's id and network_interface
 // This allows collecting stats about network interfaces configured outside docker
 // and lxc
-package lxc
+package raw
 
 import (
+	"flag"
 	"encoding/json"
 	"io/ioutil"
 )
-
-type ContainersDesc struct {
-	All_hosts []ContainerDesc
+var argContainersDesc = flag.String("cDescription", "/etc/docker/cdesc.json", "container description file")
+type containersDesc struct {
+	All_hosts []containerDesc
 }
 
-type ContainerDesc struct {
+type containerDesc struct {
 	Id                string
-	Network_interface *NetworkInterface
+	Network_interface *networkInterface
 }
 
-type NetworkInterface struct {
+type networkInterface struct {
 	VethHost  string
 	VethChild string
 	NsPath    string
 }
 
-func Unmarshal(containerDescFile string) (ContainersDesc, error) {
+func Unmarshal(containerDescFile string) (containersDesc, error) {
 	dat, err := ioutil.ReadFile(containerDescFile)
-	var cDesc ContainersDesc
+	var cDesc containersDesc
 	if err == nil {
 		err = json.Unmarshal(dat, &cDesc)
 	}

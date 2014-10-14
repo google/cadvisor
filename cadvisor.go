@@ -27,7 +27,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/container/docker"
-	"github.com/google/cadvisor/container/lxc"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/healthz"
 	"github.com/google/cadvisor/info"
@@ -60,11 +59,6 @@ func main() {
 	// Register Docker.
 	if err := docker.Register(containerManager); err != nil {
 		glog.Errorf("Docker registration failed: %v.", err)
-	}
-
-	// Register the lxc driver.
-	if err := lxc.Register(containerManager); err != nil {
-		glog.Fatalf("lxc registration failed: %v.", err)
 	}
 
 	// Register the raw driver.

@@ -23,8 +23,10 @@ import (
 	"strings"
 
 	"code.google.com/p/go.exp/inotify"
+	dockerlibcontainer "github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
+	"github.com/docker/libcontainer/network"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -42,12 +44,25 @@ type rawContainerHandler struct {
 	stopWatcher        chan error
 	watches            map[string]struct{}
 	fsInfo             fs.FsInfo
+	network_interface  *networkInterface
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
+	}
+	cDesc, err := Unmarshal(*argContainersDesc)
+	var network_interface *networkInterface
+	for _, container := range cDesc.All_hosts {
+		names := strings.SplitAfter(name, "/")
+		cName := names[len(names) - 1]
+		glog.Infof("container %s Name %s \n\n", container, name)
+		if cName == container.Id {
+			network_interface = container.Network_interface
+			fmt.Printf("Found network interface %s \n\n", network_interface)
+			break
+		}
 	}
 	return &rawContainerHandler{
 		name: name,
@@ -60,6 +75,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
 		fsInfo:             fsInfo,
+		network_interface:  network_interface,
 	}, nil
 }
 
@@ -156,9 +172,17 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := libcontainer.GetStatsCgroupOnly(self.cgroup)
+	var stats *info.ContainerStats
+	var err error
+	if self.network_interface != nil {
+		n := network.NetworkState{VethHost: self.network_interface.VethHost, VethChild: self.network_interface.VethChild, NsPath: "unknown"}
+		s := dockerlibcontainer.State{NetworkState: n}
+	stats, err = libcontainer.GetStats(self.cgroup, &s)
+	} else {
+	stats, err = libcontainer.GetStatsCgroupOnly(self.cgroup)
+	}
 	if err != nil {
-		return nil, err
+	  return nil, err
 	}
 	// Get Filesystem information only for the root cgroup.
 	if self.name == "/" {
