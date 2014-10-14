@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/docker/pkg/units"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
@@ -48,6 +49,9 @@ type containerData struct {
 	storageDriver        storage.StorageDriver
 	lock                 sync.Mutex
 	housekeepingInterval time.Duration
+
+	// Whether to log the usage of this container when it is updated.
+	logUsage bool
 
 	// Tells the container to stop.
 	stop chan bool
@@ -81,25 +85,27 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	return &c.info, nil
 }
 
-func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler) (*containerData, error) {
+func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler, logUsage bool) (*containerData, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver")
 	}
 	if handler == nil {
 		return nil, fmt.Errorf("nil container handler")
 	}
-
-	cont := &containerData{}
-	cont.handler = handler
 	ref, err := handler.ContainerReference()
 	if err != nil {
 		return nil, err
 	}
+
+	cont := &containerData{
+		handler:              handler,
+		storageDriver:        driver,
+		housekeepingInterval: *HousekeepingInterval,
+		logUsage:             logUsage,
+		stop:                 make(chan bool, 1),
+	}
 	cont.info.Name = ref.Name
 	cont.info.Aliases = ref.Aliases
-	cont.storageDriver = driver
-	cont.housekeepingInterval = *HousekeepingInterval
-	cont.stop = make(chan bool, 1)
 
 	return cont, nil
 }
@@ -153,7 +159,31 @@ func (c *containerData) housekeeping() {
 			// Log if housekeeping took too long.
 			duration := time.Since(start)
 			if duration >= longHousekeeping {
-				glog.V(2).Infof("Housekeeping(%s) took %s", c.info.Name, duration)
+				glog.V(2).Infof("[%s] Housekeeping took %s", c.info.Name, duration)
+			}
+		}
+
+		// Log usage if asked to do so.
+		if c.logUsage {
+			stats, err := c.storageDriver.RecentStats(c.info.Name, 2)
+			if err != nil {
+				glog.Infof("[%s] Failed to get recent stats for logging usage: %v", c.info.Name, err)
+			} else if len(stats) < 2 {
+				// Ignore, not enough stats yet.
+			} else {
+				usageCpuNs := uint64(0)
+				usageMemory := uint64(0)
+
+				if stats[0].Cpu != nil && stats[1].Cpu != nil {
+					usageCpuNs = stats[1].Cpu.Usage.Total - stats[0].Cpu.Usage.Total
+				}
+				if stats[1].Memory != nil {
+					usageMemory = stats[1].Memory.Usage
+				}
+
+				usageInCores := float64(usageCpuNs) / float64(stats[1].Timestamp.Sub(stats[0].Timestamp).Nanoseconds())
+				usageInHuman := units.HumanSize(int64(usageMemory))
+				glog.Infof("[%s] %.3f cores, %s of memory", c.info.Name, usageInCores, usageInHuman)
 			}
 		}
 
