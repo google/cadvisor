@@ -1,0 +1,61 @@
+{
+  "name": "Container specification",
+  "description": "Container specification",
+  "all_hosts": [
+    {
+      "name": "10-10-10-27",
+      "ip": "10.10.10.27/24",
+      "image": "registry.test.altiscale.com:5000/prometheus-init-201405270218",
+      "public_key": "/root/.ssh/authorized_keys",
+      "publish": null,
+      "gateway": null,
+      "hostname": "10-10-10-27.local.altiscale.com",
+      "privileged": "true",
+      "init": null,
+      "cpu": null,
+      "memory": null,
+      "role": "compute_node",
+      "net": null,
+      "netinit": "false",
+      "network_interface": {
+        "VethChild": "eth1",
+        "VethHost": "veth24031eth1"
+      },
+      "mounts": [
+        {
+          "host-dir": "/var/run/nm-sdc1",
+          "container-dir": "/var/run/nm-sdc1",
+          "permission": "rw"
+        },
+        {
+          "host-dir": "/var/run/nm-sdb3",
+          "container-dir": "/var/run/nm-sdb3",
+          "permission": "rw"
+        },
+        {
+          "host-dir": "/var/run/nm-sda3",
+          "container-dir": "/var/run/nm-sda3",
+          "permission": "rw"
+        },
+        {
+          "host-dir": "/var/run/netns/root",
+          "container-dir": "/var/run/netns/root",
+          "permission": "ro"
+        },
+        {
+          "host-dir": "/var/run/openvswitch/db.sock",
+          "container-dir": "/var/run/openvswitch/db.sock",
+          "permission": "rw"
+        }
+      ],
+      "host": {
+        "hostname": "localhost",
+        "ip": "127.0.0.1",
+        "bridge": "alti0",
+        "key": ""
+      },
+      "id": "18a4585950db428e4d5a65c216a5d708d241254709626f4cb300ee963fb4b144",
+      "initpid": "10741"
+    }
+  ]
+}
