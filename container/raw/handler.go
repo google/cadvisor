@@ -54,14 +54,11 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 	}
 	cHints, err := getContainerHintsFromFile(*argContainerHints)
 	if err != nil {
-		glog.Fatalf("Error unmarshalling json %s Error: %s", *argContainerHints, err)
+		return nil, err
 	}
 	var networkInterface *networkInterface
 	for _, container := range cHints.AllHosts {
-		if !strings.Contains(container.FullPath, "/") {
-			glog.Fatalf("Invalid container fullPath %s", container.FullPath)
-		}
-		if name == container.FullPath {
+		if name == container.FullName {
 			networkInterface = container.NetworkInterface
 			break
 		}

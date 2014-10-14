@@ -29,7 +29,7 @@ type containerHints struct {
 }
 
 type containerHint struct {
-	FullPath                string `json:"full_path,omitempty"`
+	FullName                string `json:"full_path,omitempty"`
 	NetworkInterface *networkInterface `json:"network_interface,omitempty"`
 }
 
