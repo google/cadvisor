@@ -22,6 +22,7 @@ import (
 	"flag"
 	"encoding/json"
 	"io/ioutil"
+	"os"
 )
 var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_hints.json", "container hints file")
 type containerHints struct {
@@ -36,12 +37,13 @@ type containerHint struct {
 type networkInterface struct {
 	VethHost  string `json:"veth_host,omitempty"`
 	VethChild string `json:"veth_child,omitempty"`
-	NsPath    string `json:"ns_path,omitempty"`
 }
 
 func getContainerHintsFromFile(containerHintsFile string) (containerHints, error) {
 	dat, err := ioutil.ReadFile(containerHintsFile)
-
+    if os.IsNotExist(err) {
+		return containerHints{}, nil
+	}
 	var cHints containerHints
 	if err == nil {
 		err = json.Unmarshal(dat, &cHints)

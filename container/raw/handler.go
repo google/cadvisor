@@ -167,25 +167,27 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	if self.name == "/" {
 		spec.HasFilesystem = true
 	}
+
+	//Network
+	if self.networkInterface != nil {
+		spec.HasNetwork = true
+	}
 	return spec, nil
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	var stats *info.ContainerStats
-	var err error
+	state := dockerlibcontainer.State{}
 	if self.networkInterface != nil {
-		state := dockerlibcontainer.State{
+		state = dockerlibcontainer.State{
 			NetworkState: network.NetworkState{
 				VethHost: self.networkInterface.VethHost,
 				VethChild: self.networkInterface.VethChild,
 				NsPath: "unknown",
 			},
 		}
-
-		stats, err = libcontainer.GetStats(self.cgroup, &state)
-	} else {
-		stats, err = libcontainer.GetStatsCgroupOnly(self.cgroup)
 	}
+
+	stats, err := libcontainer.GetStats(self.cgroup, &state)
 	if err != nil {
 		return nil, err
 	}
