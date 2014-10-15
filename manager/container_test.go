@@ -34,7 +34,7 @@ const containerName = "/container"
 func newTestContainerData(t *testing.T) (*containerData, *container.MockContainerHandler, *stest.MockStorageDriver) {
 	mockHandler := container.NewMockContainerHandler(containerName)
 	mockDriver := &stest.MockStorageDriver{}
-	ret, err := newContainerData(containerName, mockDriver, mockHandler)
+	ret, err := newContainerData(containerName, mockDriver, mockHandler, false)
 	if err != nil {
 		t.Fatal(err)
 	}

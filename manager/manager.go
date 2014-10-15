@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
@@ -30,6 +31,7 @@ import (
 )
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
+var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log the usage of the cAdvisor container")
 
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
@@ -58,10 +60,19 @@ func New(driver storage.StorageDriver) (Manager, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver!")
 	}
+
+	// Detect the container we are running on.
+	selfContainer, err := cgroups.GetThisCgroupDir("cpu")
+	if err != nil {
+		return nil, err
+	}
+	glog.Infof("cAdvisor running in container: %q", selfContainer)
+
 	newManager := &manager{
-		containers:    make(map[string]*containerData),
-		quitChannels:  make([]chan error, 0, 2),
-		storageDriver: driver,
+		containers:        make(map[string]*containerData),
+		quitChannels:      make([]chan error, 0, 2),
+		storageDriver:     driver,
+		cadvisorContainer: selfContainer,
 	}
 
 	machineInfo, err := getMachineInfo()
@@ -83,12 +94,13 @@ func New(driver storage.StorageDriver) (Manager, error) {
 }
 
 type manager struct {
-	containers     map[string]*containerData
-	containersLock sync.RWMutex
-	storageDriver  storage.StorageDriver
-	machineInfo    info.MachineInfo
-	versionInfo    info.VersionInfo
-	quitChannels   []chan error
+	containers        map[string]*containerData
+	containersLock    sync.RWMutex
+	storageDriver     storage.StorageDriver
+	machineInfo       info.MachineInfo
+	versionInfo       info.VersionInfo
+	quitChannels      []chan error
+	cadvisorContainer string
 }
 
 // Start the container manager.
@@ -270,7 +282,8 @@ func (m *manager) createContainer(containerName string) error {
 	if err != nil {
 		return err
 	}
-	cont, err := newContainerData(containerName, m.storageDriver, handler)
+	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
+	cont, err := newContainerData(containerName, m.storageDriver, handler, logUsage)
 	if err != nil {
 		return err
 	}
@@ -280,7 +293,7 @@ func (m *manager) createContainer(containerName string) error {
 		m.containersLock.Lock()
 		defer m.containersLock.Unlock()
 
-		// Check that the container didn't already exist\
+		// Check that the container didn't already exist.
 		_, ok := m.containers[containerName]
 		if ok {
 			return true

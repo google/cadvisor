@@ -6,6 +6,11 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "code.google.com/p/go.exp/inotify",
+			"Comment": "null-75",
+			"Rev": "bd8df7009305d6ada223ea3c95b94c0f38bfa119"
+		},
+		{
 			"ImportPath": "code.google.com/p/goauth2/oauth",
 			"Comment": "weekly-56",
 			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
@@ -40,6 +45,11 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/symlink",
+			"Comment": "v1.1.1-402-g487a417",
+			"Rev": "487a417d9fd074d0e78876072c7d1ebfd398ea7a"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/units",
 			"Comment": "v1.1.1-402-g487a417",
 			"Rev": "487a417d9fd074d0e78876072c7d1ebfd398ea7a"
 		},
