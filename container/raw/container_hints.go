@@ -19,18 +19,20 @@
 package raw
 
 import (
-	"flag"
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"os"
 )
+
 var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_hints.json", "container hints file")
+
 type containerHints struct {
 	AllHosts []containerHint `json:"all_hosts,omitempty"`
 }
 
 type containerHint struct {
-	FullName                string `json:"full_path,omitempty"`
+	FullName         string            `json:"full_path,omitempty"`
 	NetworkInterface *networkInterface `json:"network_interface,omitempty"`
 }
 
@@ -41,7 +43,7 @@ type networkInterface struct {
 
 func getContainerHintsFromFile(containerHintsFile string) (containerHints, error) {
 	dat, err := ioutil.ReadFile(containerHintsFile)
-    if os.IsNotExist(err) {
+	if os.IsNotExist(err) {
 		return containerHints{}, nil
 	}
 	var cHints containerHints
