@@ -26,7 +26,7 @@ cAdvisor is now running (in the background) on `http://localhost:8080`. The setu
 
 **Note**: On CentOS and RHEL 6, run cAdvisor with an additional option ```--volume=/cgroup:/cgroup \```
 
-If you want to build your own cAdvisor Docker image, take a look at the Dockerfile which can build a cAdvisor docker container under `quickstart/Dockerfile`.
+If you want to build your own cAdvisor Docker image, take a look at `deploy/Dockerfile` and `deploy/build.sh`.
 
 #### Using [InfluxDB](http://influxdb.com) as backend storage
 
