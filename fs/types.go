@@ -17,7 +17,7 @@ type FsInfo interface {
 	GetGlobalFsInfo() ([]Fs, error)
 
 	// Returns capacity and free space, in bytes, of the set of mounts passed.
-	GetFsInfoForPath(mountSet map[string]bool) ([]Fs, error)
+	GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error)
 
 	// Returns number of bytes occupied by 'dir'.
 	GetDirUsage(dir string) (uint64, error)

@@ -38,8 +38,8 @@ type containerHint struct {
 }
 
 type mount struct {
-	HostDir string `json:"host-dir,omitempty"`
-	ContainerDir string `json:"container-dir,omitempty"`
+	HostDir string `json:"host_dir,omitempty"`
+	ContainerDir string `json:"container_dir,omitempty"`
 }
 
 type networkInterface struct {
