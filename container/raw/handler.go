@@ -44,8 +44,8 @@ type rawContainerHandler struct {
 	stopWatcher        chan error
 	watches            map[string]struct{}
 	fsInfo             fs.FsInfo
-	networkInterface  *networkInterface
-	mounts             []mount
+	networkInterface   *networkInterface
+	externalMounts     []mount
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
@@ -58,11 +58,11 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		return nil, err
 	}
 	var networkInterface *networkInterface
-	var mounts []mount
+	var externalMounts []mount
 	for _, container := range cHints.AllHosts {
 		if name == container.FullName {
 			networkInterface = container.NetworkInterface
-			mounts = container.Mounts
+			externalMounts = container.Mounts
 			break
 		}
 	}
@@ -78,7 +78,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		watches:            make(map[string]struct{}),
 		fsInfo:             fsInfo,
 		networkInterface:   networkInterface,
-		mounts:             mounts,
+		externalMounts:     externalMounts,
 	}, nil
 }
 
@@ -168,7 +168,7 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	}
 
 	// Fs.
-	if self.name == "/" || self.mounts != nil {
+	if self.name == "/" || self.externalMounts != nil {
 		spec.HasFilesystem = true
 	}
 
@@ -190,10 +190,10 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		for _, fs := range filesystems {
 			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
 		}
-	} else if len(self.mounts) > 0 {
+	} else if len(self.externalMounts) > 0 {
 		var mountSet map[string]struct{}
 		mountSet = make(map[string]struct{})
-		for _, mount := range self.mounts {
+		for _, mount := range self.externalMounts {
 			mountSet[mount.HostDir] = struct{}{}
 		}
 		filesystems, err := self.fsInfo.GetFsInfoForPath(mountSet)
