@@ -23,8 +23,10 @@ import (
 	"strings"
 
 	"code.google.com/p/go.exp/inotify"
+	dockerlibcontainer "github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
+	"github.com/docker/libcontainer/network"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -42,12 +44,24 @@ type rawContainerHandler struct {
 	stopWatcher        chan error
 	watches            map[string]struct{}
 	fsInfo             fs.FsInfo
+	networkInterface  *networkInterface
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
+	}
+	cHints, err := getContainerHintsFromFile(*argContainerHints)
+	if err != nil {
+		return nil, err
+	}
+	var networkInterface *networkInterface
+	for _, container := range cHints.AllHosts {
+		if name == container.FullName {
+			networkInterface = container.NetworkInterface
+			break
+		}
 	}
 	return &rawContainerHandler{
 		name: name,
@@ -60,6 +74,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
 		fsInfo:             fsInfo,
+		networkInterface:  networkInterface,
 	}, nil
 }
 
@@ -152,11 +167,27 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	if self.name == "/" {
 		spec.HasFilesystem = true
 	}
+
+	//Network
+	if self.networkInterface != nil {
+		spec.HasNetwork = true
+	}
 	return spec, nil
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := libcontainer.GetStatsCgroupOnly(self.cgroup)
+	state := dockerlibcontainer.State{}
+	if self.networkInterface != nil {
+		state = dockerlibcontainer.State{
+			NetworkState: network.NetworkState{
+				VethHost: self.networkInterface.VethHost,
+				VethChild: self.networkInterface.VethChild,
+				NsPath: "unknown",
+			},
+		}
+	}
+
+	stats, err := libcontainer.GetStats(self.cgroup, &state)
 	if err != nil {
 		return nil, err
 	}
