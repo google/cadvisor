@@ -10,8 +10,11 @@ package fs
 import "C"
 
 import (
+	"bufio"
 	"fmt"
 	"os/exec"
+	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -53,6 +56,10 @@ func NewFsInfo() (FsInfo, error) {
 func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error) {
 	filesystems := make([]Fs, 0)
 	deviceSet := make(map[string]struct{})
+	diskStatsMap, err := getDiskStatsMap("/proc/diskstats")
+	if err != nil {
+		return nil, err
+	}
 	for device, partition := range self.partitions {
 		_, hasMount := mountSet[partition.mountpoint]
 		_, hasDevice := deviceSet[device]
@@ -67,12 +74,58 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 					Major:  uint(partition.major),
 					Minor:  uint(partition.minor),
 				}
-				fs := Fs{deviceInfo, total, free}
+				fs := Fs{deviceInfo, total, free, diskStatsMap[device]}
 				filesystems = append(filesystems, fs)
 			}
 		}
 	}
 	return filesystems, nil
+}
+
+func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
+	file, err := os.Open(diskStatsFile)
+	if err != nil {
+		return nil, err
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	diskStatsMap := make(map[string]DiskStats)
+	partitionRegex, _ := regexp.Compile("sd[a-z]\\d")
+	for scanner.Scan() {
+		line :=scanner.Text()
+		words := strings.Fields(line)
+		if !partitionRegex.MatchString(words[2]) {
+			continue
+		}
+		// 8      50 sdd2 40 0 280 223 7 0 22 108 0 330 330
+		deviceName := "/dev/" + words[2]
+		wordLength := len(words)
+		var stats = make([]uint64,wordLength)
+		var error error
+		for i := 3; i < wordLength; i++ {
+			stats[i], error = strconv.ParseUint(words[i], 10, 64)
+			if error != nil {
+				return nil, error
+			}
+		}
+		diskStats := DiskStats {
+			ReadsCompleted:	stats[3],
+			ReadsMerged:	stats[4],
+			SectorsRead:	stats[5],
+			ReadTime:		stats[6],
+			WritesCompleted:stats[7],
+			WritesMerged:	stats[8],
+			SectorsWritten:	stats[9],
+			WriteTime:		stats[10],
+			IOInProgress:	stats[11],
+			IOTime:			stats[12],
+			WeightedIOTime: stats[13],
+		}
+		diskStatsMap[deviceName] = diskStats
+	}
+	return diskStatsMap, nil
 }
 
 func (self *RealFsInfo) GetGlobalFsInfo() ([]Fs, error) {

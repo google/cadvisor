@@ -8,8 +8,23 @@ type DeviceInfo struct {
 
 type Fs struct {
 	DeviceInfo
-	Capacity uint64
-	Free     uint64
+	Capacity 		uint64
+	Free     		uint64
+	DiskStats		DiskStats
+}
+
+type DiskStats struct {
+	ReadsCompleted	uint64
+	ReadsMerged		uint64
+	SectorsRead		uint64
+	ReadTime		uint64
+	WritesCompleted	uint64
+	WritesMerged	uint64
+	SectorsWritten	uint64
+	WriteTime		uint64
+	IOInProgress	uint64
+	IOTime			uint64
+	WeightedIOTime	uint64
 }
 
 type FsInfo interface {
