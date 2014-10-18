@@ -1,0 +1,4 @@
+Linux 3.15.5-15.alti6.x86_64 (203-13-02.sc1.verticloud.com) 	10/23/2014 	_x86_64_	(24 CPU)
+
+Device:         rrqm/s   wrqm/s     r/s     w/s   rsec/s   wsec/s avgrq-sz avgqu-sz   await  svctm  %util
+sdc1               13.00     33.00    0.89    0.94    37.01    79.43    63.84     3.00    5.00   6.00   5.00

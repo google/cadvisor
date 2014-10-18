@@ -188,7 +188,20 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 			return err
 		}
 		for _, fs := range filesystems {
-			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
+			stats.Filesystem = append(stats.Filesystem,
+				info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free,
+					fs.DiskStats.ReadsMerged,
+					fs.DiskStats.WritesMerged,
+					fs.DiskStats.ReadsIssued,
+					fs.DiskStats.WritesIssued,
+					fs.DiskStats.SectorsRead,
+					fs.DiskStats.SectorsWritten,
+					fs.DiskStats.AvgRequestSize,
+					fs.DiskStats.AvgQueueLen,
+					fs.DiskStats.AvgWaitTime,
+					fs.DiskStats.AvgServiceTime,
+					fs.DiskStats.PercentUtil,
+				})
 		}
 	} else if len(self.externalMounts) > 0 {
 		var mountSet map[string]struct{}
@@ -201,7 +214,20 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 			return err
 		}
 		for _, fs := range filesystems {
-			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
+			stats.Filesystem = append(stats.Filesystem,
+				info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free,
+					fs.DiskStats.ReadsMerged,
+					fs.DiskStats.WritesMerged,
+					fs.DiskStats.ReadsIssued,
+					fs.DiskStats.WritesIssued,
+					fs.DiskStats.SectorsRead,
+					fs.DiskStats.SectorsWritten,
+					fs.DiskStats.AvgRequestSize,
+					fs.DiskStats.AvgQueueLen,
+					fs.DiskStats.AvgWaitTime,
+					fs.DiskStats.AvgServiceTime,
+					fs.DiskStats.PercentUtil,
+				})
 		}
 	}
 	return nil

@@ -240,6 +240,45 @@ type FsStats struct {
 
 	// Number of bytes that is consumed by the container on this filesystem.
 	Usage uint64 `json:"usage"`
+
+	// The number of read requests merged per second that were queued to the device.
+	ReadsMerged float64 `json:"reads_merged"`
+
+	// The number of write requests merged per second that were queued to the device
+	WritesMerged float64 `json:"writes_merged"`
+
+	// The number of read requests that were issued to the device per second.
+	ReadsIssued float64 `json:"reads_issued"`
+
+	// The number of write requests that were issued to the device per second.
+	WritesIssued float64 `json:"writes_issued"`
+
+	// The number of sectors read to the device per second.
+	SectorsRead float64 `json:"sectors_read"`
+
+	// The number of sectors written to the device per second.
+	SectorsWritten float64 `json:"sectors_written"`
+
+	// The average size (in sectors) of the requests that were issued to the device.
+	AvgRequestSize float64 `json:"avg_request_size"`
+
+	// The average queue length of the requests that were issued to the device.
+	AvgQueueLen float64 `json:"avg_queue_length"`
+
+	// The  average  time  (in  milliseconds)  for  I/O  requests issued to the
+	// device to be served. This includes the time spent by the requests in queue
+	// and the time spent servicing them
+	AvgWaitTime float64 `json:"avg_wait_time"`
+
+	// The  average  service time (in milliseconds) for I/O requests that were issued to
+	// the device. Warning! Do not trust this field any more. This field will be removed
+	// in a future iostat version
+	AvgServiceTime float64 `json:"avg_service_time"`
+
+	//Percentage of CPU time during which I/O requests were issued to the device
+	// (bandwidth utilization for the device). Device saturation occurs when this
+	// value is close to 100%.
+	PercentUtil float64 `json:"avg_service_time"`
 }
 
 type ContainerStats struct {
