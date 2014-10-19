@@ -238,9 +238,9 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 	if self.networkInterface != nil {
 		state = dockerlibcontainer.State{
 			NetworkState: network.NetworkState{
-				VethHost: self.networkInterface.VethHost,
+				VethHost:  self.networkInterface.VethHost,
 				VethChild: self.networkInterface.VethChild,
-				NsPath: "unknown",
+				NsPath:    "unknown",
 			},
 		}
 	}

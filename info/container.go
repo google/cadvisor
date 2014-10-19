@@ -218,7 +218,7 @@ type NetworkStats struct {
 	// Cumulative count of packets received.
 	RxPackets uint64 `json:"rx_packets"`
 	// Cumulative count of receive errors encountered.
-	RxErrors uint64	`json:"rx_errors"`
+	RxErrors uint64 `json:"rx_errors"`
 	// Cumulative count of packets dropped while receiving.
 	RxDropped uint64 `json:"rx_dropped"`
 	// Cumulative count of bytes transmitted.
@@ -243,49 +243,49 @@ type FsStats struct {
 
 	// # of reads completed
 	// This is the total number of reads completed successfully.
-	ReadsCompleted	uint64	`json:"reads_completed"`
+	ReadsCompleted uint64 `json:"reads_completed"`
 
 	// # of reads merged
 	// Reads and writes which are adjacent to each other may be merged for
 	// efficiency.  Thus two 4K reads may become one 8K read before it is
 	// ultimately handed to the disk, and so it will be counted (and queued)
 	// as only one I/O.  This field lets you know how often this was done.
-	ReadsMerged	uint64	`json:"reads_merged"`
+	ReadsMerged uint64 `json:"reads_merged"`
 
 	// # of sectors read
 	// This is the total number of sectors read successfully.
-	SectorsRead	uint64	`json:"sectors_read"`
+	SectorsRead uint64 `json:"sectors_read"`
 
 	// # of milliseconds spent reading
 	// This is the total number of milliseconds spent by all reads (as
 	// measured from __make_request() to end_that_request_last()).
-	ReadTime	uint64	`json:"read_time"`
+	ReadTime uint64 `json:"read_time"`
 
 	// # of writes completed
 	// This is the total number of writes completed successfully.
-	WritesCompleted	uint64	`json:"writes_completed"`
+	WritesCompleted uint64 `json:"writes_completed"`
 
 	// # of writes merged
 	// See the description of reads merged.
-	WritesMerged	uint64	`json:"writes_merged"`
+	WritesMerged uint64 `json:"writes_merged"`
 
 	// # of sectors written
 	// This is the total number of sectors written successfully.
-	SectorsWritten	uint64	`json:"sectors_written"`
+	SectorsWritten uint64 `json:"sectors_written"`
 
 	// # of milliseconds spent writing
 	// This is the total number of milliseconds spent by all writes (as
 	// measured from __make_request() to end_that_request_last()).
-	WriteTime	uint64	`json:"write_time"`
+	WriteTime uint64 `json:"write_time"`
 
 	// # of I/Os currently in progress
 	// The only field that should go to zero. Incremented as requests are
 	// given to appropriate struct request_queue and decremented as they finish.
-	IOInProgress	uint64	`json:"io_in_progress"`
+	IOInProgress uint64 `json:"io_in_progress"`
 
 	// # of milliseconds spent doing I/Os
 	// This field increases so long as field 9 is nonzero.
-	IOTime	uint64	`json:"io_time"`
+	IOTime uint64 `json:"io_time"`
 
 	// weighted # of milliseconds spent doing I/Os
 	// This field is incremented at each I/O start, I/O completion, I/O
@@ -293,7 +293,7 @@ type FsStats struct {
 	// (field 9) times the number of milliseconds spent doing I/O since the
 	// last update of this field.  This can provide an easy measure of both
 	// I/O completion time and the backlog that may be accumulating.
-	WeightedIOTime	uint64	`json:"weighted_io_time"`
+	WeightedIOTime uint64 `json:"weighted_io_time"`
 }
 
 type ContainerStats struct {

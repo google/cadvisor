@@ -12,8 +12,8 @@ import "C"
 import (
 	"bufio"
 	"fmt"
-	"os/exec"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -63,7 +63,7 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 	for device, partition := range self.partitions {
 		_, hasMount := mountSet[partition.mountpoint]
 		_, hasDevice := deviceSet[device]
-		if mountSet == nil ||  hasMount && !hasDevice {
+		if mountSet == nil || hasMount && !hasDevice {
 			total, free, err := getVfsStats(partition.mountpoint)
 			if err != nil {
 				glog.Errorf("Statvfs failed. Error: %v", err)
@@ -94,7 +94,7 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 	diskStatsMap := make(map[string]DiskStats)
 	partitionRegex, _ := regexp.Compile("sd[a-z]\\d")
 	for scanner.Scan() {
-		line :=scanner.Text()
+		line := scanner.Text()
 		words := strings.Fields(line)
 		if !partitionRegex.MatchString(words[2]) {
 			continue
@@ -102,7 +102,7 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 		// 8      50 sdd2 40 0 280 223 7 0 22 108 0 330 330
 		deviceName := "/dev/" + words[2]
 		wordLength := len(words)
-		var stats = make([]uint64,wordLength)
+		var stats = make([]uint64, wordLength)
 		var error error
 		for i := 3; i < wordLength; i++ {
 			stats[i], error = strconv.ParseUint(words[i], 10, 64)
@@ -110,18 +110,18 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 				return nil, error
 			}
 		}
-		diskStats := DiskStats {
-			ReadsCompleted:	stats[3],
-			ReadsMerged:	stats[4],
-			SectorsRead:	stats[5],
-			ReadTime:		stats[6],
-			WritesCompleted:stats[7],
-			WritesMerged:	stats[8],
-			SectorsWritten:	stats[9],
-			WriteTime:		stats[10],
-			IOInProgress:	stats[11],
-			IOTime:			stats[12],
-			WeightedIOTime: stats[13],
+		diskStats := DiskStats{
+			ReadsCompleted:  stats[3],
+			ReadsMerged:     stats[4],
+			SectorsRead:     stats[5],
+			ReadTime:        stats[6],
+			WritesCompleted: stats[7],
+			WritesMerged:    stats[8],
+			SectorsWritten:  stats[9],
+			WriteTime:       stats[10],
+			IOInProgress:    stats[11],
+			IOTime:          stats[12],
+			WeightedIOTime:  stats[13],
 		}
 		diskStatsMap[deviceName] = diskStats
 	}
