@@ -41,8 +41,6 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 	for i, cpuUsage := range cpu {
 		cpuTotalUsage += cpuUsage
 		stats := new(info.ContainerStats)
-		stats.Cpu = new(info.CpuStats)
-		stats.Memory = new(info.MemoryStats)
 		stats.Timestamp = currentTime
 		currentTime = currentTime.Add(duration)
 
@@ -53,7 +51,6 @@ func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStat
 
 		stats.Memory.Usage = mem[i]
 
-		stats.Network = new(info.NetworkStats)
 		stats.Network.RxBytes = uint64(rand.Intn(10000))
 		stats.Network.RxErrors = uint64(rand.Intn(1000))
 		stats.Network.TxBytes = uint64(rand.Intn(100000))

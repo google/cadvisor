@@ -223,13 +223,11 @@ func (self *bigqueryStorage) containerStatsToRows(
 	// hierarchical major page fault
 	row[colMemoryHierarchicalPgmajfault] = stats.Memory.HierarchicalData.Pgmajfault
 
-	// Optional: Network stats.
-	if stats.Network != nil {
-		row[colRxBytes] = stats.Network.RxBytes
-		row[colRxErrors] = stats.Network.RxErrors
-		row[colTxBytes] = stats.Network.TxBytes
-		row[colTxErrors] = stats.Network.TxErrors
-	}
+	// Network stats.
+	row[colRxBytes] = stats.Network.RxBytes
+	row[colRxErrors] = stats.Network.RxErrors
+	row[colTxBytes] = stats.Network.TxBytes
+	row[colTxErrors] = stats.Network.TxErrors
 
 	// TODO(jnagal): Handle per-cpu stats.
 
@@ -288,9 +286,6 @@ func convertToUint64(v interface{}) (uint64, error) {
 
 func (self *bigqueryStorage) valuesToContainerStats(columns []string, values []interface{}) (*info.ContainerStats, error) {
 	stats := &info.ContainerStats{
-		Cpu:        &info.CpuStats{},
-		Memory:     &info.MemoryStats{},
-		Network:    &info.NetworkStats{},
 		Filesystem: make([]info.FsStats, 0),
 	}
 	var err error
@@ -383,7 +378,7 @@ func (self *bigqueryStorage) valuesToContainerStats(columns []string, values []i
 }
 
 func (self *bigqueryStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
-	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
+	if stats == nil {
 		return nil
 	}
 	rows := make([]map[string]interface{}, 0)
