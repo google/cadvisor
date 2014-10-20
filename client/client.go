@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // TODO(cAdvisor): Package comment.
-package cadvisor
+package client
 
 import (
 	"bytes"
