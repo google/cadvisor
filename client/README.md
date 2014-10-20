@@ -1,12 +1,12 @@
 # Example REST API Client
 
-This is an implementation of a cadvisor REST API in Go.  You can use it like this:
+This is an implementation of a cAdvisor REST API in Go.  You can use it like this:
 
 ```go
 client, err := client.NewClient("http://192.168.59.103:8080/")
 ```
 
-Obviously, replace the URL with the path to your actual cadvisor REST endpoint.
+Obviously, replace the URL with the path to your actual cAdvisor REST endpoint.
 
 
 ### MachineInfo
@@ -29,6 +29,8 @@ This method returns a cadvisor/info.MachineInfo struct with all the fields fille
  }
 })
 ```
+
+You can see the full specification of the [MachineInfo struct in the source](../info/container.go)
 
 ### ContainerInfo
 

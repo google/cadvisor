@@ -133,7 +133,7 @@ There is an example Go client under [client/](client/) - you can use it on your 
 ```go
 import "github.com/google/cadvisor/client"
 client, err = client.NewClient("http://192.168.59.103:8080/")
-mInfo, _ := client.MachineInfo()
+mInfo, err := client.MachineInfo()
 ```
 
 ## Roadmap
