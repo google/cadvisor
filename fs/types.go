@@ -22,9 +22,9 @@ type DiskStats struct {
 	WritesMerged    uint64
 	SectorsWritten  uint64
 	WriteTime       uint64
-	IOInProgress    uint64
-	IOTime          uint64
-	WeightedIOTime  uint64
+	IoInProgress    uint64
+	IoTime          uint64
+	WeightedIoTime  uint64
 }
 
 type FsInfo interface {

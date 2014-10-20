@@ -36,11 +36,8 @@ func TestGetContainerHintsFromFile(t *testing.T) {
 }
 
 func TestFileNotExist(t *testing.T) {
-	cHints, err := getContainerHintsFromFile("/file_does_not_exist.json")
+	_, err := getContainerHintsFromFile("/file_does_not_exist.json")
 	if err != nil {
 		t.Fatalf("getContainerHintsFromFile must not error for blank file: %s", err)
-	}
-	for _, container := range cHints.AllHosts {
-		t.Logf("Container: %s", container)
 	}
 }

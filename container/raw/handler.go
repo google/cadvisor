@@ -198,9 +198,9 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 					fs.DiskStats.WritesMerged,
 					fs.DiskStats.SectorsWritten,
 					fs.DiskStats.WriteTime,
-					fs.DiskStats.IOInProgress,
-					fs.DiskStats.IOTime,
-					fs.DiskStats.WeightedIOTime,
+					fs.DiskStats.IoInProgress,
+					fs.DiskStats.IoTime,
+					fs.DiskStats.WeightedIoTime,
 				})
 		}
 	} else if len(self.externalMounts) > 0 {
@@ -224,9 +224,9 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 					fs.DiskStats.WritesMerged,
 					fs.DiskStats.SectorsWritten,
 					fs.DiskStats.WriteTime,
-					fs.DiskStats.IOInProgress,
-					fs.DiskStats.IOTime,
-					fs.DiskStats.WeightedIOTime,
+					fs.DiskStats.IoInProgress,
+					fs.DiskStats.IoTime,
+					fs.DiskStats.WeightedIoTime,
 				})
 		}
 	}

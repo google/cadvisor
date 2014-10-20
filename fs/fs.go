@@ -12,6 +12,7 @@ import "C"
 import (
 	"bufio"
 	"fmt"
+	"path"
 	"os"
 	"os/exec"
 	"regexp"
@@ -24,6 +25,7 @@ import (
 	"github.com/golang/glog"
 )
 
+var partitionRegex = regexp.MustCompile("sd[a-z]+\\d")
 type partition struct {
 	mountpoint string
 	major      uint
@@ -83,16 +85,20 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 }
 
 func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
+	diskStatsMap := make(map[string]DiskStats)
 	file, err := os.Open(diskStatsFile)
 	if err != nil {
+		if os.IsNotExist(err) {
+			glog.Infof("not collecting filesystem statistics because file %q was not available", diskStatsFile)
+			return diskStatsMap, nil
+		}
 		return nil, err
 	}
 
 	defer file.Close()
-
 	scanner := bufio.NewScanner(file)
-	diskStatsMap := make(map[string]DiskStats)
-	partitionRegex, _ := regexp.Compile("sd[a-z]\\d")
+
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		words := strings.Fields(line)
@@ -100,28 +106,32 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 			continue
 		}
 		// 8      50 sdd2 40 0 280 223 7 0 22 108 0 330 330
-		deviceName := "/dev/" + words[2]
+		deviceName := path.Join("/dev", words[2])
 		wordLength := len(words)
-		var stats = make([]uint64, wordLength)
+		offset := 3
+		var stats = make([]uint64, wordLength - offset)
+		if len(stats) < 11 {
+			return nil, fmt.Errorf("could not parse all 11 columns of /proc/diskstats")
+		}
 		var error error
-		for i := 3; i < wordLength; i++ {
-			stats[i], error = strconv.ParseUint(words[i], 10, 64)
+		for i := offset; i < wordLength; i++ {
+			stats[i - offset], error = strconv.ParseUint(words[i], 10, 64)
 			if error != nil {
 				return nil, error
 			}
 		}
 		diskStats := DiskStats{
-			ReadsCompleted:  stats[3],
-			ReadsMerged:     stats[4],
-			SectorsRead:     stats[5],
-			ReadTime:        stats[6],
-			WritesCompleted: stats[7],
-			WritesMerged:    stats[8],
-			SectorsWritten:  stats[9],
-			WriteTime:       stats[10],
-			IOInProgress:    stats[11],
-			IOTime:          stats[12],
-			WeightedIOTime:  stats[13],
+			ReadsCompleted:  stats[0],
+			ReadsMerged:     stats[1],
+			SectorsRead:     stats[2],
+			ReadTime:        stats[3],
+			WritesCompleted: stats[4],
+			WritesMerged:    stats[5],
+			SectorsWritten:  stats[6],
+			WriteTime:       stats[7],
+			IoInProgress:    stats[8],
+			IoTime:          stats[9],
+			WeightedIoTime:  stats[10],
 		}
 		diskStatsMap[deviceName] = diskStats
 	}

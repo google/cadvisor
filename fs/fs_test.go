@@ -45,3 +45,10 @@ func TestGetDiskStatsMap(t *testing.T) {
 		t.Errorf("diskStatsMap %s contains illegal keys %s", diskStatsMap, keySet)
 	}
 }
+
+func TestFileNotExist(t *testing.T) {
+	_, err := getDiskStatsMap("/file_does_not_exist")
+	if err != nil {
+		t.Fatalf("getDiskStatsMap must not error for absent file: %s", err)
+	}
+}
