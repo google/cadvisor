@@ -111,6 +111,10 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 		ret.DiskIo.IoServiced = DiskStatsCopy(s.BlkioStats.IoServicedRecursive)
 		ret.DiskIo.IoQueued = DiskStatsCopy(s.BlkioStats.IoQueuedRecursive)
 		ret.DiskIo.Sectors = DiskStatsCopy(s.BlkioStats.SectorsRecursive)
+		ret.DiskIo.IoServiceTime = DiskStatsCopy(s.BlkioStats.IoServiceTimeRecursive)
+		ret.DiskIo.IoWaitTime = DiskStatsCopy(s.BlkioStats.IoWaitTimeRecursive)
+		ret.DiskIo.IoMerged = DiskStatsCopy(s.BlkioStats.IoMergedRecursive)
+		ret.DiskIo.IoTime = DiskStatsCopy(s.BlkioStats.IoTimeRecursive)
 
 		ret.Memory = new(info.MemoryStats)
 		ret.Memory.Usage = s.MemoryStats.Usage
