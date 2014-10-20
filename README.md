@@ -126,6 +126,16 @@ This resource is read-only. The machine information is returned as a JSON object
 
 The actual object is the marshalled JSON of the `MachineInfo` struct found in [info/machine.go](info/machine.go)
 
+## REST API Clients
+
+There is an example Go client under [client/](client/) - you can use it on your own Go project by including it like this:
+
+```go
+import "github.com/google/cadvisor/client"
+client, err = client.NewClient("http://192.168.59.103:8080/")
+mInfo, err := client.MachineInfo()
+```
+
 ## Roadmap
 
 cAdvisor aims to improve the resource usage and performance characteristics of running containers. Today, we gather and expose this information to users. In our roadmap:
