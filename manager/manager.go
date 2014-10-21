@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"path"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +27,7 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
 )
@@ -47,6 +49,10 @@ type Manager interface {
 
 	// Get information about all subcontainers of the specified container (includes self).
 	SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error)
+
+	// Get information for the specified Docker container (or "/" for all Docker containers).
+	// Full container names here are interpreted within the Docker namespace (e.g.: /test -> top-level Docker container named 'test').
+	DockerContainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error)
 
 	// Get information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
@@ -94,13 +100,14 @@ func New(driver storage.StorageDriver) (Manager, error) {
 }
 
 type manager struct {
-	containers        map[string]*containerData
-	containersLock    sync.RWMutex
-	storageDriver     storage.StorageDriver
-	machineInfo       info.MachineInfo
-	versionInfo       info.VersionInfo
-	quitChannels      []chan error
-	cadvisorContainer string
+	containers             map[string]*containerData
+	containersLock         sync.RWMutex
+	storageDriver          storage.StorageDriver
+	machineInfo            info.MachineInfo
+	versionInfo            info.VersionInfo
+	quitChannels           []chan error
+	cadvisorContainer      string
+	dockerContainersRegexp *regexp.Regexp
 }
 
 // Start the container manager.
@@ -249,8 +256,54 @@ func (self *manager) SubcontainersInfo(containerName string, query *info.Contain
 			}
 		}
 	}()
+
+	return self.containerDataSliceToContainerInfoSlice(containers, query)
+}
+
+func (self *manager) DockerContainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
+	var containers []*containerData
+	err := func() error {
+		self.containersLock.RLock()
+		defer self.containersLock.RUnlock()
+		containers = make([]*containerData, 0, len(self.containers))
+
+		if containerName == "/" {
+			// Get all the Docker containers.
+			for i := range self.containers {
+				if docker.IsDockerContainerName(self.containers[i].info.Name) {
+					containers = append(containers, self.containers[i])
+				}
+			}
+		} else {
+			// Strip "/"
+			containerName = strings.Trim(containerName, "/")
+
+			// Get the specified container (check all possible Docker names).
+			possibleNames := docker.FullDockerContainerNames(containerName)
+			found := false
+			for _, fullName := range possibleNames {
+				cont, ok := self.containers[fullName]
+				if ok {
+					containers = append(containers, cont)
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("unable to find Docker container %q with full names %v", containerName, possibleNames)
+			}
+		}
+		return nil
+	}()
+	if err != nil {
+		return nil, err
+	}
+
+	return self.containerDataSliceToContainerInfoSlice(containers, query)
+}
+
+func (self *manager) containerDataSliceToContainerInfoSlice(containers []*containerData, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
 	if len(containers) == 0 {
-		return nil, fmt.Errorf("unknown container %q", containerName)
+		return nil, fmt.Errorf("no containers found")
 	}
 
 	// Get the info for each container.

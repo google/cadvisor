@@ -34,14 +34,17 @@ const (
 	containersApi    = "containers"
 	subcontainersApi = "subcontainers"
 	machineApi       = "machine"
+	dockerApi        = "docker"
 
 	version1_0 = "v1.0"
 	version1_1 = "v1.1"
+	version1_2 = "v1.2"
 )
 
 var supportedApiVersions map[string]struct{} = map[string]struct{}{
 	version1_0: {},
 	version1_1: {},
+	version1_2: {},
 }
 
 func RegisterHandlers(m manager.Manager) error {
@@ -78,6 +81,9 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		requestArgs = requestElements[4:]
 	}
 
+	// The container name is the path after the requestType.
+	containerName := path.Join("/", strings.Join(requestArgs, "/"))
+
 	// Check elements.
 	if len(emptyElement) != 0 {
 		return fmt.Errorf("unexpected API request format %q", request)
@@ -99,15 +105,11 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 			return err
 		}
 
-		out, err := json.Marshal(machineInfo)
+		err = writeResult(machineInfo, w)
 		if err != nil {
-			fmt.Fprintf(w, "Failed to marshall MachineInfo with error: %s", err)
+			return err
 		}
-		w.Write(out)
 	case requestType == containersApi:
-		// The container name is the path after the requestType.
-		containerName := path.Join("/", strings.Join(requestArgs, "/"))
-
 		glog.V(2).Infof("Api - Container(%s)", containerName)
 
 		// Get the query request.
@@ -123,18 +125,14 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		}
 
 		// Only output the container as JSON.
-		out, err := json.Marshal(cont)
+		err = writeResult(cont, w)
 		if err != nil {
-			return fmt.Errorf("failed to marshall container %q with error: %s", containerName, err)
+			return err
 		}
-		w.Write(out)
 	case requestType == subcontainersApi:
 		if version == version1_0 {
 			return fmt.Errorf("request type of %q not supported in API version %q", requestType, version)
 		}
-
-		// The container name is the path after the requestType.
-		containerName := path.Join("/", strings.Join(requestArgs, "/"))
 
 		glog.V(2).Infof("Api - Subcontainers(%s)", containerName)
 
@@ -151,16 +149,49 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		}
 
 		// Only output the containers as JSON.
-		out, err := json.Marshal(containers)
+		err = writeResult(containers, w)
 		if err != nil {
-			return fmt.Errorf("failed to marshall container %q with error: %s", containerName, err)
+			return err
 		}
-		w.Write(out)
+	case requestType == dockerApi:
+		if version == version1_0 || version == version1_1 {
+			return fmt.Errorf("request type of %q not supported in API version %q", requestType, version)
+		}
+
+		glog.V(2).Infof("Api - Docker(%s)", containerName)
+
+		// Get the query request.
+		query, err := getContainerInfoRequest(r.Body)
+		if err != nil {
+			return err
+		}
+
+		// Get the Docker containers.
+		containers, err := m.DockerContainersInfo(containerName, query)
+		if err != nil {
+			return fmt.Errorf("failed to get docker containers for %q with error: %s", containerName, err)
+		}
+
+		// Only output the containers as JSON.
+		err = writeResult(containers, w)
+		if err != nil {
+			return err
+		}
 	default:
 		return fmt.Errorf("unknown API request type %q", requestType)
 	}
 
 	glog.V(2).Infof("Request took %s", time.Since(start))
+	return nil
+}
+
+func writeResult(res interface{}, w http.ResponseWriter) error {
+	out, err := json.Marshal(res)
+	if err != nil {
+		return fmt.Errorf("failed to marshall response %+v with error: %s", res, err)
+	}
+
+	w.Write(out)
 	return nil
 }
 
