@@ -5,4 +5,4 @@ set -x
 
 godep go build -a github.com/google/cadvisor
 
-sudo docker build -t google/cadvisor:test .
+docker build -t google/cadvisor:canary .

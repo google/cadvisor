@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 (2014-10-28)
+- Added disk space stats. On by default for root, available on AUFS Docker containers.
+- Introduced v1.2 remote API with new "docker" resource for Docker containers.
+- Added "ContainerHints" file based interface to inject extra information about containers.
+
 ## 0.4.1 (2014-09-29)
 - Support for Docker containers in systemd systems.
 - Adding DiskIO stats
