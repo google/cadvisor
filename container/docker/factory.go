@@ -17,6 +17,7 @@ package docker
 import (
 	"flag"
 	"fmt"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -33,11 +34,18 @@ var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "do
 // Basepath to all container specific information that libcontainer stores.
 var dockerRootDir = flag.String("docker_root", "/var/lib/docker", "Absolute path to the Docker state root directory (default: /var/lib/docker)")
 
+// Whether the system is using Systemd.
+var useSystemd bool
+
+func init() {
+	useSystemd = systemd.UseSystemd()
+	if useSystemd {
+		glog.Infof("System is using systemd")
+	}
+}
+
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
-
-	// Whether this system is using systemd.
-	useSystemd bool
 
 	// Whether docker is running with AUFS storage driver.
 	usesAufsDriver bool
@@ -58,31 +66,48 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 		client,
 		name,
 		self.machineInfoFactory,
-		self.useSystemd,
 		*dockerRootDir,
 		self.usesAufsDriver,
 	)
 	return
 }
 
+// Returns whether the specified full container name corresponds to a Docker container.
+func IsDockerContainerName(name string) bool {
+	if useSystemd {
+		// In systemd systems the containers are: /system.slice/docker-{ID}
+		return strings.HasPrefix(name, "/system.slice/docker-")
+	} else {
+		return strings.HasPrefix(name, "/docker/")
+	}
+}
+
+// Returns a list of possible full container names for the specified Docker container name.
+func FullDockerContainerNames(dockerName string) []string {
+	names := make([]string, 0, 2)
+
+	// Add the full container name.
+	if useSystemd {
+		names = append(names, path.Join("/system.slice", fmt.Sprintf("docker-%s.scope", dockerName)))
+	} else {
+		names = append(names, path.Join("/docker", dockerName))
+	}
+
+	// Add the Docker alias name.
+	return append(names, path.Join("/docker", dockerName))
+}
+
 // Docker handles all containers under /docker
 func (self *dockerFactory) CanHandle(name string) (bool, error) {
-	// In systemd systems the containers are: /system.slice/docker-{ID}
-	if self.useSystemd {
-		if !strings.HasPrefix(name, "/system.slice/docker-") {
-			return false, nil
-		}
-	} else if name == "/" {
-		return false, nil
-	} else if name == "/docker" {
+	if name == "/docker" {
 		// We need the docker driver to handle /docker. Otherwise the aggregation at the API level will break.
 		return true, nil
-	} else if !strings.HasPrefix(name, "/docker/") {
+	} else if !IsDockerContainerName(name) {
 		return false, nil
 	}
 
 	// Check if the container is known to docker and it is active.
-	id := containerNameToDockerId(name, self.useSystemd)
+	id := containerNameToDockerId(name)
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := self.client.InspectContainer(id)
@@ -162,12 +187,8 @@ func Register(factory info.MachineInfoFactory) error {
 
 	f := &dockerFactory{
 		machineInfoFactory: factory,
-		useSystemd:         systemd.UseSystemd(),
 		client:             client,
 		usesAufsDriver:     usesAufsDriver,
-	}
-	if f.useSystemd {
-		glog.Infof("System is using systemd")
 	}
 	container.RegisterContainerHandlerFactory(f)
 	return nil

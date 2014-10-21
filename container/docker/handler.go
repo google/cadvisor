@@ -51,7 +51,6 @@ type dockerContainerHandler struct {
 	id                   string
 	aliases              []string
 	machineInfoFactory   info.MachineInfoFactory
-	useSystemd           bool
 	libcontainerStateDir string
 	cgroup               cgroups.Cgroup
 	usesAufsDriver       bool
@@ -63,7 +62,6 @@ func newDockerContainerHandler(
 	client *docker.Client,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
-	useSystemd bool,
 	dockerRootDir string,
 	usesAufsDriver bool,
 ) (container.ContainerHandler, error) {
@@ -75,7 +73,6 @@ func newDockerContainerHandler(
 		client:               client,
 		name:                 name,
 		machineInfoFactory:   machineInfoFactory,
-		useSystemd:           useSystemd,
 		libcontainerStateDir: path.Join(dockerRootDir, pathToLibcontainerState),
 		cgroup: cgroups.Cgroup{
 			Parent: "/",
@@ -88,7 +85,7 @@ func newDockerContainerHandler(
 	if handler.isDockerRoot() {
 		return handler, nil
 	}
-	id := containerNameToDockerId(name, useSystemd)
+	id := containerNameToDockerId(name)
 	handler.id = id
 	ctnr, err := client.InspectContainer(id)
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -99,7 +96,7 @@ func newDockerContainerHandler(
 	return handler, nil
 }
 
-func containerNameToDockerId(name string, useSystemd bool) string {
+func containerNameToDockerId(name string) string {
 	id := path.Base(name)
 
 	// Turn systemd cgroup name into Docker ID.
@@ -320,7 +317,7 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 
 	// On non-systemd systems Docker containers are under /docker.
 	containerPrefix := "/docker"
-	if self.useSystemd {
+	if useSystemd {
 		containerPrefix = "/system.slice"
 	}
 
