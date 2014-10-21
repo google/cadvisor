@@ -69,7 +69,19 @@ cAdvisor exposes its raw and processed stats via a versioned remote REST API:
 
 `http://<hostname>:<port>/api/<version>/<request>`
 
-The current version of the API is `v1.1`.
+The current version of the API is `v1.2`.
+
+### Version 1.2
+
+This version exposes the same endpoints as `v1.1` with one additional read-only endpoint.
+
+#### Docker Container Information
+
+The resource name for Docker container information is as follows:
+
+`/api/v1.1/docker/<Docker container name or blank for all Docker containers>`
+
+The Docker name can be either the UUID or the short name of the container. It returns the information of the specified container(s). The information is returned as a list of serialized `ContainerInfo` JSON objects (found in [info/container.go](info/container.go)).
 
 ### Version 1.1
 
