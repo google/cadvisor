@@ -44,7 +44,8 @@ type rawContainerHandler struct {
 	stopWatcher        chan error
 	watches            map[string]struct{}
 	fsInfo             fs.FsInfo
-	networkInterface  *networkInterface
+	networkInterface   *networkInterface
+	externalMounts     []mount
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
@@ -57,9 +58,11 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		return nil, err
 	}
 	var networkInterface *networkInterface
+	var externalMounts []mount
 	for _, container := range cHints.AllHosts {
 		if name == container.FullName {
 			networkInterface = container.NetworkInterface
+			externalMounts = container.Mounts
 			break
 		}
 	}
@@ -74,7 +77,8 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
 		fsInfo:             fsInfo,
-		networkInterface:  networkInterface,
+		networkInterface:   networkInterface,
+		externalMounts:     externalMounts,
 	}, nil
 }
 
@@ -164,7 +168,7 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	}
 
 	// Fs.
-	if self.name == "/" {
+	if self.name == "/" || self.externalMounts != nil {
 		spec.HasFilesystem = true
 	}
 
@@ -173,6 +177,34 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 		spec.HasNetwork = true
 	}
 	return spec, nil
+}
+
+func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
+
+	// Get Filesystem information only for the root cgroup.
+	if self.name == "/" {
+		filesystems, err := self.fsInfo.GetGlobalFsInfo()
+		if err != nil {
+			return err
+		}
+		for _, fs := range filesystems {
+			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
+		}
+	} else if len(self.externalMounts) > 0 {
+		var mountSet map[string]struct{}
+		mountSet = make(map[string]struct{})
+		for _, mount := range self.externalMounts {
+			mountSet[mount.HostDir] = struct{}{}
+		}
+		filesystems, err := self.fsInfo.GetFsInfoForPath(mountSet)
+		if err != nil {
+			return err
+		}
+		for _, fs := range filesystems {
+			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
+		}
+	}
+	return nil
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
@@ -191,15 +223,10 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 	if err != nil {
 		return nil, err
 	}
-	// Get Filesystem information only for the root cgroup.
-	if self.name == "/" {
-		filesystems, err := self.fsInfo.GetGlobalFsInfo()
-		if err != nil {
-			return nil, err
-		}
-		for _, fs := range filesystems {
-			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
-		}
+
+	err = self.getFsStats(stats)
+	if err != nil {
+		return nil, err
 	}
 
 	return stats, nil

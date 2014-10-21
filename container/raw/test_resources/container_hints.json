@@ -9,28 +9,28 @@
       },
       "mounts": [
         {
-          "host-dir": "/var/run/nm-sdc1",
-          "container-dir": "/var/run/nm-sdc1",
+          "host_dir": "/var/run/nm-sdc1",
+          "container_dir": "/var/run/nm-sdc1",
           "permission": "rw"
         },
         {
-          "host-dir": "/var/run/nm-sdb3",
-          "container-dir": "/var/run/nm-sdb3",
+          "host_dir": "/var/run/nm-sdb3",
+          "container_dir": "/var/run/nm-sdb3",
           "permission": "rw"
         },
         {
-          "host-dir": "/var/run/nm-sda3",
-          "container-dir": "/var/run/nm-sda3",
+          "host_dir": "/var/run/nm-sda3",
+          "container_dir": "/var/run/nm-sda3",
           "permission": "rw"
         },
         {
-          "host-dir": "/var/run/netns/root",
-          "container-dir": "/var/run/netns/root",
+          "host_dir": "/var/run/netns/root",
+          "container_dir": "/var/run/netns/root",
           "permission": "ro"
         },
         {
-          "host-dir": "/var/run/openvswitch/db.sock",
-          "container-dir": "/var/run/openvswitch/db.sock",
+          "host_dir": "/var/run/openvswitch/db.sock",
+          "container_dir": "/var/run/openvswitch/db.sock",
           "permission": "rw"
         }
       ],

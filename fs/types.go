@@ -16,6 +16,9 @@ type FsInfo interface {
 	// Returns capacity and free space, in bytes, of all the ext2, ext3, ext4 filesystems on the host.
 	GetGlobalFsInfo() ([]Fs, error)
 
+	// Returns capacity and free space, in bytes, of the set of mounts passed.
+	GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error)
+
 	// Returns number of bytes occupied by 'dir'.
 	GetDirUsage(dir string) (uint64, error)
 
