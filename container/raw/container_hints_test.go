@@ -27,7 +27,7 @@ func TestGetContainerHintsFromFile(t *testing.T) {
 	if len(cHints.AllHosts[0].Mounts) == 0 {
 		t.Errorf("Cannot find any mounts")
 	}
-	
+
 	for i, mountDir := range cHints.AllHosts[0].Mounts {
 		if correctMountDirs[i] != mountDir.HostDir {
 			t.Errorf("Cannot find mount %s in %s", mountDir.HostDir, cHints)

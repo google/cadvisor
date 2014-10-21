@@ -12,9 +12,9 @@ import "C"
 import (
 	"bufio"
 	"fmt"
-	"path"
 	"os"
 	"os/exec"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -26,6 +26,7 @@ import (
 )
 
 var partitionRegex = regexp.MustCompile("sd[a-z]+\\d")
+
 type partition struct {
 	mountpoint string
 	major      uint
@@ -98,7 +99,6 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
-
 	for scanner.Scan() {
 		line := scanner.Text()
 		words := strings.Fields(line)
@@ -109,13 +109,13 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 		deviceName := path.Join("/dev", words[2])
 		wordLength := len(words)
 		offset := 3
-		var stats = make([]uint64, wordLength - offset)
+		var stats = make([]uint64, wordLength-offset)
 		if len(stats) < 11 {
 			return nil, fmt.Errorf("could not parse all 11 columns of /proc/diskstats")
 		}
 		var error error
 		for i := offset; i < wordLength; i++ {
-			stats[i - offset], error = strconv.ParseUint(words[i], 10, 64)
+			stats[i-offset], error = strconv.ParseUint(words[i], 10, 64)
 			if error != nil {
 				return nil, error
 			}
