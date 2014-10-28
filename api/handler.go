@@ -191,6 +191,7 @@ func writeResult(res interface{}, w http.ResponseWriter) error {
 		return fmt.Errorf("failed to marshall response %+v with error: %s", res, err)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
 	return nil
 }
