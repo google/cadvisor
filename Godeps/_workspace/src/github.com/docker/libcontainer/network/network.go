@@ -32,8 +32,8 @@ func ChangeInterfaceName(old, newName string) error {
 	return netlink.NetworkChangeName(iface, newName)
 }
 
-func CreateVethPair(name1, name2 string) error {
-	return netlink.NetworkCreateVethPair(name1, name2)
+func CreateVethPair(name1, name2 string, txQueueLen int) error {
+	return netlink.NetworkCreateVethPair(name1, name2, txQueueLen)
 }
 
 func SetInterfaceInNamespacePid(name string, nsPid int) error {
@@ -66,6 +66,14 @@ func SetInterfaceMaster(name, master string) error {
 
 func SetDefaultGateway(ip, ifaceName string) error {
 	return netlink.AddDefaultGw(ip, ifaceName)
+}
+
+func SetInterfaceMac(name string, macaddr string) error {
+	iface, err := net.InterfaceByName(name)
+	if err != nil {
+		return err
+	}
+	return netlink.NetworkSetMacAddress(iface, macaddr)
 }
 
 func SetInterfaceIp(name string, rawIp string) error {

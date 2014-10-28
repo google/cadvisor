@@ -180,10 +180,14 @@ type PerDiskStats struct {
 }
 
 type DiskIoStats struct {
-	IoServiceBytes []PerDiskStats `json:"io_service_bytes,omitempty"`
-	IoServiced     []PerDiskStats `json:"io_serviced,omitempty"`
-	IoQueued       []PerDiskStats `json:"io_queued,omitempty"`
-	Sectors        []PerDiskStats `json:"sectors,omitempty"`
+	IoServiceBytes 	[]PerDiskStats `json:"io_service_bytes,omitempty"`
+	IoServiced     	[]PerDiskStats `json:"io_serviced,omitempty"`
+	IoQueued       	[]PerDiskStats `json:"io_queued,omitempty"`
+	Sectors        	[]PerDiskStats `json:"sectors,omitempty"`
+	IoServiceTime	[]PerDiskStats `json:"io_service_time,omitempty"`
+	IoWaitTime 		[]PerDiskStats `json:"io_wait_time,omitempty"`
+	IoMerged []PerDiskStats `json:"io_merged,omitempty"`
+	IoTime []PerDiskStats `json:"io_time,omitempty"`
 }
 
 type MemoryStats struct {
