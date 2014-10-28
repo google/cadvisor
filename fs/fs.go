@@ -10,8 +10,12 @@ package fs
 import "C"
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"os/exec"
+	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -20,6 +24,8 @@ import (
 	"github.com/docker/docker/pkg/mount"
 	"github.com/golang/glog"
 )
+
+var partitionRegex = regexp.MustCompile("sd[a-z]+\\d")
 
 type partition struct {
 	mountpoint string
@@ -53,10 +59,14 @@ func NewFsInfo() (FsInfo, error) {
 func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error) {
 	filesystems := make([]Fs, 0)
 	deviceSet := make(map[string]struct{})
+	diskStatsMap, err := getDiskStatsMap("/proc/diskstats")
+	if err != nil {
+		return nil, err
+	}
 	for device, partition := range self.partitions {
 		_, hasMount := mountSet[partition.mountpoint]
 		_, hasDevice := deviceSet[device]
-		if mountSet == nil ||  hasMount && !hasDevice {
+		if mountSet == nil || hasMount && !hasDevice {
 			total, free, err := getVfsStats(partition.mountpoint)
 			if err != nil {
 				glog.Errorf("Statvfs failed. Error: %v", err)
@@ -67,12 +77,65 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 					Major:  uint(partition.major),
 					Minor:  uint(partition.minor),
 				}
-				fs := Fs{deviceInfo, total, free}
+				fs := Fs{deviceInfo, total, free, diskStatsMap[device]}
 				filesystems = append(filesystems, fs)
 			}
 		}
 	}
 	return filesystems, nil
+}
+
+func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
+	diskStatsMap := make(map[string]DiskStats)
+	file, err := os.Open(diskStatsFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			glog.Infof("not collecting filesystem statistics because file %q was not available", diskStatsFile)
+			return diskStatsMap, nil
+		}
+		return nil, err
+	}
+
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		words := strings.Fields(line)
+		if !partitionRegex.MatchString(words[2]) {
+			continue
+		}
+		// 8      50 sdd2 40 0 280 223 7 0 22 108 0 330 330
+		deviceName := path.Join("/dev", words[2])
+		wordLength := len(words)
+		offset := 3
+		var stats = make([]uint64, wordLength-offset)
+		if len(stats) < 11 {
+			return nil, fmt.Errorf("could not parse all 11 columns of /proc/diskstats")
+		}
+		var error error
+		for i := offset; i < wordLength; i++ {
+			stats[i-offset], error = strconv.ParseUint(words[i], 10, 64)
+			if error != nil {
+				return nil, error
+			}
+		}
+		diskStats := DiskStats{
+			ReadsCompleted:  stats[0],
+			ReadsMerged:     stats[1],
+			SectorsRead:     stats[2],
+			ReadTime:        stats[3],
+			WritesCompleted: stats[4],
+			WritesMerged:    stats[5],
+			SectorsWritten:  stats[6],
+			WriteTime:       stats[7],
+			IoInProgress:    stats[8],
+			IoTime:          stats[9],
+			WeightedIoTime:  stats[10],
+		}
+		diskStatsMap[deviceName] = diskStats
+	}
+	return diskStatsMap, nil
 }
 
 func (self *RealFsInfo) GetGlobalFsInfo() ([]Fs, error) {

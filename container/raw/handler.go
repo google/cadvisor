@@ -188,7 +188,20 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 			return err
 		}
 		for _, fs := range filesystems {
-			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
+			stats.Filesystem = append(stats.Filesystem,
+				info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free,
+					fs.DiskStats.ReadsCompleted,
+					fs.DiskStats.ReadsMerged,
+					fs.DiskStats.SectorsRead,
+					fs.DiskStats.ReadTime,
+					fs.DiskStats.WritesCompleted,
+					fs.DiskStats.WritesMerged,
+					fs.DiskStats.SectorsWritten,
+					fs.DiskStats.WriteTime,
+					fs.DiskStats.IoInProgress,
+					fs.DiskStats.IoTime,
+					fs.DiskStats.WeightedIoTime,
+				})
 		}
 	} else if len(self.externalMounts) > 0 {
 		var mountSet map[string]struct{}
@@ -201,7 +214,20 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 			return err
 		}
 		for _, fs := range filesystems {
-			stats.Filesystem = append(stats.Filesystem, info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free})
+			stats.Filesystem = append(stats.Filesystem,
+				info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free,
+					fs.DiskStats.ReadsCompleted,
+					fs.DiskStats.ReadsMerged,
+					fs.DiskStats.SectorsRead,
+					fs.DiskStats.ReadTime,
+					fs.DiskStats.WritesCompleted,
+					fs.DiskStats.WritesMerged,
+					fs.DiskStats.SectorsWritten,
+					fs.DiskStats.WriteTime,
+					fs.DiskStats.IoInProgress,
+					fs.DiskStats.IoTime,
+					fs.DiskStats.WeightedIoTime,
+				})
 		}
 	}
 	return nil
@@ -212,9 +238,9 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 	if self.networkInterface != nil {
 		state = dockerlibcontainer.State{
 			NetworkState: network.NetworkState{
-				VethHost: self.networkInterface.VethHost,
+				VethHost:  self.networkInterface.VethHost,
 				VethChild: self.networkInterface.VethChild,
-				NsPath: "unknown",
+				NsPath:    "unknown",
 			},
 		}
 	}
