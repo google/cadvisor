@@ -275,12 +275,11 @@ func (self *manager) DockerContainersInfo(containerName string, query *info.Cont
 				}
 			}
 		} else {
-			// Strip "/"
+			// Strip first "/"
 			containerName = strings.Trim(containerName, "/")
 
 			// Get the specified container (check all possible Docker names).
 			possibleNames := docker.FullDockerContainerNames(containerName)
-			found := false
 			for _, fullName := range possibleNames {
 				cont, ok := self.containers[fullName]
 				if ok {
@@ -288,7 +287,7 @@ func (self *manager) DockerContainersInfo(containerName string, query *info.Cont
 					break
 				}
 			}
-			if !found {
+			if len(containers) == 0 {
 				return fmt.Errorf("unable to find Docker container %q with full names %v", containerName, possibleNames)
 			}
 		}
