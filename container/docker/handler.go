@@ -148,7 +148,8 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontain
 	config = retConfig
 
 	// Replace cgroup parent and name with our own since we may be running in a different context.
-	*config.Cgroups = self.cgroup
+	config.Cgroups.Name = self.cgroup.Name
+	config.Cgroups.Parent = self.cgroup.Parent
 
 	return
 }
