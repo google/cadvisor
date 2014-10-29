@@ -223,6 +223,9 @@ func TestBlkioStatsNoQueuedFile(t *testing.T) {
 }
 
 func TestBlkioStatsNoServiceTimeFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	helper := NewCgroupTestUtil("blkio", t)
 	defer helper.cleanup()
 	helper.writeFileContents(map[string]string{
@@ -244,6 +247,9 @@ func TestBlkioStatsNoServiceTimeFile(t *testing.T) {
 }
 
 func TestBlkioStatsNoWaitTimeFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	helper := NewCgroupTestUtil("blkio", t)
 	defer helper.cleanup()
 	helper.writeFileContents(map[string]string{
@@ -265,6 +271,9 @@ func TestBlkioStatsNoWaitTimeFile(t *testing.T) {
 }
 
 func TestBlkioStatsNoMergedFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	helper := NewCgroupTestUtil("blkio", t)
 	defer helper.cleanup()
 	helper.writeFileContents(map[string]string{
@@ -286,6 +295,9 @@ func TestBlkioStatsNoMergedFile(t *testing.T) {
 }
 
 func TestBlkioStatsNoTimeFile(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	helper := NewCgroupTestUtil("blkio", t)
 	defer helper.cleanup()
 	helper.writeFileContents(map[string]string{
