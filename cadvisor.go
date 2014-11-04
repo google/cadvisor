@@ -63,12 +63,12 @@ func main() {
 
 	// Register the raw driver.
 	if err := raw.Register(containerManager); err != nil {
-		glog.Fatalf("raw registration failed: %v.", err)
+		glog.Fatalf("Raw registration failed: %v.", err)
 	}
 
 	// Basic health handler.
 	if err := healthz.RegisterHandler(); err != nil {
-		glog.Fatalf("failed to register healthz handler: %s", err)
+		glog.Fatalf("Failed to register healthz handler: %s", err)
 	}
 
 	// Handler for static content.
@@ -81,19 +81,15 @@ func main() {
 
 	// Register API handler.
 	if err := api.RegisterHandlers(containerManager); err != nil {
-		glog.Fatalf("failed to register API handlers: %s", err)
+		glog.Fatalf("Failed to register API handlers: %s", err)
 	}
 
 	// Redirect / to containers page.
 	http.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
 
-	// Register the handler for the containers page.
-	http.HandleFunc(pages.ContainersPage, func(w http.ResponseWriter, r *http.Request) {
-		err := pages.ServerContainersPage(containerManager, w, r.URL)
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-		}
-	})
+	if err := pages.RegisterHandlers(containerManager); err != nil {
+		glog.Fatalf("Failed to register pages handlers: %s", err)
+	}
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {

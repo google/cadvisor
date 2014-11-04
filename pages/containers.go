@@ -88,7 +88,6 @@ func (b ByteSize) Unit() string {
 }
 
 var funcMap = template.FuncMap{
-	"containerLink":         containerLink,
 	"printMask":             printMask,
 	"printCores":            printCores,
 	"printShares":           printShares,
@@ -100,52 +99,6 @@ var funcMap = template.FuncMap{
 	"getColdMemoryPercent":  getColdMemoryPercent,
 	"getFsStats":            getFsStats,
 	"getFsUsagePercent":     getFsUsagePercent,
-}
-
-// TODO(vmarmol): Consider housekeeping Spec too so we can show changes through time. We probably don't need it ever second though.
-
-var pageTemplate *template.Template
-
-type pageData struct {
-	ContainerName      string
-	ParentContainers   []info.ContainerReference
-	Subcontainers      []info.ContainerReference
-	Spec               info.ContainerSpec
-	Stats              []*info.ContainerStats
-	MachineInfo        *info.MachineInfo
-	ResourcesAvailable bool
-	CpuAvailable       bool
-	MemoryAvailable    bool
-	NetworkAvailable   bool
-	FsAvailable        bool
-}
-
-func init() {
-	pageTemplate = template.New("containersTemplate").Funcs(funcMap)
-	_, err := pageTemplate.Parse(containersHtmlTemplate)
-	if err != nil {
-		glog.Fatalf("Failed to parse template: %s", err)
-	}
-}
-
-// TODO(vmarmol): Escape this correctly.
-func containerLink(container info.ContainerReference, basenameOnly bool, cssClasses string) interface{} {
-	var displayName string
-	containerName := container.Name
-	if len(container.Aliases) > 0 {
-		displayName = container.Aliases[0]
-	} else if basenameOnly {
-		displayName = path.Base(string(container.Name))
-	} else {
-		displayName = string(container.Name)
-	}
-	if container.Name == "root" {
-		containerName = "/"
-	} else if strings.Contains(container.Name, " ") {
-		// If it has a space, it is an a.k.a, so keep the base-name
-		containerName = container.Name[:strings.Index(container.Name, " ")]
-	}
-	return template.HTML(fmt.Sprintf("<a class=\"%s\" href=\"%s%s\">%s</a>", cssClasses, ContainersPage[:len(ContainersPage)-1], containerName, displayName))
 }
 
 func printMask(mask string, numCores int) interface{} {
@@ -266,7 +219,7 @@ func getFsUsagePercent(limit, used uint64) uint64 {
 	return uint64((float64(used) / float64(limit)) * 100)
 }
 
-func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error {
+func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error {
 	start := time.Now()
 
 	// The container name is the path after the handler
@@ -278,8 +231,9 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 	}
 	cont, err := m.GetContainerInfo(containerName, &reqParams)
 	if err != nil {
-		return fmt.Errorf("Failed to get container \"%s\" with error: %s", containerName, err)
+		return fmt.Errorf("Failed to get container %q with error: %v", containerName, err)
 	}
+	displayName := getContainerDisplayName(cont.ContainerReference)
 
 	// Get the MachineInfo
 	machineInfo, err := m.GetMachineInfo()
@@ -288,41 +242,41 @@ func ServerContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) 
 	}
 
 	// Make a list of the parent containers and their links
-	var parentContainers []info.ContainerReference
-	parentContainers = append(parentContainers, info.ContainerReference{Name: "root"})
-	parentName := ""
-	for _, part := range strings.Split(string(cont.Name), "/") {
-		if part == "" {
+	pathParts := strings.Split(string(cont.Name), "/")
+	parentContainers := make([]link, 0, len(pathParts))
+	parentContainers = append(parentContainers, link{
+		Text: "root",
+		Link: ContainersPage,
+	})
+	for i := 1; i < len(pathParts); i++ {
+		// Skip empty parts.
+		if pathParts[i] == "" {
 			continue
 		}
-		parentName += "/" + part
-		parentContainers = append(parentContainers, info.ContainerReference{Name: parentName})
+		parentContainers = append(parentContainers, link{
+			Text: pathParts[i],
+			Link: path.Join(ContainersPage, path.Join(pathParts[1:i+1]...)),
+		})
 	}
 
-	// Pick the shortest name of the container as the display name.
-	displayName := cont.Name
-	for _, alias := range cont.Aliases {
-		if len(displayName) >= len(alias) {
-			displayName = alias
-		}
-	}
-
-	// Replace the last part of the parent containers with the displayName.
-	if displayName != cont.Name {
-		parentContainers[len(parentContainers)-1] = info.ContainerReference{
-			Name: fmt.Sprintf("%s (%s)", displayName, path.Base(cont.Name)),
-		}
+	// Build the links for the subcontainers.
+	subcontainerLinks := make([]link, 0, len(cont.Subcontainers))
+	for _, sub := range cont.Subcontainers {
+		subcontainerLinks = append(subcontainerLinks, link{
+			Text: getContainerDisplayName(sub),
+			Link: path.Join(ContainersPage, sub.Name),
+		})
 	}
 
 	data := &pageData{
-		ContainerName: displayName,
-		// TODO(vmarmol): Only use strings for this.
+		DisplayName:        displayName,
+		ContainerName:      cont.Name,
 		ParentContainers:   parentContainers,
-		Subcontainers:      cont.Subcontainers,
+		Subcontainers:      subcontainerLinks,
 		Spec:               cont.Spec,
 		Stats:              cont.Stats,
 		MachineInfo:        machineInfo,
-		ResourcesAvailable: cont.Spec.HasCpu || cont.Spec.HasMemory || cont.Spec.HasNetwork,
+		ResourcesAvailable: cont.Spec.HasCpu || cont.Spec.HasMemory || cont.Spec.HasNetwork || cont.Spec.HasFilesystem,
 		CpuAvailable:       cont.Spec.HasCpu,
 		MemoryAvailable:    cont.Spec.HasMemory,
 		NetworkAvailable:   cont.Spec.HasNetwork,

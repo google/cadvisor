@@ -85,7 +85,7 @@ func newDockerContainerHandler(
 	if handler.isDockerRoot() {
 		return handler, nil
 	}
-	id := containerNameToDockerId(name)
+	id := ContainerNameToDockerId(name)
 	handler.id = id
 	ctnr, err := client.InspectContainer(id)
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -94,25 +94,6 @@ func newDockerContainerHandler(
 	}
 	handler.aliases = append(handler.aliases, path.Join("/docker", ctnr.Name))
 	return handler, nil
-}
-
-func containerNameToDockerId(name string) string {
-	id := path.Base(name)
-
-	// Turn systemd cgroup name into Docker ID.
-	if useSystemd {
-		const systemdDockerPrefix = "docker-"
-		if strings.HasPrefix(id, systemdDockerPrefix) {
-			id = id[len(systemdDockerPrefix):]
-		}
-
-		const systemdScopeSuffix = ".scope"
-		if strings.HasSuffix(id, systemdScopeSuffix) {
-			id = id[:len(id)-len(systemdScopeSuffix)]
-		}
-	}
-
-	return id
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
