@@ -24,7 +24,7 @@ sudo docker run \
 
 cAdvisor is now running (in the background) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
 
-**Note**: On CentOS and RHEL 6, run cAdvisor with an additional option ```--volume=/cgroup:/cgroup \```
+**Note**: If you're running on CentOS, RHEL, or are using LXC take a look at our [running instructions](docs/running.md).
 
 If you want to build your own cAdvisor Docker image, take a look at `deploy/Dockerfile` and `deploy/build.sh`.
 
