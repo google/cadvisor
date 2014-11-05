@@ -171,15 +171,8 @@ func (c *containerData) housekeeping() {
 			} else if len(stats) < 2 {
 				// Ignore, not enough stats yet.
 			} else {
-				usageCpuNs := uint64(0)
-				usageMemory := uint64(0)
-
-				if stats[0].Cpu != nil && stats[1].Cpu != nil {
-					usageCpuNs = stats[1].Cpu.Usage.Total - stats[0].Cpu.Usage.Total
-				}
-				if stats[1].Memory != nil {
-					usageMemory = stats[1].Memory.Usage
-				}
+				usageCpuNs := stats[1].Cpu.Usage.Total - stats[0].Cpu.Usage.Total
+				usageMemory := stats[1].Memory.Usage
 
 				usageInCores := float64(usageCpuNs) / float64(stats[1].Timestamp.Sub(stats[0].Timestamp).Nanoseconds())
 				usageInHuman := units.HumanSize(int64(usageMemory))

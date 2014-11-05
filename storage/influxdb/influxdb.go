@@ -123,20 +123,18 @@ func (self *influxdbStorage) containerStatsToValues(
 	columns = append(columns, colMemoryWorkingSet)
 	values = append(values, stats.Memory.WorkingSet)
 
-	// Optional: Network stats.
-	if stats.Network != nil {
-		columns = append(columns, colRxBytes)
-		values = append(values, stats.Network.RxBytes)
+	// Network stats.
+	columns = append(columns, colRxBytes)
+	values = append(values, stats.Network.RxBytes)
 
-		columns = append(columns, colRxErrors)
-		values = append(values, stats.Network.RxErrors)
+	columns = append(columns, colRxErrors)
+	values = append(values, stats.Network.RxErrors)
 
-		columns = append(columns, colTxBytes)
-		values = append(values, stats.Network.TxBytes)
+	columns = append(columns, colTxBytes)
+	values = append(values, stats.Network.TxBytes)
 
-		columns = append(columns, colTxErrors)
-		values = append(values, stats.Network.TxErrors)
-	}
+	columns = append(columns, colTxErrors)
+	values = append(values, stats.Network.TxErrors)
 
 	return columns, values
 }
@@ -176,9 +174,6 @@ func convertToUint64(v interface{}) (uint64, error) {
 
 func (self *influxdbStorage) valuesToContainerStats(columns []string, values []interface{}) (*info.ContainerStats, error) {
 	stats := &info.ContainerStats{
-		Cpu:        &info.CpuStats{},
-		Memory:     &info.MemoryStats{},
-		Network:    &info.NetworkStats{},
 		Filesystem: make([]info.FsStats, 0),
 	}
 	var err error
@@ -261,7 +256,7 @@ func (self *influxdbStorage) defaultReadyToFlush() bool {
 }
 
 func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
-	if stats == nil || stats.Cpu == nil || stats.Memory == nil {
+	if stats == nil {
 		return nil
 	}
 	var seriesToFlush []*influxdb.Series

@@ -95,7 +95,6 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 	ret.Timestamp = time.Now()
 
 	if s != nil {
-		ret.Cpu = new(info.CpuStats)
 		ret.Cpu.Usage.User = s.CpuStats.CpuUsage.UsageInUsermode
 		ret.Cpu.Usage.System = s.CpuStats.CpuUsage.UsageInKernelmode
 		n := len(s.CpuStats.CpuUsage.PercpuUsage)
@@ -116,7 +115,6 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 		ret.DiskIo.IoMerged = DiskStatsCopy(s.BlkioStats.IoMergedRecursive)
 		ret.DiskIo.IoTime = DiskStatsCopy(s.BlkioStats.IoTimeRecursive)
 
-		ret.Memory = new(info.MemoryStats)
 		ret.Memory.Usage = s.MemoryStats.Usage
 		if v, ok := s.MemoryStats.Stats["pgfault"]; ok {
 			ret.Memory.ContainerData.Pgfault = v
@@ -135,7 +133,7 @@ func toContainerStats(libcontainerStats *libcontainer.ContainerStats) *info.Cont
 	}
 	// TODO(vishh): Perform a deep copy or alias libcontainer network stats.
 	if libcontainerStats.NetworkStats != nil {
-		ret.Network = (*info.NetworkStats)(libcontainerStats.NetworkStats)
+		ret.Network = *(*info.NetworkStats)(libcontainerStats.NetworkStats)
 	}
 
 	return ret
