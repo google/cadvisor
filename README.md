@@ -57,6 +57,10 @@ cAdvisor now also supports [InfluxDB](http://influxdb.com) to store stats. To us
 
 [Heapster](https://github.com/GoogleCloudPlatform/heapster) enables cluster wide monitoring of containers using cAdvisor.
 
+## Building and Testing cAdvisor
+
+See the more detailed instructions in the [build page](docs/build.md).
+
 ## Web UI
 
 cAdvisor exposes a web UI at its port:
