@@ -75,7 +75,7 @@ func New(driver storage.StorageDriver) (Manager, error) {
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
 	newManager := &manager{
-		containers:        make(map[string]*containerData),
+		containers:        make(map[namespacedContainerName]*containerData),
 		quitChannels:      make([]chan error, 0, 2),
 		storageDriver:     driver,
 		cadvisorContainer: selfContainer,
@@ -99,8 +99,17 @@ func New(driver storage.StorageDriver) (Manager, error) {
 	return newManager, nil
 }
 
+// A namespaced container name.
+type namespacedContainerName struct {
+	// The namespace of the container. Can be empty for the root namespace.
+	Namespace string
+
+	// The name of the container in this namespace.
+	Name string
+}
+
 type manager struct {
-	containers             map[string]*containerData
+	containers             map[namespacedContainerName]*containerData
 	containersLock         sync.RWMutex
 	storageDriver          storage.StorageDriver
 	machineInfo            info.MachineInfo
@@ -198,7 +207,9 @@ func (self *manager) GetContainerInfo(containerName string, query *info.Containe
 		defer self.containersLock.RUnlock()
 
 		// Ensure we have the container.
-		cont, ok = self.containers[containerName]
+		cont, ok = self.containers[namespacedContainerName{
+			Name: containerName,
+		}]
 	}()
 	if !ok {
 		return nil, fmt.Errorf("unknown container %q", containerName)
@@ -221,13 +232,10 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 
 	// Make a copy of the info for the user.
 	ret := &info.ContainerInfo{
-		ContainerReference: info.ContainerReference{
-			Name:    cinfo.Name,
-			Aliases: cinfo.Aliases,
-		},
-		Subcontainers: cinfo.Subcontainers,
-		Spec:          cinfo.Spec,
-		Stats:         stats,
+		ContainerReference: cinfo.ContainerReference,
+		Subcontainers:      cinfo.Subcontainers,
+		Spec:               cinfo.Spec,
+		Stats:              stats,
 	}
 
 	// Set default value to an actual value
@@ -275,20 +283,15 @@ func (self *manager) DockerContainersInfo(containerName string, query *info.Cont
 				}
 			}
 		} else {
-			// Strip first "/"
-			containerName = strings.Trim(containerName, "/")
-
-			// Get the specified container (check all possible Docker names).
-			possibleNames := docker.FullDockerContainerNames(containerName)
-			for _, fullName := range possibleNames {
-				cont, ok := self.containers[fullName]
-				if ok {
-					containers = append(containers, cont)
-					break
-				}
-			}
-			if len(containers) == 0 {
-				return fmt.Errorf("unable to find Docker container %q with full names %v", containerName, possibleNames)
+			// Check for the container in the Docker container namespace.
+			cont, ok := self.containers[namespacedContainerName{
+				Namespace: docker.DockerNamespace,
+				Name:      containerName,
+			}]
+			if ok {
+				containers = append(containers, cont)
+			} else {
+				return fmt.Errorf("unable to find Docker container %q", containerName)
 			}
 		}
 		return nil
@@ -345,16 +348,23 @@ func (m *manager) createContainer(containerName string) error {
 		m.containersLock.Lock()
 		defer m.containersLock.Unlock()
 
+		namespacedName := namespacedContainerName{
+			Name: containerName,
+		}
+
 		// Check that the container didn't already exist.
-		_, ok := m.containers[containerName]
+		_, ok := m.containers[namespacedName]
 		if ok {
 			return true
 		}
 
-		// Add the container name and all its aliases.
-		m.containers[containerName] = cont
+		// Add the container name and all its aliases. The aliases must be within the namespace of the factory.
+		m.containers[namespacedName] = cont
 		for _, alias := range cont.info.Aliases {
-			m.containers[alias] = cont
+			m.containers[namespacedContainerName{
+				Namespace: cont.info.Namespace,
+				Name:      alias,
+			}] = cont
 		}
 
 		return false
@@ -362,7 +372,7 @@ func (m *manager) createContainer(containerName string) error {
 	if alreadyExists {
 		return nil
 	}
-	glog.Infof("Added container: %q (aliases: %s)", containerName, cont.info.Aliases)
+	glog.Infof("Added container: %q (aliases: %v, namespace: %q)", containerName, cont.info.Aliases, cont.info.Namespace)
 
 	// Start the container's housekeeping.
 	cont.Start()
@@ -373,7 +383,10 @@ func (m *manager) destroyContainer(containerName string) error {
 	m.containersLock.Lock()
 	defer m.containersLock.Unlock()
 
-	cont, ok := m.containers[containerName]
+	namespacedName := namespacedContainerName{
+		Name: containerName,
+	}
+	cont, ok := m.containers[namespacedName]
 	if !ok {
 		// Already destroyed, done.
 		return nil
@@ -386,11 +399,14 @@ func (m *manager) destroyContainer(containerName string) error {
 	}
 
 	// Remove the container from our records (and all its aliases).
-	delete(m.containers, containerName)
+	delete(m.containers, namespacedName)
 	for _, alias := range cont.info.Aliases {
-		delete(m.containers, alias)
+		delete(m.containers, namespacedContainerName{
+			Namespace: cont.info.Namespace,
+			Name:      alias,
+		})
 	}
-	glog.Infof("Destroyed container: %s (aliases: %s)", containerName, cont.info.Aliases)
+	glog.Infof("Destroyed container: %q (aliases: %v, namespace: %q)", containerName, cont.info.Aliases, cont.info.Namespace)
 	return nil
 }
 
@@ -400,7 +416,9 @@ func (m *manager) getContainersDiff(containerName string) (added []info.Containe
 	defer m.containersLock.RUnlock()
 
 	// Get all subcontainers recursively.
-	cont, ok := m.containers[containerName]
+	cont, ok := m.containers[namespacedContainerName{
+		Name: containerName,
+	}]
 	if !ok {
 		return nil, nil, fmt.Errorf("failed to find container %q while checking for new containers", containerName)
 	}
@@ -414,15 +432,17 @@ func (m *manager) getContainersDiff(containerName string) (added []info.Containe
 	allContainersSet := make(map[string]*containerData)
 	for name, d := range m.containers {
 		// Only add the canonical name.
-		if d.info.Name == name {
-			allContainersSet[name] = d
+		if d.info.Name == name.Name {
+			allContainersSet[name.Name] = d
 		}
 	}
 
 	// Added containers
 	for _, c := range allContainers {
 		delete(allContainersSet, c.Name)
-		_, ok := m.containers[c.Name]
+		_, ok := m.containers[namespacedContainerName{
+			Name: c.Name,
+		}]
 		if !ok {
 			added = append(added, c)
 		}
@@ -474,7 +494,9 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 	func() {
 		self.containersLock.RLock()
 		defer self.containersLock.RUnlock()
-		root, ok = self.containers["/"]
+		root, ok = self.containers[namespacedContainerName{
+			Name: "/",
+		}]
 	}()
 	if !ok {
 		return fmt.Errorf("Root container does not exist when watching for new containers")

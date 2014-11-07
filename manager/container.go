@@ -104,8 +104,7 @@ func newContainerData(containerName string, driver storage.StorageDriver, handle
 		logUsage:             logUsage,
 		stop:                 make(chan bool, 1),
 	}
-	cont.info.Name = ref.Name
-	cont.info.Aliases = ref.Aliases
+	cont.info.ContainerReference = ref
 
 	return cont, nil
 }

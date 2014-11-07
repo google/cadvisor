@@ -31,6 +31,9 @@ import (
 
 var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
 
+// The namespace under which Docker aliases are unique.
+var DockerNamespace = "docker"
+
 // Basepath to all container specific information that libcontainer stores.
 var dockerRootDir = flag.String("docker_root", "/var/lib/docker", "Absolute path to the Docker state root directory (default: /var/lib/docker)")
 
@@ -54,7 +57,7 @@ type dockerFactory struct {
 }
 
 func (self *dockerFactory) String() string {
-	return "docker"
+	return DockerNamespace
 }
 
 func (self *dockerFactory) NewContainerHandler(name string) (handler container.ContainerHandler, err error) {
@@ -102,19 +105,14 @@ func ContainerNameToDockerId(name string) string {
 	return id
 }
 
-// Returns a list of possible full container names for the specified Docker container name.
-func FullDockerContainerNames(dockerName string) []string {
-	names := make([]string, 0, 2)
-
+// Returns a full container name for the specified Docker ID.
+func FullContainerName(dockerId string) string {
 	// Add the full container name.
 	if useSystemd {
-		names = append(names, path.Join("/system.slice", fmt.Sprintf("docker-%s.scope", dockerName)))
+		return path.Join("/system.slice", fmt.Sprintf("docker-%s.scope", dockerId))
 	} else {
-		names = append(names, path.Join("/docker", dockerName))
+		return path.Join("/docker", dockerId)
 	}
-
-	// Add the Docker alias name.
-	return append(names, path.Join("/docker", dockerName))
 }
 
 // Docker handles all containers under /docker

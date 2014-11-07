@@ -19,7 +19,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 	start := time.Now()
 
 	// The container name is the path after the handler
-	containerName := u.Path[len(DockerPage)-1:]
+	containerName := u.Path[len(DockerPage):]
 
 	var data *pageData
 	if containerName == "/" {
