@@ -17,7 +17,7 @@ package pages
 const containersHtmlTemplate = `
 <html>
   <head>
-    <title>cAdvisor - Container {{.ContainerName}}</title>
+    <title>cAdvisor - {{.DisplayName}}</title>
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
 
@@ -39,11 +39,11 @@ const containersHtmlTemplate = `
       </div>
       <div class="col-sm-12">
 	<div class="page-header">
-	  <h1>{{.ContainerName}}</h1>
+	  <h1>{{.DisplayName}}</h1>
 	</div>
 	<ol class="breadcrumb">
 	  {{range $parentContainer := .ParentContainers}}
-	  <li>{{containerLink $parentContainer true ""}}</li>
+	  <li><a href="{{$parentContainer.Link}}">{{$parentContainer.Text}}</a></li>
 	  {{end}}
 	</ol>
       </div>
@@ -54,7 +54,7 @@ const containersHtmlTemplate = `
 	</div>
 	<div class="list-group">
 	  {{range $subcontainer := .Subcontainers}}
-          {{containerLink $subcontainer false "list-group-item"}}
+	  <a href="{{$subcontainer.Link}}" class="list-group-item">{{$subcontainer.Text}}</a>
 	  {{end}}
 	</div>
       </div>
@@ -165,7 +165,7 @@ const containersHtmlTemplate = `
                 </div>
               </div>
             </div>
-            <div class="col-sm-3"> 
+            <div class="col-sm-3">
 	      {{printSize .Limit}} {{printUnit .Limit}} ({{getFsUsagePercent .Limit .Usage}}%)
 	    </div>
 	    {{end}}
