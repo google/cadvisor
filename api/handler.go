@@ -51,7 +51,7 @@ func RegisterHandlers(m manager.Manager) error {
 	http.HandleFunc(apiResource, func(w http.ResponseWriter, r *http.Request) {
 		err := handleRequest(m, w, r)
 		if err != nil {
-			fmt.Fprintf(w, "%s", err)
+			http.Error(w, err.Error(), 500)
 		}
 	})
 
