@@ -92,14 +92,19 @@ func newDockerContainerHandler(
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %s - %s\n", id, err)
 	}
-	handler.aliases = append(handler.aliases, path.Join("/docker", ctnr.Name))
+
+	// Add the name and bare ID as aliases of the container.
+	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"))
+	handler.aliases = append(handler.aliases, id)
+
 	return handler, nil
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
 	return info.ContainerReference{
-		Name:    self.name,
-		Aliases: self.aliases,
+		Name:      self.name,
+		Aliases:   self.aliases,
+		Namespace: DockerNamespace,
 	}, nil
 }
 
@@ -297,12 +302,6 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 		return nil, err
 	}
 
-	// On non-systemd systems Docker containers are under /docker.
-	containerPrefix := "/docker"
-	if useSystemd {
-		containerPrefix = "/system.slice"
-	}
-
 	ret := make([]info.ContainerReference, 0, len(containers)+1)
 	for _, c := range containers {
 		if !strings.HasPrefix(c.Status, "Up ") {
@@ -310,8 +309,9 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 		}
 
 		ref := info.ContainerReference{
-			Name:    path.Join(containerPrefix, c.ID),
-			Aliases: c.Names,
+			Name:      FullContainerName(c.ID),
+			Aliases:   append(c.Names, c.ID),
+			Namespace: DockerNamespace,
 		}
 		ret = append(ret, ref)
 	}

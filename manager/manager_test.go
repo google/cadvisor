@@ -18,14 +18,18 @@ package manager
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/info"
 	itest "github.com/google/cadvisor/info/test"
 	stest "github.com/google/cadvisor/storage/test"
 )
+
+// TODO(vmarmol): Refactor these tests.
 
 func createManagerAndAddContainers(
 	driver *stest.MockStorageDriver,
@@ -44,9 +48,19 @@ func createManagerAndAddContainers(
 	if ret, ok := mif.(*manager); ok {
 		for _, name := range containers {
 			mockHandler := container.NewMockContainerHandler(name)
-			ret.containers[name], err = newContainerData(name, driver, mockHandler, false)
+			cont, err := newContainerData(name, driver, mockHandler, false)
 			if err != nil {
 				t.Fatal(err)
+			}
+			ret.containers[namespacedContainerName{
+				Name: name,
+			}] = cont
+			// Add Docker containers under their namespace.
+			if strings.HasPrefix(name, "/docker") {
+				ret.containers[namespacedContainerName{
+					Namespace: docker.DockerNamespace,
+					Name:      strings.TrimPrefix(name, "/docker/"),
+				}] = cont
 			}
 			f(mockHandler)
 		}

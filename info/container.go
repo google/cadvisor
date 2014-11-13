@@ -53,10 +53,16 @@ type ContainerSpec struct {
 
 // Container reference contains enough information to uniquely identify a container
 type ContainerReference struct {
-	// The absolute name of the container.
+	// The absolute name of the container. This is unique on the machine.
 	Name string `json:"name"`
 
+	// Other names by which the container is known within a certain namespace.
+	// This is unique within that namespace.
 	Aliases []string `json:"aliases,omitempty"`
+
+	// Namespace under which the aliases of a container are unique.
+	// An example of a namespace is "docker" for Docker containers.
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // ContainerInfoQuery is used when users check a container info from the REST api.
@@ -180,14 +186,14 @@ type PerDiskStats struct {
 }
 
 type DiskIoStats struct {
-	IoServiceBytes 	[]PerDiskStats `json:"io_service_bytes,omitempty"`
-	IoServiced     	[]PerDiskStats `json:"io_serviced,omitempty"`
-	IoQueued       	[]PerDiskStats `json:"io_queued,omitempty"`
-	Sectors        	[]PerDiskStats `json:"sectors,omitempty"`
-	IoServiceTime	[]PerDiskStats `json:"io_service_time,omitempty"`
-	IoWaitTime 		[]PerDiskStats `json:"io_wait_time,omitempty"`
-	IoMerged []PerDiskStats `json:"io_merged,omitempty"`
-	IoTime []PerDiskStats `json:"io_time,omitempty"`
+	IoServiceBytes []PerDiskStats `json:"io_service_bytes,omitempty"`
+	IoServiced     []PerDiskStats `json:"io_serviced,omitempty"`
+	IoQueued       []PerDiskStats `json:"io_queued,omitempty"`
+	Sectors        []PerDiskStats `json:"sectors,omitempty"`
+	IoServiceTime  []PerDiskStats `json:"io_service_time,omitempty"`
+	IoWaitTime     []PerDiskStats `json:"io_wait_time,omitempty"`
+	IoMerged       []PerDiskStats `json:"io_merged,omitempty"`
+	IoTime         []PerDiskStats `json:"io_time,omitempty"`
 }
 
 type MemoryStats struct {
