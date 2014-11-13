@@ -35,6 +35,7 @@ import (
 	"github.com/google/cadvisor/pages/static"
 )
 
+var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
 var argPort = flag.Int("port", 8080, "port to listen")
 var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
 
@@ -101,7 +102,7 @@ func main() {
 
 	glog.Infof("Starting cAdvisor version: %q on port %d", info.VERSION, *argPort)
 
-	addr := fmt.Sprintf(":%v", *argPort)
+	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
 	glog.Fatal(http.ListenAndServe(addr, nil))
 }
 
