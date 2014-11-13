@@ -276,6 +276,7 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 		Spec:               cont.Spec,
 		Stats:              cont.Stats,
 		MachineInfo:        machineInfo,
+		IsRoot:             cont.Name == "/",
 		ResourcesAvailable: cont.Spec.HasCpu || cont.Spec.HasMemory || cont.Spec.HasNetwork || cont.Spec.HasFilesystem,
 		CpuAvailable:       cont.Spec.HasCpu,
 		MemoryAvailable:    cont.Spec.HasMemory,

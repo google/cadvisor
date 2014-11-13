@@ -28,6 +28,7 @@ type pageData struct {
 	Spec               info.ContainerSpec
 	Stats              []*info.ContainerStats
 	MachineInfo        *info.MachineInfo
+	IsRoot             bool
 	ResourcesAvailable bool
 	CpuAvailable       bool
 	MemoryAvailable    bool
