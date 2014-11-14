@@ -25,8 +25,13 @@ import (
 const StaticResource = "/static/"
 
 var staticFiles = map[string]string{
-	"containers.css": containersCss,
-	"containers.js":  containersJs,
+	"containers.css":                containersCss,
+	"containers.js":                 containersJs,
+	"bootstrap-3.1.1.min.css":       bootstrapCss,
+	"bootstrap-theme-3.1.1.min.css": bootstrapThemeCss,
+	"jquery-1.10.2.min.js":          jqueryJs,
+	"bootstrap-3.1.1.min.js":        bootstrapJs,
+	"google-jsapi.js":               googleJsapiJs,
 }
 
 func HandleRequest(w http.ResponseWriter, u *url.URL) error {
