@@ -19,16 +19,16 @@ const containersHtmlTemplate = `
   <head>
     <title>cAdvisor - {{.DisplayName}}</title>
     <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/bootstrap-3.1.1.min.css">
 
     <!-- Optional theme -->
-    <link rel="stylesheet" href="/static/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="/static/bootstrap-theme-3.1.1.min.css">
 
     <link rel="stylesheet" href="/static/containers.css">
 
     <!-- Latest compiled and minified JavaScript -->
-    <script src="/static/jquery.min.js"></script>
-    <script src="/static/bootstrap.min.js"></script>
+    <script src="/static/jquery-1.10.2.min.js"></script>
+    <script src="/static/bootstrap-3.1.1.min.js"></script>
     <script type="text/javascript" src="/static/google-jsapi.js"></script>
 
     <script type="text/javascript" src="/static/containers.js"></script>
