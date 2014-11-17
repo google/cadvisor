@@ -22,7 +22,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 	containerName := u.Path[len(DockerPage):]
 
 	var data *pageData
-	if containerName == "/" {
+	if containerName == "" {
 		// Get the containers.
 		reqParams := info.ContainerInfoRequest{
 			NumStats: 0,
