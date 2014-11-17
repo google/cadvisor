@@ -269,17 +269,17 @@ func (self *manager) SubcontainersInfo(containerName string, query *info.Contain
 }
 
 func (self *manager) DockerContainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
-	var containers []*containerData
+	var containers map[string]*containerData
 	err := func() error {
 		self.containersLock.RLock()
 		defer self.containersLock.RUnlock()
-		containers = make([]*containerData, 0, len(self.containers))
+		containers = make(map[string]*containerData, len(self.containers))
 
 		if containerName == "/" {
-			// Get all the Docker containers.
-			for i := range self.containers {
-				if docker.IsDockerContainerName(self.containers[i].info.Name) {
-					containers = append(containers, self.containers[i])
+			// Get all the unique containers in the Docker namespace.
+			for name, cont := range self.containers {
+				if name.Namespace == docker.DockerNamespace {
+					containers[cont.info.Name] = cont
 				}
 			}
 		} else {
@@ -289,7 +289,7 @@ func (self *manager) DockerContainersInfo(containerName string, query *info.Cont
 				Name:      containerName,
 			}]
 			if ok {
-				containers = append(containers, cont)
+				containers[cont.info.Name] = cont
 			} else {
 				return fmt.Errorf("unable to find Docker container %q", containerName)
 			}
@@ -300,7 +300,13 @@ func (self *manager) DockerContainersInfo(containerName string, query *info.Cont
 		return nil, err
 	}
 
-	return self.containerDataSliceToContainerInfoSlice(containers, query)
+	// Convert to a slice.
+	containersSlice := make([]*containerData, 0, len(containers))
+	for _, cont := range containers {
+		containersSlice = append(containersSlice, cont)
+	}
+
+	return self.containerDataSliceToContainerInfoSlice(containersSlice, query)
 }
 
 func (self *manager) containerDataSliceToContainerInfoSlice(containers []*containerData, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
