@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 (2014-11-17)
+- Adding /docker UI endpoint for Docker containers.
+- Fixes around handling Docker containers.
+- Performance enhancements.
+- Embed all external dependencies.
+- ContainerStats Go struct has been flattened. The wire format remains unchanged.
+- Misc bugfixes and cleanups.
+
 ## 0.5.0 (2014-10-28)
 - Added disk space stats. On by default for root, available on AUFS Docker containers.
 - Introduced v1.2 remote API with new "docker" resource for Docker containers.
