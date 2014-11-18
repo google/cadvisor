@@ -62,22 +62,22 @@ const (
 func (self *influxdbStorage) getSeriesDefaultValues(
 	ref info.ContainerReference,
 	stats *info.ContainerStats,
-	columns []string,
-	values []interface{}) {
+	columns *[]string,
+	values *[]interface{}) {
 	// Timestamp
-	columns = append(columns, colTimestamp)
-	values = append(values, stats.Timestamp.UnixNano()/1E3)
+	*columns = append(*columns, colTimestamp)
+	*values = append(*values, stats.Timestamp.UnixNano()/1E3)
 
 	// Machine name
-	columns = append(columns, colMachineName)
-	values = append(values, self.machineName)
+	*columns = append(*columns, colMachineName)
+	*values = append(*values, self.machineName)
 
 	// Container name
-	columns = append(columns, colContainerName)
+	*columns = append(*columns, colContainerName)
 	if len(ref.Aliases) > 0 {
-		values = append(values, ref.Aliases[0])
+		*values = append(*values, ref.Aliases[0])
 	} else {
-		values = append(values, ref.Name)
+		*values = append(*values, ref.Name)
 	}
 }
 
@@ -91,7 +91,7 @@ func (self *influxdbStorage) containerFilesystemStatsToSeries(
 	for _, fsStat := range stats.Filesystem {
 		columns := make([]string, 0)
 		values := make([]interface{}, 0)
-		self.getSeriesDefaultValues(ref, stats, columns, values)
+		self.getSeriesDefaultValues(ref, stats, &columns, &values)
 
 		columns = append(columns, colFsDevice)
 		values = append(values, fsStat.Device)
@@ -110,7 +110,7 @@ func (self *influxdbStorage) containerStatsToValues(
 	ref info.ContainerReference,
 	stats *info.ContainerStats,
 ) (columns []string, values []interface{}) {
-	self.getSeriesDefaultValues(ref, stats, columns, values)
+	self.getSeriesDefaultValues(ref, stats, &columns, &values)
 	// Cumulative Cpu Usage
 	columns = append(columns, colCpuCumulativeUsage)
 	values = append(values, stats.Cpu.Usage.Total)
