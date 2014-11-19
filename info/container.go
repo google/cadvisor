@@ -197,29 +197,23 @@ type DiskIoStats struct {
 }
 
 type MemoryStats struct {
-	// Memory limit, equivalent to "limit" in MemorySpec.
-	// Units: Bytes.
-	Limit uint64 `json:"limit,omitempty"`
-
-	// Usage statistics.
-
 	// Current memory usage, this includes all memory regardless of when it was
 	// accessed.
 	// Units: Bytes.
-	Usage uint64 `json:"usage,omitempty"`
+	Usage uint64 `json:"usage"`
 
 	// The amount of working set memory, this includes recently accessed memory,
 	// dirty memory, and kernel memory. Working set is <= "usage".
 	// Units: Bytes.
-	WorkingSet uint64 `json:"working_set,omitempty"`
+	WorkingSet uint64 `json:"working_set"`
 
 	ContainerData    MemoryStatsMemoryData `json:"container_data,omitempty"`
 	HierarchicalData MemoryStatsMemoryData `json:"hierarchical_data,omitempty"`
 }
 
 type MemoryStatsMemoryData struct {
-	Pgfault    uint64 `json:"pgfault,omitempty"`
-	Pgmajfault uint64 `json:"pgmajfault,omitempty"`
+	Pgfault    uint64 `json:"pgfault"`
+	Pgmajfault uint64 `json:"pgmajfault"`
 }
 
 type NetworkStats struct {
