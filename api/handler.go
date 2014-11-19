@@ -158,6 +158,7 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 			return fmt.Errorf("request type of %q not supported in API version %q", requestType, version)
 		}
 
+		containerName = strings.TrimLeft(containerName, "/")
 		glog.V(2).Infof("Api - Docker(%s)", containerName)
 
 		// Get the query request.
@@ -166,10 +167,23 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 			return err
 		}
 
-		// Get the Docker containers.
-		containers, err := m.DockerContainersInfo(containerName, query)
-		if err != nil {
-			return fmt.Errorf("failed to get docker containers for %q with error: %s", containerName, err)
+		var containers map[string]info.ContainerInfo
+		if containerName == "" {
+			// Get all Docker containers.
+			containers, err = m.AllDockerContainers(query)
+			if err != nil {
+				return fmt.Errorf("failed to get all Docker containers with error: %v", err)
+			}
+		} else {
+			// Get one Docker container.
+			var cont info.ContainerInfo
+			cont, err = m.DockerContainer(containerName, query)
+			if err != nil {
+				return fmt.Errorf("failed to get Docker container %q with error: %v", containerName, err)
+			}
+			containers = map[string]info.ContainerInfo{
+				cont.Name: cont,
+			}
 		}
 
 		// Only output the containers as JSON.

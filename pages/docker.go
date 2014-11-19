@@ -27,7 +27,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 		reqParams := info.ContainerInfoRequest{
 			NumStats: 0,
 		}
-		conts, err := m.DockerContainersInfo("/", &reqParams)
+		conts, err := m.AllDockerContainers(&reqParams)
 		if err != nil {
 			return fmt.Errorf("Failed to get container %q with error: %v", containerName, err)
 		}
@@ -54,14 +54,10 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 		reqParams := info.ContainerInfoRequest{
 			NumStats: 60,
 		}
-		conts, err := m.DockerContainersInfo(containerName, &reqParams)
+		cont, err := m.DockerContainer(containerName, &reqParams)
 		if err != nil {
 			return fmt.Errorf("failed to get container %q with error: %v", containerName, err)
 		}
-		if len(conts) != 1 {
-			return fmt.Errorf("received unexpected container for %q: %v", conts)
-		}
-		cont := conts[0]
 		displayName := getContainerDisplayName(cont.ContainerReference)
 
 		// Make a list of the parent containers and their links
