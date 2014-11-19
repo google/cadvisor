@@ -34,6 +34,10 @@ If you are using Docker with the LXC exec driver, then you need to manually spec
   --volume=/cgroup/blkio:/cgroup/blkio \
 ```
 
+### Invalid Bindmount `/`
+
+This is a problem seen in older versions of Docker. To fix start cAdvisor without the `--volume=/:/rootfs:ro` mount. cAdvisor will handle not exporting the stats that allows.
+
 ## Standalone
 
 cAdvisor is a static Go binary with no external dependencies. To run it standalone all you should need to do is run it! Note that some data sources may require root priviledges. cAdvisor will gracefully degrade its features to those it can expose with the access given.
