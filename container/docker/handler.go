@@ -82,9 +82,6 @@ func newDockerContainerHandler(
 		fsInfo:         fsInfo,
 	}
 	handler.storageDirs = append(handler.storageDirs, path.Join(dockerRootDir, pathToAufsDir, path.Base(name)))
-	if handler.isDockerRoot() {
-		return handler, nil
-	}
 	id := ContainerNameToDockerId(name)
 	handler.id = id
 	ctnr, err := client.InspectContainer(id)
@@ -106,10 +103,6 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 		Aliases:   self.aliases,
 		Namespace: DockerNamespace,
 	}, nil
-}
-
-func (self *dockerContainerHandler) isDockerRoot() bool {
-	return self.name == "/docker"
 }
 
 // TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
@@ -201,9 +194,6 @@ func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.Mac
 }
 
 func (self *dockerContainerHandler) GetSpec() (spec info.ContainerSpec, err error) {
-	if self.isDockerRoot() {
-		return info.ContainerSpec{}, nil
-	}
 	mi, err := self.machineInfoFactory.GetMachineInfo()
 	if err != nil {
 		return
@@ -266,9 +256,6 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 }
 
 func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
-	if self.isDockerRoot() {
-		return &info.ContainerStats{}, nil
-	}
 	state, err := self.readLibcontainerState()
 	if err != nil {
 		if err == fileNotFound {
