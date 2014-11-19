@@ -103,7 +103,7 @@ func readString(dirpath string, file string) string {
 		glog.Errorf("raw driver: Failed to read %q: %s", cgroupFile, err)
 		return ""
 	}
-	return string(out)
+	return strings.TrimSpace(string(out))
 }
 
 func readInt64(dirpath string, file string) uint64 {
@@ -112,7 +112,7 @@ func readInt64(dirpath string, file string) uint64 {
 		return 0
 	}
 
-	val, err := strconv.ParseUint(strings.TrimSpace(out), 10, 64)
+	val, err := strconv.ParseUint(out, 10, 64)
 	if err != nil {
 		glog.Errorf("raw driver: Failed to parse int %q from file %q: %s", out, path.Join(dirpath, file), err)
 		return 0
