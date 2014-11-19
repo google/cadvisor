@@ -190,15 +190,12 @@ func TestDockerContainersInfo(t *testing.T) {
 
 	m, _, _ := expectManagerWithContainers(containers, query, t)
 
-	result, err := m.DockerContainersInfo("c1", query)
+	result, err := m.DockerContainer("c1", query)
 	if err != nil {
 		t.Fatalf("expected to succeed: %s", err)
 	}
-	if len(result) != len(containers) {
-		t.Errorf("expected to received a containers %v, but received: %v", containers, result)
-	}
-	if result[0].Name != containers[0] {
-		t.Errorf("Unexpected container %q in result. Expected container %q", result[0].Name, containers[0])
+	if result.Name != containers[0] {
+		t.Errorf("Unexpected container %q in result. Expected container %q", result.Name, containers[0])
 	}
 }
 
