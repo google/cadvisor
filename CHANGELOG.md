@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.1 (2014-11-18)
+- Bug fix in InfluxDB storage driver. Container name and hostname will be exported.
+
 ## 0.6.0 (2014-11-17)
 - Adding /docker UI endpoint for Docker containers.
 - Fixes around handling Docker containers.
