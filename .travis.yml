@@ -11,6 +11,6 @@ before_script:
  - sudo service influxdb start
 script:
  - export PATH=$PATH:$HOME/gopath/bin
- - godep go test -v -race github.com/google/cadvisor/...
+ - godep go test -v -race -test.short github.com/google/cadvisor/...
  - godep go build github.com/google/cadvisor
  - go vet github.com/google/cadvisor
