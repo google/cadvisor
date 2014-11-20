@@ -32,11 +32,6 @@ var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second,
 var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
 var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
 
-// Internal mirror of the external data structure.
-type containerStat struct {
-	Timestamp time.Time
-	Data      *info.ContainerStats
-}
 type containerInfo struct {
 	info.ContainerReference
 	Subcontainers []info.ContainerReference
