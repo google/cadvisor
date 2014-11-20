@@ -117,10 +117,7 @@ func FullContainerName(dockerId string) string {
 
 // Docker handles all containers under /docker
 func (self *dockerFactory) CanHandle(name string) (bool, error) {
-	if name == "/docker" {
-		// We need the docker driver to handle /docker. Otherwise the aggregation at the API level will break.
-		return true, nil
-	} else if !IsDockerContainerName(name) {
+	if !IsDockerContainerName(name) {
 		return false, nil
 	}
 
@@ -203,6 +200,7 @@ func Register(factory info.MachineInfoFactory) error {
 		}
 	}
 
+	glog.Infof("Registering Docker factory")
 	f := &dockerFactory{
 		machineInfoFactory: factory,
 		client:             client,
