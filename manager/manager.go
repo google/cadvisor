@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(cAdvisor): Package comment.
+// Manager of cAdvisor-monitored containers.
 package manager
 
 import (
@@ -498,11 +498,6 @@ func (m *manager) detectSubcontainers(containerName string) error {
 		}
 	}
 
-	return nil
-}
-
-func (self *manager) processEvent(event container.SubcontainerEvent) error {
-	// TODO(cAdvisor): Why does this method always return nil? [satnam6502]
 	return nil
 }
 
