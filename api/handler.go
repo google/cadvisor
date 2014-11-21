@@ -60,6 +60,7 @@ func RegisterHandlers(m manager.Manager) error {
 
 func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
+	defer glog.V(2).Infof("Request took %s", time.Since(start))
 
 	request := r.URL.Path
 	requestElements := strings.Split(r.URL.Path, "/")
@@ -195,7 +196,6 @@ func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) er
 		return fmt.Errorf("unknown API request type %q", requestType)
 	}
 
-	glog.V(2).Infof("Request took %s", time.Since(start))
 	return nil
 }
 

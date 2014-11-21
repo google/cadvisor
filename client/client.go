@@ -154,7 +154,7 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 		return err
 	}
 	if err = json.Unmarshal(body, data); err != nil {
-		err = fmt.Errorf("unable to unmarshal %q (%v): %v", infoName, string(body), err)
+		err = fmt.Errorf("unable to unmarshal %q (Body: %q) with error: %v", infoName, string(body), err)
 		return err
 	}
 	return nil

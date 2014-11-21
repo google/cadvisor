@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Handler for Docker containers.
 package docker
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -27,7 +27,6 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
 	"github.com/fsouza/go-dockerclient"
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
@@ -43,19 +42,27 @@ const pathToLibcontainerState = "execdriver/native"
 // aufs/mnt contains the mount points used to compose the rootfs. Hence it is also ignored.
 var pathToAufsDir = "aufs/diff"
 
-var fileNotFound = errors.New("file not found")
-
 type dockerContainerHandler struct {
-	client               *docker.Client
-	name                 string
-	id                   string
-	aliases              []string
-	machineInfoFactory   info.MachineInfoFactory
-	libcontainerStateDir string
-	cgroup               cgroups.Cgroup
-	usesAufsDriver       bool
-	fsInfo               fs.FsInfo
-	storageDirs          []string
+	client             *docker.Client
+	name               string
+	id                 string
+	aliases            []string
+	machineInfoFactory info.MachineInfoFactory
+
+	// Path to the libcontainer config file.
+	libcontainerConfigPath string
+
+	// Path to the libcontainer state file.
+	libcontainerStatePath string
+
+	// TODO(vmarmol): Remove when we depend on a newer Docker.
+	// Path to the libcontainer pid file.
+	libcontainerPidPath string
+
+	cgroup         cgroups.Cgroup
+	usesAufsDriver bool
+	fsInfo         fs.FsInfo
+	storageDirs    []string
 }
 
 func newDockerContainerHandler(
@@ -69,11 +76,15 @@ func newDockerContainerHandler(
 	if err != nil {
 		return nil, err
 	}
+	id := ContainerNameToDockerId(name)
 	handler := &dockerContainerHandler{
-		client:               client,
-		name:                 name,
-		machineInfoFactory:   machineInfoFactory,
-		libcontainerStateDir: path.Join(dockerRootDir, pathToLibcontainerState),
+		id:                     id,
+		client:                 client,
+		name:                   name,
+		machineInfoFactory:     machineInfoFactory,
+		libcontainerConfigPath: path.Join(dockerRootDir, pathToLibcontainerState, id, "container.json"),
+		libcontainerStatePath:  path.Join(dockerRootDir, pathToLibcontainerState, id, "state.json"),
+		libcontainerPidPath:    path.Join(dockerRootDir, pathToLibcontainerState, id, "pid"),
 		cgroup: cgroups.Cgroup{
 			Parent: "/",
 			Name:   name,
@@ -82,12 +93,11 @@ func newDockerContainerHandler(
 		fsInfo:         fsInfo,
 	}
 	handler.storageDirs = append(handler.storageDirs, path.Join(dockerRootDir, pathToAufsDir, path.Base(name)))
-	id := ContainerNameToDockerId(name)
-	handler.id = id
-	ctnr, err := client.InspectContainer(id)
+
 	// We assume that if Inspect fails then the container is not known to docker.
+	ctnr, err := client.InspectContainer(id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to inspect container %s - %s\n", id, err)
+		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 	}
 
 	// Add the name and bare ID as aliases of the container.
@@ -107,15 +117,9 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 
 // TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
 func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontainer.Config, err error) {
-	configPath := path.Join(self.libcontainerStateDir, self.id, "container.json")
-	if !utils.FileExists(configPath) {
-		// TODO(vishh): Return file name as well once we have a better error interface.
-		err = fileNotFound
-		return
-	}
-	f, err := os.Open(configPath)
+	f, err := os.Open(self.libcontainerConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open %s - %s\n", configPath, err)
+		return nil, fmt.Errorf("failed to open %s - %s\n", self.libcontainerConfigPath, err)
 	}
 	defer f.Close()
 	d := json.NewDecoder(f)
@@ -134,23 +138,17 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontain
 }
 
 func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer.State, err error) {
-	statePath := path.Join(self.libcontainerStateDir, self.id, "state.json")
-	if !utils.FileExists(statePath) {
-		// TODO(vmarmol): Remove this once we can depend on a newer Docker.
-		// Libcontainer changed how its state was stored, try the old way of a "pid" file
-		if utils.FileExists(path.Join(self.libcontainerStateDir, self.id, "pid")) {
+	// TODO(vmarmol): Remove this once we can depend on a newer Docker.
+	// Libcontainer changed how its state was stored, try the old way of a "pid" file
+	if !utils.FileExists(self.libcontainerStatePath) {
+		if utils.FileExists(self.libcontainerPidPath) {
 			// We don't need the old state, return an empty state and we'll gracefully degrade.
-			state = new(libcontainer.State)
-			return
+			return &libcontainer.State{}, nil
 		}
-
-		// TODO(vishh): Return file name as well once we have a better error interface.
-		err = fileNotFound
-		return
 	}
-	f, err := os.Open(statePath)
+	f, err := os.Open(self.libcontainerStatePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open %s - %s\n", statePath, err)
+		return nil, fmt.Errorf("failed to open %s - %s\n", self.libcontainerStatePath, err)
 	}
 	defer f.Close()
 	d := json.NewDecoder(f)
@@ -258,10 +256,6 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
 	state, err := self.readLibcontainerState()
 	if err != nil {
-		if err == fileNotFound {
-			glog.Errorf("Libcontainer state not found for container %q", self.name)
-			return &info.ContainerStats{}, nil
-		}
 		return
 	}
 
@@ -321,4 +315,9 @@ func (self *dockerContainerHandler) WatchSubcontainers(events chan container.Sub
 func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
 	// No-op for Docker driver.
 	return nil
+}
+
+func (self *dockerContainerHandler) Exists() bool {
+	// We consider the container existing if both libcontainer config and state files exist.
+	return utils.FileExists(self.libcontainerConfigPath) && utils.FileExists(self.libcontainerStatePath)
 }

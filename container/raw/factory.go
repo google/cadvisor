@@ -25,9 +25,11 @@ import (
 
 type cgroupSubsystems struct {
 	// Cgroup subsystem mounts.
+	// e.g.: "/sys/fs/cgroup/cpu" -> ["cpu", "cpuacct"]
 	mounts []cgroups.Mount
 
 	// Cgroup subsystem to their mount location.
+	// e.g.: "cpu" -> "/sys/fs/cgroup/cpu"
 	mountPoints map[string]string
 }
 
