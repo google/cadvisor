@@ -36,16 +36,27 @@ import (
 )
 
 type rawContainerHandler struct {
+	// Name of the container for this handler.
 	name               string
 	cgroup             *cgroups.Cgroup
 	cgroupSubsystems   *cgroupSubsystems
 	machineInfoFactory info.MachineInfoFactory
-	watcher            *inotify.Watcher
-	stopWatcher        chan error
-	watches            map[string]struct{}
-	fsInfo             fs.FsInfo
-	networkInterface   *networkInterface
-	externalMounts     []mount
+
+	// Inotify event watcher.
+	watcher *inotify.Watcher
+
+	// Signal for watcher thread to stop.
+	stopWatcher chan error
+
+	// Containers being watched for new subcontainers.
+	watches map[string]struct{}
+
+	// Cgroup paths being watchd for new subcontainers
+	cgroupWatches map[string]struct{}
+
+	fsInfo           fs.FsInfo
+	networkInterface *networkInterface
+	externalMounts   []mount
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
@@ -76,6 +87,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		machineInfoFactory: machineInfoFactory,
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
+		cgroupWatches:      make(map[string]struct{}),
 		fsInfo:             fsInfo,
 		networkInterface:   networkInterface,
 		externalMounts:     externalMounts,
@@ -322,7 +334,9 @@ func (self *rawContainerHandler) watchDirectory(dir string, containerName string
 		return err
 	}
 	self.watches[containerName] = struct{}{}
+	self.cgroupWatches[dir] = struct{}{}
 
+	// TODO(vmarmol): We should re-do this once we're done to ensure directories were not added in the meantime.
 	// Watch subdirectories as well.
 	entries, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -372,28 +386,33 @@ func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan 
 	// Maintain the watch for the new or deleted container.
 	switch {
 	case eventType == container.SubcontainerAdd:
-		// If we've already seen this event, return.
-		if _, ok := self.watches[containerName]; ok {
-			return nil
-		}
+		_, alreadyWatched := self.watches[containerName]
 
 		// New container was created, watch it.
 		err := self.watchDirectory(event.Name, containerName)
 		if err != nil {
 			return err
 		}
+
+		// Only report container creation once.
+		if alreadyWatched {
+			return nil
+		}
 	case eventType == container.SubcontainerDelete:
-		// If we've already seen this event, return.
+		// Container was deleted, stop watching for it. Only delete the event if we registered it.
+		if _, ok := self.cgroupWatches[event.Name]; ok {
+			err := self.watcher.RemoveWatch(event.Name)
+			if err != nil {
+				return err
+			}
+			delete(self.cgroupWatches, event.Name)
+		}
+
+		// Only report container deletion once.
 		if _, ok := self.watches[containerName]; !ok {
 			return nil
 		}
 		delete(self.watches, containerName)
-
-		// Container was deleted, stop watching for it.
-		err := self.watcher.RemoveWatch(event.Name)
-		if err != nil {
-			return err
-		}
 	default:
 		return fmt.Errorf("unknown event type %v", eventType)
 	}
