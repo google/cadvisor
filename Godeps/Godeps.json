@@ -92,11 +92,11 @@
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/assert",
-			"Rev": "ed6ea184117f7ae3168d1c05dbdbde1a86e2be68"
+			"Rev": "8ce79b9f0b77745113f82c17d0756771456ccbd3"
 		},
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
-			"Rev": "ed6ea184117f7ae3168d1c05dbdbde1a86e2be68"
+			"Rev": "8ce79b9f0b77745113f82c17d0756771456ccbd3"
 		}
 	]
 }

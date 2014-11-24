@@ -1,8 +1,11 @@
 package assert
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -73,7 +76,7 @@ func CallerInfo() string {
 		parts := strings.Split(file, "/")
 		dir := parts[len(parts)-2]
 		file = parts[len(parts)-1]
-		if (dir != "assert" && dir != "mock") || file == "mock_test.go" {
+		if (dir != "assert" && dir != "mock" && dir != "require") || file == "mock_test.go" {
 			break
 		}
 	}
@@ -109,15 +112,48 @@ func messageFromMsgAndArgs(msgAndArgs ...interface{}) string {
 	return ""
 }
 
+// Indents all lines of the message by appending a number of tabs to each line, in an output format compatible with Go's
+// test printing (see inner comment for specifics)
+func indentMessageLines(message string, tabs int) string {
+	outBuf := new(bytes.Buffer)
+
+	for i, scanner := 0, bufio.NewScanner(strings.NewReader(message)); scanner.Scan(); i++ {
+		if i != 0 {
+			outBuf.WriteRune('\n')
+		}
+		for ii := 0; ii < tabs; ii++ {
+			outBuf.WriteRune('\t')
+			// Bizarrely, all lines except the first need one fewer tabs prepended, so deliberately advance the counter
+			// by 1 prematurely.
+			if ii == 0 && i > 0 {
+				ii++
+			}
+		}
+		outBuf.WriteString(scanner.Text())
+	}
+
+	return outBuf.String()
+}
+
 // Fail reports a failure through
 func Fail(t TestingT, failureMessage string, msgAndArgs ...interface{}) bool {
 
 	message := messageFromMsgAndArgs(msgAndArgs...)
 
 	if len(message) > 0 {
-		t.Errorf("\r%s\r\tLocation:\t%s\n\r\tError:\t\t%s\n\r\tMessages:\t%s\n\r", getWhitespaceString(), CallerInfo(), failureMessage, message)
+		t.Errorf("\r%s\r\tLocation:\t%s\n"+
+			"\r\tError:%s\n"+
+			"\r\tMessages:\t%s\n\r",
+			getWhitespaceString(),
+			CallerInfo(),
+			indentMessageLines(failureMessage, 2),
+			message)
 	} else {
-		t.Errorf("\r%s\r\tLocation:\t%s\n\r\tError:\t\t%s\n\r", getWhitespaceString(), CallerInfo(), failureMessage)
+		t.Errorf("\r%s\r\tLocation:\t%s\n"+
+			"\r\tError:%s\n\r",
+			getWhitespaceString(),
+			CallerInfo(),
+			indentMessageLines(failureMessage, 2))
 	}
 
 	return false
@@ -156,7 +192,8 @@ func IsType(t TestingT, expectedType interface{}, object interface{}, msgAndArgs
 func Equal(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}) bool {
 
 	if !ObjectsAreEqual(expected, actual) {
-		return Fail(t, fmt.Sprintf("Not equal: %#v != %#v", expected, actual), msgAndArgs...)
+		return Fail(t, fmt.Sprintf("Not equal: %#v (expected)\n"+
+			"        != %#v (actual)", expected, actual), msgAndArgs...)
 	}
 
 	return true
@@ -349,7 +386,7 @@ func Len(t TestingT, object interface{}, length int, msgAndArgs ...interface{}) 
 	}
 
 	if l != length {
-		return Fail(t, fmt.Sprintf("\"%s\" should have %d item(s), but have %d", object, length, l), msgAndArgs...)
+		return Fail(t, fmt.Sprintf("\"%s\" should have %d item(s), but has %d", object, length, l), msgAndArgs...)
 	}
 	return true
 }
@@ -399,14 +436,48 @@ func NotEqual(t TestingT, expected, actual interface{}, msgAndArgs ...interface{
 
 }
 
-// Contains asserts that the specified string contains the specified substring.
+// containsElement try loop over the list check if the list includes the element.
+// return (false, false) if impossible.
+// return (true, false) if element was not found.
+// return (true, true) if element was found.
+func includeElement(list interface{}, element interface{}) (ok, found bool) {
+
+	listValue := reflect.ValueOf(list)
+	elementValue := reflect.ValueOf(element)
+	defer func() {
+		if e := recover(); e != nil {
+			ok = false
+			found = false
+		}
+	}()
+
+	if reflect.TypeOf(list).Kind() == reflect.String {
+		return true, strings.Contains(listValue.String(), elementValue.String())
+	}
+
+	for i := 0; i < listValue.Len(); i++ {
+		if ObjectsAreEqual(listValue.Index(i).Interface(), element) {
+			return true, true
+		}
+	}
+	return true, false
+
+}
+
+// Contains asserts that the specified string or list(array, slice...) contains the
+// specified substring or element.
 //
 //    assert.Contains(t, "Hello World", "World", "But 'Hello World' does contain 'World'")
+//    assert.Contains(t, ["Hello", "World"], "World", "But ["Hello", "World"] does contain 'World'")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func Contains(t TestingT, s, contains string, msgAndArgs ...interface{}) bool {
+func Contains(t TestingT, s, contains interface{}, msgAndArgs ...interface{}) bool {
 
-	if !strings.Contains(s, contains) {
+	ok, found := includeElement(s, contains)
+	if !ok {
+		return Fail(t, fmt.Sprintf("\"%s\" could not be applied builtin len()", s), msgAndArgs...)
+	}
+	if !found {
 		return Fail(t, fmt.Sprintf("\"%s\" does not contain \"%s\"", s, contains), msgAndArgs...)
 	}
 
@@ -414,14 +485,20 @@ func Contains(t TestingT, s, contains string, msgAndArgs ...interface{}) bool {
 
 }
 
-// NotContains asserts that the specified string does NOT contain the specified substring.
+// NotContains asserts that the specified string or list(array, slice...) does NOT contain the
+// specified substring or element.
 //
 //    assert.NotContains(t, "Hello World", "Earth", "But 'Hello World' does NOT contain 'Earth'")
+//    assert.NotContains(t, ["Hello", "World"], "Earth", "But ['Hello', 'World'] does NOT contain 'Earth'")
 //
 // Returns whether the assertion was successful (true) or not (false).
-func NotContains(t TestingT, s, contains string, msgAndArgs ...interface{}) bool {
+func NotContains(t TestingT, s, contains interface{}, msgAndArgs ...interface{}) bool {
 
-	if strings.Contains(s, contains) {
+	ok, found := includeElement(s, contains)
+	if !ok {
+		return Fail(t, fmt.Sprintf("\"%s\" could not be applied builtin len()", s), msgAndArgs...)
+	}
+	if found {
 		return Fail(t, fmt.Sprintf("\"%s\" should not contain \"%s\"", s, contains), msgAndArgs...)
 	}
 
@@ -654,4 +731,52 @@ func EqualError(t TestingT, theError error, errString string, msgAndArgs ...inte
 	s := "An error with value \"%s\" is expected but got \"%s\". %s"
 	return Equal(t, theError.Error(), errString,
 		s, errString, theError.Error(), message)
+}
+
+// matchRegexp return true if a specified regexp matches a string.
+func matchRegexp(rx interface{}, str interface{}) bool {
+
+	var r *regexp.Regexp
+	if rr, ok := rx.(*regexp.Regexp); ok {
+		r = rr
+	} else {
+		r = regexp.MustCompile(fmt.Sprint(rx))
+	}
+
+	return (r.FindStringIndex(fmt.Sprint(str)) != nil)
+
+}
+
+// Regexp asserts that a specified regexp matches a string.
+//
+//  assert.Regexp(t, regexp.MustCompile("start"), "it's starting")
+//  assert.Regexp(t, "start...$", "it's not starting")
+//
+// Returns whether the assertion was successful (true) or not (false).
+func Regexp(t TestingT, rx interface{}, str interface{}) bool {
+
+	match := matchRegexp(rx, str)
+
+	if !match {
+		Fail(t, "Expect \"%s\" to match \"%s\"")
+	}
+
+	return match
+}
+
+// NotRegexp asserts that a specified regexp does not match a string.
+//
+//  assert.NotRegexp(t, regexp.MustCompile("starts"), "it's starting")
+//  assert.NotRegexp(t, "^start", "it's not starting")
+//
+// Returns whether the assertion was successful (true) or not (false).
+func NotRegexp(t TestingT, rx interface{}, str interface{}) bool {
+	match := matchRegexp(rx, str)
+
+	if match {
+		Fail(t, "Expect \"%s\" to NOT match \"%s\"")
+	}
+
+	return !match
+
 }
