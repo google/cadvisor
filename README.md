@@ -50,7 +50,7 @@ See the [documentation](docs/web.md) for more details.
 
 cAdvisor exposes its raw and processed stats via a versioned remote REST API. See the API's [documentation](docs/api.md) for more information.
 
-There is also an official Go client implementation in the [client](client/) directory. See the[documentation](docs/clients.md) for more information.
+There is also an official Go client implementation in the [client](client/) directory. See the [documentation](docs/clients.md) for more information.
 
 ## Roadmap
 
