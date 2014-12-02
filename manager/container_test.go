@@ -26,6 +26,7 @@ import (
 	"github.com/google/cadvisor/info"
 	itest "github.com/google/cadvisor/info/test"
 	stest "github.com/google/cadvisor/storage/test"
+	"github.com/stretchr/testify/assert"
 )
 
 const containerName = "/container"
@@ -83,15 +84,22 @@ func TestUpdateSubcontainersWithError(t *testing.T) {
 		[]info.ContainerReference{},
 		fmt.Errorf("some error"),
 	)
+	mockHandler.On("Exists").Return(true)
 
-	err := cd.updateSubcontainers()
-	if err == nil {
-		t.Fatal("updateSubcontainers should return error")
-	}
-	if len(cd.info.Subcontainers) != 0 {
-		t.Errorf("Received %v subcontainers, should be 0", len(cd.info.Subcontainers))
-	}
+	assert.NotNil(t, cd.updateSubcontainers())
+	assert.Empty(t, cd.info.Subcontainers, "subcontainers should not be populated on failure")
+	mockHandler.AssertExpectations(t)
+}
 
+func TestUpdateSubcontainersWithErrorOnDeadContainer(t *testing.T) {
+	cd, mockHandler, _ := newTestContainerData(t)
+	mockHandler.On("ListContainers", container.ListSelf).Return(
+		[]info.ContainerReference{},
+		fmt.Errorf("some error"),
+	)
+	mockHandler.On("Exists").Return(false)
+
+	assert.Nil(t, cd.updateSubcontainers())
 	mockHandler.AssertExpectations(t)
 }
 

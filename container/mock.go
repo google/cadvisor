@@ -85,6 +85,11 @@ func (self *MockContainerHandler) StopWatchingSubcontainers() error {
 	return args.Error(0)
 }
 
+func (self *MockContainerHandler) Exists() bool {
+	args := self.Called()
+	return args.Get(0).(bool)
+}
+
 type FactoryForMockContainerHandler struct {
 	Name                        string
 	PrepareContainerHandlerFunc func(name string, handler *MockContainerHandler)

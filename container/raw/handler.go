@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(cAdvisor): Package comment.
+// Handler for "raw" containers.
 package raw
 
 import (
@@ -477,4 +477,14 @@ func (self *rawContainerHandler) StopWatchingSubcontainers() error {
 	// Rendezvous with the watcher thread.
 	self.stopWatcher <- nil
 	return <-self.stopWatcher
+}
+
+func (self *rawContainerHandler) Exists() bool {
+	// If any cgroup exists, the container is still alive.
+	for _, subsystem := range self.cgroupSubsystems.mounts {
+		if utils.FileExists(path.Join(subsystem.Mountpoint, self.name)) {
+			return true
+		}
+	}
+	return false
 }

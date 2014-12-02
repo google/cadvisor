@@ -118,11 +118,11 @@ func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Tim
 				if self.housekeepingInterval > *maxHousekeepingInterval {
 					self.housekeepingInterval = *maxHousekeepingInterval
 				}
-				glog.V(2).Infof("Raising housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
+				glog.V(3).Infof("Raising housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
 			} else if self.housekeepingInterval != *HousekeepingInterval {
 				// Lower interval back to the baseline.
 				self.housekeepingInterval = *HousekeepingInterval
-				glog.V(1).Infof("Lowering housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
+				glog.V(3).Infof("Lowering housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
 			}
 		}
 	}
@@ -193,6 +193,10 @@ func (c *containerData) housekeepingTick() {
 func (c *containerData) updateSpec() error {
 	spec, err := c.handler.GetSpec()
 	if err != nil {
+		// Ignore errors if the container is dead.
+		if !c.handler.Exists() {
+			return nil
+		}
 		return err
 	}
 	c.lock.Lock()
@@ -204,6 +208,10 @@ func (c *containerData) updateSpec() error {
 func (c *containerData) updateStats() error {
 	stats, err := c.handler.GetStats()
 	if err != nil {
+		// Ignore errors if the container is dead.
+		if !c.handler.Exists() {
+			return nil
+		}
 		return err
 	}
 	if stats == nil {
@@ -211,6 +219,10 @@ func (c *containerData) updateStats() error {
 	}
 	ref, err := c.handler.ContainerReference()
 	if err != nil {
+		// Ignore errors if the container is dead.
+		if !c.handler.Exists() {
+			return nil
+		}
 		return err
 	}
 	err = c.storageDriver.AddStats(ref, stats)
@@ -223,6 +235,10 @@ func (c *containerData) updateStats() error {
 func (c *containerData) updateSubcontainers() error {
 	subcontainers, err := c.handler.ListContainers(container.ListSelf)
 	if err != nil {
+		// Ignore errors if the container is dead.
+		if !c.handler.Exists() {
+			return nil
+		}
 		return err
 	}
 	c.lock.Lock()

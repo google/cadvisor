@@ -46,12 +46,30 @@ type SubcontainerEvent struct {
 
 // Interface for container operation handlers.
 type ContainerHandler interface {
+	// Returns the ContainerReference
 	ContainerReference() (info.ContainerReference, error)
+
+	// Returns container's isolation spec.
 	GetSpec() (info.ContainerSpec, error)
+
+	// Returns the current stats values of the container.
 	GetStats() (*info.ContainerStats, error)
+
+	// Returns the subcontainers of this container.
 	ListContainers(listType ListType) ([]info.ContainerReference, error)
+
+	// Returns the threads inside this container.
 	ListThreads(listType ListType) ([]int, error)
+
+	// Returns the processes inside this container.
 	ListProcesses(listType ListType) ([]int, error)
+
+	// Registers a channel to listen for events affecting subcontainers (recursively).
 	WatchSubcontainers(events chan SubcontainerEvent) error
+
+	// Stops watching for subcontainer changes.
 	StopWatchingSubcontainers() error
+
+	// Returns whether the container still exists.
+	Exists() bool
 }
