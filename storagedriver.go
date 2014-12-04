@@ -28,7 +28,6 @@ import (
 	"github.com/google/cadvisor/storage/memory"
 )
 
-var argSampleSize = flag.Int("samples", 1024, "number of samples we want to keep")
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
 var argDbPassword = flag.String("storage_driver_password", "root", "database password")
 var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
