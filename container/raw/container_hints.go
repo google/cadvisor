@@ -25,20 +25,20 @@ import (
 	"os"
 )
 
-var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_hints.json", "container hints file")
+var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_hints.json", "location of the container hints file")
 
 type containerHints struct {
 	AllHosts []containerHint `json:"all_hosts,omitempty"`
 }
 
 type containerHint struct {
-	FullName                string `json:"full_path,omitempty"`
-	NetworkInterface        *networkInterface `json:"network_interface,omitempty"`
-	Mounts                  []mount `json:"mounts,omitempty"`
+	FullName         string            `json:"full_path,omitempty"`
+	NetworkInterface *networkInterface `json:"network_interface,omitempty"`
+	Mounts           []mount           `json:"mounts,omitempty"`
 }
 
 type mount struct {
-	HostDir string `json:"host_dir,omitempty"`
+	HostDir      string `json:"host_dir,omitempty"`
 	ContainerDir string `json:"container_dir,omitempty"`
 }
 

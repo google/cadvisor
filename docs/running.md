@@ -48,6 +48,10 @@ $ sudo cadvisor
 
 cAdvisor is now running (in the foreground) on `http://localhost:8080/`.
 
+## Runtime Options
+
+cAdvisor has a series of flags that can be used to configure its runtime behavior. More details can be found in runtime [options](docs/runtime_options.md).
+
 ## I need help!
 
 We aim to have cAdvisor run everywhere! If you run into issues getting it running, feel free to file an issue. We are very responsive in supporting our users and update our documentation with new setups.
