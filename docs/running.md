@@ -50,7 +50,7 @@ cAdvisor is now running (in the foreground) on `http://localhost:8080/`.
 
 ## Runtime Options
 
-cAdvisor has a series of flags that can be used to configure its runtime behavior. More details can be found in runtime [options](docs/runtime_options.md).
+cAdvisor has a series of flags that can be used to configure its runtime behavior. More details can be found in runtime [options](runtime_options.md).
 
 ## I need help!
 
