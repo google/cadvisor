@@ -30,21 +30,13 @@ func GetStats(cgroup *cgroups.Cgroup, state *libcontainer.State) (*info.Containe
 	stats := &libcontainer.ContainerStats{}
 
 	var err error
-	stats.CgroupStats, err = cgroupfs.GetStats(cgroup)
+	stats.CgroupStats, err = cgroupfs.GetStats(state.CgroupPaths)
 	if err != nil {
 		return &info.ContainerStats{}, err
 	}
 
 	stats.NetworkStats, err = network.GetStats(&state.NetworkState)
 	return toContainerStats(stats), nil
-}
-
-func GetStatsCgroupOnly(cgroup *cgroups.Cgroup) (*info.ContainerStats, error) {
-	s, err := cgroupfs.GetStats(cgroup)
-	if err != nil {
-		return nil, err
-	}
-	return toContainerStats(&libcontainer.ContainerStats{CgroupStats: s}), nil
 }
 
 func DiskStatsCopy(blkio_stats []cgroups.BlkioStatEntry) (stat []info.PerDiskStats) {

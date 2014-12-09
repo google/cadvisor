@@ -252,7 +252,6 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 			NetworkState: network.NetworkState{
 				VethHost:  self.networkInterface.VethHost,
 				VethChild: self.networkInterface.VethChild,
-				NsPath:    "unknown",
 			},
 		}
 	}
