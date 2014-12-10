@@ -60,8 +60,10 @@ func NewContainerHandler(name string) (ContainerHandler, error) {
 			glog.V(1).Infof("Error trying to work out if we can hande %s: %v", name, err)
 		}
 		if canHandle {
-			glog.V(1).Infof("Using factory %q for container %q", factory.String(), name)
+			glog.V(1).Infof("Using factory %q for container %q", factory, name)
 			return factory.NewContainerHandler(name)
+		} else {
+			glog.V(1).Infof("Factory %q was unable to handle container %q", factory, name)
 		}
 	}
 

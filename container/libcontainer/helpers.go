@@ -36,6 +36,10 @@ func GetStats(cgroup *cgroups.Cgroup, state *libcontainer.State) (*info.Containe
 	}
 
 	stats.NetworkStats, err = network.GetStats(&state.NetworkState)
+	if err != nil {
+		return &info.ContainerStats{}, err
+	}
+
 	return toContainerStats(stats), nil
 }
 
