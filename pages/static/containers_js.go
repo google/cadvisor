@@ -1393,12 +1393,22 @@ xx(oX[K],oX[K][hA]);Cw(oX[K],oX[K][qy]);oX[K].setAction=oX[K].dj;oX[K].getAction
 google.loader.loaded({"module":"visualization","version":"1.0","components":["ui","corechart","default","gauge","format"]});
 google.loader.eval.visualization = function() {eval(arguments[0]);};if (google.loader.eval.scripts && google.loader.eval.scripts['visualization']) {(function() {var scripts = google.loader.eval.scripts['visualization'];for (var i = 0; i < scripts.length; i++) {google.loader.eval.visualization(scripts[i]);}})();google.loader.eval.scripts['visualization'] = null;}})();
 
-function convertToString(num) {
-    var unit, units = ["TB", "GB", "MB", "KB", "Bytes"];
-    for (unit = units.pop(); units.length && num >= 1024; unit = units.pop()) {
-        num /= 1024;
+function humanize(num,size,units) {
+    var unit;
+    for (unit = units.pop(); units.length && num >= size; unit = units.pop()) {
+        num /= size;
     }
     return [num, unit];
+}
+
+// Following the IEC naming convention
+function humanizeIEC(num) {
+        return humanize(num,1024,["TiB", "GiB", "MiB", "KiB", "Bytes"]);
+}
+
+// Following the Metric naming convention
+function humanizeMetric(num) {
+        return humanize(num,1000,["TB", "GB", "MB", "KB", "Bytes"]);
 }
 
 // Draw a line chart.
@@ -1647,12 +1657,12 @@ function drawMemoryUsage(elementId, machineInfo, containerInfo) {
 
 	// Updating the progress bar	
 	var cur = containerInfo.stats[containerInfo.stats.length-1];
-        var hotMemory = Math.floor((cur.memory.working_set * 100.0) / machineInfo.memory_capacity)|0;
-        var totalMemory = Math.floor((cur.memory.usage * 100.0) / machineInfo.memory_capacity)|0;
+        var hotMemory = Math.floor((cur.memory.working_set * 100.0) / machineInfo.memory_capacity);
+        var totalMemory = Math.floor((cur.memory.usage * 100.0) / machineInfo.memory_capacity);
 	var coldMemory = totalMemory - hotMemory;
 	$("#progress-hot-memory").width(hotMemory + "%");
         $("#progress-cold-memory").width(coldMemory + "%");
-        var repMemory = convertToString(cur.memory.usage);
+        var repMemory = humanizeIEC(cur.memory.usage);
 	$("#memory-text").html( repMemory[0].toFixed(3) + " " + repMemory[1] +  " ("+ totalMemory +"%)");
 
 	drawLineChart(titles, data, elementId, "Megabytes");
@@ -1708,9 +1718,9 @@ function drawFileSystemUsage(elementId, machineInfo, stats) {
 	// Update the progress bar
         for(var i = 0; i < curr.filesystem.length; i++) {
 		var data = curr.filesystem[i];
-		var totalUsage = Math.floor((data.usage * 100.0)/data.capacity)|0;
+		var totalUsage = Math.floor((data.usage * 100.0)/data.capacity);
 		$("#progress-"+i).width(totalUsage+"%");
-                var repFS = convertToString(data.capacity);
+                var repFS = humanizeMetric(data.capacity);
 		$("#progress-text-"+i).html( repFS[0].toFixed(2) + " " + repFS[1] + " ("+totalUsage+"%)");
 	}
 }
