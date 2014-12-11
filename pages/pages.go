@@ -8,6 +8,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
+        auth "github.com/abbot/go-http-auth"
 )
 
 var pageTemplate *template.Template
@@ -44,26 +45,81 @@ func init() {
 	}
 }
 
+func containerHandlerNoAuth(containerManager manager.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+        	err := serveContainersPage(containerManager, w, r.URL)
+	        if err != nil {
+	                fmt.Fprintf(w, "%s", err)
+	        }
+	}
+}
+
+func containerHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFunc {
+        return func(w http.ResponseWriter, r *auth.AuthenticatedRequest) { 
+                err := serveContainersPage(containerManager, w, r.URL)
+                if err != nil {
+                        fmt.Fprintf(w, "%s", err)
+                } 
+        }
+}
+
+func dockerHandlerNoAuth(containerManager manager.Manager) http.HandlerFunc {
+        return func(w http.ResponseWriter, r *http.Request) {
+                err := serveDockerPage(containerManager, w, r.URL)
+                if err != nil {
+                        fmt.Fprintf(w, "%s", err)
+                }
+        }
+}
+
+func dockerHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFunc {
+        return func(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+                err := serveDockerPage(containerManager, w, r.URL)
+                if err != nil {
+                        fmt.Fprintf(w, "%s", err)
+                }
+	}
+}
+
 // Register http handlers for pages.
-func RegisterHandlers(containerManager manager.Manager) error {
+func RegisterHandlersDigest(containerManager manager.Manager,authenticator *auth.DigestAuth) error {
+
 	// Register the handler for the containers page.
-	http.HandleFunc(ContainersPage, func(w http.ResponseWriter, r *http.Request) {
-		err := serveContainersPage(containerManager, w, r.URL)
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-		}
-	})
+	if authenticator!=nil {
+		http.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
+	} else {
+		http.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
+	}
 
 	// Register the handler for the docker page.
-	http.HandleFunc(DockerPage, func(w http.ResponseWriter, r *http.Request) {
-		err := serveDockerPage(containerManager, w, r.URL)
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-		}
-	})
+	if authenticator!=nil {
+		http.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
+	} else {
+		http.HandleFunc(ContainersPage, dockerHandlerNoAuth(containerManager))
+	}
 
 	return nil
 }
+
+func RegisterHandlersBasic(containerManager manager.Manager,authenticator *auth.BasicAuth) error {
+
+        // Register the handler for the containers page.
+        if authenticator!=nil {
+                http.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
+        } else {
+                http.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
+        }
+
+        // Register the handler for the docker page.
+        if authenticator!=nil {
+                http.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
+        } else {
+                http.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
+        }
+
+        return nil
+}
+
 
 func getContainerDisplayName(cont info.ContainerReference) string {
 	// Pick the shortest name of the container as the display name.
