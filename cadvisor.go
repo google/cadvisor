@@ -96,6 +96,7 @@ func main() {
 
 	// Setup the authenticator object
 	if *httpAuthFile != "" {
+		glog.Infof("Using auth file %s", *httpAuthFile)
 		secrets := auth.HtpasswdFileProvider(*httpAuthFile)
 		authenticator := auth.NewBasicAuthenticator(*httpAuthRealm, secrets)
 		http.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
@@ -104,7 +105,8 @@ func main() {
 		}
 		authenticated = true
 	}
-	if *httpAuthFile=="" && *httpDigestFile != "" {
+	if *httpAuthFile == "" && *httpDigestFile != "" {
+		glog.Infof("Using digest file %s", *httpDigestFile)
 		secrets := auth.HtdigestFileProvider(*httpDigestFile)
 		authenticator := auth.NewDigestAuthenticator(*httpDigestRealm, secrets)
 		http.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
