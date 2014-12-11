@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"syscall"
 
+	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/container/docker"
@@ -41,6 +42,11 @@ var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used sim
 
 var argDbDriver = flag.String("storage_driver", "", "storage driver to use. Data is always cached shortly in memory, this controls where data is pushed besides the local cache. Empty means none. Options are: <empty> (default), bigquery, and influxdb")
 var versionFlag = flag.Bool("version", false, "print cAdvisor version and exit")
+
+var httpAuthFile = flag.String("http_auth_file", "", "HTTP auth file for the web UI")
+var httpAuthRealm = flag.String("http_auth_realm", "localhost", "HTTP auth realm for the web UI")
+var httpDigestFile = flag.String("http_digest_file", "", "HTTP digest file for the web UI")
+var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest file for the web UI")
 
 func main() {
 	defer glog.Flush()
@@ -78,14 +84,6 @@ func main() {
 		glog.Fatalf("Failed to register healthz handler: %s", err)
 	}
 
-	// Handler for static content.
-	http.HandleFunc(static.StaticResource, func(w http.ResponseWriter, r *http.Request) {
-		err := static.HandleRequest(w, r.URL)
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-		}
-	})
-
 	// Register API handler.
 	if err := api.RegisterHandlers(containerManager); err != nil {
 		glog.Fatalf("Failed to register API handlers: %s", err)
@@ -94,8 +92,36 @@ func main() {
 	// Redirect / to containers page.
 	http.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
 
-	if err := pages.RegisterHandlers(containerManager); err != nil {
-		glog.Fatalf("Failed to register pages handlers: %s", err)
+	var authenticated bool = false
+
+	// Setup the authenticator object
+	if *httpAuthFile != "" {
+		glog.Infof("Using auth file %s", *httpAuthFile)
+		secrets := auth.HtpasswdFileProvider(*httpAuthFile)
+		authenticator := auth.NewBasicAuthenticator(*httpAuthRealm, secrets)
+		http.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
+		if err := pages.RegisterHandlersBasic(containerManager, authenticator); err != nil {
+			glog.Fatalf("Failed to register pages auth handlers: %s", err)
+		}
+		authenticated = true
+	}
+	if *httpAuthFile == "" && *httpDigestFile != "" {
+		glog.Infof("Using digest file %s", *httpDigestFile)
+		secrets := auth.HtdigestFileProvider(*httpDigestFile)
+		authenticator := auth.NewDigestAuthenticator(*httpDigestRealm, secrets)
+		http.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
+		if err := pages.RegisterHandlersDigest(containerManager, authenticator); err != nil {
+			glog.Fatalf("Failed to register pages digest handlers: %s", err)
+		}
+		authenticated = true
+	}
+
+	// Change handler based on authenticator initalization
+	if !authenticated {
+		http.HandleFunc(static.StaticResource, staticHandlerNoAuth)
+		if err := pages.RegisterHandlersBasic(containerManager, nil); err != nil {
+			glog.Fatalf("Failed to register pages handlers: %s", err)
+		}
 	}
 
 	// Start the manager.
@@ -143,4 +169,18 @@ func installSignalHandler(containerManager manager.Manager) {
 		glog.Infof("Exiting given signal: %v", sig)
 		os.Exit(0)
 	}()
+}
+
+func staticHandlerNoAuth(w http.ResponseWriter, r *http.Request) {
+	err := static.HandleRequest(w, r.URL)
+	if err != nil {
+		fmt.Fprintf(w, "%s", err)
+	}
+}
+
+func staticHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+	err := static.HandleRequest(w, r.URL)
+	if err != nil {
+		fmt.Fprintf(w, "%s", err)
+	}
 }

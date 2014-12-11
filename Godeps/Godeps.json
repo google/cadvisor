@@ -97,6 +97,10 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/mock",
 			"Rev": "8ce79b9f0b77745113f82c17d0756771456ccbd3"
+		},
+		{
+			"ImportPath": "github.com/abbot/go-http-auth",
+			"Rev": "c0ef4539dfab4d21c8ef20ba2924f9fc6f186d35"
 		}
 	]
 }
