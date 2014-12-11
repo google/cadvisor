@@ -1471,13 +1471,18 @@ function hasResource(stats, resource) {
 }
 
 // Draw a gauge.
-function drawGauge(elementId, cpuUsage, memoryUsage) {
+function drawGauge(elementId, cpuUsage, memoryUsage, fsUsage) {
 	var gauges = [['Label', 'Value']];
 	if (cpuUsage >= 0) {
 		gauges.push(['CPU', cpuUsage]);
 	}
 	if (memoryUsage >= 0) {
 		gauges.push(['Memory', memoryUsage]);
+	}
+        for( var i=0; i< fsUsage.length; i++) {
+	        if (fsUsage[i] >= 0) {
+			gauges.push(['FS #'+i, fsUsage[i]]);
+	        }
 	}
 	// Create and populate the data table.
 	var data = google.visualization.arrayToDataTable(gauges);
@@ -1615,7 +1620,16 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 		memoryUsage = Math.round((cur.memory.usage / limit) * 100);
 	}
 
-	drawGauge(elementId, cpuUsage, memoryUsage);
+        var fsUsage=[];
+        if (containerInfo.spec.has_filesystem) {
+                for(var i=0; i <  cur.filesystem.length; i++) {
+	                var limit = cur.filesystem[0].capacity;
+			var diskUsage = Math.round((cur.filesystem[0].usage / limit) * 100);
+                        fsUsage.push(diskUsage);
+		}
+	}
+
+	drawGauge(elementId, cpuUsage, memoryUsage, fsUsage);
 }
 
 var oneMegabyte = 1024 * 1024;
