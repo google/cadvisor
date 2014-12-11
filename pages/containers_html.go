@@ -137,15 +137,15 @@ const containersHtmlTemplate = `
               <h4>Usage Breakdown</h4>
               <div class="col-sm-9">
 		<div class="progress">
-                  <div class="progress-bar progress-bar-danger" style="width: {{getHotMemoryPercent .Spec .Stats .MachineInfo}}%">
+                  <div class="progress-bar progress-bar-danger" style="width: {{getHotMemoryPercent .Spec .Stats .MachineInfo}}%" id="progress-hot-memory">
                     <span class="sr-only">Hot Memory</span>
                   </div>
-                  <div class="progress-bar progress-bar-info" style="width: {{getColdMemoryPercent .Spec .Stats .MachineInfo}}%">
+                  <div class="progress-bar progress-bar-info" style="width: {{getColdMemoryPercent .Spec .Stats .MachineInfo}}%" id="progress-cold-memory">
                     <span class="sr-only">Cold Memory</span>
                   </div>
 		</div>
               </div>
-              <div class="col-sm-3">
+              <div class="col-sm-3" id="memory-text">
 		{{ getMemoryUsage .Stats }} MB ({{ getMemoryUsagePercent .Spec .Stats .MachineInfo}}%)
               </div>
 	    </div>
@@ -159,19 +159,19 @@ const containersHtmlTemplate = `
           </div>
           <div class="panel-body">
             {{with getFsStats .Stats}}
-	    {{range .}}
+	    {{range $i, $e := .}}
             <div class="row col-sm-12">
-              <h4>Partition: {{.Device}}</h4>
+              <h4>Partition: {{$e.Device}}</h4>
             </div>
             <div class="col-sm-9">
 	      <div class="progress">
-	        <div id="memory-usage-chart"></div>
-                <div class="progress-bar progress-bar-danger" style="width: {{getFsUsagePercent .Limit .Usage}}%">
+	        <div id="fs-{{$i}}-usage-chart"></div>
+                <div id="progress-{{$i}}" class="progress-bar progress-bar-danger" style="width: {{getFsUsagePercent $e.Limit $e.Usage}}%">
                 </div>
               </div>
             </div>
-            <div class="col-sm-3">
-	      {{printSize .Limit}} {{printUnit .Limit}} ({{getFsUsagePercent .Limit .Usage}}%)
+            <div class="col-sm-3" id="progress-text-{{$i}}">
+	      {{printSize $e.Limit}} {{printUnit $e.Limit}} ({{getFsUsagePercent $e.Limit $e.Usage}}%)
 	    </div>
 	    {{end}}
 	    {{end}}
