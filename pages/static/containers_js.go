@@ -1393,6 +1393,13 @@ xx(oX[K],oX[K][hA]);Cw(oX[K],oX[K][qy]);oX[K].setAction=oX[K].dj;oX[K].getAction
 google.loader.loaded({"module":"visualization","version":"1.0","components":["ui","corechart","default","gauge","format"]});
 google.loader.eval.visualization = function() {eval(arguments[0]);};if (google.loader.eval.scripts && google.loader.eval.scripts['visualization']) {(function() {var scripts = google.loader.eval.scripts['visualization'];for (var i = 0; i < scripts.length; i++) {google.loader.eval.visualization(scripts[i]);}})();google.loader.eval.scripts['visualization'] = null;}})();
 
+function convertToString(num) {
+    var unit, units = ["TB", "GB", "MB", "KB", "Bytes"];
+    for (unit = units.pop(); units.length && num >= 1024; unit = units.pop()) {
+        num /= 1024;
+    }
+    return [num, unit];
+}
 
 // Draw a line chart.
 function drawLineChart(seriesTitles, data, elementId, unit) {
@@ -1566,7 +1573,7 @@ function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
 }
 
 // Draw the graph for CPU usage breakdown.
-function drawCpuUsageBreakdown(elementId, containerInfo) {
+function drawCpuUsageBreakdown(elementId, machineInfo, containerInfo) {
 	if (containerInfo.spec.has_cpu && !hasResource(containerInfo, "cpu")) {
 		return;
 	}
@@ -1619,8 +1626,9 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 }
 
 var oneMegabyte = 1024 * 1024;
+var oneGigabyte = 1024 * oneMegabyte;
 
-function drawMemoryUsage(elementId, containerInfo) {
+function drawMemoryUsage(elementId, machineInfo, containerInfo) {
 	if (containerInfo.spec.has_memory && !hasResource(containerInfo, "memory")) {
 		return;
 	}
@@ -1636,6 +1644,17 @@ function drawMemoryUsage(elementId, containerInfo) {
 		elements.push(cur.memory.working_set / oneMegabyte);
 		data.push(elements);
 	}
+
+	// Updating the progress bar	
+	var cur = containerInfo.stats[containerInfo.stats.length-1];
+        var hotMemory = Math.floor((cur.memory.working_set * 100.0) / machineInfo.memory_capacity)|0;
+        var totalMemory = Math.floor((cur.memory.usage * 100.0) / machineInfo.memory_capacity)|0;
+	var coldMemory = totalMemory - hotMemory;
+	$("#progress-hot-memory").width(hotMemory + "%");
+        $("#progress-cold-memory").width(coldMemory + "%");
+        var repMemory = convertToString(cur.memory.usage);
+	$("#memory-text").html( repMemory[0].toFixed(3) + " " + repMemory[1] +  " ("+ totalMemory +"%)");
+
 	drawLineChart(titles, data, elementId, "Megabytes");
 }
 
@@ -1683,6 +1702,19 @@ function drawNetworkErrors(elementId, machineInfo, stats) {
 	drawLineChart(titles, data, elementId, "Errors per second");
 }
 
+// Draw the filesystem graph
+function drawFileSystemUsage(elementId, machineInfo, stats) {
+	var curr = stats.stats[stats.stats.length - 1]; 
+	// Update the progress bar
+        for(var i = 0; i < curr.filesystem.length; i++) {
+		var data = curr.filesystem[i];
+		var totalUsage = Math.floor((data.usage * 100.0)/data.capacity)|0;
+		$("#progress-"+i).width(totalUsage+"%");
+                var repFS = convertToString(data.capacity);
+		$("#progress-text-"+i).html( repFS[0].toFixed(2) + " " + repFS[1] + " ("+totalUsage+"%)");
+	}
+}
+
 // Expects an array of closures to call. After each execution the JS runtime is given control back before continuing.
 // This function returns asynchronously
 function stepExecute(steps) {
@@ -1720,14 +1752,14 @@ function drawCharts(machineInfo, containerInfo) {
 			drawCpuPerCoreUsage("cpu-per-core-usage-chart", machineInfo, containerInfo);
 		});
 		steps.push(function() {
-			drawCpuUsageBreakdown("cpu-usage-breakdown-chart", containerInfo);
+			drawCpuUsageBreakdown("cpu-usage-breakdown-chart", machineInfo, containerInfo);
 		});
 	}
 
 	// Memory.
 	if (containerInfo.spec.has_memory) {
 		steps.push(function() {
-			drawMemoryUsage("memory-usage-chart", containerInfo);
+			drawMemoryUsage("memory-usage-chart", machineInfo, containerInfo);
 		});
 	}
 
@@ -1740,6 +1772,14 @@ function drawCharts(machineInfo, containerInfo) {
 			drawNetworkErrors("network-errors-chart", machineInfo, containerInfo);
 		});
 	}
+
+	// Filesystem.
+	if (containerInfo.spec.has_filesystem) {
+		steps.push(function() {
+                        drawFileSystemUsage("filesystem-usage-chart", machineInfo, containerInfo);
+                });
+	}
+
 
 	stepExecute(steps);
 }
