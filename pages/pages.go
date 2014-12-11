@@ -81,42 +81,28 @@ func dockerHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFu
 	}
 }
 
-// Register http handlers for pages.
+// Register http handlers
 func RegisterHandlersDigest(containerManager manager.Manager,authenticator *auth.DigestAuth) error {
-
 	// Register the handler for the containers page.
 	if authenticator!=nil {
 		http.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
+                http.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
 	} else {
 		http.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
+                http.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
 	}
-
-	// Register the handler for the docker page.
-	if authenticator!=nil {
-		http.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
-	} else {
-		http.HandleFunc(ContainersPage, dockerHandlerNoAuth(containerManager))
-	}
-
 	return nil
 }
 
 func RegisterHandlersBasic(containerManager manager.Manager,authenticator *auth.BasicAuth) error {
-
-        // Register the handler for the containers page.
+        // Register the handler for the containers and docker age.
         if authenticator!=nil {
                 http.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
-        } else {
-                http.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
-        }
-
-        // Register the handler for the docker page.
-        if authenticator!=nil {
                 http.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
         } else {
+                http.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
                 http.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
         }
-
         return nil
 }
 

@@ -93,6 +93,7 @@ func main() {
 	http.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
 
 	var authenticated bool = false
+
 	// Setup the authenticator object
         if *httpAuthFile!="" {
                 secrets := auth.HtpasswdFileProvider(*httpAuthFile)
