@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/cgroups/systemd"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/golang/glog"
@@ -42,8 +43,10 @@ var useSystemd bool
 
 func init() {
 	useSystemd = systemd.UseSystemd()
-	if useSystemd {
-		glog.Infof("System is using systemd")
+	if !useSystemd {
+		// Second attempt at checking for systemd, check for a "name=systemd" cgroup.
+		_, err := cgroups.FindCgroupMountpoint("name=systemd")
+		useSystemd = (err == nil)
 	}
 }
 
@@ -198,6 +201,10 @@ func Register(factory info.MachineInfoFactory) error {
 			usesAufsDriver = true
 			break
 		}
+	}
+
+	if useSystemd {
+		glog.Infof("System is using systemd")
 	}
 
 	glog.Infof("Registering Docker factory")
