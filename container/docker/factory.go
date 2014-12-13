@@ -27,6 +27,7 @@ import (
 	"github.com/fsouza/go-dockerclient"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
 )
 
@@ -57,6 +58,9 @@ type dockerFactory struct {
 	usesAufsDriver bool
 
 	client *docker.Client
+
+	// Information about the mounted cgroup subsystems.
+	cgroupSubsystems libcontainer.CgroupSubsystems
 }
 
 func (self *dockerFactory) String() string {
@@ -74,6 +78,7 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 		self.machineInfoFactory,
 		*dockerRootDir,
 		self.usesAufsDriver,
+		&self.cgroupSubsystems,
 	)
 	return
 }
@@ -207,11 +212,17 @@ func Register(factory info.MachineInfoFactory) error {
 		glog.Infof("System is using systemd")
 	}
 
+	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
+	if err != nil {
+		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
+	}
+
 	glog.Infof("Registering Docker factory")
 	f := &dockerFactory{
 		machineInfoFactory: factory,
 		client:             client,
 		usesAufsDriver:     usesAufsDriver,
+		cgroupSubsystems:   cgroupSubsystems,
 	}
 	container.RegisterContainerHandlerFactory(f)
 	return nil
