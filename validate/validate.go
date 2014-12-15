@@ -23,12 +23,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/docker/libcontainer/cgroups"
 	dclient "github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container/docker"
+	"github.com/google/cadvisor/utils"
 )
 
 const ValidatePage = "/validate/"
@@ -163,6 +163,11 @@ func validateDockerInfo() (string, string) {
 			execDriver := info.Get("ExecutionDriver")
 			storageDriver := info.Get("Driver")
 			desc := fmt.Sprintf("Docker exec driver is %s. Storage driver is %s.\n", execDriver, storageDriver)
+			if docker.UseSystemd() {
+				desc += "\tsystemd is being used to create cgroups.\n"
+			} else {
+				desc += "\tCgroups are being created through cgroup filesystem.\n"
+			}
 			if strings.Contains(execDriver, "native") {
 				return Recommended, desc
 			} else if strings.Contains(execDriver, "lxc") {
@@ -184,7 +189,7 @@ func validateCgroupMounts() (string, string) {
 		return Unknown, out
 	}
 	mnt = strings.TrimSuffix(mnt, "/cpu")
-	if _, err := os.Stat(mnt); err != nil {
+	if !utils.FileExists(mnt) {
 		out := fmt.Sprintf("Cgroup mount directory %s inaccessible.\n", mnt)
 		out += desc
 		return Unsupported, out
