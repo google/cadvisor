@@ -34,6 +34,7 @@ import (
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
+	"github.com/google/cadvisor/validate"
 )
 
 var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
@@ -83,6 +84,14 @@ func main() {
 	if err := healthz.RegisterHandler(); err != nil {
 		glog.Fatalf("Failed to register healthz handler: %s", err)
 	}
+
+	// Validation/Debug handler.
+	http.HandleFunc(validate.ValidatePage, func(w http.ResponseWriter, r *http.Request) {
+		err := validate.HandleRequest(w, containerManager)
+		if err != nil {
+			fmt.Fprintf(w, "%s", err)
+		}
+	})
 
 	// Register API handler.
 	if err := api.RegisterHandlers(containerManager); err != nil {
