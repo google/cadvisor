@@ -161,7 +161,7 @@ const containersHtmlTemplate = `
             {{with getFsStats .Stats}}
 	    {{range $i, $e := .}}
             <div class="row col-sm-12">
-              <h4>Partition: {{$e.Device}}</h4>
+              <h4>FS #{{$i}}: {{$e.Device}}</h4>
             </div>
             <div class="col-sm-9">
 	      <div class="progress">
