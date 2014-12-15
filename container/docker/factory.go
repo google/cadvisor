@@ -50,6 +50,11 @@ func init() {
 	}
 }
 
+func UseSystemd() bool {
+	// init would run and initialize useSystemd before we can call this method.
+	return useSystemd
+}
+
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
