@@ -28,6 +28,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/utils"
 )
 
 var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
@@ -45,8 +46,13 @@ func init() {
 	useSystemd = systemd.UseSystemd()
 	if !useSystemd {
 		// Second attempt at checking for systemd, check for a "name=systemd" cgroup.
-		_, err := cgroups.FindCgroupMountpoint("name=systemd")
-		useSystemd = (err == nil)
+		mnt, err := cgroups.FindCgroupMountpoint("cpu")
+		if err == nil {
+			// systemd presence does not mean systemd controls cgroups.
+			// If system.slice cgroup exists, then systemd is taking control.
+			// This breaks if user creates system.slice manually :)
+			useSystemd = utils.FileExists(mnt + "/system.slice")
+		}
 	}
 }
 
