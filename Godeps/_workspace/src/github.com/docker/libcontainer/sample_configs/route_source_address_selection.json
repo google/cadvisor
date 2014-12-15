@@ -117,7 +117,6 @@
         "parent": "docker"
     },
     "restrict_sys": true,
-    "apparmor_profile": "docker-default",
     "mount_config": {
         "device_nodes": [
             {
@@ -177,7 +176,7 @@
     ],
     "hostname": "koye",
     "namespaces": [
-        {"name":"NEWIPC"},
+        {"name": "NEWIPC"},
         {"name": "NEWNET"},
         {"name": "NEWNS"},
         {"name": "NEWPID"},
@@ -189,8 +188,22 @@
             "gateway": "localhost",
             "mtu": 1500,
             "type": "loopback"
+        },
+        {
+            "address": "172.17.0.101/16",
+            "bridge": "docker0",
+            "veth_prefix": "veth",
+            "mtu": 1500,
+            "type": "veth"
         }
     ],
-    "tty": true,
-    "user": "daemon"
+    "routes": [
+        {
+            "destination": "0.0.0.0/0",
+            "source": "172.17.0.101",
+            "gateway": "172.17.42.1",
+            "interface_name": "eth0"
+        }
+    ],
+    "tty": true
 }
