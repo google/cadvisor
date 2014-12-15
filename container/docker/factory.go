@@ -164,7 +164,7 @@ func Register(factory info.MachineInfoFactory) error {
 	if version, err := client.Version(); err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	} else {
-		expected_version := []int{0, 11, 1}
+		expected_version := []int{1, 0, 0}
 		version_string := version.Get("Version")
 		version, err := parseDockerVersion(version_string)
 		if err != nil {
@@ -174,7 +174,7 @@ func Register(factory info.MachineInfoFactory) error {
 			if number > expected_version[index] {
 				break
 			} else if number < expected_version[index] {
-				return fmt.Errorf("cAdvisor requires docker version above %v but we have found version %v reported as \"%v\"", expected_version, version, version_string)
+				return fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as \"%v\"", expected_version, version, version_string)
 			}
 		}
 	}
