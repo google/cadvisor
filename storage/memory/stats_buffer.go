@@ -30,7 +30,7 @@ func (self *StatsBuffer) Add(item *info.ContainerStats) {
 }
 
 // Returns the first N elements in the buffer. If N > size of buffer, size of buffer elements are returned.
-func (self *StatsBuffer) FirstN(n int) []info.ContainerStats {
+func (self *StatsBuffer) FirstN(n int) []*info.ContainerStats {
 	// Cap n at the number of elements we have.
 	if n > self.size {
 		n = self.size
@@ -43,10 +43,10 @@ func (self *StatsBuffer) FirstN(n int) []info.ContainerStats {
 	}
 
 	// Copy the elements.
-	res := make([]info.ContainerStats, n)
+	res := make([]*info.ContainerStats, n)
 	for i := 0; i < n; i++ {
 		index := (start + i) % len(self.buffer)
-		res[i] = self.buffer[index]
+		res[i] = &self.buffer[index]
 	}
 	return res
 }

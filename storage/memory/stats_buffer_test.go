@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/cadvisor/info"
+
 )
 
 func createStats(id int32) *info.ContainerStats {
