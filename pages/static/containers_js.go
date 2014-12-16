@@ -1496,9 +1496,9 @@ function drawGauge(elementId, cpuUsage, memoryUsage, fsUsage) {
 	if (memoryUsage >= 0) {
 		gauges.push(['Memory', memoryUsage]);
 	}
-        for( var i=0; i< fsUsage.length; i++) {
+        for (var i = 0; i < fsUsage.length; i++) {
 	        if (fsUsage[i] >= 0) {
-			gauges.push(['FS #'+i, fsUsage[i]]);
+			gauges.push(['FS #' + (i + 1), fsUsage[i]]);
 	        }
 	}
 	// Create and populate the data table.
@@ -1726,17 +1726,57 @@ function drawNetworkErrors(elementId, machineInfo, stats) {
 	drawLineChart(titles, data, elementId, "Errors per second");
 }
 
-// Draw the filesystem graph
-function drawFileSystemUsage(elementId, machineInfo, stats) {
-	var curr = stats.stats[stats.stats.length - 1]; 
-	// Update the progress bar
-        for(var i = 0; i < curr.filesystem.length; i++) {
+// Update the filesystem usage values.
+function drawFileSystemUsage(machineInfo, stats) {
+	var curr = stats.stats[stats.stats.length - 1];
+	var el = $("<div>");
+	for (var i = 0; i < curr.filesystem.length; i++) {
 		var data = curr.filesystem[i];
 		var totalUsage = Math.floor((data.usage * 100.0)/data.capacity);
-		$("#progress-"+i).width(totalUsage+"%");
-                var repFS = humanizeMetric(data.capacity);
-		$("#progress-text-"+i).html( repFS[0].toFixed(2) + " " + repFS[1] + " ("+totalUsage+"%)");
+                var humanized = humanizeMetric(data.capacity);
+
+		// Update DOM elements.
+		var els = window.cadvisor.fsUsage.elements[data.device];
+		els.progressElement.width(totalUsage + "%");
+		els.textElement.text(humanized[0].toFixed(2) + " " + humanized[1] + " (" + totalUsage + "%)");
+
 	}
+}
+
+// Draw the filesystem usage nodes.
+function startFileSystemUsage(elementId, machineInfo, stats) {
+	window.cadvisor.fsUsage = {};
+
+	// A map of device name to DOM elements.
+	window.cadvisor.fsUsage.elements = {};
+
+	var curr = stats.stats[stats.stats.length - 1];
+	var el = $("<div>");
+	for (var i = 0; i < curr.filesystem.length; i++) {
+		var data = curr.filesystem[i];
+		el.append($("<div>")
+			.addClass("row col-sm-12")
+			.append($("<h4>")
+				.text("FS #" + (i + 1) + ": " + data.device)));
+
+		var progressElement = $("<div>").addClass("progress-bar progress-bar-danger");
+		el.append($("<div>")
+			.addClass("col-sm-9")
+			.append($("<div>")
+				.addClass("progress")
+				.append(progressElement)));
+
+		var textElement = $("<div>").addClass("col-sm-3");
+		el.append(textElement);
+
+		window.cadvisor.fsUsage.elements[data.device] = {
+			'progressElement': progressElement,
+			'textElement': textElement,
+		};
+	}
+	$("#" + elementId).empty().append(el);
+
+	drawFileSystemUsage(machineInfo, stats);
 }
 
 // Expects an array of closures to call. After each execution the JS runtime is given control back before continuing.
@@ -1800,10 +1840,9 @@ function drawCharts(machineInfo, containerInfo) {
 	// Filesystem.
 	if (containerInfo.spec.has_filesystem) {
 		steps.push(function() {
-                        drawFileSystemUsage("filesystem-usage-chart", machineInfo, containerInfo);
+                        drawFileSystemUsage(machineInfo, containerInfo);
                 });
 	}
-
 
 	stepExecute(steps);
 }
@@ -1816,12 +1855,19 @@ function startPage(containerName, hasCpu, hasMemory) {
 	}
 
 	window.charts = {};
+	window.cadvisor = {};
+	window.cadvisor.firstRun = true;
 
 	// Get machine info, then get the stats every 1s.
 	getMachineInfo(function(machineInfo) {
 		setInterval(function() {
-			getStats(containerName, function(stats){
-				drawCharts(machineInfo, stats);
+			getStats(containerName, function(containerInfo){
+				if (window.cadvisor.firstRun && containerInfo.spec.has_filesystem) {
+					window.cadvisor.firstRun = false;
+					startFileSystemUsage("filesystem-usage", machineInfo, containerInfo);
+				}
+
+				drawCharts(machineInfo, containerInfo);
 			});
 		}, 1000);
 	});
