@@ -153,6 +153,9 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 		err = fmt.Errorf("unable to read all %q: %v", infoName, err)
 		return err
 	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("request failed with error: %q", strings.TrimSpace(string(body)))
+	}
 	if err = json.Unmarshal(body, data); err != nil {
 		err = fmt.Errorf("unable to unmarshal %q (Body: %q) with error: %v", infoName, string(body), err)
 		return err

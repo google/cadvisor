@@ -116,6 +116,30 @@ func TestGetContainerInfo(t *testing.T) {
 	}
 }
 
+// Test a requesy failing
+func TestRequestFails(t *testing.T) {
+	errorText := "there was an error"
+	// Setup a server that simply fails.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, errorText, 500)
+	}))
+	client, err := NewClient(ts.URL)
+	if err != nil {
+		ts.Close()
+		t.Fatal(err)
+	}
+	defer ts.Close()
+
+	_, err = client.ContainerInfo("/", &info.ContainerInfoRequest{NumStats: 3})
+	if err == nil {
+		t.Fatalf("Expected non-nil error")
+	}
+	expectedError := fmt.Sprintf("request failed with error: %q", errorText)
+	if err.Error() != expectedError {
+		t.Fatalf("Expected error %q but received %q", expectedError, err)
+	}
+}
+
 func TestGetSubcontainersInfo(t *testing.T) {
 	query := &info.ContainerInfoRequest{
 		NumStats: 3,
