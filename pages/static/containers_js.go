@@ -1487,20 +1487,11 @@ function hasResource(stats, resource) {
 	return stats.stats.length > 0 && stats.stats[0][resource];
 }
 
-// Draw a gauge.
-function drawGauge(elementId, cpuUsage, memoryUsage, fsUsage) {
-	var gauges = [['Label', 'Value']];
-	if (cpuUsage >= 0) {
-		gauges.push(['CPU', cpuUsage]);
-	}
-	if (memoryUsage >= 0) {
-		gauges.push(['Memory', memoryUsage]);
-	}
-        for (var i = 0; i < fsUsage.length; i++) {
-	        if (fsUsage[i] >= 0) {
-			gauges.push(['FS #' + (i + 1), fsUsage[i]]);
-	        }
-	}
+// Draw a set of gauges. Data is comprised of an array of arrays with two elements:
+// a string label and a numeric value for the gauge.
+function drawGauges(elementId, gauges) {
+	gauges.unshift(['Label', 'Value']);
+
 	// Create and populate the data table.
 	var data = google.visualization.arrayToDataTable(gauges);
 
@@ -1612,6 +1603,7 @@ function drawCpuUsageBreakdown(elementId, machineInfo, containerInfo) {
 // Draw the gauges for overall resource usage.
 function drawOverallUsage(elementId, machineInfo, containerInfo) {
 	var cur = containerInfo.stats[containerInfo.stats.length - 1];
+	var gauges = [];
 
 	var cpuUsage = 0;
 	if (containerInfo.spec.has_cpu && containerInfo.stats.length >= 2) {
@@ -1624,6 +1616,7 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 		if (cpuUsage > 100) {
 			cpuUsage = 100;
 		}
+		gauges.push(['CPU', cpuUsage]);
 	}
 
 	var memoryUsage = 0;
@@ -1635,18 +1628,20 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 		}
 
 		memoryUsage = Math.round((cur.memory.usage / limit) * 100);
+		gauges.push(['Memory', memoryUsage]);
 	}
 
-        var fsUsage=[];
-        if (containerInfo.spec.has_filesystem) {
-                for(var i=0; i <  cur.filesystem.length; i++) {
-	                var limit = cur.filesystem[0].capacity;
-			var diskUsage = Math.round((cur.filesystem[0].usage / limit) * 100);
-                        fsUsage.push(diskUsage);
-		}
+	var numGauges = gauges.length;
+	for (var i = 0; i < cur.filesystem.length; i++) {
+		var data = cur.filesystem[i];
+		var totalUsage = Math.floor((data.usage * 100.0) / data.capacity);
+		var els = window.cadvisor.fsUsage.elements[data.device];
+
+		// Update the gauges.
+		gauges[numGauges + els.index] = ['FS #' + (els.index + 1), totalUsage];
 	}
 
-	drawGauge(elementId, cpuUsage, memoryUsage, fsUsage);
+	drawGauges(elementId, gauges);
 }
 
 var oneMegabyte = 1024 * 1024;
@@ -1669,7 +1664,7 @@ function drawMemoryUsage(elementId, machineInfo, containerInfo) {
 		data.push(elements);
 	}
 
-	// Updating the progress bar	
+	// Updating the progress bar.
 	var cur = containerInfo.stats[containerInfo.stats.length-1];
         var hotMemory = Math.floor((cur.memory.working_set * 100.0) / machineInfo.memory_capacity);
         var totalMemory = Math.floor((cur.memory.usage * 100.0) / machineInfo.memory_capacity);
@@ -1732,14 +1727,13 @@ function drawFileSystemUsage(machineInfo, stats) {
 	var el = $("<div>");
 	for (var i = 0; i < curr.filesystem.length; i++) {
 		var data = curr.filesystem[i];
-		var totalUsage = Math.floor((data.usage * 100.0)/data.capacity);
+		var totalUsage = Math.floor((data.usage * 100.0) / data.capacity);
                 var humanized = humanizeMetric(data.capacity);
 
 		// Update DOM elements.
 		var els = window.cadvisor.fsUsage.elements[data.device];
 		els.progressElement.width(totalUsage + "%");
 		els.textElement.text(humanized[0].toFixed(2) + " " + humanized[1] + " (" + totalUsage + "%)");
-
 	}
 }
 
@@ -1772,6 +1766,7 @@ function startFileSystemUsage(elementId, machineInfo, stats) {
 		window.cadvisor.fsUsage.elements[data.device] = {
 			'progressElement': progressElement,
 			'textElement': textElement,
+			'index': i,
 		};
 	}
 	$("#" + elementId).empty().append(el);
