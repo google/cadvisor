@@ -97,8 +97,6 @@ var funcMap = template.FuncMap{
 	"getMemoryUsagePercent": getMemoryUsagePercent,
 	"getHotMemoryPercent":   getHotMemoryPercent,
 	"getColdMemoryPercent":  getColdMemoryPercent,
-	"getFsStats":            getFsStats,
-	"getFsUsagePercent":     getFsUsagePercent,
 }
 
 func printMask(mask string, numCores int) interface{} {
@@ -206,17 +204,6 @@ func getColdMemoryPercent(spec *info.ContainerSpec, stats []*info.ContainerStats
 	}
 	latestStats := stats[len(stats)-1].Memory
 	return toMemoryPercent((latestStats.Usage)-(latestStats.WorkingSet), spec, machine)
-}
-
-func getFsStats(stats []*info.ContainerStats) []info.FsStats {
-	if len(stats) == 0 {
-		return []info.FsStats{}
-	}
-	return stats[len(stats)-1].Filesystem
-}
-
-func getFsUsagePercent(limit, used uint64) uint64 {
-	return uint64((float64(used) / float64(limit)) * 100)
 }
 
 func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error {

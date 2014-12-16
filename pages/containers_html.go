@@ -157,24 +157,7 @@ const containersHtmlTemplate = `
           <div class="panel-heading">
             <h3 class="panel-title">Filesystem</h3>
           </div>
-          <div class="panel-body">
-            {{with getFsStats .Stats}}
-	    {{range $i, $e := .}}
-            <div class="row col-sm-12">
-              <h4>FS #{{$i}}: {{$e.Device}}</h4>
-            </div>
-            <div class="col-sm-9">
-	      <div class="progress">
-	        <div id="fs-{{$i}}-usage-chart"></div>
-                <div id="progress-{{$i}}" class="progress-bar progress-bar-danger" style="width: {{getFsUsagePercent $e.Limit $e.Usage}}%">
-                </div>
-              </div>
-            </div>
-            <div class="col-sm-3" id="progress-text-{{$i}}">
-	      {{printSize $e.Limit}} {{printUnit $e.Limit}} ({{getFsUsagePercent $e.Limit $e.Usage}}%)
-	    </div>
-	    {{end}}
-	    {{end}}
+          <div id="filesystem-usage" class="panel-body">
           </div>
         </div>
 	{{end}}
