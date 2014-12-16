@@ -32,6 +32,7 @@ var argDbUsername = flag.String("storage_driver_user", "root", "database usernam
 var argDbPassword = flag.String("storage_driver_password", "root", "database password")
 var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
 var argDbName = flag.String("storage_driver_db", "cadvisor", "database name")
+var argDbTable = flag.String("storage_driver_table", "stats", "table name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
 var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*time.Second, "Writes in the storage driver will be buffered for this duration, and committed to the non memory backends as a single transaction")
 
@@ -59,7 +60,7 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 
 		backendStorage, err = influxdb.New(
 			hostname,
-			"stats",
+			*argDbTable,
 			*argDbName,
 			*argDbUsername,
 			*argDbPassword,
@@ -75,7 +76,7 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 		}
 		backendStorage, err = bigquery.New(
 			hostname,
-			"cadvisor",
+			*argDbTable,
 			*argDbName,
 		)
 
