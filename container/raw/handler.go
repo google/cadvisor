@@ -39,7 +39,7 @@ type rawContainerHandler struct {
 	// Name of the container for this handler.
 	name               string
 	cgroup             *cgroups.Cgroup
-	cgroupSubsystems   *cgroupSubsystems
+	cgroupSubsystems   *libcontainer.CgroupSubsystems
 	machineInfoFactory info.MachineInfoFactory
 
 	// Inotify event watcher.
@@ -54,12 +54,16 @@ type rawContainerHandler struct {
 	// Cgroup paths being watchd for new subcontainers
 	cgroupWatches map[string]struct{}
 
+	// Absolute path to the cgroup hierarchies of this container.
+	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
+	cgroupPaths map[string]string
+
 	fsInfo           fs.FsInfo
 	networkInterface *networkInterface
 	externalMounts   []mount
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
@@ -77,6 +81,13 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 			break
 		}
 	}
+
+	// Create the cgroup paths.
+	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
+	for key, val := range cgroupSubsystems.MountPoints {
+		cgroupPaths[key] = path.Join(val, name)
+	}
+
 	return &rawContainerHandler{
 		name: name,
 		cgroup: &cgroups.Cgroup{
@@ -88,6 +99,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *cgroupSubsystems, mac
 		stopWatcher:        make(chan error),
 		watches:            make(map[string]struct{}),
 		cgroupWatches:      make(map[string]struct{}),
+		cgroupPaths:        cgroupPaths,
 		fsInfo:             fsInfo,
 		networkInterface:   networkInterface,
 		externalMounts:     externalMounts,
@@ -145,9 +157,8 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	}
 
 	// CPU.
-	cpuRoot, ok := self.cgroupSubsystems.mountPoints["cpu"]
+	cpuRoot, ok := self.cgroupPaths["cpu"]
 	if ok {
-		cpuRoot = path.Join(cpuRoot, self.name)
 		if utils.FileExists(cpuRoot) {
 			spec.HasCpu = true
 			spec.Cpu.Limit = readInt64(cpuRoot, "cpu.shares")
@@ -156,9 +167,8 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 
 	// Cpu Mask.
 	// This will fail for non-unified hierarchies. We'll return the whole machine mask in that case.
-	cpusetRoot, ok := self.cgroupSubsystems.mountPoints["cpuset"]
+	cpusetRoot, ok := self.cgroupPaths["cpuset"]
 	if ok {
-		cpusetRoot = path.Join(cpusetRoot, self.name)
 		if utils.FileExists(cpusetRoot) {
 			spec.HasCpu = true
 			spec.Cpu.Mask = readString(cpusetRoot, "cpuset.cpus")
@@ -169,9 +179,8 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	}
 
 	// Memory.
-	memoryRoot, ok := self.cgroupSubsystems.mountPoints["memory"]
+	memoryRoot, ok := self.cgroupPaths["memory"]
 	if ok {
-		memoryRoot = path.Join(memoryRoot, self.name)
 		if utils.FileExists(memoryRoot) {
 			spec.HasMemory = true
 			spec.Memory.Limit = readInt64(memoryRoot, "memory.limit_in_bytes")
@@ -227,7 +236,10 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		}
 		for _, fs := range filesystems {
 			stats.Filesystem = append(stats.Filesystem,
-				info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free,
+				info.FsStats{
+					fs.Device,
+					fs.Capacity,
+					fs.Capacity - fs.Free,
 					fs.DiskStats.ReadsCompleted,
 					fs.DiskStats.ReadsMerged,
 					fs.DiskStats.SectorsRead,
@@ -246,18 +258,20 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	state := dockerlibcontainer.State{}
+	// TODO(vmarmol): Don't re-create this every time.
+	state := dockerlibcontainer.State{
+		CgroupPaths: self.cgroupPaths,
+	}
 	if self.networkInterface != nil {
 		state = dockerlibcontainer.State{
 			NetworkState: network.NetworkState{
 				VethHost:  self.networkInterface.VethHost,
 				VethChild: self.networkInterface.VethChild,
-				NsPath:    "unknown",
 			},
 		}
 	}
 
-	stats, err := libcontainer.GetStats(self.cgroup, &state)
+	stats, err := libcontainer.GetStats(&state)
 	if err != nil {
 		return nil, err
 	}
@@ -301,8 +315,8 @@ func listDirectories(dirpath string, parent string, recursive bool, output map[s
 
 func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	containers := make(map[string]struct{})
-	for _, subsystem := range self.cgroupSubsystems.mounts {
-		err := listDirectories(path.Join(subsystem.Mountpoint, self.name), self.name, listType == container.ListRecursive, containers)
+	for _, cgroupPath := range self.cgroupPaths {
+		err := listDirectories(cgroupPath, self.name, listType == container.ListRecursive, containers)
 		if err != nil {
 			return nil, err
 		}
@@ -372,7 +386,7 @@ func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan 
 
 	// Derive the container name from the path name.
 	var containerName string
-	for _, mount := range self.cgroupSubsystems.mounts {
+	for _, mount := range self.cgroupSubsystems.Mounts {
 		mountLocation := path.Clean(mount.Mountpoint) + "/"
 		if strings.HasPrefix(event.Name, mountLocation) {
 			containerName = event.Name[len(mountLocation)-1:]
@@ -437,8 +451,8 @@ func (self *rawContainerHandler) WatchSubcontainers(events chan container.Subcon
 	}
 
 	// Watch this container (all its cgroups) and all subdirectories.
-	for _, mnt := range self.cgroupSubsystems.mounts {
-		err := self.watchDirectory(path.Join(mnt.Mountpoint, self.name), self.name)
+	for _, cgroupPath := range self.cgroupPaths {
+		err := self.watchDirectory(cgroupPath, self.name)
 		if err != nil {
 			return err
 		}
@@ -481,8 +495,8 @@ func (self *rawContainerHandler) StopWatchingSubcontainers() error {
 
 func (self *rawContainerHandler) Exists() bool {
 	// If any cgroup exists, the container is still alive.
-	for _, subsystem := range self.cgroupSubsystems.mounts {
-		if utils.FileExists(path.Join(subsystem.Mountpoint, self.name)) {
+	for _, cgroupPath := range self.cgroupPaths {
+		if utils.FileExists(cgroupPath) {
 			return true
 		}
 	}

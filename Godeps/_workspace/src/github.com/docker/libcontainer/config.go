@@ -10,6 +10,13 @@ type MountConfig mount.MountConfig
 
 type Network network.Network
 
+// Namespace defines configuration for each namespace.  It specifies an
+// alternate path that is able to be joined via setns.
+type Namespace struct {
+	Name string `json:"name"`
+	Path string `json:"path,omitempty"`
+}
+
 // Config defines configuration options for executing a process inside a contained environment.
 type Config struct {
 	// Mount specific options.
@@ -38,7 +45,7 @@ type Config struct {
 
 	// Namespaces specifies the container's namespaces that it should setup when cloning the init process
 	// If a namespace is not provided that namespace is shared from the container's parent process
-	Namespaces map[string]bool `json:"namespaces,omitempty"`
+	Namespaces []Namespace `json:"namespaces,omitempty"`
 
 	// Capabilities specify the capabilities to keep when executing the process inside the container
 	// All capbilities not specified will be dropped from the processes capability mask
@@ -65,6 +72,10 @@ type Config struct {
 	// RestrictSys will remount /proc/sys, /sys, and mask over sysrq-trigger as well as /proc/irq and
 	// /proc/bus
 	RestrictSys bool `json:"restrict_sys,omitempty"`
+
+	// Rlimits specifies the resource limits, such as max open files, to set in the container
+	// If Rlimits are not set, the container will inherit rlimits from the parent process
+	Rlimits []Rlimit `json:"rlimits,omitempty"`
 }
 
 // Routes can be specified to create entries in the route table as the container is started
@@ -86,4 +97,10 @@ type Route struct {
 
 	// The device to set this route up for, for example: eth0
 	InterfaceName string `json:"interface_name,omitempty"`
+}
+
+type Rlimit struct {
+	Type int    `json:"type,omitempty"`
+	Hard uint64 `json:"hard,omitempty"`
+	Soft uint64 `json:"soft,omitempty"`
 }

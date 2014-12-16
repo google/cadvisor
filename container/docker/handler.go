@@ -59,6 +59,10 @@ type dockerContainerHandler struct {
 	// Path to the libcontainer pid file.
 	libcontainerPidPath string
 
+	// Absolute path to the cgroup hierarchies of this container.
+	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
+	cgroupPaths map[string]string
+
 	cgroup         cgroups.Cgroup
 	usesAufsDriver bool
 	fsInfo         fs.FsInfo
@@ -71,11 +75,19 @@ func newDockerContainerHandler(
 	machineInfoFactory info.MachineInfoFactory,
 	dockerRootDir string,
 	usesAufsDriver bool,
+	cgroupSubsystems *containerLibcontainer.CgroupSubsystems,
 ) (container.ContainerHandler, error) {
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
 	}
+
+	// Create the cgroup paths.
+	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
+	for key, val := range cgroupSubsystems.MountPoints {
+		cgroupPaths[key] = path.Join(val, name)
+	}
+
 	id := ContainerNameToDockerId(name)
 	handler := &dockerContainerHandler{
 		id:                     id,
@@ -85,6 +97,7 @@ func newDockerContainerHandler(
 		libcontainerConfigPath: path.Join(dockerRootDir, pathToLibcontainerState, id, "container.json"),
 		libcontainerStatePath:  path.Join(dockerRootDir, pathToLibcontainerState, id, "state.json"),
 		libcontainerPidPath:    path.Join(dockerRootDir, pathToLibcontainerState, id, "pid"),
+		cgroupPaths:            cgroupPaths,
 		cgroup: cgroups.Cgroup{
 			Parent: "/",
 			Name:   name,
@@ -158,6 +171,11 @@ func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer
 		return
 	}
 	state = retState
+
+	// Create cgroup paths if they don't exist. This is since older Docker clients don't write it.
+	if len(state.CgroupPaths) == 0 {
+		state.CgroupPaths = self.cgroupPaths
+	}
 
 	return
 }
@@ -259,7 +277,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 		return
 	}
 
-	stats, err = containerLibcontainer.GetStats(&self.cgroup, state)
+	stats, err = containerLibcontainer.GetStats(state)
 	if err != nil {
 		return
 	}

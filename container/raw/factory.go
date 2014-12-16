@@ -17,26 +17,18 @@ package raw
 import (
 	"fmt"
 
-	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/info"
 )
-
-type cgroupSubsystems struct {
-	// Cgroup subsystem mounts.
-	// e.g.: "/sys/fs/cgroup/cpu" -> ["cpu", "cpuacct"]
-	mounts []cgroups.Mount
-
-	// Cgroup subsystem to their mount location.
-	// e.g.: "cpu" -> "/sys/fs/cgroup/cpu"
-	mountPoints map[string]string
-}
 
 type rawFactory struct {
 	// Factory for machine information.
 	machineInfoFactory info.MachineInfoFactory
-	cgroupSubsystems   *cgroupSubsystems
+
+	// Information about the cgroup subsystems.
+	cgroupSubsystems *libcontainer.CgroupSubsystems
 }
 
 func (self *rawFactory) String() string {
@@ -53,46 +45,19 @@ func (self *rawFactory) CanHandle(name string) (bool, error) {
 }
 
 func Register(machineInfoFactory info.MachineInfoFactory) error {
-	// Get all cgroup mounts.
-	allCgroups, err := cgroups.GetCgroupMounts()
+	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
-	if len(allCgroups) == 0 {
-		return fmt.Errorf("failed to find cgroup mounts for the raw factory")
-	}
-
-	// Trim the mounts to only the subsystems we care about.
-	supportedCgroups := make([]cgroups.Mount, 0, len(allCgroups))
-	mountPoints := make(map[string]string, len(allCgroups))
-	for _, mount := range allCgroups {
-		for _, subsystem := range mount.Subsystems {
-			if _, ok := supportedSubsystems[subsystem]; ok {
-				supportedCgroups = append(supportedCgroups, mount)
-				mountPoints[subsystem] = mount.Mountpoint
-			}
-		}
-	}
-	if len(supportedCgroups) == 0 {
+	if len(cgroupSubsystems.Mounts) == 0 {
 		return fmt.Errorf("failed to find supported cgroup mounts for the raw factory")
 	}
 
 	glog.Infof("Registering Raw factory")
 	factory := &rawFactory{
 		machineInfoFactory: machineInfoFactory,
-		cgroupSubsystems: &cgroupSubsystems{
-			mounts:      supportedCgroups,
-			mountPoints: mountPoints,
-		},
+		cgroupSubsystems:   &cgroupSubsystems,
 	}
 	container.RegisterContainerHandlerFactory(factory)
 	return nil
-}
-
-// Cgroup subsystems we support listing (should be the minimal set we need stats from).
-var supportedSubsystems map[string]struct{} = map[string]struct{}{
-	"cpu":     {},
-	"cpuacct": {},
-	"memory":  {},
-	"cpuset":  {},
 }

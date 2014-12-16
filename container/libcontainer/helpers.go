@@ -15,6 +15,7 @@
 package libcontainer
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/docker/libcontainer"
@@ -24,13 +25,60 @@ import (
 	"github.com/google/cadvisor/info"
 )
 
+type CgroupSubsystems struct {
+	// Cgroup subsystem mounts.
+	// e.g.: "/sys/fs/cgroup/cpu" -> ["cpu", "cpuacct"]
+	Mounts []cgroups.Mount
+
+	// Cgroup subsystem to their mount location.
+	// e.g.: "cpu" -> "/sys/fs/cgroup/cpu"
+	MountPoints map[string]string
+}
+
+// Get information about the cgroup subsystems.
+func GetCgroupSubsystems() (CgroupSubsystems, error) {
+	// Get all cgroup mounts.
+	allCgroups, err := cgroups.GetCgroupMounts()
+	if err != nil {
+		return CgroupSubsystems{}, err
+	}
+	if len(allCgroups) == 0 {
+		return CgroupSubsystems{}, fmt.Errorf("failed to find cgroup mounts")
+	}
+
+	// Trim the mounts to only the subsystems we care about.
+	supportedCgroups := make([]cgroups.Mount, 0, len(allCgroups))
+	mountPoints := make(map[string]string, len(allCgroups))
+	for _, mount := range allCgroups {
+		for _, subsystem := range mount.Subsystems {
+			if _, ok := supportedSubsystems[subsystem]; ok {
+				supportedCgroups = append(supportedCgroups, mount)
+				mountPoints[subsystem] = mount.Mountpoint
+			}
+		}
+	}
+
+	return CgroupSubsystems{
+		Mounts:      supportedCgroups,
+		MountPoints: mountPoints,
+	}, nil
+}
+
+// Cgroup subsystems we support listing (should be the minimal set we need stats from).
+var supportedSubsystems map[string]struct{} = map[string]struct{}{
+	"cpu":     {},
+	"cpuacct": {},
+	"memory":  {},
+	"cpuset":  {},
+}
+
 // Get stats of the specified container
-func GetStats(cgroup *cgroups.Cgroup, state *libcontainer.State) (*info.ContainerStats, error) {
+func GetStats(state *libcontainer.State) (*info.ContainerStats, error) {
 	// TODO(vmarmol): Use libcontainer's Stats() in the new API when that is ready.
 	stats := &libcontainer.ContainerStats{}
 
 	var err error
-	stats.CgroupStats, err = cgroupfs.GetStats(cgroup)
+	stats.CgroupStats, err = cgroupfs.GetStats(state.CgroupPaths)
 	if err != nil {
 		return &info.ContainerStats{}, err
 	}
@@ -41,14 +89,6 @@ func GetStats(cgroup *cgroups.Cgroup, state *libcontainer.State) (*info.Containe
 	}
 
 	return toContainerStats(stats), nil
-}
-
-func GetStatsCgroupOnly(cgroup *cgroups.Cgroup) (*info.ContainerStats, error) {
-	s, err := cgroupfs.GetStats(cgroup)
-	if err != nil {
-		return nil, err
-	}
-	return toContainerStats(&libcontainer.ContainerStats{CgroupStats: s}), nil
 }
 
 func DiskStatsCopy(blkio_stats []cgroups.BlkioStatEntry) (stat []info.PerDiskStats) {
