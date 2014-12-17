@@ -116,7 +116,7 @@ func newDockerContainerHandler(
 	// Add the name and bare ID as aliases of the container.
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"))
 	handler.aliases = append(handler.aliases, id)
-    handler.aliases = append(handler.aliases, ctnr.Config.Hostname)
+	handler.aliases = append(handler.aliases, ctnr.Config.Hostname)
 
 	return handler, nil
 }
