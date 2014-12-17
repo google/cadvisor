@@ -27,12 +27,14 @@ import (
 	"github.com/google/cadvisor/info"
 	itest "github.com/google/cadvisor/info/test"
 	stest "github.com/google/cadvisor/storage/test"
+	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 )
 
 // TODO(vmarmol): Refactor these tests.
 
 func createManagerAndAddContainers(
 	driver *stest.MockStorageDriver,
+	sysfs *fakesysfs.FakeSysFs,
 	containers []string,
 	f func(*container.MockContainerHandler),
 	t *testing.T,
@@ -41,7 +43,7 @@ func createManagerAndAddContainers(
 		driver = &stest.MockStorageDriver{}
 	}
 	container.ClearContainerHandlerFactories()
-	mif, err := New(driver)
+	mif, err := New(driver, sysfs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,8 +83,10 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 	}
 
 	driver := &stest.MockStorageDriver{}
+	sysfs := &fakesysfs.FakeSysFs{}
 	m := createManagerAndAddContainers(
 		driver,
+		sysfs,
 		containers,
 		func(h *container.MockContainerHandler) {
 			cinfo := infosMap[h.Name]
@@ -200,7 +204,7 @@ func TestDockerContainersInfo(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	manager, err := New(&stest.MockStorageDriver{})
+	manager, err := New(&stest.MockStorageDriver{}, &fakesysfs.FakeSysFs{})
 	if err != nil {
 		t.Fatalf("Expected manager.New to succeed: %s", err)
 	}
@@ -210,7 +214,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestNewNilManager(t *testing.T) {
-	_, err := New(nil)
+	_, err := New(nil, nil)
 	if err == nil {
 		t.Fatalf("Expected nil manager to return error")
 	}

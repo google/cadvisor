@@ -27,12 +27,13 @@ import (
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/utils/sysfs"
 )
 
 var numCpuRegexp = regexp.MustCompile("processor\\t*: +[0-9]+")
 var memoryCapacityRegexp = regexp.MustCompile("MemTotal: *([0-9]+) kB")
 
-func getMachineInfo() (*info.MachineInfo, error) {
+func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 	// Get the number of CPUs from /proc/cpuinfo.
 	out, err := ioutil.ReadFile("/proc/cpuinfo")
 	if err != nil {
@@ -69,10 +70,17 @@ func getMachineInfo() (*info.MachineInfo, error) {
 		return nil, err
 	}
 
+	diskMap, err := sysfs.GetBlockDeviceInfo(sysFs)
+	if err != nil {
+		return nil, err
+	}
+
 	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
 		MemoryCapacity: memoryCapacity,
+		DiskMap:        diskMap,
 	}
+
 	for _, fs := range filesystems {
 		machineInfo.Filesystems = append(machineInfo.Filesystems, info.FsInfo{fs.Device, fs.Capacity})
 	}

@@ -30,6 +30,7 @@ import (
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/utils/sysfs"
 )
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
@@ -64,7 +65,7 @@ type Manager interface {
 }
 
 // New takes a driver and returns a new manager.
-func New(driver storage.StorageDriver) (Manager, error) {
+func New(driver storage.StorageDriver, sysfs sysfs.SysFs) (Manager, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver!")
 	}
@@ -83,7 +84,7 @@ func New(driver storage.StorageDriver) (Manager, error) {
 		cadvisorContainer: selfContainer,
 	}
 
-	machineInfo, err := getMachineInfo()
+	machineInfo, err := getMachineInfo(sysfs)
 	if err != nil {
 		return nil, err
 	}

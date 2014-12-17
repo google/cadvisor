@@ -58,7 +58,7 @@ func cadvisorTestClient(path string, expectedPostObj, expectedPostObjEmpty, repl
 			encoder := json.NewEncoder(w)
 			encoder.Encode(replyObj)
 		} else if r.URL.Path == "/api/v1.2/machine" {
-			fmt.Fprint(w, `{"num_cores":8,"memory_capacity":31625871360}`)
+			fmt.Fprint(w, `{"num_cores":8,"memory_capacity":31625871360, "disk_map":["8:0":{"name":"sda","major":8,"minor":0,"size":10737418240}]}`)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "Page not found.")
@@ -78,6 +78,14 @@ func TestGetMachineinfo(t *testing.T) {
 	minfo := &info.MachineInfo{
 		NumCores:       8,
 		MemoryCapacity: 31625871360,
+		DiskMap: map[string]info.DiskInfo{
+			"8:0": info.DiskInfo{
+				Name:  "sda",
+				Major: 8,
+				Minor: 0,
+				Size:  10737418240,
+			},
+		},
 	}
 	client, server, err := cadvisorTestClient("/api/v1.2/machine", nil, nil, minfo, t)
 	if err != nil {

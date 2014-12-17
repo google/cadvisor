@@ -22,6 +22,20 @@ type FsInfo struct {
 	Capacity uint64 `json:"capacity"`
 }
 
+type DiskInfo struct {
+	// device name
+	Name string `json:"name"`
+
+	// Major number
+	Major uint64 `json:"major"`
+
+	// Minor number
+	Minor uint64 `json:"minor"`
+
+	// Size in bytes
+	Size uint64 `json:"size"`
+}
+
 type MachineInfo struct {
 	// The number of cores in this machine.
 	NumCores int `json:"num_cores"`
@@ -31,6 +45,9 @@ type MachineInfo struct {
 
 	// Filesystems on this machine.
 	Filesystems []FsInfo `json:"filesystems"`
+
+	// Disk map
+	DiskMap map[string]DiskInfo `json:"disk_map"`
 }
 
 type VersionInfo struct {
