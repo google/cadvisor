@@ -1632,13 +1632,15 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 	}
 
 	var numGauges = gauges.length;
-	for (var i = 0; i < cur.filesystem.length; i++) {
-		var data = cur.filesystem[i];
-		var totalUsage = Math.floor((data.usage * 100.0) / data.capacity);
-		var els = window.cadvisor.fsUsage.elements[data.device];
+	if (cur.filesystem) {
+		for (var i = 0; i < cur.filesystem.length; i++) {
+			var data = cur.filesystem[i];
+			var totalUsage = Math.floor((data.usage * 100.0) / data.capacity);
+			var els = window.cadvisor.fsUsage.elements[data.device];
 
-		// Update the gauges.
-		gauges[numGauges + els.index] = ['FS #' + (els.index + 1), totalUsage];
+			// Update the gauges.
+			gauges[numGauges + els.index] = ['FS #' + (els.index + 1), totalUsage];
+		}
 	}
 
 	drawGauges(elementId, gauges);
@@ -1723,10 +1725,14 @@ function drawNetworkErrors(elementId, machineInfo, stats) {
 
 // Update the filesystem usage values.
 function drawFileSystemUsage(machineInfo, stats) {
-	var curr = stats.stats[stats.stats.length - 1];
+	var cur = stats.stats[stats.stats.length - 1];
+	if (!cur.filesystem) {
+		return;
+	}
+
 	var el = $("<div>");
-	for (var i = 0; i < curr.filesystem.length; i++) {
-		var data = curr.filesystem[i];
+	for (var i = 0; i < cur.filesystem.length; i++) {
+		var data = cur.filesystem[i];
 		var totalUsage = Math.floor((data.usage * 100.0) / data.capacity);
                 var humanized = humanizeMetric(data.capacity);
 
