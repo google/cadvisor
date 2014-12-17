@@ -18,6 +18,7 @@ package docker
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os"
 	"path"
@@ -129,25 +130,42 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 }
 
 // TODO(vmarmol): Switch to getting this from libcontainer once we have a solid API.
-func (self *dockerContainerHandler) readLibcontainerConfig() (config *libcontainer.Config, err error) {
-	f, err := os.Open(self.libcontainerConfigPath)
+func (self *dockerContainerHandler) readLibcontainerConfig() (*libcontainer.Config, error) {
+	out, err := ioutil.ReadFile(self.libcontainerConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open %s - %s\n", self.libcontainerConfigPath, err)
+		return nil, fmt.Errorf("failed to read libcontainer config from %q: %v", self.libcontainerConfigPath, err)
 	}
-	defer f.Close()
-	d := json.NewDecoder(f)
-	retConfig := new(libcontainer.Config)
-	err = d.Decode(retConfig)
+	var config libcontainer.Config
+	err = json.Unmarshal(out, &config)
 	if err != nil {
-		return
+		// TODO(vmarmol): Remove this once it becomes the standard.
+		// Try to parse the old config. The main difference is that namespaces used to be a map, now it is a slice of structs.
+		// The JSON marshaler will use the non-nested field before the nested one.
+		type oldLibcontainerConfig struct {
+			libcontainer.Config
+			OldNamespaces map[string]bool `json:"namespaces,omitempty"`
+		}
+		var oldConfig oldLibcontainerConfig
+		err2 := json.Unmarshal(out, &oldConfig)
+		if err2 != nil {
+			// Use original error.
+			return nil, fmt.Errorf("failed to parse libcontainer config at %q: %v", self.libcontainerConfigPath, err)
+		}
+
+		// Translate the old config into the new config.
+		config = oldConfig.Config
+		for ns, _ := range oldConfig.OldNamespaces {
+			config.Namespaces = append(config.Namespaces, libcontainer.Namespace{
+				Name: ns,
+			})
+		}
 	}
-	config = retConfig
 
 	// Replace cgroup parent and name with our own since we may be running in a different context.
 	config.Cgroups.Name = self.cgroup.Name
 	config.Cgroups.Parent = self.cgroup.Parent
 
-	return
+	return &config, nil
 }
 
 func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer.State, err error) {
@@ -168,7 +186,7 @@ func (self *dockerContainerHandler) readLibcontainerState() (state *libcontainer
 	retState := new(libcontainer.State)
 	err = d.Decode(retState)
 	if err != nil {
-		return
+		return nil, fmt.Errorf("failed to parse libcontainer state at %q: %v", self.libcontainerStatePath, err)
 	}
 	state = retState
 
