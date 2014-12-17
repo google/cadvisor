@@ -44,6 +44,8 @@ type containerData struct {
 	storageDriver        storage.StorageDriver
 	lock                 sync.Mutex
 	housekeepingInterval time.Duration
+	lastUpdatedTime      time.Time
+
 
 	// Whether to log the usage of this container when it is updated.
 	logUsage bool
@@ -63,17 +65,18 @@ func (c *containerData) Stop() error {
 }
 
 func (c *containerData) GetInfo() (*containerInfo, error) {
-	// TODO(vmarmol): Consider caching this.
 	// Get spec and subcontainers.
-	err := c.updateSpec()
-	if err != nil {
-		return nil, err
-	}
-	err = c.updateSubcontainers()
-	if err != nil {
-		return nil, err
-	}
-
+	if time.Since(c.lastUpdatedTime) > 5 * time.Second {
+		err := c.updateSpec()
+		if err != nil {
+			return nil, err
+		}
+		err = c.updateSubcontainers()
+		if err != nil {
+			return nil, err
+		}
+		c.lastUpdatedTime = time.Now()
+	}	
 	// Make a copy of the info for the user.
 	c.lock.Lock()
 	defer c.lock.Unlock()
