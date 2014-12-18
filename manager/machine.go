@@ -27,11 +27,41 @@ import (
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/utils"
 	"github.com/google/cadvisor/utils/sysfs"
 )
 
 var numCpuRegexp = regexp.MustCompile("processor\\t*: +[0-9]+")
+var CpuClockSpeedMHz = regexp.MustCompile("cpu MHz\\t*: +([0-9]+.[0-9]+)")
 var memoryCapacityRegexp = regexp.MustCompile("MemTotal: *([0-9]+) kB")
+
+func getClockSpeed(procInfo []byte) (uint64, error) {
+	// First look through sys to find a max supported cpu frequency.
+	const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+	if utils.FileExists(maxFreqFile) {
+		val, err := ioutil.ReadFile(maxFreqFile)
+		if err != nil {
+			return 0, err
+		}
+		var maxFreq uint64
+		n, err := fmt.Sscanf(string(val), "%d", &maxFreq)
+		if err != nil || n != 1 {
+			return 0, fmt.Errorf("could not parse frequency %q", val)
+		}
+		return maxFreq, nil
+	}
+	// Fall back to /proc/cpuinfo
+	matches := CpuClockSpeedMHz.FindSubmatch(procInfo)
+	if len(matches) != 2 {
+		return 0, fmt.Errorf("could not detect clock speed from output: %q", string(procInfo))
+	}
+	speed, err := strconv.ParseFloat(string(matches[1]), 64)
+	if err != nil {
+		return 0, err
+	}
+	// Convert to kHz
+	return uint64(speed * 1000), nil
+}
 
 func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 	// Get the number of CPUs from /proc/cpuinfo.
@@ -42,6 +72,10 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 	numCores := len(numCpuRegexp.FindAll(out, -1))
 	if numCores == 0 {
 		return nil, fmt.Errorf("failed to count cores in output: %s", string(out))
+	}
+	clockSpeed, err := getClockSpeed(out)
+	if err != nil {
+		return nil, err
 	}
 
 	// Get the amount of usable memory from /proc/meminfo.
@@ -77,6 +111,7 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 
 	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
+		CpuFrequency:   clockSpeed,
 		MemoryCapacity: memoryCapacity,
 		DiskMap:        diskMap,
 	}
