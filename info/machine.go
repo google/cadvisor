@@ -40,6 +40,9 @@ type MachineInfo struct {
 	// The number of cores in this machine.
 	NumCores int `json:"num_cores"`
 
+	// Maximum clock speed for the cores, in KHz.
+	CpuFrequency uint64 `json:"cpu_frequency_khz"`
+
 	// The amount of memory (in bytes) in this machine
 	MemoryCapacity int64 `json:"memory_capacity"`
 
