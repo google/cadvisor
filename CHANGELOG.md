@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0 (2014-12-18)
+- Support for HTTP basic auth.
+- Added /validate to perform basic checks and determine support for cAdvisor.
+- All stats in the UI are now updated.
+- Added gauges for filesystem usage.
+- Added device information to machine info.
+- Fixes to container detection.
+- Fixes for systemd detection.
+- ContainerSpecs are now cached.
+- Performance improvements.
+
 ## 0.6.2 (2014-11-20)
 - Fixes for Docker API and UI endpoints.
 - Misc UI bugfixes.
