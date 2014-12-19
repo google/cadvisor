@@ -201,7 +201,6 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 }
 
 func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
-
 	// Get Filesystem information only for the root cgroup.
 	if self.name == "/" {
 		filesystems, err := self.fsInfo.GetGlobalFsInfo()
@@ -210,7 +209,10 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		}
 		for _, fs := range filesystems {
 			stats.Filesystem = append(stats.Filesystem,
-				info.FsStats{fs.Device, fs.Capacity, fs.Capacity - fs.Free,
+				info.FsStats{
+					fs.Device,
+					fs.Capacity,
+					fs.Capacity - fs.Free,
 					fs.DiskStats.ReadsCompleted,
 					fs.DiskStats.ReadsMerged,
 					fs.DiskStats.SectorsRead,
