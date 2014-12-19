@@ -1750,10 +1750,13 @@ function startFileSystemUsage(elementId, machineInfo, stats) {
 	// A map of device name to DOM elements.
 	window.cadvisor.fsUsage.elements = {};
 
-	var curr = stats.stats[stats.stats.length - 1];
+	var cur = stats.stats[stats.stats.length - 1];
 	var el = $("<div>");
-	for (var i = 0; i < curr.filesystem.length; i++) {
-		var data = curr.filesystem[i];
+	if (!cur.filesystem) {
+		return;
+	}
+	for (var i = 0; i < cur.filesystem.length; i++) {
+		var data = cur.filesystem[i];
 		el.append($("<div>")
 			.addClass("row col-sm-12")
 			.append($("<h4>")
