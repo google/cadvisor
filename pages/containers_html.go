@@ -136,17 +136,15 @@ const containersHtmlTemplate = `
               <h4>Usage Breakdown</h4>
               <div class="col-sm-9">
 		<div class="progress">
-                  <div class="progress-bar progress-bar-danger" style="width: {{getHotMemoryPercent .Spec .Stats .MachineInfo}}%" id="progress-hot-memory">
+                  <div class="progress-bar progress-bar-danger" id="progress-hot-memory">
                     <span class="sr-only">Hot Memory</span>
                   </div>
-                  <div class="progress-bar progress-bar-info" style="width: {{getColdMemoryPercent .Spec .Stats .MachineInfo}}%" id="progress-cold-memory">
+                  <div class="progress-bar progress-bar-info" id="progress-cold-memory">
                     <span class="sr-only">Cold Memory</span>
                   </div>
 		</div>
               </div>
-              <div class="col-sm-3" id="memory-text">
-		{{ getMemoryUsage .Stats }} MB ({{ getMemoryUsagePercent .Spec .Stats .MachineInfo}}%)
-              </div>
+              <div class="col-sm-3" id="memory-text"></div>
 	    </div>
           </div>
 	</div>
