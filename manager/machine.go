@@ -31,7 +31,9 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 )
 
-var numCpuRegexp = regexp.MustCompile("processor\\t*: +[0-9]+")
+var cpuRegExp = regexp.MustCompile("processor\\t*: +([0-9]+)")
+var coreRegExp = regexp.MustCompile("core id\\t*: +([0-9]+)")
+var nodeRegExp = regexp.MustCompile("physical id\\t*: +([0-9]+)")
 var CpuClockSpeedMHz = regexp.MustCompile("cpu MHz\\t*: +([0-9]+.[0-9]+)")
 var memoryCapacityRegexp = regexp.MustCompile("MemTotal: *([0-9]+) kB")
 
@@ -63,23 +65,99 @@ func getClockSpeed(procInfo []byte) (uint64, error) {
 	return uint64(speed * 1000), nil
 }
 
+func extractValue(s string, r *regexp.Regexp) (bool, int, error) {
+	matches := r.FindSubmatch([]byte(s))
+	if len(matches) == 2 {
+		val, err := strconv.ParseInt(string(matches[1]), 10, 32)
+		if err != nil {
+			return true, -1, err
+		}
+		return true, int(val), nil
+	}
+	return false, -1, nil
+}
+
+func findNode(nodes []info.Node, id int) (bool, int) {
+	for i, n := range nodes {
+		if n.Id == id {
+			return true, i
+		}
+	}
+	return false, -1
+}
+
+func addNode(nodes *[]info.Node, id int) int {
+	var idx int
+	if id == -1 {
+		// Some VMs don't fill topology data. Export single package.
+		id = 0
+	}
+
+	ok, idx := findNode(*nodes, id)
+	if !ok {
+		// New node
+		node := info.Node{Id: id}
+		*nodes = append(*nodes, node)
+		idx = len(*nodes) - 1
+	}
+	return idx
+}
+
+func getTopology(cpuinfo string) ([]info.Node, int, error) {
+	nodes := []info.Node{}
+	numCores := 0
+	lastThread := -1
+	lastCore := -1
+	lastNode := -1
+	for _, line := range strings.Split(cpuinfo, "\n") {
+		ok, val, err := extractValue(line, cpuRegExp)
+		if err != nil {
+			return nil, -1, fmt.Errorf("could not parse cpu info from %q: %s", line, err)
+		}
+		if ok {
+			thread := val
+			numCores++
+			if lastThread != -1 {
+				// New cpu section. Save last one.
+				nodeIdx := addNode(&nodes, lastNode)
+				nodes[nodeIdx].AddThread(lastThread, lastCore)
+				lastCore = -1
+				lastNode = -1
+			}
+			lastThread = thread
+		}
+		ok, val, err = extractValue(line, coreRegExp)
+		if err != nil {
+			return nil, -1, fmt.Errorf("could not parse core info from %q: %s", line, err)
+		}
+		if ok {
+			lastCore = val
+		}
+		ok, val, err = extractValue(line, nodeRegExp)
+		if err != nil {
+			return nil, -1, fmt.Errorf("could not parse node info from %q: %s", line, err)
+		}
+		if ok {
+			lastNode = val
+		}
+	}
+	nodeIdx := addNode(&nodes, lastNode)
+	nodes[nodeIdx].AddThread(lastThread, lastCore)
+	if numCores < 1 {
+		return nil, numCores, fmt.Errorf("could not detect any cores")
+	}
+	return nodes, numCores, nil
+}
+
 func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
-	// Get the number of CPUs from /proc/cpuinfo.
-	out, err := ioutil.ReadFile("/proc/cpuinfo")
-	if err != nil {
-		return nil, err
-	}
-	numCores := len(numCpuRegexp.FindAll(out, -1))
-	if numCores == 0 {
-		return nil, fmt.Errorf("failed to count cores in output: %s", string(out))
-	}
-	clockSpeed, err := getClockSpeed(out)
+	cpuinfo, err := ioutil.ReadFile("/proc/cpuinfo")
+	clockSpeed, err := getClockSpeed(cpuinfo)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get the amount of usable memory from /proc/meminfo.
-	out, err = ioutil.ReadFile("/proc/meminfo")
+	out, err := ioutil.ReadFile("/proc/meminfo")
 	if err != nil {
 		return nil, err
 	}
@@ -109,11 +187,17 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		return nil, err
 	}
 
+	topology, numCores, err := getTopology(string(cpuinfo))
+	if err != nil {
+		return nil, err
+	}
+
 	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
 		CpuFrequency:   clockSpeed,
 		MemoryCapacity: memoryCapacity,
 		DiskMap:        diskMap,
+		Topology:       topology,
 	}
 
 	for _, fs := range filesystems {
