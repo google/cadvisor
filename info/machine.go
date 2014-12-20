@@ -22,6 +22,42 @@ type FsInfo struct {
 	Capacity uint64 `json:"capacity"`
 }
 
+type Node struct {
+	Id    int    `json:"node_id"`
+	Cores []Core `json:"cores"`
+}
+
+type Core struct {
+	Id      int   `json:"core_id"`
+	Threads []int `json:"thread_ids"`
+}
+
+func (self *Node) FindCore(id int) (bool, int) {
+	for i, n := range self.Cores {
+		if n.Id == id {
+			return true, i
+		}
+	}
+	return false, -1
+}
+
+func (self *Node) AddThread(thread int, core int) {
+	var coreIdx int
+	if core == -1 {
+		// Assume one hyperthread per core when topology data is missing.
+		core = thread
+	}
+	ok, coreIdx := self.FindCore(core)
+
+	if !ok {
+		// New core
+		core := Core{Id: core}
+		self.Cores = append(self.Cores, core)
+		coreIdx = len(self.Cores) - 1
+	}
+	self.Cores[coreIdx].Threads = append(self.Cores[coreIdx].Threads, thread)
+}
+
 type DiskInfo struct {
 	// device name
 	Name string `json:"name"`
@@ -51,6 +87,10 @@ type MachineInfo struct {
 
 	// Disk map
 	DiskMap map[string]DiskInfo `json:"disk_map"`
+
+	// Machine Topology
+	// Describes cpu layout and hierarchy. TODO(rjnagal): Add Memory hierarchy.
+	Topology []Node `json:"topology"`
 }
 
 type VersionInfo struct {
