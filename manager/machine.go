@@ -65,6 +65,20 @@ func getClockSpeed(procInfo []byte) (uint64, error) {
 	return uint64(speed * 1000), nil
 }
 
+func getMemoryCapacity(b []byte) (int64, error) {
+	matches := memoryCapacityRegexp.FindSubmatch(b)
+	if len(matches) != 2 {
+		return -1, fmt.Errorf("failed to find memory capacity in output: %q", string(b))
+	}
+	m, err := strconv.ParseInt(string(matches[1]), 10, 64)
+	if err != nil {
+		return -1, err
+	}
+
+	// Convert to bytes.
+	return m * 1024, err
+}
+
 func extractValue(s string, r *regexp.Regexp) (bool, int, error) {
 	matches := r.FindSubmatch([]byte(s))
 	if len(matches) == 2 {
@@ -86,7 +100,7 @@ func findNode(nodes []info.Node, id int) (bool, int) {
 	return false, -1
 }
 
-func addNode(nodes *[]info.Node, id int) int {
+func addNode(nodes *[]info.Node, id int) (int, error) {
 	var idx int
 	if id == -1 {
 		// Some VMs don't fill topology data. Export single package.
@@ -97,10 +111,21 @@ func addNode(nodes *[]info.Node, id int) int {
 	if !ok {
 		// New node
 		node := info.Node{Id: id}
+		// Add per-node memory information.
+		meminfo := fmt.Sprintf("/sys/devices/system/node/node%d/meminfo", id)
+		out, err := ioutil.ReadFile(meminfo)
+		// Ignore if per-node info is not available.
+		if err == nil {
+			m, err := getMemoryCapacity(out)
+			if err != nil {
+				return -1, err
+			}
+			node.Memory = uint64(m)
+		}
 		*nodes = append(*nodes, node)
 		idx = len(*nodes) - 1
 	}
-	return idx
+	return idx, nil
 }
 
 func getTopology(cpuinfo string) ([]info.Node, int, error) {
@@ -112,14 +137,17 @@ func getTopology(cpuinfo string) ([]info.Node, int, error) {
 	for _, line := range strings.Split(cpuinfo, "\n") {
 		ok, val, err := extractValue(line, cpuRegExp)
 		if err != nil {
-			return nil, -1, fmt.Errorf("could not parse cpu info from %q: %s", line, err)
+			return nil, -1, fmt.Errorf("could not parse cpu info from %q: %v", line, err)
 		}
 		if ok {
 			thread := val
 			numCores++
 			if lastThread != -1 {
 				// New cpu section. Save last one.
-				nodeIdx := addNode(&nodes, lastNode)
+				nodeIdx, err := addNode(&nodes, lastNode)
+				if err != nil {
+					return nil, -1, fmt.Errorf("failed to add node %d: %v", lastNode, err)
+				}
 				nodes[nodeIdx].AddThread(lastThread, lastCore)
 				lastCore = -1
 				lastNode = -1
@@ -128,20 +156,23 @@ func getTopology(cpuinfo string) ([]info.Node, int, error) {
 		}
 		ok, val, err = extractValue(line, coreRegExp)
 		if err != nil {
-			return nil, -1, fmt.Errorf("could not parse core info from %q: %s", line, err)
+			return nil, -1, fmt.Errorf("could not parse core info from %q: %v", line, err)
 		}
 		if ok {
 			lastCore = val
 		}
 		ok, val, err = extractValue(line, nodeRegExp)
 		if err != nil {
-			return nil, -1, fmt.Errorf("could not parse node info from %q: %s", line, err)
+			return nil, -1, fmt.Errorf("could not parse node info from %q: %v", line, err)
 		}
 		if ok {
 			lastNode = val
 		}
 	}
-	nodeIdx := addNode(&nodes, lastNode)
+	nodeIdx, err := addNode(&nodes, lastNode)
+	if err != nil {
+		return nil, -1, fmt.Errorf("failed to add node %d: %v", lastNode, err)
+	}
 	nodes[nodeIdx].AddThread(lastThread, lastCore)
 	if numCores < 1 {
 		return nil, numCores, fmt.Errorf("could not detect any cores")
@@ -161,17 +192,11 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	matches := memoryCapacityRegexp.FindSubmatch(out)
-	if len(matches) != 2 {
-		return nil, fmt.Errorf("failed to find memory capacity in output: %s", string(out))
-	}
-	memoryCapacity, err := strconv.ParseInt(string(matches[1]), 10, 64)
+
+	memoryCapacity, err := getMemoryCapacity(out)
 	if err != nil {
 		return nil, err
 	}
-
-	// Capacity is in KB, convert it to bytes.
-	memoryCapacity = memoryCapacity * 1024
 
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {

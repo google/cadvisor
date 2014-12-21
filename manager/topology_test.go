@@ -42,6 +42,8 @@ func TestTopology(t *testing.T) {
 	numThreads := 2
 	for i := 0; i < numNodes; i++ {
 		node := info.Node{Id: i}
+		// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
+		node.Memory = topology[i].Memory
 		for j := 0; j < numCoresPerNode; j++ {
 			core := info.Core{Id: i*numCoresPerNode + j}
 			for k := 0; k < numThreads; k++ {
@@ -66,6 +68,8 @@ func TestTopologyWithSimpleCpuinfo(t *testing.T) {
 	core := info.Core{Id: 0}
 	core.Threads = append(core.Threads, 0)
 	node.Cores = append(node.Cores, core)
+	// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
+	node.Memory = topology[0].Memory
 	expected := []info.Node{node}
 	if !reflect.DeepEqual(topology, expected) {
 		t.Errorf("Expected topology %+v, got %+v", expected, topology)

@@ -23,8 +23,10 @@ type FsInfo struct {
 }
 
 type Node struct {
-	Id    int    `json:"node_id"`
-	Cores []Core `json:"cores"`
+	Id int `json:"node_id"`
+	// Per-node memory
+	Memory uint64 `json:"memory"`
+	Cores  []Core `json:"cores"`
 }
 
 type Core struct {
