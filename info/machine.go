@@ -25,13 +25,24 @@ type FsInfo struct {
 type Node struct {
 	Id int `json:"node_id"`
 	// Per-node memory
-	Memory uint64 `json:"memory"`
-	Cores  []Core `json:"cores"`
+	Memory uint64  `json:"memory"`
+	Cores  []Core  `json:"cores"`
+	Caches []Cache `json:"caches"`
 }
 
 type Core struct {
-	Id      int   `json:"core_id"`
-	Threads []int `json:"thread_ids"`
+	Id      int     `json:"core_id"`
+	Threads []int   `json:"thread_ids"`
+	Caches  []Cache `json:"caches"`
+}
+
+type Cache struct {
+	// Size of memory cache in bytes.
+	Size uint64 `json:"size"`
+	// Type of memory cache: data, instruction, or unified.
+	Type string `json:"type"`
+	// Level (distance from cpus) in a multi-level cache hierarchy.
+	Level int `json:"level"`
 }
 
 func (self *Node) FindCore(id int) (bool, int) {
@@ -58,6 +69,16 @@ func (self *Node) AddThread(thread int, core int) {
 		coreIdx = len(self.Cores) - 1
 	}
 	self.Cores[coreIdx].Threads = append(self.Cores[coreIdx].Threads, thread)
+}
+
+func (self *Node) AddNodeCache(c Cache) {
+	self.Caches = append(self.Caches, c)
+}
+
+func (self *Node) AddPerCoreCache(c Cache) {
+	for idx, _ := range self.Cores {
+		self.Cores[idx].Caches = append(self.Cores[idx].Caches, c)
+	}
 }
 
 type DiskInfo struct {

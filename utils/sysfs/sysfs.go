@@ -25,7 +25,10 @@ import (
 	"github.com/google/cadvisor/info"
 )
 
-const BlockDir = "/sys/block"
+const (
+	blockDir = "/sys/block"
+	cacheDir = "/sys/devices/system/cpu/cpu"
+)
 
 // Abstracts the lowest level calls to sysfs.
 type SysFs interface {
@@ -35,6 +38,11 @@ type SysFs interface {
 	GetBlockDeviceSize(string) (string, error)
 	// Get device major:minor number string.
 	GetBlockDeviceNumbers(string) (string, error)
+
+	// Get directory information for available caches accessible to given cpu.
+	GetCaches(id int) ([]os.FileInfo, error)
+	// Get information for a cache accessible from the given cpu.
+	GetCacheInfo(cpu int, cache string) (CacheInfo, error)
 }
 
 type realSysFs struct{}
@@ -44,11 +52,11 @@ func NewRealSysFs() (SysFs, error) {
 }
 
 func (self *realSysFs) GetBlockDevices() ([]os.FileInfo, error) {
-	return ioutil.ReadDir(BlockDir)
+	return ioutil.ReadDir(blockDir)
 }
 
 func (self *realSysFs) GetBlockDeviceNumbers(name string) (string, error) {
-	dev, err := ioutil.ReadFile(path.Join(BlockDir, name, "/dev"))
+	dev, err := ioutil.ReadFile(path.Join(blockDir, name, "/dev"))
 	if err != nil {
 		return "", err
 	}
@@ -56,11 +64,57 @@ func (self *realSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 }
 
 func (self *realSysFs) GetBlockDeviceSize(name string) (string, error) {
-	size, err := ioutil.ReadFile(path.Join(BlockDir, name, "/size"))
+	size, err := ioutil.ReadFile(path.Join(blockDir, name, "/size"))
 	if err != nil {
 		return "", err
 	}
 	return string(size), nil
+}
+
+func (self *realSysFs) GetCaches(id int) ([]os.FileInfo, error) {
+	cpuPath := fmt.Sprintf("%s%d/cache", cacheDir, id)
+	return ioutil.ReadDir(cpuPath)
+}
+
+func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
+	cachePath := fmt.Sprintf("%s%d/cache/%s", cacheDir, id, name)
+	out, err := ioutil.ReadFile(path.Join(cachePath, "/size"))
+	if err != nil {
+		return CacheInfo{}, err
+	}
+	var size uint64
+	n, err := fmt.Sscanf(string(out), "%dK", &size)
+	if err != nil || n != 1 {
+		return CacheInfo{}, err
+	}
+	// convert to bytes
+	size = size * 1024
+	out, err = ioutil.ReadFile(path.Join(cachePath, "/level"))
+	if err != nil {
+		return CacheInfo{}, err
+	}
+	var level int
+	n, err = fmt.Sscanf(string(out), "%d", &level)
+	if err != nil || n != 1 {
+		return CacheInfo{}, err
+	}
+
+	out, err = ioutil.ReadFile(path.Join(cachePath, "/type"))
+	if err != nil {
+		return CacheInfo{}, err
+	}
+	cacheType := strings.TrimSpace(string(out))
+	out, err = ioutil.ReadFile(path.Join(cachePath, "/shared_cpu_list"))
+	if err != nil {
+		return CacheInfo{}, err
+	}
+	cpus := strings.Split(string(out), ",")
+	return CacheInfo{
+		Size:  size,
+		Level: level,
+		Type:  cacheType,
+		Cpus:  len(cpus),
+	}, nil
 }
 
 // Get information about block devices present on the system.
@@ -105,4 +159,35 @@ func GetBlockDeviceInfo(sysfs SysFs) (map[string]info.DiskInfo, error) {
 		diskMap[device] = disk_info
 	}
 	return diskMap, nil
+}
+
+type CacheInfo struct {
+	// size in bytes
+	Size uint64
+	// cache type - instruction, data, unified
+	Type string
+	// distance from cpus in a multi-level hierarchy
+	Level int
+	// number of cpus that can access this cache.
+	Cpus int
+}
+
+func GetCacheInfo(sysfs SysFs, id int) ([]CacheInfo, error) {
+	caches, err := sysfs.GetCaches(id)
+	if err != nil {
+		return nil, err
+	}
+
+	info := []CacheInfo{}
+	for _, cache := range caches {
+		if !strings.HasPrefix(cache.Name(), "index") {
+			continue
+		}
+		cacheInfo, err := sysfs.GetCacheInfo(id, cache.Name())
+		if err != nil {
+			return nil, err
+		}
+		info = append(info, cacheInfo)
+	}
+	return info, nil
 }

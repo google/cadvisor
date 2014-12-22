@@ -128,7 +128,7 @@ func addNode(nodes *[]info.Node, id int) (int, error) {
 	return idx, nil
 }
 
-func getTopology(cpuinfo string) ([]info.Node, int, error) {
+func getTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 	nodes := []info.Node{}
 	numCores := 0
 	lastThread := -1
@@ -177,6 +177,29 @@ func getTopology(cpuinfo string) ([]info.Node, int, error) {
 	if numCores < 1 {
 		return nil, numCores, fmt.Errorf("could not detect any cores")
 	}
+	for idx, node := range nodes {
+		caches, err := sysfs.GetCacheInfo(sysFs, node.Cores[0].Id)
+		if err != nil {
+			return nil, -1, fmt.Errorf("failed to get cache information for node %d: %v", node.Id, err)
+		}
+		numThreadsPerCore := len(node.Cores[0].Threads)
+		numThreadsPerNode := len(node.Cores) * numThreadsPerCore
+		for _, cache := range caches {
+			c := info.Cache{
+				Size:  cache.Size,
+				Level: cache.Level,
+				Type:  cache.Type,
+			}
+			if cache.Cpus == numThreadsPerNode && cache.Level > 2 {
+				// Add a node-level cache.
+				nodes[idx].AddNodeCache(c)
+			} else if cache.Cpus == numThreadsPerCore {
+				// Add to each core.
+				nodes[idx].AddPerCoreCache(c)
+			}
+			// Ignore unknown caches.
+		}
+	}
 	return nodes, numCores, nil
 }
 
@@ -212,7 +235,7 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		return nil, err
 	}
 
-	topology, numCores, err := getTopology(string(cpuinfo))
+	topology, numCores, err := getTopology(sysFs, string(cpuinfo))
 	if err != nil {
 		return nil, err
 	}
