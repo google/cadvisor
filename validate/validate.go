@@ -194,8 +194,32 @@ func validateCgroupMounts() (string, string) {
 		out += desc
 		return Unsupported, out
 	}
+	mounts, err := ioutil.ReadDir(mnt)
+	if err != nil {
+		out := fmt.Sprintf("Could not read cgroup mount directory %s.\n", mnt)
+		out += desc
+		return Unsupported, out
+	}
+	mountNames := "\tCgroup mount directories: "
+	for _, mount := range mounts {
+		mountNames += mount.Name() + " "
+	}
+	mountNames += "\n"
 	out := fmt.Sprintf("Cgroups are mounted at %s.\n", mnt)
+	out += mountNames
 	out += desc
+	info, err := ioutil.ReadFile("/proc/mounts")
+	if err != nil {
+		out := fmt.Sprintf("Could not read /proc/mounts.\n")
+		out += desc
+		return Unsupported, out
+	}
+	out += "\tCgroup mounts:\n"
+	for _, line := range strings.Split(string(info), "\n") {
+		if strings.Contains(line, " cgroup ") {
+			out += "\t" + line + "\n"
+		}
+	}
 	if mnt == recommendedMount {
 		return Recommended, out
 	}
