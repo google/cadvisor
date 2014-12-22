@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/docker/libcontainer/cgroups"
@@ -188,7 +189,7 @@ func validateCgroupMounts() (string, string) {
 		out += desc
 		return Unknown, out
 	}
-	mnt = strings.TrimSuffix(mnt, "/cpu")
+	mnt = path.Dir(mnt)
 	if !utils.FileExists(mnt) {
 		out := fmt.Sprintf("Cgroup mount directory %s inaccessible.\n", mnt)
 		out += desc
