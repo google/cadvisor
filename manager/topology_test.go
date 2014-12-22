@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/utils/sysfs"
+	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 )
 
 func TestTopology(t *testing.T) {
@@ -28,7 +30,15 @@ func TestTopology(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", testfile)
 	}
-	topology, numCores, err := getTopology(string(testcpuinfo))
+	sysFs := &fakesysfs.FakeSysFs{}
+	c := sysfs.CacheInfo{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 1,
+		Cpus:  2,
+	}
+	sysFs.SetCacheInfo(c)
+	topology, numCores, err := getTopology(sysFs, string(testcpuinfo))
 	if err != nil {
 		t.Errorf("failed to get topology for sample cpuinfo %s", string(testcpuinfo))
 	}
@@ -40,12 +50,18 @@ func TestTopology(t *testing.T) {
 	numNodes := 2
 	numCoresPerNode := 3
 	numThreads := 2
+	cache := info.Cache{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 1,
+	}
 	for i := 0; i < numNodes; i++ {
 		node := info.Node{Id: i}
 		// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
 		node.Memory = topology[i].Memory
 		for j := 0; j < numCoresPerNode; j++ {
 			core := info.Core{Id: i*numCoresPerNode + j}
+			core.Caches = append(core.Caches, cache)
 			for k := 0; k < numThreads; k++ {
 				core.Threads = append(core.Threads, k*numCoresPerNode*numNodes+core.Id)
 			}
@@ -60,13 +76,27 @@ func TestTopology(t *testing.T) {
 }
 
 func TestTopologyWithSimpleCpuinfo(t *testing.T) {
-	topology, numCores, err := getTopology("processor\t: 0\n")
+	sysFs := &fakesysfs.FakeSysFs{}
+	c := sysfs.CacheInfo{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 1,
+		Cpus:  1,
+	}
+	sysFs.SetCacheInfo(c)
+	topology, numCores, err := getTopology(sysFs, "processor\t: 0\n")
 	if err != nil {
 		t.Errorf("Expected cpuinfo with no topology data to succeed.")
 	}
 	node := info.Node{Id: 0}
 	core := info.Core{Id: 0}
 	core.Threads = append(core.Threads, 0)
+	cache := info.Cache{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 1,
+	}
+	core.Caches = append(core.Caches, cache)
 	node.Cores = append(node.Cores, core)
 	// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
 	node.Memory = topology[0].Memory
@@ -80,7 +110,7 @@ func TestTopologyWithSimpleCpuinfo(t *testing.T) {
 }
 
 func TestTopologyEmptyCpuinfo(t *testing.T) {
-	_, _, err := getTopology("")
+	_, _, err := getTopology(&fakesysfs.FakeSysFs{}, "")
 	if err == nil {
 		t.Errorf("Expected empty cpuinfo to fail.")
 	}

@@ -17,14 +17,17 @@ package fakesysfs
 import (
 	"os"
 	"time"
+
+	"github.com/google/cadvisor/utils/sysfs"
 )
 
 // If we extend sysfs to support more interfaces, it might be worth making this a mock instead of a fake.
 type FileInfo struct {
+	EntryName string
 }
 
 func (self *FileInfo) Name() string {
-	return "sda"
+	return self.EntryName
 }
 
 func (self *FileInfo) Size() int64 {
@@ -48,10 +51,12 @@ func (self *FileInfo) Sys() interface{} {
 }
 
 type FakeSysFs struct {
-	info FileInfo
+	info  FileInfo
+	cache sysfs.CacheInfo
 }
 
 func (self *FakeSysFs) GetBlockDevices() ([]os.FileInfo, error) {
+	self.info.EntryName = "sda"
 	return []os.FileInfo{&self.info}, nil
 }
 
@@ -61,4 +66,17 @@ func (self *FakeSysFs) GetBlockDeviceSize(name string) (string, error) {
 
 func (self *FakeSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 	return "8:0\n", nil
+}
+
+func (self *FakeSysFs) GetCaches(id int) ([]os.FileInfo, error) {
+	self.info.EntryName = "index0"
+	return []os.FileInfo{&self.info}, nil
+}
+
+func (self *FakeSysFs) GetCacheInfo(cpu int, cache string) (sysfs.CacheInfo, error) {
+	return self.cache, nil
+}
+
+func (self *FakeSysFs) SetCacheInfo(cache sysfs.CacheInfo) {
+	self.cache = cache
 }
