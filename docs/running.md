@@ -18,6 +18,17 @@ sudo docker run \
 
 cAdvisor is now running (in the background) on `http://localhost:8080/`. The setup includes directories with Docker state cAdvisor needs to observe.
 
+## With Boot2Docker
+
+After booting up a boot2docker instance, run cAdvisor image with the same docker command mentioned above. cAdvisor can now be accessed at port 8080 of your boot2docker instance. The host IP can be found through DOCKER_HOST environment variable setup by boot2docker:
+
+```
+$ echo $DOCKER_HOST
+tcp://192.168.59.103:2376
+```
+
+In this case, cAdvisor UI should be accessible on `http://192.168.59.103:8080`
+
 ### CentOS and RHEL
 
 On CentOS and RHEL the cgroup hierarchies are mounted in `/cgroup` so run cAdvisor with an additional Docker option of `--volume=/cgroup:/cgroup \`.
