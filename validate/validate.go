@@ -37,7 +37,7 @@ const Supported = "[Supported, but not recommended]"
 const Unsupported = "[Unsupported]"
 const Recommended = "[Supported and recommended]"
 const Unknown = "[Unknown]"
-const VersionFormat = "%d.%d.%s"
+const VersionFormat = "%d.%d%s"
 const OutputFormat = "%s: %s\n\t%s\n\n"
 
 func getMajorMinor(version string) (int, int, error) {
