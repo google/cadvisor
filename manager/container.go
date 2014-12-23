@@ -46,7 +46,6 @@ type containerData struct {
 	housekeepingInterval time.Duration
 	lastUpdatedTime      time.Time
 
-
 	// Whether to log the usage of this container when it is updated.
 	logUsage bool
 
@@ -66,7 +65,7 @@ func (c *containerData) Stop() error {
 
 func (c *containerData) GetInfo() (*containerInfo, error) {
 	// Get spec and subcontainers.
-	if time.Since(c.lastUpdatedTime) > 5 * time.Second {
+	if time.Since(c.lastUpdatedTime) > 5*time.Second {
 		err := c.updateSpec()
 		if err != nil {
 			return nil, err
@@ -76,7 +75,7 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 			return nil, err
 		}
 		c.lastUpdatedTime = time.Now()
-	}	
+	}
 	// Make a copy of the info for the user.
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -112,7 +111,16 @@ func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Tim
 	if *allowDynamicHousekeeping {
 		stats, err := self.storageDriver.RecentStats(self.info.Name, 2)
 		if err != nil {
-			glog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
+			// TODO(rjnagal): Change log to warning after figuring out failures.
+			glog.V(1).Infof("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
+			// Raise to interval in case of errors.
+			if self.housekeepingInterval < *maxHousekeepingInterval {
+				self.housekeepingInterval *= 2
+				if self.housekeepingInterval > *maxHousekeepingInterval {
+					self.housekeepingInterval = *maxHousekeepingInterval
+				}
+				glog.V(3).Infof("Raising housekeeping interval for %q to %v", self.info.Name, self.housekeepingInterval)
+			}
 		} else if len(stats) == 2 {
 			// TODO(vishnuk): Use no processes as a signal.
 			// Raise the interval if usage hasn't changed in the last housekeeping.
