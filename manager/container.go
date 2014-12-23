@@ -45,7 +45,7 @@ type containerData struct {
 	lock                 sync.Mutex
 	housekeepingInterval time.Duration
 	lastUpdatedTime      time.Time
-
+	lastErrorTime        time.Time
 
 	// Whether to log the usage of this container when it is updated.
 	logUsage bool
@@ -64,9 +64,17 @@ func (c *containerData) Stop() error {
 	return nil
 }
 
+func (c *containerData) allowErrorLogging() bool {
+	if !c.lastErrorTime.IsZero() && time.Since(c.lastErrorTime) > time.Hour {
+		c.lastErrorTime = time.Now()
+		return true
+	}
+	return false
+}
+
 func (c *containerData) GetInfo() (*containerInfo, error) {
 	// Get spec and subcontainers.
-	if time.Since(c.lastUpdatedTime) > 5 * time.Second {
+	if time.Since(c.lastUpdatedTime) > 5*time.Second {
 		err := c.updateSpec()
 		if err != nil {
 			return nil, err
@@ -76,7 +84,7 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 			return nil, err
 		}
 		c.lastUpdatedTime = time.Now()
-	}	
+	}
 	// Make a copy of the info for the user.
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -112,7 +120,9 @@ func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Tim
 	if *allowDynamicHousekeeping {
 		stats, err := self.storageDriver.RecentStats(self.info.Name, 2)
 		if err != nil {
-			glog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
+			if self.allowErrorLogging() {
+				glog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
+			}
 		} else if len(stats) == 2 {
 			// TODO(vishnuk): Use no processes as a signal.
 			// Raise the interval if usage hasn't changed in the last housekeeping.
@@ -164,7 +174,9 @@ func (c *containerData) housekeeping() {
 		if c.logUsage {
 			stats, err := c.storageDriver.RecentStats(c.info.Name, 2)
 			if err != nil {
-				glog.Infof("[%s] Failed to get recent stats for logging usage: %v", c.info.Name, err)
+				if c.allowErrorLogging() {
+					glog.Infof("[%s] Failed to get recent stats for logging usage: %v", c.info.Name, err)
+				}
 			} else if len(stats) < 2 {
 				// Ignore, not enough stats yet.
 			} else {
@@ -189,7 +201,9 @@ func (c *containerData) housekeeping() {
 func (c *containerData) housekeepingTick() {
 	err := c.updateStats()
 	if err != nil {
-		glog.Infof("Failed to update stats for container \"%s\": %s", c.info.Name, err)
+		if c.allowErrorLogging() {
+			glog.Infof("Failed to update stats for container \"%s\": %s", c.info.Name, err)
+		}
 	}
 }
 
