@@ -273,7 +273,7 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 		}
 	}
 
-	stats, err := libcontainer.GetStats(&state)
+	stats, err := libcontainer.GetStats(self.cgroupPaths, &state)
 	if err != nil {
 		return nil, err
 	}

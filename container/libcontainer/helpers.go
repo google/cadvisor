@@ -73,12 +73,12 @@ var supportedSubsystems map[string]struct{} = map[string]struct{}{
 }
 
 // Get stats of the specified container
-func GetStats(state *libcontainer.State) (*info.ContainerStats, error) {
+func GetStats(cgroupPaths map[string]string, state *libcontainer.State) (*info.ContainerStats, error) {
 	// TODO(vmarmol): Use libcontainer's Stats() in the new API when that is ready.
 	stats := &libcontainer.ContainerStats{}
 
 	var err error
-	stats.CgroupStats, err = cgroupfs.GetStats(state.CgroupPaths)
+	stats.CgroupStats, err = cgroupfs.GetStats(cgroupPaths)
 	if err != nil {
 		return &info.ContainerStats{}, err
 	}

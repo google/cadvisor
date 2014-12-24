@@ -295,7 +295,7 @@ func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err 
 		return
 	}
 
-	stats, err = containerLibcontainer.GetStats(state)
+	stats, err = containerLibcontainer.GetStats(self.cgroupPaths, state)
 	if err != nil {
 		return
 	}
