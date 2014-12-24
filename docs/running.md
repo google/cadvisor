@@ -47,7 +47,7 @@ If you are using Docker with the LXC exec driver, then you need to manually spec
 
 ### Invalid Bindmount `/`
 
-This is a problem seen in older versions of Docker. To fix start cAdvisor without the `--volume=/:/rootfs:ro` mount. cAdvisor will handle not exporting the stats that allows.
+This is a problem seen in older versions of Docker. To fix, start cAdvisor without the `--volume=/:/rootfs:ro` mount. cAdvisor will degrade gracefully by dropping stats that depend on access to the machine root.
 
 ## Standalone
 
