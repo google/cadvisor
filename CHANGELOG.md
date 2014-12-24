@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1 (2014-12-23)
+- Avoid repeated logging of container errors.
+- Handle non identify mounts for cgroups.
+
 ## 0.7.0 (2014-12-18)
 - Support for HTTP basic auth.
 - Added /validate to perform basic checks and determine support for cAdvisor.
