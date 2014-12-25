@@ -74,8 +74,9 @@ func GetBlockDeviceInfo(sysfs SysFs) (map[string]info.DiskInfo, error) {
 	diskMap := make(map[string]info.DiskInfo)
 	for _, disk := range disks {
 		name := disk.Name()
-		// Ignore loopback and ram devices.
-		if strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "ram") {
+		// Ignore non-disk devices.
+		// TODO(rjnagal): Maybe just match hd, sd, and dm prefixes.
+		if strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "ram") || strings.HasPrefix(name, "sr") {
 			continue
 		}
 		disk_info := info.DiskInfo{
