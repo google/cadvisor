@@ -28,6 +28,7 @@ import (
 const (
 	blockDir = "/sys/block"
 	cacheDir = "/sys/devices/system/cpu/cpu"
+	netDir   = "/sys/class/net"
 )
 
 // Abstracts the lowest level calls to sysfs.
@@ -38,6 +39,11 @@ type SysFs interface {
 	GetBlockDeviceSize(string) (string, error)
 	// Get device major:minor number string.
 	GetBlockDeviceNumbers(string) (string, error)
+
+	GetNetworkDevices() ([]os.FileInfo, error)
+	GetNetworkAddress(string) (string, error)
+	GetNetworkMtu(string) (string, error)
+	GetNetworkSpeed(string) (string, error)
 
 	// Get directory information for available caches accessible to given cpu.
 	GetCaches(id int) ([]os.FileInfo, error)
@@ -69,6 +75,34 @@ func (self *realSysFs) GetBlockDeviceSize(name string) (string, error) {
 		return "", err
 	}
 	return string(size), nil
+}
+
+func (self *realSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
+	return ioutil.ReadDir(netDir)
+}
+
+func (self *realSysFs) GetNetworkAddress(name string) (string, error) {
+	address, err := ioutil.ReadFile(path.Join(netDir, name, "/address"))
+	if err != nil {
+		return "", err
+	}
+	return string(address), nil
+}
+
+func (self *realSysFs) GetNetworkMtu(name string) (string, error) {
+	mtu, err := ioutil.ReadFile(path.Join(netDir, name, "/mtu"))
+	if err != nil {
+		return "", err
+	}
+	return string(mtu), nil
+}
+
+func (self *realSysFs) GetNetworkSpeed(name string) (string, error) {
+	speed, err := ioutil.ReadFile(path.Join(netDir, name, "/speed"))
+	if err != nil {
+		return "", err
+	}
+	return string(speed), nil
 }
 
 func (self *realSysFs) GetCaches(id int) ([]os.FileInfo, error) {
@@ -159,6 +193,52 @@ func GetBlockDeviceInfo(sysfs SysFs) (map[string]info.DiskInfo, error) {
 		diskMap[device] = disk_info
 	}
 	return diskMap, nil
+}
+
+// Get information about network devices present on the system.
+func GetNetworkDevices(sysfs SysFs) ([]info.NetInfo, error) {
+	devs, err := sysfs.GetNetworkDevices()
+	if err != nil {
+		return nil, err
+	}
+	netDevices := []info.NetInfo{}
+	for _, dev := range devs {
+		name := dev.Name()
+		// Only consider ethernet devices for now.
+		if !strings.HasPrefix(name, "eth") {
+			continue
+		}
+		address, err := sysfs.GetNetworkAddress(name)
+		if err != nil {
+			return nil, err
+		}
+		mtuStr, err := sysfs.GetNetworkMtu(name)
+		if err != nil {
+			return nil, err
+		}
+		var mtu uint64
+		n, err := fmt.Sscanf(mtuStr, "%d", &mtu)
+		if err != nil || n != 1 {
+			return nil, fmt.Errorf("could not parse mtu from %s for device %s", mtuStr, name)
+		}
+		netInfo := info.NetInfo{
+			Name:       name,
+			MacAddress: strings.TrimSpace(address),
+			Mtu:        mtu,
+		}
+		speed, err := sysfs.GetNetworkSpeed(name)
+		// Some devices don't set speed.
+		if err == nil {
+			var s uint64
+			n, err := fmt.Sscanf(speed, "%d", &s)
+			if err != nil || n != 1 {
+				return nil, fmt.Errorf("could not parse speed from %s for device %s", speed, name)
+			}
+			netInfo.Speed = s
+		}
+		netDevices = append(netDevices, netInfo)
+	}
+	return netDevices, nil
 }
 
 type CacheInfo struct {

@@ -235,6 +235,11 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		return nil, err
 	}
 
+	netDevices, err := sysfs.GetNetworkDevices(sysFs)
+	if err != nil {
+		return nil, err
+	}
+
 	topology, numCores, err := getTopology(sysFs, string(cpuinfo))
 	if err != nil {
 		return nil, err
@@ -245,6 +250,7 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		CpuFrequency:   clockSpeed,
 		MemoryCapacity: memoryCapacity,
 		DiskMap:        diskMap,
+		NetworkDevices: netDevices,
 		Topology:       topology,
 	}
 
