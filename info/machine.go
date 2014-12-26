@@ -95,6 +95,20 @@ type DiskInfo struct {
 	Size uint64 `json:"size"`
 }
 
+type NetInfo struct {
+	// Device name
+	Name string `json:"name"`
+
+	// Mac Address
+	MacAddress string `json:"mac_address"`
+
+	// Speed in MBits/s
+	Speed uint64 `json:"speed"`
+
+	// Maximum Transmission Unit
+	Mtu uint64 `json:"mtu"`
+}
+
 type MachineInfo struct {
 	// The number of cores in this machine.
 	NumCores int `json:"num_cores"`
@@ -110,6 +124,9 @@ type MachineInfo struct {
 
 	// Disk map
 	DiskMap map[string]DiskInfo `json:"disk_map"`
+
+	// Network devices
+	NetworkDevices []NetInfo `json:"network_devices"`
 
 	// Machine Topology
 	// Describes cpu layout and hierarchy. TODO(rjnagal): Add Memory hierarchy.

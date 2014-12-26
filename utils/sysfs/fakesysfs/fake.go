@@ -68,6 +68,23 @@ func (self *FakeSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 	return "8:0\n", nil
 }
 
+func (self *FakeSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
+	self.info.EntryName = "eth0"
+	return []os.FileInfo{&self.info}, nil
+}
+
+func (self *FakeSysFs) GetNetworkAddress(name string) (string, error) {
+	return "42:01:02:03:04:f4\n", nil
+}
+
+func (self *FakeSysFs) GetNetworkMtu(name string) (string, error) {
+	return "1024\n", nil
+}
+
+func (self *FakeSysFs) GetNetworkSpeed(name string) (string, error) {
+	return "1000\n", nil
+}
+
 func (self *FakeSysFs) GetCaches(id int) ([]os.FileInfo, error) {
 	self.info.EntryName = "index0"
 	return []os.FileInfo{&self.info}, nil
