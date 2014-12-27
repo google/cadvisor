@@ -19,10 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"strings"
-
-	"github.com/google/cadvisor/info"
 )
 
 const (
@@ -30,6 +27,17 @@ const (
 	cacheDir = "/sys/devices/system/cpu/cpu"
 	netDir   = "/sys/class/net"
 )
+
+type CacheInfo struct {
+	// size in bytes
+	Size uint64
+	// cache type - instruction, data, unified
+	Type string
+	// distance from cpus in a multi-level hierarchy
+	Level int
+	// number of cpus that can access this cache.
+	Cpus int
+}
 
 // Abstracts the lowest level calls to sysfs.
 type SysFs interface {
@@ -149,126 +157,4 @@ func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 		Type:  cacheType,
 		Cpus:  len(cpus),
 	}, nil
-}
-
-// Get information about block devices present on the system.
-// Uses the passed in system interface to retrieve the low level OS information.
-func GetBlockDeviceInfo(sysfs SysFs) (map[string]info.DiskInfo, error) {
-	disks, err := sysfs.GetBlockDevices()
-	if err != nil {
-		return nil, err
-	}
-
-	diskMap := make(map[string]info.DiskInfo)
-	for _, disk := range disks {
-		name := disk.Name()
-		// Ignore non-disk devices.
-		// TODO(rjnagal): Maybe just match hd, sd, and dm prefixes.
-		if strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "ram") || strings.HasPrefix(name, "sr") {
-			continue
-		}
-		disk_info := info.DiskInfo{
-			Name: name,
-		}
-		dev, err := sysfs.GetBlockDeviceNumbers(name)
-		if err != nil {
-			return nil, err
-		}
-		n, err := fmt.Sscanf(dev, "%d:%d", &disk_info.Major, &disk_info.Minor)
-		if err != nil || n != 2 {
-			return nil, fmt.Errorf("could not parse device numbers from %s for device %s", dev, name)
-		}
-		out, err := sysfs.GetBlockDeviceSize(name)
-		if err != nil {
-			return nil, err
-		}
-		// Remove trailing newline before conversion.
-		size, err := strconv.ParseUint(strings.TrimSpace(out), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		// size is in 512 bytes blocks.
-		disk_info.Size = size * 512
-
-		device := fmt.Sprintf("%d:%d", disk_info.Major, disk_info.Minor)
-		diskMap[device] = disk_info
-	}
-	return diskMap, nil
-}
-
-// Get information about network devices present on the system.
-func GetNetworkDevices(sysfs SysFs) ([]info.NetInfo, error) {
-	devs, err := sysfs.GetNetworkDevices()
-	if err != nil {
-		return nil, err
-	}
-	netDevices := []info.NetInfo{}
-	for _, dev := range devs {
-		name := dev.Name()
-		// Only consider ethernet devices for now.
-		if !strings.HasPrefix(name, "eth") {
-			continue
-		}
-		address, err := sysfs.GetNetworkAddress(name)
-		if err != nil {
-			return nil, err
-		}
-		mtuStr, err := sysfs.GetNetworkMtu(name)
-		if err != nil {
-			return nil, err
-		}
-		var mtu uint64
-		n, err := fmt.Sscanf(mtuStr, "%d", &mtu)
-		if err != nil || n != 1 {
-			return nil, fmt.Errorf("could not parse mtu from %s for device %s", mtuStr, name)
-		}
-		netInfo := info.NetInfo{
-			Name:       name,
-			MacAddress: strings.TrimSpace(address),
-			Mtu:        mtu,
-		}
-		speed, err := sysfs.GetNetworkSpeed(name)
-		// Some devices don't set speed.
-		if err == nil {
-			var s uint64
-			n, err := fmt.Sscanf(speed, "%d", &s)
-			if err != nil || n != 1 {
-				return nil, fmt.Errorf("could not parse speed from %s for device %s", speed, name)
-			}
-			netInfo.Speed = s
-		}
-		netDevices = append(netDevices, netInfo)
-	}
-	return netDevices, nil
-}
-
-type CacheInfo struct {
-	// size in bytes
-	Size uint64
-	// cache type - instruction, data, unified
-	Type string
-	// distance from cpus in a multi-level hierarchy
-	Level int
-	// number of cpus that can access this cache.
-	Cpus int
-}
-
-func GetCacheInfo(sysfs SysFs, id int) ([]CacheInfo, error) {
-	caches, err := sysfs.GetCaches(id)
-	if err != nil {
-		return nil, err
-	}
-
-	info := []CacheInfo{}
-	for _, cache := range caches {
-		if !strings.HasPrefix(cache.Name(), "index") {
-			continue
-		}
-		cacheInfo, err := sysfs.GetCacheInfo(id, cache.Name())
-		if err != nil {
-			return nil, err
-		}
-		info = append(info, cacheInfo)
-	}
-	return info, nil
 }
