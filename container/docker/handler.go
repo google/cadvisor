@@ -70,6 +70,10 @@ type dockerContainerHandler struct {
 	storageDirs    []string
 }
 
+func DockerStateDir() string {
+	return path.Join(*dockerRootDir, pathToLibcontainerState)
+}
+
 func newDockerContainerHandler(
 	client *docker.Client,
 	name string,
@@ -90,14 +94,15 @@ func newDockerContainerHandler(
 	}
 
 	id := ContainerNameToDockerId(name)
+	stateDir := DockerStateDir()
 	handler := &dockerContainerHandler{
 		id:                     id,
 		client:                 client,
 		name:                   name,
 		machineInfoFactory:     machineInfoFactory,
-		libcontainerConfigPath: path.Join(dockerRootDir, pathToLibcontainerState, id, "container.json"),
-		libcontainerStatePath:  path.Join(dockerRootDir, pathToLibcontainerState, id, "state.json"),
-		libcontainerPidPath:    path.Join(dockerRootDir, pathToLibcontainerState, id, "pid"),
+		libcontainerConfigPath: path.Join(stateDir, id, "container.json"),
+		libcontainerStatePath:  path.Join(stateDir, id, "state.json"),
+		libcontainerPidPath:    path.Join(stateDir, id, "pid"),
 		cgroupPaths:            cgroupPaths,
 		cgroup: cgroups.Cgroup{
 			Parent: "/",
