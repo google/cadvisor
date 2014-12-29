@@ -29,6 +29,7 @@ import (
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/utils"
 	"github.com/google/cadvisor/utils/sysfs"
+	"github.com/google/cadvisor/utils/sysinfo"
 )
 
 var cpuRegExp = regexp.MustCompile("processor\\t*: +([0-9]+)")
@@ -178,7 +179,7 @@ func getTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 		return nil, numCores, fmt.Errorf("could not detect any cores")
 	}
 	for idx, node := range nodes {
-		caches, err := sysfs.GetCacheInfo(sysFs, node.Cores[0].Id)
+		caches, err := sysinfo.GetCacheInfo(sysFs, node.Cores[0].Id)
 		if err != nil {
 			return nil, -1, fmt.Errorf("failed to get cache information for node %d: %v", node.Id, err)
 		}
@@ -230,12 +231,12 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		return nil, err
 	}
 
-	diskMap, err := sysfs.GetBlockDeviceInfo(sysFs)
+	diskMap, err := sysinfo.GetBlockDeviceInfo(sysFs)
 	if err != nil {
 		return nil, err
 	}
 
-	netDevices, err := sysfs.GetNetworkDevices(sysFs)
+	netDevices, err := sysinfo.GetNetworkDevices(sysFs)
 	if err != nil {
 		return nil, err
 	}
