@@ -32,13 +32,15 @@ import (
 	"github.com/google/cadvisor/utils"
 )
 
-const ValidatePage = "/validate/"
-const Supported = "[Supported, but not recommended]"
-const Unsupported = "[Unsupported]"
-const Recommended = "[Supported and recommended]"
-const Unknown = "[Unknown]"
-const VersionFormat = "%d.%d%s"
-const OutputFormat = "%s: %s\n\t%s\n\n"
+const (
+	ValidatePage  = "/validate/"
+	Supported     = "[Supported, but not recommended]"
+	Unsupported   = "[Unsupported]"
+	Recommended   = "[Supported and recommended]"
+	Unknown       = "[Unknown]"
+	VersionFormat = "%d.%d%s"
+	OutputFormat  = "%s: %s\n\t%s\n\n"
+)
 
 func getMajorMinor(version string) (int, int, error) {
 	var major, minor int
@@ -170,6 +172,12 @@ func validateDockerInfo() (string, string) {
 				desc += "\tCgroups are being created through cgroup filesystem.\n"
 			}
 			if strings.Contains(execDriver, "native") {
+				stateFile := docker.DockerStateDir()
+				if !utils.FileExists(stateFile) {
+					desc += fmt.Sprintf("\tDocker container state directory %q is not accessible.\n", stateFile)
+					return Unsupported, desc
+				}
+				desc += fmt.Sprintf("\tDocker container state directory is at %q and is accessible.\n", stateFile)
 				return Recommended, desc
 			} else if strings.Contains(execDriver, "lxc") {
 				return Supported, desc
