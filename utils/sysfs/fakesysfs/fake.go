@@ -85,6 +85,10 @@ func (self *FakeSysFs) GetNetworkSpeed(name string) (string, error) {
 	return "1000\n", nil
 }
 
+func (self *FakeSysFs) GetNetworkStatValue(name string, stat string) (uint64, error) {
+	return 1024, nil
+}
+
 func (self *FakeSysFs) GetCaches(id int) ([]os.FileInfo, error) {
 	self.info.EntryName = "index0"
 	return []os.FileInfo{&self.info}, nil

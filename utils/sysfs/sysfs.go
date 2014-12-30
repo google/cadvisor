@@ -52,6 +52,7 @@ type SysFs interface {
 	GetNetworkAddress(string) (string, error)
 	GetNetworkMtu(string) (string, error)
 	GetNetworkSpeed(string) (string, error)
+	GetNetworkStatValue(dev string, stat string) (uint64, error)
 
 	// Get directory information for available caches accessible to given cpu.
 	GetCaches(id int) ([]os.FileInfo, error)
@@ -111,6 +112,20 @@ func (self *realSysFs) GetNetworkSpeed(name string) (string, error) {
 		return "", err
 	}
 	return string(speed), nil
+}
+
+func (self *realSysFs) GetNetworkStatValue(dev string, stat string) (uint64, error) {
+	statPath := path.Join(netDir, dev, "/statistics", stat)
+	out, err := ioutil.ReadFile(statPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to read stat from %q for device %q", statPath, dev)
+	}
+	var s uint64
+	n, err := fmt.Sscanf(string(out), "%d", &s)
+	if err != nil || n != 1 {
+		return 0, fmt.Errorf("could not parse value from %q for file %s", string(out), statPath)
+	}
+	return s, nil
 }
 
 func (self *realSysFs) GetCaches(id int) ([]os.FileInfo, error) {

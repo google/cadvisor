@@ -33,6 +33,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/utils"
+	"github.com/google/cadvisor/utils/sysinfo"
 )
 
 type rawContainerHandler struct {
@@ -145,6 +146,18 @@ func readInt64(dirpath string, file string) uint64 {
 	return val
 }
 
+func (self *rawContainerHandler) GetRootNetworkDevices() ([]info.NetInfo, error) {
+	nd := []info.NetInfo{}
+	if self.name == "/" {
+		mi, err := self.machineInfoFactory.GetMachineInfo()
+		if err != nil {
+			return nd, err
+		}
+		return mi.NetworkDevices, nil
+	}
+	return nd, nil
+}
+
 func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	var spec info.ContainerSpec
 
@@ -195,6 +208,15 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 
 	//Network
 	if self.networkInterface != nil {
+		spec.HasNetwork = true
+	}
+
+	// Check physical network devices for root container.
+	nd, err := self.GetRootNetworkDevices()
+	if err != nil {
+		return spec, err
+	}
+	if len(nd) != 0 {
 		spec.HasNetwork = true
 	}
 	return spec, nil
@@ -283,6 +305,19 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 		return nil, err
 	}
 
+	// Fill in network stats for root.
+	nd, err := self.GetRootNetworkDevices()
+	if err != nil {
+		return stats, err
+	}
+	if len(nd) != 0 {
+		// ContainerStats only reports stat for one network device.
+		// TODO(rjnagal): Handle multiple physical network devices.
+		stats.Network, err = sysinfo.GetNetworkStats(nd[0].Name)
+		if err != nil {
+			return stats, err
+		}
+	}
 	return stats, nil
 }
 
