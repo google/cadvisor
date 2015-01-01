@@ -1,5 +1,5 @@
 // +build linux
-//
+
 // Provides Filesystem Stats
 package fs
 
