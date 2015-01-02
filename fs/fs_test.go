@@ -10,7 +10,7 @@ func TestGetDiskStatsMap(t *testing.T) {
 		t.Errorf("Error calling getDiskStatMap %s", err)
 	}
 	if len(diskStatsMap) != 20 {
-		t.Errorf("diskStatsMap %s not valid", diskStatsMap)
+		t.Errorf("diskStatsMap %+v not valid", diskStatsMap)
 	}
 	keySet := map[string]string{
 		"/dev/sdb1": "/dev/sdb1",
@@ -42,7 +42,7 @@ func TestGetDiskStatsMap(t *testing.T) {
 		delete(keySet, device)
 	}
 	if len(keySet) != 0 {
-		t.Errorf("diskStatsMap %s contains illegal keys %s", diskStatsMap, keySet)
+		t.Errorf("diskStatsMap %+v contains illegal keys %+v", diskStatsMap, keySet)
 	}
 }
 

@@ -625,7 +625,7 @@ func TestSchedDebugReader(t *testing.T) {
 		loads, err := NewSchedulerLoadReader()
 		if testCase.Error != nil {
 			if err == nil {
-				t.Fatal("expected error: %v", testCase.Error)
+				t.Fatalf("expected error: %v", testCase.Error)
 			}
 		}
 		if err != nil {
