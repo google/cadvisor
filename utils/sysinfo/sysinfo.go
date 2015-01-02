@@ -133,3 +133,51 @@ func GetCacheInfo(sysFs sysfs.SysFs, id int) ([]sysfs.CacheInfo, error) {
 	}
 	return info, nil
 }
+
+func GetNetworkStats(name string) (info.NetworkStats, error) {
+	stats := info.NetworkStats{}
+	// TODO(rjnagal): Take syfs as an argument.
+	sysFs, err := sysfs.NewRealSysFs()
+	if err != nil {
+		return stats, err
+	}
+	return getNetworkStats(name, sysFs)
+}
+
+func getNetworkStats(name string, sysFs sysfs.SysFs) (info.NetworkStats, error) {
+	stats := info.NetworkStats{}
+	var err error
+	stats.RxBytes, err = sysFs.GetNetworkStatValue(name, "rx_bytes")
+	if err != nil {
+		return stats, err
+	}
+	stats.RxPackets, err = sysFs.GetNetworkStatValue(name, "rx_packets")
+	if err != nil {
+		return stats, err
+	}
+	stats.RxErrors, err = sysFs.GetNetworkStatValue(name, "rx_errors")
+	if err != nil {
+		return stats, err
+	}
+	stats.RxDropped, err = sysFs.GetNetworkStatValue(name, "rx_dropped")
+	if err != nil {
+		return stats, err
+	}
+	stats.TxBytes, err = sysFs.GetNetworkStatValue(name, "tx_bytes")
+	if err != nil {
+		return stats, err
+	}
+	stats.TxPackets, err = sysFs.GetNetworkStatValue(name, "tx_packets")
+	if err != nil {
+		return stats, err
+	}
+	stats.TxErrors, err = sysFs.GetNetworkStatValue(name, "tx_errors")
+	if err != nil {
+		return stats, err
+	}
+	stats.TxDropped, err = sysFs.GetNetworkStatValue(name, "tx_dropped")
+	if err != nil {
+		return stats, err
+	}
+	return stats, nil
+}

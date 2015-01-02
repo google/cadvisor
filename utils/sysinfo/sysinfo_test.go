@@ -17,6 +17,7 @@ package sysinfo
 import (
 	"testing"
 
+	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 )
@@ -86,5 +87,26 @@ func TestGetCacheInfo(t *testing.T) {
 	}
 	if caches[0] != cacheInfo {
 		t.Errorf("expected to find cacheinfo %+v. Got %+v", cacheInfo, caches[0])
+	}
+}
+
+func TestGetNetworkStats(t *testing.T) {
+	expected_stats := info.NetworkStats{
+		RxBytes:   1024,
+		RxPackets: 1024,
+		RxErrors:  1024,
+		RxDropped: 1024,
+		TxBytes:   1024,
+		TxPackets: 1024,
+		TxErrors:  1024,
+		TxDropped: 1024,
+	}
+	fakeSys := &fakesysfs.FakeSysFs{}
+	netStats, err := getNetworkStats("eth0", fakeSys)
+	if err != nil {
+		t.Errorf("call to getNetworkStats() failed with %s", err)
+	}
+	if expected_stats != netStats {
+		t.Errorf("expected to get stats %+v, got %+v", expected_stats, netStats)
 	}
 }
