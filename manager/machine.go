@@ -179,7 +179,7 @@ func getTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 		return nil, numCores, fmt.Errorf("could not detect any cores")
 	}
 	for idx, node := range nodes {
-		caches, err := sysinfo.GetCacheInfo(sysFs, node.Cores[0].Id)
+		caches, err := sysinfo.GetCacheInfo(sysFs, node.Cores[0].Threads[0])
 		if err != nil {
 			return nil, -1, fmt.Errorf("failed to get cache information for node %d: %v", node.Id, err)
 		}
