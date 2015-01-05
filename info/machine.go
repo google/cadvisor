@@ -76,7 +76,7 @@ func (self *Node) AddNodeCache(c Cache) {
 }
 
 func (self *Node) AddPerCoreCache(c Cache) {
-	for idx, _ := range self.Cores {
+	for idx := range self.Cores {
 		self.Cores[idx].Caches = append(self.Cores[idx].Caches, c)
 	}
 }

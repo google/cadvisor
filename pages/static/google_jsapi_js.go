@@ -14,7 +14,7 @@
 
 package static
 
-const googleJsapiJs= `
+const googleJsapiJs = `
 if(!window['googleLT_']){window['googleLT_']=(new Date()).getTime();}if (!window['google']) {
 window['google'] = {};
 }

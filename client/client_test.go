@@ -79,7 +79,7 @@ func TestGetMachineinfo(t *testing.T) {
 		NumCores:       8,
 		MemoryCapacity: 31625871360,
 		DiskMap: map[string]info.DiskInfo{
-			"8:0": info.DiskInfo{
+			"8:0": {
 				Name:  "sda",
 				Major: 8,
 				Minor: 0,
