@@ -1671,7 +1671,7 @@ function drawMemoryUsage(elementId, machineInfo, containerInfo) {
 	// Get the memory limit, saturate to the machine size.
 	var memory_limit = machineInfo.memory_capacity;
 	if (containerInfo.spec.memory.limit && (containerInfo.spec.memory.limit < memory_limit)) {
-		memory_limit = machineInfo.spec.memory.limit;;
+		memory_limit = containerInfo.spec.memory.limit;
 	}
 
 	// Updating the progress bar.
