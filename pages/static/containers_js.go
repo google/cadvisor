@@ -1499,7 +1499,7 @@ function drawGauges(elementId, gauges) {
 
 	// Create and draw the visualization.
 	var options = {
-		width: 400, height: 120,
+		height: 100,
 		redFrom: 90, redTo: 100,
 		yellowFrom:75, yellowTo: 90,
 		minorTicks: 5,
