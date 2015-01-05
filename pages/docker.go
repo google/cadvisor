@@ -43,7 +43,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 		data = &pageData{
 			DisplayName: dockerContainersText,
 			ParentContainers: []link{
-				link{
+				{
 					Text: dockerContainersText,
 					Link: DockerPage,
 				}},

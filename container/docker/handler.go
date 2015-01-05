@@ -159,7 +159,7 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (*libcontainer.Conf
 
 		// Translate the old config into the new config.
 		config = oldConfig.Config
-		for ns, _ := range oldConfig.OldNamespaces {
+		for ns := range oldConfig.OldNamespaces {
 			config.Namespaces = append(config.Namespaces, libcontainer.Namespace{
 				Name: ns,
 			})
