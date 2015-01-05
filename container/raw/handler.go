@@ -59,12 +59,23 @@ type rawContainerHandler struct {
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
 	cgroupPaths map[string]string
 
-	fsInfo           fs.FsInfo
-	networkInterface *networkInterface
-	externalMounts   []mount
+	// Equivalent libcontainer state for this container.
+	libcontainerState dockerlibcontainer.State
+
+	// Whether this container has network isolation enabled.
+	hasNetwork bool
+
+	fsInfo         fs.FsInfo
+	externalMounts []mount
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory) (container.ContainerHandler, error) {
+	// Create the cgroup paths.
+	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
+	for key, val := range cgroupSubsystems.MountPoints {
+		cgroupPaths[key] = path.Join(val, name)
+	}
+
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
@@ -73,20 +84,24 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 	if err != nil {
 		return nil, err
 	}
-	var networkInterface *networkInterface
+
+	// Generate the equivalent libcontainer state for this container.
+	libcontainerState := dockerlibcontainer.State{
+		CgroupPaths: cgroupPaths,
+	}
+
+	hasNetwork := false
 	var externalMounts []mount
 	for _, container := range cHints.AllHosts {
 		if name == container.FullName {
-			networkInterface = container.NetworkInterface
+			libcontainerState.NetworkState = network.NetworkState{
+				VethHost:  container.NetworkInterface.VethHost,
+				VethChild: container.NetworkInterface.VethChild,
+			}
+			hasNetwork = true
 			externalMounts = container.Mounts
 			break
 		}
-	}
-
-	// Create the cgroup paths.
-	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
-	for key, val := range cgroupSubsystems.MountPoints {
-		cgroupPaths[key] = path.Join(val, name)
 	}
 
 	return &rawContainerHandler{
@@ -101,8 +116,9 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		watches:            make(map[string]struct{}),
 		cgroupWatches:      make(map[string]struct{}),
 		cgroupPaths:        cgroupPaths,
+		libcontainerState:  libcontainerState,
 		fsInfo:             fsInfo,
-		networkInterface:   networkInterface,
+		hasNetwork:         hasNetwork,
 		externalMounts:     externalMounts,
 	}, nil
 }
@@ -207,9 +223,7 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	}
 
 	//Network
-	if self.networkInterface != nil {
-		spec.HasNetwork = true
-	}
+	spec.HasNetwork = self.hasNetwork
 
 	// Check physical network devices for root container.
 	nd, err := self.GetRootNetworkDevices()
@@ -282,20 +296,7 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	// TODO(vmarmol): Don't re-create this every time.
-	state := dockerlibcontainer.State{
-		CgroupPaths: self.cgroupPaths,
-	}
-	if self.networkInterface != nil {
-		state = dockerlibcontainer.State{
-			NetworkState: network.NetworkState{
-				VethHost:  self.networkInterface.VethHost,
-				VethChild: self.networkInterface.VethChild,
-			},
-		}
-	}
-
-	stats, err := libcontainer.GetStats(self.cgroupPaths, &state)
+	stats, err := libcontainer.GetStats(self.cgroupPaths, &self.libcontainerState)
 	if err != nil {
 		return nil, err
 	}
