@@ -1635,15 +1635,20 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
 
 	var numGauges = gauges.length;
 	if (cur.filesystem) {
-		// Limit the number of filesystem gauges displayed to 5.
-		// 'Filesystem details' section still shows information for all filesystems.
-		for (var i = 0; i < cur.filesystem.length && i < 5; i++) {
+		for (var i = 0; i < cur.filesystem.length; i++) {
 			var data = cur.filesystem[i];
 			var totalUsage = Math.floor((data.usage * 100.0) / data.capacity);
 			var els = window.cadvisor.fsUsage.elements[data.device];
 
-			// Update the gauges.
+			// Update the gauges in the right order.
 			gauges[numGauges + els.index] = ['FS #' + (els.index + 1), totalUsage];
+		}
+
+		// Limit the number of filesystem gauges displayed to 5.
+		// 'Filesystem details' section still shows information for all filesystems.
+		var max_gauges = numGauges + 5;
+		if (gauges.length > max_gauges) {
+			gauges = gauges.slice(0, max_gauges);
 		}
 	}
 
