@@ -64,11 +64,15 @@ The actual object is the marshalled JSON of the `ContainerInfo` struct found in 
 
 The resource name for machine information is as follows:
 
-`/api/v1.0/machine`
+`/api/vX.Y/machine`
 
 This resource is read-only. The machine information is returned as a JSON object containing:
 
 - Number of schedulable logical CPU cores
 - Memory capacity (in bytes)
+- Maximum supported CPU frequency (in kHz)
+- Available filesystems: major, minor numbers and capacity (in bytes)
+- Network devices: mac addresses, MTU, and speed (if available)
+- Machine topology: Nodes, cores, threads, per-node memory, and caches
 
 The actual object is the marshalled JSON of the `MachineInfo` struct found in [info/machine.go](info/machine.go)
