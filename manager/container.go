@@ -65,7 +65,7 @@ func (c *containerData) Stop() error {
 }
 
 func (c *containerData) allowErrorLogging() bool {
-	if !c.lastErrorTime.IsZero() && time.Since(c.lastErrorTime) > time.Hour {
+	if time.Since(c.lastErrorTime) > time.Minute {
 		c.lastErrorTime = time.Now()
 		return true
 	}
