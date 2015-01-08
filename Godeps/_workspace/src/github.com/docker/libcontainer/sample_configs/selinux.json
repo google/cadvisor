@@ -178,11 +178,11 @@
     ],
     "hostname": "koye",
     "namespaces": [
-        {"name": "NEWIPC"},
-        {"name": "NEWNET"},
-        {"name": "NEWNS"},
-        {"name": "NEWPID"},
-        {"name": "NEWUTS"}
+        {"type": "NEWIPC"},
+        {"type": "NEWNET"},
+        {"type": "NEWNS"},
+        {"type": "NEWPID"},
+        {"type": "NEWUTS"}
     ],
     "networks": [
         {

@@ -10,11 +10,55 @@ type MountConfig mount.MountConfig
 
 type Network network.Network
 
+type NamespaceType string
+
+const (
+	NEWNET  NamespaceType = "NEWNET"
+	NEWPID  NamespaceType = "NEWPID"
+	NEWNS   NamespaceType = "NEWNS"
+	NEWUTS  NamespaceType = "NEWUTS"
+	NEWIPC  NamespaceType = "NEWIPC"
+	NEWUSER NamespaceType = "NEWUSER"
+)
+
 // Namespace defines configuration for each namespace.  It specifies an
 // alternate path that is able to be joined via setns.
 type Namespace struct {
-	Name string `json:"name"`
-	Path string `json:"path,omitempty"`
+	Type NamespaceType `json:"type"`
+	Path string        `json:"path,omitempty"`
+}
+
+type Namespaces []Namespace
+
+func (n *Namespaces) Remove(t NamespaceType) bool {
+	i := n.index(t)
+	if i == -1 {
+		return false
+	}
+	*n = append((*n)[:i], (*n)[i+1:]...)
+	return true
+}
+
+func (n *Namespaces) Add(t NamespaceType, path string) {
+	i := n.index(t)
+	if i == -1 {
+		*n = append(*n, Namespace{Type: t, Path: path})
+		return
+	}
+	(*n)[i].Path = path
+}
+
+func (n *Namespaces) index(t NamespaceType) int {
+	for i, ns := range *n {
+		if ns.Type == t {
+			return i
+		}
+	}
+	return -1
+}
+
+func (n *Namespaces) Contains(t NamespaceType) bool {
+	return n.index(t) != -1
 }
 
 // Config defines configuration options for executing a process inside a contained environment.
@@ -45,7 +89,7 @@ type Config struct {
 
 	// Namespaces specifies the container's namespaces that it should setup when cloning the init process
 	// If a namespace is not provided that namespace is shared from the container's parent process
-	Namespaces []Namespace `json:"namespaces,omitempty"`
+	Namespaces Namespaces `json:"namespaces,omitempty"`
 
 	// Capabilities specify the capabilities to keep when executing the process inside the container
 	// All capbilities not specified will be dropped from the processes capability mask
