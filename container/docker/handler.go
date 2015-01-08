@@ -161,7 +161,7 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (*libcontainer.Conf
 		config = oldConfig.Config
 		for ns := range oldConfig.OldNamespaces {
 			config.Namespaces = append(config.Namespaces, libcontainer.Namespace{
-				Name: ns,
+				Type: libcontainer.NamespaceType(ns),
 			})
 		}
 	}

@@ -88,8 +88,7 @@ func TestIPCHost(t *testing.T) {
 	}
 
 	config := newTemplateConfig(rootfs)
-	i := getNamespaceIndex(config, "NEWIPC")
-	config.Namespaces = append(config.Namespaces[:i], config.Namespaces[i+1:]...)
+	config.Namespaces.Remove(libcontainer.NEWIPC)
 	buffers, exitCode, err := runContainer(config, "", "readlink", "/proc/self/ns/ipc")
 	if err != nil {
 		t.Fatal(err)
@@ -121,8 +120,7 @@ func TestIPCJoinPath(t *testing.T) {
 	}
 
 	config := newTemplateConfig(rootfs)
-	i := getNamespaceIndex(config, "NEWIPC")
-	config.Namespaces[i].Path = "/proc/1/ns/ipc"
+	config.Namespaces.Add(libcontainer.NEWIPC, "/proc/1/ns/ipc")
 
 	buffers, exitCode, err := runContainer(config, "", "readlink", "/proc/self/ns/ipc")
 	if err != nil {
@@ -150,8 +148,7 @@ func TestIPCBadPath(t *testing.T) {
 	defer remove(rootfs)
 
 	config := newTemplateConfig(rootfs)
-	i := getNamespaceIndex(config, "NEWIPC")
-	config.Namespaces[i].Path = "/proc/1/ns/ipcc"
+	config.Namespaces.Add(libcontainer.NEWIPC, "/proc/1/ns/ipcc")
 
 	_, _, err = runContainer(config, "", "true")
 	if err == nil {
@@ -178,13 +175,4 @@ func TestRlimit(t *testing.T) {
 	if limit := strings.TrimSpace(out.Stdout.String()); limit != "1024" {
 		t.Fatalf("expected rlimit to be 1024, got %s", limit)
 	}
-}
-
-func getNamespaceIndex(config *libcontainer.Config, name string) int {
-	for i, v := range config.Namespaces {
-		if v.Name == name {
-			return i
-		}
-	}
-	return -1
 }

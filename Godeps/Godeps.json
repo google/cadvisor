@@ -59,8 +59,8 @@
 		},
 		{
 			"ImportPath": "github.com/docker/libcontainer",
-			"Comment": "v1.2.0-173-g58fc931",
-			"Rev": "58fc93160e03387a4f41dcf4aed2e376c4a92db4"
+			"Comment": "v1.4.0-52-gd7dea0e",
+			"Rev": "d7dea0e925315bab640115053204c16718839b1e"
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
