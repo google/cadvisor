@@ -17,9 +17,10 @@ package info
 type FsInfo struct {
 	// Block device associated with the filesystem.
 	Device string `json:"device"`
-
 	// Total number of bytes available on the filesystem.
 	Capacity uint64 `json:"capacity"`
+	// Free number of bytes available on the filesystem.
+	Free uint64 `json:"free"`
 }
 
 type Node struct {

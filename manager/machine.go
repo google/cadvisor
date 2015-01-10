@@ -256,7 +256,7 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 	}
 
 	for _, fs := range filesystems {
-		machineInfo.Filesystems = append(machineInfo.Filesystems, info.FsInfo{Device: fs.Device, Capacity: fs.Capacity})
+		machineInfo.Filesystems = append(machineInfo.Filesystems, info.FsInfo{Device: fs.Device, Capacity: fs.Capacity, Free: fs.Free})
 	}
 
 	return machineInfo, nil
