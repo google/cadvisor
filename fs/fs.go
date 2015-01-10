@@ -39,7 +39,7 @@ import (
 	"github.com/golang/glog"
 )
 
-var partitionRegex = regexp.MustCompile("sd[a-z]+\\d")
+var partitionRegex = regexp.MustCompile("(:?s|xv)d[a-z]+\\d")
 
 type partition struct {
 	mountpoint string
