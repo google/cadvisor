@@ -15,4 +15,4 @@
 package info
 
 // Version of cAdvisor.
-const VERSION = "0.7.1"
+const VERSION = "0.8.0"
