@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0 (2015-01-09)
+- Added ethernet device information.
+- Added machine-wide networking statistics.
+- Misc UI fixes.
+- Fixes for partially-isolated containers.
+
 ## 0.7.1 (2014-12-23)
 - Avoid repeated logging of container errors.
 - Handle non identify mounts for cgroups.
