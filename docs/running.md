@@ -33,6 +33,10 @@ In this case, cAdvisor UI should be accessible on `http://192.168.59.103:8080`
 
 On CentOS and RHEL the cgroup hierarchies are mounted in `/cgroup` so run cAdvisor with an additional Docker option of `--volume=/cgroup:/cgroup \`.
 
+## Debian
+
+By default, Debian disables the memory cgroup which does not allow cAdvisor to gather memory stats. To enable the memory cgroup take a look at [these instructions](https://github.com/google/cadvisor/issues/432).
+
 ### LXC Docker exec driver
 
 If you are using Docker with the LXC exec driver, then you need to manually specify all cgroup mounts by adding the:
