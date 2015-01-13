@@ -91,6 +91,10 @@
 			"Rev": "6807e777504f54ad073ecef66747de158294b639"
 		},
 		{
+			"ImportPath": "github.com/remyoudompheng/go-netlink",
+			"Rev": "739088cfabc6a06254abdef8057958311cc24c4a"
+		},
+		{
 			"ImportPath": "github.com/stretchr/objx",
 			"Rev": "cbeaeb16a013161a98496fad62933b1d21786672"
 		},
