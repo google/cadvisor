@@ -69,7 +69,6 @@ func (self *FakeSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 }
 
 func (self *FakeSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
-	self.info.EntryName = "eth0"
 	return []os.FileInfo{&self.info}, nil
 }
 
@@ -100,4 +99,8 @@ func (self *FakeSysFs) GetCacheInfo(cpu int, cache string) (sysfs.CacheInfo, err
 
 func (self *FakeSysFs) SetCacheInfo(cache sysfs.CacheInfo) {
 	self.cache = cache
+}
+
+func (self *FakeSysFs) SetEntryName(name string) {
+	self.info.EntryName = name
 }
