@@ -77,8 +77,16 @@ func GetNetworkDevices(sysfs sysfs.SysFs) ([]info.NetInfo, error) {
 	netDevices := []info.NetInfo{}
 	for _, dev := range devs {
 		name := dev.Name()
-		// Only consider ethernet devices for now.
-		if !strings.HasPrefix(name, "eth") {
+		// Ignore docker, loopback, and veth devices.
+		ignoredDevices := []string{"lo", "veth", "docker"}
+		ignored := false
+		for _, prefix := range ignoredDevices {
+			if strings.HasPrefix(name, prefix) {
+				ignored = true
+				break
+			}
+		}
+		if ignored {
 			continue
 		}
 		address, err := sysfs.GetNetworkAddress(name)

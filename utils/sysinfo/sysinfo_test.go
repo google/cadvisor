@@ -47,6 +47,7 @@ func TestGetBlockDeviceInfo(t *testing.T) {
 
 func TestGetNetworkDevices(t *testing.T) {
 	fakeSys := fakesysfs.FakeSysFs{}
+	fakeSys.SetEntryName("eth0")
 	devs, err := GetNetworkDevices(&fakeSys)
 	if err != nil {
 		t.Errorf("expected call to GetNetworkDevices() to succeed. Failed with %s", err)
@@ -66,6 +67,21 @@ func TestGetNetworkDevices(t *testing.T) {
 	}
 	if eth.MacAddress != "42:01:02:03:04:f4" {
 		t.Errorf("expected mac address to be '42:01:02:03:04:f4'. Found %q", eth.MacAddress)
+	}
+}
+
+func TestIgnoredNetworkDevices(t *testing.T) {
+	fakeSys := fakesysfs.FakeSysFs{}
+	ignoredDevices := []string{"veth1234", "lo", "docker0"}
+	for _, name := range ignoredDevices {
+		fakeSys.SetEntryName(name)
+		devs, err := GetNetworkDevices(&fakeSys)
+		if err != nil {
+			t.Errorf("expected call to GetNetworkDevices() to succeed. Failed with %s", err)
+		}
+		if len(devs) != 0 {
+			t.Errorf("expected dev %s to be ignored, but got info %+v", name, devs)
+		}
 	}
 }
 
