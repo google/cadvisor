@@ -169,7 +169,7 @@ func convertToUint64(v interface{}) (uint64, error) {
 	case uint32:
 		return uint64(x), nil
 	}
-	return 0, fmt.Errorf("Unknown type")
+	return 0, fmt.Errorf("unknown type")
 }
 
 func (self *influxdbStorage) valuesToContainerStats(columns []string, values []interface{}) (*info.ContainerStats, error) {

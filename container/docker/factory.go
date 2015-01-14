@@ -208,7 +208,7 @@ func Register(factory info.MachineInfoFactory) error {
 		}
 	}
 	if !usesNativeDriver {
-		return fmt.Errorf("Docker found, but not using native exec driver")
+		return fmt.Errorf("docker found, but not using native exec driver")
 	}
 
 	usesAufsDriver := false

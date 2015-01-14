@@ -81,7 +81,7 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 		)
 
 	default:
-		err = fmt.Errorf("Unknown database driver: %v", *argDbDriver)
+		err = fmt.Errorf("unknown database driver: %v", *argDbDriver)
 	}
 	if err != nil {
 		return nil, err
