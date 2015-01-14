@@ -43,7 +43,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 		}
 		conts, err := m.AllDockerContainers(&reqParams)
 		if err != nil {
-			return fmt.Errorf("Failed to get container %q with error: %v", containerName, err)
+			return fmt.Errorf("failed to get container %q with error: %v", containerName, err)
 		}
 		subcontainers := make([]link, 0, len(conts))
 		for _, cont := range conts {

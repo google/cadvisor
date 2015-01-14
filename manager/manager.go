@@ -514,7 +514,7 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 		}]
 	}()
 	if !ok {
-		return fmt.Errorf("Root container does not exist when watching for new containers")
+		return fmt.Errorf("root container does not exist when watching for new containers")
 	}
 
 	// Register for new subcontainers.

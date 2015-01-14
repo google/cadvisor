@@ -185,7 +185,7 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 	}
 	cont, err := m.GetContainerInfo(containerName, &reqParams)
 	if err != nil {
-		return fmt.Errorf("Failed to get container %q with error: %v", containerName, err)
+		return fmt.Errorf("failed to get container %q with error: %v", containerName, err)
 	}
 	displayName := getContainerDisplayName(cont.ContainerReference)
 

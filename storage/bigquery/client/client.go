@@ -50,21 +50,21 @@ type Client struct {
 // Helper method to create an authenticated connection.
 func connect() (*oauth.Token, *bigquery.Service, error) {
 	if *clientId == "" {
-		return nil, nil, fmt.Errorf("No client id specified")
+		return nil, nil, fmt.Errorf("no client id specified")
 	}
 	if *serviceAccount == "" {
-		return nil, nil, fmt.Errorf("No service account specified")
+		return nil, nil, fmt.Errorf("no service account specified")
 	}
 	if *projectId == "" {
-		return nil, nil, fmt.Errorf("No project id specified")
+		return nil, nil, fmt.Errorf("no project id specified")
 	}
 	authScope := bigquery.BigqueryScope
 	if *pemFile == "" {
-		return nil, nil, fmt.Errorf("No credentials specified")
+		return nil, nil, fmt.Errorf("no credentials specified")
 	}
 	pemBytes, err := ioutil.ReadFile(*pemFile)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Could not access credential file %v - %v", pemFile, err)
+		return nil, nil, fmt.Errorf("could not access credential file %v - %v", pemFile, err)
 	}
 
 	t := jwt.NewToken(*serviceAccount, authScope, pemBytes)
@@ -118,7 +118,7 @@ func (c *Client) Close() error {
 // Expired connection is refreshed.
 func (c *Client) getService() (*bigquery.Service, error) {
 	if c.token == nil || c.service == nil {
-		return nil, fmt.Errorf("Service not initialized")
+		return nil, fmt.Errorf("service not initialized")
 	}
 
 	// Refresh expired token.
@@ -151,7 +151,7 @@ func (c *Client) PrintDatasets() error {
 
 func (c *Client) CreateDataset(datasetId string) error {
 	if c.service == nil {
-		return fmt.Errorf("No service created")
+		return fmt.Errorf("no service created")
 	}
 	_, err := c.service.Datasets.Insert(*projectId, &bigquery.Dataset{
 		DatasetReference: &bigquery.DatasetReference{
@@ -171,7 +171,7 @@ func (c *Client) CreateDataset(datasetId string) error {
 // Schema is currently not updated if the table already exists.
 func (c *Client) CreateTable(tableId string, schema *bigquery.TableSchema) error {
 	if c.service == nil || c.datasetId == "" {
-		return fmt.Errorf("No dataset created")
+		return fmt.Errorf("no dataset created")
 	}
 	_, err := c.service.Tables.Get(*projectId, c.datasetId, tableId).Do()
 	if err != nil {
@@ -197,7 +197,7 @@ func (c *Client) CreateTable(tableId string, schema *bigquery.TableSchema) error
 func (c *Client) InsertRow(rowData map[string]interface{}) error {
 	service, _ := c.getService()
 	if service == nil || c.datasetId == "" || c.tableId == "" {
-		return fmt.Errorf("Table not setup to add rows")
+		return fmt.Errorf("table not setup to add rows")
 	}
 	jsonRows := make(map[string]bigquery.JsonValue)
 	for key, value := range rowData {
@@ -214,7 +214,7 @@ func (c *Client) InsertRow(rowData map[string]interface{}) error {
 
 	result, err := service.Tabledata.InsertAll(*projectId, c.datasetId, c.tableId, insertRequest).Do()
 	if err != nil {
-		return fmt.Errorf("Error inserting row: %v", err)
+		return fmt.Errorf("error inserting row: %v", err)
 	}
 
 	if len(result.InsertErrors) > 0 {
@@ -232,7 +232,7 @@ func (c *Client) InsertRow(rowData map[string]interface{}) error {
 // Returns a bigtable table name (format: datasetID.tableID)
 func (c *Client) GetTableName() (string, error) {
 	if c.service == nil || c.datasetId == "" || c.tableId == "" {
-		return "", fmt.Errorf("Table not setup")
+		return "", fmt.Errorf("table not setup")
 	}
 	return fmt.Sprintf("%s.%s", c.datasetId, c.tableId), nil
 }
@@ -262,7 +262,7 @@ func (c *Client) Query(query string) ([]string, [][]interface{}, error) {
 	}
 	numRows := results.TotalRows
 	if numRows < 1 {
-		return nil, nil, fmt.Errorf("Query returned no data")
+		return nil, nil, fmt.Errorf("query returned no data")
 	}
 
 	headers := []string{}
