@@ -97,7 +97,6 @@ func New(driver storage.StorageDriver, sysfs sysfs.SysFs) (Manager, error) {
 	}
 	newManager.versionInfo = *versionInfo
 	glog.Infof("Version: %+v", newManager.versionInfo)
-	newManager.storageDriver = driver
 
 	return newManager, nil
 }
