@@ -93,6 +93,9 @@ type DiskInfo struct {
 
 	// Size in bytes
 	Size uint64 `json:"size"`
+
+	// I/O Scheduler - one of "none", "noop", "cfq", "deadline"
+	Scheduler string `json:"scheduler"`
 }
 
 type NetInfo struct {

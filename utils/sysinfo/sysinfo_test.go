@@ -43,6 +43,9 @@ func TestGetBlockDeviceInfo(t *testing.T) {
 	if disk.Size != size {
 		t.Errorf("expected to get disk size of %d. Got %d", size, disk.Size)
 	}
+	if disk.Scheduler != "cfq" {
+		t.Errorf("expected to get scheduler type of cfq. Got %q", disk.Scheduler)
+	}
 }
 
 func TestGetNetworkDevices(t *testing.T) {

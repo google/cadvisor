@@ -64,6 +64,10 @@ func (self *FakeSysFs) GetBlockDeviceSize(name string) (string, error) {
 	return "1234567", nil
 }
 
+func (self *FakeSysFs) GetBlockDeviceScheduler(name string) (string, error) {
+	return "noop deadline [cfq]", nil
+}
+
 func (self *FakeSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 	return "8:0\n", nil
 }
