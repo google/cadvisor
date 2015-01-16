@@ -39,7 +39,7 @@ import (
 	"github.com/golang/glog"
 )
 
-var partitionRegex = regexp.MustCompile("(:?s|xv)d[a-z]+\\d")
+var partitionRegex = regexp.MustCompile("^(:?(:?s|xv)d[a-z]+\\d*|dm-\\d+)$")
 
 type partition struct {
 	mountpoint string
@@ -58,7 +58,7 @@ func NewFsInfo() (FsInfo, error) {
 	}
 	partitions := make(map[string]partition, 0)
 	for _, mount := range mounts {
-		if !strings.HasPrefix(mount.Fstype, "ext") {
+		if !strings.HasPrefix(mount.Fstype, "ext") && mount.Fstype != "btrfs" {
 			continue
 		}
 		// Avoid bind mounts.
