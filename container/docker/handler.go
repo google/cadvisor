@@ -341,6 +341,14 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 	return ret, nil
 }
 
+func (self *dockerContainerHandler) GetCgroupPath(resource string) (string, error) {
+	path, ok := self.cgroupPaths[resource]
+	if !ok {
+		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, self.name)
+	}
+	return path, nil
+}
+
 func (self *dockerContainerHandler) ListThreads(listType container.ListType) ([]int, error) {
 	return nil, nil
 }

@@ -30,6 +30,7 @@ import (
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/utils/cpuload"
 	"github.com/google/cadvisor/utils/sysfs"
 )
 
@@ -119,12 +120,22 @@ type manager struct {
 	quitChannels           []chan error
 	cadvisorContainer      string
 	dockerContainersRegexp *regexp.Regexp
+	loadReader             *cpuload.CpuLoadReader
 }
 
 // Start the container manager.
 func (self *manager) Start() error {
+	// Create cpu load reader.
+	cpuLoadReader, err := cpuload.New()
+	if err != nil {
+		// TODO(rjnagal): Promote to warning once we support cpu load inside namespaces.
+		glog.Infof("could not initialize cpu load reader: %s", err)
+	} else {
+		self.loadReader = cpuLoadReader
+	}
+
 	// Create root and then recover all containers.
-	err := self.createContainer("/")
+	err = self.createContainer("/")
 	if err != nil {
 		return err
 	}
@@ -164,6 +175,10 @@ func (self *manager) Stop() error {
 		}
 	}
 	self.quitChannels = make([]chan error, 0, 2)
+	if self.loadReader != nil {
+		self.loadReader.Close()
+		self.loadReader = nil
+	}
 	return nil
 }
 
@@ -357,7 +372,7 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
-	cont, err := newContainerData(containerName, m.storageDriver, handler, logUsage)
+	cont, err := newContainerData(containerName, m.storageDriver, handler, m.loadReader, logUsage)
 	if err != nil {
 		return err
 	}

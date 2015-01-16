@@ -70,6 +70,9 @@ type ContainerHandler interface {
 	// Stops watching for subcontainer changes.
 	StopWatchingSubcontainers() error
 
+	// Returns absolute cgroup path for the requested resource.
+	GetCgroupPath(resource string) (string, error)
+
 	// Returns whether the container still exists.
 	Exists() bool
 }

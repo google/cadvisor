@@ -157,6 +157,24 @@ func (self *ContainerInfo) StatsEndTime() time.Time {
 	return ret
 }
 
+// This mirrors kernel internal structure.
+type LoadStats struct {
+	// Number of sleeping tasks.
+	NrSleeping uint64 `json:"nr_sleeping"`
+
+	// Number of running tasks.
+	NrRunning uint64 `json:"nr_running"`
+
+	// Number of tasks in stopped state
+	NrStopped uint64 `json:"nr_stopped"`
+
+	// Number of tasks in uninterruptible state
+	NrUinterruptible uint64 `json:"nr_uninterruptible"`
+
+	// Number of tasks waiting on IO
+	NrIoWait uint64 `json:"nr_io_wait"`
+}
+
 // All CPU usage metrics are cumulative from the creation of the container
 type CpuStats struct {
 	Usage struct {
@@ -310,6 +328,9 @@ type ContainerStats struct {
 
 	// Filesystem statistics
 	Filesystem []FsStats `json:"filesystem,omitempty"`
+
+	// Task load stats
+	TaskStats LoadStats `json:"task_stats,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

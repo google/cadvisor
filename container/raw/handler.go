@@ -322,6 +322,14 @@ func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
+func (self *rawContainerHandler) GetCgroupPath(resource string) (string, error) {
+	path, ok := self.cgroupPaths[resource]
+	if !ok {
+		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, self.name)
+	}
+	return path, nil
+}
+
 // Lists all directories under "path" and outputs the results as children of "parent".
 func listDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}) error {
 	// Ignore if this hierarchy does not exist.
