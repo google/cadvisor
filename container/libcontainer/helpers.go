@@ -70,6 +70,7 @@ var supportedSubsystems map[string]struct{} = map[string]struct{}{
 	"cpuacct": {},
 	"memory":  {},
 	"cpuset":  {},
+	"blkio":   {},
 }
 
 // Get stats of the specified container
