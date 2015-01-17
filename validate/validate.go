@@ -235,6 +235,29 @@ func validateCgroupMounts() (string, string) {
 	return Supported, out
 }
 
+func validateIoScheduler(containerManager manager.Manager) (string, string) {
+	var desc string
+	mi, err := containerManager.GetMachineInfo()
+	if err != nil {
+		return Unknown, "Machine info not available\n\t"
+	}
+	cfq := false
+	for _, disk := range mi.DiskMap {
+		desc += fmt.Sprintf("\t Disk %q Scheduler type %q.\n", disk.Name, disk.Scheduler)
+		if disk.Scheduler == "cfq" {
+			cfq = true
+		}
+	}
+	// Since we get lot of random block devices, report recommended if
+	// at least one of them is on cfq. Report Supported otherwise.
+	if cfq {
+		desc = "At least one device supports 'cfq' I/O scheduler. Some disk stats can be reported.\n" + desc
+		return Recommended, desc
+	}
+	desc = "None of the devices support 'cfq' I/O scheduler. No disk stats can be reported.\n" + desc
+	return Supported, desc
+}
+
 func HandleRequest(w http.ResponseWriter, containerManager manager.Manager) error {
 	// Get cAdvisor version Info.
 	versionInfo, err := containerManager.GetVersionInfo()
@@ -262,6 +285,8 @@ func HandleRequest(w http.ResponseWriter, containerManager manager.Manager) erro
 	dockerInfoValidation, desc := validateDockerInfo()
 	out += fmt.Sprintf(OutputFormat, "Docker driver setup", dockerInfoValidation, desc)
 
+	ioSchedulerValidation, desc := validateIoScheduler(containerManager)
+	out += fmt.Sprintf(OutputFormat, "Block device setup", ioSchedulerValidation, desc)
 	_, err = w.Write([]byte(out))
 	return err
 }
