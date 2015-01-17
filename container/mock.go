@@ -90,6 +90,11 @@ func (self *MockContainerHandler) Exists() bool {
 	return args.Get(0).(bool)
 }
 
+func (self *MockContainerHandler) GetCgroupPath(path string) (string, error) {
+	args := self.Called(path)
+	return args.Get(0).(string), args.Error(1)
+}
+
 type FactoryForMockContainerHandler struct {
 	Name                        string
 	PrepareContainerHandlerFunc func(name string, handler *MockContainerHandler)

@@ -25,6 +25,7 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/utils/cpuload"
 )
 
 // Housekeeping interval.
@@ -43,6 +44,7 @@ type containerData struct {
 	info                 containerInfo
 	storageDriver        storage.StorageDriver
 	lock                 sync.Mutex
+	loadReader           *cpuload.CpuLoadReader
 	housekeepingInterval time.Duration
 	lastUpdatedTime      time.Time
 	lastErrorTime        time.Time
@@ -91,7 +93,7 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	return &c.info, nil
 }
 
-func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler, logUsage bool) (*containerData, error) {
+func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler, loadReader *cpuload.CpuLoadReader, logUsage bool) (*containerData, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver")
 	}
@@ -107,6 +109,7 @@ func newContainerData(containerName string, driver storage.StorageDriver, handle
 		handler:              handler,
 		storageDriver:        driver,
 		housekeepingInterval: *HousekeepingInterval,
+		loadReader:           loadReader,
 		logUsage:             logUsage,
 		stop:                 make(chan bool, 1),
 	}
@@ -233,6 +236,17 @@ func (c *containerData) updateStats() error {
 	}
 	if stats == nil {
 		return nil
+	}
+	if c.loadReader != nil {
+		path, err := c.handler.GetCgroupPath("cpu")
+		if err == nil {
+			loadStats, err := c.loadReader.GetCpuLoad(path)
+			if err != nil {
+				return fmt.Errorf("failed to get load stat for %q - path %q, error %s", c.info.Name, path, err)
+			} else {
+				stats.TaskStats = loadStats
+			}
+		}
 	}
 	ref, err := c.handler.ContainerReference()
 	if err != nil {

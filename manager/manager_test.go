@@ -50,7 +50,7 @@ func createManagerAndAddContainers(
 	if ret, ok := mif.(*manager); ok {
 		for _, name := range containers {
 			mockHandler := container.NewMockContainerHandler(name)
-			cont, err := newContainerData(name, driver, mockHandler, false)
+			cont, err := newContainerData(name, driver, mockHandler, nil, false)
 			if err != nil {
 				t.Fatal(err)
 			}

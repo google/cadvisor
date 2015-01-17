@@ -19,6 +19,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"syscall"
+
+	"github.com/google/cadvisor/info"
 )
 
 const (
@@ -60,7 +62,7 @@ func (self netlinkMessage) toRawMsg() (rawmsg syscall.NetlinkMessage) {
 type loadStatsResp struct {
 	Header    syscall.NlMsghdr
 	GenHeader genMsghdr
-	Stats     LoadStats
+	Stats     info.LoadStats
 }
 
 // Return required padding to align 'size' to 'alignment'.
@@ -216,21 +218,21 @@ func verifyHeader(msg syscall.NetlinkMessage) error {
 // id: family id for taskstats.
 // fd: fd to path to the cgroup directory under cpu hierarchy.
 // conn: open netlink connection used to communicate with kernel.
-func getLoadStats(id uint16, fd uintptr, conn *Connection) (LoadStats, error) {
+func getLoadStats(id uint16, fd uintptr, conn *Connection) (info.LoadStats, error) {
 	msg := prepareCmdMessage(id, fd)
 	err := conn.WriteMessage(msg.toRawMsg())
 	if err != nil {
-		return LoadStats{}, err
+		return info.LoadStats{}, err
 	}
 
 	resp, err := conn.ReadMessage()
 	if err != nil {
-		return LoadStats{}, err
+		return info.LoadStats{}, err
 	}
 
 	parsedmsg, err := parseLoadStatsResp(resp)
 	if err != nil {
-		return LoadStats{}, err
+		return info.LoadStats{}, err
 	}
 	return parsedmsg.Stats, nil
 }

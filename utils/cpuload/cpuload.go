@@ -19,6 +19,7 @@ import (
 	"os"
 
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/info"
 )
 
 type CpuLoadReader struct {
@@ -49,41 +50,23 @@ func (self *CpuLoadReader) Close() {
 	}
 }
 
-// This mirrors kernel internal structure.
-type LoadStats struct {
-	// Number of sleeping tasks.
-	NrSleeping uint64 `json:"nr_sleeping"`
-
-	// Number of running tasks.
-	NrRunning uint64 `json:"nr_running"`
-
-	// Number of tasks in stopped state
-	NrStopped uint64 `json:"nr_stopped"`
-
-	// Number of tasks in uninterruptible state
-	NrUinterruptible uint64 `json:"nr_uninterruptible"`
-
-	// Number of tasks waiting on IO
-	NrIoWait uint64 `json:"nr_io_wait"`
-}
-
 // Returns instantaneous number of running tasks in a group.
 // Caller can use historical data to calculate cpu load.
 // path is an absolute filesystem path for a container under the CPU cgroup hierarchy.
 // NOTE: non-hierarchical load is returned. It does not include load for subcontainers.
-func (self *CpuLoadReader) GetCpuLoad(path string) (LoadStats, error) {
+func (self *CpuLoadReader) GetCpuLoad(path string) (info.LoadStats, error) {
 	if len(path) == 0 {
-		return LoadStats{}, fmt.Errorf("cgroup path can not be empty!")
+		return info.LoadStats{}, fmt.Errorf("cgroup path can not be empty!")
 	}
 
 	cfd, err := os.Open(path)
 	if err != nil {
-		return LoadStats{}, fmt.Errorf("failed to open cgroup path %s: %q", path, err)
+		return info.LoadStats{}, fmt.Errorf("failed to open cgroup path %s: %q", path, err)
 	}
 
 	stats, err := getLoadStats(self.familyId, cfd.Fd(), self.conn)
 	if err != nil {
-		return LoadStats{}, err
+		return info.LoadStats{}, err
 	}
 	glog.V(1).Infof("Task stats for %q: %+v", path, stats)
 	return stats, nil
