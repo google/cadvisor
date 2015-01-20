@@ -225,6 +225,11 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	//Network
 	spec.HasNetwork = self.hasNetwork
 
+	// DiskIo.
+	if blkioRoot, ok := self.cgroupPaths["blkio"]; ok && utils.FileExists(blkioRoot) {
+		spec.HasDiskIo = true
+	}
+
 	// Check physical network devices for root container.
 	nd, err := self.GetRootNetworkDevices()
 	if err != nil {

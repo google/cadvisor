@@ -49,6 +49,9 @@ type ContainerSpec struct {
 	HasNetwork bool `json:"has_network"`
 
 	HasFilesystem bool `json:"has_filesystem"`
+
+	// HasDiskIo when true, indicates that DiskIo stats will be available.
+	HasDiskIo bool `json:"has_diskio"`
 }
 
 // Container reference contains enough information to uniquely identify a container
