@@ -85,7 +85,10 @@ func (self *Connection) WriteMessage(msg syscall.NetlinkMessage) error {
 }
 
 func (self *Connection) ReadMessage() (msg syscall.NetlinkMessage, err error) {
-	binary.Read(self.rbuf, binary.LittleEndian, &msg.Header)
+	err = binary.Read(self.rbuf, binary.LittleEndian, &msg.Header)
+	if err != nil {
+		return msg, err
+	}
 	msg.Data = make([]byte, msg.Header.Len-syscall.NLMSG_HDRLEN)
 	_, err = self.rbuf.Read(msg.Data)
 	return msg, err

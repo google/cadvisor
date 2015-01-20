@@ -76,7 +76,10 @@ func getFamilyId(conn *Connection) (uint16, error) {
 	msg := prepareFamilyMessage()
 	conn.WriteMessage(msg.toRawMsg())
 
-	resp, _ := conn.ReadMessage()
+	resp, err := conn.ReadMessage()
+	if err != nil {
+		return 0, err
+	}
 	id, err := parseFamilyResp(resp)
 	if err != nil {
 		return 0, err
