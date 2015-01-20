@@ -149,15 +149,6 @@ const containersHtmlTemplate = `
           </div>
 	</div>
 	{{end}}
-	{{if .FsAvailable}}
-	<div class="panel panel-primary">
-          <div class="panel-heading">
-            <h3 class="panel-title">Filesystem</h3>
-          </div>
-          <div id="filesystem-usage" class="panel-body">
-          </div>
-        </div>
-	{{end}}
 	{{if .NetworkAvailable}}
 	<div class="panel panel-primary">
 	  <div class="panel-heading">
@@ -173,6 +164,15 @@ const containersHtmlTemplate = `
 	  </div>
 	</div>
         {{end}}
+	{{if .FsAvailable}}
+	<div class="panel panel-primary">
+          <div class="panel-heading">
+            <h3 class="panel-title">Filesystem</h3>
+          </div>
+          <div id="filesystem-usage" class="panel-body">
+          </div>
+        </div>
+	{{end}}
       </div>
       {{end}}
     </div>
