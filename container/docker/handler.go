@@ -229,6 +229,8 @@ func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.Mac
 	}
 
 	spec.HasNetwork = true
+	spec.HasDiskIo = true
+
 	return spec
 }
 
