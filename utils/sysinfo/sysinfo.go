@@ -112,7 +112,7 @@ func GetNetworkDevices(sysfs sysfs.SysFs) ([]info.NetInfo, error) {
 		if err != nil {
 			return nil, err
 		}
-		var mtu uint64
+		var mtu int64
 		n, err := fmt.Sscanf(mtuStr, "%d", &mtu)
 		if err != nil || n != 1 {
 			return nil, fmt.Errorf("could not parse mtu from %s for device %s", mtuStr, name)
@@ -125,7 +125,7 @@ func GetNetworkDevices(sysfs sysfs.SysFs) ([]info.NetInfo, error) {
 		speed, err := sysfs.GetNetworkSpeed(name)
 		// Some devices don't set speed.
 		if err == nil {
-			var s uint64
+			var s int64
 			n, err := fmt.Sscanf(speed, "%d", &s)
 			if err != nil || n != 1 {
 				return nil, fmt.Errorf("could not parse speed from %s for device %s", speed, name)

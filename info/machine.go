@@ -106,10 +106,10 @@ type NetInfo struct {
 	MacAddress string `json:"mac_address"`
 
 	// Speed in MBits/s
-	Speed uint64 `json:"speed"`
+	Speed int64 `json:"speed"`
 
 	// Maximum Transmission Unit
-	Mtu uint64 `json:"mtu"`
+	Mtu int64 `json:"mtu"`
 }
 
 type MachineInfo struct {
