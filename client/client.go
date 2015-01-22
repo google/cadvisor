@@ -142,22 +142,22 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 		resp, err = http.Get(url)
 	}
 	if err != nil {
-		return fmt.Errorf("unable to get %q: %v", infoName, err)
+		return fmt.Errorf("unable to get %q from %q: %v", infoName, url, err)
 	}
 	if resp == nil {
-		return fmt.Errorf("received empty response from %q", infoName)
+		return fmt.Errorf("received empty response for %q from %q", infoName, url)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		err = fmt.Errorf("unable to read all %q: %v", infoName, err)
+		err = fmt.Errorf("unable to read all %q from %q: %v", infoName, url, err)
 		return err
 	}
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("request failed with error: %q", strings.TrimSpace(string(body)))
+		return fmt.Errorf("request %q failed with error: %q", url, strings.TrimSpace(string(body)))
 	}
 	if err = json.Unmarshal(body, data); err != nil {
-		err = fmt.Errorf("unable to unmarshal %q (Body: %q) with error: %v", infoName, string(body), err)
+		err = fmt.Errorf("unable to unmarshal %q (Body: %q) from %q with error: %v", infoName, string(body), url, err)
 		return err
 	}
 	return nil
