@@ -198,7 +198,6 @@ func TestDockerContainerSpec(t *testing.T) {
 	assert.True(containerInfo.Spec.HasMemory, "Memory should be isolated")
 	assert.Equal(containerInfo.Spec.Memory.Limit, memoryLimit, "Container should have memory limit of %d, has %d", memoryLimit, containerInfo.Spec.Memory.Limit)
 	assert.True(containerInfo.Spec.HasNetwork, "Network should be isolated")
-	assert.True(containerInfo.Spec.HasFilesystem, "Filesystem should be isolated")
 	assert.True(containerInfo.Spec.HasDiskIo, "Blkio should be isolated")
 }
 
