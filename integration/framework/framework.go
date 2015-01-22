@@ -198,6 +198,7 @@ type DockerRunArgs struct {
 	Args []string
 }
 
+// TODO(vmarmol): Use the Docker remote API.
 // TODO(vmarmol): Refactor a set of "RunCommand" actions.
 // Runs a Docker container in the background. Uses the specified DockerRunArgs and command.
 //
@@ -226,7 +227,7 @@ func (self *realFramework) Run(args DockerRunArgs, cmd ...string) string {
 		output = string(out)
 	}
 
-	// The last lime is the container ID.
+	// The last line is the container ID.
 	elements := strings.Fields(output)
 	containerId := elements[len(elements)-1]
 
