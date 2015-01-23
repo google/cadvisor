@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -63,10 +64,22 @@ func New(t *testing.T) Framework {
 		t.Skip("Skipping framework test in short mode")
 	}
 
+	// Try to see if non-localhost hosts are GCE instances.
+	var gceInstanceName string
+	hostname := *host
+	if hostname != "localhost" {
+		gceInstanceName = hostname
+		gceIp, err := getGceIp(hostname)
+		if err == nil {
+			hostname = gceIp
+		}
+	}
+
 	return &realFramework{
 		host: HostInfo{
-			Host: *host,
-			Port: *port,
+			Host:            hostname,
+			Port:            *port,
+			GceInstanceName: gceInstanceName,
 		},
 		t:        t,
 		cleanups: make([]func(), 0),
@@ -104,13 +117,29 @@ type realFramework struct {
 }
 
 type HostInfo struct {
-	Host string
-	Port int
+	Host            string
+	Port            int
+	GceInstanceName string
 }
 
 // Returns: http://<host>:<port>/
 func (self HostInfo) FullHost() string {
 	return fmt.Sprintf("http://%s:%d/", self.Host, self.Port)
+}
+
+var gceIpRegexp = regexp.MustCompile("external-ip +\\| +([0-9.:]+) +")
+
+func getGceIp(hostname string) (string, error) {
+	out, err := exec.Command("gcutil", "getinstance", hostname).CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	matches := gceIpRegexp.FindStringSubmatch(string(out))
+	if len(matches) == 0 {
+		return "", fmt.Errorf("failed to find IP from output %q", string(out))
+	}
+	return matches[1], nil
 }
 
 func (self *realFramework) T() *testing.T {
@@ -151,7 +180,7 @@ func (self *realFramework) Client() *client.Client {
 func (self *realFramework) RunPause() string {
 	return self.Run(DockerRunArgs{
 		Image: "kubernetes/pause",
-	}, "sleep", "inf")
+	})
 }
 
 // Run the specified command in a Docker busybox container.
@@ -169,40 +198,51 @@ type DockerRunArgs struct {
 	Args []string
 }
 
+// TODO(vmarmol): Use the Docker remote API.
+// TODO(vmarmol): Refactor a set of "RunCommand" actions.
 // Runs a Docker container in the background. Uses the specified DockerRunArgs and command.
 //
 // e.g.:
 // RunDockerContainer(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 //   -> docker run busybox ping www.google.com
 func (self *realFramework) Run(args DockerRunArgs, cmd ...string) string {
+	dockerCommand := append(append(append([]string{"docker", "run", "-d"}, args.Args...), args.Image), cmd...)
+
+	var output string
 	if self.host.Host == "localhost" {
 		// Just run locally.
-		out, err := exec.Command("docker", append(append(append([]string{"run", "-d"}, args.Args...), args.Image), cmd...)...).CombinedOutput()
+		out, err := exec.Command("sudo", dockerCommand...).Output()
 		if err != nil {
 			self.t.Fatalf("Failed to run docker container with run args %+v due to error: %v and output: %q", args, err, out)
 			return ""
 		}
-		// The last lime is the container ID.
-		elements := strings.Split(string(out), "\n")
-		if len(elements) < 2 {
-			self.t.Fatalf("Failed to find Docker container ID in output %q", out)
+		output = string(out)
+	} else {
+		// We must SSH to the remote machine and run the command.
+		out, err := exec.Command("gcutil", append([]string{"ssh", self.host.GceInstanceName, "sudo"}, dockerCommand...)...).Output()
+		if err != nil {
+			self.t.Fatalf("Failed to run docker container remotely in %q with run args %+v due to error: %v and output: %q", self.host.Host, args, err, out)
 			return ""
 		}
-		containerId := elements[len(elements)-2]
-		self.cleanups = append(self.cleanups, func() {
-			out, err := exec.Command("docker", "rm", "-f", containerId).CombinedOutput()
-			if err != nil {
-				glog.Errorf("Failed to remove container %q with error: %v and output: %q", containerId, err, out)
-			}
-		})
-		return containerId
+		output = string(out)
 	}
 
-	// TODO(vmarmol): Implement.
-	// We must SSH to the remote machine and run the command.
+	// The last line is the container ID.
+	elements := strings.Fields(output)
+	containerId := elements[len(elements)-1]
 
-	self.t.Fatalf("Non-localhost Run not implemented")
-	return ""
+	self.cleanups = append(self.cleanups, func() {
+		cleanupCommand := []string{"sudo", "docker", "rm", "-f", containerId}
+		if self.host.Host != "localhost" {
+			cleanupCommand = append([]string{"gcutil", "ssh", self.host.GceInstanceName}, cleanupCommand...)
+		}
+
+		out, err := exec.Command(cleanupCommand[0], cleanupCommand[1:]...).CombinedOutput()
+		if err != nil {
+			glog.Errorf("Failed to remove container %q with error: %v and output: %q", containerId, err, out)
+		}
+	})
+	return containerId
 }
 
 // Runs retryFunc until no error is returned. After dur time the last error is returned.

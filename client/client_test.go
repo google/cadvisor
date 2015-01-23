@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"path"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -143,7 +144,7 @@ func TestRequestFails(t *testing.T) {
 		t.Fatalf("Expected non-nil error")
 	}
 	expectedError := fmt.Sprintf("request failed with error: %q", errorText)
-	if err.Error() != expectedError {
+	if strings.Contains(err.Error(), expectedError) {
 		t.Fatalf("Expected error %q but received %q", expectedError, err)
 	}
 }
