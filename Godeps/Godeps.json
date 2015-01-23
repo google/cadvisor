@@ -30,6 +30,10 @@
 			"Rev": "e1c259484b495133836706f46319f5897f1e9bf6"
 		},
 		{
+			"ImportPath": "github.com/GoogleCloudPlatform/gcloud-golang/compute/metadata",
+			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
+		},
+		{
 			"ImportPath": "github.com/SeanDolphin/bqschema",
 			"Rev": "a713d26df274e999ec10e9bbc7e73a1c4791053c"
 		},
@@ -105,6 +109,10 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
 			"Rev": "8ce79b9f0b77745113f82c17d0756771456ccbd3"
+		},
+		{
+			"ImportPath": "google.golang.org/cloud/internal",
+			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
 		}
 	]
 }
