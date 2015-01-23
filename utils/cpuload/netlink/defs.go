@@ -12,28 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package netlink
 
-import (
-	"log"
+/*
+#include <linux/taskstats.h>
+*/
+import "C"
 
-	"github.com/google/cadvisor/utils/cpuload"
+type TaskStats C.struct_taskstats
+
+const (
+	__TASKSTATS_CMD_MAX = C.__TASKSTATS_CMD_MAX
 )
-
-func main() {
-	c, err := cpuload.New()
-	if err != nil {
-		log.Printf("Failed to create cpu load util: %s", err)
-		return
-	}
-	defer c.Close()
-
-	paths := []string{"/sys/fs/cgroup/cpu", "/sys/fs/cgroup/cpu/docker"}
-	for _, path := range paths {
-		stats, err := c.GetCpuLoad(path)
-		if err != nil {
-			log.Printf("Error getting cpu load for %q: %s", path, err)
-		}
-		log.Printf("Task load for %s: %+v", path, stats)
-	}
-}
