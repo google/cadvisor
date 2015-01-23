@@ -16,58 +16,27 @@ package cpuload
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/info"
+	"github.com/google/cadvisor/utils/cpuload/netlink"
 )
 
-type CpuLoadReader struct {
-	familyId uint16
-	conn     *Connection
+type CpuLoadReader interface {
+	// Start the reader.
+	Start() error
+
+	// Stop the reader and clean up internal state.
+	Stop()
+
+	// Retrieve Cpu load for a given group.
+	// Path is an absolute filesystem path for a container under CPU cgroup hierarchy.
+	GetCpuLoad(path string) (info.LoadStats, error)
 }
 
-func New() (*CpuLoadReader, error) {
-	conn, err := newConnection()
+func New() (CpuLoadReader, error) {
+	reader, err := netlink.New()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create a new connection: %s", err)
+		return nil, fmt.Errorf("failed to create a netlink-based cpu load reader: %s", err)
 	}
-
-	id, err := getFamilyId(conn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get netlink family id for task stats: %s", err)
-	}
-	glog.V(2).Infof("Family id for taskstats: %d", id)
-	return &CpuLoadReader{
-		familyId: id,
-		conn:     conn,
-	}, nil
-}
-
-func (self *CpuLoadReader) Close() {
-	if self.conn != nil {
-		self.conn.Close()
-	}
-}
-
-// Returns instantaneous number of running tasks in a group.
-// Caller can use historical data to calculate cpu load.
-// path is an absolute filesystem path for a container under the CPU cgroup hierarchy.
-// NOTE: non-hierarchical load is returned. It does not include load for subcontainers.
-func (self *CpuLoadReader) GetCpuLoad(path string) (info.LoadStats, error) {
-	if len(path) == 0 {
-		return info.LoadStats{}, fmt.Errorf("cgroup path can not be empty!")
-	}
-
-	cfd, err := os.Open(path)
-	if err != nil {
-		return info.LoadStats{}, fmt.Errorf("failed to open cgroup path %s: %q", path, err)
-	}
-
-	stats, err := getLoadStats(self.familyId, cfd.Fd(), self.conn)
-	if err != nil {
-		return info.LoadStats{}, err
-	}
-	glog.V(1).Infof("Task stats for %q: %+v", path, stats)
-	return stats, nil
+	return reader, nil
 }

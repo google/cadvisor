@@ -44,7 +44,7 @@ type containerData struct {
 	info                 containerInfo
 	storageDriver        storage.StorageDriver
 	lock                 sync.Mutex
-	loadReader           *cpuload.CpuLoadReader
+	loadReader           cpuload.CpuLoadReader
 	housekeepingInterval time.Duration
 	lastUpdatedTime      time.Time
 	lastErrorTime        time.Time
@@ -93,7 +93,7 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	return &c.info, nil
 }
 
-func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler, loadReader *cpuload.CpuLoadReader, logUsage bool) (*containerData, error) {
+func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool) (*containerData, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver")
 	}
