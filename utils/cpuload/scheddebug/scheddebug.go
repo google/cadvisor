@@ -107,12 +107,17 @@ func (self *SchedReader) refresh() {
 		}
 		glog.V(2).Infof("Load for %q on cpu %s: %d", cgroup, cpu, numRunning)
 		if strings.HasPrefix(cgroup, "/autogroup") {
-			// collapse all autogroups to root.
+			// collapse all autogroups to root. This keeps our internal map compact.
 			cgroup = "/"
 		}
 		// TODO(rjnagal): Walk up the path and add load to all parent containers. That will make
 		// it different from netlink approach which is non-hierarchical.
 		load[cgroup] += int(numRunning)
+
+		if cgroup != "/" {
+			// Return the whole machine load for root. Add all task group's running processes to root.
+			load["/"] += int(numRunning)
+		}
 	}
 	glog.V(2).Infof("New loads : %+v", load)
 	self.dataLock.Lock()
