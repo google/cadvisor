@@ -240,7 +240,7 @@ func (c *containerData) updateStats() error {
 	if c.loadReader != nil {
 		path, err := c.handler.GetCgroupPath("cpu")
 		if err == nil {
-			loadStats, err := c.loadReader.GetCpuLoad(path)
+			loadStats, err := c.loadReader.GetCpuLoad(c.info.Name, path)
 			if err != nil {
 				return fmt.Errorf("failed to get load stat for %q - path %q, error %s", c.info.Name, path, err)
 			} else {

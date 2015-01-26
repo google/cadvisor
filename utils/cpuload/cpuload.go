@@ -17,8 +17,10 @@ package cpuload
 import (
 	"fmt"
 
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/utils/cpuload/netlink"
+	"github.com/google/cadvisor/utils/cpuload/scheddebug"
 )
 
 type CpuLoadReader interface {
@@ -29,14 +31,24 @@ type CpuLoadReader interface {
 	Stop()
 
 	// Retrieve Cpu load for a given group.
+	// name is the full hierarchical name of the container.
 	// Path is an absolute filesystem path for a container under CPU cgroup hierarchy.
-	GetCpuLoad(path string) (info.LoadStats, error)
+	GetCpuLoad(name string, path string) (info.LoadStats, error)
 }
 
 func New() (CpuLoadReader, error) {
+	// First try to create a netlink based load reader.
 	reader, err := netlink.New()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a netlink-based cpu load reader: %s", err)
+	if err == nil {
+		glog.Info("Using a netlink-based load reader")
+		return reader, nil
 	}
-	return reader, nil
+	glog.V(1).Infof("failed to create a netlink-based cpu load read: %v", err)
+	// Netlink based load reader doesn't work inside namespaces. Fall back to using scheddebug.
+	schedReader, schedErr := scheddebug.New()
+	if schedErr != nil {
+		return nil, fmt.Errorf("failed to create any cpu load reader - netlink based (%v), scheddebug based (%v)", err, schedErr)
+	}
+	glog.Info("Using a sched debug based load reader")
+	return schedReader, nil
 }
