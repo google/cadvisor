@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/GoogleCloudPlatform/gcloud-golang/compute/metadata"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
 )
@@ -127,7 +128,8 @@ func (self HostInfo) FullHost() string {
 	return fmt.Sprintf("http://%s:%d/", self.Host, self.Port)
 }
 
-var gceIpRegexp = regexp.MustCompile("external-ip +\\| +([0-9.:]+) +")
+var gceInternalIpRegexp = regexp.MustCompile(" +ip +\\| +([0-9.:]+) +")
+var gceExternalIpRegexp = regexp.MustCompile("external-ip +\\| +([0-9.:]+) +")
 
 func getGceIp(hostname string) (string, error) {
 	out, err := exec.Command("gcutil", "getinstance", hostname).CombinedOutput()
@@ -135,7 +137,13 @@ func getGceIp(hostname string) (string, error) {
 		return "", err
 	}
 
-	matches := gceIpRegexp.FindStringSubmatch(string(out))
+	// Use the internal IP within GCE and the external one outside.
+	var matches []string
+	if metadata.OnGCE() {
+		matches = gceInternalIpRegexp.FindStringSubmatch(string(out))
+	} else {
+		matches = gceExternalIpRegexp.FindStringSubmatch(string(out))
+	}
 	if len(matches) == 0 {
 		return "", fmt.Errorf("failed to find IP from output %q", string(out))
 	}
