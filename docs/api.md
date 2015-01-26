@@ -16,7 +16,7 @@ The resource name for Docker container information is as follows:
 
 `/api/v1.2/docker/<Docker container name or blank for all Docker containers>`
 
-The Docker name can be either the UUID or the short name of the container. It returns the information of the specified container(s). The information is returned as a list of serialized `ContainerInfo` JSON objects (found in [info/container.go](info/container.go)).
+The Docker name can be either the UUID or the short name of the container. It returns the information of the specified container(s). The information is returned as a list of serialized `ContainerInfo` JSON objects (found in [info/container.go](../info/container.go)).
 
 ## Version 1.1
 
@@ -28,7 +28,7 @@ The resource name for subcontainer information is as follows:
 
 `/api/v1.1/subcontainers/<absolute container name>`
 
-Where the absolute container name follows the lmctfy naming convention (described bellow). It returns the information of the specified container and all subcontainers (recursively). The information is returned as a list of serialized `ContainerInfo` JSON objects (found in [info/container.go](info/container.go)).
+Where the absolute container name follows the lmctfy naming convention (described bellow). It returns the information of the specified container and all subcontainers (recursively). The information is returned as a list of serialized `ContainerInfo` JSON objects (found in [info/container.go](../info/container.go)).
 
 ## Version 1.0
 
@@ -58,7 +58,7 @@ The container information is returned as a JSON object containing:
 - Detailed resource usage statistics of the container for the last `N` seconds (`N` is globally configurable in cAdvisor)
 - Histogram of resource usage from the creation of the container
 
-The actual object is the marshalled JSON of the `ContainerInfo` struct found in [info/container.go](info/container.go)
+The actual object is the marshalled JSON of the `ContainerInfo` struct found in [info/container.go](../info/container.go)
 
 ### Machine Information
 
@@ -75,4 +75,4 @@ This resource is read-only. The machine information is returned as a JSON object
 - Network devices: mac addresses, MTU, and speed (if available)
 - Machine topology: Nodes, cores, threads, per-node memory, and caches
 
-The actual object is the marshalled JSON of the `MachineInfo` struct found in [info/machine.go](info/machine.go)
+The actual object is the marshalled JSON of the `MachineInfo` struct found in [info/machine.go](../info/machine.go)
