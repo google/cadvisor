@@ -197,6 +197,8 @@ type CpuStats struct {
 		// Unit: nanoseconds
 		System uint64 `json:"system"`
 	} `json:"usage"`
+	// Smoothed average of number of runnable threads x 1000.
+	// We multiply by thousand to avoid using floats, but preserving precision.
 	Load int32 `json:"load"`
 }
 

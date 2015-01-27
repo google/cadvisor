@@ -17,6 +17,7 @@ package manager
 import (
 	"flag"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -33,6 +34,9 @@ var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second,
 var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
 var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
 
+// Decay value used for load average smoothing. Interval length of 10 seconds is used.
+var loadDecay = math.Exp(float64(-1 * (*HousekeepingInterval).Seconds() / 10))
+
 type containerInfo struct {
 	info.ContainerReference
 	Subcontainers []info.ContainerReference
@@ -45,6 +49,7 @@ type containerData struct {
 	storageDriver        storage.StorageDriver
 	lock                 sync.Mutex
 	loadReader           cpuload.CpuLoadReader
+	loadAvg              float64 // smoothed load average seen so far.
 	housekeepingInterval time.Duration
 	lastUpdatedTime      time.Time
 	lastErrorTime        time.Time
@@ -111,6 +116,7 @@ func newContainerData(containerName string, driver storage.StorageDriver, handle
 		housekeepingInterval: *HousekeepingInterval,
 		loadReader:           loadReader,
 		logUsage:             logUsage,
+		loadAvg:              -1.0, // negative value indicates uninitialized.
 		stop:                 make(chan bool, 1),
 	}
 	cont.info.ContainerReference = ref
@@ -225,6 +231,18 @@ func (c *containerData) updateSpec() error {
 	return nil
 }
 
+// Calculate new smoothed load average using the new sample of runnable threads.
+// The decay used ensures that the load will stabilize on a new constant value within
+// 10 seconds.
+func (c *containerData) updateLoad(newLoad uint64) {
+	if c.loadAvg < 0 {
+		c.loadAvg = float64(newLoad) // initialize to the first seen sample for faster stabilization.
+	} else {
+		c.loadAvg = c.loadAvg*loadDecay + float64(newLoad)*(1.0-loadDecay)
+	}
+	glog.V(3).Infof("New load for %q: %v. latest sample: %d", c.info.Name, c.loadAvg, newLoad)
+}
+
 func (c *containerData) updateStats() error {
 	stats, err := c.handler.GetStats()
 	if err != nil {
@@ -243,9 +261,11 @@ func (c *containerData) updateStats() error {
 			loadStats, err := c.loadReader.GetCpuLoad(c.info.Name, path)
 			if err != nil {
 				return fmt.Errorf("failed to get load stat for %q - path %q, error %s", c.info.Name, path, err)
-			} else {
-				stats.TaskStats = loadStats
 			}
+			stats.TaskStats = loadStats
+			c.updateLoad(loadStats.NrRunning)
+			// convert to 'milliLoad' to avoid floats and preserve precision.
+			stats.Cpu.Load = int32(c.loadAvg * 1000)
 		}
 	}
 	ref, err := c.handler.ContainerReference()
