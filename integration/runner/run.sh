@@ -23,7 +23,15 @@ if [ $# != 1 ]; then
   exit 1
 fi
 
+# Don't run on trivial changes.
+if ! git diff --name-only origin/master | grep -c -E "*.go|*.sh" &> /dev/null; then
+  echo "This PR does not touch files that require integration testing. Skipping integration tests."
+  exit 0
+fi
+
 HOST=$1
+export GOPATH="$JENKINS_HOME/workspace/project"
+export GOBIN="$GOPATH/bin"
 
 # Build the runner.
 godep go build github.com/google/cadvisor/integration/runner
