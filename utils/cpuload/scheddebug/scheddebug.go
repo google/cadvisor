@@ -17,6 +17,7 @@ package scheddebug
 import (
 	"fmt"
 	"io/ioutil"
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -110,9 +111,15 @@ func (self *SchedReader) refresh() {
 			// collapse all autogroups to root.
 			cgroup = "/"
 		}
-		// TODO(rjnagal): Walk up the path and add load to all parent containers. That will make
-		// it different from netlink approach which is non-hierarchical.
 		load[cgroup] += int(numRunning)
+		// Walk up the path and add load to all parent containers.
+		for cgroup != "/" {
+			cgroup = path.Dir(cgroup)
+			if cgroup == "." {
+				cgroup = "/"
+			}
+			load[cgroup] += int(numRunning)
+		}
 	}
 	glog.V(2).Infof("New loads : %+v", load)
 	self.dataLock.Lock()
