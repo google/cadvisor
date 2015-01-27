@@ -199,7 +199,9 @@ type CpuStats struct {
 	} `json:"usage"`
 	// Smoothed average of number of runnable threads x 1000.
 	// We multiply by thousand to avoid using floats, but preserving precision.
-	Load int32 `json:"load"`
+	// Load is smoothed over the last 10 seconds. Instantaneous value can be read
+	// from LoadStats.NrRunning.
+	LoadAverage int32 `json:"load_average"`
 }
 
 type PerDiskStats struct {
