@@ -31,9 +31,9 @@ import (
 var containerRegexp *regexp.Regexp = regexp.MustCompile(
 	`Task in (.*) killed as a result of limit of `)
 var lastLineRegexp *regexp.Regexp = regexp.MustCompile(
-	`(^[A-Z]{1}[a-z]{2} [0-9]{1,2} [0-9]{1,2}:[0-9]{2}:[0-9]{2}) .* Killed process ([0-9]+) \(([0-9A-Za-z_]+)\)`)
+	`(^[A-Z]{1}[a-z]{2} .*[0-9]{1,2} [0-9]{1,2}:[0-9]{2}:[0-9]{2}) .* Killed process ([0-9]+) \(([0-9A-Za-z_]+)\)`)
 var firstLineRegexp *regexp.Regexp = regexp.MustCompile(
-	`kernel: [[0-9]+.[0-9]+] [0-9A-Za-z_]+ invoked oom-killer:`)
+	`invoked oom-killer:`)
 
 // struct to hold file from which we obtain OomInstances
 type OomParser struct {
@@ -112,7 +112,9 @@ func (self *OomParser) analyzeLines(outPipe io.ReadCloser, outStream chan *OomIn
 			continue
 		}
 		if in_oom_kernel_log {
-			oomCurrentInstance := new(OomInstance)
+			oomCurrentInstance := &OomInstance{
+				ContainerName: "/",
+			}
 			finished := false
 			for err == nil && !finished {
 				err = getContainerName(line, oomCurrentInstance)
