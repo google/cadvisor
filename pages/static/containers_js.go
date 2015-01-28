@@ -1471,6 +1471,11 @@ function drawLineChart(seriesTitles, data, elementId, unit) {
 			position: 'bottom',
 		},
 	};
+	// If the whole data series has the same value, try to center it in the chart.
+	if ( min == max) {
+		opts.vAxis.viewWindow.max = 1.1 * max
+		opts.vAxis.viewWindow.min = 0.9 * max
+	}
 
 	window.charts[elementId].draw(dataTable, opts);
 }
@@ -1552,6 +1557,23 @@ function drawCpuTotalUsage(elementId, machineInfo, stats) {
 	}
 	drawLineChart(titles, data, elementId, "Cores");
 }
+
+// Draw the graph for CPU load.
+function drawCpuLoad(elementId, machineInfo, stats) {
+
+	var titles = ["Time", "Average"];
+	var data = [];
+	for (var i = 1; i < stats.stats.length; i++) {
+		var cur = stats.stats[i];
+
+		var elements = [];
+		elements.push(cur.timestamp);
+		elements.push(cur.cpu.load_average/1000);
+		data.push(elements);
+	}
+	drawLineChart(titles, data, elementId, "Runnable threads");
+}
+
 
 // Draw the graph for per-core CPU usage.
 function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
@@ -1828,6 +1850,9 @@ function drawCharts(machineInfo, containerInfo) {
 	if (containerInfo.spec.has_cpu) {
 		steps.push(function() {
 			drawCpuTotalUsage("cpu-total-usage-chart", machineInfo, containerInfo);
+		});
+		steps.push(function() {
+			drawCpuLoad("cpu-load-chart", machineInfo, containerInfo);
 		});
 		steps.push(function() {
 			drawCpuPerCoreUsage("cpu-per-core-usage-chart", machineInfo, containerInfo);
