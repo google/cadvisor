@@ -23,7 +23,7 @@ import (
 func createStats(id int32) *info.ContainerStats {
 	return &info.ContainerStats{
 		Cpu: info.CpuStats{
-			Load: id,
+			LoadAverage: id,
 		},
 	}
 }
@@ -41,7 +41,7 @@ func expectElements(t *testing.T, sb *StatsBuffer, expected []int32) {
 		return
 	}
 	for i, el := range res {
-		if el.Cpu.Load != expected[i] {
+		if el.Cpu.LoadAverage != expected[i] {
 			t.Errorf("Expected elements %v, got %v", expected, res)
 		}
 	}

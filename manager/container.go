@@ -265,7 +265,7 @@ func (c *containerData) updateStats() error {
 			stats.TaskStats = loadStats
 			c.updateLoad(loadStats.NrRunning)
 			// convert to 'milliLoad' to avoid floats and preserve precision.
-			stats.Cpu.Load = int32(c.loadAvg * 1000)
+			stats.Cpu.LoadAverage = int32(c.loadAvg * 1000)
 		}
 	}
 	ref, err := c.handler.ContainerReference()

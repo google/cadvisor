@@ -47,7 +47,7 @@ func checkCpuStats(t *testing.T, stat info.CpuStats) {
 	}
 	inDelta(t, stat.Usage.Total, totalUsage, uint64((5 * time.Millisecond).Nanoseconds()), "Per-core CPU usage")
 	inDelta(t, stat.Usage.Total, stat.Usage.User+stat.Usage.System, uint64((500 * time.Millisecond).Nanoseconds()), "User + system CPU usage")
-	assert.Equal(0, stat.Load, "Non-zero load is unexpected as it is currently unset. Do we need to update the test?")
+	// TODO(rjnagal): Add verification for cpu load.
 }
 
 func checkMemoryStats(t *testing.T, stat info.MemoryStats) {
