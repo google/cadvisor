@@ -207,8 +207,11 @@ func TestDockerContainerCpuStats(t *testing.T) {
 	defer fm.Cleanup()
 
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("ping", "www.google.com")
+	containerId := fm.Docker().RunBusybox("sh", "-c", "while [ 1 ]; do md5sum /bin/busybox; done")
 	waitForContainer(containerId, fm)
+
+	// wait for cpu load reader housekeeping to kick in.
+	time.Sleep(1 * time.Second)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
