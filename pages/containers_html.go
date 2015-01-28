@@ -116,6 +116,8 @@ const containersHtmlTemplate = `
           <div class="panel-body">
             <h4>Total Usage</h4>
 	    <div id="cpu-total-usage-chart"></div>
+            <h4>CPU Load Average</h4>
+	    <div id="cpu-load-chart"></div>
             <h4>Usage per Core</h4>
 	    <div id="cpu-per-core-usage-chart"></div>
             <h4>Usage Breakdown</h4>
