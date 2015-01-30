@@ -31,7 +31,7 @@ func main() {
 	paths := []string{"/sys/fs/cgroup/cpu", "/sys/fs/cgroup/cpu/docker"}
 	names := []string{"/", "/docker"}
 	for i, path := range paths {
-		stats, err := n.GetCpuLoad(path, names[i])
+		stats, err := n.GetCpuLoad(names[i], path)
 		if err != nil {
 			log.Printf("Error getting cpu load for %q: %s", path, err)
 		}
