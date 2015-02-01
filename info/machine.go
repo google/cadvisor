@@ -132,7 +132,7 @@ type MachineInfo struct {
 	NetworkDevices []NetInfo `json:"network_devices"`
 
 	// Machine Topology
-	// Describes cpu layout and hierarchy. TODO(rjnagal): Add Memory hierarchy.
+	// Describes cpu/memory layout and hierarchy.
 	Topology []Node `json:"topology"`
 }
 
