@@ -111,7 +111,7 @@ func newDockerContainerHandler(
 		usesAufsDriver: usesAufsDriver,
 		fsInfo:         fsInfo,
 	}
-	handler.storageDirs = append(handler.storageDirs, path.Join(dockerRootDir, pathToAufsDir, path.Base(name)))
+	handler.storageDirs = append(handler.storageDirs, path.Join(dockerRootDir, pathToAufsDir, id))
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := client.InspectContainer(id)
