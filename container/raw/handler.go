@@ -76,6 +76,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		cgroupPaths[key] = path.Join(val, name)
 	}
 
+	// TODO(vmarmol): Get from factory.
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
@@ -303,12 +304,12 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 	stats, err := libcontainer.GetStats(self.cgroupPaths, &self.libcontainerState)
 	if err != nil {
-		return nil, err
+		return stats, err
 	}
 
 	err = self.getFsStats(stats)
 	if err != nil {
-		return nil, err
+		return stats, err
 	}
 
 	// Fill in network stats for root.

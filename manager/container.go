@@ -244,18 +244,20 @@ func (c *containerData) updateLoad(newLoad uint64) {
 }
 
 func (c *containerData) updateStats() error {
-	stats, err := c.handler.GetStats()
-	if err != nil {
+	stats, statsErr := c.handler.GetStats()
+	if statsErr != nil {
 		// Ignore errors if the container is dead.
 		if !c.handler.Exists() {
 			return nil
 		}
-		return err
+
+		// Stats may be partially populated, push those before we return an error.
 	}
 	if stats == nil {
-		return nil
+		return statsErr
 	}
 	if c.loadReader != nil {
+		// TODO(vmarmol): Cache this path.
 		path, err := c.handler.GetCgroupPath("cpu")
 		if err == nil {
 			loadStats, err := c.loadReader.GetCpuLoad(c.info.Name, path)
@@ -280,7 +282,7 @@ func (c *containerData) updateStats() error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return statsErr
 }
 
 func (c *containerData) updateSubcontainers() error {

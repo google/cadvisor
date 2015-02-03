@@ -82,6 +82,7 @@ func newDockerContainerHandler(
 	usesAufsDriver bool,
 	cgroupSubsystems *containerLibcontainer.CgroupSubsystems,
 ) (container.ContainerHandler, error) {
+	// TODO(vmarmol): Get from factory.
 	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
@@ -299,16 +300,16 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 func (self *dockerContainerHandler) GetStats() (stats *info.ContainerStats, err error) {
 	state, err := self.readLibcontainerState()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	stats, err = containerLibcontainer.GetStats(self.cgroupPaths, state)
 	if err != nil {
-		return
+		return stats, err
 	}
 	err = self.getFsStats(stats)
 	if err != nil {
-		return
+		return stats, err
 	}
 
 	return stats, nil
