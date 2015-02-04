@@ -252,6 +252,7 @@ func (c *containerData) updateStats() error {
 		}
 
 		// Stats may be partially populated, push those before we return an error.
+		statsErr = fmt.Errorf("%v, continuing to push stats", statsErr)
 	}
 	if stats == nil {
 		return statsErr
