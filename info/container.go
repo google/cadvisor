@@ -405,3 +405,37 @@ func calculateCpuUsage(prev, cur uint64) uint64 {
 	}
 	return cur - prev
 }
+
+type Percentiles struct {
+	// Indicates whether the stats are present or not.
+	// If true, values below do not have any data.
+	Present bool `json:"present"`
+	// Average over the collected sample.
+	Mean uint64 `json:"mean"`
+	// Max seen over the collected sample.
+	Max uint64 `json:"max"`
+	// 90th percentile over the collected sample.
+	Ninety uint64 `json:"ninety"`
+}
+
+type Usage struct {
+	// Indicates amount of data available [0-100].
+	// If we have data for half a day, we'll still process DayUsage,
+	// but set PercentComplete to 50.
+	PercentComplete int32 `json:"percent_complete"`
+	// Mean, Max, and 90p cpu rate value in milliCpus/seconds. Converted to milliCpus to avoid floats.
+	Cpu Percentiles `json:"cpu"`
+	// Mean, Max, and 90p memory size in bytes.
+	Memory Percentiles `json:"memory"`
+}
+
+type DerivedStats struct {
+	// Time of generation of these stats.
+	Timestamp time.Time `json:"timestamp"`
+	// Percentiles in last observed minute.
+	MinuteUsage Usage `json:"minute_usage"`
+	// Percentile in last hour.
+	HourUsage Usage `json:"hour_usage"`
+	// Percentile in last day.
+	DayUsage Usage `json:"day_usage"`
+}
