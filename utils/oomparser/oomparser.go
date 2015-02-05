@@ -69,7 +69,9 @@ func getProcessNamePid(line string, currentOomInstance *OomInstance) (bool, erro
 	if reList == nil {
 		return false, nil
 	}
-	linetime, err := time.Parse(time.Stamp, reList[1])
+	const longForm = "Jan _2 15:04:05 2006"
+	stringYear := strconv.Itoa(time.Now().Year())
+	linetime, err := time.Parse(longForm, reList[1]+" "+stringYear)
 	if err != nil {
 		return false, err
 	}

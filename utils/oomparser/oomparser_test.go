@@ -27,7 +27,8 @@ const containerLogFile = "containerOomExampleLog.txt"
 const systemLogFile = "systemOomExampleLog.txt"
 
 func createExpectedContainerOomInstance(t *testing.T) *OomInstance {
-	deathTime, err := time.Parse(time.Stamp, "Jan  5 15:19:27")
+	const longForm = "Jan _2 15:04:05 2006"
+	deathTime, err := time.Parse(longForm, "Jan  5 15:19:27 2015")
 	if err != nil {
 		t.Fatalf("could not parse expected time when creating expected container oom instance. Had error %v", err)
 		return nil
@@ -41,7 +42,8 @@ func createExpectedContainerOomInstance(t *testing.T) *OomInstance {
 }
 
 func createExpectedSystemOomInstance(t *testing.T) *OomInstance {
-	deathTime, err := time.Parse(time.Stamp, "Jan 28 19:58:45")
+	const longForm = "Jan _2 15:04:05 2006"
+	deathTime, err := time.Parse(longForm, "Jan 28 19:58:45 2015")
 	if err != nil {
 		t.Fatalf("could not parse expected time when creating expected system oom instance. Had error %v", err)
 		return nil
@@ -82,7 +84,8 @@ func TestGetProcessNamePid(t *testing.T) {
 		t.Errorf("bad line fed to getProcessNamePid should return false but returned %v", couldParseLine)
 	}
 
-	correctTime, err := time.Parse(time.Stamp, "Jan 21 22:01:49")
+	const longForm = "Jan _2 15:04:05 2006"
+	correctTime, err := time.Parse(longForm, "Jan 21 22:01:49 2015")
 	couldParseLine, err = getProcessNamePid(endLine, currentOomInstance)
 	if err != nil {
 		t.Errorf("good line fed to getProcessNamePid should yield no error, but had error %v", err)
@@ -97,7 +100,7 @@ func TestGetProcessNamePid(t *testing.T) {
 		t.Errorf("getProcessNamePid should have set PID to 19667, not %d", currentOomInstance.Pid)
 	}
 	if !correctTime.Equal(currentOomInstance.TimeOfDeath) {
-		t.Errorf("getProcessNamePid should have set date to %v, not %v", correctTime, currentOomInstance.Pid)
+		t.Errorf("getProcessNamePid should have set date to %v, not %v", correctTime, currentOomInstance.TimeOfDeath)
 	}
 }
 
