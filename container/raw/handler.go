@@ -18,9 +18,11 @@ package raw
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"strconv"
 	"strings"
+	"time"
 
 	"code.google.com/p/go.exp/inotify"
 	dockerlibcontainer "github.com/docker/libcontainer"
@@ -179,6 +181,20 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	var spec info.ContainerSpec
 
 	// The raw driver assumes unified hierarchy containers.
+
+	// Get the lowest creation time from all hierarchies as the container creation time.
+	now := time.Now()
+	lowestTime := now
+	for _, cgroupPath := range self.cgroupPaths {
+		// The modified time of the cgroup directory is when the container was created.
+		fi, err := os.Stat(cgroupPath)
+		if err == nil && fi.ModTime().Before(lowestTime) {
+			lowestTime = fi.ModTime()
+		}
+	}
+	if lowestTime != now {
+		spec.CreationTime = lowestTime
+	}
 
 	// Get machine info.
 	mi, err := self.machineInfoFactory.GetMachineInfo()
