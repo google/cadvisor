@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/docker/libcontainer"
 	"github.com/docker/libcontainer/cgroups"
@@ -68,6 +69,9 @@ type dockerContainerHandler struct {
 	usesAufsDriver bool
 	fsInfo         fs.FsInfo
 	storageDirs    []string
+
+	// Time at which this container was created.
+	creationTime time.Time
 }
 
 func DockerStateDir() string {
@@ -119,6 +123,7 @@ func newDockerContainerHandler(
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 	}
+	handler.creationTime = ctnr.Created
 
 	// Add the name and bare ID as aliases of the container.
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"))
@@ -235,23 +240,23 @@ func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.Mac
 	return spec
 }
 
-func (self *dockerContainerHandler) GetSpec() (spec info.ContainerSpec, err error) {
+func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	mi, err := self.machineInfoFactory.GetMachineInfo()
 	if err != nil {
-		return
+		return info.ContainerSpec{}, err
 	}
 	libcontainerConfig, err := self.readLibcontainerConfig()
 	if err != nil {
-		return
+		return info.ContainerSpec{}, err
 	}
 
-	spec = libcontainerConfigToContainerSpec(libcontainerConfig, mi)
-
+	spec := libcontainerConfigToContainerSpec(libcontainerConfig, mi)
+	spec.CreationTime = self.creationTime
 	if self.usesAufsDriver {
 		spec.HasFilesystem = true
 	}
 
-	return
+	return spec, err
 }
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {

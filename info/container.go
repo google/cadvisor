@@ -40,6 +40,9 @@ type MemorySpec struct {
 }
 
 type ContainerSpec struct {
+	// Time at which the container was created.
+	CreationTime time.Time `json:"creation_time,omitempty"`
+
 	HasCpu bool    `json:"has_cpu"`
 	Cpu    CpuSpec `json:"cpu,omitempty"`
 
@@ -88,6 +91,7 @@ type ContainerInfo struct {
 	Stats []*ContainerStats `json:"stats,omitempty"`
 }
 
+// TODO(vmarmol): Refactor to not need this equality comparison.
 // ContainerInfo may be (un)marshaled by json or other en/decoder. In that
 // case, the Timestamp field in each stats/sample may not be precisely
 // en/decoded.  This will lead to small but acceptable differences between a
@@ -111,7 +115,7 @@ func (self *ContainerInfo) Eq(b *ContainerInfo) bool {
 	if !reflect.DeepEqual(self.Subcontainers, b.Subcontainers) {
 		return false
 	}
-	if !reflect.DeepEqual(self.Spec, b.Spec) {
+	if !self.Spec.Eq(&b.Spec) {
 		return false
 	}
 
@@ -122,6 +126,37 @@ func (self *ContainerInfo) Eq(b *ContainerInfo) bool {
 		}
 	}
 
+	return true
+}
+
+func (self *ContainerSpec) Eq(b *ContainerSpec) bool {
+	// Creation within 1s of each other.
+	diff := self.CreationTime.Sub(b.CreationTime)
+	if (diff > time.Second) || (diff < -time.Second) {
+		return false
+	}
+
+	if self.HasCpu != b.HasCpu {
+		return false
+	}
+	if !reflect.DeepEqual(self.Cpu, b.Cpu) {
+		return false
+	}
+	if self.HasMemory != b.HasMemory {
+		return false
+	}
+	if !reflect.DeepEqual(self.Memory, b.Memory) {
+		return false
+	}
+	if self.HasNetwork != b.HasNetwork {
+		return false
+	}
+	if self.HasFilesystem != b.HasFilesystem {
+		return false
+	}
+	if self.HasDiskIo != b.HasDiskIo {
+		return false
+	}
 	return true
 }
 
