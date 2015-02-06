@@ -94,31 +94,14 @@ func (self *dockerFactory) NewContainerHandler(name string) (handler container.C
 	return
 }
 
-// Returns whether the specified full container name corresponds to a Docker container.
-func IsDockerContainerName(name string) bool {
-	if useSystemd {
-		// In systemd systems the containers are: /system.slice/docker-{ID}
-		return strings.HasPrefix(name, "/system.slice/docker-")
-	} else {
-		return strings.HasPrefix(name, "/docker/")
-	}
-}
-
 // Returns the Docker ID from the full container name.
 func ContainerNameToDockerId(name string) string {
 	id := path.Base(name)
 
 	// Turn systemd cgroup name into Docker ID.
 	if useSystemd {
-		const systemdDockerPrefix = "docker-"
-		if strings.HasPrefix(id, systemdDockerPrefix) {
-			id = id[len(systemdDockerPrefix):]
-		}
-
-		const systemdScopeSuffix = ".scope"
-		if strings.HasSuffix(id, systemdScopeSuffix) {
-			id = id[:len(id)-len(systemdScopeSuffix)]
-		}
+		id = strings.TrimPrefix(id, "docker-")
+		id = strings.TrimSuffix(id, ".scope")
 	}
 
 	return id
@@ -136,10 +119,6 @@ func FullContainerName(dockerId string) string {
 
 // Docker handles all containers under /docker
 func (self *dockerFactory) CanHandle(name string) (bool, error) {
-	if !IsDockerContainerName(name) {
-		return false, nil
-	}
-
 	// Check if the container is known to docker and it is active.
 	id := ContainerNameToDockerId(name)
 
