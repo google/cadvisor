@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0 (2015-02-06)
+- Support for more network devices (all non-eth).
+- Support for more partition types (btrfs, device-mapper, whole-disk).
+- Added reporting of DiskIO stats.
+- Adding container creation time to ContainerSpec.
+- More robust handling of stats failures.
+- Various misc fixes.
+
 ## 0.8.0 (2015-01-09)
 - Added ethernet device information.
 - Added machine-wide networking statistics.
