@@ -23,10 +23,18 @@ func TestGetDiskStatsMap(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error calling getDiskStatMap %s", err)
 	}
-	if len(diskStatsMap) != 20 {
+	if len(diskStatsMap) != 30 {
 		t.Errorf("diskStatsMap %+v not valid", diskStatsMap)
 	}
 	keySet := map[string]string{
+		"/dev/sda":  "/dev/sda",
+		"/dev/sdb":  "/dev/sdb",
+		"/dev/sdc":  "/dev/sdc",
+		"/dev/sdd":  "/dev/sdd",
+		"/dev/sde":  "/dev/sde",
+		"/dev/sdf":  "/dev/sdf",
+		"/dev/sdg":  "/dev/sdg",
+		"/dev/sdh":  "/dev/sdh",
 		"/dev/sdb1": "/dev/sdb1",
 		"/dev/sdb2": "/dev/sdb2",
 		"/dev/sda1": "/dev/sda1",
@@ -47,6 +55,8 @@ func TestGetDiskStatsMap(t *testing.T) {
 		"/dev/sdg2": "/dev/sdg2",
 		"/dev/sdh1": "/dev/sdh1",
 		"/dev/sdh2": "/dev/sdh2",
+		"/dev/dm-0": "/dev/dm-0",
+		"/dev/dm-1": "/dev/dm-1",
 	}
 
 	for device := range diskStatsMap {
