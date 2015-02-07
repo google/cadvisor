@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 )
 
@@ -143,6 +144,33 @@ func (self *realSysFs) GetCaches(id int) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(cpuPath)
 }
 
+func bitCount(i uint64) (count int) {
+	for i != 0 {
+		if i&1 == 1 {
+			count++
+		}
+		i >>= 1
+	}
+	return
+}
+
+func getCpuCount(cache string) (count int, err error) {
+	out, err := ioutil.ReadFile(path.Join(cache, "/shared_cpu_map"))
+	if err != nil {
+		return 0, err
+	}
+	masks := strings.Split(string(out), ",")
+	for _, mask := range masks {
+		// convert hex string to uint64
+		m, err := strconv.ParseUint(strings.TrimSpace(mask), 16, 64)
+		if err != nil {
+			return 0, fmt.Errorf("failed to parse cpu map %q: %v", string(out), err)
+		}
+		count += bitCount(m)
+	}
+	return
+}
+
 func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 	cachePath := fmt.Sprintf("%s%d/cache/%s", cacheDir, id, name)
 	out, err := ioutil.ReadFile(path.Join(cachePath, "/size"))
@@ -171,15 +199,14 @@ func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 		return CacheInfo{}, err
 	}
 	cacheType := strings.TrimSpace(string(out))
-	out, err = ioutil.ReadFile(path.Join(cachePath, "/shared_cpu_list"))
+	cpuCount, err := getCpuCount(cachePath)
 	if err != nil {
 		return CacheInfo{}, err
 	}
-	cpus := strings.Split(string(out), ",")
 	return CacheInfo{
 		Size:  size,
 		Level: level,
 		Type:  cacheType,
-		Cpus:  len(cpus),
+		Cpus:  cpuCount,
 	}, nil
 }
