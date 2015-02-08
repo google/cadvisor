@@ -181,20 +181,27 @@ func (c *containerData) housekeeping() {
 
 		// Log usage if asked to do so.
 		if c.logUsage {
-			stats, err := c.storageDriver.RecentStats(c.info.Name, 2)
+			const numSamples = 60
+			stats, err := c.storageDriver.RecentStats(c.info.Name, numSamples)
 			if err != nil {
 				if c.allowErrorLogging() {
 					glog.Infof("[%s] Failed to get recent stats for logging usage: %v", c.info.Name, err)
 				}
-			} else if len(stats) < 2 {
+			} else if len(stats) < numSamples {
 				// Ignore, not enough stats yet.
 			} else {
-				usageCpuNs := stats[1].Cpu.Usage.Total - stats[0].Cpu.Usage.Total
-				usageMemory := stats[1].Memory.Usage
+				usageCpuNs := uint64(0)
+				for i := range stats {
+					if i > 0 {
+						usageCpuNs += (stats[i].Cpu.Usage.Total - stats[i-1].Cpu.Usage.Total)
+					}
+				}
+				usageMemory := stats[numSamples-1].Memory.Usage
 
-				usageInCores := float64(usageCpuNs) / float64(stats[1].Timestamp.Sub(stats[0].Timestamp).Nanoseconds())
+				instantUsageInCores := float64(stats[numSamples-1].Cpu.Usage.Total-stats[numSamples-2].Cpu.Usage.Total) / float64(stats[numSamples-1].Timestamp.Sub(stats[numSamples-2].Timestamp).Nanoseconds())
+				usageInCores := float64(usageCpuNs) / float64(stats[numSamples-1].Timestamp.Sub(stats[0].Timestamp).Nanoseconds())
 				usageInHuman := units.HumanSize(int64(usageMemory))
-				glog.Infof("[%s] %.3f cores, %s of memory", c.info.Name, usageInCores, usageInHuman)
+				glog.Infof("[%s] %.3f cores (average: %.3f cores), %s of memory", c.info.Name, instantUsageInCores, usageInCores, usageInHuman)
 			}
 		}
 
