@@ -21,6 +21,8 @@ import (
 	"io"
 	"net/http"
 	"path"
+	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -30,26 +32,18 @@ import (
 )
 
 const (
-	apiResource      = "/api/"
-	containersApi    = "containers"
-	subcontainersApi = "subcontainers"
-	machineApi       = "machine"
-	dockerApi        = "docker"
-
-	version1_0 = "v1.0"
-	version1_1 = "v1.1"
-	version1_2 = "v1.2"
+	apiResource = "/api/"
 )
 
-var supportedApiVersions map[string]struct{} = map[string]struct{}{
-	version1_0: {},
-	version1_1: {},
-	version1_2: {},
-}
-
 func RegisterHandlers(m manager.Manager) error {
+	apiVersions := getApiVersions()
+	supportedApiVersions := make(map[string]ApiVersion, len(apiVersions))
+	for _, v := range apiVersions {
+		supportedApiVersions[v.Version()] = v
+	}
+
 	http.HandleFunc(apiResource, func(w http.ResponseWriter, r *http.Request) {
-		err := handleRequest(m, w, r)
+		err := handleRequest(supportedApiVersions, m, w, r)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 		}
@@ -58,145 +52,68 @@ func RegisterHandlers(m manager.Manager) error {
 	return nil
 }
 
-func handleRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+// Captures the API version, requestType [optional], and remaining request [optional].
+var apiRegexp = regexp.MustCompile("/api/([^/]+)/?([^/]+)?(.*)")
+
+const (
+	apiVersion = iota + 1
+	apiRequestType
+	apiRequestArgs
+)
+
+func handleRequest(supportedApiVersions map[string]ApiVersion, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
-	defer glog.V(2).Infof("Request took %s", time.Since(start))
+	defer func() {
+		glog.V(2).Infof("Request took %s", time.Since(start))
+	}()
 
 	request := r.URL.Path
-	requestElements := strings.Split(r.URL.Path, "/")
 
-	// Verify that we have all the elements we expect:
-	// <empty>/api/<version>/<request type>[/<args...>]
-	// [0]     [1] [2]       [3]             [4...]
-	if len(requestElements) < 4 {
+	const apiPrefix = "/api"
+	if !strings.HasPrefix(request, apiPrefix) {
 		return fmt.Errorf("incomplete API request %q", request)
 	}
 
-	// Get all the element parts.
-	emptyElement := requestElements[0]
-	apiElement := requestElements[1]
-	version := requestElements[2]
-	requestType := requestElements[3]
-	requestArgs := []string{}
-	if len(requestElements) > 4 {
-		requestArgs = requestElements[4:]
+	// If the request doesn't have an API version, list those.
+	if request == apiPrefix || request == apiResource {
+		versions := make([]string, 0, len(supportedApiVersions))
+		for v := range supportedApiVersions {
+			versions = append(versions, v)
+		}
+		sort.Strings(versions)
+		fmt.Fprintf(w, "Supported API versions: %s", strings.Join(versions, ","))
+		return nil
 	}
 
-	// The container name is the path after the requestType.
-	containerName := path.Join("/", strings.Join(requestArgs, "/"))
+	// Verify that we have all the elements we expect:
+	// /<version>/<request type>[/<args...>]
+	requestElements := apiRegexp.FindStringSubmatch(request)
+	if len(requestElements) == 0 {
+		return fmt.Errorf("malformed request %q", request)
+	}
+	version := requestElements[apiVersion]
+	requestType := requestElements[apiRequestType]
+	requestArgs := strings.Split(requestElements[apiRequestArgs], "/")
 
-	// Check elements.
-	if len(emptyElement) != 0 {
-		return fmt.Errorf("unexpected API request format %q", request)
-	}
-	if apiElement != "api" {
-		return fmt.Errorf("invalid API request format %q", request)
-	}
-	if _, ok := supportedApiVersions[version]; !ok {
+	// Check supported versions.
+	versionHandler, ok := supportedApiVersions[version]
+	if !ok {
 		return fmt.Errorf("unsupported API version %q", version)
 	}
 
-	switch {
-	case requestType == machineApi:
-		glog.V(2).Infof("Api - Machine")
-
-		// Get the MachineInfo
-		machineInfo, err := m.GetMachineInfo()
-		if err != nil {
-			return err
-		}
-
-		err = writeResult(machineInfo, w)
-		if err != nil {
-			return err
-		}
-	case requestType == containersApi:
-		glog.V(2).Infof("Api - Container(%s)", containerName)
-
-		// Get the query request.
-		query, err := getContainerInfoRequest(r.Body)
-		if err != nil {
-			return err
-		}
-
-		// Get the container.
-		cont, err := m.GetContainerInfo(containerName, query)
-		if err != nil {
-			return fmt.Errorf("failed to get container %q with error: %s", containerName, err)
-		}
-
-		// Only output the container as JSON.
-		err = writeResult(cont, w)
-		if err != nil {
-			return err
-		}
-	case requestType == subcontainersApi:
-		if version == version1_0 {
-			return fmt.Errorf("request type of %q not supported in API version %q", requestType, version)
-		}
-
-		glog.V(2).Infof("Api - Subcontainers(%s)", containerName)
-
-		// Get the query request.
-		query, err := getContainerInfoRequest(r.Body)
-		if err != nil {
-			return err
-		}
-
-		// Get the subcontainers.
-		containers, err := m.SubcontainersInfo(containerName, query)
-		if err != nil {
-			return fmt.Errorf("failed to get subcontainers for container %q with error: %s", containerName, err)
-		}
-
-		// Only output the containers as JSON.
-		err = writeResult(containers, w)
-		if err != nil {
-			return err
-		}
-	case requestType == dockerApi:
-		if version == version1_0 || version == version1_1 {
-			return fmt.Errorf("request type of %q not supported in API version %q", requestType, version)
-		}
-
-		containerName = strings.TrimLeft(containerName, "/")
-		glog.V(2).Infof("Api - Docker(%s)", containerName)
-
-		// Get the query request.
-		query, err := getContainerInfoRequest(r.Body)
-		if err != nil {
-			return err
-		}
-
-		var containers map[string]info.ContainerInfo
-		if containerName == "" {
-			// Get all Docker containers.
-			containers, err = m.AllDockerContainers(query)
-			if err != nil {
-				return fmt.Errorf("failed to get all Docker containers with error: %v", err)
-			}
-		} else {
-			// Get one Docker container.
-			var cont info.ContainerInfo
-			cont, err = m.DockerContainer(containerName, query)
-			if err != nil {
-				return fmt.Errorf("failed to get Docker container %q with error: %v", containerName, err)
-			}
-			containers = map[string]info.ContainerInfo{
-				cont.Name: cont,
-			}
-		}
-
-		// Only output the containers as JSON.
-		err = writeResult(containers, w)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown API request type %q", requestType)
+	// If no request type, list possible request types.
+	if requestType == "" {
+		requestTypes := versionHandler.SupportedRequestTypes()
+		sort.Strings(requestTypes)
+		fmt.Fprintf(w, "Supported request types: %q", strings.Join(requestTypes, ","))
+		return nil
 	}
 
-	return nil
+	// Trim the first empty element from the request.
+	if len(requestArgs) > 0 && requestArgs[0] == "" {
+		requestArgs = requestArgs[1:]
+	}
+	return versionHandler.HandleRequest(requestType, requestArgs, m, w, r)
 }
 
 func writeResult(res interface{}, w http.ResponseWriter) error {
@@ -223,4 +140,8 @@ func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, er
 	}
 
 	return &query, nil
+}
+
+func getContainerName(request []string) string {
+	return path.Join("/", strings.Join(request, "/"))
 }
