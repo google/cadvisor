@@ -1851,9 +1851,10 @@ function drawCharts(machineInfo, containerInfo) {
 		steps.push(function() {
 			drawCpuTotalUsage("cpu-total-usage-chart", machineInfo, containerInfo);
 		});
-		steps.push(function() {
-			drawCpuLoad("cpu-load-chart", machineInfo, containerInfo);
-		});
+		// TODO(rjnagal): Re-enable CPU Load after understanding resource usage. 
+		// steps.push(function() {
+		// 	drawCpuLoad("cpu-load-chart", machineInfo, containerInfo);
+		// });
 		steps.push(function() {
 			drawCpuPerCoreUsage("cpu-per-core-usage-chart", machineInfo, containerInfo);
 		});
