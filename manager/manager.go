@@ -125,22 +125,25 @@ type manager struct {
 
 // Start the container manager.
 func (self *manager) Start() error {
-	// Create cpu load reader.
-	cpuLoadReader, err := cpuload.New()
-	if err != nil {
-		// TODO(rjnagal): Promote to warning once we support cpu load inside namespaces.
-		glog.Infof("Could not initialize cpu load reader: %s", err)
-	} else {
-		err = cpuLoadReader.Start()
+	// TODO(rjnagal): Skip creating cpu load reader while we improve resource usage and accuracy.
+	if false {
+		// Create cpu load reader.
+		cpuLoadReader, err := cpuload.New()
 		if err != nil {
-			glog.Warning("Could not start cpu load stat collector: %s", err)
+			// TODO(rjnagal): Promote to warning once we support cpu load inside namespaces.
+			glog.Infof("Could not initialize cpu load reader: %s", err)
 		} else {
-			self.loadReader = cpuLoadReader
+			err = cpuLoadReader.Start()
+			if err != nil {
+				glog.Warning("Could not start cpu load stat collector: %s", err)
+			} else {
+				self.loadReader = cpuLoadReader
+			}
 		}
 	}
 
 	// Create root and then recover all containers.
-	err = self.createContainer("/")
+	err := self.createContainer("/")
 	if err != nil {
 		return err
 	}
