@@ -52,7 +52,9 @@ func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info
 func GenerateRandomContainerSpec(numCores int) info.ContainerSpec {
 	ret := info.ContainerSpec{
 		CreationTime: time.Now(),
+		HasCpu:       true,
 		Cpu:          info.CpuSpec{},
+		HasMemory:    true,
 		Memory:       info.MemorySpec{},
 	}
 	ret.Cpu.Limit = uint64(1000 + rand.Int63n(2000))

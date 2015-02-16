@@ -50,6 +50,11 @@ func createManagerAndAddContainers(
 	if ret, ok := mif.(*manager); ok {
 		for _, name := range containers {
 			mockHandler := container.NewMockContainerHandler(name)
+			spec := itest.GenerateRandomContainerSpec(4)
+			mockHandler.On("GetSpec").Return(
+				spec,
+				nil,
+			).Once()
 			cont, err := newContainerData(name, driver, mockHandler, nil, false)
 			if err != nil {
 				t.Fatal(err)
