@@ -26,6 +26,7 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
 )
 
@@ -49,6 +50,7 @@ type containerData struct {
 	storageDriver        storage.StorageDriver
 	lock                 sync.Mutex
 	loadReader           cpuload.CpuLoadReader
+	summaryReader        *summary.StatsSummary
 	loadAvg              float64 // smoothed load average seen so far.
 	housekeepingInterval time.Duration
 	lastUpdatedTime      time.Time
@@ -120,6 +122,15 @@ func newContainerData(containerName string, driver storage.StorageDriver, handle
 		stop:                 make(chan bool, 1),
 	}
 	cont.info.ContainerReference = ref
+
+	err = cont.updateSpec()
+	if err != nil {
+		return nil, err
+	}
+	cont.summaryReader, err = summary.New(cont.info.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create summary reader: %v", err)
+	}
 
 	return cont, nil
 }
@@ -276,6 +287,13 @@ func (c *containerData) updateStats() error {
 			c.updateLoad(loadStats.NrRunning)
 			// convert to 'milliLoad' to avoid floats and preserve precision.
 			stats.Cpu.LoadAverage = int32(c.loadAvg * 1000)
+		}
+	}
+	if c.summaryReader != nil {
+		err := c.summaryReader.AddSample(*stats)
+		if err != nil {
+			// Ignore summary errors for now.
+			glog.V(2).Infof("failed to add summary stats for %q: %v", c.info.Name, err)
 		}
 	}
 	ref, err := c.handler.ContainerReference()

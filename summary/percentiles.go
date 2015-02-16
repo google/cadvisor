@@ -45,7 +45,7 @@ func (self uint64Slice) Get90Percentile() uint64 {
 	idx, frac := math.Modf(n)
 	index := int(idx)
 	percentile := float64(self[index-1])
-	if index > 1 || index < count {
+	if index > 1 && index < count {
 		percentile += frac * float64(self[index]-self[index-1])
 	}
 	return uint64(percentile)

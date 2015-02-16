@@ -31,14 +31,25 @@ import (
 
 const containerName = "/container"
 
-// Create a containerData instance for a test. Optionsl storage driver may be specified (one is made otherwise).
-func newTestContainerData(t *testing.T) (*containerData, *container.MockContainerHandler, *stest.MockStorageDriver) {
+// Create a containerData instance for a test.
+func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *container.MockContainerHandler, *stest.MockStorageDriver) {
 	mockHandler := container.NewMockContainerHandler(containerName)
+	mockHandler.On("GetSpec").Return(
+		spec,
+		nil,
+	)
 	mockDriver := &stest.MockStorageDriver{}
 	ret, err := newContainerData(containerName, mockDriver, mockHandler, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
+	return ret, mockHandler, mockDriver
+}
+
+// Create a containerData instance for a test and add a default GetSpec mock.
+func newTestContainerData(t *testing.T) (*containerData, *container.MockContainerHandler, *stest.MockStorageDriver) {
+	spec := itest.GenerateRandomContainerSpec(4)
+	ret, mockHandler, mockDriver := setupContainerData(t, spec)
 	return ret, mockHandler, mockDriver
 }
 
@@ -146,11 +157,7 @@ func TestGetInfo(t *testing.T) {
 		{Name: "/container/abcd"},
 		{Name: "/container/something"},
 	}
-	cd, mockHandler, _ := newTestContainerData(t)
-	mockHandler.On("GetSpec").Return(
-		spec,
-		nil,
-	)
+	cd, mockHandler, _ := setupContainerData(t, spec)
 	mockHandler.On("ListContainers", container.ListSelf).Return(
 		subcontainers,
 		nil,
