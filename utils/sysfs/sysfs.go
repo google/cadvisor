@@ -98,7 +98,25 @@ func (self *realSysFs) GetBlockDeviceSize(name string) (string, error) {
 }
 
 func (self *realSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
-	return ioutil.ReadDir(netDir)
+	files, err := ioutil.ReadDir(netDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter out non-directory & non-symlink files
+	var dirs []os.FileInfo
+	for _, f := range files {
+		if f.Mode()|os.ModeSymlink != 0 {
+			f, err = os.Stat(path.Join(netDir, f.Name()))
+			if err != nil {
+				continue
+			}
+		}
+		if f.IsDir() {
+			dirs = append(dirs, f)
+		}
+	}
+	return dirs, nil
 }
 
 func (self *realSysFs) GetNetworkAddress(name string) (string, error) {
