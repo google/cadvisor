@@ -76,7 +76,7 @@ func PushAndRunTests(host, testDir string) error {
 		}
 	}()
 	defer func() {
-		err := RunCommand("gcutil", "ssh", host, "sudo", "killall", cadvisorBinary)
+		err := RunCommand("gcutil", "ssh", host, "sudo", "pkill", cadvisorBinary)
 		if err != nil {
 			glog.Error(err)
 		}
