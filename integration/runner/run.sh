@@ -18,8 +18,8 @@ set -e
 set -x
 
 # Check usage.
-if [ $# != 1 ]; then
-  echo "USAGE: run.sh <host to run tests on>"
+if [ $# == 0 ]; then
+  echo "USAGE: run.sh <hosts to run tests on>"
   exit 1
 fi
 
@@ -29,7 +29,8 @@ if ! git diff --name-only origin/master | grep -c -E "*.go|*.sh" &> /dev/null; t
   exit 0
 fi
 
-HOST=$1
+shift
+HOSTS=$@
 export GOPATH="$JENKINS_HOME/workspace/project"
 export GOBIN="$GOPATH/bin"
 
@@ -37,4 +38,4 @@ export GOBIN="$GOPATH/bin"
 godep go build github.com/google/cadvisor/integration/runner
 
 # Run it.
-./runner --logtostderr $HOST
+./runner --logtostderr $HOSTS
