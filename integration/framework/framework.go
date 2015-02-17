@@ -18,14 +18,13 @@ import (
 	"flag"
 	"fmt"
 	"os/exec"
-	"regexp"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/gcloud-golang/compute/metadata"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
+	"github.com/google/cadvisor/integration/common"
 )
 
 var host = flag.String("host", "localhost", "Address of the host being tested")
@@ -70,7 +69,7 @@ func New(t *testing.T) Framework {
 	hostname := *host
 	if hostname != "localhost" {
 		gceInstanceName = hostname
-		gceIp, err := getGceIp(hostname)
+		gceIp, err := common.GetGceIp(hostname)
 		if err == nil {
 			hostname = gceIp
 		}
@@ -126,28 +125,6 @@ type HostInfo struct {
 // Returns: http://<host>:<port>/
 func (self HostInfo) FullHost() string {
 	return fmt.Sprintf("http://%s:%d/", self.Host, self.Port)
-}
-
-var gceInternalIpRegexp = regexp.MustCompile(" +ip +\\| +([0-9.:]+) +")
-var gceExternalIpRegexp = regexp.MustCompile("external-ip +\\| +([0-9.:]+) +")
-
-func getGceIp(hostname string) (string, error) {
-	out, err := exec.Command("gcutil", "getinstance", hostname).CombinedOutput()
-	if err != nil {
-		return "", err
-	}
-
-	// Use the internal IP within GCE and the external one outside.
-	var matches []string
-	if metadata.OnGCE() {
-		matches = gceInternalIpRegexp.FindStringSubmatch(string(out))
-	} else {
-		matches = gceExternalIpRegexp.FindStringSubmatch(string(out))
-	}
-	if len(matches) == 0 {
-		return "", fmt.Errorf("failed to find IP from output %q", string(out))
-	}
-	return matches[1], nil
 }
 
 func (self *realFramework) T() *testing.T {
