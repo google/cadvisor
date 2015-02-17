@@ -15,6 +15,8 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -22,6 +24,8 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/golang/glog"
@@ -42,33 +46,10 @@ func RunCommand(cmd string, args ...string) error {
 	return nil
 }
 
-func Run() error {
-	start := time.Now()
-	defer func() {
-		glog.Infof("Execution time %v", time.Since(start))
-	}()
-	defer glog.Flush()
-
-	host := flag.Args()[0]
-	testDir := fmt.Sprintf("/tmp/cadvisor-%d", os.Getpid())
-	glog.Infof("Running integration tests in host %q", host)
-
-	// Build cAdvisor.
-	glog.Infof("Building cAdvisor...")
-	err := RunCommand("godep", "go", "build", "github.com/google/cadvisor")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err := RunCommand("rm", cadvisorBinary)
-		if err != nil {
-			glog.Error(err)
-		}
-	}()
-
-	// Ship it to the destination host.
-	glog.Infof("Pushing cAdvisor binary to remote host...")
-	err = RunCommand("gcutil", "ssh", host, "mkdir", "-p", testDir)
+func PushAndRunTests(host, testDir string) error {
+	// Push binary.
+	glog.Infof("Pushing cAdvisor binary to %q...", host)
+	err := RunCommand("gcutil", "ssh", host, "mkdir", "-p", testDir)
 	if err != nil {
 		return err
 	}
@@ -85,7 +66,7 @@ func Run() error {
 
 	// TODO(vmarmol): Get logs in case of failures.
 	// Start cAdvisor.
-	glog.Infof("Running cAdvisor on the remote host...")
+	glog.Infof("Running cAdvisor on %q...", host)
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error)
 	go func() {
@@ -128,10 +109,67 @@ func Run() error {
 	}
 
 	// Run the tests.
-	glog.Infof("Running integration tests targeting remote host...")
+	glog.Infof("Running integration tests targeting %q...", host)
 	err = RunCommand("godep", "go", "test", "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func Run() error {
+	start := time.Now()
+	defer func() {
+		glog.Infof("Execution time %v", time.Since(start))
+	}()
+	defer glog.Flush()
+
+	hosts := flag.Args()
+	testDir := fmt.Sprintf("/tmp/cadvisor-%d", os.Getpid())
+	glog.Infof("Running integration tests on host(s) %q", strings.Join(hosts, ","))
+
+	// Build cAdvisor.
+	glog.Infof("Building cAdvisor...")
+	err := RunCommand("godep", "go", "build", "github.com/google/cadvisor")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err := RunCommand("rm", cadvisorBinary)
+		if err != nil {
+			glog.Error(err)
+		}
+	}()
+
+	// Run test on all hosts in parallel.
+	var wg sync.WaitGroup
+	allErrors := make([]error, 0)
+	var allErrorsLock sync.Mutex
+	for _, host := range hosts {
+		wg.Add(1)
+		go func(host string) {
+			defer wg.Done()
+			err := PushAndRunTests(host, testDir)
+			if err != nil {
+				func() {
+					allErrorsLock.Lock()
+					defer allErrorsLock.Unlock()
+					allErrors = append(allErrors, err)
+				}()
+			}
+		}(host)
+	}
+	wg.Wait()
+
+	if len(allErrors) != 0 {
+		var buffer bytes.Buffer
+		for i, err := range allErrors {
+			buffer.WriteString(fmt.Sprintf("Error %d:", i))
+			buffer.WriteString(err.Error())
+			buffer.WriteString("\n")
+		}
+		return errors.New(buffer.String())
 	}
 
 	glog.Infof("All tests pass!")
@@ -142,8 +180,8 @@ func main() {
 	flag.Parse()
 
 	// Check usage.
-	if len(flag.Args()) != 1 {
-		glog.Fatalf("USAGE: runner <host to test>")
+	if len(flag.Args()) == 0 {
+		glog.Fatalf("USAGE: runner <hosts to test>")
 	}
 
 	// Run the tests.
