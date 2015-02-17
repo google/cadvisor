@@ -29,7 +29,6 @@ if ! git diff --name-only origin/master | grep -c -E "*.go|*.sh" &> /dev/null; t
   exit 0
 fi
 
-shift
 HOSTS=$@
 export GOPATH="$JENKINS_HOME/workspace/project"
 export GOBIN="$GOPATH/bin"
