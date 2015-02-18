@@ -58,6 +58,9 @@ type Manager interface {
 	// Gets information about a specific Docker container. The specified name is within the Docker namespace.
 	DockerContainer(dockerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
 
+	// Get derived stats for a container.
+	GetContainerDerivedStats(containerName string) (info.DerivedStats, error)
+
 	// Get information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
 
@@ -362,6 +365,20 @@ func (self *manager) containerDataSliceToContainerInfoSlice(containers []*contai
 	}
 
 	return output, nil
+}
+
+func (self *manager) GetContainerDerivedStats(containerName string) (info.DerivedStats, error) {
+	var ok bool
+	var cont *containerData
+	func() {
+		self.containersLock.RLock()
+		defer self.containersLock.RUnlock()
+		cont, ok = self.containers[namespacedContainerName{Name: containerName}]
+	}()
+	if !ok {
+		return info.DerivedStats{}, fmt.Errorf("unknown container %q", containerName)
+	}
+	return cont.DerivedStats()
 }
 
 func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {

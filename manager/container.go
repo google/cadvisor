@@ -100,6 +100,13 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	return &c.info, nil
 }
 
+func (c *containerData) DerivedStats() (info.DerivedStats, error) {
+	if c.summaryReader == nil {
+		return info.DerivedStats{}, fmt.Errorf("derived stats not enabled for container %q", c.info.Name)
+	}
+	return c.summaryReader.DerivedStats()
+}
+
 func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool) (*containerData, error) {
 	if driver == nil {
 		return nil, fmt.Errorf("nil storage driver")
