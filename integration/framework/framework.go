@@ -15,6 +15,7 @@
 package framework
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os/exec"
@@ -22,7 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
 	"github.com/google/cadvisor/integration/common"
 )
@@ -38,11 +38,14 @@ type Framework interface {
 	// The testing.T used by the framework and the current test.
 	T() *testing.T
 
-	// Returns information about the host being tested.
-	Host() HostInfo
+	// Returns the hostname being tested.
+	Hostname() HostnameInfo
 
 	// Returns the Docker actions for the test framework.
 	Docker() DockerActions
+
+	// Returns the shell actions for the test framework.
+	Shell() ShellActions
 
 	// Returns the cAdvisor actions for the test framework.
 	Cadvisor() CadvisorActions
@@ -75,8 +78,8 @@ func New(t *testing.T) Framework {
 		}
 	}
 
-	return &realFramework{
-		host: HostInfo{
+	fm := &realFramework{
+		hostname: HostnameInfo{
 			Host:            hostname,
 			Port:            *port,
 			GceInstanceName: gceInstanceName,
@@ -84,6 +87,14 @@ func New(t *testing.T) Framework {
 		t:        t,
 		cleanups: make([]func(), 0),
 	}
+	fm.shellActions = shellActions{
+		fm: fm,
+	}
+	fm.dockerActions = dockerActions{
+		fm: fm,
+	}
+
+	return fm
 }
 
 type DockerActions interface {
@@ -102,28 +113,44 @@ type DockerActions interface {
 	Run(args DockerRunArgs, cmd ...string) string
 }
 
+type ShellActions interface {
+	// Runs a specified command and arguments. Returns the stdout and stderr.
+	Run(cmd string, args ...string) (string, string)
+}
+
 type CadvisorActions interface {
 	// Returns a cAdvisor client to the machine being tested.
 	Client() *client.Client
 }
 
 type realFramework struct {
-	host           HostInfo
+	hostname       HostnameInfo
 	t              *testing.T
 	cadvisorClient *client.Client
+
+	shellActions  shellActions
+	dockerActions dockerActions
 
 	// Cleanup functions to call on Cleanup()
 	cleanups []func()
 }
 
-type HostInfo struct {
+type shellActions struct {
+	fm *realFramework
+}
+
+type dockerActions struct {
+	fm *realFramework
+}
+
+type HostnameInfo struct {
 	Host            string
 	Port            int
 	GceInstanceName string
 }
 
 // Returns: http://<host>:<port>/
-func (self HostInfo) FullHost() string {
+func (self HostnameInfo) FullHostname() string {
 	return fmt.Sprintf("http://%s:%d/", self.Host, self.Port)
 }
 
@@ -131,12 +158,16 @@ func (self *realFramework) T() *testing.T {
 	return self.t
 }
 
-func (self *realFramework) Host() HostInfo {
-	return self.host
+func (self *realFramework) Hostname() HostnameInfo {
+	return self.hostname
+}
+
+func (self *realFramework) Shell() ShellActions {
+	return self.shellActions
 }
 
 func (self *realFramework) Docker() DockerActions {
-	return self
+	return self.dockerActions
 }
 
 func (self *realFramework) Cadvisor() CadvisorActions {
@@ -153,7 +184,7 @@ func (self *realFramework) Cleanup() {
 // Gets a client to the cAdvisor being tested.
 func (self *realFramework) Client() *client.Client {
 	if self.cadvisorClient == nil {
-		cadvisorClient, err := client.NewClient(self.Host().FullHost())
+		cadvisorClient, err := client.NewClient(self.Hostname().FullHostname())
 		if err != nil {
 			self.t.Fatalf("Failed to instantiate the cAdvisor client: %v", err)
 		}
@@ -162,14 +193,14 @@ func (self *realFramework) Client() *client.Client {
 	return self.cadvisorClient
 }
 
-func (self *realFramework) RunPause() string {
+func (self dockerActions) RunPause() string {
 	return self.Run(DockerRunArgs{
 		Image: "kubernetes/pause",
 	})
 }
 
 // Run the specified command in a Docker busybox container.
-func (self *realFramework) RunBusybox(cmd ...string) string {
+func (self dockerActions) RunBusybox(cmd ...string) string {
 	return self.Run(DockerRunArgs{
 		Image: "busybox",
 	}, cmd...)
@@ -190,44 +221,40 @@ type DockerRunArgs struct {
 // e.g.:
 // RunDockerContainer(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 //   -> docker run busybox ping www.google.com
-func (self *realFramework) Run(args DockerRunArgs, cmd ...string) string {
+func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 	dockerCommand := append(append(append([]string{"docker", "run", "-d"}, args.Args...), args.Image), cmd...)
 
-	var output string
-	if self.host.Host == "localhost" {
-		// Just run locally.
-		out, err := exec.Command("sudo", dockerCommand...).Output()
-		if err != nil {
-			self.t.Fatalf("Failed to run docker container with run args %+v due to error: %v and output: %q", args, err, out)
-			return ""
-		}
-		output = string(out)
-	} else {
-		// We must SSH to the remote machine and run the command.
-		out, err := exec.Command("gcutil", append([]string{"ssh", self.host.GceInstanceName, "sudo"}, dockerCommand...)...).Output()
-		if err != nil {
-			self.t.Fatalf("Failed to run docker container remotely in %q with run args %+v due to error: %v and output: %q", self.host.Host, args, err, out)
-			return ""
-		}
-		output = string(out)
-	}
+	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
 
 	// The last line is the container ID.
 	elements := strings.Fields(output)
 	containerId := elements[len(elements)-1]
 
-	self.cleanups = append(self.cleanups, func() {
-		cleanupCommand := []string{"sudo", "docker", "rm", "-f", containerId}
-		if self.host.Host != "localhost" {
-			cleanupCommand = append([]string{"gcutil", "ssh", self.host.GceInstanceName}, cleanupCommand...)
-		}
-
-		out, err := exec.Command(cleanupCommand[0], cleanupCommand[1:]...).CombinedOutput()
-		if err != nil {
-			glog.Errorf("Failed to remove container %q with error: %v and output: %q", containerId, err, out)
-		}
+	self.fm.cleanups = append(self.fm.cleanups, func() {
+		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
 	})
 	return containerId
+}
+
+func (self shellActions) Run(command string, args ...string) (string, string) {
+	var cmd *exec.Cmd
+	if self.fm.Hostname().Host == "localhost" {
+		// Just run locally.
+		cmd = exec.Command(command, args...)
+	} else {
+		// We must SSH to the remote machine and run the command.
+		cmd = exec.Command("gcutil", append([]string{"ssh", self.fm.Hostname().GceInstanceName, command}, args...)...)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		self.fm.T().Fatalf("Failed to run %q %v in %q with error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())
+		return "", ""
+	}
+	return stdout.String(), stderr.String()
 }
 
 // Runs retryFunc until no error is returned. After dur time the last error is returned.

@@ -27,7 +27,7 @@ func TestHealthzOk(t *testing.T) {
 	defer fm.Cleanup()
 
 	// Ensure that /heathz returns "ok"
-	resp, err := http.Get(fm.Host().FullHost() + "healthz")
+	resp, err := http.Get(fm.Hostname().FullHostname() + "healthz")
 	if err != nil {
 		t.Fatal(err)
 	}
