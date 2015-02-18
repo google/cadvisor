@@ -188,6 +188,10 @@ func (self *version1_2) HandleRequest(requestType string, request []string, m ma
 		}
 
 		var containers map[string]info.ContainerInfo
+		// map requests for "docker/" to "docker"
+		if len(request) == 1 && len(request[0]) == 0 {
+			request = request[:0]
+		}
 		switch len(request) {
 		case 0:
 			// Get all Docker containers.
