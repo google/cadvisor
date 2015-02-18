@@ -26,24 +26,21 @@ import (
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/info"
 	itest "github.com/google/cadvisor/info/test"
-	stest "github.com/google/cadvisor/storage/test"
+	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 )
 
 // TODO(vmarmol): Refactor these tests.
 
 func createManagerAndAddContainers(
-	driver *stest.MockStorageDriver,
+	memoryStorage *memory.InMemoryStorage,
 	sysfs *fakesysfs.FakeSysFs,
 	containers []string,
 	f func(*container.MockContainerHandler),
 	t *testing.T,
 ) *manager {
-	if driver == nil {
-		driver = &stest.MockStorageDriver{}
-	}
 	container.ClearContainerHandlerFactories()
-	mif, err := New(driver, sysfs)
+	mif, err := New(memoryStorage, sysfs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,7 +52,7 @@ func createManagerAndAddContainers(
 				spec,
 				nil,
 			).Once()
-			cont, err := newContainerData(name, driver, mockHandler, nil, false)
+			cont, err := newContainerData(name, memoryStorage, mockHandler, nil, false)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -87,24 +84,25 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 		infosMap[container] = itest.GenerateRandomContainerInfo(container, 4, query, 1*time.Second)
 	}
 
-	driver := &stest.MockStorageDriver{}
+	memoryStorage := memory.New(query.NumStats, nil)
 	sysfs := &fakesysfs.FakeSysFs{}
 	m := createManagerAndAddContainers(
-		driver,
+		memoryStorage,
 		sysfs,
 		containers,
 		func(h *container.MockContainerHandler) {
 			cinfo := infosMap[h.Name]
-			stats := cinfo.Stats
+			ref, err := h.ContainerReference()
+			if err != nil {
+				t.Error(err)
+			}
+			for _, stat := range cinfo.Stats {
+				err = memoryStorage.AddStats(ref, stat)
+				if err != nil {
+					t.Error(err)
+				}
+			}
 			spec := cinfo.Spec
-			driver.On(
-				"RecentStats",
-				h.Name,
-				query.NumStats,
-			).Return(
-				stats,
-				nil,
-			)
 
 			h.On("ListContainers", container.ListSelf).Return(
 				[]info.ContainerReference(nil),
@@ -209,7 +207,8 @@ func TestDockerContainersInfo(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	manager, err := New(&stest.MockStorageDriver{}, &fakesysfs.FakeSysFs{})
+	memoryStorage := memory.New(60, nil)
+	manager, err := New(memoryStorage, &fakesysfs.FakeSysFs{})
 	if err != nil {
 		t.Fatalf("Expected manager.New to succeed: %s", err)
 	}

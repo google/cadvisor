@@ -38,7 +38,8 @@ var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*tim
 
 const statsRequestedByUI = 60
 
-func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
+// Creates a memory storage with an optional backend storage option.
+func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error) {
 	var storageDriver *memory.InMemoryStorage
 	var backendStorage storage.StorageDriver
 	var err error
@@ -48,7 +49,7 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 		// The UI requests the most recent 60 stats by default.
 		statsToCache = statsRequestedByUI
 	}
-	switch driverName {
+	switch backendStorageName {
 	case "":
 		backendStorage = nil
 	case "influxdb":
@@ -79,14 +80,18 @@ func NewStorageDriver(driverName string) (*memory.InMemoryStorage, error) {
 			*argDbTable,
 			*argDbName,
 		)
-
 	default:
-		err = fmt.Errorf("unknown database driver: %v", *argDbDriver)
+		err = fmt.Errorf("unknown backend storage driver: %v", *argDbDriver)
 	}
 	if err != nil {
 		return nil, err
 	}
-	glog.Infof("Caching %d recent stats in memory; using \"%v\" storage driver\n", statsToCache, driverName)
+	if backendStorageName != "" {
+		glog.Infof("Using backend storage type %q", backendStorageName)
+	} else {
+		glog.Infof("No backend storage selected")
+	}
+	glog.Info("Caching %d stats in memory", statsToCache)
 	storageDriver = memory.New(statsToCache, backendStorage)
 	return storageDriver, nil
 }

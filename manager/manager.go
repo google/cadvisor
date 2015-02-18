@@ -29,7 +29,7 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/info"
-	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/utils/cpuload"
 	"github.com/google/cadvisor/utils/sysfs"
 )
@@ -65,10 +65,10 @@ type Manager interface {
 	GetVersionInfo() (*info.VersionInfo, error)
 }
 
-// New takes a driver and returns a new manager.
-func New(driver storage.StorageDriver, sysfs sysfs.SysFs) (Manager, error) {
-	if driver == nil {
-		return nil, fmt.Errorf("nil storage driver!")
+// New takes a memory storage and returns a new manager.
+func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, error) {
+	if memoryStorage == nil {
+		return nil, fmt.Errorf("manager requires memory storage")
 	}
 
 	// Detect the container we are running on.
@@ -81,7 +81,7 @@ func New(driver storage.StorageDriver, sysfs sysfs.SysFs) (Manager, error) {
 	newManager := &manager{
 		containers:        make(map[namespacedContainerName]*containerData),
 		quitChannels:      make([]chan error, 0, 2),
-		storageDriver:     driver,
+		memoryStorage:     memoryStorage,
 		cadvisorContainer: selfContainer,
 	}
 
@@ -114,7 +114,7 @@ type namespacedContainerName struct {
 type manager struct {
 	containers             map[namespacedContainerName]*containerData
 	containersLock         sync.RWMutex
-	storageDriver          storage.StorageDriver
+	memoryStorage          *memory.InMemoryStorage
 	machineInfo            info.MachineInfo
 	versionInfo            info.VersionInfo
 	quitChannels           []chan error
@@ -250,7 +250,7 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 		return nil, err
 	}
 
-	stats, err := self.storageDriver.RecentStats(cinfo.Name, query.NumStats)
+	stats, err := self.memoryStorage.RecentStats(cinfo.Name, query.NumStats)
 	if err != nil {
 		return nil, err
 	}
@@ -380,7 +380,7 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
-	cont, err := newContainerData(containerName, m.storageDriver, handler, m.loadReader, logUsage)
+	cont, err := newContainerData(containerName, m.memoryStorage, handler, m.loadReader, logUsage)
 	if err != nil {
 		return err
 	}

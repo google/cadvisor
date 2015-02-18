@@ -61,7 +61,7 @@ func main() {
 
 	setMaxProcs()
 
-	storageDriver, err := NewStorageDriver(*argDbDriver)
+	memoryStorage, err := NewMemoryStorage(*argDbDriver)
 	if err != nil {
 		glog.Fatalf("Failed to connect to database: %s", err)
 	}
@@ -71,7 +71,7 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	containerManager, err := manager.New(storageDriver, sysFs)
+	containerManager, err := manager.New(memoryStorage, sysFs)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
