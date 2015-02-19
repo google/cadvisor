@@ -227,12 +227,7 @@ func libcontainerConfigToContainerSpec(config *libcontainer.Config, mi *info.Mac
 	if config.Cgroups.CpuShares != 0 {
 		spec.Cpu.Limit = uint64(config.Cgroups.CpuShares)
 	}
-	if config.Cgroups.CpusetCpus == "" {
-		// All cores are active.
-		spec.Cpu.Mask = fmt.Sprintf("0-%d", mi.NumCores-1)
-	} else {
-		spec.Cpu.Mask = config.Cgroups.CpusetCpus
-	}
+	spec.Cpu.Mask = utils.FixCpuMask(config.Cgroups.CpusetCpus, mi.NumCores)
 
 	spec.HasNetwork = true
 	spec.HasDiskIo = true

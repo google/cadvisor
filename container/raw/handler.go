@@ -217,10 +217,8 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	if ok {
 		if utils.FileExists(cpusetRoot) {
 			spec.HasCpu = true
-			spec.Cpu.Mask = readString(cpusetRoot, "cpuset.cpus")
-			if spec.Cpu.Mask == "" {
-				spec.Cpu.Mask = fmt.Sprintf("0-%d", mi.NumCores-1)
-			}
+			mask := readString(cpusetRoot, "cpuset.cpus")
+			spec.Cpu.Mask = utils.FixCpuMask(mask, mi.NumCores)
 		}
 	}
 
