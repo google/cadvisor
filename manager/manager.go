@@ -28,9 +28,11 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
+	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/utils/cpuload"
+	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
 )
 
@@ -619,6 +621,30 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 					return
 				}
 			}
+		}
+	}()
+	return nil
+}
+
+func (self *manager) watchForNewOoms() error {
+	outStream := make(chan *oomparser.OomInstance, 10)
+	oomLog, err := oomparser.New()
+	if err != nil {
+		return err
+	}
+	err = oomLog.StreamOoms(outStream)
+	if err != nil {
+		return err
+	}
+	go func() {
+		for oomInstance := range outStream {
+			newEvent := &events.Event{
+				ContainerName: oomInstance.ContainerName,
+				Timestamp:     oomInstance.TimeOfDeath,
+				EventType:     events.TypeOom,
+				EventData:     oomInstance,
+			}
+			glog.V(1).Infof("Created an oom event: %v", newEvent)
 		}
 	}()
 	return nil
