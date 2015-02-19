@@ -29,6 +29,7 @@ const (
 	machineApi       = "machine"
 	dockerApi        = "docker"
 	summaryApi       = "summary"
+	specApi          = "spec"
 )
 
 // Interface for a cAdvisor API version
@@ -257,6 +258,14 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		}
 
 		return writeResult(stats, w)
+	case specApi:
+		containerName := getContainerName(request)
+		glog.V(2).Infof("Api - Spec(%v)", containerName)
+		spec, err := m.GetContainerSpec(containerName)
+		if err != nil {
+			return err
+		}
+		return writeResult(spec, w)
 	default:
 		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}

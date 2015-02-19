@@ -58,6 +58,9 @@ type Manager interface {
 	// Gets information about a specific Docker container. The specified name is within the Docker namespace.
 	DockerContainer(dockerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
 
+	// Gets spec for a container.
+	GetContainerSpec(containerName string) (info.ContainerSpec, error)
+
 	// Get derived stats for a container.
 	GetContainerDerivedStats(containerName string) (info.DerivedStats, error)
 
@@ -226,8 +229,7 @@ func (self *manager) globalHousekeeping(quit chan error) {
 	}
 }
 
-// Get a container by name.
-func (self *manager) GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
+func (self *manager) getContainerData(containerName string) (*containerData, error) {
 	var cont *containerData
 	var ok bool
 	func() {
@@ -242,7 +244,40 @@ func (self *manager) GetContainerInfo(containerName string, query *info.Containe
 	if !ok {
 		return nil, fmt.Errorf("unknown container %q", containerName)
 	}
+	return cont, nil
+}
 
+func (self *manager) GetContainerSpec(containerName string) (info.ContainerSpec, error) {
+	cont, err := self.getContainerData(containerName)
+	if err != nil {
+		return info.ContainerSpec{}, err
+	}
+	cinfo, err := cont.GetInfo()
+	if err != nil {
+		return info.ContainerSpec{}, err
+	}
+	return self.getAdjustedSpec(cinfo), nil
+}
+
+func (self *manager) getAdjustedSpec(cinfo *containerInfo) info.ContainerSpec {
+	spec := cinfo.Spec
+
+	// Set default value to an actual value
+	if spec.HasMemory {
+		// Memory.Limit is 0 means there's no limit
+		if spec.Memory.Limit == 0 {
+			spec.Memory.Limit = uint64(self.machineInfo.MemoryCapacity)
+		}
+	}
+	return spec
+}
+
+// Get a container by name.
+func (self *manager) GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
+	cont, err := self.getContainerData(containerName)
+	if err != nil {
+		return nil, err
+	}
 	return self.containerDataToContainerInfo(cont, query)
 }
 
@@ -262,16 +297,8 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 	ret := &info.ContainerInfo{
 		ContainerReference: cinfo.ContainerReference,
 		Subcontainers:      cinfo.Subcontainers,
-		Spec:               cinfo.Spec,
+		Spec:               self.getAdjustedSpec(cinfo),
 		Stats:              stats,
-	}
-
-	// Set default value to an actual value
-	if ret.Spec.HasMemory {
-		// Memory.Limit is 0 means there's no limit
-		if ret.Spec.Memory.Limit == 0 {
-			ret.Spec.Memory.Limit = uint64(self.machineInfo.MemoryCapacity)
-		}
 	}
 	return ret, nil
 }
