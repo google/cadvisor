@@ -28,6 +28,7 @@ const (
 	subcontainersApi = "subcontainers"
 	machineApi       = "machine"
 	dockerApi        = "docker"
+	summaryApi       = "summary"
 )
 
 // Interface for a cAdvisor API version
@@ -47,7 +48,8 @@ func getApiVersions() []ApiVersion {
 	v1_0 := &version1_0{}
 	v1_1 := newVersion1_1(v1_0)
 	v1_2 := newVersion1_2(v1_1)
-	return []ApiVersion{v1_0, v1_1, v1_2}
+	v2_0 := newVersion2_0(v1_2)
+	return []ApiVersion{v1_0, v1_1, v1_2, v2_0}
 }
 
 // API v1.0
@@ -64,8 +66,8 @@ func (self *version1_0) SupportedRequestTypes() []string {
 }
 
 func (self *version1_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
-	switch {
-	case requestType == machineApi:
+	switch requestType {
+	case machineApi:
 		glog.V(2).Infof("Api - Machine")
 
 		// Get the MachineInfo
@@ -78,7 +80,7 @@ func (self *version1_0) HandleRequest(requestType string, request []string, m ma
 		if err != nil {
 			return err
 		}
-	case requestType == containersApi:
+	case containersApi:
 		containerName := getContainerName(request)
 		glog.V(2).Infof("Api - Container(%s)", containerName)
 
@@ -127,8 +129,8 @@ func (self *version1_1) SupportedRequestTypes() []string {
 }
 
 func (self *version1_1) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
-	switch {
-	case requestType == subcontainersApi:
+	switch requestType {
+	case subcontainersApi:
 		containerName := getContainerName(request)
 		glog.V(2).Infof("Api - Subcontainers(%s)", containerName)
 
@@ -177,8 +179,8 @@ func (self *version1_2) SupportedRequestTypes() []string {
 }
 
 func (self *version1_2) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
-	switch {
-	case requestType == dockerApi:
+	switch requestType {
+	case dockerApi:
 		glog.V(2).Infof("Api - Docker(%v)", request)
 
 		// Get the query request.
@@ -219,6 +221,42 @@ func (self *version1_2) HandleRequest(requestType string, request []string, m ma
 			return err
 		}
 		return nil
+	default:
+		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
+	}
+}
+
+// v2.0 builds on v1.2
+type version2_0 struct {
+	baseVersion *version1_2
+}
+
+func newVersion2_0(v *version1_2) *version2_0 {
+	return &version2_0{
+		baseVersion: v,
+	}
+}
+
+func (self *version2_0) Version() string {
+	return "v2.0"
+}
+
+func (self *version2_0) SupportedRequestTypes() []string {
+	return append(self.baseVersion.SupportedRequestTypes(), summaryApi)
+}
+
+func (self *version2_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+	switch requestType {
+	case summaryApi:
+		containerName := getContainerName(request)
+		glog.V(2).Infof("Api - Summary(%v)", containerName)
+
+		stats, err := m.GetContainerDerivedStats(containerName)
+		if err != nil {
+			return err
+		}
+
+		return writeResult(stats, w)
 	default:
 		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}

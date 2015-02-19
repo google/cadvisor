@@ -57,6 +57,7 @@ type StatsSummary struct {
 // stats are updated.
 func (s *StatsSummary) AddSample(stat info.ContainerStats) error {
 	sample := secondSample{}
+	sample.Timestamp = stat.Timestamp
 	if s.available.Cpu {
 		sample.Cpu = stat.Cpu.Usage.Total
 	}
@@ -119,7 +120,7 @@ func (s *StatsSummary) getDerivedUsage(n int) (info.Usage, error) {
 	// We generate derived stats even with partial data.
 	usage := GetDerivedPercentiles(samples)
 	// Assumes we have equally placed minute samples.
-	usage.PercentComplete = int32(numSamples / n)
+	usage.PercentComplete = int32(numSamples * 100 / n)
 	return usage, nil
 }
 
