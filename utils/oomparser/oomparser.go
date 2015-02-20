@@ -162,7 +162,9 @@ func (self *OomParser) StreamOoms(outStream chan *OomInstance) error {
 	if err != nil {
 		return err
 	}
-	go self.analyzeLines(file, outStream)
+	go func() {
+		self.analyzeLines(file, outStream)
+	}()
 	return nil
 }
 
