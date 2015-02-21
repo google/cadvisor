@@ -71,6 +71,9 @@ type Manager interface {
 
 	// Get version information about different components we depend on.
 	GetVersionInfo() (*info.VersionInfo, error)
+
+	// Get events streamed through passedChannel that fit the request.
+	WatchForEvents(request *events.Request, passedChannel chan *events.Event) error
 }
 
 // New takes a memory storage and returns a new manager.
@@ -107,6 +110,8 @@ func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, err
 	newManager.versionInfo = *versionInfo
 	glog.Infof("Version: %+v", newManager.versionInfo)
 
+	newManager.eventHandler = events.NewEventManager()
+
 	return newManager, nil
 }
 
@@ -129,6 +134,7 @@ type manager struct {
 	cadvisorContainer      string
 	dockerContainersRegexp *regexp.Regexp
 	loadReader             cpuload.CpuLoadReader
+	eventHandler           events.EventManager
 }
 
 // Start the container manager.
@@ -169,6 +175,10 @@ func (self *manager) Start() error {
 		return err
 	}
 	self.quitChannels = append(self.quitChannels, quitWatcher)
+	err = self.watchForNewOoms()
+	if err != nil {
+		return err
+	}
 
 	// Look for new containers in the main housekeeping thread.
 	quitGlobalHousekeeping := make(chan error)
@@ -645,7 +655,16 @@ func (self *manager) watchForNewOoms() error {
 				EventData:     oomInstance,
 			}
 			glog.V(1).Infof("Created an oom event: %v", newEvent)
+			err := self.eventHandler.AddEvent(newEvent)
+			if err != nil {
+				glog.Errorf("Failed to add event %v, got error: %v", newEvent, err)
+			}
 		}
 	}()
 	return nil
+}
+
+// can be called by the api which will take events returned on the channel
+func (self *manager) WatchForEvents(request *events.Request, passedChannel chan *events.Event) error {
+	return self.eventHandler.WatchEvents(passedChannel, request)
 }
