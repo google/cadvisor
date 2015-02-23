@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"math"
+	"sort"
 	"sync"
 	"time"
 
@@ -321,6 +322,7 @@ func (c *containerData) updateStats() error {
 }
 
 func (c *containerData) updateSubcontainers() error {
+	var subcontainers info.ContainerReferenceSlice
 	subcontainers, err := c.handler.ListContainers(container.ListSelf)
 	if err != nil {
 		// Ignore errors if the container is dead.
@@ -329,6 +331,7 @@ func (c *containerData) updateSubcontainers() error {
 		}
 		return err
 	}
+	sort.Sort(subcontainers)
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.info.Subcontainers = subcontainers
