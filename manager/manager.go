@@ -177,7 +177,7 @@ func (self *manager) Start() error {
 	self.quitChannels = append(self.quitChannels, quitWatcher)
 	err = self.watchForNewOoms()
 	if err != nil {
-		return err
+		glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
 	}
 
 	// Look for new containers in the main housekeeping thread.
