@@ -25,7 +25,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
-	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
 )
@@ -47,7 +47,7 @@ type containerInfo struct {
 type containerData struct {
 	handler              container.ContainerHandler
 	info                 containerInfo
-	storageDriver        storage.StorageDriver
+	memoryStorage        *memory.InMemoryStorage
 	lock                 sync.Mutex
 	loadReader           cpuload.CpuLoadReader
 	summaryReader        *summary.StatsSummary
@@ -107,9 +107,9 @@ func (c *containerData) DerivedStats() (info.DerivedStats, error) {
 	return c.summaryReader.DerivedStats()
 }
 
-func newContainerData(containerName string, driver storage.StorageDriver, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool) (*containerData, error) {
-	if driver == nil {
-		return nil, fmt.Errorf("nil storage driver")
+func newContainerData(containerName string, memoryStorage *memory.InMemoryStorage, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool) (*containerData, error) {
+	if memoryStorage == nil {
+		return nil, fmt.Errorf("nil memory storage")
 	}
 	if handler == nil {
 		return nil, fmt.Errorf("nil container handler")
@@ -121,7 +121,7 @@ func newContainerData(containerName string, driver storage.StorageDriver, handle
 
 	cont := &containerData{
 		handler:              handler,
-		storageDriver:        driver,
+		memoryStorage:        memoryStorage,
 		housekeepingInterval: *HousekeepingInterval,
 		loadReader:           loadReader,
 		logUsage:             logUsage,
@@ -145,7 +145,8 @@ func newContainerData(containerName string, driver storage.StorageDriver, handle
 // Determine when the next housekeeping should occur.
 func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Time {
 	if *allowDynamicHousekeeping {
-		stats, err := self.storageDriver.RecentStats(self.info.Name, 2)
+		var empty time.Time
+		stats, err := self.memoryStorage.RecentStats(self.info.Name, empty, empty, 2)
 		if err != nil {
 			if self.allowErrorLogging() {
 				glog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
@@ -200,7 +201,8 @@ func (c *containerData) housekeeping() {
 		// Log usage if asked to do so.
 		if c.logUsage {
 			const numSamples = 60
-			stats, err := c.storageDriver.RecentStats(c.info.Name, numSamples)
+			var empty time.Time
+			stats, err := c.memoryStorage.RecentStats(c.info.Name, empty, empty, numSamples)
 			if err != nil {
 				if c.allowErrorLogging() {
 					glog.Infof("[%s] Failed to get recent stats for logging usage: %v", c.info.Name, err)
@@ -311,7 +313,7 @@ func (c *containerData) updateStats() error {
 		}
 		return err
 	}
-	err = c.storageDriver.AddStats(ref, stats)
+	err = c.memoryStorage.AddStats(ref, stats)
 	if err != nil {
 		return err
 	}

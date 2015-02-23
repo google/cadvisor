@@ -17,12 +17,14 @@ package memory
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage"
 )
 
+// TODO(vmarmol): See about refactoring this class, we have an unecessary redirection of containerStorage and InMemoryStorage.
 // containerStorage is used to store per-container information
 type containerStorage struct {
 	ref         info.ContainerReference
@@ -40,22 +42,10 @@ func (self *containerStorage) AddStats(stats *info.ContainerStats) error {
 	return nil
 }
 
-func (self *containerStorage) RecentStats(numStats int) ([]*info.ContainerStats, error) {
+func (self *containerStorage) RecentStats(start, end time.Time, maxStats int) ([]*info.ContainerStats, error) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
-	if self.recentStats.Size() < numStats || numStats < 0 {
-		numStats = self.recentStats.Size()
-	}
-
-	// Stats in the recentStats list are stored in reverse chronological
-	// order, i.e. most recent stats is in the front.
-	// numStats will always <= recentStats.Size() so that there will be
-	// always at least numStats available stats to retrieve. We traverse
-	// the recentStats list from its head so that the returned slice will be in chronological
-	// order. The order of the returned slice is not specified by the
-	// StorageDriver interface, so it is not necessary for other storage
-	// drivers to return the slice in the same order.
-	return self.recentStats.FirstN(numStats), nil
+	return self.recentStats.InTimeRange(start, end, maxStats), nil
 }
 
 func newContainerStore(ref info.ContainerReference, maxNumStats int) *containerStorage {
@@ -97,7 +87,7 @@ func (self *InMemoryStorage) AddStats(ref info.ContainerReference, stats *info.C
 	return cstore.AddStats(stats)
 }
 
-func (self *InMemoryStorage) RecentStats(name string, numStats int) ([]*info.ContainerStats, error) {
+func (self *InMemoryStorage) RecentStats(name string, start, end time.Time, maxStats int) ([]*info.ContainerStats, error) {
 	var cstore *containerStorage
 	var ok bool
 	err := func() error {
@@ -112,7 +102,7 @@ func (self *InMemoryStorage) RecentStats(name string, numStats int) ([]*info.Con
 		return nil, err
 	}
 
-	return cstore.RecentStats(numStats)
+	return cstore.RecentStats(start, end, maxStats)
 }
 
 func (self *InMemoryStorage) Close() error {

@@ -25,32 +25,33 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info"
 	itest "github.com/google/cadvisor/info/test"
-	stest "github.com/google/cadvisor/storage/test"
+	"github.com/google/cadvisor/storage/memory"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const containerName = "/container"
 
 // Create a containerData instance for a test.
-func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *container.MockContainerHandler, *stest.MockStorageDriver) {
+func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *container.MockContainerHandler, *memory.InMemoryStorage) {
 	mockHandler := container.NewMockContainerHandler(containerName)
 	mockHandler.On("GetSpec").Return(
 		spec,
 		nil,
 	)
-	mockDriver := &stest.MockStorageDriver{}
-	ret, err := newContainerData(containerName, mockDriver, mockHandler, nil, false)
+	memoryStorage := memory.New(60, nil)
+	ret, err := newContainerData(containerName, memoryStorage, mockHandler, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return ret, mockHandler, mockDriver
+	return ret, mockHandler, memoryStorage
 }
 
 // Create a containerData instance for a test and add a default GetSpec mock.
-func newTestContainerData(t *testing.T) (*containerData, *container.MockContainerHandler, *stest.MockStorageDriver) {
+func newTestContainerData(t *testing.T) (*containerData, *container.MockContainerHandler, *memory.InMemoryStorage) {
 	spec := itest.GenerateRandomContainerSpec(4)
-	ret, mockHandler, mockDriver := setupContainerData(t, spec)
-	return ret, mockHandler, mockDriver
+	ret, mockHandler, memoryStorage := setupContainerData(t, spec)
+	return ret, mockHandler, memoryStorage
 }
 
 func TestUpdateSubcontainers(t *testing.T) {
@@ -114,23 +115,29 @@ func TestUpdateSubcontainersWithErrorOnDeadContainer(t *testing.T) {
 	mockHandler.AssertExpectations(t)
 }
 
+func checkNumStats(t *testing.T, memoryStorage *memory.InMemoryStorage, numStats int) {
+	var empty time.Time
+	stats, err := memoryStorage.RecentStats(containerName, empty, empty, -1)
+	require.Nil(t, err)
+	assert.Len(t, stats, numStats)
+}
+
 func TestUpdateStats(t *testing.T) {
 	statsList := itest.GenerateRandomStats(1, 4, 1*time.Second)
 	stats := statsList[0]
 
-	cd, mockHandler, mockDriver := newTestContainerData(t)
+	cd, mockHandler, memoryStorage := newTestContainerData(t)
 	mockHandler.On("GetStats").Return(
 		stats,
 		nil,
 	)
-
-	mockDriver.On("AddStats", info.ContainerReference{Name: mockHandler.Name}, stats).Return(nil)
 
 	err := cd.updateStats()
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	checkNumStats(t, memoryStorage, 1)
 	mockHandler.AssertExpectations(t)
 }
 

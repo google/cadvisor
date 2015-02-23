@@ -16,42 +16,82 @@ package memory
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/cadvisor/info"
-	"github.com/google/cadvisor/storage"
-	"github.com/google/cadvisor/storage/test"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-type memoryTestStorageDriver struct {
-	storage.StorageDriver
-}
+const containerName = "/container"
 
-func (self *memoryTestStorageDriver) StatsEq(a, b *info.ContainerStats) bool {
-	return test.DefaultStatsEq(a, b)
-}
+var (
+	containerRef = info.ContainerReference{Name: containerName}
+	zero         time.Time
+)
 
-func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T) {
-	maxSize := 200
-
-	for N := 10; N < maxSize; N += 10 {
-		testDriver := &memoryTestStorageDriver{}
-		testDriver.StorageDriver = New(N, nil)
-		f(testDriver, t)
+// Make stats with the specified identifier.
+func makeStat(i int) *info.ContainerStats {
+	return &info.ContainerStats{
+		Timestamp: zero.Add(time.Duration(i) * time.Second),
+		Cpu: info.CpuStats{
+			LoadAverage: int32(i),
+		},
 	}
 }
 
-func TestRetrievePartialRecentStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestRetrievePartialRecentStats, t)
+func getRecentStats(t *testing.T, memoryStorage *InMemoryStorage, numStats int) []*info.ContainerStats {
+	stats, err := memoryStorage.RecentStats(containerName, zero, zero, numStats)
+	require.Nil(t, err)
+	return stats
 }
 
-func TestRetrieveAllRecentStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestRetrieveAllRecentStats, t)
+func TestAddStats(t *testing.T) {
+	memoryStorage := New(60, nil)
+
+	assert := assert.New(t)
+	assert.Nil(memoryStorage.AddStats(containerRef, makeStat(0)))
+	assert.Nil(memoryStorage.AddStats(containerRef, makeStat(1)))
+	assert.Nil(memoryStorage.AddStats(containerRef, makeStat(2)))
+	assert.Nil(memoryStorage.AddStats(containerRef, makeStat(0)))
+	containerRef2 := info.ContainerReference{
+		Name: "/container2",
+	}
+	assert.Nil(memoryStorage.AddStats(containerRef2, makeStat(0)))
+	assert.Nil(memoryStorage.AddStats(containerRef2, makeStat(1)))
 }
 
-func TestNoRecentStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestNoRecentStats, t)
+func TestRecentStatsNoRecentStats(t *testing.T) {
+	memoryStorage := makeWithStats(0)
+
+	_, err := memoryStorage.RecentStats(containerName, zero, zero, 60)
+	assert.NotNil(t, err)
 }
 
-func TestRetrieveZeroStats(t *testing.T) {
-	runStorageTest(test.StorageDriverTestRetrieveZeroRecentStats, t)
+// Make an instance of InMemoryStorage with n stats.
+func makeWithStats(n int) *InMemoryStorage {
+	memoryStorage := New(60, nil)
+
+	for i := 0; i < n; i++ {
+		memoryStorage.AddStats(containerRef, makeStat(i))
+	}
+	return memoryStorage
+}
+
+func TestRecentStatsGetZeroStats(t *testing.T) {
+	memoryStorage := makeWithStats(10)
+
+	assert.Len(t, getRecentStats(t, memoryStorage, 0), 0)
+}
+
+func TestRecentStatsGetSomeStats(t *testing.T) {
+	memoryStorage := makeWithStats(10)
+
+	assert.Len(t, getRecentStats(t, memoryStorage, 5), 5)
+}
+
+func TestRecentStatsGetAllStats(t *testing.T) {
+	memoryStorage := makeWithStats(10)
+
+	assert.Len(t, getRecentStats(t, memoryStorage, -1), 10)
 }
