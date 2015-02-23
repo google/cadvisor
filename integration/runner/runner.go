@@ -70,7 +70,7 @@ func PushAndRunTests(host, testDir string) error {
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error)
 	go func() {
-		err = RunCommand("gcutil", "ssh", host, "sudo", path.Join(testDir, cadvisorBinary), "--port", portStr, "--logtostderr", "&>", "/dev/null")
+		err = RunCommand("gcutil", "ssh", host, "sudo", path.Join(testDir, cadvisorBinary), "--port", portStr, "--logtostderr")
 		if err != nil {
 			errChan <- err
 		}
@@ -165,7 +165,7 @@ func Run() error {
 	if len(allErrors) != 0 {
 		var buffer bytes.Buffer
 		for i, err := range allErrors {
-			buffer.WriteString(fmt.Sprintf("Error %d:", i))
+			buffer.WriteString(fmt.Sprintf("Error %d: ", i))
 			buffer.WriteString(err.Error())
 			buffer.WriteString("\n")
 		}
