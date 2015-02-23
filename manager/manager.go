@@ -288,7 +288,7 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 		return nil, err
 	}
 
-	stats, err := self.memoryStorage.RecentStats(cinfo.Name, query.NumStats)
+	stats, err := self.memoryStorage.RecentStats(cinfo.Name, query.Start, query.End, query.NumStats)
 	if err != nil {
 		return nil, err
 	}
