@@ -20,8 +20,8 @@ At this point you can build cAdvisor:
 $ godep go build github.com/google/cadvisor
 ```
 
-or run unit tests:
+or run only unit tests:
 
 ```
-$ godep go test github.com/google/cadvisor/...
+$ godep go test github.com/google/cadvisor/... -test.short
 ```
