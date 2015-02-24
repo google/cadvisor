@@ -47,7 +47,8 @@ type StatsSummary struct {
 	secondSamples []*secondSample
 	// minute percentiles. We track 24 * 60 maximum samples.
 	minuteSamples *SamplesBuffer
-	// latest derived minute, hour, and day stats. Updated every minute.
+	// latest derived instant, minute, hour, and day stats. Instant sample updated every second.
+	// Others updated every minute.
 	derivedStats info.DerivedStats // Guarded by dataLock.
 	dataLock     sync.RWMutex
 }
@@ -65,6 +66,7 @@ func (s *StatsSummary) AddSample(stat info.ContainerStats) error {
 		sample.Memory = stat.Memory.WorkingSet
 	}
 	s.secondSamples = append(s.secondSamples, &sample)
+	s.updateLatestUsage()
 	// TODO(jnagal): Use 'available' to avoid unnecessary computation.
 	if len(s.secondSamples) == 60 {
 		// Make a minute stat.
@@ -78,6 +80,29 @@ func (s *StatsSummary) AddSample(stat info.ContainerStats) error {
 		}
 	}
 	return nil
+}
+
+func (s *StatsSummary) updateLatestUsage() {
+	usage := info.InstantUsage{}
+	numStats := len(s.secondSamples)
+	if numStats < 1 {
+		return
+	}
+	latest := s.secondSamples[numStats-1]
+	usage.Memory = latest.Memory
+	if numStats > 1 {
+		previous := s.secondSamples[numStats-2]
+		cpu, err := getCpuRate(*latest, *previous)
+		if err == nil {
+			usage.Cpu = cpu
+		}
+	}
+
+	s.dataLock.Lock()
+	defer s.dataLock.Unlock()
+	s.derivedStats.LatestUsage = usage
+	s.derivedStats.Timestamp = latest.Timestamp
+	return
 }
 
 // Generate new derived stats based on current minute stats samples.
@@ -102,6 +127,7 @@ func (s *StatsSummary) updateDerivedStats() error {
 
 	s.dataLock.Lock()
 	defer s.dataLock.Unlock()
+	derived.LatestUsage = s.derivedStats.LatestUsage
 	s.derivedStats = derived
 
 	return nil

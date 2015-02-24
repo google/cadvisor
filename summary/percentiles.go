@@ -17,6 +17,7 @@
 package summary
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -147,23 +148,31 @@ func getPercentComplete(stats []*secondSample) (percent int32) {
 	return
 }
 
+// Calculate cpurate from two consecutive total cpu usage samples.
+func getCpuRate(latest, previous secondSample) (uint64, error) {
+	var elapsed int64
+	elapsed = latest.Timestamp.Sub(previous.Timestamp).Nanoseconds()
+	if elapsed < 10*milliSecondsToNanoSeconds {
+		return 0, fmt.Errorf("elapsed time too small: %d ns: time now %s last %s", elapsed, latest.Timestamp.String(), previous.Timestamp.String())
+	}
+	if latest.Cpu < previous.Cpu {
+		return 0, fmt.Errorf("bad sample: cumulative cpu usage dropped from %d to %d", latest.Cpu, previous.Cpu)
+	}
+	// Cpurate is calculated in cpu-milliseconds per second.
+	cpuRate := (latest.Cpu - previous.Cpu) * secondsToMilliSeconds / uint64(elapsed)
+	return cpuRate, nil
+}
+
 // Returns a percentile sample for a minute by aggregating seconds samples.
 func GetMinutePercentiles(stats []*secondSample) info.Usage {
 	lastSample := secondSample{}
 	cpu := NewResource(len(stats))
 	memory := NewResource(len(stats))
 	for _, stat := range stats {
-		var elapsed int64
 		if !lastSample.Timestamp.IsZero() {
-			elapsed = stat.Timestamp.Sub(lastSample.Timestamp).Nanoseconds()
-			if elapsed < 10*milliSecondsToNanoSeconds {
-				glog.Infof("Elapsed time too small: %d ns: time now %s last %s", elapsed, stat.Timestamp.String(), lastSample.Timestamp.String())
-				continue
-			}
-			glog.V(2).Infof("Read sample: cpu %d, memory %d", stat.Cpu, memory)
-			cpuRate := (stat.Cpu - lastSample.Cpu) * secondsToMilliSeconds / uint64(elapsed)
-			if cpuRate < 0 {
-				glog.Infof("cpu rate too small: %f ns", cpuRate)
+			cpuRate, err := getCpuRate(*stat, lastSample)
+			if err != nil {
+				glog.V(2).Infof("Skipping sample, %v", err)
 				continue
 			}
 			glog.V(2).Infof("Adding cpu rate sample : %d", cpuRate)

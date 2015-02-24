@@ -479,9 +479,19 @@ type Usage struct {
 	Memory Percentiles `json:"memory"`
 }
 
+// latest sample collected for a container.
+type InstantUsage struct {
+	// cpu rate in cpu milliseconds/second.
+	Cpu uint64 `json:"cpu"`
+	// Memory usage in bytes.
+	Memory uint64 `json:"memory"`
+}
+
 type DerivedStats struct {
 	// Time of generation of these stats.
 	Timestamp time.Time `json:"timestamp"`
+	// Latest instantaneous sample.
+	LatestUsage InstantUsage `json:"latest_usage"`
 	// Percentiles in last observed minute.
 	MinuteUsage Usage `json:"minute_usage"`
 	// Percentile in last hour.
