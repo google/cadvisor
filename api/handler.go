@@ -23,10 +23,12 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 )
@@ -125,6 +127,7 @@ func writeResult(res interface{}, w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
 	return nil
+
 }
 
 func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, error) {
@@ -140,6 +143,74 @@ func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, er
 	}
 
 	return &query, nil
+}
+
+// The user can set any or none of the following arguments in any order
+// with any twice defined arguments being assigned the first value.
+// If the value type for the argument is wrong the field will be assumed to be
+// unassigned
+// bools: historical, subcontainers, oom_events, creation_events, deletion_events
+// ints: max_events, start_time (unix timestamp), end_time (unix timestamp)
+// example r.URL: http://localhost:8080/api/v1.3/events?oom_events=true&historical=true&max_events=10
+func getEventRequest(r *http.Request) (*events.Request, bool, error) {
+	query := events.NewRequest()
+	getHistoricalEvents := false
+
+	urlMap := r.URL.Query()
+
+	if val, ok := urlMap["historical"]; ok {
+		newBool, err := strconv.ParseBool(val[0])
+		if err == nil {
+			getHistoricalEvents = newBool
+		}
+	}
+	if val, ok := urlMap["subcontainers"]; ok {
+		newBool, err := strconv.ParseBool(val[0])
+		if err == nil {
+			query.IncludeSubcontainers = newBool
+		}
+	}
+	if val, ok := urlMap["oom_events"]; ok {
+		newBool, err := strconv.ParseBool(val[0])
+		if err == nil {
+			query.EventType[events.TypeOom] = newBool
+		}
+	}
+	if val, ok := urlMap["creation_events"]; ok {
+		newBool, err := strconv.ParseBool(val[0])
+		if err == nil {
+			query.EventType[events.TypeContainerCreation] = newBool
+		}
+	}
+	if val, ok := urlMap["deletion_events"]; ok {
+		newBool, err := strconv.ParseBool(val[0])
+		if err == nil {
+			query.EventType[events.TypeContainerDeletion] = newBool
+		}
+	}
+	if val, ok := urlMap["max_events"]; ok {
+		newInt, err := strconv.Atoi(val[0])
+		if err == nil {
+			query.MaxEventsReturned = int(newInt)
+		}
+	}
+	if val, ok := urlMap["start_time"]; ok {
+		newTime, err := time.Parse(time.RFC3339, val[0])
+		if err == nil {
+			query.StartTime = newTime
+		}
+	}
+	if val, ok := urlMap["end_time"]; ok {
+		newTime, err := time.Parse(time.RFC3339, val[0])
+		if err == nil {
+			query.EndTime = newTime
+		}
+	}
+
+	glog.V(2).Infof(
+		"%v was returned in api/handler.go:getEventRequest from the url rawQuery %v",
+		query, r.URL.RawQuery)
+	return query, getHistoricalEvents, nil
 }
 
 func getContainerName(request []string) string {

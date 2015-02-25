@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 )
@@ -30,6 +31,7 @@ const (
 	dockerApi        = "docker"
 	summaryApi       = "summary"
 	specApi          = "spec"
+	eventsApi        = "events"
 )
 
 // Interface for a cAdvisor API version
@@ -49,8 +51,11 @@ func getApiVersions() []ApiVersion {
 	v1_0 := &version1_0{}
 	v1_1 := newVersion1_1(v1_0)
 	v1_2 := newVersion1_2(v1_1)
-	v2_0 := newVersion2_0(v1_2)
-	return []ApiVersion{v1_0, v1_1, v1_2, v2_0}
+	v1_3 := newVersion1_3(v1_2)
+	v2_0 := newVersion2_0(v1_3)
+
+	return []ApiVersion{v1_0, v1_1, v1_2, v1_3, v2_0}
+
 }
 
 // API v1.0
@@ -227,12 +232,72 @@ func (self *version1_2) HandleRequest(requestType string, request []string, m ma
 	}
 }
 
-// v2.0 builds on v1.2
-type version2_0 struct {
+// API v1.3
+
+type version1_3 struct {
 	baseVersion *version1_2
 }
 
-func newVersion2_0(v *version1_2) *version2_0 {
+// v1.3 builds on v1.2.
+func newVersion1_3(v *version1_2) *version1_3 {
+	return &version1_3{
+		baseVersion: v,
+	}
+}
+
+func (self *version1_3) Version() string {
+	return "v1.3"
+}
+
+func (self *version1_3) SupportedRequestTypes() []string {
+	return append(self.baseVersion.SupportedRequestTypes(), eventsApi)
+}
+
+func (self *version1_3) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+	switch requestType {
+	case eventsApi:
+		query, eventsFromAllTime, err := getEventRequest(r)
+		if err != nil {
+			return err
+		}
+		glog.V(2).Infof("Api - Events(%v)", query)
+
+		if eventsFromAllTime {
+			allEvents, err := m.GetPastEvents(query)
+			if err != nil {
+				return err
+			}
+			return writeResult(allEvents, w)
+		} else {
+			// every time URL is entered to watch, a channel is created here
+			eventChannel := make(chan *events.Event, 10)
+			err = m.WatchForEvents(query, eventChannel)
+
+			defer close(eventChannel)
+			currentEventSet := make(events.EventSlice, 0)
+			for ev := range eventChannel {
+				// todo: implement write-as-received writeResult method
+				currentEventSet = append(currentEventSet, ev)
+				err = writeResult(currentEventSet, w)
+				if err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	default:
+		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
+	}
+}
+
+// API v2.0
+
+// v2.0 builds on v1.3
+type version2_0 struct {
+	baseVersion *version1_3
+}
+
+func newVersion2_0(v *version1_3) *version2_0 {
 	return &version2_0{
 		baseVersion: v,
 	}

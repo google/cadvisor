@@ -103,7 +103,7 @@ type Request struct {
 	// allows the caller to put a limit on how many
 	// events they receive. If there are more events than MaxEventsReturned
 	// then the most chronologically recent events in the time period
-	// specified are returned
+	// specified are returned. Must be >= 1
 	MaxEventsReturned int
 	// the absolute container name for which the event occurred
 	ContainerName string

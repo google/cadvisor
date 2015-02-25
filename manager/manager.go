@@ -74,6 +74,9 @@ type Manager interface {
 
 	// Get events streamed through passedChannel that fit the request.
 	WatchForEvents(request *events.Request, passedChannel chan *events.Event) error
+
+	// Get past events that have been detected and that fit the request.
+	GetPastEvents(request *events.Request) (events.EventSlice, error)
 }
 
 // New takes a memory storage and returns a new manager.
@@ -474,6 +477,7 @@ func (m *manager) createContainer(containerName string) error {
 
 	// Start the container's housekeeping.
 	cont.Start()
+
 	return nil
 }
 
@@ -596,8 +600,8 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 	}
 
 	// Register for new subcontainers.
-	events := make(chan container.SubcontainerEvent, 16)
-	err := root.handler.WatchSubcontainers(events)
+	eventsChannel := make(chan container.SubcontainerEvent, 16)
+	err := root.handler.WatchSubcontainers(eventsChannel)
 	if err != nil {
 		return err
 	}
@@ -612,7 +616,7 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 	go func() {
 		for {
 			select {
-			case event := <-events:
+			case event := <-eventsChannel:
 				switch {
 				case event.EventType == container.SubcontainerAdd:
 					err = self.createContainer(event.Name)
@@ -667,4 +671,9 @@ func (self *manager) watchForNewOoms() error {
 // can be called by the api which will take events returned on the channel
 func (self *manager) WatchForEvents(request *events.Request, passedChannel chan *events.Event) error {
 	return self.eventHandler.WatchEvents(passedChannel, request)
+}
+
+// can be called by the api which will return all events satisfying the request
+func (self *manager) GetPastEvents(request *events.Request) (events.EventSlice, error) {
+	return self.eventHandler.GetEvents(request)
 }
