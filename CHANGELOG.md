@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.0 (2015-02-24)
+- Adding Start and End time for ContainerInfoRequest.
+- Various misc fixes.
+
 ## 0.9.0 (2015-02-06)
 - Support for more network devices (all non-eth).
 - Support for more partition types (btrfs, device-mapper, whole-disk).
