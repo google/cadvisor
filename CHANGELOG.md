@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.1 (2015-02-27)
+- Disable OOM monitoring which is using too much CPU.
+- Fix break in summary stats.
+
 ## 0.10.0 (2015-02-24)
 - Adding Start and End time for ContainerInfoRequest.
 - Various misc fixes.
