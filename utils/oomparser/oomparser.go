@@ -89,12 +89,12 @@ func getProcessNamePid(line string, currentOomInstance *OomInstance) (bool, erro
 }
 
 // uses regex to see if line is the start of a kernel oom log
-func checkIfStartOfOomMessages(line string) (bool, error) {
+func checkIfStartOfOomMessages(line string) bool {
 	potential_oom_start := firstLineRegexp.MatchString(line)
 	if potential_oom_start {
-		return true, nil
+		return true
 	}
-	return false, nil
+	return false
 }
 
 // opens a reader to grab new messages from the Reader object called outPipe
@@ -104,15 +104,14 @@ func checkIfStartOfOomMessages(line string) (bool, error) {
 // lines are checked against a regexp to check for the pid, process name, etc.
 // At the end of an oom message group, AnalyzeLines adds the new oomInstance to
 // oomLog
-func (self *OomParser) analyzeLines(outPipe io.ReadCloser, outStream chan *OomInstance) {
-	ioreader := bufio.NewReader(outPipe)
-	line, err := ioreader.ReadString('\n')
-	for err == nil {
-		in_oom_kernel_log, err := checkIfStartOfOomMessages(line)
-		if err != nil {
-			glog.Errorf("%v", err)
-			continue
+func (self *OomParser) analyzeLines(ioreader *bufio.Reader, outStream chan *OomInstance) {
+	var line string
+	var err error
+	for true {
+		for line, err = ioreader.ReadString('\n'); err != nil && err == io.EOF; {
+			time.Sleep(100 * time.Millisecond)
 		}
+		in_oom_kernel_log := checkIfStartOfOomMessages(line)
 		if in_oom_kernel_log {
 			oomCurrentInstance := &OomInstance{
 				ContainerName: "/",
@@ -132,9 +131,7 @@ func (self *OomParser) analyzeLines(outPipe io.ReadCloser, outStream chan *OomIn
 			in_oom_kernel_log = false
 			outStream <- oomCurrentInstance
 		}
-		line, err = ioreader.ReadString('\n')
 	}
-	glog.Errorf("%v", err)
 }
 
 // looks for system files that contain kernel messages and if one is found, sets
@@ -162,8 +159,11 @@ func (self *OomParser) StreamOoms(outStream chan *OomInstance) error {
 	if err != nil {
 		return err
 	}
+	ioreader := bufio.NewReader(file)
+
+	// Process the events received from the kernel.
 	go func() {
-		self.analyzeLines(file, outStream)
+		self.analyzeLines(ioreader, outStream)
 	}()
 	return nil
 }
