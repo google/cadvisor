@@ -137,7 +137,8 @@ func newContainerData(containerName string, memoryStorage *memory.InMemoryStorag
 	}
 	cont.summaryReader, err = summary.New(cont.info.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create summary reader: %v", err)
+		cont.summaryReader = nil
+		glog.Warningf("Failed to create summary reader for %q: %v", ref.Name, err)
 	}
 
 	return cont, nil
