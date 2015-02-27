@@ -43,6 +43,8 @@ var httpAuthRealm = flag.String("http_auth_realm", "localhost", "HTTP auth realm
 var httpDigestFile = flag.String("http_digest_file", "", "HTTP digest file for the web UI")
 var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest file for the web UI")
 
+var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
+
 func main() {
 	defer glog.Flush()
 	flag.Parse()
@@ -72,7 +74,7 @@ func main() {
 	mux := http.DefaultServeMux
 
 	// Register all HTTP handlers.
-	err = cadvisorHttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
+	err = cadvisorHttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *prometheusEndpoint)
 	if err != nil {
 		glog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
