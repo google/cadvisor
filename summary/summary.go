@@ -68,11 +68,21 @@ func (s *StatsSummary) AddSample(stat info.ContainerStats) error {
 	s.secondSamples = append(s.secondSamples, &sample)
 	s.updateLatestUsage()
 	// TODO(jnagal): Use 'available' to avoid unnecessary computation.
-	if len(s.secondSamples) == 60 {
-		// Make a minute stat.
+	numSamples := len(s.secondSamples)
+	elapsed := time.Nanosecond
+	if numSamples > 1 {
+		start := s.secondSamples[0].Timestamp
+		end := s.secondSamples[numSamples-1].Timestamp
+		elapsed = end.Sub(start)
+	}
+	if elapsed > 60*time.Second {
+		// Make a minute sample. This works with dynamic housekeeping as long
+		// as we keep max dynamic houskeeping period close to a minute.
 		minuteSample := GetMinutePercentiles(s.secondSamples)
-		// clear seconds samples.
-		s.secondSamples = s.secondSamples[:0]
+		// Clear seconds samples. Keep the latest sample for continuity.
+		// Copying and resizing helps avoid slice re-allocation.
+		s.secondSamples[0] = s.secondSamples[numSamples-1]
+		s.secondSamples = s.secondSamples[:1]
 		s.minuteSamples.Add(minuteSample)
 		err := s.updateDerivedStats()
 		if err != nil {
