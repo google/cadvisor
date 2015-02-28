@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
@@ -121,12 +122,24 @@ func RegisterHandlersBasic(containerManager manager.Manager, authenticator *auth
 }
 
 func getContainerDisplayName(cont info.ContainerReference) string {
-	// Pick the shortest name of the container as the display name.
-	displayName := cont.Name
+	// Pick a user-added alias as display name.
+	displayName := ""
 	for _, alias := range cont.Aliases {
-		if len(displayName) >= len(alias) {
+		// ignore container id as alias.
+		if strings.Contains(cont.Name, alias) {
+			continue
+		}
+		// pick shortest display name if multiple aliases are available.
+		if displayName == "" || len(displayName) >= len(alias) {
 			displayName = alias
 		}
+	}
+
+	if displayName == "" {
+		displayName = cont.Name
+	} else if len(displayName) > 50 {
+		// truncate display name to fit in one line.
+		displayName = displayName[:50] + "..."
 	}
 
 	// Add the full container name to the display name.
