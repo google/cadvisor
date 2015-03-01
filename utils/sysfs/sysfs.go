@@ -27,6 +27,7 @@ const (
 	blockDir = "/sys/block"
 	cacheDir = "/sys/devices/system/cpu/cpu"
 	netDir   = "/sys/class/net"
+	dmiDir   = "/sys/class/dmi"
 )
 
 type CacheInfo struct {
@@ -61,6 +62,8 @@ type SysFs interface {
 	GetCaches(id int) ([]os.FileInfo, error)
 	// Get information for a cache accessible from the given cpu.
 	GetCacheInfo(cpu int, cache string) (CacheInfo, error)
+
+	GetSystemUUID() (string, error)
 }
 
 type realSysFs struct{}
@@ -227,4 +230,12 @@ func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 		Type:  cacheType,
 		Cpus:  cpuCount,
 	}, nil
+}
+
+func (self *realSysFs) GetSystemUUID() (string, error) {
+	id, err := ioutil.ReadFile(path.Join(dmiDir, "id", "product_uuid"))
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(id)), nil
 }

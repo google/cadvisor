@@ -16,6 +16,7 @@ package manager
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"regexp"
@@ -24,6 +25,7 @@ import (
 	"syscall"
 
 	dclient "github.com/fsouza/go-dockerclient"
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -38,6 +40,8 @@ var coreRegExp = regexp.MustCompile("core id\\t*: +([0-9]+)")
 var nodeRegExp = regexp.MustCompile("physical id\\t*: +([0-9]+)")
 var CpuClockSpeedMHz = regexp.MustCompile("cpu MHz\\t*: +([0-9]+.[0-9]+)")
 var memoryCapacityRegexp = regexp.MustCompile("MemTotal: *([0-9]+) kB")
+
+var machineIdFilePath = flag.String("machine_id_file", "/etc/machine-id", "File containing the machine-id")
 
 func getClockSpeed(procInfo []byte) (uint64, error) {
 	// First look through sys to find a max supported cpu frequency.
@@ -205,6 +209,15 @@ func getTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 	return nodes, numCores, nil
 }
 
+func getMachineID() string {
+	id, err := ioutil.ReadFile(*machineIdFilePath)
+	if err != nil {
+		glog.Error("Couldn't collect machine-id: ", err)
+		return ""
+	}
+	return strings.TrimSpace(string(id))
+}
+
 func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 	cpuinfo, err := ioutil.ReadFile("/proc/cpuinfo")
 	clockSpeed, err := getClockSpeed(cpuinfo)
@@ -247,6 +260,11 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		return nil, err
 	}
 
+	system_uuid, err := sysinfo.GetSystemUUID(sysFs)
+	if err != nil {
+		return nil, err
+	}
+
 	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
 		CpuFrequency:   clockSpeed,
@@ -254,6 +272,8 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		DiskMap:        diskMap,
 		NetworkDevices: netDevices,
 		Topology:       topology,
+		MachineID:      getMachineID(),
+		SystemUUID:     system_uuid,
 	}
 
 	for _, fs := range filesystems {
