@@ -133,6 +133,31 @@ func areCgroupsPresent(available map[string]int, desired []string) (bool, string
 	return true, ""
 }
 
+func validateMemoryAccounting(available_cgroups map[string]int) string {
+	ok, _ := areCgroupsPresent(available_cgroups, []string{"memory"})
+	if !ok {
+		return "\tHierarchical memory accounting status unknown: memory cgroup not enabled.\n"
+	}
+	mnt, err := cgroups.FindCgroupMountpoint("memory")
+	if err != nil {
+		return "\tHierarchical memory accounting status unknown: memory cgroup not mounted.\n"
+	}
+	hier, err := ioutil.ReadFile(path.Join(mnt, "memory.use_hierarchy"))
+	if err != nil {
+		return "\tHierarchical memory accounting status unknown: hierarchy interface unavailable.\n"
+	}
+	var enabled int
+	n, err := fmt.Sscanf(string(hier), "%d", &enabled)
+	if err != nil || n != 1 {
+		return "\tHierarchical memory accounting status unknown: hierarchy interface unreadable.\n"
+	}
+	if enabled == 1 {
+		return "\tHierarchical memory accounting enabled. Reported memory usage includes memory used by child containers.\n"
+	}
+	return "\tHierarchical memory accounting disabled. Memory usage does not include usage from child containers.\n"
+
+}
+
 func validateCgroups() (string, string) {
 	required_cgroups := []string{"cpu", "cpuacct"}
 	recommended_cgroups := []string{"memory", "blkio", "cpuset", "devices", "freezer"}
@@ -155,6 +180,7 @@ func validateCgroups() (string, string) {
 	}
 	out = fmt.Sprintf("Available cgroups: %v\n", available_cgroups)
 	out += desc
+	out += validateMemoryAccounting(available_cgroups)
 	return Recommended, out
 }
 
