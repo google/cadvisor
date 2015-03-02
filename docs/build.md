@@ -25,3 +25,5 @@ or run only unit tests:
 ```
 $ godep go test github.com/google/cadvisor/... -test.short
 ```
+
+For integration tests, see the [integration testing](integration_testing.md) page.
