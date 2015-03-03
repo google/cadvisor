@@ -48,18 +48,18 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/mount",
-			"Comment": "v1.1.1-402-g487a417",
-			"Rev": "487a417d9fd074d0e78876072c7d1ebfd398ea7a"
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/symlink",
-			"Comment": "v1.1.1-402-g487a417",
-			"Rev": "487a417d9fd074d0e78876072c7d1ebfd398ea7a"
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/units",
-			"Comment": "v1.1.1-402-g487a417",
-			"Rev": "487a417d9fd074d0e78876072c7d1ebfd398ea7a"
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
 		},
 		{
 			"ImportPath": "github.com/docker/libcontainer",
