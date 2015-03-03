@@ -93,6 +93,12 @@ type ContainerInfoRequest struct {
 	End time.Time `json:"end,omitempty"`
 }
 
+func (self *ContainerInfoRequest) Equals(other ContainerInfoRequest) bool {
+	return self.NumStats == other.NumStats &&
+		self.Start.Equal(other.Start) &&
+		self.End.Equal(other.End)
+}
+
 type ContainerInfo struct {
 	ContainerReference
 
