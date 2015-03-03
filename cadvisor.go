@@ -27,8 +27,6 @@ import (
 	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
-	"github.com/google/cadvisor/container/docker"
-	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/healthz"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
@@ -74,16 +72,6 @@ func main() {
 	containerManager, err := manager.New(memoryStorage, sysFs)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
-	}
-
-	// Register Docker.
-	if err := docker.Register(containerManager); err != nil {
-		glog.Errorf("Docker registration failed: %v.", err)
-	}
-
-	// Register the raw driver.
-	if err := raw.Register(containerManager); err != nil {
-		glog.Fatalf("Raw registration failed: %v.", err)
 	}
 
 	// Basic health handler.

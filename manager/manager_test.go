@@ -40,38 +40,35 @@ func createManagerAndAddContainers(
 	t *testing.T,
 ) *manager {
 	container.ClearContainerHandlerFactories()
-	mif, err := New(memoryStorage, sysfs)
-	if err != nil {
-		t.Fatal(err)
+	mif := &manager{
+		containers:    make(map[namespacedContainerName]*containerData),
+		quitChannels:  make([]chan error, 0, 2),
+		memoryStorage: memoryStorage,
 	}
-	if ret, ok := mif.(*manager); ok {
-		for _, name := range containers {
-			mockHandler := container.NewMockContainerHandler(name)
-			spec := itest.GenerateRandomContainerSpec(4)
-			mockHandler.On("GetSpec").Return(
-				spec,
-				nil,
-			).Once()
-			cont, err := newContainerData(name, memoryStorage, mockHandler, nil, false)
-			if err != nil {
-				t.Fatal(err)
-			}
-			ret.containers[namespacedContainerName{
-				Name: name,
-			}] = cont
-			// Add Docker containers under their namespace.
-			if strings.HasPrefix(name, "/docker") {
-				ret.containers[namespacedContainerName{
-					Namespace: docker.DockerNamespace,
-					Name:      strings.TrimPrefix(name, "/docker/"),
-				}] = cont
-			}
-			f(mockHandler)
+	for _, name := range containers {
+		mockHandler := container.NewMockContainerHandler(name)
+		spec := itest.GenerateRandomContainerSpec(4)
+		mockHandler.On("GetSpec").Return(
+			spec,
+			nil,
+		).Once()
+		cont, err := newContainerData(name, memoryStorage, mockHandler, nil, false)
+		if err != nil {
+			t.Fatal(err)
 		}
-		return ret
+		mif.containers[namespacedContainerName{
+			Name: name,
+		}] = cont
+		// Add Docker containers under their namespace.
+		if strings.HasPrefix(name, "/docker") {
+			mif.containers[namespacedContainerName{
+				Namespace: docker.DockerNamespace,
+				Name:      strings.TrimPrefix(name, "/docker/"),
+			}] = cont
+		}
+		f(mockHandler)
 	}
-	t.Fatal("Wrong type")
-	return nil
+	return mif
 }
 
 // Expect a manager with the specified containers and query. Returns the manager, map of ContainerInfo objects,
@@ -203,17 +200,6 @@ func TestDockerContainersInfo(t *testing.T) {
 	}
 	if result.Name != containers[0] {
 		t.Errorf("Unexpected container %q in result. Expected container %q", result.Name, containers[0])
-	}
-}
-
-func TestNew(t *testing.T) {
-	memoryStorage := memory.New(60, nil)
-	manager, err := New(memoryStorage, &fakesysfs.FakeSysFs{})
-	if err != nil {
-		t.Fatalf("Expected manager.New to succeed: %s", err)
-	}
-	if manager == nil {
-		t.Fatalf("Expected returned manager to not be nil")
 	}
 }
 
