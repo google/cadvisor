@@ -222,7 +222,7 @@ func (c *containerData) housekeeping() {
 
 				instantUsageInCores := float64(stats[numSamples-1].Cpu.Usage.Total-stats[numSamples-2].Cpu.Usage.Total) / float64(stats[numSamples-1].Timestamp.Sub(stats[numSamples-2].Timestamp).Nanoseconds())
 				usageInCores := float64(usageCpuNs) / float64(stats[numSamples-1].Timestamp.Sub(stats[0].Timestamp).Nanoseconds())
-				usageInHuman := units.HumanSize(int64(usageMemory))
+				usageInHuman := units.HumanSize(float64(usageMemory))
 				glog.Infof("[%s] %.3f cores (average: %.3f cores), %s of memory", c.info.Name, instantUsageInCores, usageInCores, usageInHuman)
 			}
 		}
