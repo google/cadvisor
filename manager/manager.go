@@ -28,6 +28,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
+	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/storage/memory"
@@ -114,6 +115,18 @@ func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, err
 	glog.Infof("Version: %+v", newManager.versionInfo)
 
 	newManager.eventHandler = events.NewEventManager()
+
+	// Register Docker container factory.
+	err = docker.Register(newManager)
+	if err != nil {
+		glog.Errorf("Docker container factory registration failed: %v.", err)
+	}
+
+	// Register the raw driver.
+	err = raw.Register(newManager)
+	if err != nil {
+		return nil, fmt.Errorf("registration of the raw container factory failed: %v", err)
+	}
 
 	return newManager, nil
 }
