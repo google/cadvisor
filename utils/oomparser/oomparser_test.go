@@ -15,6 +15,7 @@
 package oomparser
 
 import (
+	"bufio"
 	"os"
 	"testing"
 	"time"
@@ -105,18 +106,11 @@ func TestGetProcessNamePid(t *testing.T) {
 }
 
 func TestCheckIfStartOfMessages(t *testing.T) {
-	couldParseLine, err := checkIfStartOfOomMessages(endLine)
-	if err != nil {
-		t.Errorf("bad line fed to checkIfStartOfMessages should yield no error, but had error %v", err)
-	}
+	couldParseLine := checkIfStartOfOomMessages(endLine)
 	if couldParseLine {
 		t.Errorf("bad line fed to checkIfStartOfMessages should return false but returned %v", couldParseLine)
 	}
-
-	couldParseLine, err = checkIfStartOfOomMessages(startLine)
-	if err != nil {
-		t.Errorf("start line fed to checkIfStartOfMessages should yield no error, but had error %v", err)
-	}
+	couldParseLine = checkIfStartOfOomMessages(startLine)
 	if !couldParseLine {
 		t.Errorf("start line fed to checkIfStartOfMessages should return true but returned %v", couldParseLine)
 	}
@@ -140,12 +134,13 @@ func helpTestAnalyzeLines(oomCheckInstance *OomInstance, sysFile string, t *test
 	if err != nil {
 		t.Errorf("couldn't open test log: %v", err)
 	}
+	ioreader := bufio.NewReader(file)
 	timeout := make(chan bool, 1)
 	go func() {
 		time.Sleep(1 * time.Second)
 		timeout <- true
 	}()
-	go oomLog.analyzeLines(file, outStream)
+	go oomLog.analyzeLines(ioreader, outStream)
 	select {
 	case oomInstance := <-outStream:
 		if *oomCheckInstance != *oomInstance {

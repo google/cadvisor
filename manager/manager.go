@@ -191,10 +191,10 @@ func (self *manager) Start() error {
 		return err
 	}
 	self.quitChannels = append(self.quitChannels, quitWatcher)
-	// err = self.watchForNewOoms()
-	// if err != nil {
-	// 	glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
-	// }
+	err = self.watchForNewOoms()
+	if err != nil {
+		glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
+	}
 
 	// Look for new containers in the main housekeeping thread.
 	quitGlobalHousekeeping := make(chan error)
