@@ -204,3 +204,7 @@ func getNetworkStats(name string, sysFs sysfs.SysFs) (info.NetworkStats, error) 
 	}
 	return stats, nil
 }
+
+func GetSystemUUID(sysFs sysfs.SysFs) (string, error) {
+	return sysFs.GetSystemUUID()
+}

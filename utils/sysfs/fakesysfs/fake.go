@@ -108,3 +108,7 @@ func (self *FakeSysFs) SetCacheInfo(cache sysfs.CacheInfo) {
 func (self *FakeSysFs) SetEntryName(name string) {
 	self.info.EntryName = name
 }
+
+func (self *FakeSysFs) GetSystemUUID() (string, error) {
+	return "1F862619-BA9F-4526-8F85-ECEAF0C97430", nil
+}
