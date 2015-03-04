@@ -17,6 +17,7 @@ package manager
 import (
 	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -59,9 +60,9 @@ func (c *ManagerMock) GetContainerSpec(containerName string) (info.ContainerSpec
 	return args.Get(0).(info.ContainerSpec), args.Error(1)
 }
 
-func (c *ManagerMock) GetContainerDerivedStats(containerName string) (info.DerivedStats, error) {
+func (c *ManagerMock) GetContainerDerivedStats(containerName string) (v2.DerivedStats, error) {
 	args := c.Called(containerName)
-	return args.Get(0).(info.DerivedStats), args.Error(1)
+	return args.Get(0).(v2.DerivedStats), args.Error(1)
 }
 
 func (c *ManagerMock) WatchForEvents(queryuest *events.Request, passedChannel chan *events.Event) error {

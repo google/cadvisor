@@ -31,6 +31,7 @@ import (
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/utils/cpuload"
 	"github.com/google/cadvisor/utils/oomparser"
@@ -65,7 +66,7 @@ type Manager interface {
 	GetContainerSpec(containerName string) (info.ContainerSpec, error)
 
 	// Get derived stats for a container.
-	GetContainerDerivedStats(containerName string) (info.DerivedStats, error)
+	GetContainerDerivedStats(containerName string) (v2.DerivedStats, error)
 
 	// Get information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
@@ -424,7 +425,7 @@ func (self *manager) containerDataSliceToContainerInfoSlice(containers []*contai
 	return output, nil
 }
 
-func (self *manager) GetContainerDerivedStats(containerName string) (info.DerivedStats, error) {
+func (self *manager) GetContainerDerivedStats(containerName string) (v2.DerivedStats, error) {
 	var ok bool
 	var cont *containerData
 	func() {
@@ -433,7 +434,7 @@ func (self *manager) GetContainerDerivedStats(containerName string) (info.Derive
 		cont, ok = self.containers[namespacedContainerName{Name: containerName}]
 	}()
 	if !ok {
-		return info.DerivedStats{}, fmt.Errorf("unknown container %q", containerName)
+		return v2.DerivedStats{}, fmt.Errorf("unknown container %q", containerName)
 	}
 	return cont.DerivedStats()
 }
