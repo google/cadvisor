@@ -26,6 +26,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
@@ -101,9 +102,9 @@ func (c *containerData) GetInfo() (*containerInfo, error) {
 	return &c.info, nil
 }
 
-func (c *containerData) DerivedStats() (info.DerivedStats, error) {
+func (c *containerData) DerivedStats() (v2.DerivedStats, error) {
 	if c.summaryReader == nil {
-		return info.DerivedStats{}, fmt.Errorf("derived stats not enabled for container %q", c.info.Name)
+		return v2.DerivedStats{}, fmt.Errorf("derived stats not enabled for container %q", c.info.Name)
 	}
 	return c.summaryReader.DerivedStats()
 }

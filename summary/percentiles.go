@@ -22,7 +22,7 @@ import (
 	"sort"
 
 	"github.com/golang/glog"
-	info "github.com/google/cadvisor/info/v1"
+	info "github.com/google/cadvisor/info/v2"
 )
 
 const secondsToMilliSeconds = 1000

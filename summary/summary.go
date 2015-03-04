@@ -25,7 +25,8 @@ import (
 	"sync"
 	"time"
 
-	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v1"
+	info "github.com/google/cadvisor/info/v2"
 )
 
 // Usage fields we track for generating percentiles.
@@ -56,7 +57,7 @@ type StatsSummary struct {
 // Adds a new seconds sample.
 // If enough seconds samples are collected, a minute sample is generated and derived
 // stats are updated.
-func (s *StatsSummary) AddSample(stat info.ContainerStats) error {
+func (s *StatsSummary) AddSample(stat v1.ContainerStats) error {
 	sample := secondSample{}
 	sample.Timestamp = stat.Timestamp
 	if s.available.Cpu {
@@ -168,7 +169,7 @@ func (s *StatsSummary) DerivedStats() (info.DerivedStats, error) {
 	return s.derivedStats, nil
 }
 
-func New(spec info.ContainerSpec) (*StatsSummary, error) {
+func New(spec v1.ContainerSpec) (*StatsSummary, error) {
 	summary := StatsSummary{}
 	if spec.HasCpu {
 		summary.available.Cpu = true
