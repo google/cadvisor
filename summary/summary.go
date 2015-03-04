@@ -25,7 +25,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 // Usage fields we track for generating percentiles.

@@ -20,7 +20,7 @@ import (
 	"time"
 
 	bigquery "code.google.com/p/google-api-go-client/bigquery/v2"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/bigquery/client"
 )

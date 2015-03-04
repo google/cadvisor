@@ -23,7 +23,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container/docker"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
 )
 
