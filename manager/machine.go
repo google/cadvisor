@@ -26,10 +26,11 @@ import (
 	dclient "github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/fs"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysinfo"
+	version "github.com/google/cadvisor/version"
 )
 
 var cpuRegExp = regexp.MustCompile("processor\\t*: +([0-9]+)")
@@ -272,7 +273,7 @@ func getVersionInfo() (*info.VersionInfo, error) {
 		KernelVersion:      kernel_version,
 		ContainerOsVersion: container_os,
 		DockerVersion:      docker_version,
-		CadvisorVersion:    info.VERSION,
+		CadvisorVersion:    version.VERSION,
 	}, nil
 }
 

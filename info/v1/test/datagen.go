@@ -19,7 +19,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info.ContainerStats {

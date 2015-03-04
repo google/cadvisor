@@ -22,7 +22,7 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
 )
 

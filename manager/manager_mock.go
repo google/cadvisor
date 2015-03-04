@@ -16,7 +16,7 @@ package manager
 
 import (
 	"github.com/google/cadvisor/events"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/stretchr/testify/mock"
 )
 

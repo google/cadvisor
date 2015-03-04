@@ -28,12 +28,12 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/healthz"
-	"github.com/google/cadvisor/info"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/validate"
+	"github.com/google/cadvisor/version"
 )
 
 var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
@@ -53,7 +53,7 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag {
-		fmt.Printf("cAdvisor version %s\n", info.VERSION)
+		fmt.Printf("cAdvisor version %s\n", version.VERSION)
 		os.Exit(0)
 	}
 
@@ -135,7 +135,7 @@ func main() {
 	// Install signal handler.
 	installSignalHandler(containerManager)
 
-	glog.Infof("Starting cAdvisor version: %q on port %d", info.VERSION, *argPort)
+	glog.Infof("Starting cAdvisor version: %q on port %d", version.VERSION, *argPort)
 
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
 	glog.Fatal(http.ListenAndServe(addr, nil))

@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/cpuload/netlink"
 	"github.com/google/cadvisor/utils/cpuload/scheddebug"
 )

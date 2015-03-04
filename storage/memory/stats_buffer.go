@@ -18,7 +18,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 // A circular buffer for ContainerStats.

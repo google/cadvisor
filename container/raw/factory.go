@@ -20,7 +20,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 type rawFactory struct {

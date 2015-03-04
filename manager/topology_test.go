@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 )

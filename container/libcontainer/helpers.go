@@ -22,7 +22,7 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	cgroupfs "github.com/docker/libcontainer/cgroups/fs"
 	"github.com/docker/libcontainer/network"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 type CgroupSubsystems struct {

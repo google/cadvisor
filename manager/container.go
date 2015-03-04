@@ -25,7 +25,7 @@ import (
 	"github.com/docker/docker/pkg/units"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/info"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"

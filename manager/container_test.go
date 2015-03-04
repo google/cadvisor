@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/info"
-	itest "github.com/google/cadvisor/info/test"
+	info "github.com/google/cadvisor/info/v1"
+	itest "github.com/google/cadvisor/info/v1/test"
 	"github.com/google/cadvisor/storage/memory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
