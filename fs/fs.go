@@ -12,16 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build linux
-
 // Provides Filesystem Stats
 package fs
-
-/*
- extern int getBytesFree(const char *path, unsigned long long *bytes);
- extern int getBytesTotal(const char *path, unsigned long long *bytes);
-*/
-import "C"
 
 import (
 	"bufio"
@@ -33,7 +25,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"unsafe"
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/golang/glog"
@@ -191,20 +182,4 @@ func (self *RealFsInfo) GetDirUsage(dir string) (uint64, error) {
 		return 0, fmt.Errorf("cannot parse 'du' output %s - %s", out, err)
 	}
 	return usageInKb * 1024, nil
-}
-
-func getVfsStats(path string) (total uint64, free uint64, err error) {
-	_p0, err := syscall.BytePtrFromString(path)
-	if err != nil {
-		return 0, 0, err
-	}
-	res, err := C.getBytesFree((*C.char)(unsafe.Pointer(_p0)), (*_Ctype_ulonglong)(unsafe.Pointer(&free)))
-	if res != 0 {
-		return 0, 0, err
-	}
-	res, err = C.getBytesTotal((*C.char)(unsafe.Pointer(_p0)), (*_Ctype_ulonglong)(unsafe.Pointer(&total)))
-	if res != 0 {
-		return 0, 0, err
-	}
-	return total, free, nil
 }
