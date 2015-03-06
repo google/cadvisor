@@ -17,6 +17,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -50,7 +51,6 @@ func RegisterHandlers(m manager.Manager) error {
 			http.Error(w, err.Error(), 500)
 		}
 	})
-
 	return nil
 }
 
@@ -115,7 +115,9 @@ func handleRequest(supportedApiVersions map[string]ApiVersion, m manager.Manager
 	if len(requestArgs) > 0 && requestArgs[0] == "" {
 		requestArgs = requestArgs[1:]
 	}
+
 	return versionHandler.HandleRequest(requestType, requestArgs, m, w, r)
+
 }
 
 func writeResult(res interface{}, w http.ResponseWriter) error {
@@ -128,6 +130,36 @@ func writeResult(res interface{}, w http.ResponseWriter) error {
 	w.Write(out)
 	return nil
 
+}
+
+func streamResults(results chan *events.Event, w http.ResponseWriter, r *http.Request) error {
+	cn, ok := w.(http.CloseNotifier)
+	if !ok {
+		return errors.New("could not access http.CloseNotifier")
+	}
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		return errors.New("could not access http.Flusher")
+	}
+
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.WriteHeader(http.StatusOK)
+	flusher.Flush()
+
+	enc := json.NewEncoder(w)
+	for {
+		select {
+		case <-cn.CloseNotify():
+			glog.Infof("Client stopped listening")
+			return nil
+		case ev := <-results:
+			err := enc.Encode(ev)
+			if err != nil {
+				glog.Errorf("error encoding message %+v for result stream: %v", ev, err)
+			}
+			flusher.Flush()
+		}
+	}
 }
 
 func getContainerInfoRequest(body io.ReadCloser) (*info.ContainerInfoRequest, error) {
