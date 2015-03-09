@@ -197,7 +197,7 @@ func (c *containerData) housekeeping() {
 			// Log if housekeeping took too long.
 			duration := time.Since(start)
 			if duration >= longHousekeeping {
-				glog.V(2).Infof("[%s] Housekeeping took %s", c.info.Name, duration)
+				glog.V(3).Infof("[%s] Housekeeping took %s", c.info.Name, duration)
 			}
 		}
 
