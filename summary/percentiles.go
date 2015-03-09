@@ -172,10 +172,10 @@ func GetMinutePercentiles(stats []*secondSample) info.Usage {
 		if !lastSample.Timestamp.IsZero() {
 			cpuRate, err := getCpuRate(*stat, lastSample)
 			if err != nil {
-				glog.V(2).Infof("Skipping sample, %v", err)
+				glog.V(3).Infof("Skipping sample, %v", err)
 				continue
 			}
-			glog.V(2).Infof("Adding cpu rate sample : %d", cpuRate)
+			glog.V(3).Infof("Adding cpu rate sample : %d", cpuRate)
 			cpu.AddSample(cpuRate)
 			memory.AddSample(stat.Memory)
 		} else {

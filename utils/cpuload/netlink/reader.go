@@ -73,6 +73,6 @@ func (self *NetlinkReader) GetCpuLoad(name string, path string) (info.LoadStats,
 	if err != nil {
 		return info.LoadStats{}, err
 	}
-	glog.V(1).Infof("Task stats for %q: %+v", path, stats)
+	glog.V(3).Infof("Task stats for %q: %+v", path, stats)
 	return stats, nil
 }
