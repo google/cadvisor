@@ -223,7 +223,7 @@ func getMachineID() string {
 	return ""
 }
 
-func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
+func getMachineInfo(sysFs sysfs.SysFs, fsInfo fs.FsInfo) (*info.MachineInfo, error) {
 	cpuinfo, err := ioutil.ReadFile("/proc/cpuinfo")
 	clockSpeed, err := getClockSpeed(cpuinfo)
 	if err != nil {
@@ -241,10 +241,6 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		return nil, err
 	}
 
-	fsInfo, err := fs.NewFsInfo()
-	if err != nil {
-		return nil, err
-	}
 	filesystems, err := fsInfo.GetGlobalFsInfo()
 	if err != nil {
 		return nil, err
