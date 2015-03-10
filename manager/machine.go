@@ -265,9 +265,10 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		return nil, err
 	}
 
-	system_uuid, err := sysinfo.GetSystemUUID(sysFs)
+	systemUUID, err := sysinfo.GetSystemUUID(sysFs)
 	if err != nil {
-		return nil, err
+		glog.Errorf("Failed to get system UUID: %v", err)
+		systemUUID = ""
 	}
 
 	machineInfo := &info.MachineInfo{
@@ -278,7 +279,7 @@ func getMachineInfo(sysFs sysfs.SysFs) (*info.MachineInfo, error) {
 		NetworkDevices: netDevices,
 		Topology:       topology,
 		MachineID:      getMachineID(),
-		SystemUUID:     system_uuid,
+		SystemUUID:     systemUUID,
 	}
 
 	for _, fs := range filesystems {
