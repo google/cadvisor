@@ -262,30 +262,19 @@ func (self *version1_3) HandleRequest(requestType string, request []string, m ma
 			return err
 		}
 		glog.V(2).Infof("Api - Events(%v)", query)
-
 		if eventsFromAllTime {
-			allEvents, err := m.GetPastEvents(query)
+			pastEvents, err := m.GetPastEvents(query)
 			if err != nil {
 				return err
 			}
-			return writeResult(allEvents, w)
-		} else {
-			// every time URL is entered to watch, a channel is created here
-			eventChannel := make(chan *events.Event, 10)
-			err = m.WatchForEvents(query, eventChannel)
-
-			defer close(eventChannel)
-			currentEventSet := make(events.EventSlice, 0)
-			for ev := range eventChannel {
-				// todo: implement write-as-received writeResult method
-				currentEventSet = append(currentEventSet, ev)
-				err = writeResult(currentEventSet, w)
-				if err != nil {
-					return err
-				}
-			}
+			return writeResult(pastEvents, w)
 		}
-		return nil
+		eventsChannel := make(chan *events.Event, 10)
+		err = m.WatchForEvents(query, eventsChannel)
+		if err != nil {
+			return err
+		}
+		return streamResults(eventsChannel, w, r)
 	default:
 		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
