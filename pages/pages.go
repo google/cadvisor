@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
+	"github.com/google/cadvisor/utils"
 )
 
 var pageTemplate *template.Template
@@ -97,26 +98,26 @@ func dockerHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFu
 }
 
 // Register http handlers
-func RegisterHandlersDigest(containerManager manager.Manager, authenticator *auth.DigestAuth) error {
+func RegisterHandlersDigest(mux utils.Mux, containerManager manager.Manager, authenticator *auth.DigestAuth) error {
 	// Register the handler for the containers page.
 	if authenticator != nil {
-		http.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
-		http.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
+		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
+		mux.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
 	} else {
-		http.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
-		http.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
+		mux.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
+		mux.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
 	}
 	return nil
 }
 
-func RegisterHandlersBasic(containerManager manager.Manager, authenticator *auth.BasicAuth) error {
+func RegisterHandlersBasic(mux utils.Mux, containerManager manager.Manager, authenticator *auth.BasicAuth) error {
 	// Register the handler for the containers and docker age.
 	if authenticator != nil {
-		http.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
-		http.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
+		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
+		mux.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
 	} else {
-		http.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
-		http.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
+		mux.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
+		mux.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
 	}
 	return nil
 }

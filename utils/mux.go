@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2015 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package healthz
+package utils
 
 import (
 	"net/http"
-
-	"github.com/google/cadvisor/utils"
 )
 
-func handleHealthz(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
-}
-
-// Register simple HTTP /healthz handler to return "ok".
-func RegisterHandler(mux utils.Mux) error {
-	mux.HandleFunc("/healthz", handleHealthz)
-	return nil
+// Mux interface expected by cAdvisor components.
+type Mux interface {
+	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
+	Handler(r *http.Request) (http.Handler, string)
 }
