@@ -74,13 +74,16 @@ func main() {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
 
+	mux := http.DefaultServeMux
+
+	// TODO(vmarmol): Use Kubernetes'.
 	// Basic health handler.
-	if err := healthz.RegisterHandler(); err != nil {
+	if err := healthz.RegisterHandler(mux); err != nil {
 		glog.Fatalf("Failed to register healthz handler: %s", err)
 	}
 
 	// Validation/Debug handler.
-	http.HandleFunc(validate.ValidatePage, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(validate.ValidatePage, func(w http.ResponseWriter, r *http.Request) {
 		err := validate.HandleRequest(w, containerManager)
 		if err != nil {
 			fmt.Fprintf(w, "%s", err)
@@ -88,12 +91,12 @@ func main() {
 	})
 
 	// Register API handler.
-	if err := api.RegisterHandlers(containerManager); err != nil {
+	if err := api.RegisterHandlers(mux, containerManager); err != nil {
 		glog.Fatalf("Failed to register API handlers: %s", err)
 	}
 
 	// Redirect / to containers page.
-	http.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
+	mux.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
 
 	var authenticated bool = false
 
@@ -102,8 +105,8 @@ func main() {
 		glog.Infof("Using auth file %s", *httpAuthFile)
 		secrets := auth.HtpasswdFileProvider(*httpAuthFile)
 		authenticator := auth.NewBasicAuthenticator(*httpAuthRealm, secrets)
-		http.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
-		if err := pages.RegisterHandlersBasic(containerManager, authenticator); err != nil {
+		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
+		if err := pages.RegisterHandlersBasic(mux, containerManager, authenticator); err != nil {
 			glog.Fatalf("Failed to register pages auth handlers: %s", err)
 		}
 		authenticated = true
@@ -112,8 +115,8 @@ func main() {
 		glog.Infof("Using digest file %s", *httpDigestFile)
 		secrets := auth.HtdigestFileProvider(*httpDigestFile)
 		authenticator := auth.NewDigestAuthenticator(*httpDigestRealm, secrets)
-		http.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
-		if err := pages.RegisterHandlersDigest(containerManager, authenticator); err != nil {
+		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
+		if err := pages.RegisterHandlersDigest(mux, containerManager, authenticator); err != nil {
 			glog.Fatalf("Failed to register pages digest handlers: %s", err)
 		}
 		authenticated = true
@@ -121,8 +124,8 @@ func main() {
 
 	// Change handler based on authenticator initalization
 	if !authenticated {
-		http.HandleFunc(static.StaticResource, staticHandlerNoAuth)
-		if err := pages.RegisterHandlersBasic(containerManager, nil); err != nil {
+		mux.HandleFunc(static.StaticResource, staticHandlerNoAuth)
+		if err := pages.RegisterHandlersBasic(mux, containerManager, nil); err != nil {
 			glog.Fatalf("Failed to register pages handlers: %s", err)
 		}
 	}
