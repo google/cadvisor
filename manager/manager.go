@@ -746,6 +746,7 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 }
 
 func (self *manager) watchForNewOoms() error {
+	glog.Infof("Started watching for new ooms in manager")
 	outStream := make(chan *oomparser.OomInstance, 10)
 	oomLog, err := oomparser.New()
 	if err != nil {
