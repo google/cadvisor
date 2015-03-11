@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package mux
 
 import (
 	"net/http"
@@ -22,4 +22,5 @@ import (
 type Mux interface {
 	HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request))
 	Handler(r *http.Request) (http.Handler, string)
+	Handle(pattern string, handler http.Handler)
 }

@@ -30,16 +30,16 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/events"
+	httpMux "github.com/google/cadvisor/http/mux"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
-	"github.com/google/cadvisor/utils"
 )
 
 const (
 	apiResource = "/api/"
 )
 
-func RegisterHandlers(mux utils.Mux, m manager.Manager) error {
+func RegisterHandlers(mux httpMux.Mux, m manager.Manager) error {
 	apiVersions := getApiVersions()
 	supportedApiVersions := make(map[string]ApiVersion, len(apiVersions))
 	for _, v := range apiVersions {

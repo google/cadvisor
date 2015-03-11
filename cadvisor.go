@@ -24,15 +24,10 @@ import (
 	"runtime"
 	"syscall"
 
-	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/api"
-	"github.com/google/cadvisor/healthz"
+	cadvisorHttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
-	"github.com/google/cadvisor/pages"
-	"github.com/google/cadvisor/pages/static"
 	"github.com/google/cadvisor/utils/sysfs"
-	"github.com/google/cadvisor/validate"
 	"github.com/google/cadvisor/version"
 )
 
@@ -76,58 +71,10 @@ func main() {
 
 	mux := http.DefaultServeMux
 
-	// TODO(vmarmol): Use Kubernetes'.
-	// Basic health handler.
-	if err := healthz.RegisterHandler(mux); err != nil {
-		glog.Fatalf("Failed to register healthz handler: %s", err)
-	}
-
-	// Validation/Debug handler.
-	mux.HandleFunc(validate.ValidatePage, func(w http.ResponseWriter, r *http.Request) {
-		err := validate.HandleRequest(w, containerManager)
-		if err != nil {
-			fmt.Fprintf(w, "%s", err)
-		}
-	})
-
-	// Register API handler.
-	if err := api.RegisterHandlers(mux, containerManager); err != nil {
-		glog.Fatalf("Failed to register API handlers: %s", err)
-	}
-
-	// Redirect / to containers page.
-	mux.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
-
-	var authenticated bool = false
-
-	// Setup the authenticator object
-	if *httpAuthFile != "" {
-		glog.Infof("Using auth file %s", *httpAuthFile)
-		secrets := auth.HtpasswdFileProvider(*httpAuthFile)
-		authenticator := auth.NewBasicAuthenticator(*httpAuthRealm, secrets)
-		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
-		if err := pages.RegisterHandlersBasic(mux, containerManager, authenticator); err != nil {
-			glog.Fatalf("Failed to register pages auth handlers: %s", err)
-		}
-		authenticated = true
-	}
-	if *httpAuthFile == "" && *httpDigestFile != "" {
-		glog.Infof("Using digest file %s", *httpDigestFile)
-		secrets := auth.HtdigestFileProvider(*httpDigestFile)
-		authenticator := auth.NewDigestAuthenticator(*httpDigestRealm, secrets)
-		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
-		if err := pages.RegisterHandlersDigest(mux, containerManager, authenticator); err != nil {
-			glog.Fatalf("Failed to register pages digest handlers: %s", err)
-		}
-		authenticated = true
-	}
-
-	// Change handler based on authenticator initalization
-	if !authenticated {
-		mux.HandleFunc(static.StaticResource, staticHandlerNoAuth)
-		if err := pages.RegisterHandlersBasic(mux, containerManager, nil); err != nil {
-			glog.Fatalf("Failed to register pages handlers: %s", err)
-		}
+	// Register all HTTP handlers.
+	err = cadvisorHttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
+	if err != nil {
+		glog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
 
 	// Start the manager.
@@ -175,18 +122,4 @@ func installSignalHandler(containerManager manager.Manager) {
 		glog.Infof("Exiting given signal: %v", sig)
 		os.Exit(0)
 	}()
-}
-
-func staticHandlerNoAuth(w http.ResponseWriter, r *http.Request) {
-	err := static.HandleRequest(w, r.URL)
-	if err != nil {
-		fmt.Fprintf(w, "%s", err)
-	}
-}
-
-func staticHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	err := static.HandleRequest(w, r.URL)
-	if err != nil {
-		fmt.Fprintf(w, "%s", err)
-	}
 }

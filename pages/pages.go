@@ -22,9 +22,9 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/golang/glog"
+	httpMux "github.com/google/cadvisor/http/mux"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
-	"github.com/google/cadvisor/utils"
 )
 
 var pageTemplate *template.Template
@@ -98,7 +98,7 @@ func dockerHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFu
 }
 
 // Register http handlers
-func RegisterHandlersDigest(mux utils.Mux, containerManager manager.Manager, authenticator *auth.DigestAuth) error {
+func RegisterHandlersDigest(mux httpMux.Mux, containerManager manager.Manager, authenticator *auth.DigestAuth) error {
 	// Register the handler for the containers page.
 	if authenticator != nil {
 		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
@@ -110,7 +110,7 @@ func RegisterHandlersDigest(mux utils.Mux, containerManager manager.Manager, aut
 	return nil
 }
 
-func RegisterHandlersBasic(mux utils.Mux, containerManager manager.Manager, authenticator *auth.BasicAuth) error {
+func RegisterHandlersBasic(mux httpMux.Mux, containerManager manager.Manager, authenticator *auth.BasicAuth) error {
 	// Register the handler for the containers and docker age.
 	if authenticator != nil {
 		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
