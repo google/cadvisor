@@ -97,3 +97,20 @@ type DerivedStats struct {
 	// Percentile in last day.
 	DayUsage Usage `json:"day_usage"`
 }
+
+type FsInfo struct {
+	// The block device name associated with the filesystem.
+	Device string `json:"device"`
+
+	// Path where the filesystem is mounted.
+	Mountpoint string `json:"mountpoint"`
+
+	// Filesystem usage in bytes.
+	Capacity uint64 `json:"capacity"`
+
+	// Number of bytes used on this filesystem.
+	Usage uint64 `json:"usage"`
+
+	// Labels associated with this filesystem.
+	Labels []string `json:"labels"`
+}

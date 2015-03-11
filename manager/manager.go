@@ -30,6 +30,7 @@ import (
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
+	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/storage/memory"
@@ -74,6 +75,10 @@ type Manager interface {
 	// Get version information about different components we depend on.
 	GetVersionInfo() (*info.VersionInfo, error)
 
+	// Get filesystem information for a given label.
+	// Returns information for all global filesystems if label is empty.
+	GetFsInfo(label string) ([]v2.FsInfo, error)
+
 	// Get events streamed through passedChannel that fit the request.
 	WatchForEvents(request *events.Request, passedChannel chan *events.Event) error
 
@@ -94,15 +99,21 @@ func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, err
 	}
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
+	context := fs.Context{DockerRoot: docker.RootDir()}
+	fsInfo, err := fs.NewFsInfo(context)
+	if err != nil {
+		return nil, err
+	}
 	newManager := &manager{
 		containers:        make(map[namespacedContainerName]*containerData),
 		quitChannels:      make([]chan error, 0, 2),
 		memoryStorage:     memoryStorage,
+		fsInfo:            fsInfo,
 		cadvisorContainer: selfContainer,
 		startupTime:       time.Now(),
 	}
 
-	machineInfo, err := getMachineInfo(sysfs)
+	machineInfo, err := getMachineInfo(sysfs, fsInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -119,13 +130,13 @@ func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, err
 	newManager.eventHandler = events.NewEventManager()
 
 	// Register Docker container factory.
-	err = docker.Register(newManager)
+	err = docker.Register(newManager, fsInfo)
 	if err != nil {
 		glog.Errorf("Docker container factory registration failed: %v.", err)
 	}
 
 	// Register the raw driver.
-	err = raw.Register(newManager)
+	err = raw.Register(newManager, fsInfo)
 	if err != nil {
 		glog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
@@ -146,6 +157,7 @@ type manager struct {
 	containers             map[namespacedContainerName]*containerData
 	containersLock         sync.RWMutex
 	memoryStorage          *memory.InMemoryStorage
+	fsInfo                 fs.FsInfo
 	machineInfo            info.MachineInfo
 	versionInfo            info.VersionInfo
 	quitChannels           []chan error
@@ -437,6 +449,45 @@ func (self *manager) GetContainerDerivedStats(containerName string) (v2.DerivedS
 		return v2.DerivedStats{}, fmt.Errorf("unknown container %q", containerName)
 	}
 	return cont.DerivedStats()
+}
+
+func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
+	var empty time.Time
+	// Get latest data from filesystems hanging off root container.
+	stats, err := self.memoryStorage.RecentStats("/", empty, empty, 1)
+	if err != nil {
+		return nil, err
+	}
+	dev := ""
+	if len(label) != 0 {
+		dev, err = self.fsInfo.GetDeviceForLabel(label)
+		if err != nil {
+			return nil, err
+		}
+	}
+	fsInfo := []v2.FsInfo{}
+	for _, fs := range stats[0].Filesystem {
+		if len(label) != 0 && fs.Device != dev {
+			continue
+		}
+		mountpoint, err := self.fsInfo.GetMountpointForDevice(fs.Device)
+		if err != nil {
+			return nil, err
+		}
+		labels, err := self.fsInfo.GetLabelsForDevice(fs.Device)
+		if err != nil {
+			return nil, err
+		}
+		fi := v2.FsInfo{
+			Device:     fs.Device,
+			Mountpoint: mountpoint,
+			Capacity:   fs.Limit,
+			Usage:      fs.Usage,
+			Labels:     labels,
+		}
+		fsInfo = append(fsInfo, fi)
+	}
+	return fsInfo, nil
 }
 
 func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {

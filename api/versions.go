@@ -33,6 +33,7 @@ const (
 	summaryApi       = "summary"
 	specApi          = "spec"
 	eventsApi        = "events"
+	storageApi       = "storage"
 )
 
 // Interface for a cAdvisor API version
@@ -322,6 +323,24 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		}
 		specV2 := convertSpec(spec)
 		return writeResult(specV2, w)
+	case storageApi:
+		var err error
+		fi := []v2.FsInfo{}
+		label := r.URL.Query().Get("label")
+		if len(label) == 0 {
+			// Get all global filesystems info.
+			fi, err = m.GetFsInfo("")
+			if err != nil {
+				return err
+			}
+		} else {
+			// Get a specific label.
+			fi, err = m.GetFsInfo(label)
+			if err != nil {
+				return err
+			}
+		}
+		return writeResult(fi, w)
 	default:
 		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
