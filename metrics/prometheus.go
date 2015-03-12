@@ -183,7 +183,7 @@ func NewPrometheusCollector(manager manager.Manager) *PrometheusCollector {
 			nil),
 		fsWeightedIoTime: prometheus.NewDesc(
 			"container_fs_io_time_weighted_seconds_total",
-			"Cumulative count of seconds spent doing I/Os",
+			"Cumulative weighted I/O time in seconds",
 			[]string{"name", "id", "device"},
 			nil),
 		networkRxBytes: prometheus.NewDesc(
@@ -198,7 +198,7 @@ func NewPrometheusCollector(manager manager.Manager) *PrometheusCollector {
 			nil),
 		networkRxDropped: prometheus.NewDesc(
 			"container_network_receive_packets_dropped_total",
-			"Cumulative count of bytes received",
+			"Cumulative count of packets dropped while receiving",
 			[]string{"name", "id"},
 			nil),
 		networkRxErrors: prometheus.NewDesc(
@@ -218,7 +218,7 @@ func NewPrometheusCollector(manager manager.Manager) *PrometheusCollector {
 			nil),
 		networkTxDropped: prometheus.NewDesc(
 			"container_network_transmit_packets_dropped_total",
-			"Cumulative count of bytes dropped",
+			"Cumulative count of packets dropped while transmitting",
 			[]string{"name", "id"},
 			nil),
 		networkTxErrors: prometheus.NewDesc(
@@ -351,8 +351,8 @@ func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
 				c.fsWritesMerged:  {valueType: prometheus.CounterValue, value: float64(stat.WritesMerged)},
 				c.fsWriteTime:     {valueType: prometheus.CounterValue, value: float64(stat.WriteTime) / float64(time.Second)},
 
-				c.fsIoTime:         {valueType: prometheus.CounterValue, value: float64(stat.IoInProgress) / float64(time.Second)},
-				c.fsWeightedIoTime: {valueType: prometheus.CounterValue, value: float64(stat.IoTime) / float64(time.Second)},
+				c.fsIoTime:         {valueType: prometheus.CounterValue, value: float64(stat.IoTime) / float64(time.Second)},
+				c.fsWeightedIoTime: {valueType: prometheus.CounterValue, value: float64(stat.WeightedIoTime) / float64(time.Second)},
 
 				c.fsIoInProgress: {valueType: prometheus.GaugeValue, value: float64(stat.IoInProgress)},
 				c.fsLimit:        {valueType: prometheus.GaugeValue, value: float64(stat.Limit)},
