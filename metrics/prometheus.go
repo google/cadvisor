@@ -20,9 +20,13 @@ import (
 
 	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/manager"
 	"github.com/prometheus/client_golang/prometheus"
 )
+
+type subcontainersInfoProvider interface {
+	// Get information about all subcontainers of the specified container (includes self).
+	SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error)
+}
 
 type prometheusMetric struct {
 	valueType prometheus.ValueType
@@ -32,7 +36,7 @@ type prometheusMetric struct {
 
 // PrometheusCollector implements prometheus.Collector.
 type PrometheusCollector struct {
-	manager manager.Manager
+	infoProvider subcontainersInfoProvider
 
 	errors   prometheus.Gauge
 	lastSeen *prometheus.Desc
@@ -77,9 +81,9 @@ type PrometheusCollector struct {
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector.
-func NewPrometheusCollector(manager manager.Manager) *PrometheusCollector {
+func NewPrometheusCollector(infoProvider subcontainersInfoProvider) *PrometheusCollector {
 	c := &PrometheusCollector{
-		manager: manager,
+		infoProvider: infoProvider,
 		errors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: "container",
 			Name:      "scrape_error",
@@ -283,7 +287,7 @@ func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 // Collect fetches the stats from all containers and delivers them as
 // Prometheus metrics. It implements prometheus.PrometheusCollector.
 func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
-	containers, err := c.manager.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 1})
+	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 1})
 	if err != nil {
 		c.errors.Set(1)
 		glog.Warning("Couldn't get containers: %s", err)
@@ -330,7 +334,7 @@ func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
 			c.networkTxDropped: {{valueType: prometheus.CounterValue, value: float64(stats.Network.TxDropped)}},
 		} {
 			for _, m := range metrics {
-				ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, float64(m.value), append(m.labels, name, id)...)
+				ch <- prometheus.MustNewConstMetric(desc, m.valueType, float64(m.value), append(m.labels, name, id)...)
 			}
 		}
 
