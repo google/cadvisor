@@ -311,7 +311,7 @@ func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
 				{valueType: prometheus.GaugeValue, labels: []string{"sleeping"}, value: float64(stats.TaskStats.NrSleeping)},
 				{valueType: prometheus.GaugeValue, labels: []string{"running"}, value: float64(stats.TaskStats.NrRunning)},
 				{valueType: prometheus.GaugeValue, labels: []string{"stopped"}, value: float64(stats.TaskStats.NrStopped)},
-				{valueType: prometheus.GaugeValue, labels: []string{"uninterruptible"}, value: float64(stats.TaskStats.NrUinterruptible)},
+				{valueType: prometheus.GaugeValue, labels: []string{"uninterruptible"}, value: float64(stats.TaskStats.NrUninterruptible)},
 				{valueType: prometheus.GaugeValue, labels: []string{"iowaiting"}, value: float64(stats.TaskStats.NrIoWait)},
 			},
 
