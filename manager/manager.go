@@ -175,8 +175,19 @@ func (self *manager) Start() error {
 		}
 	}
 
+	// Watch for OOMs.
+	err := self.watchForNewOoms()
+	if err != nil {
+		glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
+	}
+
+	// If there are no factories, don't start any housekeeping and serve the information we do have.
+	if !container.HasFactories() {
+		return nil
+	}
+
 	// Create root and then recover all containers.
-	err := self.createContainer("/")
+	err = self.createContainer("/")
 	if err != nil {
 		return err
 	}
@@ -194,10 +205,6 @@ func (self *manager) Start() error {
 		return err
 	}
 	self.quitChannels = append(self.quitChannels, quitWatcher)
-	err = self.watchForNewOoms()
-	if err != nil {
-		glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
-	}
 
 	// Look for new containers in the main housekeeping thread.
 	quitGlobalHousekeeping := make(chan error)
