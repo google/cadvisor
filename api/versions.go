@@ -331,17 +331,30 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		}
 		switch sr.IdType {
 		case typeName:
-			cont, err := m.GetContainerInfo(name, &query)
-			if err != nil {
-				return fmt.Errorf("failed to get container %q: %v", name, err)
+			contStats := make(map[string][]v2.ContainerStats, 0)
+			if sr.Recursive == false {
+				cont, err := m.GetContainerInfo(name, &query)
+				if err != nil {
+					return fmt.Errorf("failed to get container %q: %v", name, err)
+				}
+				contStats[name] = convertStats(cont)
+			} else {
+				containers, err := m.SubcontainersInfo(name, &query)
+				if err != nil {
+					return fmt.Errorf("failed to get subcontainers for container %q with error: %s", name, err)
+				}
+				for _, cont := range containers {
+					contStats[cont.Name] = convertStats(cont)
+				}
 			}
-			contStats := convertStats(cont)
 			return writeResult(contStats, w)
 		case typeDocker:
 			contStats := make(map[string][]v2.ContainerStats, 0)
 			if name == "/" {
 				// special case: get all docker containers.
-				// TODO(rjnagal): require recursive=true to be set?
+				if sr.Recursive == false {
+					return fmt.Errorf("unknown Docker container %q", name)
+				}
 				containers, err := m.AllDockerContainers(&query)
 				if err != nil {
 					return fmt.Errorf("failed to get all docker containers: %v", err)
@@ -451,6 +464,9 @@ func getStatsRequest(id string, r *http.Request) (v2.StatsRequest, error) {
 		}
 		sr.Count = int(n)
 	}
-	// TODO(rjnagal): Add option to specify recursive.
+	recursive := r.URL.Query().Get("recursive")
+	if recursive == "true" {
+		sr.Recursive = true
+	}
 	return sr, nil
 }
