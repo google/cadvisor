@@ -368,8 +368,7 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		if err != nil {
 			return err
 		}
-		specV2 := convertSpec(spec)
-		return writeResult(specV2, w)
+		return writeResult(spec, w)
 	case storageApi:
 		var err error
 		fi := []v2.FsInfo{}
@@ -391,26 +390,6 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 	default:
 		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
-}
-
-// Convert container spec from v1 to v2.
-func convertSpec(specV1 info.ContainerSpec) v2.ContainerSpec {
-	specV2 := v2.ContainerSpec{
-		CreationTime: specV1.CreationTime,
-		HasCpu:       specV1.HasCpu,
-		HasMemory:    specV1.HasMemory,
-	}
-	if specV1.HasCpu {
-		specV2.Cpu.Limit = specV1.Cpu.Limit
-		specV2.Cpu.MaxLimit = specV1.Cpu.MaxLimit
-		specV2.Cpu.Mask = specV1.Cpu.Mask
-	}
-	if specV1.HasMemory {
-		specV2.Memory.Limit = specV1.Memory.Limit
-		specV2.Memory.Reservation = specV1.Memory.Reservation
-		specV2.Memory.SwapLimit = specV1.Memory.SwapLimit
-	}
-	return specV2
 }
 
 func convertStats(cont *info.ContainerInfo) []v2.ContainerStats {

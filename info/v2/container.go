@@ -51,6 +51,14 @@ type ContainerSpec struct {
 	// Time at which the container was created.
 	CreationTime time.Time `json:"creation_time,omitempty"`
 
+	// Other names by which the container is known within a certain namespace.
+	// This is unique within that namespace.
+	Aliases []string `json:"aliases,omitempty"`
+
+	// Namespace under which the aliases of a container are unique.
+	// An example of a namespace is "docker" for Docker containers.
+	Namespace string `json:"namespace,omitempty"`
+
 	HasCpu bool    `json:"has_cpu"`
 	Cpu    CpuSpec `json:"cpu,omitempty"`
 

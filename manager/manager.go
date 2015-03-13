@@ -64,7 +64,7 @@ type Manager interface {
 	DockerContainer(dockerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
 
 	// Gets spec for a container.
-	GetContainerSpec(containerName string) (info.ContainerSpec, error)
+	GetContainerSpec(containerName string) (v2.ContainerSpec, error)
 
 	// Get derived stats for a container.
 	GetContainerDerivedStats(containerName string) (v2.DerivedStats, error)
@@ -297,16 +297,40 @@ func (self *manager) getContainerData(containerName string) (*containerData, err
 	return cont, nil
 }
 
-func (self *manager) GetContainerSpec(containerName string) (info.ContainerSpec, error) {
+func (self *manager) GetContainerSpec(containerName string) (v2.ContainerSpec, error) {
 	cont, err := self.getContainerData(containerName)
 	if err != nil {
-		return info.ContainerSpec{}, err
+		return v2.ContainerSpec{}, err
 	}
 	cinfo, err := cont.GetInfo()
 	if err != nil {
-		return info.ContainerSpec{}, err
+		return v2.ContainerSpec{}, err
 	}
-	return self.getAdjustedSpec(cinfo), nil
+	spec := self.getV2Spec(cinfo)
+	return spec, nil
+}
+
+// Get V2 container spec from v1 container info.
+func (self *manager) getV2Spec(cinfo *containerInfo) v2.ContainerSpec {
+	specV1 := self.getAdjustedSpec(cinfo)
+	specV2 := v2.ContainerSpec{
+		CreationTime: specV1.CreationTime,
+		HasCpu:       specV1.HasCpu,
+		HasMemory:    specV1.HasMemory,
+	}
+	if specV1.HasCpu {
+		specV2.Cpu.Limit = specV1.Cpu.Limit
+		specV2.Cpu.MaxLimit = specV1.Cpu.MaxLimit
+		specV2.Cpu.Mask = specV1.Cpu.Mask
+	}
+	if specV1.HasMemory {
+		specV2.Memory.Limit = specV1.Memory.Limit
+		specV2.Memory.Reservation = specV1.Memory.Reservation
+		specV2.Memory.SwapLimit = specV1.Memory.SwapLimit
+	}
+	specV2.Aliases = cinfo.Aliases
+	specV2.Namespace = cinfo.Namespace
+	return specV2
 }
 
 func (self *manager) getAdjustedSpec(cinfo *containerInfo) info.ContainerSpec {
