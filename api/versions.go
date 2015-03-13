@@ -37,6 +37,8 @@ const (
 	specApi          = "spec"
 	eventsApi        = "events"
 	storageApi       = "storage"
+	attributesApi    = "attributes"
+	versionApi       = "version"
 	typeName         = "name"
 	typeDocker       = "docker"
 )
@@ -309,6 +311,35 @@ func (self *version2_0) SupportedRequestTypes() []string {
 
 func (self *version2_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
+	case versionApi:
+		glog.V(2).Infof("Api - Version")
+		versionInfo, err := m.GetVersionInfo()
+		if err != nil {
+			return err
+		}
+		return writeResult(versionInfo.CadvisorVersion, w)
+	case attributesApi:
+		glog.V(2).Info("Api - Attributes")
+
+		machineInfo, err := m.GetMachineInfo()
+		if err != nil {
+			return err
+		}
+		versionInfo, err := m.GetVersionInfo()
+		if err != nil {
+			return err
+		}
+		info := v2.GetAttributes(machineInfo, versionInfo)
+		return writeResult(info, w)
+	case machineApi:
+		glog.V(2).Info("Api - Machine")
+
+		// TODO(rjnagal): Move machineInfo from v1.
+		machineInfo, err := m.GetMachineInfo()
+		if err != nil {
+			return err
+		}
+		return writeResult(machineInfo, w)
 	case summaryApi:
 		containerName := getContainerName(request)
 		glog.V(2).Infof("Api - Summary(%v)", containerName)
