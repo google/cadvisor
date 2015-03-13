@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/events"
@@ -36,6 +37,8 @@ const (
 	specApi          = "spec"
 	eventsApi        = "events"
 	storageApi       = "storage"
+	typeName         = "name"
+	typeDocker       = "docker"
 )
 
 // Interface for a cAdvisor API version
@@ -326,12 +329,38 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		query := info.ContainerInfoRequest{
 			NumStats: sr.Count,
 		}
-		cont, err := m.GetContainerInfo(name, &query)
-		if err != nil {
-			return fmt.Errorf("failed to get container %q: %v", name, err)
+		switch sr.IdType {
+		case typeName:
+			cont, err := m.GetContainerInfo(name, &query)
+			if err != nil {
+				return fmt.Errorf("failed to get container %q: %v", name, err)
+			}
+			contStats := convertStats(cont)
+			return writeResult(contStats, w)
+		case typeDocker:
+			contStats := make(map[string][]v2.ContainerStats, 0)
+			if name == "/" {
+				// special case: get all docker containers.
+				// TODO(rjnagal): require recursive=true to be set?
+				containers, err := m.AllDockerContainers(&query)
+				if err != nil {
+					return fmt.Errorf("failed to get all docker containers: %v", err)
+				}
+				for name, cont := range containers {
+					contStats[name] = convertStats(&cont)
+				}
+			} else {
+				name = strings.TrimPrefix(name, "/")
+				cont, err := m.DockerContainer(name, &query)
+				if err != nil {
+					return fmt.Errorf("failed to get Docker container %q with error: %v", name, err)
+				}
+				contStats[cont.Name] = convertStats(&cont)
+			}
+			return writeResult(contStats, w)
+		default:
+			return fmt.Errorf("unknown id type %q for container name %q", sr.IdType, name)
 		}
-		contStats := convertStats(cont)
-		return writeResult(contStats, w)
 	case specApi:
 		containerName := getContainerName(request)
 		glog.V(2).Infof("Api - Spec(%v)", containerName)
@@ -418,15 +447,22 @@ func convertStats(cont *info.ContainerInfo) []v2.ContainerStats {
 }
 
 func getStatsRequest(id string, r *http.Request) (v2.StatsRequest, error) {
+	supportedTypes := map[string]bool{
+		typeName:   true,
+		typeDocker: true,
+	}
 	// fill in the defaults.
 	sr := v2.StatsRequest{
-		IdType:    "name",
+		IdType:    typeName,
 		Count:     64,
 		Recursive: false,
 	}
 	idType := r.URL.Query().Get("type")
-	if len(idType) != 0 && idType != "name" {
-		return sr, fmt.Errorf("unknown 'type' %q for container name %q", idType, id)
+	if len(idType) != 0 {
+		if !supportedTypes[idType] {
+			return sr, fmt.Errorf("unknown 'type' %q for container name %q", idType, id)
+		}
+		sr.IdType = idType
 	}
 	count := r.URL.Query().Get("count")
 	if len(count) != 0 {
