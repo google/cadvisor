@@ -36,6 +36,8 @@ See the more detailed instructions in the [build page](docs/build.md). This incl
 
 cAdvisor supports exporting stats to [InfluxDB](http://influxdb.com). See the [documentation](docs/influxdb.md) for more information and examples.
 
+cAdvisor also exposes container stats as [Prometheus](http://prometheus.io) metrics. See the [documentation](docs/prometheus.md) for more information.
+
 [Heapster](https://github.com/GoogleCloudPlatform/heapster) enables cluster wide monitoring of containers using cAdvisor.
 
 ## Web UI
