@@ -378,22 +378,26 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 }
 
 func (self *manager) SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
-	var containers []*containerData
+	var containersMap map[string]*containerData
 	func() {
 		self.containersLock.RLock()
 		defer self.containersLock.RUnlock()
-		containers = make([]*containerData, 0, len(self.containers))
+		containersMap = make(map[string]*containerData, len(self.containers))
 
-		// Get all the subcontainers of the specified container
+		// Get all the unique subcontainers of the specified container
 		matchedName := path.Join(containerName, "/")
 		for i := range self.containers {
 			name := self.containers[i].info.Name
 			if name == containerName || strings.HasPrefix(name, matchedName) {
-				containers = append(containers, self.containers[i])
+				containersMap[self.containers[i].info.Name] = self.containers[i]
 			}
 		}
 	}()
 
+	containers := make([]*containerData, 0, len(containersMap))
+	for _, cont := range containersMap {
+		containers = append(containers, cont)
+	}
 	return self.containerDataSliceToContainerInfoSlice(containers, query)
 }
 
