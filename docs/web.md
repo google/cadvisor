@@ -26,4 +26,4 @@ You will need to add a *http_digest_file* parameter with a HTTP digest auth file
 
 The [test.htdigest](../test.htdigest) file provided has a username and password already added (admin:password1) for testing purposes.
 
-**Note** : You can use either type of authentication, incase you decide to use both files in the arguments only HTTP basic auth will be enabled. 
+**Note** : You can use either type of authentication, in case you decide to use both files in the arguments only HTTP basic auth will be enabled. 
