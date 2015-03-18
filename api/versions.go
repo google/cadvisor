@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/events"
@@ -39,8 +38,6 @@ const (
 	storageApi       = "storage"
 	attributesApi    = "attributes"
 	versionApi       = "version"
-	typeName         = "name"
-	typeDocker       = "docker"
 )
 
 // Interface for a cAdvisor API version
@@ -310,6 +307,10 @@ func (self *version2_0) SupportedRequestTypes() []string {
 }
 
 func (self *version2_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+	opt, err := getRequestOptions(r)
+	if err != nil {
+		return err
+	}
 	switch requestType {
 	case versionApi:
 		glog.V(2).Infof("Api - Version")
@@ -342,77 +343,33 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		return writeResult(machineInfo, w)
 	case summaryApi:
 		containerName := getContainerName(request)
-		glog.V(2).Infof("Api - Summary(%v)", containerName)
+		glog.V(2).Infof("Api - Summary for container %q, options %+v", containerName, opt)
 
-		stats, err := m.GetContainerDerivedStats(containerName)
+		stats, err := m.GetDerivedStats(containerName, opt)
 		if err != nil {
 			return err
 		}
-
 		return writeResult(stats, w)
 	case statsApi:
 		name := getContainerName(request)
-		sr, err := getStatsRequest(name, r)
+		glog.V(2).Infof("Api - Stats: Looking for stats for container %q, options %+v", name, opt)
+		conts, err := m.GetRequestedContainersInfo(name, opt)
 		if err != nil {
 			return err
 		}
-		glog.V(2).Infof("Api - Stats: Looking for stats for container %q, options %+v", name, sr)
-		query := info.ContainerInfoRequest{
-			NumStats: sr.Count,
+		contStats := make(map[string][]v2.ContainerStats, 0)
+		for name, cont := range conts {
+			contStats[name] = convertStats(cont)
 		}
-		switch sr.IdType {
-		case typeName:
-			contStats := make(map[string][]v2.ContainerStats, 0)
-			if sr.Recursive == false {
-				cont, err := m.GetContainerInfo(name, &query)
-				if err != nil {
-					return fmt.Errorf("failed to get container %q: %v", name, err)
-				}
-				contStats[name] = convertStats(cont)
-			} else {
-				containers, err := m.SubcontainersInfo(name, &query)
-				if err != nil {
-					return fmt.Errorf("failed to get subcontainers for container %q with error: %s", name, err)
-				}
-				for _, cont := range containers {
-					contStats[cont.Name] = convertStats(cont)
-				}
-			}
-			return writeResult(contStats, w)
-		case typeDocker:
-			contStats := make(map[string][]v2.ContainerStats, 0)
-			if name == "/" {
-				// special case: get all docker containers.
-				if sr.Recursive == false {
-					return fmt.Errorf("unknown Docker container %q", name)
-				}
-				containers, err := m.AllDockerContainers(&query)
-				if err != nil {
-					return fmt.Errorf("failed to get all docker containers: %v", err)
-				}
-				for name, cont := range containers {
-					contStats[name] = convertStats(&cont)
-				}
-			} else {
-				name = strings.TrimPrefix(name, "/")
-				cont, err := m.DockerContainer(name, &query)
-				if err != nil {
-					return fmt.Errorf("failed to get Docker container %q with error: %v", name, err)
-				}
-				contStats[cont.Name] = convertStats(&cont)
-			}
-			return writeResult(contStats, w)
-		default:
-			return fmt.Errorf("unknown id type %q for container name %q", sr.IdType, name)
-		}
+		return writeResult(contStats, w)
 	case specApi:
 		containerName := getContainerName(request)
-		glog.V(2).Infof("Api - Spec(%v)", containerName)
-		spec, err := m.GetContainerSpec(containerName)
+		glog.V(2).Infof("Api - Spec for container %q, options %+v", containerName, opt)
+		specs, err := m.GetContainerSpec(containerName, opt)
 		if err != nil {
 			return err
 		}
-		return writeResult(spec, w)
+		return writeResult(specs, w)
 	case storageApi:
 		var err error
 		fi := []v2.FsInfo{}
@@ -469,35 +426,35 @@ func convertStats(cont *info.ContainerInfo) []v2.ContainerStats {
 	return stats
 }
 
-func getStatsRequest(id string, r *http.Request) (v2.StatsRequest, error) {
+func getRequestOptions(r *http.Request) (v2.RequestOptions, error) {
 	supportedTypes := map[string]bool{
-		typeName:   true,
-		typeDocker: true,
+		v2.TypeName:   true,
+		v2.TypeDocker: true,
 	}
 	// fill in the defaults.
-	sr := v2.StatsRequest{
-		IdType:    typeName,
+	opt := v2.RequestOptions{
+		IdType:    v2.TypeName,
 		Count:     64,
 		Recursive: false,
 	}
 	idType := r.URL.Query().Get("type")
 	if len(idType) != 0 {
 		if !supportedTypes[idType] {
-			return sr, fmt.Errorf("unknown 'type' %q for container name %q", idType, id)
+			return opt, fmt.Errorf("unknown 'type' %q", idType)
 		}
-		sr.IdType = idType
+		opt.IdType = idType
 	}
 	count := r.URL.Query().Get("count")
 	if len(count) != 0 {
 		n, err := strconv.ParseUint(count, 10, 32)
 		if err != nil {
-			return sr, fmt.Errorf("failed to parse 'count' option: %v", count)
+			return opt, fmt.Errorf("failed to parse 'count' option: %v", count)
 		}
-		sr.Count = int(n)
+		opt.Count = int(n)
 	}
 	recursive := r.URL.Query().Get("recursive")
 	if recursive == "true" {
-		sr.Recursive = true
+		opt.Recursive = true
 	}
-	return sr, nil
+	return opt, nil
 }

@@ -22,6 +22,11 @@ import (
 	"github.com/google/cadvisor/info/v1"
 )
 
+const (
+	TypeName   = "name"
+	TypeDocker = "docker"
+)
+
 type CpuSpec struct {
 	// Requested cpu shares. Default is 1024.
 	Limit uint64 `json:"limit"`
@@ -150,7 +155,7 @@ type FsInfo struct {
 	Labels []string `json:"labels"`
 }
 
-type StatsRequest struct {
+type RequestOptions struct {
 	// Type of container identifier specified - "name", "dockerid", dockeralias"
 	IdType string `json:"type"`
 	// Number of stats to return
