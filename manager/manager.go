@@ -868,10 +868,8 @@ func (self *manager) watchForNewOoms() error {
 	if err != nil {
 		return err
 	}
-	err = oomLog.StreamOoms(outStream)
-	if err != nil {
-		return err
-	}
+	go oomLog.StreamOoms(outStream)
+
 	go func() {
 		for oomInstance := range outStream {
 			newEvent := &events.Event{
@@ -883,7 +881,7 @@ func (self *manager) watchForNewOoms() error {
 			glog.V(1).Infof("Created an oom event: %v", newEvent)
 			err := self.eventHandler.AddEvent(newEvent)
 			if err != nil {
-				glog.Errorf("Failed to add event %v, got error: %v", newEvent, err)
+				glog.Errorf("failed to add event %v, got error: %v", newEvent, err)
 			}
 		}
 	}()
