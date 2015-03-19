@@ -1,4 +1,4 @@
-FROM gliderlabs/alpine:3.1
+FROM progrium/busybox
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com
 
 # Grab cadvisor from the staging directory.
