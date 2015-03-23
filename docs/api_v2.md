@@ -19,16 +19,7 @@ The resource name for machine information is as follows:
 
 `/api/v2.0/machine`
 
-The machine information is returned as a JSON object containing:
-
-- Number of schedulable logical CPU cores
-- Memory capacity (in bytes)
-- Maximum supported CPU frequency (in kHz)
-- Available filesystems: major, minor numbers and capacity (in bytes)
-- Network devices: mac addresses, MTU, and speed (if available)
-- Machine topology: Nodes, cores, threads, per-node memory, and caches
-
-The actual object is the marshalled JSON of the `MachineInfo` struct found in [info/v1/machine.go](../info/v1/machine.go)
+The machine information is returned as a JSON object of the `MachineInfo` struct found in [info/v1/machine.go](../info/v1/machine.go)
 
 ## Attributes
 
