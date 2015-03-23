@@ -91,7 +91,7 @@ func TestGetMachineinfo(t *testing.T) {
 			},
 		},
 	}
-	client, server, err := cadvisorTestClient("/api/v1.2/machine", nil, minfo, t)
+	client, server, err := cadvisorTestClient("/api/v1.3/machine", nil, minfo, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
@@ -113,7 +113,7 @@ func TestGetContainerInfo(t *testing.T) {
 	}
 	containerName := "/some/container"
 	cinfo := itest.GenerateRandomContainerInfo(containerName, 4, query, 1*time.Second)
-	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.2/containers%v", containerName), query, cinfo, t)
+	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.3/containers%v", containerName), query, cinfo, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
@@ -165,7 +165,7 @@ func TestGetSubcontainersInfo(t *testing.T) {
 		*cinfo1,
 		*cinfo2,
 	}
-	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.2/subcontainers%v", containerName), query, response, t)
+	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.3/subcontainers%v", containerName), query, response, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
