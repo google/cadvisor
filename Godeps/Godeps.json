@@ -16,11 +16,6 @@
 			"Rev": "bd8df7009305d6ada223ea3c95b94c0f38bfa119"
 		},
 		{
-			"ImportPath": "code.google.com/p/goauth2/oauth",
-			"Comment": "weekly-56",
-			"Rev": "afe77d958c701557ec5dc56f6936fcc194d15520"
-		},
-		{
 			"ImportPath": "code.google.com/p/gomock/gomock",
 			"Rev": "5d0b59c9f277f888d2c70b00908236a30ab90f45"
 		},
@@ -150,6 +145,26 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
 			"Rev": "8ce79b9f0b77745113f82c17d0756771456ccbd3"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "7dbad50ab5b31073856416cdcfeb2796d682f844"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2",
+			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/internal",
+			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/jwt",
+			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2/jws",
+			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
 		},
 		{
 			"ImportPath": "google.golang.org/cloud/internal",
