@@ -8,7 +8,7 @@ Housekeeping is the periodic actions cAdvisor takes. During these actions, cAdvi
 
 #### Dynamic Housekeeping
 
-Dynamic housekeeping intervals let cAdvisor very how oftern it gathers stats.
+Dynamic housekeeping intervals let cAdvisor very how often it gathers stats.
 It does this depending on how active the container is. Turning this off
 provides predictable housekeeping intervals, but increases the resource usage
 of cAdvisor.
