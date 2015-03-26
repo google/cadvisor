@@ -133,7 +133,7 @@ func writeResult(res interface{}, w http.ResponseWriter) error {
 
 }
 
-func streamResults(results chan *events.Event, w http.ResponseWriter, r *http.Request) error {
+func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *http.Request, m manager.Manager) error {
 	cn, ok := w.(http.CloseNotifier)
 	if !ok {
 		return errors.New("could not access http.CloseNotifier")
@@ -151,8 +151,10 @@ func streamResults(results chan *events.Event, w http.ResponseWriter, r *http.Re
 	for {
 		select {
 		case <-cn.CloseNotify():
+			glog.V(3).Infof("Received CloseNotify event")
+			m.CloseEventChannel(eventChannel.GetWatchId())
 			return nil
-		case ev := <-results:
+		case ev := <-eventChannel.GetChannel():
 			glog.V(3).Infof("Received event from watch channel in api: %v", ev)
 			err := enc.Encode(ev)
 			if err != nil {

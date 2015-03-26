@@ -20,7 +20,6 @@ import (
 	"strconv"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/manager"
@@ -274,12 +273,11 @@ func (self *version1_3) HandleRequest(requestType string, request []string, m ma
 			}
 			return writeResult(pastEvents, w)
 		}
-		eventsChannel := make(chan *events.Event, 10)
-		err = m.WatchForEvents(query, eventsChannel)
+		eventChannel, err := m.WatchForEvents(query)
 		if err != nil {
 			return err
 		}
-		return streamResults(eventsChannel, w, r)
+		return streamResults(eventChannel, w, r, m)
 	default:
 		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}

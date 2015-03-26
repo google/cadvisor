@@ -17,6 +17,8 @@ package events
 import (
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func createOldTime(t *testing.T) time.Time {
@@ -103,8 +105,8 @@ func TestCheckIfIsSubcontainer(t *testing.T) {
 func TestWatchEventsDetectsNewEvents(t *testing.T) {
 	myEventHolder, myRequest, fakeEvent, fakeEvent2 := initializeScenario(t)
 	myRequest.EventType[TypeOom] = true
-	outChannel := make(chan *Event, 10)
-	myEventHolder.WatchEvents(outChannel, myRequest)
+	returnEventChannel, err := myEventHolder.WatchEvents(myRequest)
+	assert.Nil(t, err)
 
 	myEventHolder.AddEvent(fakeEvent)
 	myEventHolder.AddEvent(fakeEvent2)
@@ -114,19 +116,17 @@ func TestWatchEventsDetectsNewEvents(t *testing.T) {
 		time.Sleep(5 * time.Second)
 		if time.Since(startTime) > (5 * time.Second) {
 			t.Errorf("Took too long to receive all the events")
-			close(outChannel)
 		}
 	}()
 
 	eventsFound := 0
 	go func() {
-		for event := range outChannel {
+		for event := range returnEventChannel.GetChannel() {
 			eventsFound += 1
 			if eventsFound == 1 {
 				ensureProperEventReturned(t, fakeEvent, event)
 			} else if eventsFound == 2 {
 				ensureProperEventReturned(t, fakeEvent2, event)
-				close(outChannel)
 				break
 			}
 		}
@@ -151,9 +151,7 @@ func TestGetEventsForOneEvent(t *testing.T) {
 	myEventHolder.AddEvent(fakeEvent2)
 
 	receivedEvents, err := myEventHolder.GetEvents(myRequest)
-	if err != nil {
-		t.Errorf("Failed to GetEvents: %v", err)
-	}
+	assert.Nil(t, err)
 	checkNumberOfEvents(t, 1, receivedEvents.Len())
 	ensureProperEventReturned(t, fakeEvent2, receivedEvents[0])
 }
@@ -168,9 +166,7 @@ func TestGetEventsForTimePeriod(t *testing.T) {
 	myEventHolder.AddEvent(fakeEvent2)
 
 	receivedEvents, err := myEventHolder.GetEvents(myRequest)
-	if err != nil {
-		t.Errorf("Failed to GetEvents: %v", err)
-	}
+	assert.Nil(t, err)
 
 	checkNumberOfEvents(t, 1, receivedEvents.Len())
 	ensureProperEventReturned(t, fakeEvent, receivedEvents[0])
@@ -183,8 +179,6 @@ func TestGetEventsForNoTypeRequested(t *testing.T) {
 	myEventHolder.AddEvent(fakeEvent2)
 
 	receivedEvents, err := myEventHolder.GetEvents(myRequest)
-	if err != nil {
-		t.Errorf("Failed to GetEvents: %v", err)
-	}
+	assert.Nil(t, err)
 	checkNumberOfEvents(t, 0, receivedEvents.Len())
 }

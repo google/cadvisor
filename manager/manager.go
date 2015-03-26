@@ -83,10 +83,12 @@ type Manager interface {
 	GetFsInfo(label string) ([]v2.FsInfo, error)
 
 	// Get events streamed through passedChannel that fit the request.
-	WatchForEvents(request *events.Request, passedChannel chan *events.Event) error
+	WatchForEvents(request *events.Request) (*events.EventChannel, error)
 
 	// Get past events that have been detected and that fit the request.
 	GetPastEvents(request *events.Request) (events.EventSlice, error)
+
+	CloseEventChannel(watch_id int)
 }
 
 // New takes a memory storage and returns a new manager.
@@ -891,11 +893,16 @@ func (self *manager) watchForNewOoms() error {
 }
 
 // can be called by the api which will take events returned on the channel
-func (self *manager) WatchForEvents(request *events.Request, passedChannel chan *events.Event) error {
-	return self.eventHandler.WatchEvents(passedChannel, request)
+func (self *manager) WatchForEvents(request *events.Request) (*events.EventChannel, error) {
+	return self.eventHandler.WatchEvents(request)
 }
 
 // can be called by the api which will return all events satisfying the request
 func (self *manager) GetPastEvents(request *events.Request) (events.EventSlice, error) {
 	return self.eventHandler.GetEvents(request)
+}
+
+// called by the api when a client is no longer listening to the channel
+func (self *manager) CloseEventChannel(watch_id int) {
+	self.eventHandler.StopWatch(watch_id)
 }
