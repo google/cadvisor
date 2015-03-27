@@ -57,7 +57,7 @@ func getApiVersions() []ApiVersion {
 	v1_1 := newVersion1_1(v1_0)
 	v1_2 := newVersion1_2(v1_1)
 	v1_3 := newVersion1_3(v1_2)
-	v2_0 := newVersion2_0(v1_3)
+	v2_0 := newVersion2_0()
 
 	return []ApiVersion{v1_0, v1_1, v1_2, v1_3, v2_0}
 
@@ -287,13 +287,10 @@ func (self *version1_3) HandleRequest(requestType string, request []string, m ma
 
 // v2.0 builds on v1.3
 type version2_0 struct {
-	baseVersion *version1_3
 }
 
-func newVersion2_0(v *version1_3) *version2_0 {
-	return &version2_0{
-		baseVersion: v,
-	}
+func newVersion2_0() *version2_0 {
+	return &version2_0{}
 }
 
 func (self *version2_0) Version() string {
@@ -301,7 +298,7 @@ func (self *version2_0) Version() string {
 }
 
 func (self *version2_0) SupportedRequestTypes() []string {
-	return append(self.baseVersion.SupportedRequestTypes(), summaryApi)
+	return []string{versionApi, attributesApi, machineApi, summaryApi, statsApi, specApi, storageApi}
 }
 
 func (self *version2_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
@@ -387,7 +384,7 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		}
 		return writeResult(fi, w)
 	default:
-		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
+		return fmt.Errorf("unknown request type %q", requestType)
 	}
 }
 
