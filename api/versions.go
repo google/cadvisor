@@ -261,31 +261,35 @@ func (self *version1_3) SupportedRequestTypes() []string {
 func (self *version1_3) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
 	case eventsApi:
-		query, eventsFromAllTime, err := getEventRequest(r)
-		if err != nil {
-			return err
-		}
-		glog.V(2).Infof("Api - Events(%v)", query)
-		if eventsFromAllTime {
-			pastEvents, err := m.GetPastEvents(query)
-			if err != nil {
-				return err
-			}
-			return writeResult(pastEvents, w)
-		}
-		eventChannel, err := m.WatchForEvents(query)
-		if err != nil {
-			return err
-		}
-		return streamResults(eventChannel, w, r, m)
+		return handleEventRequest(m, w, r)
 	default:
 		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
 }
 
+func handleEventRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+	query, eventsFromAllTime, err := getEventRequest(r)
+	if err != nil {
+		return err
+	}
+	glog.V(2).Infof("Api - Events(%v)", query)
+	if eventsFromAllTime {
+		pastEvents, err := m.GetPastEvents(query)
+		if err != nil {
+			return err
+		}
+		return writeResult(pastEvents, w)
+	}
+	eventChannel, err := m.WatchForEvents(query)
+	if err != nil {
+		return err
+	}
+	return streamResults(eventChannel, w, r, m)
+
+}
+
 // API v2.0
 
-// v2.0 builds on v1.3
 type version2_0 struct {
 }
 
@@ -298,7 +302,7 @@ func (self *version2_0) Version() string {
 }
 
 func (self *version2_0) SupportedRequestTypes() []string {
-	return []string{versionApi, attributesApi, machineApi, summaryApi, statsApi, specApi, storageApi}
+	return []string{versionApi, attributesApi, eventsApi, machineApi, summaryApi, statsApi, specApi, storageApi}
 }
 
 func (self *version2_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
@@ -383,6 +387,8 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 			}
 		}
 		return writeResult(fi, w)
+	case eventsApi:
+		return handleEventRequest(m, w, r)
 	default:
 		return fmt.Errorf("unknown request type %q", requestType)
 	}
