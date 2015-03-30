@@ -8,7 +8,7 @@ cAdvisor has native support for [Docker](https://github.com/docker/docker) conta
 
 #### Quick Start: Running cAdvisor in a Docker Container
 
-To quickly tryout cAdvisor on your machine with Docker, we have a Docker image that includes everything you need to get started. Simply run:
+To quickly tryout cAdvisor on your machine with Docker, we have a Docker image that includes everything you need to get started. You can run a single cAdvisor to monitor the whole machine. Simply run:
 
 ```
 sudo docker run \
