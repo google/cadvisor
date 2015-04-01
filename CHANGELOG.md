@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.1 (2015-03-27)
+- Export all stats as [Prometheus](http://prometheus.io/) metrics.
+- Initial support for [events](docs/api.md): creation, deletion, and OOM.
+- Adding machine UUID information.
+- Beta release of the cAdvisor [2.0 API](docs/api_v2.md).
+- Improve handling of error conditions.
+- Misc fixes and improvements.
+
 ## 0.10.1 (2015-02-27)
 - Disable OOM monitoring which is using too much CPU.
 - Fix break in summary stats.
