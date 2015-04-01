@@ -4,7 +4,34 @@ cAdvisor exposes its raw and processed stats via a versioned remote REST API:
 
 `http://<hostname>:<port>/api/<version>/<request>`
 
-The current version of the API is `v1.2`.
+The current version of the API is `v1.3`.
+
+There is a beta release of the `v2.0` API [available](api_v2.md).
+
+## Version 1.3
+
+This version exposes the same endpoints as `v1.2` with one additional read-only endpoint.
+
+### Events
+
+The resource name for Docker container information is as follows:
+
+`/api/v1.3/events/<absolute container name>`
+
+Querying the endpoint receives a list of events which are a serialized `Event` JSON objects (found in [info/v1/container.go](../info/v1/container.go)).
+
+The endpoint accepts a certain number of query parameters:
+
+| Parameter         | Description                                                                    | Default           |
+|-------------------|--------------------------------------------------------------------------------|-------------------|
+| `start_time`      | Start time of events to query (for stream=false)                               | Beginning of time |
+| `end_time`        | End time of events to query (for stream=false)                                 | Now               |
+| `stream`          | Whether to stream new events as they occur. If false returns historical events | false             |
+| `subcontainers`   | Whether to also return events for all subcontainers                            | false             |
+| `max_events`      | The max number of events to return (for stream=false)                          | 10                |
+| `oom_events`      | Whether to include OOM events                                                  | false             |
+| `creation_events` | Whether to include container creation events                                   | false             |
+| `deletion_events` | Whether to include container deletion events                                   | false             |
 
 ## Version 1.2
 
