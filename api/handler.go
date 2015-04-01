@@ -204,19 +204,19 @@ func getEventRequest(r *http.Request) (*events.Request, bool, error) {
 	if val, ok := urlMap["oom_events"]; ok {
 		newBool, err := strconv.ParseBool(val[0])
 		if err == nil {
-			query.EventType[events.TypeOom] = newBool
+			query.EventType[info.EventOom] = newBool
 		}
 	}
 	if val, ok := urlMap["creation_events"]; ok {
 		newBool, err := strconv.ParseBool(val[0])
 		if err == nil {
-			query.EventType[events.TypeContainerCreation] = newBool
+			query.EventType[info.EventContainerCreation] = newBool
 		}
 	}
 	if val, ok := urlMap["deletion_events"]; ok {
 		newBool, err := strconv.ParseBool(val[0])
 		if err == nil {
-			query.EventType[events.TypeContainerDeletion] = newBool
+			query.EventType[info.EventContainerDeletion] = newBool
 		}
 	}
 	if val, ok := urlMap["max_events"]; ok {

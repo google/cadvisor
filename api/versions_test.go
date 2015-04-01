@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/google/cadvisor/events"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,8 +36,8 @@ func makeHTTPRequest(requestURL string, t *testing.T) *http.Request {
 func TestGetEventRequestBasicRequest(t *testing.T) {
 	r := makeHTTPRequest("http://localhost:8080/api/v1.3/events?oom_events=true&historical=true&max_events=10", t)
 	expectedQuery := &events.Request{
-		EventType: map[events.EventType]bool{
-			events.TypeOom: true,
+		EventType: map[info.EventType]bool{
+			info.EventOom: true,
 		},
 		MaxEventsReturned: 10,
 	}
@@ -66,8 +67,8 @@ func TestGetEventEmptyRequest(t *testing.T) {
 func TestGetEventRequestDoubleArgument(t *testing.T) {
 	r := makeHTTPRequest("http://localhost:8080/api/v1.3/events?historical=true&oom_events=true&oom_events=false", t)
 	expectedQuery := &events.Request{
-		EventType: map[events.EventType]bool{
-			events.TypeOom: true,
+		EventType: map[info.EventType]bool{
+			info.EventOom: true,
 		},
 	}
 
