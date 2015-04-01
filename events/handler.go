@@ -133,6 +133,7 @@ func NewRequest() *Request {
 	return &Request{
 		EventType:            map[info.EventType]bool{},
 		IncludeSubcontainers: false,
+		MaxEventsReturned:    10,
 	}
 }
 
