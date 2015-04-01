@@ -34,20 +34,19 @@ func makeHTTPRequest(requestURL string, t *testing.T) *http.Request {
 }
 
 func TestGetEventRequestBasicRequest(t *testing.T) {
-	r := makeHTTPRequest("http://localhost:8080/api/v1.3/events?oom_events=true&historical=true&max_events=10", t)
-	expectedQuery := &events.Request{
-		EventType: map[info.EventType]bool{
-			info.EventOom: true,
-		},
-		MaxEventsReturned: 10,
+	r := makeHTTPRequest("http://localhost:8080/api/v1.3/events?oom_events=true&stream=false&max_events=20", t)
+	expectedQuery := events.NewRequest()
+	expectedQuery.EventType = map[info.EventType]bool{
+		info.EventOom: true,
 	}
+	expectedQuery.MaxEventsReturned = 20
 
-	receivedQuery, getHistoricalEvents, err := getEventRequest(r)
+	receivedQuery, stream, err := getEventRequest(r)
 
 	if !reflect.DeepEqual(expectedQuery, receivedQuery) {
-		t.Errorf("expected %v but received %v", expectedQuery, receivedQuery)
+		t.Errorf("expected %#v but received %#v", expectedQuery, receivedQuery)
 	}
-	assert.True(t, getHistoricalEvents)
+	assert.False(t, stream)
 	assert.Nil(t, err)
 }
 
@@ -55,28 +54,27 @@ func TestGetEventEmptyRequest(t *testing.T) {
 	r := makeHTTPRequest("", t)
 	expectedQuery := events.NewRequest()
 
-	receivedQuery, getHistoricalEvents, err := getEventRequest(r)
+	receivedQuery, stream, err := getEventRequest(r)
 
 	if !reflect.DeepEqual(expectedQuery, receivedQuery) {
-		t.Errorf("expected %v but received %v", expectedQuery, receivedQuery)
+		t.Errorf("expected %#v but received %#v", expectedQuery, receivedQuery)
 	}
-	assert.False(t, getHistoricalEvents)
+	assert.False(t, stream)
 	assert.Nil(t, err)
 }
 
 func TestGetEventRequestDoubleArgument(t *testing.T) {
-	r := makeHTTPRequest("http://localhost:8080/api/v1.3/events?historical=true&oom_events=true&oom_events=false", t)
-	expectedQuery := &events.Request{
-		EventType: map[info.EventType]bool{
-			info.EventOom: true,
-		},
+	r := makeHTTPRequest("http://localhost:8080/api/v1.3/events?stream=true&oom_events=true&oom_events=false", t)
+	expectedQuery := events.NewRequest()
+	expectedQuery.EventType = map[info.EventType]bool{
+		info.EventOom: true,
 	}
 
-	receivedQuery, getHistoricalEvents, err := getEventRequest(r)
+	receivedQuery, stream, err := getEventRequest(r)
 
 	if !reflect.DeepEqual(expectedQuery, receivedQuery) {
-		t.Errorf("expected %v but received %v", expectedQuery, receivedQuery)
+		t.Errorf("expected %#v but received %#v", expectedQuery, receivedQuery)
 	}
-	assert.True(t, getHistoricalEvents)
+	assert.True(t, stream)
 	assert.Nil(t, err)
 }

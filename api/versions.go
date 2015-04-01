@@ -268,12 +268,12 @@ func (self *version1_3) HandleRequest(requestType string, request []string, m ma
 }
 
 func handleEventRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) error {
-	query, eventsFromAllTime, err := getEventRequest(r)
+	query, stream, err := getEventRequest(r)
 	if err != nil {
 		return err
 	}
 	glog.V(2).Infof("Api - Events(%v)", query)
-	if eventsFromAllTime {
+	if !stream {
 		pastEvents, err := m.GetPastEvents(query)
 		if err != nil {
 			return err
