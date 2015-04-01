@@ -19,11 +19,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
 
+	"github.com/golang/glog"
+	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
 )
 
@@ -39,8 +42,30 @@ func NewClient(url string) (*Client, error) {
 	}
 
 	return &Client{
-		baseUrl: fmt.Sprintf("%sapi/v1.2/", url),
+		baseUrl: fmt.Sprintf("%sapi/v1.3/", url),
 	}, nil
+}
+
+// Returns all past events that satisfy the request
+func (self *Client) EventStaticInfo(name string) (einfo []*events.Event, err error) {
+	u := self.eventsInfoUrl(name)
+	glog.V(3).Infof("got complete url %v", u)
+	ret := new([]*events.Event)
+	if err = self.httpGetJsonData(ret, nil, u, "event info"); err != nil {
+		return
+	}
+	einfo = *ret
+	return
+}
+
+// Streams all events that occur that satisfy the request into the channel
+// that is passed
+func (self *Client) EventStreamingInfo(name string, einfo chan interface{}) (err error) {
+	u := self.eventsInfoUrl(name)
+	if err = self.getEventStreamingData(u, einfo); err != nil {
+		return
+	}
+	return nil
 }
 
 // MachineInfo returns the JSON machine information for this client.
@@ -128,6 +153,10 @@ func (self *Client) dockerInfoUrl(name string) string {
 	return self.baseUrl + path.Join("docker", name)
 }
 
+func (self *Client) eventsInfoUrl(name string) string {
+	return self.baseUrl + path.Join("events", name)
+}
+
 func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName string) error {
 	var resp *http.Response
 	var err error
@@ -159,6 +188,34 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 	if err = json.Unmarshal(body, data); err != nil {
 		err = fmt.Errorf("unable to unmarshal %q (Body: %q) from %q with error: %v", infoName, string(body), url, err)
 		return err
+	}
+	return nil
+}
+
+func (self *Client) getEventStreamingData(url string, einfo chan interface{}) error {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Status code is not OK: %v (%s)", resp.StatusCode, resp.Status)
+	}
+
+	dec := json.NewDecoder(resp.Body)
+	var m interface{}
+	for {
+		err := dec.Decode(&m)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+		einfo <- m
 	}
 	return nil
 }
