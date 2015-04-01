@@ -86,7 +86,7 @@ type Manager interface {
 	WatchForEvents(request *events.Request) (*events.EventChannel, error)
 
 	// Get past events that have been detected and that fit the request.
-	GetPastEvents(request *events.Request) (events.EventSlice, error)
+	GetPastEvents(request *events.Request) ([]*info.Event, error)
 
 	CloseEventChannel(watch_id int)
 }
@@ -671,11 +671,11 @@ func (m *manager) createContainer(containerName string) error {
 			return err
 		}
 
-		newEvent := &events.Event{
+		newEvent := &info.Event{
 			ContainerName: contRef.Name,
 			EventData:     contSpecs,
 			Timestamp:     contSpecs.CreationTime,
-			EventType:     events.TypeContainerCreation,
+			EventType:     info.EventContainerCreation,
 		}
 		err = m.eventHandler.AddEvent(newEvent)
 		if err != nil {
@@ -723,10 +723,10 @@ func (m *manager) destroyContainer(containerName string) error {
 		return err
 	}
 
-	newEvent := &events.Event{
+	newEvent := &info.Event{
 		ContainerName: contRef.Name,
 		Timestamp:     time.Now(),
-		EventType:     events.TypeContainerDeletion,
+		EventType:     info.EventContainerDeletion,
 	}
 	err = m.eventHandler.AddEvent(newEvent)
 	if err != nil {
@@ -874,10 +874,10 @@ func (self *manager) watchForNewOoms() error {
 
 	go func() {
 		for oomInstance := range outStream {
-			newEvent := &events.Event{
+			newEvent := &info.Event{
 				ContainerName: oomInstance.ContainerName,
 				Timestamp:     oomInstance.TimeOfDeath,
-				EventType:     events.TypeOom,
+				EventType:     info.EventOom,
 				EventData:     oomInstance,
 			}
 			glog.V(1).Infof("Created an oom event: %v", newEvent)
@@ -896,7 +896,7 @@ func (self *manager) WatchForEvents(request *events.Request) (*events.EventChann
 }
 
 // can be called by the api which will return all events satisfying the request
-func (self *manager) GetPastEvents(request *events.Request) (events.EventSlice, error) {
+func (self *manager) GetPastEvents(request *events.Request) ([]*info.Event, error) {
 	return self.eventHandler.GetEvents(request)
 }
 
