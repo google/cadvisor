@@ -26,7 +26,6 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
 )
 
@@ -47,10 +46,10 @@ func NewClient(url string) (*Client, error) {
 }
 
 // Returns all past events that satisfy the request
-func (self *Client) EventStaticInfo(name string) (einfo []*events.Event, err error) {
+func (self *Client) EventStaticInfo(name string) (einfo []*info.Event, err error) {
 	u := self.eventsInfoUrl(name)
 	glog.V(3).Infof("got complete url %v", u)
-	ret := new([]*events.Event)
+	ret := new([]*info.Event)
 	if err = self.httpGetJsonData(ret, nil, u, "event info"); err != nil {
 		return
 	}
