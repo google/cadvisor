@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2015 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package v2
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"path"
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	info "github.com/google/cadvisor/info/v1"
-	itest "github.com/google/cadvisor/info/v1/test"
+	infoV2 "github.com/google/cadvisor/info/v2"
 	"github.com/kr/pretty"
 )
 
@@ -61,6 +59,8 @@ func cadvisorTestClient(path string, expectedPostObj *info.ContainerInfoRequest,
 			}
 			encoder := json.NewEncoder(w)
 			encoder.Encode(replyObj)
+		} else if r.URL.Path == "/api/v2.0/version" {
+			fmt.Fprintf(w, "0.1.2")
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "Page not found.")
@@ -89,7 +89,7 @@ func TestGetMachineinfo(t *testing.T) {
 			},
 		},
 	}
-	client, server, err := cadvisorTestClient("/api/v1.3/machine", nil, minfo, t)
+	client, server, err := cadvisorTestClient("/api/v2.0/machine", nil, minfo, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
@@ -103,30 +103,57 @@ func TestGetMachineinfo(t *testing.T) {
 	}
 }
 
-// TestGetContainerInfo generates a random container information object
-// and then checks that ContainerInfo returns the expected result.
-func TestGetContainerInfo(t *testing.T) {
-	query := &info.ContainerInfoRequest{
-		NumStats: 3,
-	}
-	containerName := "/some/container"
-	cinfo := itest.GenerateRandomContainerInfo(containerName, 4, query, 1*time.Second)
-	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.3/containers%v", containerName), query, cinfo, t)
+// TestGetVersionInfo performs one test to check if VersionInfo()
+// in a cAdvisor client returns the correct result.
+func TestGetVersioninfo(t *testing.T) {
+	version := "0.1.2"
+	client, server, err := cadvisorTestClient("", nil, version, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
 	defer server.Close()
-	returned, err := client.ContainerInfo(containerName, query)
+	returned, err := client.VersionInfo()
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if !returned.Eq(cinfo) {
-		t.Error("received unexpected ContainerInfo")
+	if returned != version {
+		t.Fatalf("received unexpected version info")
 	}
 }
 
-// Test a request failing
+// TestAttributes performs one test to check if Attributes()
+// in a cAdvisor client returns the correct result.
+func TestGetAttributes(t *testing.T) {
+	attr := &infoV2.Attributes{
+		KernelVersion:      "3.3.0",
+		ContainerOsVersion: "Ubuntu 14.4",
+		DockerVersion:      "Docker 1.5",
+		CadvisorVersion:    "0.1.2",
+		NumCores:           8,
+		MemoryCapacity:     31625871360,
+		DiskMap: map[string]info.DiskInfo{
+			"8:0": {
+				Name:  "sda",
+				Major: 8,
+				Minor: 0,
+				Size:  10737418240,
+			},
+		},
+	}
+	client, server, err := cadvisorTestClient("/api/v2.0/attributes", nil, attr, t)
+	if err != nil {
+		t.Fatalf("unable to get a client %v", err)
+	}
+	defer server.Close()
+	returned, err := client.Attributes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(returned, attr) {
+		t.Fatalf("received unexpected attributes")
+	}
+}
+
 func TestRequestFails(t *testing.T) {
 	errorText := "there was an error"
 	// Setup a server that simply fails.
@@ -140,49 +167,12 @@ func TestRequestFails(t *testing.T) {
 	}
 	defer ts.Close()
 
-	_, err = client.ContainerInfo("/", &info.ContainerInfoRequest{NumStats: 3})
+	_, err = client.MachineInfo()
 	if err == nil {
 		t.Fatalf("Expected non-nil error")
 	}
 	expectedError := fmt.Sprintf("request failed with error: %q", errorText)
 	if strings.Contains(err.Error(), expectedError) {
 		t.Fatalf("Expected error %q but received %q", expectedError, err)
-	}
-}
-
-func TestGetSubcontainersInfo(t *testing.T) {
-	query := &info.ContainerInfoRequest{
-		NumStats: 3,
-	}
-	containerName := "/some/container"
-	cinfo := itest.GenerateRandomContainerInfo(containerName, 4, query, 1*time.Second)
-	cinfo1 := itest.GenerateRandomContainerInfo(path.Join(containerName, "sub1"), 4, query, 1*time.Second)
-	cinfo2 := itest.GenerateRandomContainerInfo(path.Join(containerName, "sub2"), 4, query, 1*time.Second)
-	response := []info.ContainerInfo{
-		*cinfo,
-		*cinfo1,
-		*cinfo2,
-	}
-	client, server, err := cadvisorTestClient(fmt.Sprintf("/api/v1.3/subcontainers%v", containerName), query, response, t)
-	if err != nil {
-		t.Fatalf("unable to get a client %v", err)
-	}
-	defer server.Close()
-	returned, err := client.SubcontainersInfo(containerName, query)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(returned) != 3 {
-		t.Errorf("unexpected number of results: got %d, expected 3", len(returned))
-	}
-	if !returned[0].Eq(cinfo) {
-		t.Error("received unexpected ContainerInfo")
-	}
-	if !returned[1].Eq(cinfo1) {
-		t.Error("received unexpected ContainerInfo")
-	}
-	if !returned[2].Eq(cinfo2) {
-		t.Error("received unexpected ContainerInfo")
 	}
 }
