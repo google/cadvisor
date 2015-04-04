@@ -59,7 +59,7 @@ func (self *Client) EventStaticInfo(name string) (einfo []*info.Event, err error
 
 // Streams all events that occur that satisfy the request into the channel
 // that is passed
-func (self *Client) EventStreamingInfo(name string, einfo chan interface{}) (err error) {
+func (self *Client) EventStreamingInfo(name string, einfo chan *info.Event) (err error) {
 	u := self.eventsInfoUrl(name)
 	if err = self.getEventStreamingData(u, einfo); err != nil {
 		return
@@ -191,7 +191,7 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 	return nil
 }
 
-func (self *Client) getEventStreamingData(url string, einfo chan interface{}) error {
+func (self *Client) getEventStreamingData(url string, einfo chan *info.Event) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -205,7 +205,7 @@ func (self *Client) getEventStreamingData(url string, einfo chan interface{}) er
 	}
 
 	dec := json.NewDecoder(resp.Body)
-	var m interface{}
+	var m *info.Event
 	for {
 		err := dec.Decode(&m)
 		if err != nil {

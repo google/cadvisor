@@ -111,11 +111,13 @@ type DockerActions interface {
 	// Run(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 	//   -> docker run busybox ping www.google.com
 	Run(args DockerRunArgs, cmd ...string) string
+	RunStress(args DockerRunArgs, cmd ...string)
 }
 
 type ShellActions interface {
 	// Runs a specified command and arguments. Returns the stdout and stderr.
 	Run(cmd string, args ...string) (string, string)
+	RunStress(cmd string, args ...string) (string, string)
 }
 
 type CadvisorActions interface {
@@ -212,6 +214,8 @@ type DockerRunArgs struct {
 
 	// Arguments to the Docker CLI.
 	Args []string
+
+	InnerArgs []string
 }
 
 // TODO(vmarmol): Use the Docker remote API.
@@ -236,6 +240,21 @@ func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 	return containerId
 }
 
+func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) {
+	dockerCommand := append(append(append(append([]string{"docker", "run", "-m=4M"}, args.Args...), args.Image), args.InnerArgs...), cmd...)
+
+	self.fm.Shell().RunStress("sudo", dockerCommand...)
+
+	if len(args.Args) < 2 {
+		self.fm.T().Fatalf("need 2 arguments in DockerRunArgs %v to get the name but have %v", args, len(args.Args))
+	}
+	containerId := args.Args[1]
+
+	self.fm.cleanups = append(self.fm.cleanups, func() {
+		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
+	})
+}
+
 func (self shellActions) Run(command string, args ...string) (string, string) {
 	var cmd *exec.Cmd
 	if self.fm.Hostname().Host == "localhost" {
@@ -252,6 +271,27 @@ func (self shellActions) Run(command string, args ...string) (string, string) {
 	err := cmd.Run()
 	if err != nil {
 		self.fm.T().Fatalf("Failed to run %q %v in %q with error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())
+		return "", ""
+	}
+	return stdout.String(), stderr.String()
+}
+
+func (self shellActions) RunStress(command string, args ...string) (string, string) {
+	var cmd *exec.Cmd
+	if self.fm.Hostname().Host == "localhost" {
+		// Just run locally.
+		cmd = exec.Command(command, args...)
+	} else {
+		// We must SSH to the remote machine and run the command.
+		cmd = exec.Command("gcutil", append([]string{"ssh", self.fm.Hostname().GceInstanceName, command}, args...)...)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		self.fm.T().Logf("Ran %q %v in %q and received error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())
 		return "", ""
 	}
 	return stdout.String(), stderr.String()

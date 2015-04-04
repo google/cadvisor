@@ -19,6 +19,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 func staticClientExample() {
@@ -43,7 +44,7 @@ func streamingClientExample() {
 		glog.Errorf("tried to make client and got error %v", err)
 		return
 	}
-	einfo := make(chan interface{})
+	einfo := make(chan *info.Event)
 	go func() {
 		err = streamingClient.EventStreamingInfo("?oom_events=true", einfo)
 		if err != nil {
