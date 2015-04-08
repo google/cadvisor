@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/google/cadvisor",
-	"GoVersion": "go1.4",
+	"GoVersion": "go1.4.2",
 	"Packages": [
 		"./..."
 	],
@@ -38,6 +38,11 @@
 			"Rev": "a713d26df274e999ec10e9bbc7e73a1c4791053c"
 		},
 		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.6.2-10-g51fe59a",
+			"Rev": "51fe59aca108dc5680109e7b2051cbdcfa5a253c"
+		},
+		{
 			"ImportPath": "github.com/abbot/go-http-auth",
 			"Rev": "c0ef4539dfab4d21c8ef20ba2924f9fc6f186d35"
 		},
@@ -56,19 +61,14 @@
 			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/symlink",
-			"Comment": "v1.4.1-1379-g8e107a9",
-			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/pkg/units",
 			"Comment": "v1.4.1-1379-g8e107a9",
 			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
 		},
 		{
 			"ImportPath": "github.com/docker/libcontainer",
-			"Comment": "v1.4.0-52-gd7dea0e",
-			"Rev": "d7dea0e925315bab640115053204c16718839b1e"
+			"Comment": "v1.4.0-412-g4ea9039",
+			"Rev": "4ea9039ff269fc8675409df7f1a192c94eab2f52"
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
@@ -145,6 +145,10 @@
 		{
 			"ImportPath": "github.com/stretchr/testify/require",
 			"Rev": "8ce79b9f0b77745113f82c17d0756771456ccbd3"
+		},
+		{
+			"ImportPath": "github.com/syndtr/gocapability/capability",
+			"Rev": "3c85049eaeb429febe7788d9c7aac42322a377fe"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
