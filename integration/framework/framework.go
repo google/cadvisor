@@ -111,7 +111,7 @@ type DockerActions interface {
 	// Run(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 	//   -> docker run busybox ping www.google.com
 	Run(args DockerRunArgs, cmd ...string) string
-	RunStress(args DockerRunArgs, cmd ...string)
+	RunStress(args DockerRunArgs, cmd ...string) string
 }
 
 type ShellActions interface {
@@ -240,19 +240,22 @@ func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 	return containerId
 }
 
-func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) {
-	dockerCommand := append(append(append(append([]string{"docker", "run", "-m=4M"}, args.Args...), args.Image), args.InnerArgs...), cmd...)
+func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
+	dockerCommand := append(append(append(append([]string{"docker", "run", "-m=4M", "-d", "-t", "-i"}, args.Args...), args.Image), args.InnerArgs...), cmd...)
 
-	self.fm.Shell().RunStress("sudo", dockerCommand...)
+	output, _ := self.fm.Shell().RunStress("sudo", dockerCommand...)
 
-	if len(args.Args) < 2 {
-		self.fm.T().Fatalf("need 2 arguments in DockerRunArgs %v to get the name but have %v", args, len(args.Args))
+	// The last line is the container ID.
+	if len(output) < 1 {
+		self.fm.T().Fatalf("need 1 arguments in output %v to get the name but have %v", output, len(output))
 	}
-	containerId := args.Args[1]
+	elements := strings.Fields(output)
+	containerId := elements[len(elements)-1]
 
 	self.fm.cleanups = append(self.fm.cleanups, func() {
 		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
 	})
+	return containerId
 }
 
 func (self shellActions) Run(command string, args ...string) (string, string) {
@@ -292,7 +295,7 @@ func (self shellActions) RunStress(command string, args ...string) (string, stri
 	err := cmd.Run()
 	if err != nil {
 		self.fm.T().Logf("Ran %q %v in %q and received error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())
-		return "", ""
+		return stdout.String(), stderr.String()
 	}
 	return stdout.String(), stderr.String()
 }
