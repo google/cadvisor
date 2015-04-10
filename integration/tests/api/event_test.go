@@ -53,6 +53,8 @@ func TestStreamingEventInformationIsReturned(t *testing.T) {
 
 	waitForStreamingEvent(containerId, "?deletion_events=true&stream=true", t, fm, info.EventContainerDeletion)
 	waitForStaticEvent(containerId, "?creation_events=true", t, fm, info.EventContainerCreation)
+	//TODO: test for oom events
+	//waitForStaticEvent(containerId, "?oom_events=true", t, fm, info.EventOom)
 }
 
 func waitForStreamingEvent(containerId string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {
