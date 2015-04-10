@@ -15,16 +15,15 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/integration/framework"
-	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,13 +33,13 @@ func TestStreamingEventInformationIsReturned(t *testing.T) {
 
 	einfo := make(chan *info.Event)
 	go func() {
-		err := fm.Cadvisor().Client().EventStreamingInfo("?oom_events=true", einfo)
-		t.Logf("Started event streaming with error %v", err)
+		err := fm.Cadvisor().Client().EventStreamingInfo("?oom_events=true&stream=true", einfo)
+		t.Logf("tried to stream events but got error %v", err)
 		require.NoError(t, err)
 	}()
 
 	containerName := fmt.Sprintf("test-basic-docker-container-%d", os.Getpid())
-	fm.Docker().RunStress(framework.DockerRunArgs{
+	containerId := fm.Docker().RunStress(framework.DockerRunArgs{
 		Image: "bernardo/stress",
 		Args:  []string{"--name", containerName},
 		InnerArgs: []string{
@@ -52,24 +51,49 @@ func TestStreamingEventInformationIsReturned(t *testing.T) {
 		},
 	})
 
+	waitForStreamingEvent(containerId, "?deletion_events=true&stream=true", t, fm, info.EventContainerDeletion)
+	waitForStaticEvent(containerId, "?creation_events=true", t, fm, info.EventContainerCreation)
+}
+
+func waitForStreamingEvent(containerId string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {
 	timeout := make(chan bool, 1)
 	go func() {
 		time.Sleep(60 * time.Second)
 		timeout <- true
 	}()
 
-	select {
-	case ev := <-einfo:
-		if ev.EventType == 0 {
-			marshaledData, err := json.Marshal(ev.EventData)
-			require.Nil(t, err)
-			var oomEvent *oomparser.OomInstance
-			err = json.Unmarshal(marshaledData, &oomEvent)
-			require.Nil(t, err)
-			require.True(t, oomEvent.ProcessName == "stress")
+	einfo := make(chan *info.Event)
+	go func() {
+		err := fm.Cadvisor().Client().EventStreamingInfo(urlRequest, einfo)
+		require.NoError(t, err)
+	}()
+	for {
+		select {
+		case ev := <-einfo:
+			if ev.EventType == typeEvent {
+				if strings.Contains(strings.Trim(ev.ContainerName, "/ "), strings.Trim(containerId, "/ ")) {
+					return
+				}
+			}
+		case <-timeout:
+			t.Fatal(
+				"timeout happened before destruction event was detected")
 		}
-	case <-timeout:
-		t.Fatal(
-			"timeout happened before event was detected")
 	}
+}
+
+func waitForStaticEvent(containerId string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {
+	einfo, err := fm.Cadvisor().Client().EventStaticInfo(urlRequest)
+	require.NoError(t, err)
+
+	found := false
+	for _, ev := range einfo {
+		if ev.EventType == typeEvent {
+			if strings.Contains(strings.Trim(ev.ContainerName, "/ "), strings.Trim(containerId, "/ ")) {
+				found = true
+				break
+			}
+		}
+	}
+	require.True(t, found)
 }

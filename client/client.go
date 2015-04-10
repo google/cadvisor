@@ -205,14 +205,16 @@ func (self *Client) getEventStreamingData(url string, einfo chan *info.Event) er
 	}
 
 	dec := json.NewDecoder(resp.Body)
-	var m *info.Event
+	var m *info.Event = &info.Event{}
 	for {
-		err := dec.Decode(&m)
+		err := dec.Decode(m)
+		glog.V(3).Infof("received m as %v", m)
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
-			return err
+			// if called without &stream=true will not be able to parse event and will trigger fatal
+			glog.Fatalf("Received error %v", err)
 		}
 		einfo <- m
 	}

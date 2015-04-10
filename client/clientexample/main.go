@@ -28,7 +28,7 @@ func staticClientExample() {
 		glog.Errorf("tried to make client and got error %v", err)
 		return
 	}
-	einfo, err := staticClient.EventStaticInfo("?oom_events=true&historical=true")
+	einfo, err := staticClient.EventStaticInfo("?oom_events=true")
 	if err != nil {
 		glog.Errorf("got error retrieving event info: %v", err)
 		return
@@ -38,7 +38,7 @@ func staticClientExample() {
 	}
 }
 
-func streamingClientExample() {
+func streamingClientExample(url string) {
 	streamingClient, err := client.NewClient("http://localhost:8080/")
 	if err != nil {
 		glog.Errorf("tried to make client and got error %v", err)
@@ -46,14 +46,14 @@ func streamingClientExample() {
 	}
 	einfo := make(chan *info.Event)
 	go func() {
-		err = streamingClient.EventStreamingInfo("?oom_events=true", einfo)
+		err = streamingClient.EventStreamingInfo(url, einfo)
 		if err != nil {
 			glog.Errorf("got error retrieving event info: %v", err)
 			return
 		}
 	}()
 	for ev := range einfo {
-		glog.Infof("streaming einfo: %v", ev)
+		glog.Infof("streaming einfo: %v\n", ev)
 	}
 }
 
@@ -61,5 +61,5 @@ func streamingClientExample() {
 func main() {
 	flag.Parse()
 	staticClientExample()
-	streamingClientExample()
+	streamingClientExample("?creation_events=true&stream=true")
 }
