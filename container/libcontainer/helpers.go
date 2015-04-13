@@ -16,10 +16,7 @@ package libcontainer
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/docker/libcontainer"
@@ -90,6 +87,7 @@ func GetStats(cgroupManager cgroups.Manager, networkInterfaces []string) (*info.
 	if len(networkInterfaces) != 0 {
 		// ContainerStats only reports stat for one network device.
 		// TODO(rjnagal): Handle multiple physical network devices.
+		// TODO(rjnagal): Use networking stats directly from libcontainer.
 		stats.Network, err = sysinfo.GetNetworkStats(networkInterfaces[0])
 		if err != nil {
 			return stats, err
@@ -197,53 +195,5 @@ func toContainerStats(libcontainerStats *libcontainer.Stats) *info.ContainerStat
 		ret.Network.TxErrors = libcontainerStats.Interfaces[0].TxErrors
 		ret.Network.TxDropped = libcontainerStats.Interfaces[0].TxDropped
 	}
-
 	return ret
-}
-
-// Returns the network statistics for the network interfaces represented by the NetworkRuntimeInfo.
-func GetNetworkInterfaceStats(interfaceName string) (*libcontainer.NetworkInterface, error) {
-	out := &libcontainer.NetworkInterface{
-		Name: interfaceName,
-	}
-	// This can happen if the network runtime information is missing - possible if the
-	// container was created by an old version of libcontainer.
-	if interfaceName == "" {
-		return out, nil
-	}
-	type netStatsPair struct {
-		// Where to write the output.
-		Out *uint64
-		// The network stats file to read.
-		File string
-	}
-	// Ingress for host veth is from the container. Hence tx_bytes stat on the host veth is actually number of bytes received by the container.
-	netStats := []netStatsPair{
-		{Out: &out.RxBytes, File: "tx_bytes"},
-		{Out: &out.RxPackets, File: "tx_packets"},
-		{Out: &out.RxErrors, File: "tx_errors"},
-		{Out: &out.RxDropped, File: "tx_dropped"},
-
-		{Out: &out.TxBytes, File: "rx_bytes"},
-		{Out: &out.TxPackets, File: "rx_packets"},
-		{Out: &out.TxErrors, File: "rx_errors"},
-		{Out: &out.TxDropped, File: "rx_dropped"},
-	}
-	for _, netStat := range netStats {
-		data, err := readSysfsNetworkStats(interfaceName, netStat.File)
-		if err != nil {
-			return nil, err
-		}
-		*(netStat.Out) = data
-	}
-	return out, nil
-}
-
-// Reads the specified statistics available under /sys/class/net/<EthInterface>/statistics
-func readSysfsNetworkStats(ethInterface, statsFile string) (uint64, error) {
-	data, err := ioutil.ReadFile(path.Join("/sys/class/net", ethInterface, "statistics", statsFile))
-	if err != nil {
-		return 0, err
-	}
-	return strconv.ParseUint(strings.TrimSpace(string(data)), 10, 64)
 }
