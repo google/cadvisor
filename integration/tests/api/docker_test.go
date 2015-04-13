@@ -261,7 +261,7 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 
 	// Checks for NetworkStats.
 	stat := containerInfo.Stats[0]
-	assert.NotEqual(t, 0, stat.Network.TxBytes, "Network tx bytes should not bet zero")
-	assert.NotEqual(t, 0, stat.Network.TxPackets, "Network tx packets should not bet zero")
+	assert.NotEqual(t, 0, stat.Network.TxBytes, "Network tx bytes should not be zero")
+	assert.NotEqual(t, 0, stat.Network.TxPackets, "Network tx packets should not be zero")
 	// TODO(vmarmol): Can probably do a better test with two containers pinging each other.
 }
