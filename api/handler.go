@@ -67,7 +67,7 @@ const (
 func handleRequest(supportedApiVersions map[string]ApiVersion, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
 	defer func() {
-		glog.V(2).Infof("Request took %s", time.Since(start))
+		glog.V(4).Infof("Request took %s", time.Since(start))
 	}()
 
 	request := r.URL.Path
@@ -151,11 +151,9 @@ func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *
 	for {
 		select {
 		case <-cn.CloseNotify():
-			glog.V(3).Infof("Received CloseNotify event. About to return from api/handler:streamResults")
 			m.CloseEventChannel(eventChannel.GetWatchId())
 			return nil
 		case ev := <-eventChannel.GetChannel():
-			glog.V(3).Infof("Received event from watch channel in api: %v", ev)
 			err := enc.Encode(ev)
 			if err != nil {
 				glog.Errorf("error encoding message %+v for result stream: %v", ev, err)
@@ -238,9 +236,6 @@ func getEventRequest(r *http.Request) (*events.Request, bool, error) {
 		}
 	}
 
-	glog.V(2).Infof(
-		"%v was returned in api/handler.go:getEventRequest from the url rawQuery %v",
-		query, r.URL.RawQuery)
 	return query, stream, nil
 }
 

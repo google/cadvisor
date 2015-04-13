@@ -201,12 +201,10 @@ func getSystemFile() (string, error) {
 func New() (*OomParser, error) {
 	systemFile, err := getSystemFile()
 	if err != nil {
-		glog.V(1).Infof("received error %v when calling getSystemFile", err)
 		return trySystemd()
 	}
 	file, err := os.Open(systemFile)
 	if err != nil {
-		glog.V(1).Infof("received error %v when opening file", err)
 		return trySystemd()
 	}
 	return &OomParser{
