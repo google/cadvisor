@@ -273,7 +273,7 @@ func (self *manager) globalHousekeeping(quit chan error) {
 			// Log if housekeeping took too long.
 			duration := time.Since(start)
 			if duration >= longHousekeeping {
-				glog.V(1).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
+				glog.V(3).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
 			}
 		case <-quit:
 			// Quit if asked to do so.
@@ -889,7 +889,7 @@ func (self *manager) watchForNewOoms() error {
 					},
 				},
 			}
-			glog.V(2).Infof("Created an oom event: %v", newEvent)
+			glog.V(2).Infof("Created an oom event in container %q at %v", oomInstance.ContainerName, oomInstance.TimeOfDeath)
 			err := self.eventHandler.AddEvent(newEvent)
 			if err != nil {
 				glog.Errorf("failed to add event %v, got error: %v", newEvent, err)

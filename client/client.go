@@ -48,7 +48,6 @@ func NewClient(url string) (*Client, error) {
 // Returns all past events that satisfy the request
 func (self *Client) EventStaticInfo(name string) (einfo []*info.Event, err error) {
 	u := self.eventsInfoUrl(name)
-	glog.V(3).Infof("got complete url %v", u)
 	ret := new([]*info.Event)
 	if err = self.httpGetJsonData(ret, nil, u, "event info"); err != nil {
 		return
@@ -208,7 +207,6 @@ func (self *Client) getEventStreamingData(url string, einfo chan *info.Event) er
 	var m *info.Event = &info.Event{}
 	for {
 		err := dec.Decode(m)
-		glog.V(3).Infof("received m as %v", m)
 		if err != nil {
 			if err == io.EOF {
 				break
