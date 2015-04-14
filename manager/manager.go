@@ -175,25 +175,23 @@ type manager struct {
 
 // Start the container manager.
 func (self *manager) Start() error {
-	// TODO(rjnagal): Skip creating cpu load reader while we improve resource usage and accuracy.
-	if false {
-		// Create cpu load reader.
-		cpuLoadReader, err := cpuload.New()
+
+	// Create cpu load reader.
+	cpuLoadReader, err := cpuload.New()
+	if err != nil {
+		// TODO(rjnagal): Promote to warning once we support cpu load inside namespaces.
+		glog.Infof("Could not initialize cpu load reader: %s", err)
+	} else {
+		err = cpuLoadReader.Start()
 		if err != nil {
-			// TODO(rjnagal): Promote to warning once we support cpu load inside namespaces.
-			glog.Infof("Could not initialize cpu load reader: %s", err)
+			glog.Warning("Could not start cpu load stat collector: %s", err)
 		} else {
-			err = cpuLoadReader.Start()
-			if err != nil {
-				glog.Warning("Could not start cpu load stat collector: %s", err)
-			} else {
-				self.loadReader = cpuLoadReader
-			}
+			self.loadReader = cpuLoadReader
 		}
 	}
 
 	// Watch for OOMs.
-	err := self.watchForNewOoms()
+	err = self.watchForNewOoms()
 	if err != nil {
 		glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
 	}
