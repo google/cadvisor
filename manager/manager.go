@@ -41,6 +41,7 @@ import (
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
 var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log the usage of the cAdvisor container")
+var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
 
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
@@ -176,22 +177,24 @@ type manager struct {
 // Start the container manager.
 func (self *manager) Start() error {
 
-	// Create cpu load reader.
-	cpuLoadReader, err := cpuload.New()
-	if err != nil {
-		// TODO(rjnagal): Promote to warning once we support cpu load inside namespaces.
-		glog.Infof("Could not initialize cpu load reader: %s", err)
-	} else {
-		err = cpuLoadReader.Start()
+	if *enableLoadReader {
+		// Create cpu load reader.
+		cpuLoadReader, err := cpuload.New()
 		if err != nil {
-			glog.Warning("Could not start cpu load stat collector: %s", err)
+			// TODO(rjnagal): Promote to warning once we support cpu load inside namespaces.
+			glog.Infof("Could not initialize cpu load reader: %s", err)
 		} else {
-			self.loadReader = cpuLoadReader
+			err = cpuLoadReader.Start()
+			if err != nil {
+				glog.Warning("Could not start cpu load stat collector: %s", err)
+			} else {
+				self.loadReader = cpuLoadReader
+			}
 		}
 	}
 
 	// Watch for OOMs.
-	err = self.watchForNewOoms()
+	err := self.watchForNewOoms()
 	if err != nil {
 		glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
 	}
