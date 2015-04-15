@@ -876,21 +876,32 @@ func (self *manager) watchForNewOoms() error {
 
 	go func() {
 		for oomInstance := range outStream {
+			// Surface OOM and OOM kill events.
 			newEvent := &info.Event{
 				ContainerName: oomInstance.ContainerName,
 				Timestamp:     oomInstance.TimeOfDeath,
 				EventType:     info.EventOom,
+			}
+			err := self.eventHandler.AddEvent(newEvent)
+			if err != nil {
+				glog.Errorf("failed to add OOM event for %q: %v", oomInstance.ContainerName, err)
+			}
+			glog.V(3).Infof("Created an OOM event in container %q at %v", oomInstance.ContainerName, oomInstance.TimeOfDeath)
+
+			newEvent = &info.Event{
+				ContainerName: oomInstance.VictimContainerName,
+				Timestamp:     oomInstance.TimeOfDeath,
+				EventType:     info.EventOomKill,
 				EventData: info.EventData{
-					Oom: &info.OomEventData{
+					OomKill: &info.OomKillEventData{
 						Pid:         oomInstance.Pid,
 						ProcessName: oomInstance.ProcessName,
 					},
 				},
 			}
-			glog.V(2).Infof("Created an oom event in container %q at %v", oomInstance.ContainerName, oomInstance.TimeOfDeath)
-			err := self.eventHandler.AddEvent(newEvent)
+			err = self.eventHandler.AddEvent(newEvent)
 			if err != nil {
-				glog.Errorf("failed to add event %v, got error: %v", newEvent, err)
+				glog.Errorf("failed to add OOM kill event for %q: %v", oomInstance.ContainerName, err)
 			}
 		}
 	}()

@@ -497,9 +497,10 @@ type Event struct {
 type EventType int
 
 const (
-	EventOom EventType = iota
-	EventContainerCreation
-	EventContainerDeletion
+	EventOom               EventType = 0
+	EventOomKill                     = 1
+	EventContainerCreation           = 2
+	EventContainerDeletion           = 3
 )
 
 // Extra information about an event. Only one type will be set.
@@ -507,8 +508,8 @@ type EventData struct {
 	// Information about a container creation event.
 	Created *CreatedEventData `json:"created,omitempty"`
 
-	// Information about an OOM event.
-	Oom *OomEventData `json:"oom,omitempty"`
+	// Information about an OOM kill event.
+	OomKill *OomKillEventData `json:"oom,omitempty"`
 }
 
 // Information related to a container creation event.
@@ -518,7 +519,7 @@ type CreatedEventData struct {
 }
 
 // Information related to an OOM kill instance
-type OomEventData struct {
+type OomKillEventData struct {
 	// process id of the killed process
 	Pid int `json:"pid"`
 
