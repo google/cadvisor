@@ -30,7 +30,7 @@ import (
 )
 
 var containerRegexp *regexp.Regexp = regexp.MustCompile(
-	`Task in (.*) killed as a result of limit of `)
+	`Task in (.*) killed as a result of limit of (.*)`)
 var lastLineRegexp *regexp.Regexp = regexp.MustCompile(
 	`(^[A-Z]{1}[a-z]{2} .*[0-9]{1,2} [0-9]{1,2}:[0-9]{2}:[0-9]{2}) .* Killed process ([0-9]+) \(([0-9A-Za-z_]+)\)`)
 var firstLineRegexp *regexp.Regexp = regexp.MustCompile(
@@ -52,6 +52,9 @@ type OomInstance struct {
 	TimeOfDeath time.Time
 	// the absolute name of the container that OOMed
 	ContainerName string
+	// the absolute name of the container that was killed
+	// due to the OOM.
+	VictimContainerName string
 }
 
 // gets the container name from a line and adds it to the oomInstance.
@@ -61,6 +64,7 @@ func getContainerName(line string, currentOomInstance *OomInstance) error {
 		return nil
 	}
 	currentOomInstance.ContainerName = path.Join("/", parsedLine[1])
+	currentOomInstance.VictimContainerName = path.Join("/", parsedLine[2])
 	return nil
 }
 
