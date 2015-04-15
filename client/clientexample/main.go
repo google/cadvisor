@@ -61,5 +61,5 @@ func streamingClientExample(url string) {
 func main() {
 	flag.Parse()
 	staticClientExample()
-	streamingClientExample("?creation_events=true&stream=true")
+	streamingClientExample("?creation_events=true&stream=true&oom_events=true&deletion_events=true")
 }
