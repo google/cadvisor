@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.11.1 (2015-03-27)
+## 0.12.0 (2015-04-15)
+- Added support for Docker 1.6.
+- Split OOM event into OOM kill and OOM.
+- Made EventData a concrete type in returned events.
+- Enabled CPU load tracking (experimental).
+
+## 0.11.0 (2015-03-27)
 - Export all stats as [Prometheus](http://prometheus.io/) metrics.
 - Initial support for [events](docs/api.md): creation, deletion, and OOM.
 - Adding machine UUID information.
