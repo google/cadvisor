@@ -205,6 +205,12 @@ func getEventRequest(r *http.Request) (*events.Request, bool, error) {
 			query.EventType[info.EventOom] = newBool
 		}
 	}
+	if val, ok := urlMap["oom_kill_events"]; ok {
+		newBool, err := strconv.ParseBool(val[0])
+		if err == nil {
+			query.EventType[info.EventOomKill] = newBool
+		}
+	}
 	if val, ok := urlMap["creation_events"]; ok {
 		newBool, err := strconv.ParseBool(val[0])
 		if err == nil {

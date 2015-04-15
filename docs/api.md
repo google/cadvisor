@@ -30,6 +30,7 @@ The endpoint accepts a certain number of query parameters:
 | `subcontainers`   | Whether to also return events for all subcontainers                            | false             |
 | `max_events`      | The max number of events to return (for stream=false)                          | 10                |
 | `oom_events`      | Whether to include OOM events                                                  | false             |
+| `oom_kill_events` | Whether to include OOM kill events                                             | false             |
 | `creation_events` | Whether to include container creation events                                   | false             |
 | `deletion_events` | Whether to include container deletion events                                   | false             |
 
