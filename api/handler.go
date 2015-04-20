@@ -241,10 +241,6 @@ func getEventRequest(r *http.Request) (*events.Request, bool, error) {
 			query.EndTime = newTime
 		}
 	}
-	if val, ok := urlMap["container_name"]; ok {
-		containerName := strings.Trim(val[0], " /")
-		query.ContainerName = "/" + containerName
-	}
 
 	return query, stream, nil
 }

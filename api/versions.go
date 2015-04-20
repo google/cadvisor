@@ -17,6 +17,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"path"
 	"strconv"
 
 	"github.com/golang/glog"
@@ -261,17 +262,18 @@ func (self *version1_3) SupportedRequestTypes() []string {
 func (self *version1_3) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
 	case eventsApi:
-		return handleEventRequest(m, w, r)
+		return handleEventRequest(request, m, w, r)
 	default:
 		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
 }
 
-func handleEventRequest(m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+func handleEventRequest(request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	query, stream, err := getEventRequest(r)
 	if err != nil {
 		return err
 	}
+	query.ContainerName = path.Join("/", getContainerName(request))
 	glog.V(4).Infof("Api - Events(%v)", query)
 	if !stream {
 		pastEvents, err := m.GetPastEvents(query)
@@ -388,7 +390,7 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		}
 		return writeResult(fi, w)
 	case eventsApi:
-		return handleEventRequest(m, w, r)
+		return handleEventRequest(request, m, w, r)
 	default:
 		return fmt.Errorf("unknown request type %q", requestType)
 	}
