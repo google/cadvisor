@@ -494,13 +494,13 @@ type Event struct {
 
 // EventType is an enumerated type which lists the categories under which
 // events may fall. The Event field EventType is populated by this enum.
-type EventType int
+type EventType string
 
 const (
-	EventOom               EventType = 0
-	EventOomKill                     = 1
-	EventContainerCreation           = 2
-	EventContainerDeletion           = 3
+	EventOom               EventType = "oom"
+	EventOomKill                     = "oomKill"
+	EventContainerCreation           = "containerCreation"
+	EventContainerDeletion           = "containerDeletion"
 )
 
 // Extra information about an event. Only one type will be set.
