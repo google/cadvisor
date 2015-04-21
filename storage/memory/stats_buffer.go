@@ -21,30 +21,33 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 )
 
-// A circular buffer for ContainerStats.
+// A time-based buffer for ContainerStats. Holds information for a specific time period.
 type StatsBuffer struct {
 	buffer []*info.ContainerStats
-	size   int
-	index  int
+	age    time.Duration
 }
 
 // Returns a new thread-compatible StatsBuffer.
-func NewStatsBuffer(size int) *StatsBuffer {
+func NewStatsBuffer(age time.Duration) *StatsBuffer {
 	return &StatsBuffer{
-		buffer: make([]*info.ContainerStats, size),
-		size:   0,
-		index:  size - 1,
+		buffer: make([]*info.ContainerStats, 0),
+		age:    age,
 	}
 }
 
 // Adds an element to the start of the buffer (removing one from the end if necessary).
 func (self *StatsBuffer) Add(item *info.ContainerStats) {
-	if self.size < len(self.buffer) {
-		self.size++
+	// Remove any elements before the eviction time.
+	evictTime := item.Timestamp.Add(-self.age)
+	index := sort.Search(len(self.buffer), func(index int) bool {
+		return self.buffer[index].Timestamp.After(evictTime)
+	})
+	if index < len(self.buffer) {
+		self.buffer = self.buffer[index:]
 	}
-	self.index = (self.index + 1) % len(self.buffer)
+
 	copied := *item
-	self.buffer[self.index] = &copied
+	self.buffer = append(self.buffer, &copied)
 }
 
 // Returns up to maxResult elements in the specified time period (inclusive).
@@ -52,7 +55,7 @@ func (self *StatsBuffer) Add(item *info.ContainerStats) {
 // and last are specified, maxResults is ignored.
 func (self *StatsBuffer) InTimeRange(start, end time.Time, maxResults int) []*info.ContainerStats {
 	// No stats, return empty.
-	if self.size == 0 {
+	if len(self.buffer) == 0 {
 		return []*info.ContainerStats{}
 	}
 
@@ -67,12 +70,12 @@ func (self *StatsBuffer) InTimeRange(start, end time.Time, maxResults int) []*in
 	var startIndex int
 	if start.IsZero() {
 		// None specified, start at the beginning.
-		startIndex = self.size - 1
+		startIndex = len(self.buffer) - 1
 	} else {
 		// Start is the index before the elements smaller than it. We do this by
 		// finding the first element smaller than start and taking the index
 		// before that element
-		startIndex = sort.Search(self.size, func(index int) bool {
+		startIndex = sort.Search(len(self.buffer), func(index int) bool {
 			// buffer[index] < start
 			return self.Get(index).Timestamp.Before(start)
 		}) - 1
@@ -88,12 +91,12 @@ func (self *StatsBuffer) InTimeRange(start, end time.Time, maxResults int) []*in
 		endIndex = 0
 	} else {
 		// End is the first index smaller than or equal to it (so, not larger).
-		endIndex = sort.Search(self.size, func(index int) bool {
+		endIndex = sort.Search(len(self.buffer), func(index int) bool {
 			// buffer[index] <= t -> !(buffer[index] > t)
 			return !self.Get(index).Timestamp.After(end)
 		})
 		// Check if end is before all the data we have.
-		if endIndex == self.size {
+		if endIndex == len(self.buffer) {
 			return []*info.ContainerStats{}
 		}
 	}
@@ -113,15 +116,11 @@ func (self *StatsBuffer) InTimeRange(start, end time.Time, maxResults int) []*in
 	return result
 }
 
-// Gets the element at the specified index. Note that elements are stored in LIFO order.
+// Gets the element at the specified index. Note that elements are output in LIFO order.
 func (self *StatsBuffer) Get(index int) *info.ContainerStats {
-	calculatedIndex := self.index - index
-	if calculatedIndex < 0 {
-		calculatedIndex += len(self.buffer)
-	}
-	return self.buffer[calculatedIndex]
+	return self.buffer[len(self.buffer)-index-1]
 }
 
 func (self *StatsBuffer) Size() int {
-	return self.size
+	return len(self.buffer)
 }
