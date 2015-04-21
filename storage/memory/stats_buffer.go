@@ -113,30 +113,6 @@ func (self *StatsBuffer) InTimeRange(start, end time.Time, maxResults int) []*in
 	return result
 }
 
-// TODO(vmarmol): Remove this function as it will no longer be neededt.
-// Returns the first N elements in the buffer. If N > size of buffer, size of buffer elements are returned.
-// Returns the elements in ascending timestamp order.
-func (self *StatsBuffer) FirstN(n int) []*info.ContainerStats {
-	// Cap n at the number of elements we have.
-	if n > self.size {
-		n = self.size
-	}
-
-	// index points to the latest element, get n before that one (keeping in mind we may have gone through 0).
-	start := self.index - (n - 1)
-	if start < 0 {
-		start += len(self.buffer)
-	}
-
-	// Copy the elements.
-	res := make([]*info.ContainerStats, n)
-	for i := 0; i < n; i++ {
-		index := (start + i) % len(self.buffer)
-		res[i] = self.buffer[index]
-	}
-	return res
-}
-
 // Gets the element at the specified index. Note that elements are stored in LIFO order.
 func (self *StatsBuffer) Get(index int) *info.ContainerStats {
 	calculatedIndex := self.index - index
