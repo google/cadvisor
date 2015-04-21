@@ -53,18 +53,22 @@ func expectAllElements(t *testing.T, sb *StatsBuffer, expected []int32) {
 	expectElements(t, els, expected)
 }
 
+func getActualElements(actual []*info.ContainerStats) string {
+	actualElements := make([]string, len(actual))
+	for i, element := range actual {
+		actualElements[i] = strconv.Itoa(int(element.Cpu.LoadAverage))
+	}
+	return strings.Join(actualElements, ",")
+}
+
 func expectElements(t *testing.T, actual []*info.ContainerStats, expected []int32) {
 	if len(actual) != len(expected) {
-		t.Errorf("Expected elements %v, got %v", expected, actual)
+		t.Errorf("Expected elements %v, got %v", expected, getActualElements(actual))
 		return
 	}
 	for i, el := range actual {
 		if el.Cpu.LoadAverage != expected[i] {
-			actualElements := make([]string, len(actual))
-			for i, element := range actual {
-				actualElements[i] = strconv.Itoa(int(element.Cpu.LoadAverage))
-			}
-			t.Errorf("Expected elements %v, got %v", expected, strings.Join(actualElements, ","))
+			t.Errorf("Expected elements %v, got %v", expected, getActualElements(actual))
 			return
 		}
 	}
@@ -77,12 +81,12 @@ func expectElement(t *testing.T, stat *info.ContainerStats, expected int32) {
 }
 
 func TestAdd(t *testing.T) {
-	sb := NewStatsBuffer(5)
+	sb := NewStatsBuffer(5 * time.Second)
 
 	// Add 1.
-	sb.Add(createStats(1))
+	sb.Add(createStats(0))
 	expectSize(t, sb, 1)
-	expectAllElements(t, sb, []int32{1})
+	expectAllElements(t, sb, []int32{0})
 
 	// Fill the buffer.
 	for i := 1; i <= 5; i++ {
@@ -106,7 +110,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	sb := NewStatsBuffer(5)
+	sb := NewStatsBuffer(5 * time.Second)
 	sb.Add(createStats(1))
 	sb.Add(createStats(2))
 	sb.Add(createStats(3))
@@ -118,7 +122,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestInTimeRange(t *testing.T) {
-	sb := NewStatsBuffer(5)
+	sb := NewStatsBuffer(5 * time.Second)
 	assert := assert.New(t)
 
 	var empty time.Time
@@ -195,7 +199,7 @@ func TestInTimeRange(t *testing.T) {
 }
 
 func TestInTimeRangeWithLimit(t *testing.T) {
-	sb := NewStatsBuffer(5)
+	sb := NewStatsBuffer(5 * time.Second)
 	sb.Add(createStats(1))
 	sb.Add(createStats(2))
 	sb.Add(createStats(3))

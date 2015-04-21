@@ -92,6 +92,6 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error
 		glog.Infof("No backend storage selected")
 	}
 	glog.Infof("Caching %d stats in memory", statsToCache)
-	storageDriver = memory.New(statsToCache, backendStorage)
+	storageDriver = memory.New(time.Duration(statsToCache)*time.Second, backendStorage)
 	return storageDriver, nil
 }
