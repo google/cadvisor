@@ -44,8 +44,13 @@ func expectSize(t *testing.T, sb *StatsBuffer, expectedSize int) {
 	}
 }
 
-func expectFirstN(t *testing.T, sb *StatsBuffer, expected []int32) {
-	expectElements(t, sb.FirstN(sb.Size()), expected)
+func expectAllElements(t *testing.T, sb *StatsBuffer, expected []int32) {
+	size := sb.Size()
+	els := make([]*info.ContainerStats, size)
+	for i := 0; i < size; i++ {
+		els[i] = sb.Get(size - i - 1)
+	}
+	expectElements(t, els, expected)
 }
 
 func expectElements(t *testing.T, actual []*info.ContainerStats, expected []int32) {
@@ -71,13 +76,13 @@ func expectElement(t *testing.T, stat *info.ContainerStats, expected int32) {
 	}
 }
 
-func TestAddAndFirstN(t *testing.T) {
+func TestAdd(t *testing.T) {
 	sb := NewStatsBuffer(5)
 
 	// Add 1.
 	sb.Add(createStats(1))
 	expectSize(t, sb, 1)
-	expectFirstN(t, sb, []int32{1})
+	expectAllElements(t, sb, []int32{1})
 
 	// Fill the buffer.
 	for i := 1; i <= 5; i++ {
@@ -85,19 +90,19 @@ func TestAddAndFirstN(t *testing.T) {
 		sb.Add(createStats(int32(i)))
 	}
 	expectSize(t, sb, 5)
-	expectFirstN(t, sb, []int32{1, 2, 3, 4, 5})
+	expectAllElements(t, sb, []int32{1, 2, 3, 4, 5})
 
 	// Add more than is available in the buffer
 	sb.Add(createStats(6))
 	expectSize(t, sb, 5)
-	expectFirstN(t, sb, []int32{2, 3, 4, 5, 6})
+	expectAllElements(t, sb, []int32{2, 3, 4, 5, 6})
 
 	// Replace all elements.
 	for i := 7; i <= 10; i++ {
 		sb.Add(createStats(int32(i)))
 	}
 	expectSize(t, sb, 5)
-	expectFirstN(t, sb, []int32{6, 7, 8, 9, 10})
+	expectAllElements(t, sb, []int32{6, 7, 8, 9, 10})
 }
 
 func TestGet(t *testing.T) {
@@ -106,7 +111,6 @@ func TestGet(t *testing.T) {
 	sb.Add(createStats(2))
 	sb.Add(createStats(3))
 	expectSize(t, sb, 3)
-	expectFirstN(t, sb, []int32{1, 2, 3})
 
 	expectElement(t, sb.Get(0), 3)
 	expectElement(t, sb.Get(1), 2)
