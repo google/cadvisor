@@ -174,7 +174,7 @@ func getMaxEventsReturned(request *Request, eSlice EventSlice) EventSlice {
 // equivalent
 func checkIfIsSubcontainer(request *Request, event *info.Event) bool {
 	if request.IncludeSubcontainers == true {
-		return strings.HasPrefix(event.ContainerName+"/", request.ContainerName+"/")
+		return request.ContainerName == "/" || strings.HasPrefix(event.ContainerName+"/", request.ContainerName+"/")
 	}
 	return event.ContainerName == request.ContainerName
 }
