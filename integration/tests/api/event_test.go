@@ -15,9 +15,6 @@
 package api
 
 import (
-	"fmt"
-	"os"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -31,67 +28,45 @@ func TestStreamingEventInformationIsReturned(t *testing.T) {
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
+	// Watch for container deletions
 	einfo := make(chan *info.Event)
 	go func() {
-		err := fm.Cadvisor().Client().EventStreamingInfo("?oom_events=true&stream=true", einfo)
-		t.Logf("tried to stream events but got error %v", err)
+		err := fm.Cadvisor().Client().EventStreamingInfo("?deletion_events=true&stream=true&subcontainers=true", einfo)
 		require.NoError(t, err)
 	}()
 
-	containerName := fmt.Sprintf("test-basic-docker-container-%d", os.Getpid())
-	containerId := fm.Docker().RunStress(framework.DockerRunArgs{
-		Image: "bernardo/stress",
-		Args:  []string{"--name", containerName},
-		InnerArgs: []string{
-			"--vm", strconv.FormatUint(4, 10),
-			"--vm-keep",
-			"-q",
-			"-m", strconv.FormatUint(1000, 10),
-			"--timeout", strconv.FormatUint(10, 10),
-		},
-	})
+	// Create a short-lived container.
+	containerId := fm.Docker().RunBusybox("sleep", "2")
 
-	waitForStreamingEvent(containerId, "?deletion_events=true&stream=true", t, fm, info.EventContainerDeletion)
-	waitForStaticEvent(containerId, "?creation_events=true", t, fm, info.EventContainerCreation)
-	//TODO: test for oom events
-	//waitForStaticEvent(containerId, "?oom_events=true", t, fm, info.EventOom)
-}
-
-func waitForStreamingEvent(containerId string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {
-	timeout := make(chan bool, 1)
-	go func() {
-		time.Sleep(60 * time.Second)
-		timeout <- true
-	}()
-
-	einfo := make(chan *info.Event)
-	go func() {
-		err := fm.Cadvisor().Client().EventStreamingInfo(urlRequest, einfo)
-		require.NoError(t, err)
-	}()
-	for {
+	// Wait for the deletion event.
+	timeout := time.After(30 * time.Second)
+	done := false
+	for !done {
 		select {
 		case ev := <-einfo:
-			if ev.EventType == typeEvent {
-				if strings.Contains(strings.Trim(ev.ContainerName, "/ "), strings.Trim(containerId, "/ ")) {
-					return
+			if ev.EventType == info.EventContainerDeletion {
+				if strings.Contains(ev.ContainerName, containerId) {
+					done = true
 				}
 			}
 		case <-timeout:
-			t.Fatal(
-				"timeout happened before destruction event was detected")
+			t.Errorf(
+				"timeout happened before destruction event was detected for container %q", containerId)
+			done = true
 		}
 	}
+
+	// We should have already received a creation event.
+	waitForStaticEvent(containerId, "?creation_events=true&subcontainers=true", t, fm, info.EventContainerCreation)
 }
 
 func waitForStaticEvent(containerId string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {
 	einfo, err := fm.Cadvisor().Client().EventStaticInfo(urlRequest)
 	require.NoError(t, err)
-
 	found := false
 	for _, ev := range einfo {
 		if ev.EventType == typeEvent {
-			if strings.Contains(strings.Trim(ev.ContainerName, "/ "), strings.Trim(containerId, "/ ")) {
+			if strings.Contains(ev.ContainerName, containerId) {
 				found = true
 				break
 			}
