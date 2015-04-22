@@ -2,6 +2,14 @@
 
 This document describes a set of runtime flags available in cAdvisor.
 
+## Local Storage Duration
+
+cAdvisor stores the latest historical data in memory. How long of a history it stores can be configured with the `--storage_duration` flag.
+
+```
+--storage_duration: How long to store data.
+```
+
 ## Housekeeping
 
 Housekeeping is the periodic actions cAdvisor takes. During these actions, cAdvisor will gather container stats. These flags control how and when cAdvisor performs housekeeping.
