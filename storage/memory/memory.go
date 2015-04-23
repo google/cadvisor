@@ -39,14 +39,19 @@ func (self *containerStorage) AddStats(stats *info.ContainerStats) error {
 	defer self.lock.Unlock()
 
 	// Add the stat to storage.
-	self.recentStats.Add(stats)
+	self.recentStats.Add(stats.Timestamp, stats)
 	return nil
 }
 
 func (self *containerStorage) RecentStats(start, end time.Time, maxStats int) ([]*info.ContainerStats, error) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
-	return self.recentStats.InTimeRange(start, end, maxStats), nil
+	result := self.recentStats.InTimeRange(start, end, maxStats)
+	converted := make([]*info.ContainerStats, len(result))
+	for i, el := range result {
+		converted[i] = el.(*info.ContainerStats)
+	}
+	return converted, nil
 }
 
 func newContainerStore(ref info.ContainerReference, maxAge time.Duration) *containerStorage {
