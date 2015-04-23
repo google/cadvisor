@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package memory
+package utils
 
 import (
 	"sort"
@@ -22,21 +22,21 @@ import (
 )
 
 // A time-based buffer for ContainerStats. Holds information for a specific time period.
-type StatsBuffer struct {
+type TimedStore struct {
 	buffer []*info.ContainerStats
 	age    time.Duration
 }
 
-// Returns a new thread-compatible StatsBuffer.
-func NewStatsBuffer(age time.Duration) *StatsBuffer {
-	return &StatsBuffer{
+// Returns a new thread-compatible TimedStore.
+func NewTimedStore(age time.Duration) *TimedStore {
+	return &TimedStore{
 		buffer: make([]*info.ContainerStats, 0),
 		age:    age,
 	}
 }
 
 // Adds an element to the start of the buffer (removing one from the end if necessary).
-func (self *StatsBuffer) Add(item *info.ContainerStats) {
+func (self *TimedStore) Add(item *info.ContainerStats) {
 	// Remove any elements before the eviction time.
 	evictTime := item.Timestamp.Add(-self.age)
 	index := sort.Search(len(self.buffer), func(index int) bool {
@@ -53,7 +53,7 @@ func (self *StatsBuffer) Add(item *info.ContainerStats) {
 // Returns up to maxResult elements in the specified time period (inclusive).
 // Results are from first to last. maxResults of -1 means no limit. When first
 // and last are specified, maxResults is ignored.
-func (self *StatsBuffer) InTimeRange(start, end time.Time, maxResults int) []*info.ContainerStats {
+func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []*info.ContainerStats {
 	// No stats, return empty.
 	if len(self.buffer) == 0 {
 		return []*info.ContainerStats{}
@@ -117,10 +117,10 @@ func (self *StatsBuffer) InTimeRange(start, end time.Time, maxResults int) []*in
 }
 
 // Gets the element at the specified index. Note that elements are output in LIFO order.
-func (self *StatsBuffer) Get(index int) *info.ContainerStats {
+func (self *TimedStore) Get(index int) *info.ContainerStats {
 	return self.buffer[len(self.buffer)-index-1]
 }
 
-func (self *StatsBuffer) Size() int {
+func (self *TimedStore) Size() int {
 	return len(self.buffer)
 }

@@ -22,13 +22,14 @@ import (
 	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/utils"
 )
 
 // TODO(vmarmol): See about refactoring this class, we have an unecessary redirection of containerStorage and InMemoryStorage.
 // containerStorage is used to store per-container information
 type containerStorage struct {
 	ref         info.ContainerReference
-	recentStats *StatsBuffer
+	recentStats *utils.TimedStore
 	maxAge      time.Duration
 	lock        sync.RWMutex
 }
@@ -51,7 +52,7 @@ func (self *containerStorage) RecentStats(start, end time.Time, maxStats int) ([
 func newContainerStore(ref info.ContainerReference, maxAge time.Duration) *containerStorage {
 	return &containerStorage{
 		ref:         ref,
-		recentStats: NewStatsBuffer(maxAge),
+		recentStats: utils.NewTimedStore(maxAge),
 		maxAge:      maxAge,
 	}
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package memory
+package utils
 
 import (
 	"strconv"
@@ -38,13 +38,13 @@ func createStats(id int32) *info.ContainerStats {
 	}
 }
 
-func expectSize(t *testing.T, sb *StatsBuffer, expectedSize int) {
+func expectSize(t *testing.T, sb *TimedStore, expectedSize int) {
 	if sb.Size() != expectedSize {
 		t.Errorf("Expected size %v, got %v", expectedSize, sb.Size())
 	}
 }
 
-func expectAllElements(t *testing.T, sb *StatsBuffer, expected []int32) {
+func expectAllElements(t *testing.T, sb *TimedStore, expected []int32) {
 	size := sb.Size()
 	els := make([]*info.ContainerStats, size)
 	for i := 0; i < size; i++ {
@@ -81,7 +81,7 @@ func expectElement(t *testing.T, stat *info.ContainerStats, expected int32) {
 }
 
 func TestAdd(t *testing.T) {
-	sb := NewStatsBuffer(5 * time.Second)
+	sb := NewTimedStore(5 * time.Second)
 
 	// Add 1.
 	sb.Add(createStats(0))
@@ -110,7 +110,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	sb := NewStatsBuffer(5 * time.Second)
+	sb := NewTimedStore(5 * time.Second)
 	sb.Add(createStats(1))
 	sb.Add(createStats(2))
 	sb.Add(createStats(3))
@@ -122,7 +122,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestInTimeRange(t *testing.T) {
-	sb := NewStatsBuffer(5 * time.Second)
+	sb := NewTimedStore(5 * time.Second)
 	assert := assert.New(t)
 
 	var empty time.Time
@@ -199,7 +199,7 @@ func TestInTimeRange(t *testing.T) {
 }
 
 func TestInTimeRangeWithLimit(t *testing.T) {
-	sb := NewStatsBuffer(5 * time.Second)
+	sb := NewTimedStore(5 * time.Second)
 	sb.Add(createStats(1))
 	sb.Add(createStats(2))
 	sb.Add(createStats(3))
