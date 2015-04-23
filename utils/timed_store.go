@@ -17,46 +17,52 @@ package utils
 import (
 	"sort"
 	"time"
-
-	info "github.com/google/cadvisor/info/v1"
 )
 
 // A time-based buffer for ContainerStats. Holds information for a specific time period.
 type TimedStore struct {
-	buffer []*info.ContainerStats
+	buffer []timedStoreData
 	age    time.Duration
+}
+
+type timedStoreData struct {
+	timestamp time.Time
+	data      interface{}
 }
 
 // Returns a new thread-compatible TimedStore.
 func NewTimedStore(age time.Duration) *TimedStore {
 	return &TimedStore{
-		buffer: make([]*info.ContainerStats, 0),
+		buffer: make([]timedStoreData, 0),
 		age:    age,
 	}
 }
 
 // Adds an element to the start of the buffer (removing one from the end if necessary).
-func (self *TimedStore) Add(item *info.ContainerStats) {
+func (self *TimedStore) Add(timestamp time.Time, item interface{}) {
 	// Remove any elements before the eviction time.
-	evictTime := item.Timestamp.Add(-self.age)
+	evictTime := timestamp.Add(-self.age)
 	index := sort.Search(len(self.buffer), func(index int) bool {
-		return self.buffer[index].Timestamp.After(evictTime)
+		return self.buffer[index].timestamp.After(evictTime)
 	})
 	if index < len(self.buffer) {
 		self.buffer = self.buffer[index:]
 	}
 
-	copied := *item
-	self.buffer = append(self.buffer, &copied)
+	copied := item
+	self.buffer = append(self.buffer, timedStoreData{
+		timestamp: timestamp,
+		data:      copied,
+	})
 }
 
 // Returns up to maxResult elements in the specified time period (inclusive).
 // Results are from first to last. maxResults of -1 means no limit. When first
 // and last are specified, maxResults is ignored.
-func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []*info.ContainerStats {
+func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []interface{} {
 	// No stats, return empty.
 	if len(self.buffer) == 0 {
-		return []*info.ContainerStats{}
+		return []interface{}{}
 	}
 
 	// Return all results in a time range if specified.
@@ -77,11 +83,11 @@ func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []*inf
 		// before that element
 		startIndex = sort.Search(len(self.buffer), func(index int) bool {
 			// buffer[index] < start
-			return self.Get(index).Timestamp.Before(start)
+			return self.getData(index).timestamp.Before(start)
 		}) - 1
 		// Check if start is after all the data we have.
 		if startIndex < 0 {
-			return []*info.ContainerStats{}
+			return []interface{}{}
 		}
 	}
 
@@ -93,11 +99,11 @@ func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []*inf
 		// End is the first index smaller than or equal to it (so, not larger).
 		endIndex = sort.Search(len(self.buffer), func(index int) bool {
 			// buffer[index] <= t -> !(buffer[index] > t)
-			return !self.Get(index).Timestamp.After(end)
+			return !self.getData(index).timestamp.After(end)
 		})
 		// Check if end is before all the data we have.
 		if endIndex == len(self.buffer) {
-			return []*info.ContainerStats{}
+			return []interface{}{}
 		}
 	}
 
@@ -109,7 +115,7 @@ func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []*inf
 	}
 
 	// Return in sorted timestamp order so from the "back" to "front".
-	result := make([]*info.ContainerStats, numResults)
+	result := make([]interface{}, numResults)
 	for i := 0; i < numResults; i++ {
 		result[i] = self.Get(startIndex - i)
 	}
@@ -117,7 +123,12 @@ func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []*inf
 }
 
 // Gets the element at the specified index. Note that elements are output in LIFO order.
-func (self *TimedStore) Get(index int) *info.ContainerStats {
+func (self *TimedStore) Get(index int) interface{} {
+	return self.getData(index).data
+}
+
+// Gets the data at the specified index. Note that elements are output in LIFO order.
+func (self *TimedStore) getData(index int) timedStoreData {
 	return self.buffer[len(self.buffer)-index-1]
 }
 
