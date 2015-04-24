@@ -133,7 +133,8 @@ func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, err
 	newManager.versionInfo = *versionInfo
 	glog.Infof("Version: %+v", newManager.versionInfo)
 
-	newManager.eventHandler = events.NewEventManager()
+	// TODO(vmarmol): Make configurable.
+	newManager.eventHandler = events.NewEventManager(24 * time.Hour)
 
 	// Register Docker container factory.
 	err = docker.Register(newManager, fsInfo)
