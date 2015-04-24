@@ -16,7 +16,7 @@ package oomparser
 
 import (
 	"bufio"
-	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -187,17 +187,20 @@ func trySystemd() (*OomParser, error) {
 
 }
 
+// List of possible kernel log files. These are prioritized in order so that
+// we will use the first one that is available.
+var kernelLogFiles = []string{"/var/log/kern.log", "/var/log/messages", "/var/log/syslog"}
+
 // looks for system files that contain kernel messages and if one is found, sets
 // the systemFile attribute of the OomParser object
 func getSystemFile() (string, error) {
-	const varLogMessages = "/var/log/messages"
-	const varLogSyslog = "/var/log/syslog"
-	if utils.FileExists(varLogMessages) {
-		return varLogMessages, nil
-	} else if utils.FileExists(varLogSyslog) {
-		return varLogSyslog, nil
+	for _, logFile := range kernelLogFiles {
+		if utils.FileExists(logFile) {
+			glog.Infof("OOM parser using kernel log file: %q", logFile)
+			return logFile, nil
+		}
 	}
-	return "", errors.New("neither " + varLogSyslog + " nor " + varLogMessages + " exists from which to read kernel errors")
+	return "", fmt.Errorf("unable to find any kernel log file available from our set: %v", kernelLogFiles)
 }
 
 // initializes an OomParser object and calls getSystemFile to set the systemFile
