@@ -216,6 +216,9 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 	// Build the links for the subcontainers.
 	subcontainerLinks := make([]link, 0, len(cont.Subcontainers))
 	for _, sub := range cont.Subcontainers {
+		if !m.Exists(sub.Name) {
+			continue
+		}
 		subcontainerLinks = append(subcontainerLinks, link{
 			Text: getContainerDisplayName(sub),
 			Link: path.Join(ContainersPage, sub.Name),

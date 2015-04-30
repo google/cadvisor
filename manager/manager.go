@@ -73,6 +73,9 @@ type Manager interface {
 	// Get info for all requested containers based on the request options.
 	GetRequestedContainersInfo(containerName string, options v2.RequestOptions) (map[string]*info.ContainerInfo, error)
 
+	// Returns true if the named container exists.
+	Exists(containerName string) bool
+
 	// Get information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
 
@@ -619,11 +622,31 @@ func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
 	return &m.versionInfo, nil
 }
 
+func (m *manager) Exists(containerName string) bool {
+	m.containersLock.Lock()
+	defer m.containersLock.Unlock()
+
+	namespacedName := namespacedContainerName{
+		Name: containerName,
+	}
+
+	_, ok := m.containers[namespacedName]
+	if ok {
+		return true
+	}
+	return false
+}
+
 // Create a container.
 func (m *manager) createContainer(containerName string) error {
-	handler, err := container.NewContainerHandler(containerName)
+	handler, accept, err := container.NewContainerHandler(containerName)
 	if err != nil {
 		return err
+	}
+	if !accept {
+		// ignoring this container.
+		glog.V(4).Infof("ignoring container %q", containerName)
+		return nil
 	}
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
 	cont, err := newContainerData(containerName, m.memoryStorage, handler, m.loadReader, logUsage)
