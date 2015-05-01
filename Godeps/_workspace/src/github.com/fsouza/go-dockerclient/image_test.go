@@ -1,4 +1,4 @@
-// Copyright 2014 go-dockerclient authors. All rights reserved.
+// Copyright 2015 go-dockerclient authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -19,7 +19,7 @@ import (
 
 func newTestClient(rt *FakeRoundTripper) Client {
 	endpoint := "http://localhost:4243"
-	u, _ := parseEndpoint("http://localhost:4243")
+	u, _ := parseEndpoint("http://localhost:4243", false)
 	client := Client{
 		HTTPClient:             &http.Client{Transport: rt},
 		endpoint:               endpoint,
@@ -88,7 +88,7 @@ func TestListImages(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
-	images, err := client.ListImages(false)
+	images, err := client.ListImages(ListImagesOptions{})
 	if err != nil {
 		t.Error(err)
 	}
@@ -100,25 +100,42 @@ func TestListImages(t *testing.T) {
 func TestListImagesParameters(t *testing.T) {
 	fakeRT := &FakeRoundTripper{message: "null", status: http.StatusOK}
 	client := newTestClient(fakeRT)
-	_, err := client.ListImages(false)
+	_, err := client.ListImages(ListImagesOptions{All: false})
 	if err != nil {
 		t.Fatal(err)
 	}
 	req := fakeRT.requests[0]
 	if req.Method != "GET" {
-		t.Errorf("ListImages(false: Wrong HTTP method. Want GET. Got %s.", req.Method)
+		t.Errorf("ListImages({All: false}: Wrong HTTP method. Want GET. Got %s.", req.Method)
 	}
-	if all := req.URL.Query().Get("all"); all != "0" {
-		t.Errorf("ListImages(false): Wrong parameter. Want all=0. Got all=%s", all)
+	if all := req.URL.Query().Get("all"); all != "0" && all != "" {
+		t.Errorf("ListImages({All: false}): Wrong parameter. Want all=0 or not present at all. Got all=%s", all)
 	}
 	fakeRT.Reset()
-	_, err = client.ListImages(true)
+	_, err = client.ListImages(ListImagesOptions{All: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	req = fakeRT.requests[0]
 	if all := req.URL.Query().Get("all"); all != "1" {
-		t.Errorf("ListImages(true): Wrong parameter. Want all=1. Got all=%s", all)
+		t.Errorf("ListImages({All: true}): Wrong parameter. Want all=1. Got all=%s", all)
+	}
+	fakeRT.Reset()
+	_, err = client.ListImages(ListImagesOptions{Filters: map[string][]string{
+		"dangling": {"true"},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = fakeRT.requests[0]
+	body := req.URL.Query().Get("filters")
+	var filters map[string][]string
+	err = json.Unmarshal([]byte(body), &filters)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(filters["dangling"]) != 1 || filters["dangling"][0] != "true" {
+		t.Errorf("ListImages(dangling=[true]): Wrong filter map. Want dangling=[true], got dangling=%v", filters["dangling"])
 	}
 }
 
@@ -188,6 +205,29 @@ func TestRemoveImageNotFound(t *testing.T) {
 	err := client.RemoveImage("test:")
 	if err != ErrNoSuchImage {
 		t.Errorf("RemoveImage: wrong error. Want %#v. Got %#v.", ErrNoSuchImage, err)
+	}
+}
+
+func TestRemoveImageExtended(t *testing.T) {
+	name := "test"
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusNoContent}
+	client := newTestClient(fakeRT)
+	err := client.RemoveImageExtended(name, RemoveImageOptions{Force: true, NoPrune: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := fakeRT.requests[0]
+	expectedMethod := "DELETE"
+	if req.Method != expectedMethod {
+		t.Errorf("RemoveImage(%q): Wrong HTTP method. Want %s. Got %s.", name, expectedMethod, req.Method)
+	}
+	u, _ := url.Parse(client.getURL("/images/" + name))
+	if req.URL.Path != u.Path {
+		t.Errorf("RemoveImage(%q): Wrong request path. Want %q. Got %q.", name, u.Path, req.URL.Path)
+	}
+	expectedQuery := "force=1&noprune=1"
+	if query := req.URL.Query().Encode(); query != expectedQuery {
+		t.Errorf("PushImage: Wrong query string. Want %q. Got %q.", expectedQuery, query)
 	}
 }
 
@@ -263,6 +303,35 @@ func TestPushImage(t *testing.T) {
 	if strings.TrimSpace(string(auth)) != "{}" {
 		t.Errorf("PushImage: wrong body. Want %q. Got %q.",
 			base64.URLEncoding.EncodeToString([]byte("{}")), req.Header.Get("X-Registry-Auth"))
+	}
+}
+
+func TestPushImageWithRawJSON(t *testing.T) {
+	body := `
+	{"status":"Pushing..."}
+	{"status":"Pushing", "progress":"1/? (n/a)", "progressDetail":{"current":1}}}
+	{"status":"Image successfully pushed"}
+	`
+	fakeRT := &FakeRoundTripper{
+		message: body,
+		status:  http.StatusOK,
+		header: map[string]string{
+			"Content-Type": "application/json",
+		},
+	}
+	client := newTestClient(fakeRT)
+	var buf bytes.Buffer
+
+	err := client.PushImage(PushImageOptions{
+		Name:          "test",
+		OutputStream:  &buf,
+		RawJSONStream: true,
+	}, AuthConfiguration{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if buf.String() != body {
+		t.Errorf("PushImage: Wrong raw output. Want %q. Got %q.", body, buf.String())
 	}
 }
 
@@ -788,5 +857,79 @@ func TestExportImage(t *testing.T) {
 	expectedPath := "/images/testimage/get"
 	if req.URL.Path != expectedPath {
 		t.Errorf("ExportIMage: wrong path. Expected %q. Got %q.", expectedPath, req.URL.Path)
+	}
+}
+
+func TestExportImages(t *testing.T) {
+	var buf bytes.Buffer
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := ExportImagesOptions{Names: []string{"testimage1", "testimage2:latest"}, OutputStream: &buf}
+	err := client.ExportImages(opts)
+	if nil != err {
+		t.Error(err)
+	}
+	req := fakeRT.requests[0]
+	if req.Method != "GET" {
+		t.Errorf("ExportImage: wrong method. Expected %q. Got %q.", "GET", req.Method)
+	}
+	expected := "http://localhost:4243/images/get?names=testimage1&names=testimage2%3Alatest"
+	got := req.URL.String()
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("ExportIMage: wrong path. Expected %q. Got %q.", expected, got)
+	}
+}
+
+func TestExportImagesNoNames(t *testing.T) {
+	var buf bytes.Buffer
+	fakeRT := &FakeRoundTripper{message: "", status: http.StatusOK}
+	client := newTestClient(fakeRT)
+	opts := ExportImagesOptions{Names: []string{}, OutputStream: &buf}
+	err := client.ExportImages(opts)
+	if err == nil {
+		t.Error("Expected an error")
+	}
+	if err != ErrMustSpecifyNames {
+		t.Error(err)
+	}
+}
+
+func TestSearchImages(t *testing.T) {
+	body := `[
+	{
+		"description":"A container with Cassandra 2.0.3",
+		"is_official":true,
+		"is_automated":true,
+		"name":"poklet/cassandra",
+		"star_count":17
+	},
+	{
+		"description":"A container with Cassandra 2.0.3",
+		"is_official":true,
+		"is_automated":false,
+		"name":"poklet/cassandra",
+		"star_count":17
+	}
+	,
+	{
+		"description":"A container with Cassandra 2.0.3",
+		"is_official":false,
+		"is_automated":true,
+		"name":"poklet/cassandra",
+		"star_count":17
+	}
+]`
+	var expected []APIImageSearch
+	err := json.Unmarshal([]byte(body), &expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := newTestClient(&FakeRoundTripper{message: body, status: http.StatusOK})
+	result, err := client.SearchImages("cassandra")
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("SearchImages: Wrong return value. Want %#v. Got %#v.", expected, result)
 	}
 }

@@ -56,12 +56,47 @@
 			"Rev": "97e243d21a8e232e9d8af38ba2366dfcfceebeba"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/archive",
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/fileutils",
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/ioutils",
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/mount",
 			"Comment": "v1.4.1-1379-g8e107a9",
 			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
 		},
 		{
+			"ImportPath": "github.com/docker/docker/pkg/pools",
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/promise",
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/system",
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/units",
+			"Comment": "v1.4.1-1379-g8e107a9",
+			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/vendor/src/code.google.com/p/go/src/pkg/archive/tar",
 			"Comment": "v1.4.1-1379-g8e107a9",
 			"Rev": "8e107a93210c54f22ec1354d969c771b1abfbe05"
 		},
@@ -72,8 +107,8 @@
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Comment": "0.2.1-251-g2e21eae",
-			"Rev": "2e21eaef5e7d46f002e259eb7cde39ed3680a7b4"
+			"Comment": "0.2.1-461-g09334c5",
+			"Rev": "09334c56c63bab2cd6c4ccab924d89e2419a361f"
 		},
 		{
 			"ImportPath": "github.com/godbus/dbus",
@@ -156,18 +191,6 @@
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
-			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
-		},
-		{
-			"ImportPath": "golang.org/x/oauth2/internal",
-			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
-		},
-		{
-			"ImportPath": "golang.org/x/oauth2/jwt",
-			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
-		},
-		{
-			"ImportPath": "golang.org/x/oauth2/jws",
 			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
 		},
 		{
