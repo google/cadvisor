@@ -100,8 +100,10 @@ type events struct {
 	watcherLock sync.RWMutex
 	// last allocated watch id.
 	lastId int
-	// Max duration for which to keep events.
+	// Max duration for which to keep events (per event type).
 	maxAge time.Duration
+	// Max number of events to keep (per event type).
+	maxNumEvents int
 }
 
 // initialized by a call to WatchEvents(), a watch struct will then be added
@@ -128,12 +130,14 @@ func NewEventChannel(watchId int) *EventChannel {
 }
 
 // returns a pointer to an initialized Events object.
-// eventMaxAge is the max duration for which to keep events.
-func NewEventManager(eventMaxAge time.Duration) *events {
+// eventMaxAge is the max duration for which to keep events per type.
+// maxNumEvents is the max number of events to keep per type (-1 for no limit).
+func NewEventManager(eventMaxAge time.Duration, maxNumEvents int) *events {
 	return &events{
-		eventStore: make(map[info.EventType]*utils.TimedStore, 0),
-		watchers:   make(map[int]*watch),
-		maxAge:     eventMaxAge,
+		eventStore:   make(map[info.EventType]*utils.TimedStore, 0),
+		watchers:     make(map[int]*watch),
+		maxAge:       eventMaxAge,
+		maxNumEvents: maxNumEvents,
 	}
 }
 
@@ -262,7 +266,7 @@ func (self *events) updateEventStore(e *info.Event) {
 	self.eventsLock.Lock()
 	defer self.eventsLock.Unlock()
 	if _, ok := self.eventStore[e.EventType]; !ok {
-		self.eventStore[e.EventType] = utils.NewTimedStore(self.maxAge, -1)
+		self.eventStore[e.EventType] = utils.NewTimedStore(self.maxAge, self.maxNumEvents)
 	}
 	self.eventStore[e.EventType].Add(e.Timestamp, e)
 }
