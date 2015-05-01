@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -50,13 +51,16 @@ type containerData struct {
 	handler              container.ContainerHandler
 	info                 containerInfo
 	memoryStorage        *memory.InMemoryStorage
-	lock                 sync.Mutex
+	lock                 sync.RWMutex
 	loadReader           cpuload.CpuLoadReader
 	summaryReader        *summary.StatsSummary
 	loadAvg              float64 // smoothed load average seen so far.
 	housekeepingInterval time.Duration
 	lastUpdatedTime      time.Time
 	lastErrorTime        time.Time
+	lastCpuLoadGrab      time.Time
+	cgroupPath           string
+	contSubcontainers    map[namespacedContainerName]*containerData
 
 	// Whether to log the usage of this container when it is updated.
 	logUsage bool
@@ -270,6 +274,50 @@ func (c *containerData) updateLoad(newLoad uint64) {
 	}
 }
 
+func (c *containerData) getContainerDataLoadStats() (info.LoadStats, error) {
+	c.lock.RLock()
+	defer c.lock.RUnlock()
+	var loadstats info.LoadStats
+	if time.Since(c.lastCpuLoadGrab) > time.Second {
+		loadstats, err := c.loadReader.GetCpuLoad(c.info.Name, c.cgroupPath)
+		if err != nil {
+			glog.V(3).Infof("got error trying to read cpuload for container %v: %v", c.info.Name, err)
+		}
+		c.lastCpuLoadGrab = time.Now()
+		return loadstats, err
+	} else {
+		var uninitializedTime time.Time
+		recentStats, err := c.memoryStorage.RecentStats(c.info.Name, uninitializedTime, uninitializedTime, 1)
+		if err != nil || len(recentStats) < 1 {
+			glog.V(3).Infof("Failed to get recent stats for %v. len(recentStats) = %v and err is %v", c.info.Name, len(recentStats), err)
+			return loadstats, err
+		}
+		glog.V(3).Infof("container %v: recentStats[0].TaskStats = %+v", c.info.Name, recentStats[0].TaskStats)
+		return recentStats[0].TaskStats, err
+	}
+}
+
+func (c *containerData) updateSubcontainerStats(stats *info.ContainerStats) (*info.ContainerStats, error) {
+	for _, sub := range c.contSubcontainers {
+		glog.V(3).Infof("calling updateSubcontainerStats for container %v and sub %v", c.info.Name, sub.info.Name)
+		stats, err := sub.updateSubcontainerStats(stats)
+		if err != nil {
+			glog.Errorf("trying to updateSubcontainerStats on sub %v of container %v got error %v", sub.info.Name, c.info.Name, err)
+			continue
+		}
+		loadStats, err := sub.getContainerDataLoadStats()
+		if err != nil {
+			glog.Errorf("failed to get load stat for %q - path %q, error %s", c.info.Name, c.cgroupPath, err)
+			continue
+		}
+		stats.UpdateTaskStats(loadStats)
+		c.updateLoad(loadStats.NrRunning)
+		// convert to 'milliLoad' to avoid floats and preserve precision.
+		stats.Cpu.LoadAverage = int32(c.loadAvg * 1000)
+	}
+	return stats, nil
+}
+
 func (c *containerData) updateStats() error {
 	stats, statsErr := c.handler.GetStats()
 	if statsErr != nil {
@@ -285,18 +333,26 @@ func (c *containerData) updateStats() error {
 		return statsErr
 	}
 	if c.loadReader != nil {
-		// TODO(vmarmol): Cache this path.
-		path, err := c.handler.GetCgroupPath("cpu")
-		if err == nil {
-			loadStats, err := c.loadReader.GetCpuLoad(c.info.Name, path)
-			if err != nil {
-				return fmt.Errorf("failed to get load stat for %q - path %q, error %s", c.info.Name, path, err)
-			}
-			stats.TaskStats = loadStats
-			c.updateLoad(loadStats.NrRunning)
-			// convert to 'milliLoad' to avoid floats and preserve precision.
-			stats.Cpu.LoadAverage = int32(c.loadAvg * 1000)
+		preloadavg := c.loadAvg
+		// calls GetCpuLoad or gets most recent stats
+		loadStats, err := c.getContainerDataLoadStats()
+		if err != nil {
+			return fmt.Errorf("failed to get load stat for %q - path %q, error %s", c.info.Name, c.cgroupPath, err)
 		}
+		stats.TaskStats = loadStats
+		c.updateLoad(loadStats.NrRunning)
+		// convert to 'milliLoad' to avoid floats and preserve precision.
+		stats.Cpu.LoadAverage = int32(c.loadAvg * 1000)
+		midloadavg := c.loadAvg
+
+		stats, err = c.updateSubcontainerStats(stats)
+		if err != nil {
+			glog.Errorf("failed to updateStats getting subcontainer info with error %v", err)
+			return fmt.Errorf("failed to get subcontainer load stat for %q - path %q, error %s", c.info.Name, c.cgroupPath, err)
+		}
+		postloadavg := c.loadAvg
+		glog.V(2).Infof("container: %+v; loadavg pre: %v, mid: %+v, post: %v\n", c.info.Name, preloadavg, midloadavg, postloadavg)
+
 	}
 	if c.summaryReader != nil {
 		err := c.summaryReader.AddSample(*stats)
@@ -335,4 +391,52 @@ func (c *containerData) updateSubcontainers() error {
 	defer c.lock.Unlock()
 	c.info.Subcontainers = subcontainers
 	return nil
+}
+
+func isImmediateSubcontainer(potentialParent string, potentialChild string) bool {
+	// if they're the same container return false
+	potentialParent = strings.Trim(potentialParent, "/ ")
+	potentialChild = strings.Trim(potentialChild, "/ ")
+	if potentialParent == potentialChild {
+		// glog.Infof("parent: %v, child: %v, %v", potentialParent, potentialChild, false)
+		return false
+	}
+	// if parent is not prefix of child it cannot be parent
+	if !strings.HasPrefix(potentialChild, potentialParent) {
+		// glog.Infof("parent: %v, child: %v, %v", potentialParent, potentialChild, false)
+		return false
+	}
+	// if the subcontainer is more than one layer down it's not a direct subcontainer
+	extraSubcontainers := strings.TrimLeft(potentialChild, potentialParent)
+	if len(strings.Split(strings.Trim(extraSubcontainers, "/ "), "/")) > 1 {
+		// glog.Infof("parent: %v, child: %v, %v", potentialParent, potentialChild, false)
+		return false
+	}
+	// glog.Infof("parent: %v, child: %v, %v", potentialParent, potentialChild, true)
+	return true
+}
+
+func (m *manager) getSubcontainerContainerData(containerName string) map[namespacedContainerName]*containerData {
+	subcontainers := make(map[namespacedContainerName]*containerData)
+	for namespacedNameKey, containerDataValue := range m.containers {
+		if isImmediateSubcontainer(containerName, namespacedNameKey.Name) {
+			subcontainers[namespacedNameKey] = containerDataValue
+		}
+	}
+	return subcontainers
+}
+
+func (m *manager) addAsSubcontainer(cont *containerData, currentNamespacedName namespacedContainerName) {
+	containerName := cont.info.Name
+	for namespacedNameKey, containerDataValue := range m.containers {
+		if isImmediateSubcontainer(namespacedNameKey.Name, containerName) {
+			containerDataValue.contSubcontainers[currentNamespacedName] = cont
+		}
+	}
+}
+
+func (m *manager) removeSubcontainer(cont *containerData, currentNamespacedName namespacedContainerName) {
+	for namespacedNameKey, containerDataValue := range m.containers {
+		delete(containerDataValue.contSubcontainers, namespacedNameKey)
+	}
 }
