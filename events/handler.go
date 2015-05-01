@@ -100,10 +100,8 @@ type events struct {
 	watcherLock sync.RWMutex
 	// last allocated watch id.
 	lastId int
-	// Max duration for which to keep events (per event type).
-	maxAge time.Duration
-	// Max number of events to keep (per event type).
-	maxNumEvents int
+	// Event storage policy.
+	storagePolicy StoragePolicy
 }
 
 // initialized by a call to WatchEvents(), a watch struct will then be added
@@ -129,15 +127,34 @@ func NewEventChannel(watchId int) *EventChannel {
 	}
 }
 
+// Policy specifying how many events to store.
+// MaxAge is the max duration for which to keep events.
+// MaxNumEvents is the max number of events to keep (-1 for no limit).
+type StoragePolicy struct {
+	// Defaults limites, used if a per-event limit is not set.
+	DefaultMaxAge       time.Duration
+	DefaultMaxNumEvents int
+
+	// Per-event type limits.
+	PerTypeMaxAge       map[info.EventType]time.Duration
+	PerTypeMaxNumEvents map[info.EventType]int
+}
+
+func DefaultStoragePolicy() StoragePolicy {
+	return StoragePolicy{
+		DefaultMaxAge:       24 * time.Hour,
+		DefaultMaxNumEvents: 100000,
+		PerTypeMaxAge:       make(map[info.EventType]time.Duration),
+		PerTypeMaxNumEvents: make(map[info.EventType]int),
+	}
+}
+
 // returns a pointer to an initialized Events object.
-// eventMaxAge is the max duration for which to keep events per type.
-// maxNumEvents is the max number of events to keep per type (-1 for no limit).
-func NewEventManager(eventMaxAge time.Duration, maxNumEvents int) *events {
+func NewEventManager(storagePolicy StoragePolicy) *events {
 	return &events{
-		eventStore:   make(map[info.EventType]*utils.TimedStore, 0),
-		watchers:     make(map[int]*watch),
-		maxAge:       eventMaxAge,
-		maxNumEvents: maxNumEvents,
+		eventStore:    make(map[info.EventType]*utils.TimedStore, 0),
+		watchers:      make(map[int]*watch),
+		storagePolicy: storagePolicy,
 	}
 }
 
@@ -266,7 +283,16 @@ func (self *events) updateEventStore(e *info.Event) {
 	self.eventsLock.Lock()
 	defer self.eventsLock.Unlock()
 	if _, ok := self.eventStore[e.EventType]; !ok {
-		self.eventStore[e.EventType] = utils.NewTimedStore(self.maxAge, self.maxNumEvents)
+		maxAge := self.storagePolicy.DefaultMaxAge
+		maxNumEvents := self.storagePolicy.DefaultMaxNumEvents
+		if age, ok := self.storagePolicy.PerTypeMaxAge[e.EventType]; ok {
+			maxAge = age
+		}
+		if numEvents, ok := self.storagePolicy.PerTypeMaxNumEvents[e.EventType]; ok {
+			maxNumEvents = numEvents
+		}
+
+		self.eventStore[e.EventType] = utils.NewTimedStore(maxAge, maxNumEvents)
 	}
 	self.eventStore[e.EventType].Add(e.Timestamp, e)
 }
