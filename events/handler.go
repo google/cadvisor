@@ -262,7 +262,7 @@ func (self *events) updateEventStore(e *info.Event) {
 	self.eventsLock.Lock()
 	defer self.eventsLock.Unlock()
 	if _, ok := self.eventStore[e.EventType]; !ok {
-		self.eventStore[e.EventType] = utils.NewTimedStore(self.maxAge)
+		self.eventStore[e.EventType] = utils.NewTimedStore(self.maxAge, -1)
 	}
 	self.eventStore[e.EventType].Add(e.Timestamp, e)
 }
