@@ -47,7 +47,7 @@ func initializeScenario(t *testing.T) (*events, *Request, *info.Event, *info.Eve
 	fakeEvent := makeEvent(createOldTime(t), "/")
 	fakeEvent2 := makeEvent(time.Now(), "/")
 
-	return NewEventManager(time.Hour), NewRequest(), fakeEvent, fakeEvent2
+	return NewEventManager(time.Hour, -1), NewRequest(), fakeEvent, fakeEvent2
 }
 
 func checkNumberOfEvents(t *testing.T, numEventsExpected int, numEventsReceived int) {
