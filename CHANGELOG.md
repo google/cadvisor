@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.0 (2015-05-01)
+- Added `--docker_only` to limit monitoring to only Docker containers.
+- Added support for Docker labels.
+- Added limit for events storage.
+- Fixes for OOM event monitoring.
+- Changed event type to a string in the API.
+- Misc fixes.
+
 ## 0.12.0 (2015-04-15)
 - Added support for Docker 1.6.
 - Split OOM event into OOM kill and OOM.
