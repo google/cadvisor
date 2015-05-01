@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -42,6 +43,8 @@ import (
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
 var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log the usage of the cAdvisor container")
 var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
+var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h", "Max length of time for which to store events (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is a duration. Default is applied to all non-specified event types")
+var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
 
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
@@ -136,8 +139,7 @@ func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, err
 	newManager.versionInfo = *versionInfo
 	glog.Infof("Version: %+v", newManager.versionInfo)
 
-	// TODO(vmarmol): Make configurable.
-	newManager.eventHandler = events.NewEventManager(24*time.Hour, 100000)
+	newManager.eventHandler = events.NewEventManager(parseEventsStoragePolicy())
 
 	// Register Docker container factory.
 	err = docker.Register(newManager, fsInfo)
@@ -948,4 +950,51 @@ func (self *manager) GetPastEvents(request *events.Request) ([]*info.Event, erro
 // called by the api when a client is no longer listening to the channel
 func (self *manager) CloseEventChannel(watch_id int) {
 	self.eventHandler.StopWatch(watch_id)
+}
+
+// Parses the events StoragePolicy from the flags.
+func parseEventsStoragePolicy() events.StoragePolicy {
+	policy := events.DefaultStoragePolicy()
+
+	// Parse max age.
+	parts := strings.Split(*eventStorageAgeLimit, ",")
+	for _, part := range parts {
+		items := strings.Split(part, "=")
+		if len(items) != 2 {
+			glog.Warningf("Unknown event storage policy %q when parsing max age", part)
+			continue
+		}
+		dur, err := time.ParseDuration(items[1])
+		if err != nil {
+			glog.Warningf("Unable to parse event max age duration %q: %v", items[1], err)
+			continue
+		}
+		if items[0] == "default" {
+			policy.DefaultMaxAge = dur
+			continue
+		}
+		policy.PerTypeMaxAge[info.EventType(items[0])] = dur
+	}
+
+	// Parse max number.
+	parts = strings.Split(*eventStorageEventLimit, ",")
+	for _, part := range parts {
+		items := strings.Split(part, "=")
+		if len(items) != 2 {
+			glog.Warningf("Unknown event storage policy %q when parsing max event limit", part)
+			continue
+		}
+		val, err := strconv.Atoi(items[1])
+		if err != nil {
+			glog.Warningf("Unable to parse integer from %q: %v", items[1], err)
+			continue
+		}
+		if items[0] == "default" {
+			policy.DefaultMaxNumEvents = val
+			continue
+		}
+		policy.PerTypeMaxNumEvents[info.EventType(items[0])] = val
+	}
+
+	return policy
 }
