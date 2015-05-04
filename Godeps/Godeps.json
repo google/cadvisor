@@ -11,11 +11,6 @@
 			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
 		},
 		{
-			"ImportPath": "code.google.com/p/go.exp/inotify",
-			"Comment": "null-75",
-			"Rev": "bd8df7009305d6ada223ea3c95b94c0f38bfa119"
-		},
-		{
 			"ImportPath": "code.google.com/p/gomock/gomock",
 			"Rev": "5d0b59c9f277f888d2c70b00908236a30ab90f45"
 		},
@@ -184,6 +179,10 @@
 		{
 			"ImportPath": "github.com/syndtr/gocapability/capability",
 			"Rev": "3c85049eaeb429febe7788d9c7aac42322a377fe"
+		},
+		{
+			"ImportPath": "golang.org/x/exp/inotify",
+			"Rev": "d00e13ec443927751b2bd49e97dea7bf3b6a6487"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
