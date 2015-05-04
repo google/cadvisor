@@ -27,6 +27,7 @@ import (
 
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
@@ -650,8 +651,13 @@ func (m *manager) createContainer(containerName string) error {
 		glog.V(4).Infof("ignoring container %q", containerName)
 		return nil
 	}
+	// TODO(vmarmol): Register collectors.
+	collectorManager, err := collector.NewCollectorManager()
+	if err != nil {
+		return err
+	}
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
-	cont, err := newContainerData(containerName, m.memoryStorage, handler, m.loadReader, logUsage)
+	cont, err := newContainerData(containerName, m.memoryStorage, handler, m.loadReader, logUsage, collectorManager)
 	if err != nil {
 		return err
 	}
