@@ -692,26 +692,24 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 
-	if contSpec.CreationTime.After(m.startupTime) {
-		contRef, err := cont.handler.ContainerReference()
-		if err != nil {
-			return err
-		}
+	contRef, err := cont.handler.ContainerReference()
+	if err != nil {
+		return err
+	}
 
-		newEvent := &info.Event{
-			ContainerName: contRef.Name,
-			Timestamp:     contSpec.CreationTime,
-			EventType:     info.EventContainerCreation,
-			EventData: info.EventData{
-				Created: &info.CreatedEventData{
-					Spec: contSpec,
-				},
+	newEvent := &info.Event{
+		ContainerName: contRef.Name,
+		Timestamp:     contSpec.CreationTime,
+		EventType:     info.EventContainerCreation,
+		EventData: info.EventData{
+			Created: &info.CreatedEventData{
+				Spec: contSpec,
 			},
-		}
-		err = m.eventHandler.AddEvent(newEvent)
-		if err != nil {
-			return err
-		}
+		},
+	}
+	err = m.eventHandler.AddEvent(newEvent)
+	if err != nil {
+		return err
 	}
 
 	// Start the container's housekeeping.
