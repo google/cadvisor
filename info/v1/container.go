@@ -508,17 +508,8 @@ const (
 
 // Extra information about an event. Only one type will be set.
 type EventData struct {
-	// Information about a container creation event.
-	Created *CreatedEventData `json:"created,omitempty"`
-
 	// Information about an OOM kill event.
 	OomKill *OomKillEventData `json:"oom,omitempty"`
-}
-
-// Information related to a container creation event.
-type CreatedEventData struct {
-	// Spec of the container at creation.
-	Spec ContainerSpec `json:"spec"`
 }
 
 // Information related to an OOM kill instance
