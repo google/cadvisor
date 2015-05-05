@@ -33,10 +33,6 @@ func (m *mockCgroupManager) Set(container *configs.Config) error {
 	return nil
 }
 
-func (m *mockCgroupManager) ChargeProcess(pid int) error {
-	return nil
-}
-
 func (m *mockCgroupManager) Destroy() error {
 	return nil
 }
@@ -134,7 +130,8 @@ func TestGetContainerState(t *testing.T) {
 				{Type: configs.NEWNS},
 				{Type: configs.NEWNET, Path: expectedNetworkPath},
 				{Type: configs.NEWUTS},
-				{Type: configs.NEWIPC},
+				// emulate host for IPC
+				//{Type: configs.NEWIPC},
 			},
 		},
 		initProcess: &mockProcess{

@@ -16,6 +16,8 @@ import (
 	"github.com/docker/libcontainer/configs"
 )
 
+const stdioFdCount = 3
+
 type linuxContainer struct {
 	id            string
 	root          string
@@ -112,10 +114,6 @@ func (c *linuxContainer) Start(process *Process) error {
 	return nil
 }
 
-func (c *linuxContainer) ChargeProcess(pid int) error {
-	return c.cgroupManager.EnterProcess(pid)
-}
-
 func (c *linuxContainer) newParentProcess(p *Process, doInit bool) (parentProcess, error) {
 	parentPipe, childPipe, err := newPipe()
 	if err != nil {
@@ -143,8 +141,11 @@ func (c *linuxContainer) commandTemplate(p *Process, childPipe *os.File) (*exec.
 	if cmd.SysProcAttr == nil {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
-	cmd.ExtraFiles = []*os.File{childPipe}
-	cmd.SysProcAttr.Pdeathsig = syscall.SIGKILL
+	cmd.ExtraFiles = append(p.ExtraFiles, childPipe)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("_LIBCONTAINER_INITPIPE=%d", stdioFdCount+len(cmd.ExtraFiles)-1))
+	// NOTE: when running a container with no PID namespace and the parent process spawning the container is
+	// PID1 the pdeathsig is being delivered to the container's init process by the kernel for some reason
+	// even with the parent still running.
 	if c.config.ParentDeathSignal > 0 {
 		cmd.SysProcAttr.Pdeathsig = syscall.Signal(c.config.ParentDeathSignal)
 	}
@@ -180,11 +181,9 @@ func (c *linuxContainer) newSetnsProcess(p *Process, cmd *exec.Cmd, parentPipe, 
 		fmt.Sprintf("_LIBCONTAINER_INITPID=%d", c.initProcess.pid()),
 		"_LIBCONTAINER_INITTYPE=setns",
 	)
-
 	if p.consolePath != "" {
 		cmd.Env = append(cmd.Env, "_LIBCONTAINER_CONSOLE_PATH="+p.consolePath)
 	}
-
 	// TODO: set on container for process management
 	return &setnsProcess{
 		cmd:         cmd,
@@ -197,13 +196,14 @@ func (c *linuxContainer) newSetnsProcess(p *Process, cmd *exec.Cmd, parentPipe, 
 
 func (c *linuxContainer) newInitConfig(process *Process) *initConfig {
 	return &initConfig{
-		Config:       c.config,
-		Args:         process.Args,
-		Env:          process.Env,
-		User:         process.User,
-		Cwd:          process.Cwd,
-		Console:      process.consolePath,
-		Capabilities: process.Capabilities,
+		Config:           c.config,
+		Args:             process.Args,
+		Env:              process.Env,
+		User:             process.User,
+		Cwd:              process.Cwd,
+		Console:          process.consolePath,
+		Capabilities:     process.Capabilities,
+		PassedFilesCount: len(process.ExtraFiles),
 	}
 }
 
@@ -307,6 +307,12 @@ func (c *linuxContainer) currentState() (*State, error) {
 	}
 	for _, ns := range c.config.Namespaces {
 		state.NamespacePaths[ns.Type] = ns.GetPath(c.initProcess.pid())
+	}
+	for _, nsType := range configs.NamespaceTypes() {
+		if _, ok := state.NamespacePaths[nsType]; !ok {
+			ns := configs.Namespace{Type: nsType}
+			state.NamespacePaths[ns.Type] = ns.GetPath(c.initProcess.pid())
+		}
 	}
 	return state, nil
 }
