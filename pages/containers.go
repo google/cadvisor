@@ -195,12 +195,14 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 		return err
 	}
 
+	rootDir := getRootDir(cont.Name)
+
 	// Make a list of the parent containers and their links
 	pathParts := strings.Split(string(cont.Name), "/")
 	parentContainers := make([]link, 0, len(pathParts))
 	parentContainers = append(parentContainers, link{
 		Text: "root",
-		Link: ContainersPage,
+		Link: path.Join(rootDir, ContainersPage),
 	})
 	for i := 1; i < len(pathParts); i++ {
 		// Skip empty parts.
@@ -209,7 +211,7 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 		}
 		parentContainers = append(parentContainers, link{
 			Text: pathParts[i],
-			Link: path.Join(ContainersPage, path.Join(pathParts[1:i+1]...)),
+			Link: path.Join(rootDir, ContainersPage, path.Join(pathParts[1:i+1]...)),
 		})
 	}
 
@@ -221,7 +223,7 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 		}
 		subcontainerLinks = append(subcontainerLinks, link{
 			Text: getContainerDisplayName(sub),
-			Link: path.Join(ContainersPage, sub.Name),
+			Link: path.Join(rootDir, ContainersPage, sub.Name),
 		})
 	}
 
@@ -239,6 +241,7 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 		MemoryAvailable:    cont.Spec.HasMemory,
 		NetworkAvailable:   cont.Spec.HasNetwork,
 		FsAvailable:        cont.Spec.HasFilesystem,
+		Root:               rootDir,
 	}
 	err = pageTemplate.Execute(w, data)
 	if err != nil {
@@ -247,4 +250,11 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 
 	glog.V(5).Infof("Request took %s", time.Since(start))
 	return nil
+}
+
+// Build a relative path to the root of the container page.
+func getRootDir(containerName string) string {
+	// The root is at: container depth
+	levels := (strings.Count(containerName, "/"))
+	return strings.Repeat("../", levels)
 }
