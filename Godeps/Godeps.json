@@ -178,7 +178,7 @@
 		},
 		{
 			"ImportPath": "github.com/syndtr/gocapability/capability",
-			"Rev": "3c85049eaeb429febe7788d9c7aac42322a377fe"
+			"Rev": "8e4cdcb3c22b40d5e330ade0b68cb2e2a3cf6f98"
 		},
 		{
 			"ImportPath": "golang.org/x/exp/inotify",
