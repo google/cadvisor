@@ -42,15 +42,7 @@ func (m *Manager) Set(container *configs.Config) error {
 	return nil, fmt.Errorf("Systemd not supported")
 }
 
-func (m *Manager) EnterProcess(pid int) error {
-	return nil, fmt.Errorf("Systemd not supported")
-}
-
 func (m *Manager) Freeze(state configs.FreezerState) error {
-	return fmt.Errorf("Systemd not supported")
-}
-
-func ApplyDevices(c *configs.Cgroup, pid int) error {
 	return fmt.Errorf("Systemd not supported")
 }
 
