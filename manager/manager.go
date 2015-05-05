@@ -707,11 +707,6 @@ func (m *manager) createContainer(containerName string) error {
 		ContainerName: contRef.Name,
 		Timestamp:     contSpec.CreationTime,
 		EventType:     info.EventContainerCreation,
-		EventData: info.EventData{
-			Created: &info.CreatedEventData{
-				Spec: contSpec,
-			},
-		},
 	}
 	err = m.eventHandler.AddEvent(newEvent)
 	if err != nil {
