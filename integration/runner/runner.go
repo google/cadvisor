@@ -49,19 +49,19 @@ func RunCommand(cmd string, args ...string) error {
 func PushAndRunTests(host, testDir string) error {
 	// Push binary.
 	glog.Infof("Pushing cAdvisor binary to %q...", host)
-	err := RunCommand("gcutil", "ssh", host, "mkdir", "-p", testDir)
+	err := RunCommand("gcloud", "compute", "ssh", common.GetZoneFlag(), host, "--", "mkdir", "-p", testDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to make remote testing directory: %v", err)
 	}
 	defer func() {
-		err := RunCommand("gcutil", "ssh", host, "rm", "-rf", testDir)
+		err := RunCommand("gcloud", "compute", "ssh", common.GetZoneFlag(), host, "--", "rm", "-rf", testDir)
 		if err != nil {
-			glog.Error(err)
+			glog.Errorf("Failed to cleanup test directory: %v", err)
 		}
 	}()
-	err = RunCommand("gcutil", "push", host, cadvisorBinary, testDir)
+	err = RunCommand("gcloud", "compute", "copy-files", common.GetZoneFlag(), cadvisorBinary, fmt.Sprintf("%s:%s", host, testDir))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to copy binary: %v", err)
 	}
 
 	// TODO(vmarmol): Get logs in case of failures.
@@ -70,21 +70,21 @@ func PushAndRunTests(host, testDir string) error {
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error)
 	go func() {
-		err = RunCommand("gcutil", "ssh", host, "sudo", path.Join(testDir, cadvisorBinary), "--port", portStr, "--logtostderr")
+		err = RunCommand("gcloud", "compute", "ssh", common.GetZoneFlag(), host, "--command", fmt.Sprintf("sudo %s --port %s --logtostderr", path.Join(testDir, cadvisorBinary), portStr))
 		if err != nil {
-			errChan <- err
+			errChan <- fmt.Errorf("error running cAdvisor: %v", err)
 		}
 	}()
 	defer func() {
-		err := RunCommand("gcutil", "ssh", host, "sudo", "pkill", cadvisorBinary)
+		err := RunCommand("gcloud", "compute", "ssh", common.GetZoneFlag(), host, "--", "sudo", "pkill", cadvisorBinary)
 		if err != nil {
-			glog.Error(err)
+			glog.Errorf("Failed to cleanup: %v", err)
 		}
 	}()
 
 	ipAddress, err := common.GetGceIp(host)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get GCE IP: %v", err)
 	}
 
 	// Wait for cAdvisor to come up.
