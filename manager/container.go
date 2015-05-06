@@ -320,7 +320,7 @@ func (c *containerData) updateStats() error {
 		err := c.summaryReader.AddSample(*stats)
 		if err != nil {
 			// Ignore summary errors for now.
-			glog.V(2).Infof("failed to add summary stats for %q: %v", c.info.Name, err)
+			glog.V(2).Infof("Failed to add summary stats for %q: %v", c.info.Name, err)
 		}
 	}
 	ref, err := c.handler.ContainerReference()
