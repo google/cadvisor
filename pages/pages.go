@@ -51,7 +51,6 @@ type pageData struct {
 	MemoryAvailable    bool
 	NetworkAvailable   bool
 	FsAvailable        bool
-	Root               string
 }
 
 func init() {
