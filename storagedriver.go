@@ -30,7 +30,7 @@ import (
 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
 var argDbPassword = flag.String("storage_driver_password", "root", "database password")
-var argDbHost = flag.String("storage_driver_host", "", "database host:port")
+var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
 var argDbName = flag.String("storage_driver_db", "cadvisor", "database name")
 var argDbTable = flag.String("storage_driver_table", "stats", "table name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
@@ -74,13 +74,17 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error
 			*argDbName,
 		)
 	case "redis":
-		var hostname string
-		hostname, err = os.Hostname()
+	//machineName: A unique identifier to identify the host that current cAdvisor
+	//We use os.Hostname as the machineName
+	//argDbName: the key for redis's data
+	//argDbHost: the redis's server host
+		var machineName string
+		machineName, err = os.Hostname()
 		if err != nil {
 			return nil, err
 		}
 		backendStorage, err = redis.New(
-			hostname,
+			machineName,
 			*argDbName,
 			*argDbHost,
 			*argDbBufferDuration,
@@ -100,3 +104,4 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error
 	storageDriver = memory.New(*storageDuration, backendStorage)
 	return storageDriver, nil
 }
+
