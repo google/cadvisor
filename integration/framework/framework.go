@@ -265,7 +265,7 @@ func (self shellActions) Run(command string, args ...string) (string, string) {
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		cmd = exec.Command("gcutil", append([]string{"ssh", self.fm.Hostname().GceInstanceName, command}, args...)...)
+		cmd = exec.Command("gcloud", append([]string{"compute", "ssh", common.GetZoneFlag(), self.fm.Hostname().GceInstanceName, "--", command}, args...)...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -286,7 +286,7 @@ func (self shellActions) RunStress(command string, args ...string) (string, stri
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		cmd = exec.Command("gcutil", append([]string{"ssh", self.fm.Hostname().GceInstanceName, command}, args...)...)
+		cmd = exec.Command("gcloud", append([]string{"compute", "ssh", common.GetZoneFlag(), self.fm.Hostname().GceInstanceName, "--", command}, args...)...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
