@@ -44,13 +44,14 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 		}
 	}()
 	if len(seriesToFlush) > 0 {
-		//use redis's "LPUSH" to push the data to the redis
+		//We use redis's "LPUSH" to push the data to the redis
 		self.conn.Send("LPUSH", self.redisKey, seriesToFlush)
 	}
 	return nil
 }
 
-// just need to push the data to the redis, do not need to pull form the redis,so not override RecentStats()
+// We just need to push the data to the redis, do not need to pull form the redis,
+//so we do not override RecentStats()
 func (self *redisStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
 	return nil, nil
 }
