@@ -232,8 +232,9 @@ func (c *containerData) housekeeping() {
 			}
 		}
 
+		// TODO(vmarmol): Export metrics.
 		// Run custom collectors.
-		nextCollectionTime, err := c.collectorManager.Collect()
+		nextCollectionTime, _, err := c.collectorManager.Collect()
 		if err != nil && c.allowErrorLogging() {
 			glog.Warningf("[%s] Collection failed: %v", c.info.Name, err)
 		}
