@@ -25,11 +25,12 @@ import (
 	"github.com/google/cadvisor/storage/bigquery"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/memory"
+	"github.com/google/cadvisor/storage/redis"
 )
 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
 var argDbPassword = flag.String("storage_driver_password", "root", "database password")
-var argDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
+var argDbHost = flag.String("storage_driver_host", "", "database host:port")
 var argDbName = flag.String("storage_driver_db", "cadvisor", "database name")
 var argDbTable = flag.String("storage_driver_table", "stats", "table name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
@@ -71,6 +72,18 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error
 			hostname,
 			*argDbTable,
 			*argDbName,
+		)
+	case "redis":
+		var hostname string
+		hostname, err = os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+		backendStorage, err = redis.New(
+			hostname,
+			*argDbName,
+			*argDbHost,
+			*argDbBufferDuration,
 		)
 	default:
 		err = fmt.Errorf("unknown backend storage driver: %v", *argDbDriver)
