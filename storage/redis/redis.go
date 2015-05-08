@@ -19,14 +19,36 @@ type redisStorage struct {
 	readyToFlush   func() bool
 }
 
-func (self *redisStorage) OverrideReadyToFlush(readyToFlush func() bool) {
-	self.readyToFlush = readyToFlush
+type detailSpec struct {
+	Timestamp      int64                `json:"timestamp"`
+	MachineName    string               `json:"machine_name,omitempty"`
+	ContainerName  string               `json:"container_Name,omitempty"`
+	ContainerStats *info.ContainerStats `json:"container_stats,omitempty"`
 }
 
 func (self *redisStorage) defaultReadyToFlush() bool {
 	return time.Since(self.lastWrite) >= self.bufferDuration
 }
 
+//We must add some defaut params (for example: MachineName,ContainerName...)because containerStats do not include them 
+func (self *redisStorage) containerStatsAndDefautValues(ref info.ContainerReference, stats *info.ContainerStats) *detailSpec {
+	timestamp := stats.Timestamp.UnixNano() / 1E3
+	var containerName string
+	if len(ref.Aliases) > 0 {
+		containerName = ref.Aliases[0]
+	} else {
+		containerName = ref.Name
+	}
+	detail := &detailSpec{
+		Timestamp:      timestamp,
+		MachineName:    self.machineName,
+		ContainerName:  containerName,
+		ContainerStats: stats,
+	}
+	return detail
+}
+
+//Push the data into redis
 func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
@@ -36,7 +58,10 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 		// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
 		self.lock.Lock()
 		defer self.lock.Unlock()
-		b, _ := json.Marshal(stats)
+		// Add some defaut params based on containerStats
+		detail := self.containerStatsAndDefautValues(ref, stats)
+		//To json
+		b, _ := json.Marshal(detail)
 		if self.readyToFlush() {
 			seriesToFlush = b
 			b = nil
@@ -50,7 +75,7 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 	return nil
 }
 
-// We just need to push the data to the redis, do not need to pull form the redis,
+// We just need to push the data to the redis, do not need to pull from the redis,
 //so we do not override RecentStats()
 func (self *redisStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
 	return nil, nil
@@ -84,3 +109,4 @@ func New(machineName,
 	ret.readyToFlush = ret.defaultReadyToFlush
 	return ret, nil
 }
+
