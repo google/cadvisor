@@ -15,6 +15,7 @@
 package common
 
 import (
+	"flag"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -22,8 +23,10 @@ import (
 	"github.com/GoogleCloudPlatform/gcloud-golang/compute/metadata"
 )
 
-var gceInternalIpRegexp = regexp.MustCompile(" +ip +\\| +([0-9.:]+) +")
-var gceExternalIpRegexp = regexp.MustCompile("external-ip +\\| +([0-9.:]+) +")
+var zone = flag.String("zone", "us-central1-f", "Zone the instances are running in")
+
+var gceInternalIpRegexp = regexp.MustCompile(" +networkIP: +([0-9.:]+)\n")
+var gceExternalIpRegexp = regexp.MustCompile(" +natIP: +([0-9.:]+)\n")
 
 // Gets the IP of the specified GCE instance.
 func GetGceIp(hostname string) (string, error) {
@@ -31,9 +34,9 @@ func GetGceIp(hostname string) (string, error) {
 		return "127.0.0.1", nil
 	}
 
-	out, err := exec.Command("gcutil", "getinstance", hostname).CombinedOutput()
+	out, err := exec.Command("gcloud", "compute", "instances", "describe", GetZoneFlag(), hostname).CombinedOutput()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get instance information for %q with error %v and output %s", hostname, err, string(out))
 	}
 
 	// Use the internal IP within GCE and the external one outside.
@@ -47,4 +50,8 @@ func GetGceIp(hostname string) (string, error) {
 		return "", fmt.Errorf("failed to find IP from output %q", string(out))
 	}
 	return matches[1], nil
+}
+
+func GetZoneFlag() string {
+	return fmt.Sprintf("--zone=%s", *zone)
 }

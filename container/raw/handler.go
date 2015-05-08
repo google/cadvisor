@@ -24,7 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"code.google.com/p/go.exp/inotify"
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
 	"github.com/docker/libcontainer/configs"
@@ -34,6 +33,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
+	"golang.org/x/exp/inotify"
 )
 
 type rawContainerHandler struct {
@@ -177,7 +177,11 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	now := time.Now()
 	lowestTime := now
 	for _, cgroupPath := range self.cgroupPaths {
-		// The modified time of the cgroup directory is when the container was created.
+		// The modified time of the cgroup directory changes whenever a subcontainer is created.
+		// eg. /docker will have creation time matching the creation of latest docker container.
+		// Use clone_children as a workaround as it isn't usually modified. It is only likely changed
+		// immediately after creating a container.
+		cgroupPath = path.Join(cgroupPath, "cgroup.clone_children")
 		fi, err := os.Stat(cgroupPath)
 		if err == nil && fi.ModTime().Before(lowestTime) {
 			lowestTime = fi.ModTime()

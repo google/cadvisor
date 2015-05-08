@@ -29,6 +29,7 @@ The endpoint accepts a certain number of query parameters:
 | `stream`          | Whether to stream new events as they occur. If false returns historical events | false             |
 | `subcontainers`   | Whether to also return events for all subcontainers                            | false             |
 | `max_events`      | The max number of events to return (for stream=false)                          | 10                |
+| `all_events`      | Whether to include all supported event types                                   | false             |
 | `oom_events`      | Whether to include OOM events                                                  | false             |
 | `oom_kill_events` | Whether to include OOM kill events                                             | false             |
 | `creation_events` | Whether to include container creation events                                   | false             |

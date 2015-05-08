@@ -67,7 +67,7 @@ type Container interface {
 	// State returns the current container's state information.
 	//
 	// errors:
-	// Systemerror - System erroor.
+	// Systemerror - System error.
 	State() (*State, error)
 
 	// Returns the current config of the container.
@@ -107,14 +107,6 @@ type Container interface {
 	// ContainerPaused - Container is paused,
 	// Systemerror - System error.
 	Start(process *Process) (err error)
-
-	// Charge the resource usage of the specified process to this container.
-	// Does not join the namespaces of the container.
-	//
-	// errors:
-	// ContainerDestroyed - Container no longer exists,
-	// Systemerror - System error.
-	ChargeProcess(pid int) error
 
 	// Destroys the container after killing all running processes.
 	//
