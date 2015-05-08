@@ -31,11 +31,11 @@ In this case, cAdvisor UI should be accessible on `http://192.168.59.103:8080`
 
 ### CentOS and RHEL
 
-You may need to run the container with `--privilege` and `--volume=/cgroup:/cgroup \` in order for cAdvisor to monitor Docker containers.
+You may need to run the container with `--privileged=true` and `--volume=/cgroup:/cgroup:ro \` in order for cAdvisor to monitor Docker containers.
 
-RHEL and CentOS lock down their containers a bit more. cAdvisor needs access to the Docker daemon through its socket. This requires `--privilege` in RHEL and CentOS.
+RHEL and CentOS lock down their containers a bit more. cAdvisor needs access to the Docker daemon through its socket. This requires `--privileged=true` in RHEL and CentOS.
 
-On some versions of RHEL and CentOS the cgroup hierarchies are mounted in `/cgroup` so run cAdvisor with an additional Docker option of `--volume=/cgroup:/cgroup \`.
+On some versions of RHEL and CentOS the cgroup hierarchies are mounted in `/cgroup` so run cAdvisor with an additional Docker option of `--volume=/cgroup:/cgroup:ro \`.
 
 ## Debian
 
