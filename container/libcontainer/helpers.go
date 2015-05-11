@@ -96,6 +96,14 @@ func GetStats(cgroupManager cgroups.Manager, networkInterfaces []string) (*info.
 	return stats, nil
 }
 
+func GetProcesses(cgroupManager cgroups.Manager) ([]int, error) {
+	pids, err := cgroupManager.GetPids()
+	if err != nil {
+		return nil, err
+	}
+	return pids, nil
+}
+
 func DockerStateDir(dockerRoot string) string {
 	return path.Join(dockerRoot, "containers")
 }
