@@ -193,7 +193,7 @@ func toContainerStats2(s *cgroups.Stats, ret *info.ContainerStats) {
 			workingSet -= v
 		}
 
-		if v, ok := s.MemoryStats.Stats["total_active_file"]; ok {
+		if v, ok := s.MemoryStats.Stats["total_inactive_file"]; ok {
 			if workingSet < v {
 				workingSet = 0
 			} else {
