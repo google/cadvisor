@@ -264,6 +264,7 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 					Device:          fs.Device,
 					Limit:           fs.Capacity,
 					Usage:           fs.Capacity - fs.Free,
+					Available:       fs.Available,
 					ReadsCompleted:  fs.DiskStats.ReadsCompleted,
 					ReadsMerged:     fs.DiskStats.ReadsMerged,
 					SectorsRead:     fs.DiskStats.SectorsRead,
