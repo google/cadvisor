@@ -151,6 +151,9 @@ type FsInfo struct {
 	// Filesystem usage in bytes.
 	Capacity uint64 `json:"capacity"`
 
+	// Bytes available for non-root use.
+	Available uint64 `json:"available"`
+
 	// Number of bytes used on this filesystem.
 	Usage uint64 `json:"usage"`
 
