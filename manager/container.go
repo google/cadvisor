@@ -117,13 +117,17 @@ func (c *containerData) DerivedStats() (v2.DerivedStats, error) {
 }
 
 func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
-	pids, err := c.handler.ListProcesses(container.ListSelf)
-	if err != nil {
-		return nil, err
-	}
+	// report all processes for root.
+	isRoot := c.info.Name == "/"
 	pidMap := map[int]bool{}
-	for _, pid := range pids {
-		pidMap[pid] = true
+	if !isRoot {
+		pids, err := c.handler.ListProcesses(container.ListSelf)
+		if err != nil {
+			return nil, err
+		}
+		for _, pid := range pids {
+			pidMap[pid] = true
+		}
 	}
 	// TODO(rjnagal): Take format as an option?
 	format := "user,pid,ppid,stime,pcpu,rss,vsz,stat,time,comm"
@@ -151,7 +155,7 @@ func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid ppid %q: %v", fields[2], err)
 		}
-		if pidMap[pid] == true {
+		if isRoot || pidMap[pid] == true {
 			processes = append(processes, v2.ProcessInfo{
 				User:        fields[0],
 				Pid:         pid,
