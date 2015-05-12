@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2015 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ func (self *redisStorage) Close() error {
 }
 
 // Create a new redis storage driver.
-// machineName: A unique identifier to identify the host that current cAdvisor
+// machineName: A unique identifier to identify the host that runs the current cAdvisor
 // instance is running on.
 // redisHost: The host which runs redis.
 // redisKey: The key for the Data that stored in the redis
