@@ -442,6 +442,14 @@ const (
 	timePrecision time.Duration = 10 * time.Millisecond
 )
 
+func (stats *ContainerStats) UpdateTaskStats(newload LoadStats) {
+	stats.TaskStats.NrSleeping += newload.NrSleeping
+	stats.TaskStats.NrRunning += newload.NrRunning
+	stats.TaskStats.NrStopped += newload.NrStopped
+	stats.TaskStats.NrUninterruptible += newload.NrUninterruptible
+	stats.TaskStats.NrIoWait += newload.NrIoWait
+}
+
 // This function is useful because we do not require precise time
 // representation.
 func (a *ContainerStats) Eq(b *ContainerStats) bool {

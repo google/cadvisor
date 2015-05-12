@@ -662,14 +662,14 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 
+	namespacedName := namespacedContainerName{
+		Name: containerName,
+	}
+
 	// Add to the containers map.
 	alreadyExists := func() bool {
 		m.containersLock.Lock()
 		defer m.containersLock.Unlock()
-
-		namespacedName := namespacedContainerName{
-			Name: containerName,
-		}
 
 		// Check that the container didn't already exist.
 		_, ok := m.containers[namespacedName]
@@ -713,6 +713,19 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 
+	if *enableLoadReader {
+		subcontainers := m.getSubcontainerContainerData(containerName)
+		cont.contSubcontainers = subcontainers
+		m.addAsSubcontainer(cont, namespacedName)
+
+		path, err := cont.handler.GetCgroupPath("cpu")
+		if err != nil {
+			glog.Errorf("could not get cgroup path for container %v. got error %v", cont.info.Name, err)
+		} else {
+			cont.cgroupPath = path
+		}
+	}
+
 	// Start the container's housekeeping.
 	cont.Start()
 
@@ -736,6 +749,10 @@ func (m *manager) destroyContainer(containerName string) error {
 	err := cont.Stop()
 	if err != nil {
 		return err
+	}
+
+	if *enableLoadReader {
+		m.removeSubcontainer(cont, namespacedName)
 	}
 
 	// Remove the container from our records (and all its aliases).
