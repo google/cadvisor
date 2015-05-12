@@ -104,4 +104,3 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error
 	storageDriver = memory.New(*storageDuration, backendStorage)
 	return storageDriver, nil
 }
-
