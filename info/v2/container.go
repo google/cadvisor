@@ -166,3 +166,16 @@ type RequestOptions struct {
 	// Whether to include stats for child subcontainers.
 	Recursive bool `json:"recursive"`
 }
+
+type ProcessInfo struct {
+	User        string `json:"user"`
+	Pid         int    `json:"pid"`
+	Ppid        int    `json:"parent_pid"`
+	StartTime   string `json:"start_time"`
+	PercentCpu  string `json:"percent_cpu"`
+	RSS         string `json:"rss"`
+	VirtualSize string `json:"virtual_size"`
+	Status      string `json:"status"`
+	RunningTime string `json:"running_time"`
+	Cmd         string `json:"cmd"`
+}
