@@ -612,6 +612,7 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 			Mountpoint: mountpoint,
 			Capacity:   fs.Limit,
 			Usage:      fs.Usage,
+			Available:  fs.Available,
 			Labels:     labels,
 		}
 		fsInfo = append(fsInfo, fi)
