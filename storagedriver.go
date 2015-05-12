@@ -74,10 +74,9 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error
 			*argDbName,
 		)
 	case "redis":
-	//machineName: A unique identifier to identify the host that current cAdvisor
-	//We use os.Hostname as the machineName
-	//argDbName: the key for redis's data
-	//argDbHost: the redis's server host
+		//machineName: We use os.Hostname as the machineName (A unique identifier to identify the host that runs the current cAdvisor)
+		//argDbName: the key for redis's data
+		//argDbHost: the redis's server host
 		var machineName string
 		machineName, err = os.Hostname()
 		if err != nil {
@@ -104,4 +103,3 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error
 	storageDriver = memory.New(*storageDuration, backendStorage)
 	return storageDriver, nil
 }
-

@@ -1,3 +1,17 @@
+// Copyright 2015 Google Inc. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package redis
 
 import (
@@ -30,7 +44,7 @@ func (self *redisStorage) defaultReadyToFlush() bool {
 	return time.Since(self.lastWrite) >= self.bufferDuration
 }
 
-//We must add some defaut params (for example: MachineName,ContainerName...)because containerStats do not include them 
+//We must add some defaut params (for example: MachineName,ContainerName...)because containerStats do not include them
 func (self *redisStorage) containerStatsAndDefautValues(ref info.ContainerReference, stats *info.ContainerStats) *detailSpec {
 	timestamp := stats.Timestamp.UnixNano() / 1E3
 	var containerName string
@@ -86,7 +100,7 @@ func (self *redisStorage) Close() error {
 }
 
 // Create a new redis storage driver.
-// machineName: A unique identifier to identify the host that current cAdvisor
+// machineName: A unique identifier to identify the host that runs the current cAdvisor
 // instance is running on.
 // redisHost: The host which runs redis.
 // redisKey: The key for the Data that stored in the redis
@@ -109,4 +123,3 @@ func New(machineName,
 	ret.readyToFlush = ret.defaultReadyToFlush
 	return ret, nil
 }
-
