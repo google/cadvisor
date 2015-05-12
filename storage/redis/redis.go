@@ -44,7 +44,7 @@ func (self *redisStorage) defaultReadyToFlush() bool {
 	return time.Since(self.lastWrite) >= self.bufferDuration
 }
 
-//We must add some defaut params (for example: MachineName,ContainerName...)because containerStats do not include them 
+//We must add some defaut params (for example: MachineName,ContainerName...)because containerStats do not include them
 func (self *redisStorage) containerStatsAndDefautValues(ref info.ContainerReference, stats *info.ContainerStats) *detailSpec {
 	timestamp := stats.Timestamp.UnixNano() / 1E3
 	var containerName string
@@ -123,4 +123,3 @@ func New(machineName,
 	ret.readyToFlush = ret.defaultReadyToFlush
 	return ret, nil
 }
-
