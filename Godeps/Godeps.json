@@ -106,6 +106,14 @@
 			"Rev": "09334c56c63bab2cd6c4ccab924d89e2419a361f"
 		},
 		{
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
+		},
+		{
 			"ImportPath": "github.com/godbus/dbus",
 			"Comment": "0-7-g939230d",
 			"Rev": "939230d2086a4f1870e04c52e0a376c25bae0ec4"
