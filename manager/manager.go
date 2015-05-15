@@ -50,7 +50,8 @@ var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=1
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
 type Manager interface {
-	// Start the manager.
+	// Start the manager. Calling other manager methods before this returns
+	// may produce undefined behavior.
 	Start() error
 
 	// Stops the manager.
@@ -150,21 +151,6 @@ func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, err
 	glog.Infof("Version: %+v", newManager.versionInfo)
 
 	newManager.eventHandler = events.NewEventManager(parseEventsStoragePolicy())
-
-	// Register Docker container factory.
-	err = docker.Register(newManager, fsInfo)
-	if err != nil {
-		glog.Errorf("Docker container factory registration failed: %v.", err)
-	}
-
-	// Register the raw driver.
-	err = raw.Register(newManager, fsInfo)
-	if err != nil {
-		glog.Errorf("Registration of the raw container factory failed: %v", err)
-	}
-
-	newManager.DockerInfo()
-	newManager.DockerImages()
 	return newManager, nil
 }
 
@@ -194,6 +180,20 @@ type manager struct {
 
 // Start the container manager.
 func (self *manager) Start() error {
+	// Register Docker container factory.
+	err := docker.Register(self, self.fsInfo)
+	if err != nil {
+		glog.Errorf("Docker container factory registration failed: %v.", err)
+	}
+
+	// Register the raw driver.
+	err = raw.Register(self, self.fsInfo)
+	if err != nil {
+		glog.Errorf("Registration of the raw container factory failed: %v", err)
+	}
+
+	self.DockerInfo()
+	self.DockerImages()
 
 	if *enableLoadReader {
 		// Create cpu load reader.
@@ -212,7 +212,7 @@ func (self *manager) Start() error {
 	}
 
 	// Watch for OOMs.
-	err := self.watchForNewOoms()
+	err = self.watchForNewOoms()
 	if err != nil {
 		glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
 	}
