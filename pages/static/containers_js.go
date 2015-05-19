@@ -35,7 +35,7 @@ function humanizeMetric(num) {
 }
 
 // Draw a table.
-function drawTable(seriesTitles, titleTypes, data, elementId) {
+function drawTable(seriesTitles, titleTypes, data, elementId, numPages) {
 	var dataTable = new google.visualization.DataTable();
 	for (var i = 0; i < seriesTitles.length; i++) {
 		dataTable.addColumn(titleTypes[i], seriesTitles[i]);
@@ -45,10 +45,17 @@ function drawTable(seriesTitles, titleTypes, data, elementId) {
 		window.charts[elementId] = new google.visualization.Table(document.getElementById(elementId));
 	}
 
+	var cssClassNames = {
+		'headerRow': '',
+		'tableRow': 'table-row',
+		'oddTableRow': 'table-row'
+	};
 	var opts = {
 		alternatingRowStyle: true,
 		page: 'enable',
-		pageSize: 25,
+		pageSize: numPages,
+		allowHtml: true,
+		cssClassNames: cssClassNames,
 	};
 	window.charts[elementId].draw(dataTable, opts);
 }
@@ -425,11 +432,44 @@ function drawFileSystemUsage(machineInfo, stats) {
 	}
 }
 
+function drawImages(images) {
+	if (images == null || images.length == 0) {
+		return;
+	}
+	window.charts = {};
+	var titles = ["Repository", "Tags", "ID", "Virtual Size", "Creation Time"];
+	var titleTypes = ['string', 'string', 'string', 'number', 'number'];
+	var data = [];
+	for (var i = 0; i < images.length; i++) {
+		var elements = [];
+		var tags = [];
+		var repos = images[i].repo_tags[0].split(":");
+		repos.splice(-1,1)
+		for (var j = 0; j < images[i].repo_tags.length; j++) {
+			var splits = images[i].repo_tags[j].split(":")
+			if (splits.length > 1) {
+				tags.push(splits[splits.length - 1])
+			}
+		}
+		elements.push(repos.join(":"));
+		elements.push(tags.join(", "));
+		elements.push(images[i].id.substr(0,24));
+		elements.push({v: images[i].virtual_size, f: humanizeIEC(images[i].virtual_size)});
+		var d = new Date(images[i].created * 1000);
+		elements.push({v: images[i].created, f: d.toLocaleString()});
+		data.push(elements);
+	}
+	drawTable(titles, titleTypes, data, "docker-images", 30);
+}
+
 function drawProcesses(processInfo) {
+	if (processInfo.length == 0) {
+		return;
+	}
 	var titles = ["User", "PID", "PPID", "Start Time", "CPU %", "MEM %", "RSS", "Virtual Size", "Status", "Running Time", "Command"];
 	var titleTypes = ['string', 'number', 'number', 'string', 'number', 'number', 'number', 'number', 'string', 'string', 'string'];
 	var data = []
-	for (var i = 1; i < processInfo.length; i++) {
+	for (var i = 0; i < processInfo.length; i++) {
 		var elements = [];
 		elements.push(processInfo[i].user);
 		elements.push(processInfo[i].pid);
@@ -444,7 +484,7 @@ function drawProcesses(processInfo) {
 		elements.push(processInfo[i].cmd);
 		data.push(elements);
 	}
-	drawTable(titles, titleTypes, data, "processes-top");
+	drawTable(titles, titleTypes, data, "processes-top", 25);
 }
 
 // Draw the filesystem usage nodes.
