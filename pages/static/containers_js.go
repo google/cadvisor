@@ -462,12 +462,16 @@ function drawImages(images) {
 	drawTable(titles, titleTypes, data, "docker-images", 30);
 }
 
-function drawProcesses(processInfo) {
+function drawProcesses(isRoot, rootDir, processInfo) {
 	if (processInfo.length == 0) {
 		return;
 	}
 	var titles = ["User", "PID", "PPID", "Start Time", "CPU %", "MEM %", "RSS", "Virtual Size", "Status", "Running Time", "Command"];
 	var titleTypes = ['string', 'number', 'number', 'string', 'number', 'number', 'number', 'number', 'string', 'string', 'string'];
+	if (isRoot) {
+		titles.push("Cgroup");
+		titleTypes.push('string');
+	}
 	var data = []
 	for (var i = 0; i < processInfo.length; i++) {
 		var elements = [];
@@ -482,6 +486,12 @@ function drawProcesses(processInfo) {
 		elements.push(processInfo[i].status);
 		elements.push(processInfo[i].running_time);
 		elements.push(processInfo[i].cmd);
+		if (isRoot) {
+			var cgroup = processInfo[i].cgroup_path
+			// Use the raw cgroup link as it works for all containers.
+			var cgroupLink = '<a href="' + rootDir + 'containers/' + cgroup +'">' + cgroup.substr(0,30) + ' </a>';
+			elements.push({v:cgroup, f:cgroupLink});
+		}
 		data.push(elements);
 	}
 	drawTable(titles, titleTypes, data, "processes-top", 25);
@@ -600,7 +610,7 @@ function drawCharts(machineInfo, containerInfo) {
 }
 
 // Executed when the page finishes loading.
-function startPage(containerName, hasCpu, hasMemory, rootDir) {
+function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
 	// Don't fetch data if we don't have any resource.
 	if (!hasCpu && !hasMemory) {
 		return;
@@ -612,11 +622,11 @@ function startPage(containerName, hasCpu, hasMemory, rootDir) {
 
 	// Draw process information at start and refresh every 60s.
 	getProcessInfo(rootDir, containerName, function(processInfo) {
-		drawProcesses(processInfo)
+		drawProcesses(isRoot, rootDir, processInfo)
 	});
 	setInterval(function() {
 		getProcessInfo(rootDir, containerName, function(processInfo) {
-			drawProcesses(processInfo)
+			drawProcesses(isRoot, rootDir, processInfo)
 		});
 	}, 60000);
 
