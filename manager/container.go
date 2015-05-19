@@ -155,16 +155,32 @@ func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid ppid %q: %v", fields[2], err)
 		}
+		percentCpu, err := strconv.ParseFloat(fields[4], 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid cpu percent %q: %v", fields[4], err)
+		}
+		percentMem, err := strconv.ParseFloat(fields[5], 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid memory percent %q: %v", fields[5], err)
+		}
+		rss, err := strconv.ParseUint(fields[6], 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid rss %q: %v", fields[6], err)
+		}
+		vs, err := strconv.ParseUint(fields[7], 0, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid virtual size %q: %v", fields[7], err)
+		}
 		if isRoot || pidMap[pid] == true {
 			processes = append(processes, v2.ProcessInfo{
 				User:          fields[0],
 				Pid:           pid,
 				Ppid:          ppid,
 				StartTime:     fields[3],
-				PercentCpu:    fields[4],
-				PercentMemory: fields[5],
-				RSS:           fields[6],
-				VirtualSize:   fields[7],
+				PercentCpu:    float32(percentCpu),
+				PercentMemory: float32(percentMem),
+				RSS:           rss,
+				VirtualSize:   vs,
 				Status:        fields[8],
 				RunningTime:   fields[9],
 				Cmd:           strings.Join(fields[10:], " "),
