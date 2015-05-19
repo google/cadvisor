@@ -25,10 +25,9 @@ function humanize(num, size, units) {
 
 // Following the IEC naming convention
 function humanizeIEC(num) {
-        var ret = humanize(num, 1024, ["TiB", "GiB", "MiB", "KiB", "Bytes"]);
+        var ret = humanize(num, 1024, ["TiB", "GiB", "MiB", "KiB", "B"]);
 	return ret[0].toFixed(2) + " " + ret[1];
 }
-
 // Following the Metric naming convention
 function humanizeMetric(num) {
         var ret = humanize(num, 1000, ["TB", "GB", "MB", "KB", "Bytes"]);
@@ -428,7 +427,7 @@ function drawFileSystemUsage(machineInfo, stats) {
 
 function drawProcesses(processInfo) {
 	var titles = ["User", "PID", "PPID", "Start Time", "CPU %", "MEM %", "RSS", "Virtual Size", "Status", "Running Time", "Command"];
-	var titleTypes = ['string', 'number', 'number', 'string', 'string', 'string', 'string', 'string', 'string', 'string', 'string'];
+	var titleTypes = ['string', 'number', 'number', 'string', 'number', 'number', 'number', 'number', 'string', 'string', 'string'];
 	var data = []
 	for (var i = 1; i < processInfo.length; i++) {
 		var elements = [];
@@ -436,10 +435,10 @@ function drawProcesses(processInfo) {
 		elements.push(processInfo[i].pid);
 		elements.push(processInfo[i].parent_pid);
 		elements.push(processInfo[i].start_time);
-		elements.push(processInfo[i].percent_cpu);
-		elements.push(processInfo[i].percent_mem);
-		elements.push(processInfo[i].rss);
-		elements.push(processInfo[i].virtual_size);
+		elements.push({ v:processInfo[i].percent_cpu, f:processInfo[i].percent_cpu.toFixed(2)});
+		elements.push({ v:processInfo[i].percent_mem, f:processInfo[i].percent_mem.toFixed(2)});
+		elements.push({ v:processInfo[i].rss, f:humanizeIEC(processInfo[i].rss)});
+		elements.push({ v:processInfo[i].virtual_size, f:humanizeIEC(processInfo[i].virtual_size)});
 		elements.push(processInfo[i].status);
 		elements.push(processInfo[i].running_time);
 		elements.push(processInfo[i].cmd);
