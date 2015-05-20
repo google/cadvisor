@@ -215,7 +215,7 @@ const containersHtmlTemplate = `
       {{end}}
     </div>
     <script type="text/javascript">
-      startPage({{.ContainerName}}, {{.CpuAvailable}}, {{.MemoryAvailable}}, {{.Root}});
+      startPage({{.ContainerName}}, {{.CpuAvailable}}, {{.MemoryAvailable}}, {{.Root}}, {{.IsRoot}});
       drawImages({{.DockerImages}});
     </script>
   </body>

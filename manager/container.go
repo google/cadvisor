@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"math"
 	"os/exec"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -40,6 +41,8 @@ import (
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
 var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
+
+var cgroupPathRegExp = regexp.MustCompile(".*:devices:(.*?),.*")
 
 // Decay value used for load average smoothing. Interval length of 10 seconds is used.
 var loadDecay = math.Exp(float64(-1 * (*HousekeepingInterval).Seconds() / 10))
@@ -116,6 +119,19 @@ func (c *containerData) DerivedStats() (v2.DerivedStats, error) {
 	return c.summaryReader.DerivedStats()
 }
 
+func (c *containerData) getCgroupPath(cgroups string) (string, error) {
+	if cgroups == "-" {
+		return "/", nil
+	}
+	matches := cgroupPathRegExp.FindSubmatch([]byte(cgroups))
+	if len(matches) != 2 {
+		glog.V(3).Infof("failed to get devices cgroup path from %q", cgroups)
+		// return root in case of failures - devices hierarchy might not be enabled.
+		return "/", nil
+	}
+	return string(matches[1]), nil
+}
+
 func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
 	// report all processes for root.
 	isRoot := c.info.Name == "/"
@@ -130,9 +146,9 @@ func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
 		}
 	}
 	// TODO(rjnagal): Take format as an option?
-	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm"
+	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm,cgroup"
 	args := []string{"-e", "-o", format}
-	expectedFields := 11
+	expectedFields := 12
 	out, err := exec.Command("ps", args...).Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute ps command: %v", err)
@@ -171,6 +187,14 @@ func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid virtual size %q: %v", fields[7], err)
 		}
+		var cgroupPath string
+		if isRoot {
+			cgroupPath, err = c.getCgroupPath(fields[11])
+			if err != nil {
+				return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[10], err)
+			}
+		}
+
 		if isRoot || pidMap[pid] == true {
 			processes = append(processes, v2.ProcessInfo{
 				User:          fields[0],
@@ -183,7 +207,8 @@ func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
 				VirtualSize:   vs,
 				Status:        fields[8],
 				RunningTime:   fields[9],
-				Cmd:           strings.Join(fields[10:], " "),
+				Cmd:           fields[10],
+				CgroupPath:    cgroupPath,
 			})
 		}
 	}

@@ -181,5 +181,6 @@ type ProcessInfo struct {
 	VirtualSize   uint64  `json:"virtual_size"`
 	Status        string  `json:"status"`
 	RunningTime   string  `json:"running_time"`
+	CgroupPath    string  `json:"cgroup_path"`
 	Cmd           string  `json:"cmd"`
 }
