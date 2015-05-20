@@ -11,8 +11,4 @@ before_script:
  - sudo service influxdb start
 script:
  - export PATH=$PATH:$HOME/gopath/bin
- - ./deploy/check_gofmt.sh .
- - ./hooks/check_boilerplate.sh
- - go vet github.com/google/cadvisor/...
- - godep go test -v -race -test.short github.com/google/cadvisor/...
- - godep go build github.com/google/cadvisor
+ - ./build/presubmit.sh

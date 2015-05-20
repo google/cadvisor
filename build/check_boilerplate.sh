@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-REF_FILE="./hooks/boilerplate.go.txt"
+REF_FILE="./build/boilerplate.go.txt"
 if [ ! -e $REF_FILE ]; then
   echo "Missing reference file: " ${REF_FILE}
   exit 1
