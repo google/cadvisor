@@ -35,7 +35,7 @@ function humanizeMetric(num) {
 }
 
 // Draw a table.
-function drawTable(seriesTitles, titleTypes, data, elementId, numPages) {
+function drawTable(seriesTitles, titleTypes, data, elementId, numPages, sortIndex) {
 	var dataTable = new google.visualization.DataTable();
 	for (var i = 0; i < seriesTitles.length; i++) {
 		dataTable.addColumn(titleTypes[i], seriesTitles[i]);
@@ -55,6 +55,8 @@ function drawTable(seriesTitles, titleTypes, data, elementId, numPages) {
 		page: 'enable',
 		pageSize: numPages,
 		allowHtml: true,
+		sortColumn: sortIndex,
+		sortAscending: false,
 		cssClassNames: cssClassNames,
 	};
 	window.charts[elementId].draw(dataTable, opts);
@@ -439,6 +441,7 @@ function drawImages(images) {
 	window.charts = {};
 	var titles = ["Repository", "Tags", "ID", "Virtual Size", "Creation Time"];
 	var titleTypes = ['string', 'string', 'string', 'number', 'number'];
+	var sortIndex = 0;
 	var data = [];
 	for (var i = 0; i < images.length; i++) {
 		var elements = [];
@@ -459,7 +462,7 @@ function drawImages(images) {
 		elements.push({v: images[i].created, f: d.toLocaleString()});
 		data.push(elements);
 	}
-	drawTable(titles, titleTypes, data, "docker-images", 30);
+	drawTable(titles, titleTypes, data, "docker-images", 30, sortIndex);
 }
 
 function drawProcesses(isRoot, rootDir, processInfo) {
@@ -468,6 +471,7 @@ function drawProcesses(isRoot, rootDir, processInfo) {
 	}
 	var titles = ["User", "PID", "PPID", "Start Time", "CPU %", "MEM %", "RSS", "Virtual Size", "Status", "Running Time", "Command"];
 	var titleTypes = ['string', 'number', 'number', 'string', 'number', 'number', 'number', 'number', 'string', 'string', 'string'];
+	var sortIndex = 4
 	if (isRoot) {
 		titles.push("Cgroup");
 		titleTypes.push('string');
@@ -494,7 +498,7 @@ function drawProcesses(isRoot, rootDir, processInfo) {
 		}
 		data.push(elements);
 	}
-	drawTable(titles, titleTypes, data, "processes-top", 25);
+	drawTable(titles, titleTypes, data, "processes-top", 25, sortIndex);
 }
 
 // Draw the filesystem usage nodes.
