@@ -27,11 +27,8 @@ type InotifyWatcher struct {
 	// Underlying inotify watcher.
 	watcher *inotify.Watcher
 
-	// Containers being watched.
-	containersWatched map[string]bool
-
-	// Full cgroup paths being watched.
-	cgroupsWatched map[string]bool
+	// Map of containers being watched to cgroup paths watched for that container.
+	containersWatched map[string]map[string]bool
 
 	// Lock for all datastructure access.
 	lock sync.Mutex
@@ -45,8 +42,7 @@ func NewInotifyWatcher() (*InotifyWatcher, error) {
 
 	return &InotifyWatcher{
 		watcher:           w,
-		containersWatched: make(map[string]bool),
-		cgroupsWatched:    make(map[string]bool),
+		containersWatched: make(map[string]map[string]bool),
 	}, nil
 }
 
@@ -55,46 +51,55 @@ func (iw *InotifyWatcher) AddWatch(containerName, dir string) (bool, error) {
 	iw.lock.Lock()
 	defer iw.lock.Unlock()
 
-	alreadyWatched := iw.containersWatched[containerName]
+	cgroupsWatched, alreadyWatched := iw.containersWatched[containerName]
 
 	// Register an inotify notification.
-	if !iw.cgroupsWatched[dir] {
+	if !cgroupsWatched[dir] {
 		err := iw.watcher.AddWatch(dir, inotify.IN_CREATE|inotify.IN_DELETE|inotify.IN_MOVE)
 		if err != nil {
 			return alreadyWatched, err
 		}
-		iw.cgroupsWatched[dir] = true
+
+		if cgroupsWatched == nil {
+			cgroupsWatched = make(map[string]bool)
+		}
+		cgroupsWatched[dir] = true
 	}
 
 	// Record our watching of the container.
 	if !alreadyWatched {
-		iw.containersWatched[containerName] = true
+		iw.containersWatched[containerName] = cgroupsWatched
 	}
 	return alreadyWatched, nil
 }
 
-// Remove watch from the specified directory. Returns if the container was already being watched.
+// Remove watch from the specified directory. Returns if this was the last watch on the specified container.
 func (iw *InotifyWatcher) RemoveWatch(containerName, dir string) (bool, error) {
 	iw.lock.Lock()
 	defer iw.lock.Unlock()
 
-	alreadyWatched := iw.containersWatched[containerName]
+	// If we don't have a watch registed for this, just return.
+	cgroupsWatched, ok := iw.containersWatched[containerName]
+	if !ok {
+		return false, nil
+	}
 
 	// Remove the inotify watch if it exists.
-	if iw.cgroupsWatched[dir] {
+	if cgroupsWatched[dir] {
 		err := iw.watcher.RemoveWatch(dir)
 		if err != nil {
-			return alreadyWatched, nil
+			return false, nil
 		}
-		delete(iw.cgroupsWatched, dir)
+		delete(cgroupsWatched, dir)
 	}
 
-	// Record the container as no longer being watched.
-	if alreadyWatched {
+	// Remove the record if this is the last watch.
+	if len(cgroupsWatched) == 0 {
 		delete(iw.containersWatched, containerName)
+		return true, nil
 	}
 
-	return alreadyWatched, nil
+	return false, nil
 }
 
 // Errors are returned on this channel.
@@ -112,11 +117,13 @@ func (iw *InotifyWatcher) Close() error {
 	return iw.watcher.Close()
 }
 
-// Returns a list of:
-// - Containers being watched.
-// - Cgroup paths being watched.
-func (iw *InotifyWatcher) GetWatches() ([]string, []string) {
-	return mapToSlice(iw.containersWatched), mapToSlice(iw.cgroupsWatched)
+// Returns a map of containers to the cgroup paths being watched.
+func (iw *InotifyWatcher) GetWatches() map[string][]string {
+	out := make(map[string][]string, len(iw.containersWatched))
+	for k, v := range iw.containersWatched {
+		out[k] = mapToSlice(v)
+	}
+	return out
 }
 
 func mapToSlice(m map[string]bool) []string {

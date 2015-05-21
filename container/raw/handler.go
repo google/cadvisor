@@ -473,18 +473,18 @@ func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan 
 		}
 
 		// Only report container creation once.
-		if !alreadyWatched {
+		if alreadyWatched {
 			return nil
 		}
 	case eventType == container.SubcontainerDelete:
 		// Container was deleted, stop watching for it.
-		wasWatched, err := self.watcher.RemoveWatch(containerName, event.Name)
+		lastWatched, err := self.watcher.RemoveWatch(containerName, event.Name)
 		if err != nil {
 			return err
 		}
 
 		// Only report container deletion once.
-		if wasWatched {
+		if !lastWatched {
 			return nil
 		}
 	default:
