@@ -55,6 +55,23 @@ func (self *rawFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	return true, accept, nil
 }
 
+func (self *rawFactory) DebugInfo() map[string][]string {
+	out := make(map[string][]string)
+
+	// Get information about inotify watches.
+	watches := self.watcher.GetWatches()
+	lines := make([]string, 0, len(watches))
+	for containerName, cgroupWatches := range watches {
+		lines = append(lines, fmt.Sprintf("%s:", containerName))
+		for _, cg := range cgroupWatches {
+			lines = append(lines, fmt.Sprintf("\t%s", cg))
+		}
+	}
+	out["Inotify watches"] = lines
+
+	return out
+}
+
 func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
