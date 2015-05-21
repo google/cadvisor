@@ -62,7 +62,7 @@ type rawContainerHandler struct {
 	externalMounts []mount
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *InotifyWatcher) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
 	for key, val := range cgroupSubsystems.MountPoints {
@@ -106,6 +106,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		fsInfo:             fsInfo,
 		hasNetwork:         hasNetwork,
 		externalMounts:     externalMounts,
+		watcher:            watcher,
 	}, nil
 }
 
@@ -501,15 +502,6 @@ func (self *rawContainerHandler) processEvent(event *inotify.Event, events chan 
 }
 
 func (self *rawContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {
-	// Lazily initialize the watcher so we don't use it when not asked to.
-	if self.watcher == nil {
-		w, err := NewInotifyWatcher()
-		if err != nil {
-			return err
-		}
-		self.watcher = w
-	}
-
 	// Watch this container (all its cgroups) and all subdirectories.
 	for _, cgroupPath := range self.cgroupPaths {
 		_, err := self.watchDirectory(cgroupPath, self.name)
@@ -533,7 +525,6 @@ func (self *rawContainerHandler) WatchSubcontainers(events chan container.Subcon
 				err := self.watcher.Close()
 				if err == nil {
 					self.stopWatcher <- err
-					self.watcher = nil
 					return
 				}
 			}
@@ -544,10 +535,6 @@ func (self *rawContainerHandler) WatchSubcontainers(events chan container.Subcon
 }
 
 func (self *rawContainerHandler) StopWatchingSubcontainers() error {
-	if self.watcher == nil {
-		return fmt.Errorf("can't stop watch that has not started for container %q", self.name)
-	}
-
 	// Rendezvous with the watcher thread.
 	self.stopWatcher <- nil
 	return <-self.stopWatcher

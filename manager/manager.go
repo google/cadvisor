@@ -107,6 +107,9 @@ type Manager interface {
 
 	// Get details about interesting docker images.
 	DockerImages() ([]DockerImage, error)
+
+	// Returns debugging information. Map of lines per category.
+	DebugInfo() map[string][]string
 }
 
 // New takes a memory storage and returns a new manager.
@@ -1130,4 +1133,8 @@ func (m *manager) DockerInfo() (DockerStatus, error) {
 		}
 	}
 	return out, nil
+}
+
+func (m *manager) DebugInfo() map[string][]string {
+	return container.DebugInfo()
 }
