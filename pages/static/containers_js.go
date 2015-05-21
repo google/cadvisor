@@ -175,8 +175,12 @@ function getMachineInfo(rootDir, callback) {
 
 // Get ps info.
 function getProcessInfo(rootDir, containerName, callback) {
-	$.getJSON(rootDir + "api/v2.0/ps" + containerName, function(data) {
+	$.getJSON(rootDir + "api/v2.0/ps" + containerName)
+	.done(function(data) {
 		callback(data);
+	})
+	.fail(function(jqhxr, textStatus, error) {
+		callback([]);
 	});
 }
 
@@ -467,6 +471,7 @@ function drawImages(images) {
 
 function drawProcesses(isRoot, rootDir, processInfo) {
 	if (processInfo.length == 0) {
+		$("#processes-top").text("No processes found");
 		return;
 	}
 	var titles = ["User", "PID", "PPID", "Start Time", "CPU %", "MEM %", "RSS", "Virtual Size", "Status", "Running Time", "Command"];
