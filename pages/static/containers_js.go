@@ -478,7 +478,7 @@ function drawProcesses(isRoot, rootDir, processInfo) {
 	var titleTypes = ['string', 'number', 'number', 'string', 'number', 'number', 'number', 'number', 'string', 'string', 'string'];
 	var sortIndex = 4
 	if (isRoot) {
-		titles.push("Cgroup");
+		titles.push("Container");
 		titleTypes.push('string');
 	}
 	var data = []
