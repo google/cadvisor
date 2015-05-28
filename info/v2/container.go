@@ -72,6 +72,11 @@ type ContainerSpec struct {
 
 	HasMemory bool       `json:"has_memory"`
 	Memory    MemorySpec `json:"memory,omitempty"`
+
+	// Following resources have no associated spec, but are being isolated.
+	HasNetwork    bool `json:"has_network"`
+	HasFilesystem bool `json:"has_filesystem"`
+	HasDiskIo     bool `json:"has_diskio"`
 }
 
 type ContainerStats struct {
