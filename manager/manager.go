@@ -361,9 +361,12 @@ func (self *manager) GetContainerSpec(containerName string, options v2.RequestOp
 func (self *manager) getV2Spec(cinfo *containerInfo) v2.ContainerSpec {
 	specV1 := self.getAdjustedSpec(cinfo)
 	specV2 := v2.ContainerSpec{
-		CreationTime: specV1.CreationTime,
-		HasCpu:       specV1.HasCpu,
-		HasMemory:    specV1.HasMemory,
+		CreationTime:  specV1.CreationTime,
+		HasCpu:        specV1.HasCpu,
+		HasMemory:     specV1.HasMemory,
+		HasFilesystem: specV1.HasFilesystem,
+		HasNetwork:    specV1.HasNetwork,
+		HasDiskIo:     specV1.HasDiskIo,
 	}
 	if specV1.HasCpu {
 		specV2.Cpu.Limit = specV1.Cpu.Limit
