@@ -26,6 +26,7 @@ import (
 	"github.com/google/cadvisor/storage/bigquery"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/redis"
+	"github.com/google/cadvisor/storage/riemann"
 )
 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
@@ -85,6 +86,16 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 		backendStorage, err = redis.New(
 			machineName,
 			*argDbName,
+			*argDbHost,
+			*argDbBufferDuration,
+		)
+	case "riemann":
+		machineName, err := os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+		backendStorage, err = riemann.New(
+			machineName,
 			*argDbHost,
 			*argDbBufferDuration,
 		)
