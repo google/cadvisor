@@ -89,8 +89,7 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 	return nil
 }
 
-// We just need to push the data to the redis, do not need to pull from the redis,
-//so we do not override RecentStats()
+// RecentStats is only implemented by in-memory cache storage.
 func (self *redisStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
 	return nil, nil
 }
