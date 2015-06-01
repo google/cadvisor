@@ -19,6 +19,9 @@ import info "github.com/google/cadvisor/info/v1"
 type StorageDriver interface {
 	AddStats(ref info.ContainerReference, stats *info.ContainerStats) error
 
+	// TODO(rjnagal): RecentStats() is only required by in-memory cache
+	// storage. Refactor and remove from the interface.
+	//
 	// Read most recent stats. numStats indicates max number of stats
 	// returned. The returned stats must be consecutive observed stats. If
 	// numStats < 0, then return all stats stored in the storage. The
