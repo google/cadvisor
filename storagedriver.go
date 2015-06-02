@@ -21,10 +21,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/bigquery"
 	"github.com/google/cadvisor/storage/influxdb"
-	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/storage/redis"
 )
 
@@ -38,8 +38,8 @@ var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*tim
 var storageDuration = flag.Duration("storage_duration", 2*time.Minute, "How long to keep data stored (Default: 2min).")
 
 // Creates a memory storage with an optional backend storage option.
-func NewMemoryStorage(backendStorageName string) (*memory.InMemoryStorage, error) {
-	var storageDriver *memory.InMemoryStorage
+func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) {
+	var storageDriver *memory.InMemoryCache
 	var backendStorage storage.StorageDriver
 	var err error
 	switch backendStorageName {

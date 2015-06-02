@@ -28,11 +28,11 @@ import (
 
 	"github.com/docker/docker/pkg/units"
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
-	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
 )
@@ -56,7 +56,7 @@ type containerInfo struct {
 type containerData struct {
 	handler              container.ContainerHandler
 	info                 containerInfo
-	memoryStorage        *memory.InMemoryStorage
+	memoryCache          *memory.InMemoryCache
 	lock                 sync.Mutex
 	loadReader           cpuload.CpuLoadReader
 	summaryReader        *summary.StatsSummary
@@ -215,8 +215,8 @@ func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
 	return processes, nil
 }
 
-func newContainerData(containerName string, memoryStorage *memory.InMemoryStorage, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool, collectorManager collector.CollectorManager) (*containerData, error) {
-	if memoryStorage == nil {
+func newContainerData(containerName string, memoryCache *memory.InMemoryCache, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool, collectorManager collector.CollectorManager) (*containerData, error) {
+	if memoryCache == nil {
 		return nil, fmt.Errorf("nil memory storage")
 	}
 	if handler == nil {
@@ -229,7 +229,7 @@ func newContainerData(containerName string, memoryStorage *memory.InMemoryStorag
 
 	cont := &containerData{
 		handler:              handler,
-		memoryStorage:        memoryStorage,
+		memoryCache:          memoryCache,
 		housekeepingInterval: *HousekeepingInterval,
 		loadReader:           loadReader,
 		logUsage:             logUsage,
@@ -256,7 +256,7 @@ func newContainerData(containerName string, memoryStorage *memory.InMemoryStorag
 func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Time {
 	if *allowDynamicHousekeeping {
 		var empty time.Time
-		stats, err := self.memoryStorage.RecentStats(self.info.Name, empty, empty, 2)
+		stats, err := self.memoryCache.RecentStats(self.info.Name, empty, empty, 2)
 		if err != nil {
 			if self.allowErrorLogging() {
 				glog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
@@ -311,7 +311,7 @@ func (c *containerData) housekeeping() {
 		if c.logUsage {
 			const numSamples = 60
 			var empty time.Time
-			stats, err := c.memoryStorage.RecentStats(c.info.Name, empty, empty, numSamples)
+			stats, err := c.memoryCache.RecentStats(c.info.Name, empty, empty, numSamples)
 			if err != nil {
 				if c.allowErrorLogging() {
 					glog.Infof("[%s] Failed to get recent stats for logging usage: %v", c.info.Name, err)
@@ -434,7 +434,7 @@ func (c *containerData) updateStats() error {
 		}
 		return err
 	}
-	err = c.memoryStorage.AddStats(ref, stats)
+	err = c.memoryCache.AddStats(ref, stats)
 	if err != nil {
 		return err
 	}

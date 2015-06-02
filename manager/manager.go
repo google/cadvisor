@@ -27,6 +27,7 @@ import (
 
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
@@ -35,7 +36,6 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
-	"github.com/google/cadvisor/storage/memory"
 	"github.com/google/cadvisor/utils/cpuload"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
@@ -113,8 +113,8 @@ type Manager interface {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, error) {
-	if memoryStorage == nil {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs) (Manager, error) {
+	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
 
@@ -133,7 +133,7 @@ func New(memoryStorage *memory.InMemoryStorage, sysfs sysfs.SysFs) (Manager, err
 	newManager := &manager{
 		containers:        make(map[namespacedContainerName]*containerData),
 		quitChannels:      make([]chan error, 0, 2),
-		memoryStorage:     memoryStorage,
+		memoryCache:       memoryCache,
 		fsInfo:            fsInfo,
 		cadvisorContainer: selfContainer,
 		startupTime:       time.Now(),
@@ -169,7 +169,7 @@ type namespacedContainerName struct {
 type manager struct {
 	containers             map[namespacedContainerName]*containerData
 	containersLock         sync.RWMutex
-	memoryStorage          *memory.InMemoryStorage
+	memoryCache            *memory.InMemoryCache
 	fsInfo                 fs.FsInfo
 	machineInfo            info.MachineInfo
 	versionInfo            info.VersionInfo
@@ -412,7 +412,7 @@ func (self *manager) containerDataToContainerInfo(cont *containerData, query *in
 		return nil, err
 	}
 
-	stats, err := self.memoryStorage.RecentStats(cinfo.Name, query.Start, query.End, query.NumStats)
+	stats, err := self.memoryCache.RecentStats(cinfo.Name, query.Start, query.End, query.NumStats)
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +597,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 	var empty time.Time
 	// Get latest data from filesystems hanging off root container.
-	stats, err := self.memoryStorage.RecentStats("/", empty, empty, 1)
+	stats, err := self.memoryCache.RecentStats("/", empty, empty, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -696,7 +696,7 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
-	cont, err := newContainerData(containerName, m.memoryStorage, handler, m.loadReader, logUsage, collectorManager)
+	cont, err := newContainerData(containerName, m.memoryCache, handler, m.loadReader, logUsage, collectorManager)
 	if err != nil {
 		return err
 	}

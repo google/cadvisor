@@ -89,11 +89,6 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 	return nil
 }
 
-// RecentStats is only implemented by in-memory cache storage.
-func (self *redisStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
-	return nil, nil
-}
-
 func (self *redisStorage) Close() error {
 	return self.conn.Close()
 }

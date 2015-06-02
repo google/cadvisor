@@ -260,11 +260,6 @@ func (self *bigqueryStorage) AddStats(ref info.ContainerReference, stats *info.C
 	return nil
 }
 
-// Recent stats is not required to be implemented by any storage driver other than the in-memory cache.
-func (self *bigqueryStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
-	return nil, nil
-}
-
 func (self *bigqueryStorage) Close() error {
 	self.client.Close()
 	self.client = nil
