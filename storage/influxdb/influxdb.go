@@ -229,8 +229,3 @@ func New(machineName,
 	ret.readyToFlush = ret.defaultReadyToFlush
 	return ret, nil
 }
-
-// RecentStats is only implemented by in-memory cache storage.
-func (self *influxdbStorage) RecentStats(containerName string, numStats int) ([]*info.ContainerStats, error) {
-	return nil, nil
-}
