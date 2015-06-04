@@ -92,8 +92,8 @@ type ContainerStats struct {
 	HasMemory bool           `json:"has_memory"`
 	Memory    v1.MemoryStats `json:"memory,omitempty"`
 	// Network statistics
-	HasNetwork bool              `json:"has_network"`
-	Network    []v1.NetworkStats `json:"network,omitempty"`
+	HasNetwork bool         `json:"has_network"`
+	Network    NetworkStats `json:"network,omitempty"`
 	// Filesystem statistics
 	HasFilesystem bool         `json:"has_filesystem"`
 	Filesystem    []v1.FsStats `json:"filesystem,omitempty"`
@@ -188,4 +188,9 @@ type ProcessInfo struct {
 	RunningTime   string  `json:"running_time"`
 	CgroupPath    string  `json:"cgroup_path"`
 	Cmd           string  `json:"cmd"`
+}
+
+type NetworkStats struct {
+	// Network stats by interface.
+	Interfaces []v1.InterfaceStats `json:"interfaces,omitempty"`
 }
