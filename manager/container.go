@@ -132,26 +132,22 @@ func (c *containerData) getCgroupPath(cgroups string) (string, error) {
 	return string(matches[1]), nil
 }
 
-func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
+func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace bool) ([]v2.ProcessInfo, error) {
 	// report all processes for root.
 	isRoot := c.info.Name == "/"
-	pidMap := map[int]bool{}
-	if !isRoot {
-		pids, err := c.handler.ListProcesses(container.ListSelf)
-		if err != nil {
-			return nil, err
-		}
-		for _, pid := range pids {
-			pidMap[pid] = true
-		}
-	}
 	// TODO(rjnagal): Take format as an option?
 	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm,cgroup"
-	args := []string{"-e", "-o", format}
+	args := []string{}
+	command := "ps"
+	if !inHostNamespace {
+		command = "/usr/sbin/chroot"
+		args = append(args, "/rootfs", "ps")
+	}
+	args = append(args, "-e", "-o", format)
 	expectedFields := 12
-	out, err := exec.Command("ps", args...).Output()
+	out, err := exec.Command(command, args...).Output()
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute ps command: %v", err)
+		return nil, fmt.Errorf("failed to execute %q command: %v", command, err)
 	}
 	processes := []v2.ProcessInfo{}
 	lines := strings.Split(string(out), "\n")
@@ -187,15 +183,21 @@ func (c *containerData) GetProcessList() ([]v2.ProcessInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("invalid virtual size %q: %v", fields[7], err)
 		}
+		cgroup, err := c.getCgroupPath(fields[11])
+		if err != nil {
+			return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[10], err)
+		}
+		// Remove the ps command we just ran from cadvisor container.
+		// Not necessary, but makes the cadvisor page look cleaner.
+		if !inHostNamespace && cadvisorContainer == cgroup && fields[10] == "ps" {
+			continue
+		}
 		var cgroupPath string
 		if isRoot {
-			cgroupPath, err = c.getCgroupPath(fields[11])
-			if err != nil {
-				return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[10], err)
-			}
+			cgroupPath = cgroup
 		}
 
-		if isRoot || pidMap[pid] == true {
+		if isRoot || c.info.Name == cgroup {
 			processes = append(processes, v2.ProcessInfo{
 				User:          fields[0],
 				Pid:           pid,
