@@ -18,6 +18,7 @@ package manager
 import (
 	"flag"
 	"fmt"
+	"os"
 	"path"
 	"regexp"
 	"strconv"
@@ -130,12 +131,20 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs) (Manager, error) 
 	if err != nil {
 		return nil, err
 	}
+
+	// If cAdvisor was started with host's rootfs mounted, assume that its running
+	// in its own namespaces.
+	inHostNamespace := false
+	if _, err := os.Stat("/rootfs/proc"); os.IsNotExist(err) {
+		inHostNamespace = true
+	}
 	newManager := &manager{
 		containers:        make(map[namespacedContainerName]*containerData),
 		quitChannels:      make([]chan error, 0, 2),
 		memoryCache:       memoryCache,
 		fsInfo:            fsInfo,
 		cadvisorContainer: selfContainer,
+		inHostNamespace:   inHostNamespace,
 		startupTime:       time.Now(),
 	}
 
@@ -175,6 +184,7 @@ type manager struct {
 	versionInfo            info.VersionInfo
 	quitChannels           []chan error
 	cadvisorContainer      string
+	inHostNamespace        bool
 	dockerContainersRegexp *regexp.Regexp
 	loadReader             cpuload.CpuLoadReader
 	eventHandler           events.EventManager
@@ -671,7 +681,7 @@ func (m *manager) GetProcessList(containerName string, options v2.RequestOptions
 	// TODO(rjnagal): handle count? Only if we can do count by type (eg. top 5 cpu users)
 	ps := []v2.ProcessInfo{}
 	for _, cont := range conts {
-		ps, err = cont.GetProcessList()
+		ps, err = cont.GetProcessList(m.cadvisorContainer, m.inHostNamespace)
 		if err != nil {
 			return nil, err
 		}
