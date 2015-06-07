@@ -29,6 +29,8 @@ tcp://192.168.59.103:2376
 
 In this case, cAdvisor UI should be accessible on `http://192.168.59.103:8080`
 
+## Other Configurations
+
 ### CentOS and RHEL
 
 You may need to run the container with `--privileged=true` and `--volume=/cgroup:/cgroup:ro \` in order for cAdvisor to monitor Docker containers.
@@ -37,7 +39,7 @@ RHEL and CentOS lock down their containers a bit more. cAdvisor needs access to 
 
 On some versions of RHEL and CentOS the cgroup hierarchies are mounted in `/cgroup` so run cAdvisor with an additional Docker option of `--volume=/cgroup:/cgroup:ro \`.
 
-## Debian
+### Debian
 
 By default, Debian disables the memory cgroup which does not allow cAdvisor to gather memory stats. To enable the memory cgroup take a look at [these instructions](https://github.com/google/cadvisor/issues/432).
 
