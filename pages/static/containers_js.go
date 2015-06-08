@@ -654,7 +654,9 @@ function setNetwork(interfaceName) {
 		.append($("<span>").text("Interface: "))
 		.append($("<b>").text(interfaceName));
 	window.cadvisor.network.interface = interfaceName;
-	// TODO(vmarmol): Draw network here.
+
+	// Draw the new stats.
+	refreshStats();
 }
 
 // Creates the network selection dropdown.
@@ -669,7 +671,6 @@ function startNetwork(selectionElement, containerInfo) {
 
 	// Add all interfaces to the dropdown.
 	var el = $("#" + selectionElement);
-	console.log(containerInfo.stats[0].network.interfaces);
 	for (var i = 0; i < containerInfo.stats[0].network.interfaces.length; i++) {
 		var interfaceName = containerInfo.stats[0].network.interfaces[i].name;
 		el.append($("<li>")
@@ -683,6 +684,24 @@ function startNetwork(selectionElement, containerInfo) {
 	setNetwork(containerInfo.stats[0].network.interfaces[0].name);
 }
 
+// Refresh the stats on the page.
+function refreshStats() {
+	var machineInfo = window.cadvisor.machineInfo;
+	getStats(window.cadvisor.rootDir, window.cadvisor.containerName, function(containerInfo){
+		if (window.cadvisor.firstRun) {
+			window.cadvisor.firstRun = false;
+
+			if (containerInfo.spec.has_filesystem) {
+				startFileSystemUsage("filesystem-usage", machineInfo, containerInfo);
+			}
+			if (containerInfo.spec.has_network) {
+				startNetwork("network-selection", containerInfo);
+			}
+		}
+			drawCharts(machineInfo, containerInfo);
+	});
+}
+
 // Executed when the page finishes loading.
 function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
 	// Don't fetch data if we don't have any resource.
@@ -693,6 +712,8 @@ function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
 	window.charts = {};
 	window.cadvisor = {};
 	window.cadvisor.firstRun = true;
+	window.cadvisor.rootDir = rootDir;
+	window.cadvisor.containerName = containerName;
 
 	// Draw process information at start and refresh every 60s.
 	getProcessInfo(rootDir, containerName, function(processInfo) {
@@ -706,21 +727,9 @@ function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
 
 	// Get machine info, then get the stats every 1s.
 	getMachineInfo(rootDir, function(machineInfo) {
+		window.cadvisor.machineInfo = machineInfo;
 		setInterval(function() {
-			getStats(rootDir, containerName, function(containerInfo){
-				if (window.cadvisor.firstRun) {
-					window.cadvisor.firstRun = false;
-
-					if (containerInfo.spec.has_filesystem) {
-						startFileSystemUsage("filesystem-usage", machineInfo, containerInfo);
-					}
-					if (containerInfo.spec.has_network) {
-						startNetwork("network-selection", containerInfo);
-					}
-				}
-
-				drawCharts(machineInfo, containerInfo);
-			});
+			refreshStats();
 		}, 1000);
 	});
 }
