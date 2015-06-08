@@ -31,7 +31,7 @@ In this case, cAdvisor UI should be accessible on `http://192.168.59.103:8080`
 
 ## Other Configurations
 
-### CentOS and RHEL
+### CentOS, Fedora, and RHEL
 
 You may need to run the container with `--privileged=true` and `--volume=/cgroup:/cgroup:ro \` in order for cAdvisor to monitor Docker containers.
 
