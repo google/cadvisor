@@ -227,7 +227,7 @@ func (self *manager) Start() error {
 	// Watch for OOMs.
 	err = self.watchForNewOoms()
 	if err != nil {
-		glog.Errorf("Failed to start OOM watcher, will not get OOM events: %v", err)
+		glog.Warningf("Could not configure a source for OOM detection, disabling OOM events: %v", err)
 	}
 
 	// If there are no factories, don't start any housekeeping and serve the information we do have.
