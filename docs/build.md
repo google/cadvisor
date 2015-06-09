@@ -27,3 +27,9 @@ $GOPATH/src/github.com/google/cadvisor $ godep go test ./... -test.short
 ```
 
 For integration tests, see the [integration testing](integration_testing.md) page.
+
+Now you can run the built binary:
+
+```
+$GOPATH/src/github.com/google/cadvisor $ sudo ./cadvisor
+```
