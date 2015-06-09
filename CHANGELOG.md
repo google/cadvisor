@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.0 (2015-06-08)
+- Expose multiple network intefaces in UI and API.
+- Add support for XFS.
+- Fixes in inotify watches.
+- Fixes on PowerPC machines.
+- Fixes for newer systems with systemd.
+- Extra debuging informaiton in /validate.
+
 ## 0.14.0 (2015-05-21)
 - Add process stats to container pages in the UI.
 - Serve UI from relative paths (allows reverse proxying).
