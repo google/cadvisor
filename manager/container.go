@@ -81,6 +81,10 @@ func (c *containerData) Start() error {
 }
 
 func (c *containerData) Stop() error {
+	err := c.memoryCache.RemoveContainer(c.info.Name)
+	if err != nil {
+		return err
+	}
 	c.stop <- true
 	return nil
 }

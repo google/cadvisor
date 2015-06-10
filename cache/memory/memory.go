@@ -118,6 +118,13 @@ func (self *InMemoryCache) Close() error {
 	return nil
 }
 
+func (self *InMemoryCache) RemoveContainer(containerName string) error {
+	self.lock.Lock()
+	delete(self.containerCacheMap, containerName)
+	self.lock.Unlock()
+	return nil
+}
+
 func New(
 	maxAge time.Duration,
 	backend storage.StorageDriver,

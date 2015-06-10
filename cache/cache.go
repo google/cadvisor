@@ -17,7 +17,11 @@ package cache
 import info "github.com/google/cadvisor/info/v1"
 
 type Cache interface {
+	// Add a ContainerStats for the specified container.
 	AddStats(ref info.ContainerReference, stats *info.ContainerStats) error
+
+	// Remove all cached information for the specified container.
+	RemoveContainer(containerName string) error
 
 	// Read most recent stats. numStats indicates max number of stats
 	// returned. The returned stats must be consecutive observed stats. If
