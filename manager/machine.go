@@ -30,6 +30,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
+	"github.com/google/cadvisor/utils/cloudinfo"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysinfo"
 	version "github.com/google/cadvisor/version"
@@ -273,6 +274,10 @@ func getMachineInfo(sysFs sysfs.SysFs, fsInfo fs.FsInfo) (*info.MachineInfo, err
 		glog.Errorf("Failed to get system UUID: %v", err)
 	}
 
+	realCloudInfo := cloudinfo.NewRealCloudInfo()
+	cloudProvider := realCloudInfo.GetCloudProvider()
+	instanceType := realCloudInfo.GetInstanceType()
+
 	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
 		CpuFrequency:   clockSpeed,
@@ -283,6 +288,8 @@ func getMachineInfo(sysFs sysfs.SysFs, fsInfo fs.FsInfo) (*info.MachineInfo, err
 		MachineID:      getInfoFromFiles(*machineIdFilePath),
 		SystemUUID:     systemUUID,
 		BootID:         getInfoFromFiles(*bootIdFilePath),
+		CloudProvider:  cloudProvider,
+		InstanceType:   instanceType,
 	}
 
 	for _, fs := range filesystems {
