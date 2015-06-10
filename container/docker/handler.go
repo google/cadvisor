@@ -167,7 +167,7 @@ func libcontainerConfigToContainerSpec(config *libcontainerConfigs.Config, mi *i
 	}
 	spec.Cpu.Mask = utils.FixCpuMask(config.Cgroups.CpusetCpus, mi.NumCores)
 
-	spec.HasNetwork = true
+	spec.HasNetwork = len(config.Networks) > 0
 	spec.HasDiskIo = true
 
 	return spec
