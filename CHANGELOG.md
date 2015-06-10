@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.1 (2015-06-10)
+- Fix longstanding memory leak.
+- Fix UI on newest Chrome.
+
 ## 0.15.0 (2015-06-08)
 - Expose multiple network intefaces in UI and API.
 - Add support for XFS.
