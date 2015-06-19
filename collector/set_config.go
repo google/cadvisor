@@ -1,7 +1,6 @@
 package collector
 
 import (
-	"fmt"
 	"io/ioutil"
 	"time"
 	"encoding/json"
@@ -28,10 +27,8 @@ type metricConfig struct {
 }
 
 func SetCollectorConfig(collector *Collector, file string) error {
-	fmt.Println("In setconfig")
 	configFile, err := ioutil.ReadFile(file)
 	if err != nil {
-		fmt.Println( err )
 		collector.err = err
 	} else {
 		var configInJSON Config
