@@ -1,0 +1,30 @@
+{
+	"endpoint" : "host:port/nginx_status",
+	"metricsConfig"  : [
+		{ "name" : "activeConnections",  
+		  "metricType" : "gauge",
+		  "units" : "integer",
+		  "pollingFrequency" : "10s",
+		  "regex" : "Active connections: ([0-9]+)"			
+		},
+		{ "name" : "reading",
+		  "metricType" : "gauge", 
+		  "units" : "integer",
+		  "pollingFrequency" : "10s",
+		  "regex" : "Reading: ([0-9]+) .*"	
+		},
+		{ "name" : "writing",
+                  "metricType" : "gauge",
+                  "units" : "integer",
+                  "pollingFrequency" : "10s",
+                  "regex" : ".*Writing: ([0-9]+).*"
+                },
+		{ "name" : "waiting",
+                  "metricType" : "gauge",
+                  "units" : "integer",
+                  "pollingFrequency" : "10s",
+                  "regex" : ".*Waiting: ([0-9]+)"
+                }
+	] 	
+	
+}
