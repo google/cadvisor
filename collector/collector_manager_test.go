@@ -13,16 +13,14 @@
 // limitations under the License.
 
 package collector
-/*
+
 import (
 	"testing"
-	"time"
 
-	"github.com/google/cadvisor/info/v2"
 	"github.com/stretchr/testify/assert"
 )
 
-type fakeCollector struct {
+/*type fakeCollector struct {
 	nextCollectionTime time.Time
 	err                error
 	collectedFrom      int
@@ -69,3 +67,11 @@ func TestCollect(t *testing.T) {
 	assert.Equal(2, f1.collectedFrom)
 	assert.Equal(1, f2.collectedFrom)
 }*/
+
+func TestCollectorManager(t *testing.T) {
+	assert := assert.New(t)
+	cm, err := NewCollectorManager()
+	assert.NoError(err)
+	err = cm.RegisterAllCollectors("config/sample_config.json")
+	assert.NoError(err)
+}

@@ -35,6 +35,10 @@ type CollectorInterface interface {
 
 // Manages and runs collectors.
 type CollectorManager interface {
+
+
+	RegisterAllCollectors(fileLocation string) error	
+
 	// Register a collector.
 	RegisterCollector(collector Collector) error
 

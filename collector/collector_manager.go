@@ -48,6 +48,18 @@ func (cm *collectorManager) RegisterCollector(collector Collector) error {
 	return nil
 }
 
+func (cm *collectorManager) RegisterAllCollectors(fileLocation string) error {
+	collector, err := NewNginxCollector()
+	if err!= nil {
+		return err
+	}
+	err = SetCollectorConfig(collector, fileLocation)
+	if err!= nil {
+		return err
+	}
+	return cm.RegisterCollector(*collector)
+}
+
 func (cm *collectorManager) Collect() (time.Time, []v2.Metric, error) {
 	var errors []error
 
