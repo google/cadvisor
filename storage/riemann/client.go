@@ -17,18 +17,18 @@
    since Goryman doesn't support direct interaction
    with TCP connection which we need for batch-sending
    events.
-
-   TODO: reconnect on broken pipe.
 */
 
 package riemann
 
-import(
+import (
+	"fmt"
 	"net"
 	"time"
 
-	"github.com/bigdatadev/goryman/proto"
 	riemann "github.com/bigdatadev/goryman"
+	"github.com/bigdatadev/goryman/proto"
+	"github.com/cenkalti/backoff"
 )
 
 type riemannClient struct {
@@ -45,8 +45,41 @@ func (c *riemannClient) Connect() error {
 	return nil
 }
 
+func (c *riemannClient) ConnectWithRetry() error {
+	return backoff.Retry(
+		c.Connect,
+		backoff.NewConstantBackOff(time.Second),
+	)
+}
+
 func (c *riemannClient) SendMessage(msg *proto.Msg) (*proto.Msg, error) {
-	return c.conn.SendRecv(msg)
+	if c.conn == nil {
+		return msg, fmt.Errorf("no connection, message will be dropped.")
+	}
+
+	msg, err := c.conn.SendRecv(msg)
+	if err != nil {
+		failed := c.Reconnect()
+		if failed != nil {
+			return msg, failed
+		}
+		return msg, err
+	}
+
+	return msg, nil
+}
+
+func (c *riemannClient) Reconnect() error {
+	err := c.Close()
+	if err != nil {
+		return err
+	}
+
+	// Try to create a new connection in a background
+	// while dropping incoming messages
+	go c.ConnectWithRetry()
+
+	return nil
 }
 
 func (c *riemannClient) Close() error {

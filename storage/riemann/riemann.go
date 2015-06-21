@@ -14,49 +14,48 @@
 
 package riemann
 
-import(
+import (
 	"fmt"
-	"time"
 	"strconv"
 	"sync"
+	"time"
 
-	"github.com/google/cadvisor/storage"
 	"github.com/bigdatadev/goryman/proto"
+	"github.com/google/cadvisor/storage"
 
 	riemann "github.com/bigdatadev/goryman"
-	info    "github.com/google/cadvisor/info/v1"
+	info "github.com/google/cadvisor/info/v1"
 )
 
-const(
+const (
 	// https://github.com/collectd/collectd/blob/master/src/write_riemann.c#L949
 	ttlFactor float32 = 2.0
 
 	// Metrics keys
-	memoryUsage string = "memory:usage"
+	memoryUsage      string = "memory:usage"
 	memoryWorkingSet string = "memory:working:set"
-	cpuUsageTotal string = "cpu:usage:total"
-	cpuUsageUser string = "cpu:usage:user"
-	cpuUsageSystem string = "cpu:usage:system"
-	cpuUsagePerCpu string = "cpu:usage:cpu%d"
-	networkRxBytes string = "network:rxbytes"
-	networkRxErrors string = "network:rxerrors"
-	networkTxErrors string = "network:txerrors"
-	networkTxBytes string = "network:txbytes"
+	cpuUsageTotal    string = "cpu:usage:total"
+	cpuUsageUser     string = "cpu:usage:user"
+	cpuUsageSystem   string = "cpu:usage:system"
+	cpuUsagePerCpu   string = "cpu:usage:cpu%d"
+	networkRxBytes   string = "network:rxbytes"
+	networkRxErrors  string = "network:rxerrors"
+	networkTxErrors  string = "network:txerrors"
+	networkTxBytes   string = "network:txbytes"
 )
 
 type riemannStorage struct {
-	machineName string
-	lock sync.Mutex
-	lastSend time.Time
-	client *riemannClient
-	buffer *proto.Msg
+	machineName    string
+	lock           sync.Mutex
+	lastSend       time.Time
+	client         *riemannClient
+	buffer         *proto.Msg
 	bufferDuration time.Duration
 }
 
 func (self *riemannStorage) readyToFlush() bool {
 	return time.Since(self.lastSend) >= self.bufferDuration
 }
-
 
 // A Riemann metric could be int64, float32 or float64
 func coerceMetricType(v interface{}) (interface{}, error) {
@@ -119,6 +118,7 @@ func (self *riemannStorage) statsMapToRiemannMessage(
 			Service: fmt.Sprintf("%s:%s", containerName, service),
 			Metric:  metric,
 			Time:    timestamp,
+			Tags:    []string{"cadvisor"},
 			Ttl:     self.calculateTtl(),
 		}
 
@@ -134,7 +134,7 @@ func (self *riemannStorage) statsMapToRiemannMessage(
 }
 
 func makeStatsMap(stats *info.ContainerStats) map[string]interface{} {
-	values    := make(map[string]interface{}, 0)
+	values := make(map[string]interface{}, 0)
 
 	values[memoryUsage] = stats.Memory.Usage
 	values[memoryWorkingSet] = stats.Memory.WorkingSet
@@ -156,12 +156,11 @@ func makeStatsMap(stats *info.ContainerStats) map[string]interface{} {
 	return values
 }
 
-
 func (self *riemannStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
 	var messageToFlush *proto.Msg
 
-	timestamp    := stats.Timestamp.UnixNano()/1E3
-	statsMap     := makeStatsMap(stats)
+	timestamp := stats.Timestamp.UnixNano() / 1E3
+	statsMap := makeStatsMap(stats)
 	message, err := self.statsMapToRiemannMessage(statsMap, ref, timestamp)
 
 	self.lock.Lock()
@@ -216,17 +215,17 @@ func New(
 		addr: riemannAddr,
 	}
 
-	err := client.Connect()
+	err := client.ConnectWithRetry()
 	if err != nil {
 		return nil, err
 	}
 
 	ret := &riemannStorage{
-		client: client,
-		machineName: machineName,
+		client:         client,
+		machineName:    machineName,
 		bufferDuration: bufferDuration,
-		buffer: newEmptyBuffer(),
-		lastSend: time.Now(),
+		buffer:         newEmptyBuffer(),
+		lastSend:       time.Now(),
 	}
 
 	return ret, nil
