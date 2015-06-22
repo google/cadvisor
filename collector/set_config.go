@@ -33,11 +33,11 @@ type Config struct {
 }
 
 type metricConfig struct {
-	Name             string "json:'name'"
-	MetricType       string "json:'metricType'"
-	Units            string "json:'units'"
-	PollingFrequency string "json:'pollingFrequency'"
-	Regex            string "json:'regex'"
+	Name             string 'json:"name"'
+	MetricType       string 'json:"metricType"'
+	Units            string 'json:"units"'
+	PollingFrequency string 'json:"pollingFrequency"'
+	Regex            string 'json:"regex"'
 }
 
 func SetCollectorConfig(collector *Collector, file string) error {
