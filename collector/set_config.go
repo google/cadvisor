@@ -1,9 +1,9 @@
 package collector
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"time"
-	"encoding/json"
 )
 
 type Collector struct {
@@ -44,4 +44,3 @@ func SetCollectorConfig(collector *Collector, file string) error {
 
 	return collector.err
 }
-
