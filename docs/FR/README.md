@@ -1,4 +1,4 @@
-# cAdvisor
+﻿# cAdvisor
 
 
 *Traduction faîte par https://github.com/GlobalHelp*
@@ -7,7 +7,7 @@ cAdvisor (Container Advisor) fournis une explication et des statistiques sur les
 
 cAdvisor a un support natif avec [Docker](https://github.com/docker/docker)et devrait supporter d'autres types de conteneurs.Les conteneurs de  cAdvisor  sont basés sur [lmctfy](https://github.com/google/lmctfy) donc les conteneurs sont surportés intrinsèquement.
 
-![cAdvisor](logo.png "cAdvisor")
+![cAdvisor](https://raw.githubusercontent.com/google/cadvisor/master/logo.png "cAdvisor")
 
 #### Lancement Rapide: Lancer cAdvisor dans in Docker Container
 
