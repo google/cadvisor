@@ -1,5 +1,8 @@
 # cAdvisor
 
+
+*French version is available at Docs/FR/README.md*
+
 cAdvisor (Container Advisor) provides container users an understanding of the resource usage and performance characteristics of their running containers. It is a running daemon that collects, aggregates, processes, and exports information about running containers. Specifically, for each container it keeps resource isolation parameters, historical resource usage, histograms of complete historical resource usage and network statistics. This data is exported by container and machine-wide.
 
 cAdvisor has native support for [Docker](https://github.com/docker/docker) containers and should support just about any other container type out of the box. We strive for support accross the board so feel free to open an issue if that is not the case. cAdvisor's container abstraction is based on [lmctfy](https://github.com/google/lmctfy)'s so containers are inherently nested hierarchically.
@@ -24,9 +27,9 @@ sudo docker run \
 
 cAdvisor is now running (in the background) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
 
-**Note**: If you're running on CentOS, Fedora, RHEL, or are using LXC take a look at our [running instructions](docs/running.md).
+**Note**: If you're running on CentOS, Fedora, RHEL, or are using LXC take a look at our [running instructions](docs/en/running.md).
 
-We have detailed [instructions](docs/running.md#standalone) on running cAdvisor standalone outside of Docker. cAdvisor [running options](docs/runtime_options.md) may also be interesting for advanced usecases. If you want to build your own cAdvisor Docker image see our [deployment](docs/deploy.md) page.
+We have detailed [instructions](docs/en/running.md#standalone) on running cAdvisor standalone outside of Docker. cAdvisor [running options](docs//en/runtime_options.md) may also be interesting for advanced usecases. If you want to build your own cAdvisor Docker image see our [deployment](docs/en/deploy.md) page.
 
 ## Building and Testing
 
@@ -46,13 +49,13 @@ cAdvisor exposes a web UI at its port:
 
 `http://<hostname>:<port>/`
 
-See the [documentation](docs/web.md) for more details.
+See the [documentation](docs/en/web.md) for more details.
 
 ## Remote REST API & Clients
 
-cAdvisor exposes its raw and processed stats via a versioned remote REST API. See the API's [documentation](docs/api.md) for more information.
+cAdvisor exposes its raw and processed stats via a versioned remote REST API. See the API's [documentation](docs/en/api.md) for more information.
 
-There is also an official Go client implementation in the [client](client/) directory. See the [documentation](docs/clients.md) for more information.
+There is also an official Go client implementation in the [client](client/) directory. See the [documentation](docs/en/clients.md) for more information.
 
 ## Roadmap
 
