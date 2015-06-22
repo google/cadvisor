@@ -28,8 +28,8 @@ type Collector struct {
 }
 
 type Config struct {
-	Endpoint      string         "json:'endpoint'"
-	MetricsConfig []metricConfig "json:'metrics'"
+	Endpoint      string         'json:"endpoint"'
+	MetricsConfig []metricConfig 'json:"metricsConfig"'
 }
 
 type metricConfig struct {
