@@ -28,16 +28,16 @@ type Collector struct {
 }
 
 type Config struct {
-	Endpoint      string         'json:"endpoint"'
-	MetricsConfig []metricConfig 'json:"metricsConfig"'
+	Endpoint      string         `json:"endpoint"`
+	MetricsConfig []metricConfig `json:"metricsConfig"`
 }
 
 type metricConfig struct {
-	Name             string 'json:"name"'
-	MetricType       string 'json:"metricType"'
-	Units            string 'json:"units"'
-	PollingFrequency string 'json:"pollingFrequency"'
-	Regex            string 'json:"regex"'
+	Name             string `json:"name"`
+	MetricType       string `json:"metricType"`
+	Units            string `json:"units"`
+	PollingFrequency string `json:"pollingFrequency"`
+	Regex            string `json:"regex"`
 }
 
 func SetCollectorConfig(collector *Collector, file string) error {
