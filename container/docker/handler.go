@@ -276,7 +276,7 @@ func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 }
 
 func convertInterfaceStats(stats *info.InterfaceStats) {
-	net := stats
+	net := *stats
 
 	// Ingress for host veth is from the container.
 	// Hence tx_bytes stat on the host veth is actually number of bytes received by the container.
