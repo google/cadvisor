@@ -249,7 +249,7 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	defer fm.Cleanup()
 
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("ping", "www.google.com")
+	containerId := fm.Docker().RunBusybox("sh", "-c", "wget www.google.com && ping www.google.com")
 	waitForContainer(containerId, fm)
 
 	request := &info.ContainerInfoRequest{
@@ -261,7 +261,11 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 
 	// Checks for NetworkStats.
 	stat := containerInfo.Stats[0]
-	assert.NotEqual(t, 0, stat.Network.TxBytes, "Network tx bytes should not be zero")
-	assert.NotEqual(t, 0, stat.Network.TxPackets, "Network tx packets should not be zero")
-	// TODO(vmarmol): Can probably do a better test with two containers pinging each other.
+	assert := assert.New(t)
+	assert.NotEqual(0, stat.Network.TxBytes, "Network tx bytes should not be zero")
+	assert.NotEqual(0, stat.Network.TxPackets, "Network tx packets should not be zero")
+	assert.NotEqual(0, stat.Network.RxBytes, "Network rx bytes should not be zero")
+	assert.NotEqual(0, stat.Network.RxPackets, "Network rx packets should not be zero")
+	assert.NotEqual(stat.Network.RxBytes, stat.Network.TxBytes, "Network tx and rx bytes should not be equal")
+	assert.NotEqual(stat.Network.RxPackets, stat.Network.TxPackets, "Network tx and rx packets should not be equal")
 }
