@@ -229,7 +229,7 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) e
 
 	data := &pageData{
 		DisplayName:        displayName,
-		ContainerName:      cont.Name,
+		ContainerName:      escapeContainerName(cont.Name),
 		ParentContainers:   parentContainers,
 		Subcontainers:      subcontainerLinks,
 		Spec:               cont.Spec,
