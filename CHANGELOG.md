@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.16.0 (2015-06-26)
+- Misc fixes.
+
 ## 0.15.1 (2015-06-10)
 - Fix longstanding memory leak.
 - Fix UI on newest Chrome.
