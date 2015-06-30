@@ -49,14 +49,14 @@ func (self *realCloudInfo) GetInstanceType() info.InstanceType {
 
 func detectCloudProvider() info.CloudProvider {
 	switch {
-	case inGCE():
+	case onGCE():
 		return info.GCE
-	case inAWS():
+	case onAWS():
 		return info.AWS
-	case inBareMetal():
-		return info.BAREMETAL
+	case onBaremetal():
+		return info.Baremetal
 	}
-	return info.UNKNOWN_PROVIDER
+	return info.UnkownProvider
 }
 
 func detectInstanceType(cloudProvider info.CloudProvider) info.InstanceType {
@@ -65,23 +65,23 @@ func detectInstanceType(cloudProvider info.CloudProvider) info.InstanceType {
 		return getGceInstanceType()
 	case info.AWS:
 		return getAwsInstanceType()
-	case info.BAREMETAL:
-		return info.NO_INSTANCE
+	case info.Baremetal:
+		return info.NoInstance
 	}
-	return info.UNKNOWN_INSTANCE
+	return info.UnknownInstance
 }
 
 //TODO: Implement method.
-func inAWS() bool {
+func onAWS() bool {
 	return false
 }
 
 //TODO: Implement method.
 func getAwsInstanceType() info.InstanceType {
-	return info.UNKNOWN_INSTANCE
+	return info.UnknownInstance
 }
 
 //TODO: Implement method.
-func inBareMetal() bool {
+func onBaremetal() bool {
 	return false
 }

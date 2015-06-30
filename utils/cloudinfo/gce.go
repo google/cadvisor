@@ -15,38 +15,22 @@
 package cloudinfo
 
 import (
-	"io"
-	"net/http"
 	"strings"
 
+	"github.com/GoogleCloudPlatform/gcloud-golang/compute/metadata"
 	info "github.com/google/cadvisor/info/v1"
 )
 
-func inGCE() bool {
-	_, err := http.Get("http://metadata.google.internal/computeMetadata/v1/instance/machine-type")
-	return err == nil
+func onGCE() bool {
+	return metadata.OnGCE()
 }
 
 func getGceInstanceType() info.InstanceType {
-	// Query the metadata server.
-	req, err := http.NewRequest("GET", "http://metadata.google.internal/computeMetadata/v1/instance/machine-type", nil)
+	machineType, err := metadata.Get("machine-type")
 	if err != nil {
-		return info.UNKNOWN_INSTANCE
-	}
-	req.Header.Set("Metadata-Flavor", "Google")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return info.UNKNOWN_INSTANCE
-	}
-	body := make([]byte, 1000)
-	numRead, err := resp.Body.Read(body)
-	if err != io.EOF {
-		return info.UNKNOWN_INSTANCE
+		return info.UnknownInstance
 	}
 
-	// Extract the instance name from the response.
-	responseString := string(body[:numRead])
-	responseParts := strings.Split(responseString, "/")
+	responseParts := strings.Split(machineType, "/") // Extract the instance name from the machine type.
 	return info.InstanceType(responseParts[len(responseParts)-1])
 }

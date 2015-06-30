@@ -115,17 +115,17 @@ type NetInfo struct {
 type CloudProvider string
 
 const (
-	GCE              CloudProvider = "GCE"
-	AWS                            = "AWS"
-	BAREMETAL                      = "BAREMETAL"
-	UNKNOWN_PROVIDER               = "UNKNOWN"
+	GCE            CloudProvider = "GCE"
+	AWS                          = "AWS"
+	Baremetal                    = "Baremetal"
+	UnkownProvider               = "Unknown"
 )
 
 type InstanceType string
 
 const (
-	NO_INSTANCE      InstanceType = "NONE"
-	UNKNOWN_INSTANCE              = "UNKNOWN"
+	NoInstance      InstanceType = "None"
+	UnknownInstance              = "Uknown"
 )
 
 type MachineInfo struct {
