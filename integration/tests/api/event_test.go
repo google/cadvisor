@@ -25,6 +25,9 @@ import (
 )
 
 func TestStreamingEventInformationIsReturned(t *testing.T) {
+	// TODO(vmarmol): De-flake and re-enable.
+	t.Skip()
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 

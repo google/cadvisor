@@ -249,7 +249,7 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	defer fm.Cleanup()
 
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("sh", "-c", "wget www.google.com && ping www.google.com")
+	containerId := fm.Docker().RunBusybox("watch", "-n1", "wget", "https://www.google.com/")
 	waitForContainer(containerId, fm)
 
 	request := &info.ContainerInfoRequest{
