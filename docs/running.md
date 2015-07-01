@@ -18,6 +18,12 @@ sudo docker run \
 
 cAdvisor is now running (in the background) on `http://localhost:8080/`. The setup includes directories with Docker state cAdvisor needs to observe.
 
+## Latest Canary
+
+The latest cAdvisor canary release is continuously built from HEAD and available
+as an Automated Build Docker image:
+[google/cadvisor-canary](https://registry.hub.docker.com/u/google/cadvisor-canary/). We do *not* recommend using this image in production due to its large size and volatility.
+
 ## With Boot2Docker
 
 After booting up a boot2docker instance, run cAdvisor image with the same docker command mentioned above. cAdvisor can now be accessed at port 8080 of your boot2docker instance. The host IP can be found through DOCKER_HOST environment variable setup by boot2docker:
