@@ -26,6 +26,7 @@ import (
 	"github.com/google/cadvisor/storage/bigquery"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/redis"
+	"github.com/google/cadvisor/storage/statsd"
 )
 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
@@ -87,6 +88,11 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 			*argDbName,
 			*argDbHost,
 			*argDbBufferDuration,
+		)
+	case "statsd":
+		backendStorage, err = statsd.New(
+			*argDbName,
+			*argDbHost,
 		)
 	default:
 		err = fmt.Errorf("unknown backend storage driver: %v", *argDbDriver)
