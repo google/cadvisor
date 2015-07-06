@@ -125,7 +125,7 @@ type InstanceType string
 
 const (
 	NoInstance      InstanceType = "None"
-	UnknownInstance              = "Uknown"
+	UnknownInstance              = "Unknown"
 )
 
 type MachineInfo struct {

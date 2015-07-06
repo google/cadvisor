@@ -26,7 +26,7 @@ func onGCE() bool {
 }
 
 func getGceInstanceType() info.InstanceType {
-	machineType, err := metadata.Get("machine-type")
+	machineType, err := metadata.Get("instance/machine-type")
 	if err != nil {
 		return info.UnknownInstance
 	}
