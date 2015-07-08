@@ -26,6 +26,7 @@ import (
 	"github.com/google/cadvisor/storage/bigquery"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/redis"
+	"github.com/google/cadvisor/storage/riemann"
 )
 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
@@ -35,6 +36,7 @@ var argDbName = flag.String("storage_driver_db", "cadvisor", "database name")
 var argDbTable = flag.String("storage_driver_table", "stats", "table name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
 var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*time.Second, "Writes in the storage driver will be buffered for this duration, and committed to the non memory backends as a single transaction")
+var argRiemannHost = flag.String("storage_driver_riemann_host", "localhost:5555", "riemann host:port")
 var storageDuration = flag.Duration("storage_duration", 2*time.Minute, "How long to keep data stored (Default: 2min).")
 
 // Creates a memory storage with an optional backend storage option.
@@ -86,6 +88,16 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 			machineName,
 			*argDbName,
 			*argDbHost,
+			*argDbBufferDuration,
+		)
+	case "riemann":
+		machineName, err := os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+		backendStorage, err = riemann.New(
+			machineName,
+			*argRiemannHost,
 			*argDbBufferDuration,
 		)
 	default:

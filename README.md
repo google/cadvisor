@@ -40,6 +40,10 @@ cAdvisor also exposes container stats as [Prometheus](http://prometheus.io) metr
 
 [Heapster](https://github.com/GoogleCloudPlatform/heapster) enables cluster wide monitoring of containers using cAdvisor.
 
+## Sending metrics to Riemann
+
+cAdvisor also supports sending stats to [Riemann](http://riemann.io). See the [documentation](docs/riemann.md) for more information.
+
 ## Web UI
 
 cAdvisor exposes a web UI at its port:
