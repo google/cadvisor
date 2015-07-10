@@ -11,10 +11,6 @@
 			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
 		},
 		{
-			"ImportPath": "code.google.com/p/gomock/gomock",
-			"Rev": "5d0b59c9f277f888d2c70b00908236a30ab90f45"
-		},
-		{
 			"ImportPath": "code.google.com/p/google-api-go-client/bigquery/v2",
 			"Comment": "release-101",
 			"Rev": "e1c259484b495133836706f46319f5897f1e9bf6"
@@ -121,6 +117,10 @@
 		{
 			"ImportPath": "github.com/golang/glog",
 			"Rev": "d1c4472bf2efd3826f2b5bdcc02d8416798d678c"
+		},
+		{
+			"ImportPath": "github.com/golang/mock/gomock",
+			"Rev": "15f8b22550555c0d3edf5afa97d74001bda2208b"
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/proto",
