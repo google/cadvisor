@@ -17,7 +17,7 @@ package collector
 import (
 	"time"
 
-	"github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/info/v1"
 )
 
 type FakeCollectorManager struct {
@@ -27,7 +27,7 @@ func (fkm *FakeCollectorManager) RegisterCollector(collector Collector) error {
 	return nil
 }
 
-func (fkm *FakeCollectorManager) Collect() (time.Time, []v2.Metric, error) {
+func (fkm *FakeCollectorManager) Collect() (time.Time, []v1.Metric, error) {
 	var zero time.Time
-	return zero, []v2.Metric{}, nil
+	return zero, []v1.Metric{}, nil
 }

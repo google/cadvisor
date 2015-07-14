@@ -419,6 +419,9 @@ type ContainerStats struct {
 
 	// Task load stats
 	TaskStats LoadStats `json:"task_stats,omitempty"`
+
+	//Custom metrics from all collectors
+	CustomMetrics []Metric `json:"custom_metrics,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

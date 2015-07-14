@@ -19,7 +19,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/info/v1"
 )
 
 type GenericCollector struct {
@@ -56,7 +56,7 @@ func (collector *GenericCollector) Name() string {
 }
 
 //Returns collected metrics and the next collection time of the collector
-func (collector *GenericCollector) Collect() (time.Time, []v2.Metric, error) {
+func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 	//TO BE IMPLEMENTED
 	return time.Now(), nil, nil
 }

@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/info/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,9 +28,9 @@ type fakeCollector struct {
 	collectedFrom      int
 }
 
-func (fc *fakeCollector) Collect() (time.Time, []v2.Metric, error) {
+func (fc *fakeCollector) Collect() (time.Time, []v1.Metric, error) {
 	fc.collectedFrom++
-	return fc.nextCollectionTime, []v2.Metric{}, fc.err
+	return fc.nextCollectionTime, []v1.Metric{}, fc.err
 }
 
 func (fc *fakeCollector) Name() string {
