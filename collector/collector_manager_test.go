@@ -38,7 +38,7 @@ func (fc *fakeCollector) Name() string {
 }
 
 func TestCollect(t *testing.T) {
-	cm := &collectorManager{}
+	cm := &GenericCollectorManager{}
 
 	firstTime := time.Now().Add(-time.Hour)
 	secondTime := time.Now().Add(time.Hour)
