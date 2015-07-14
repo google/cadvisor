@@ -18,7 +18,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/cadvisor/info/v1"
@@ -92,6 +95,70 @@ func (collector *GenericCollector) Name() string {
 
 //Returns collected metrics and the next collection time of the collector
 func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
-	//TO BE IMPLEMENTED
-	return time.Now(), nil, nil
+	minNextColTime := collector.configFile.MetricsConfig[0].PollingFrequency
+	for _, metricConfig := range collector.configFile.MetricsConfig {
+		if metricConfig.PollingFrequency < minNextColTime {
+			minNextColTime = metricConfig.PollingFrequency
+		}
+	}
+	currentTime := time.Now()
+	nextCollectionTime := currentTime.Add(time.Duration(minNextColTime * time.Second))
+
+	uri := collector.configFile.Endpoint
+	response, err := http.Get(uri)
+	if err != nil {
+		return nextCollectionTime, nil, err
+	}
+
+	defer response.Body.Close()
+
+	pageContent, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nextCollectionTime, nil, err
+	}
+
+	metrics := make([]v1.Metric, len(collector.configFile.MetricsConfig))
+	var errorSlice []error
+
+	for ind, metricConfig := range collector.configFile.MetricsConfig {
+		regex, err := regexp.Compile(metricConfig.Regex)
+		if err != nil {
+			return nextCollectionTime, nil, err
+		}
+
+		matchString := regex.FindStringSubmatch(string(pageContent))
+		if matchString != nil {
+			if metricConfig.Units == "float" {
+				regVal, err := strconv.ParseFloat(strings.TrimSpace(matchString[1]), 64)
+				if err != nil {
+					errorSlice = append(errorSlice, err)
+				}
+				metrics[ind].FloatPoints = []v1.FloatPoint{
+					{Value: regVal, Timestamp: currentTime},
+				}
+			} else if metricConfig.Units == "integer" || metricConfig.Units == "int" {
+				regVal, err := strconv.ParseInt(strings.TrimSpace(matchString[1]), 10, 64)
+				if err != nil {
+					errorSlice = append(errorSlice, err)
+				}
+				metrics[ind].IntPoints = []v1.IntPoint{
+					{Value: regVal, Timestamp: currentTime},
+				}
+
+			} else {
+				errorSlice = append(errorSlice, fmt.Errorf("Unexpected value of 'units' for metric '%v' in config ", metricConfig.Name))
+			}
+		} else {
+			errorSlice = append(errorSlice, fmt.Errorf("No match found for regexp: %v for metric '%v' in config", metricConfig.Regex, metricConfig.Name))
+		}
+
+		metrics[ind].Name = metricConfig.Name
+		if metricConfig.MetricType == "gauge" {
+			metrics[ind].Type = v1.MetricGauge
+		} else if metricConfig.MetricType == "counter" {
+			metrics[ind].Type = v1.MetricCumulative
+		}
+	}
+
+	return nextCollectionTime, metrics, compileErrors(errorSlice)
 }
