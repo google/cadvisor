@@ -16,7 +16,9 @@ package collector
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"regexp"
 	"time"
 
 	"github.com/google/cadvisor/info/v1"
@@ -28,6 +30,17 @@ type GenericCollector struct {
 
 	//holds information extracted from the config file for a collector
 	configFile Config
+
+	//holds information necessary to extract metrics
+	info *collectorInfo
+}
+
+type collectorInfo struct {
+	//minimum polling frequency among all metrics
+	minPollingFrequency time.Duration
+
+	//regular expresssions for all metrics
+	regexps []*regexp.Regexp
 }
 
 //Returns a new collector using the information extracted from the configfile
@@ -45,8 +58,30 @@ func NewCollector(collectorName string, configfile string) (*GenericCollector, e
 
 	//TODO : Add checks for validity of config file (eg : Accurate JSON fields)
 
+	if len(configInJSON.MetricsConfig) == 0 {
+		return nil, fmt.Errorf("No metrics provided in config")
+	}
+
+	minPollFrequency := configInJSON.MetricsConfig[0].PollingFrequency
+	regexprs := make([]*regexp.Regexp, len(configInJSON.MetricsConfig))
+
+	for ind, metricConfig := range configInJSON.MetricsConfig {
+		if metricConfig.PollingFrequency < minPollFrequency {
+			minPollFrequency = metricConfig.PollingFrequency
+		}
+
+		regexprs[ind], err = regexp.Compile(metricConfig.Regex)
+		if err != nil {
+			return nil, fmt.Errorf("Invalid regexp %v for metric %v", metricConfig.Regex, metricConfig.Name)
+		}
+	}
+
 	return &GenericCollector{
-		name: collectorName, configFile: configInJSON,
+		name:       collectorName,
+		configFile: configInJSON,
+		info: &collectorInfo{
+			minPollingFrequency: minPollFrequency,
+			regexps:             regexprs},
 	}, nil
 }
 

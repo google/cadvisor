@@ -22,19 +22,39 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestEmptyConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	emptyConfig := `
+        {
+                "endpoint" : "http://localhost:8000/nginx_status",
+                "metrics_config"  : [
+                ]
+        }
+        `
+
+	//Create a temporary config file 'temp.json' with invalid json format
+	assert.NoError(ioutil.WriteFile("temp.json", []byte(emptyConfig), 0777))
+
+	_, err := NewCollector("tempCollector", "temp.json")
+	assert.Error(err)
+
+	assert.NoError(os.Remove("temp.json"))
+}
+
 func TestConfigWithErrors(t *testing.T) {
 	assert := assert.New(t)
 
-	//Syntax error: Missed '"' after active connections
+	//Syntax error: Missed '"' after activeConnections
 	invalid := `
 	{
-		"endpoint" : "host:port/nginx_status",
-		"metricsConfig"  : [
+		"endpoint" : "http://localhost:8000/nginx_status",
+		"metrics_config"  : [
 			{
 				 "name" : "activeConnections,  
-		  		 "metricType" : "gauge",
+		  		 "metric_type" : "gauge",
 		 	 	 "units" : "integer",
-		  		 "pollingFrequency" : "10s",
+		  		 "polling_frequency" : 10,
 		    		 "regex" : "Active connections: ([0-9]+)"			
 			}
 		]
@@ -42,6 +62,41 @@ func TestConfigWithErrors(t *testing.T) {
 	`
 
 	//Create a temporary config file 'temp.json' with invalid json format
+	assert.NoError(ioutil.WriteFile("temp.json", []byte(invalid), 0777))
+
+	_, err := NewCollector("tempCollector", "temp.json")
+	assert.Error(err)
+
+	assert.NoError(os.Remove("temp.json"))
+}
+
+func TestConfigWithRegexErrors(t *testing.T) {
+	assert := assert.New(t)
+
+	//Error: Missed operand for '+' in activeConnections regex
+	invalid := `
+        {
+                "endpoint" : "host:port/nginx_status",
+                "metrics_config"  : [
+                        {
+                                 "name" : "activeConnections",
+                                 "metric_type" : "gauge",
+                                 "units" : "integer",
+                                 "polling_frequency" : 10,
+                                 "regex" : "Active connections: (+)"
+                        },
+                        {
+                                 "name" : "reading",
+                                 "metric_type" : "gauge",
+                                 "units" : "integer",
+                                 "polling_frequency" : 10,
+                                 "regex" : "Reading: ([0-9]+) .*"
+                        }
+                ]
+        }
+        `
+
+	//Create a temporary config file 'temp.json'
 	assert.NoError(ioutil.WriteFile("temp.json", []byte(invalid), 0777))
 
 	_, err := NewCollector("tempCollector", "temp.json")
