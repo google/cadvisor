@@ -15,10 +15,14 @@
 package collector
 
 import (
+	"fmt"
 	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
+	"github.com/google/cadvisor/info/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -114,4 +118,31 @@ func TestConfig(t *testing.T) {
 	assert.Equal(collector.name, "nginx")
 	assert.Equal(collector.configFile.Endpoint, "http://localhost:8000/nginx_status")
 	assert.Equal(collector.configFile.MetricsConfig[0].Name, "activeConnections")
+}
+
+func TestMetricCollection(t *testing.T) {
+	assert := assert.New(t)
+
+	//Collect nginx metrics from a fake nginx endpoint
+	fakeCollector, err := NewCollector("nginx", "config/sample_config.json")
+	assert.NoError(err)
+
+	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Active connections: 3\nserver accepts handled requests")
+		fmt.Fprintln(w, "5 5 32\nReading: 0 Writing: 1 Waiting: 2")
+	}))
+	defer tempServer.Close()
+	fakeCollector.configFile.Endpoint = tempServer.URL
+
+	_, metrics, errMetric := fakeCollector.Collect()
+	assert.NoError(errMetric)
+	assert.Equal(metrics[0].Name, "activeConnections")
+	assert.Equal(metrics[0].Type, v1.MetricGauge)
+	assert.Nil(metrics[0].FloatPoints)
+	assert.Equal(metrics[1].Name, "reading")
+	assert.Equal(metrics[2].Name, "writing")
+	assert.Equal(metrics[3].Name, "waiting")
+
+	//Assert: Number of active connections = Number of connections reading + Number of connections writing + Number of connections waiting
+	assert.Equal(metrics[0].IntPoints[0].Value, (metrics[1].IntPoints[0].Value)+(metrics[2].IntPoints[0].Value)+(metrics[3].IntPoints[0].Value))
 }
