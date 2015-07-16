@@ -66,10 +66,16 @@ func NewCollector(collectorName string, configfile string) (*GenericCollector, e
 	}
 
 	minPollFrequency := configInJSON.MetricsConfig[0].PollingFrequency
+
+	//set minPollFrequency to housekeepingInterval if config returns minpollFrequency=0
+	if minPollFrequency == 0 {
+		minPollFrequency = 1 * time.Second
+	}
+
 	regexprs := make([]*regexp.Regexp, len(configInJSON.MetricsConfig))
 
 	for ind, metricConfig := range configInJSON.MetricsConfig {
-		if metricConfig.PollingFrequency < minPollFrequency {
+		if metricConfig.PollingFrequency < minPollFrequency && metricConfig.PollingFrequency != 0 {
 			minPollFrequency = metricConfig.PollingFrequency
 		}
 
@@ -95,14 +101,8 @@ func (collector *GenericCollector) Name() string {
 
 //Returns collected metrics and the next collection time of the collector
 func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
-	minNextColTime := collector.configFile.MetricsConfig[0].PollingFrequency
-	for _, metricConfig := range collector.configFile.MetricsConfig {
-		if metricConfig.PollingFrequency < minNextColTime {
-			minNextColTime = metricConfig.PollingFrequency
-		}
-	}
 	currentTime := time.Now()
-	nextCollectionTime := currentTime.Add(time.Duration(minNextColTime * time.Second))
+	nextCollectionTime := currentTime.Add(time.Duration(collector.info.minPollingFrequency * time.Second))
 
 	uri := collector.configFile.Endpoint
 	response, err := http.Get(uri)
@@ -121,12 +121,7 @@ func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 	var errorSlice []error
 
 	for ind, metricConfig := range collector.configFile.MetricsConfig {
-		regex, err := regexp.Compile(metricConfig.Regex)
-		if err != nil {
-			return nextCollectionTime, nil, err
-		}
-
-		matchString := regex.FindStringSubmatch(string(pageContent))
+		matchString := collector.info.regexps[ind].FindStringSubmatch(string(pageContent))
 		if matchString != nil {
 			if metricConfig.Units == "float" {
 				regVal, err := strconv.ParseFloat(strings.TrimSpace(matchString[1]), 64)
