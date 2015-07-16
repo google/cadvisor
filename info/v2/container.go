@@ -115,8 +115,12 @@ type Percentiles struct {
 	Mean uint64 `json:"mean"`
 	// Max seen over the collected sample.
 	Max uint64 `json:"max"`
+	// 50th percentile over the collected sample.
+	Fifty uint64 `json:"fifty"`
 	// 90th percentile over the collected sample.
 	Ninety uint64 `json:"ninety"`
+	// 95th percentile over the collected sample.
+	NinetyFive uint64 `json:"ninetyfive"`
 }
 
 type Usage struct {
