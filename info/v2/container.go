@@ -73,6 +73,8 @@ type ContainerSpec struct {
 	HasMemory bool       `json:"has_memory"`
 	Memory    MemorySpec `json:"memory,omitempty"`
 
+	HasCustomMetrics bool `json:"has_custom_metrics"`
+
 	// Following resources have no associated spec, but are being isolated.
 	HasNetwork    bool `json:"has_network"`
 	HasFilesystem bool `json:"has_filesystem"`
@@ -100,6 +102,9 @@ type ContainerStats struct {
 	// Task load statistics
 	HasLoad bool         `json:"has_load"`
 	Load    v1.LoadStats `json:"load_stats,omitempty"`
+	//Custom statistics
+	HasCustomMetrics bool        `json:"has_custom_metrics"`
+	CustomMetrics    []v1.Metric `json:"custom_metrics,omitempty"`
 }
 
 type Percentiles struct {

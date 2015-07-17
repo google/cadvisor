@@ -58,6 +58,8 @@ type ContainerSpec struct {
 
 	// HasDiskIo when true, indicates that DiskIo stats will be available.
 	HasDiskIo bool `json:"has_diskio"`
+
+	HasCustomMetrics bool `json:"has_custom_metrics"`
 }
 
 // Container reference contains enough information to uniquely identify a container
@@ -188,6 +190,9 @@ func (self *ContainerSpec) Eq(b *ContainerSpec) bool {
 		return false
 	}
 	if self.HasDiskIo != b.HasDiskIo {
+		return false
+	}
+	if self.HasCustomMetrics != b.HasCustomMetrics {
 		return false
 	}
 	return true
