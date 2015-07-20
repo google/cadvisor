@@ -65,24 +65,27 @@ func NewCollector(collectorName string, configfile string) (*GenericCollector, e
 		return nil, fmt.Errorf("No metrics provided in config")
 	}
 
-	minPollFrequency := configInJSON.MetricsConfig[0].PollingFrequency
-
-	//set minPollFrequency to housekeepingInterval if config returns minpollFrequency=0
-	if minPollFrequency == 0 {
-		minPollFrequency = 1 * time.Second
-	}
-
+	minPollFrequency := time.Duration(0)
 	regexprs := make([]*regexp.Regexp, len(configInJSON.MetricsConfig))
 
 	for ind, metricConfig := range configInJSON.MetricsConfig {
-		if metricConfig.PollingFrequency < minPollFrequency && metricConfig.PollingFrequency != 0 {
-			minPollFrequency = metricConfig.PollingFrequency
+		// Find the minimum specified polling frequency in metric config.
+		if metricConfig.PollingFrequency != 0 {
+			if minPollFrequency == 0 || metricConfig.PollingFrequency < minPollFrequency {
+				minPollFrequency = metricConfig.PollingFrequency
+			}
 		}
 
 		regexprs[ind], err = regexp.Compile(metricConfig.Regex)
 		if err != nil {
 			return nil, fmt.Errorf("Invalid regexp %v for metric %v", metricConfig.Regex, metricConfig.Name)
 		}
+	}
+
+	// Minimum supported polling frequency is 1s.
+	minSupportedFrequency := 1 * time.Second
+	if minPollFrequency < minSupportedFrequency {
+		minPollFrequency = minSupportedFrequency
 	}
 
 	return &GenericCollector{
