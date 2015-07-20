@@ -53,7 +53,7 @@ func createManagerAndAddContainers(
 			spec,
 			nil,
 		).Once()
-		cont, err := newContainerData(name, memoryCache, mockHandler, nil, false, &collector.FakeCollectorManager{})
+		cont, err := newContainerData(name, memoryCache, mockHandler, nil, false, &collector.GenericCollectorManager{})
 		if err != nil {
 			t.Fatal(err)
 		}

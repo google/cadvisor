@@ -340,19 +340,7 @@ func (c *containerData) housekeeping() {
 			}
 		}
 
-		// TODO(vmarmol): Export metrics.
-		// Run custom collectors.
-		nextCollectionTime, _, err := c.collectorManager.Collect()
-		if err != nil && c.allowErrorLogging() {
-			glog.Warningf("[%s] Collection failed: %v", c.info.Name, err)
-		}
-
-		// Next housekeeping is the first of the stats or the custom collector's housekeeping.
-		nextHousekeeping := c.nextHousekeeping(lastHousekeeping)
-		next := nextHousekeeping
-		if !nextCollectionTime.IsZero() && nextCollectionTime.Before(nextHousekeeping) {
-			next = nextCollectionTime
-		}
+		next := c.nextHousekeeping(lastHousekeeping)
 
 		// Schedule the next housekeeping. Sleep until that time.
 		if time.Now().Before(next) {
@@ -432,6 +420,20 @@ func (c *containerData) updateStats() error {
 			glog.V(2).Infof("Failed to add summary stats for %q: %v", c.info.Name, err)
 		}
 	}
+	var customStatsErr error
+	if c.collectorManager != nil {
+		cm := c.collectorManager.(*collector.GenericCollectorManager)
+		if cm.NextCollectionTime.Before(time.Now()) {
+			customStats, err := c.updateCustomStats()
+			if customStats != nil {
+				stats.CustomMetrics = customStats
+			}
+			if err != nil {
+				customStatsErr = err
+			}
+		}
+	}
+
 	ref, err := c.handler.ContainerReference()
 	if err != nil {
 		// Ignore errors if the container is dead.
@@ -444,7 +446,21 @@ func (c *containerData) updateStats() error {
 	if err != nil {
 		return err
 	}
-	return statsErr
+	if statsErr != nil {
+		return statsErr
+	}
+	return customStatsErr
+}
+
+func (c *containerData) updateCustomStats() ([]info.Metric, error) {
+	_, customStats, customStatsErr := c.collectorManager.Collect()
+	if customStatsErr != nil {
+		if !c.handler.Exists() {
+			return customStats, nil
+		}
+		customStatsErr = fmt.Errorf("%v, continuing to push custom stats", customStatsErr)
+	}
+	return customStats, customStatsErr
 }
 
 func (c *containerData) updateSubcontainers() error {

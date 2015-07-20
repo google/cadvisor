@@ -22,11 +22,10 @@ import (
 	"github.com/google/cadvisor/info/v1"
 )
 
-type collectorManager struct {
-	collectors []*collectorData
+type GenericCollectorManager struct {
+	Collectors         []*collectorData
+	NextCollectionTime time.Time
 }
-
-var _ CollectorManager = &collectorManager{}
 
 type collectorData struct {
 	collector          Collector
@@ -35,26 +34,27 @@ type collectorData struct {
 
 // Returns a new CollectorManager that is thread-compatible.
 func NewCollectorManager() (CollectorManager, error) {
-	return &collectorManager{
-		collectors: []*collectorData{},
+	return &GenericCollectorManager{
+		Collectors:         []*collectorData{},
+		NextCollectionTime: time.Now(),
 	}, nil
 }
 
-func (cm *collectorManager) RegisterCollector(collector Collector) error {
-	cm.collectors = append(cm.collectors, &collectorData{
+func (cm *GenericCollectorManager) RegisterCollector(collector Collector) error {
+	cm.Collectors = append(cm.Collectors, &collectorData{
 		collector:          collector,
 		nextCollectionTime: time.Now(),
 	})
 	return nil
 }
 
-func (cm *collectorManager) Collect() (time.Time, []v1.Metric, error) {
+func (cm *GenericCollectorManager) Collect() (time.Time, []v1.Metric, error) {
 	var errors []error
 
 	// Collect from all collectors that are ready.
 	var next time.Time
 	var metrics []v1.Metric
-	for _, c := range cm.collectors {
+	for _, c := range cm.Collectors {
 		if c.nextCollectionTime.Before(time.Now()) {
 			nextCollection, newMetrics, err := c.collector.Collect()
 			if err != nil {
@@ -69,7 +69,7 @@ func (cm *collectorManager) Collect() (time.Time, []v1.Metric, error) {
 			next = c.nextCollectionTime
 		}
 	}
-
+	cm.NextCollectionTime = next
 	return next, metrics, compileErrors(errors)
 }
 
