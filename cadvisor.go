@@ -23,6 +23,7 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 
 	"github.com/golang/glog"
 	cadvisorHttp "github.com/google/cadvisor/http"
@@ -45,6 +46,9 @@ var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest
 
 var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
 
+var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
+var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
+
 func main() {
 	defer glog.Flush()
 	flag.Parse()
@@ -66,7 +70,7 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	containerManager, err := manager.New(memoryStorage, sysFs)
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
