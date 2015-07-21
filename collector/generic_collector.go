@@ -47,14 +47,9 @@ type collectorInfo struct {
 }
 
 //Returns a new collector using the information extracted from the configfile
-func NewCollector(collectorName string, configfile string) (*GenericCollector, error) {
-	configFile, err := ioutil.ReadFile(configfile)
-	if err != nil {
-		return nil, err
-	}
-
+func NewCollector(collectorName string, configFile []byte) (*GenericCollector, error) {
 	var configInJSON Config
-	err = json.Unmarshal(configFile, &configInJSON)
+	err := json.Unmarshal(configFile, &configInJSON)
 	if err != nil {
 		return nil, err
 	}

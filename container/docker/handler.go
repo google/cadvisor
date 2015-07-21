@@ -332,6 +332,10 @@ func (self *dockerContainerHandler) ListThreads(listType container.ListType) ([]
 	return nil, nil
 }
 
+func (self *dockerContainerHandler) GetContainerLabels() map[string]string {
+	return self.labels
+}
+
 func (self *dockerContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
 	return containerLibcontainer.GetProcesses(self.cgroupManager)
 }

@@ -17,8 +17,10 @@ package manager
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"os/exec"
+	"path"
 	"regexp"
 	"sort"
 	"strconv"
@@ -136,11 +138,32 @@ func (c *containerData) getCgroupPath(cgroups string) (string, error) {
 	return string(matches[1]), nil
 }
 
-func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace bool) ([]v2.ProcessInfo, error) {
-	// report all processes for root.
-	isRoot := c.info.Name == "/"
-	// TODO(rjnagal): Take format as an option?
-	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm,cgroup"
+// Returns contents of a file inside the container root.
+// Takes in a path relative to container root.
+func (c *containerData) ReadFile(filepath string, inHostNamespace bool) ([]byte, error) {
+	pids, err := c.getContainerPids(inHostNamespace)
+	if err != nil {
+		return nil, err
+	}
+	// TODO(rjnagal): Optimize by just reading container's cgroup.proc file when in host namespace.
+	rootfs := "/"
+	if !inHostNamespace {
+		rootfs = "/rootfs"
+	}
+	for _, pid := range pids {
+		filePath := path.Join(rootfs, "/proc", pid, "/root", filepath)
+		glog.V(3).Infof("Trying path %q", filePath)
+		data, err := ioutil.ReadFile(filePath)
+		if err == nil {
+			return data, err
+		}
+	}
+	// No process paths could be found. Declare config non-existent.
+	return nil, fmt.Errorf("file %q does not exist.", filepath)
+}
+
+// Return output for ps command in host /proc with specified format
+func (c *containerData) getPsOutput(inHostNamespace bool, format string) ([]byte, error) {
 	args := []string{}
 	command := "ps"
 	if !inHostNamespace {
@@ -148,11 +171,53 @@ func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace
 		args = append(args, "/rootfs", "ps")
 	}
 	args = append(args, "-e", "-o", format)
-	expectedFields := 12
 	out, err := exec.Command(command, args...).Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute %q command: %v", command, err)
 	}
+	return out, err
+}
+
+// Get pids of processes in this container.
+// A slightly lighterweight call than GetProcessList if other details are not required.
+func (c *containerData) getContainerPids(inHostNamespace bool) ([]string, error) {
+	format := "pid,cgroup"
+	out, err := c.getPsOutput(inHostNamespace, format)
+	if err != nil {
+		return nil, err
+	}
+	expectedFields := 2
+	lines := strings.Split(string(out), "\n")
+	pids := []string{}
+	for _, line := range lines[1:] {
+		if len(line) == 0 {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) < expectedFields {
+			return nil, fmt.Errorf("expected at least %d fields, found %d: output: %q", expectedFields, len(fields), line)
+		}
+		pid := fields[0]
+		cgroup, err := c.getCgroupPath(fields[1])
+		if err != nil {
+			return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[1], err)
+		}
+		if c.info.Name == cgroup {
+			pids = append(pids, pid)
+		}
+	}
+	return pids, nil
+}
+
+func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace bool) ([]v2.ProcessInfo, error) {
+	// report all processes for root.
+	isRoot := c.info.Name == "/"
+	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm,cgroup"
+	out, err := c.getPsOutput(inHostNamespace, format)
+	if err != nil {
+		return nil, err
+	}
+	expectedFields := 12
 	processes := []v2.ProcessInfo{}
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines[1:] {
@@ -189,7 +254,7 @@ func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace
 		}
 		cgroup, err := c.getCgroupPath(fields[11])
 		if err != nil {
-			return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[10], err)
+			return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[11], err)
 		}
 		// Remove the ps command we just ran from cadvisor container.
 		// Not necessary, but makes the cadvisor page look cleaner.
