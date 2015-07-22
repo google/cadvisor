@@ -782,6 +782,10 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 
+	if collectorConfigs != nil {
+		contSpec.HasCustomMetrics = true
+	}
+
 	contRef, err := cont.handler.ContainerReference()
 	if err != nil {
 		return err
