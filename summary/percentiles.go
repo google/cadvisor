@@ -28,14 +28,14 @@ const secondsToMilliSeconds = 1000
 const milliSecondsToNanoSeconds = 1000000
 const secondsToNanoSeconds = secondsToMilliSeconds * milliSecondsToNanoSeconds
 
-type uint64Slice []uint64
+type Uint64Slice []uint64
 
-func (a uint64Slice) Len() int           { return len(a) }
-func (a uint64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a uint64Slice) Less(i, j int) bool { return a[i] < a[j] }
+func (a Uint64Slice) Len() int           { return len(a) }
+func (a Uint64Slice) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a Uint64Slice) Less(i, j int) bool { return a[i] < a[j] }
 
 // Get percentile of the provided samples. Round to integer.
-func (self uint64Slice) GetPercentile(d float64) uint64 {
+func (self Uint64Slice) GetPercentile(d float64) uint64 {
 	if d < 0.0 || d > 1.0 {
 		return 0
 	}
@@ -74,7 +74,7 @@ func (self *mean) Add(value uint64) {
 
 type resource struct {
 	// list of samples being tracked.
-	samples uint64Slice
+	samples Uint64Slice
 	// average from existing samples.
 	mean mean
 	// maximum value seen so far in the added samples.
@@ -121,7 +121,7 @@ func (self *resource) GetAllPercentiles() info.Percentiles {
 
 func NewResource(size int) *resource {
 	return &resource{
-		samples: make(uint64Slice, 0, size),
+		samples: make(Uint64Slice, 0, size),
 		mean:    mean{count: 0, Mean: 0},
 	}
 }

@@ -23,7 +23,7 @@ import (
 
 const Nanosecond = 1000000000
 
-func assertPercentile(t *testing.T, s uint64Slice, f float64, want uint64) {
+func assertPercentile(t *testing.T, s Uint64Slice, f float64, want uint64) {
 	if got := s.GetPercentile(f); got != want {
 		t.Errorf("GetPercentile(%f) is %d, should be %d.", f, got, want)
 	}
@@ -31,7 +31,7 @@ func assertPercentile(t *testing.T, s uint64Slice, f float64, want uint64) {
 
 func TestPercentile(t *testing.T) {
 	N := 100
-	s := make(uint64Slice, 0, N)
+	s := make(Uint64Slice, 0, N)
 	for i := N; i > 0; i-- {
 		s = append(s, uint64(i))
 	}
