@@ -114,7 +114,7 @@ type Manager interface {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -139,13 +139,15 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs) (Manager, error) 
 		inHostNamespace = true
 	}
 	newManager := &manager{
-		containers:        make(map[namespacedContainerName]*containerData),
-		quitChannels:      make([]chan error, 0, 2),
-		memoryCache:       memoryCache,
-		fsInfo:            fsInfo,
-		cadvisorContainer: selfContainer,
-		inHostNamespace:   inHostNamespace,
-		startupTime:       time.Now(),
+		containers:               make(map[namespacedContainerName]*containerData),
+		quitChannels:             make([]chan error, 0, 2),
+		memoryCache:              memoryCache,
+		fsInfo:                   fsInfo,
+		cadvisorContainer:        selfContainer,
+		inHostNamespace:          inHostNamespace,
+		startupTime:              time.Now(),
+		maxHousekeepingInterval:  maxHousekeepingInterval,
+		allowDynamicHousekeeping: allowDynamicHousekeeping,
 	}
 
 	machineInfo, err := getMachineInfo(sysfs, fsInfo)
@@ -176,19 +178,21 @@ type namespacedContainerName struct {
 }
 
 type manager struct {
-	containers             map[namespacedContainerName]*containerData
-	containersLock         sync.RWMutex
-	memoryCache            *memory.InMemoryCache
-	fsInfo                 fs.FsInfo
-	machineInfo            info.MachineInfo
-	versionInfo            info.VersionInfo
-	quitChannels           []chan error
-	cadvisorContainer      string
-	inHostNamespace        bool
-	dockerContainersRegexp *regexp.Regexp
-	loadReader             cpuload.CpuLoadReader
-	eventHandler           events.EventManager
-	startupTime            time.Time
+	containers               map[namespacedContainerName]*containerData
+	containersLock           sync.RWMutex
+	memoryCache              *memory.InMemoryCache
+	fsInfo                   fs.FsInfo
+	machineInfo              info.MachineInfo
+	versionInfo              info.VersionInfo
+	quitChannels             []chan error
+	cadvisorContainer        string
+	inHostNamespace          bool
+	dockerContainersRegexp   *regexp.Regexp
+	loadReader               cpuload.CpuLoadReader
+	eventHandler             events.EventManager
+	startupTime              time.Time
+	maxHousekeepingInterval  time.Duration
+	allowDynamicHousekeeping bool
 }
 
 // Start the container manager.
@@ -706,7 +710,7 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
-	cont, err := newContainerData(containerName, m.memoryCache, handler, m.loadReader, logUsage, collectorManager)
+	cont, err := newContainerData(containerName, m.memoryCache, handler, m.loadReader, logUsage, collectorManager, m.maxHousekeepingInterval, m.allowDynamicHousekeeping)
 	if err != nil {
 		return err
 	}

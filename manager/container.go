@@ -39,8 +39,6 @@ import (
 
 // Housekeeping interval.
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
-var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
-var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
 
 var cgroupPathRegExp = regexp.MustCompile(".*:devices:(.*?),.*")
 
@@ -54,16 +52,18 @@ type containerInfo struct {
 }
 
 type containerData struct {
-	handler              container.ContainerHandler
-	info                 containerInfo
-	memoryCache          *memory.InMemoryCache
-	lock                 sync.Mutex
-	loadReader           cpuload.CpuLoadReader
-	summaryReader        *summary.StatsSummary
-	loadAvg              float64 // smoothed load average seen so far.
-	housekeepingInterval time.Duration
-	lastUpdatedTime      time.Time
-	lastErrorTime        time.Time
+	handler                  container.ContainerHandler
+	info                     containerInfo
+	memoryCache              *memory.InMemoryCache
+	lock                     sync.Mutex
+	loadReader               cpuload.CpuLoadReader
+	summaryReader            *summary.StatsSummary
+	loadAvg                  float64 // smoothed load average seen so far.
+	housekeepingInterval     time.Duration
+	maxHousekeepingInterval  time.Duration
+	allowDynamicHousekeeping bool
+	lastUpdatedTime          time.Time
+	lastErrorTime            time.Time
 
 	// Whether to log the usage of this container when it is updated.
 	logUsage bool
@@ -221,7 +221,7 @@ func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace
 	return processes, nil
 }
 
-func newContainerData(containerName string, memoryCache *memory.InMemoryCache, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool, collectorManager collector.CollectorManager) (*containerData, error) {
+func newContainerData(containerName string, memoryCache *memory.InMemoryCache, handler container.ContainerHandler, loadReader cpuload.CpuLoadReader, logUsage bool, collectorManager collector.CollectorManager, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool) (*containerData, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("nil memory storage")
 	}
@@ -234,14 +234,16 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 	}
 
 	cont := &containerData{
-		handler:              handler,
-		memoryCache:          memoryCache,
-		housekeepingInterval: *HousekeepingInterval,
-		loadReader:           loadReader,
-		logUsage:             logUsage,
-		loadAvg:              -1.0, // negative value indicates uninitialized.
-		stop:                 make(chan bool, 1),
-		collectorManager:     collectorManager,
+		handler:                  handler,
+		memoryCache:              memoryCache,
+		housekeepingInterval:     *HousekeepingInterval,
+		maxHousekeepingInterval:  maxHousekeepingInterval,
+		allowDynamicHousekeeping: allowDynamicHousekeeping,
+		loadReader:               loadReader,
+		logUsage:                 logUsage,
+		loadAvg:                  -1.0, // negative value indicates uninitialized.
+		stop:                     make(chan bool, 1),
+		collectorManager:         collectorManager,
 	}
 	cont.info.ContainerReference = ref
 
@@ -260,7 +262,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 
 // Determine when the next housekeeping should occur.
 func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Time {
-	if *allowDynamicHousekeeping {
+	if self.allowDynamicHousekeeping {
 		var empty time.Time
 		stats, err := self.memoryCache.RecentStats(self.info.Name, empty, empty, 2)
 		if err != nil {
@@ -270,10 +272,10 @@ func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Tim
 		} else if len(stats) == 2 {
 			// TODO(vishnuk): Use no processes as a signal.
 			// Raise the interval if usage hasn't changed in the last housekeeping.
-			if stats[0].StatsEq(stats[1]) && (self.housekeepingInterval < *maxHousekeepingInterval) {
+			if stats[0].StatsEq(stats[1]) && (self.housekeepingInterval < self.maxHousekeepingInterval) {
 				self.housekeepingInterval *= 2
-				if self.housekeepingInterval > *maxHousekeepingInterval {
-					self.housekeepingInterval = *maxHousekeepingInterval
+				if self.housekeepingInterval > self.maxHousekeepingInterval {
+					self.housekeepingInterval = self.maxHousekeepingInterval
 				}
 			} else if self.housekeepingInterval != *HousekeepingInterval {
 				// Lower interval back to the baseline.
