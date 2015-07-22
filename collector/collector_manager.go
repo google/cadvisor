@@ -22,6 +22,8 @@ import (
 	"github.com/google/cadvisor/info/v1"
 )
 
+const metricLabelPrefix = "io.cadvisor.metric."
+
 type GenericCollectorManager struct {
 	Collectors         []*collectorData
 	NextCollectionTime time.Time
@@ -38,6 +40,17 @@ func NewCollectorManager() (CollectorManager, error) {
 		Collectors:         []*collectorData{},
 		NextCollectionTime: time.Now(),
 	}, nil
+}
+
+func GetCollectorConfigs(labels map[string]string) map[string]string {
+	configs := map[string]string{}
+	for k, v := range labels {
+		if strings.HasPrefix(k, metricLabelPrefix) {
+			name := strings.TrimPrefix(k, metricLabelPrefix)
+			configs[name] = v
+		}
+	}
+	return configs
 }
 
 func (cm *GenericCollectorManager) RegisterCollector(collector Collector) error {

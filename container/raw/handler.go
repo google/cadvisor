@@ -356,6 +356,10 @@ func (self *rawContainerHandler) GetCgroupPath(resource string) (string, error) 
 	return path, nil
 }
 
+func (self *rawContainerHandler) GetContainerLabels() map[string]string {
+	return map[string]string{}
+}
+
 // Lists all directories under "path" and outputs the results as children of "parent".
 func listDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}) error {
 	// Ignore if this hierarchy does not exist.

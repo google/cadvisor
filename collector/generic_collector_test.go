@@ -40,7 +40,10 @@ func TestEmptyConfig(t *testing.T) {
 	//Create a temporary config file 'temp.json' with invalid json format
 	assert.NoError(ioutil.WriteFile("temp.json", []byte(emptyConfig), 0777))
 
-	_, err := NewCollector("tempCollector", "temp.json")
+	configFile, err := ioutil.ReadFile("temp.json")
+	assert.NoError(err)
+
+	_, err = NewCollector("tempCollector", configFile)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -67,8 +70,10 @@ func TestConfigWithErrors(t *testing.T) {
 
 	//Create a temporary config file 'temp.json' with invalid json format
 	assert.NoError(ioutil.WriteFile("temp.json", []byte(invalid), 0777))
+	configFile, err := ioutil.ReadFile("temp.json")
+	assert.NoError(err)
 
-	_, err := NewCollector("tempCollector", "temp.json")
+	_, err = NewCollector("tempCollector", configFile)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -103,7 +108,10 @@ func TestConfigWithRegexErrors(t *testing.T) {
 	//Create a temporary config file 'temp.json'
 	assert.NoError(ioutil.WriteFile("temp.json", []byte(invalid), 0777))
 
-	_, err := NewCollector("tempCollector", "temp.json")
+	configFile, err := ioutil.ReadFile("temp.json")
+	assert.NoError(err)
+
+	_, err = NewCollector("tempCollector", configFile)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -113,7 +121,10 @@ func TestConfig(t *testing.T) {
 	assert := assert.New(t)
 
 	//Create an nginx collector using the config file 'sample_config.json'
-	collector, err := NewCollector("nginx", "config/sample_config.json")
+	configFile, err := ioutil.ReadFile("config/sample_config.json")
+	assert.NoError(err)
+
+	collector, err := NewCollector("nginx", configFile)
 	assert.NoError(err)
 	assert.Equal(collector.name, "nginx")
 	assert.Equal(collector.configFile.Endpoint, "http://localhost:8000/nginx_status")
@@ -124,7 +135,10 @@ func TestMetricCollection(t *testing.T) {
 	assert := assert.New(t)
 
 	//Collect nginx metrics from a fake nginx endpoint
-	fakeCollector, err := NewCollector("nginx", "config/sample_config.json")
+	configFile, err := ioutil.ReadFile("config/sample_config.json")
+	assert.NoError(err)
+
+	fakeCollector, err := NewCollector("nginx", configFile)
 	assert.NoError(err)
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

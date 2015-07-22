@@ -693,6 +693,28 @@ func (m *manager) GetProcessList(containerName string, options v2.RequestOptions
 	return ps, nil
 }
 
+func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *containerData) error {
+	for k, v := range collectorConfigs {
+		configFile, err := cont.ReadFile(v, m.inHostNamespace)
+		if err != nil {
+			return fmt.Errorf("failed to read config file %q for config %q, container %q: %v", k, v, cont.info.Name, err)
+		}
+		glog.V(3).Infof("Got config from %q: %q", v, configFile)
+
+		newCollector, err := collector.NewCollector(k, configFile)
+		if err != nil {
+			glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
+			return err
+		}
+		err = cont.collectorManager.RegisterCollector(newCollector)
+		if err != nil {
+			glog.Infof("failed to register collector for container %q, config %q: %v", cont.info.Name, k, err)
+			return err
+		}
+	}
+	return nil
+}
+
 // Create a container.
 func (m *manager) createContainer(containerName string) error {
 	handler, accept, err := container.NewContainerHandler(containerName)
@@ -704,14 +726,23 @@ func (m *manager) createContainer(containerName string) error {
 		glog.V(4).Infof("ignoring container %q", containerName)
 		return nil
 	}
-	// TODO(vmarmol): Register collectors.
 	collectorManager, err := collector.NewCollectorManager()
 	if err != nil {
 		return err
 	}
+
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
 	cont, err := newContainerData(containerName, m.memoryCache, handler, m.loadReader, logUsage, collectorManager, m.maxHousekeepingInterval, m.allowDynamicHousekeeping)
 	if err != nil {
+		return err
+	}
+
+	// Add collectors
+	labels := handler.GetContainerLabels()
+	collectorConfigs := collector.GetCollectorConfigs(labels)
+	err = m.registerCollectors(collectorConfigs, cont)
+	if err != nil {
+		glog.Infof("failed to register collectors for %q: %v", containerName, err)
 		return err
 	}
 
