@@ -152,7 +152,7 @@ func TestMetricCollection(t *testing.T) {
 	assert.NoError(errMetric)
 	assert.Equal(metrics[0].Name, "activeConnections")
 	assert.Equal(metrics[0].Type, v1.MetricGauge)
-	assert.Nil(metrics[0].FloatPoints)
+	assert.Equal(len(metrics[0].FloatPoints), 0)
 	assert.Equal(metrics[1].Name, "reading")
 	assert.Equal(metrics[2].Name, "writing")
 	assert.Equal(metrics[3].Name, "waiting")
