@@ -100,7 +100,7 @@ func (collector *GenericCollector) Name() string {
 //Returns collected metrics and the next collection time of the collector
 func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 	currentTime := time.Now()
-	nextCollectionTime := currentTime.Add(time.Duration(collector.info.minPollingFrequency * time.Second))
+	nextCollectionTime := currentTime.Add(time.Duration(collector.info.minPollingFrequency))
 
 	uri := collector.configFile.Endpoint
 	response, err := http.Get(uri)
