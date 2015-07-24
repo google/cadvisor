@@ -248,10 +248,14 @@ func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace
 		if err != nil {
 			return nil, fmt.Errorf("invalid rss %q: %v", fields[6], err)
 		}
+		// convert to bytes
+		rss *= 1024
 		vs, err := strconv.ParseUint(fields[7], 0, 64)
 		if err != nil {
 			return nil, fmt.Errorf("invalid virtual size %q: %v", fields[7], err)
 		}
+		// convert to bytes
+		vs *= 1024
 		cgroup, err := c.getCgroupPath(fields[11])
 		if err != nil {
 			return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[11], err)
