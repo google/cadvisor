@@ -15,6 +15,8 @@
 package v1
 
 import (
+	"github.com/google/cadvisor/utils"
+	"sync"
 	"time"
 )
 
@@ -43,27 +45,16 @@ type Metric struct {
 	// Metadata associated with this metric.
 	Labels map[string]string
 
-	// Value of the metric. Only one of these values will be
-	// available according to the output type of the metric.
+	// Value of the metric.
 	// If no values are available, there are no data points.
-	IntPoints   []IntPoint   `json:"int_points,omitempty"`
-	FloatPoints []FloatPoint `json:"float_points,omitempty"`
+	DataPoints *utils.TimedStore `json:"data_points,omitempty"`
+	Lock       sync.RWMutex
 }
 
-// An integer metric data point.
-type IntPoint struct {
+type DataPoint struct {
 	// Time at which the metric was queried
 	Timestamp time.Time `json:"timestamp"`
 
 	// The value of the metric at this point.
-	Value int64 `json:"value"`
-}
-
-// A float metric data point.
-type FloatPoint struct {
-	// Time at which the metric was queried
-	Timestamp time.Time `json:"timestamp"`
-
-	// The value of the metric at this point.
-	Value float64 `json:"value"`
+	Value interface{} `json:"value"`
 }

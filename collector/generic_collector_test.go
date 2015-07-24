@@ -152,11 +152,12 @@ func TestMetricCollection(t *testing.T) {
 	assert.NoError(errMetric)
 	assert.Equal(metrics[0].Name, "activeConnections")
 	assert.Equal(metrics[0].Type, v1.MetricGauge)
-	assert.Nil(metrics[0].FloatPoints)
 	assert.Equal(metrics[1].Name, "reading")
 	assert.Equal(metrics[2].Name, "writing")
 	assert.Equal(metrics[3].Name, "waiting")
 
+	metricsMap, metricsMapErr := fakeCollector.GetMetrics()
+	assert.NoError(metricsMapErr)
 	//Assert: Number of active connections = Number of connections reading + Number of connections writing + Number of connections waiting
-	assert.Equal(metrics[0].IntPoints[0].Value, (metrics[1].IntPoints[0].Value)+(metrics[2].IntPoints[0].Value)+(metrics[3].IntPoints[0].Value))
+	assert.Equal(metricsMap["activeConnections"][0].Value.(int64), (metricsMap["reading"][0].Value.(int64))+(metricsMap["writing"][0].Value.(int64))+(metricsMap["waiting"][0].Value.(int64)))
 }
