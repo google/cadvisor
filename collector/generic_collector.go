@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/utils"
 )
 
 type GenericCollector struct {
@@ -67,6 +68,7 @@ func NewCollector(collectorName string, configFile []byte) (*GenericCollector, e
 
 	var metrics []v1.Metric
 	var metricType v1.MetricType
+
 	for ind, metricConfig := range configInJSON.MetricsConfig {
 		// Find the minimum specified polling frequency in metric config.
 		if metricConfig.PollingFrequency != 0 {
@@ -87,11 +89,10 @@ func NewCollector(collectorName string, configFile []byte) (*GenericCollector, e
 		}
 
 		metrics = append(metrics, v1.Metric{
-			Name:        metricConfig.Name,
-			Type:        metricType,
-			Labels:      make(map[string]string),
-			IntPoints:   []v1.IntPoint{},
-			FloatPoints: []v1.FloatPoint{},
+			Name:       metricConfig.Name,
+			Type:       metricType,
+			Labels:     make(map[string]string),
+			DataPoints: utils.NewTimedStore(2*time.Minute, -1), //TimedStore : age is set to storageDuration, maxItems is set to -1 (no limit)
 		})
 	}
 
@@ -119,7 +120,7 @@ func (collector *GenericCollector) Name() string {
 //Returns collected metrics and the next collection time of the collector
 func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 	currentTime := time.Now()
-	nextCollectionTime := currentTime.Add(time.Duration(collector.info.minPollingFrequency * time.Second))
+	nextCollectionTime := currentTime.Add(time.Duration(collector.info.minPollingFrequency))
 
 	uri := collector.configFile.Endpoint
 	response, err := http.Get(uri)
@@ -139,23 +140,26 @@ func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 	for ind, metricConfig := range collector.configFile.MetricsConfig {
 		matchString := collector.info.regexps[ind].FindStringSubmatch(string(pageContent))
 		if matchString != nil {
+			collector.metrics[ind].Lock.Lock()
+			defer collector.metrics[ind].Lock.Unlock()
 			if metricConfig.Units == "float" {
 				regVal, err := strconv.ParseFloat(strings.TrimSpace(matchString[1]), 64)
 				if err != nil {
 					errorSlice = append(errorSlice, err)
 				}
-				collector.metrics[ind].FloatPoints = append(collector.metrics[ind].FloatPoints, v1.FloatPoint{
-					Value: regVal, Timestamp: currentTime,
+				collector.metrics[ind].DataPoints.Add(currentTime, v1.DataPoint{
+					Value:     regVal,
+					Timestamp: currentTime,
 				})
 			} else if metricConfig.Units == "integer" || metricConfig.Units == "int" {
 				regVal, err := strconv.ParseInt(strings.TrimSpace(matchString[1]), 10, 64)
 				if err != nil {
 					errorSlice = append(errorSlice, err)
 				}
-				collector.metrics[ind].IntPoints = append(collector.metrics[ind].IntPoints, v1.IntPoint{
-					Value: regVal, Timestamp: currentTime,
+				collector.metrics[ind].DataPoints.Add(currentTime, v1.DataPoint{
+					Value:     regVal,
+					Timestamp: currentTime,
 				})
-
 			} else {
 				errorSlice = append(errorSlice, fmt.Errorf("Unexpected value of 'units' for metric '%v' in config ", metricConfig.Name))
 			}
@@ -165,4 +169,22 @@ func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 	}
 
 	return nextCollectionTime, collector.metrics, compileErrors(errorSlice)
+}
+
+func (collector *GenericCollector) GetMetrics() (map[string][]v1.DataPoint, error) {
+	metrics := make(map[string][]v1.DataPoint)
+	var zeroTime time.Time
+	for _, metric := range collector.metrics {
+		metric.Lock.Lock()
+		//defer metric.Lock.Unlock()
+		data := metric.DataPoints.InTimeRange(zeroTime, zeroTime, -1)
+		if len(data) != 0 {
+			dataPoints := make([]v1.DataPoint, len(data))
+			for i, val := range data {
+				dataPoints[i] = val.(v1.DataPoint)
+			}
+			metrics[metric.Name] = dataPoints
+		}
+	}
+	return metrics, nil
 }

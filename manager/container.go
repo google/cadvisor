@@ -488,8 +488,8 @@ func (c *containerData) updateStats() error {
 		}
 	}
 	var customStatsErr error
-	if c.collectorManager != nil {
-		cm := c.collectorManager.(*collector.GenericCollectorManager)
+	cm := c.collectorManager.(*collector.GenericCollectorManager)
+	if len(cm.Collectors) > 0 {
 		if cm.NextCollectionTime.Before(time.Now()) {
 			customStats, err := c.updateCustomStats()
 			if customStats != nil {
