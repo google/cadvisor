@@ -15,6 +15,7 @@
 package collector
 
 import (
+	"github.com/google/cadvisor/info/v1"
 	"time"
 )
 
@@ -32,7 +33,7 @@ type MetricConfig struct {
 	Name string `json:"name"`
 
 	//enum type for the metric type
-	MetricType MetricType `json:"metric_type"`
+	MetricType v1.MetricType `json:"metric_type"`
 
 	//data type of the metric (eg: integer, string)
 	Units string `json:"units"`
@@ -43,11 +44,3 @@ type MetricConfig struct {
 	//the regular expression that can be used to extract the metric
 	Regex string `json:"regex"`
 }
-
-// MetricType is an enum type that lists the possible type of the metric
-type MetricType string
-
-const (
-	Counter MetricType = "counter"
-	Gauge   MetricType = "gauge"
-)

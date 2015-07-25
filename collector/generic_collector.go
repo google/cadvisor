@@ -97,8 +97,24 @@ func (collector *GenericCollector) Name() string {
 	return collector.name
 }
 
+func (collector *GenericCollector) configToSpec(config MetricConfig) v1.MetricSpec {
+	return v1.MetricSpec{
+		Name: config.Name,
+		Type: config.MetricType,
+	}
+}
+
+func (collector *GenericCollector) GetSpec() []v1.MetricSpec {
+	specs := []v1.MetricSpec{}
+	for _, metricConfig := range collector.configFile.MetricsConfig {
+		spec := collector.configToSpec(metricConfig)
+		specs = append(specs, spec)
+	}
+	return specs
+}
+
 //Returns collected metrics and the next collection time of the collector
-func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
+func (collector *GenericCollector) Collect(metrics map[string]v1.MetricVal) (time.Time, map[string]v1.MetricVal, error) {
 	currentTime := time.Now()
 	nextCollectionTime := currentTime.Add(time.Duration(collector.info.minPollingFrequency))
 
@@ -115,9 +131,7 @@ func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 		return nextCollectionTime, nil, err
 	}
 
-	metrics := make([]v1.Metric, len(collector.configFile.MetricsConfig))
 	var errorSlice []error
-
 	for ind, metricConfig := range collector.configFile.MetricsConfig {
 		matchString := collector.info.regexps[ind].FindStringSubmatch(string(pageContent))
 		if matchString != nil {
@@ -126,16 +140,16 @@ func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 				if err != nil {
 					errorSlice = append(errorSlice, err)
 				}
-				metrics[ind].FloatPoints = []v1.FloatPoint{
-					{Value: regVal, Timestamp: currentTime},
+				metrics[metricConfig.Name] = v1.MetricVal{
+					FloatValue: regVal, Timestamp: currentTime,
 				}
 			} else if metricConfig.Units == "integer" || metricConfig.Units == "int" {
 				regVal, err := strconv.ParseInt(strings.TrimSpace(matchString[1]), 10, 64)
 				if err != nil {
 					errorSlice = append(errorSlice, err)
 				}
-				metrics[ind].IntPoints = []v1.IntPoint{
-					{Value: regVal, Timestamp: currentTime},
+				metrics[metricConfig.Name] = v1.MetricVal{
+					IntValue: regVal, Timestamp: currentTime,
 				}
 
 			} else {
@@ -144,14 +158,6 @@ func (collector *GenericCollector) Collect() (time.Time, []v1.Metric, error) {
 		} else {
 			errorSlice = append(errorSlice, fmt.Errorf("No match found for regexp: %v for metric '%v' in config", metricConfig.Regex, metricConfig.Name))
 		}
-
-		metrics[ind].Name = metricConfig.Name
-		if metricConfig.MetricType == "gauge" {
-			metrics[ind].Type = v1.MetricGauge
-		} else if metricConfig.MetricType == "counter" {
-			metrics[ind].Type = v1.MetricCumulative
-		}
 	}
-
 	return nextCollectionTime, metrics, compileErrors(errorSlice)
 }

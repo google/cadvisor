@@ -148,15 +148,20 @@ func TestMetricCollection(t *testing.T) {
 	defer tempServer.Close()
 	fakeCollector.configFile.Endpoint = tempServer.URL
 
-	_, metrics, errMetric := fakeCollector.Collect()
+	metrics := map[string]v1.MetricVal{}
+	_, metrics, errMetric := fakeCollector.Collect(metrics)
 	assert.NoError(errMetric)
-	assert.Equal(metrics[0].Name, "activeConnections")
-	assert.Equal(metrics[0].Type, v1.MetricGauge)
-	assert.Nil(metrics[0].FloatPoints)
-	assert.Equal(metrics[1].Name, "reading")
-	assert.Equal(metrics[2].Name, "writing")
-	assert.Equal(metrics[3].Name, "waiting")
-
-	//Assert: Number of active connections = Number of connections reading + Number of connections writing + Number of connections waiting
-	assert.Equal(metrics[0].IntPoints[0].Value, (metrics[1].IntPoints[0].Value)+(metrics[2].IntPoints[0].Value)+(metrics[3].IntPoints[0].Value))
+	metricNames := []string{"activeConnections", "reading", "writing", "waiting"}
+	// activeConnections = 3
+	assert.Equal(metrics[metricNames[0]].IntValue, 3)
+	assert.Equal(metrics[metricNames[0]].FloatValue, 0)
+	// reading = 0
+	assert.Equal(metrics[metricNames[1]].IntValue, 0)
+	assert.Equal(metrics[metricNames[1]].FloatValue, 0)
+	// writing = 1
+	assert.Equal(metrics[metricNames[2]].IntValue, 1)
+	assert.Equal(metrics[metricNames[2]].FloatValue, 0)
+	// waiting = 2
+	assert.Equal(metrics[metricNames[3]].IntValue, 2)
+	assert.Equal(metrics[metricNames[3]].FloatValue, 0)
 }

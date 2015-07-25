@@ -28,13 +28,17 @@ type fakeCollector struct {
 	collectedFrom      int
 }
 
-func (fc *fakeCollector) Collect() (time.Time, []v1.Metric, error) {
+func (fc *fakeCollector) Collect(metric map[string]v1.MetricVal) (time.Time, map[string]v1.MetricVal, error) {
 	fc.collectedFrom++
-	return fc.nextCollectionTime, []v1.Metric{}, fc.err
+	return fc.nextCollectionTime, metric, fc.err
 }
 
 func (fc *fakeCollector) Name() string {
 	return "fake-collector"
+}
+
+func (fc *fakeCollector) GetSpec() []v1.MetricSpec {
+	return []v1.MetricSpec{}
 }
 
 func TestCollect(t *testing.T) {
