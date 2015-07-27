@@ -59,7 +59,8 @@ type ContainerSpec struct {
 	// HasDiskIo when true, indicates that DiskIo stats will be available.
 	HasDiskIo bool `json:"has_diskio"`
 
-	HasCustomMetrics bool `json:"has_custom_metrics"`
+	HasCustomMetrics bool         `json:"has_custom_metrics"`
+	CustomMetrics    []MetricSpec `json:"custom_metrics,omitempty"`
 }
 
 // Container reference contains enough information to uniquely identify a container
@@ -426,7 +427,7 @@ type ContainerStats struct {
 	TaskStats LoadStats `json:"task_stats,omitempty"`
 
 	//Custom metrics from all collectors
-	CustomMetrics []Metric `json:"custom_metrics,omitempty"`
+	CustomMetrics map[string]MetricVal `json:"custom_metrics,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

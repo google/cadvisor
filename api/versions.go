@@ -372,13 +372,21 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		if err != nil {
 			return err
 		}
-		contMetrics := make(map[string][][]info.Metric, 0)
-		metrics := [][]info.Metric{}
+		specs, err := m.GetContainerSpec(containerName, opt)
+		if err != nil {
+			return err
+		}
+		contMetrics := make(map[string]map[string][]info.MetricVal, 0)
 		for _, cont := range conts {
+			metrics := map[string][]info.MetricVal{}
 			contStats := convertStats(cont)
+			spec := specs[cont.Name]
 			for _, contStat := range contStats {
-				metric := contStat.CustomMetrics
-				metrics = append(metrics, metric)
+				for _, ms := range spec.CustomMetrics {
+					if contStat.HasCustomMetrics && !contStat.CustomMetrics[ms.Name].Timestamp.IsZero() {
+						metrics[ms.Name] = append(metrics[ms.Name], contStat.CustomMetrics[ms.Name])
+					}
+				}
 			}
 			contMetrics[containerName] = metrics
 		}

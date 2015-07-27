@@ -61,20 +61,29 @@ func (cm *GenericCollectorManager) RegisterCollector(collector Collector) error 
 	return nil
 }
 
-func (cm *GenericCollectorManager) Collect() (time.Time, []v1.Metric, error) {
+func (cm *GenericCollectorManager) GetSpec() ([]v1.MetricSpec, error) {
+	metricSpec := []v1.MetricSpec{}
+	for _, c := range cm.Collectors {
+		specs := c.collector.GetSpec()
+		metricSpec = append(metricSpec, specs...)
+	}
+
+	return metricSpec, nil
+}
+
+func (cm *GenericCollectorManager) Collect() (time.Time, map[string]v1.MetricVal, error) {
 	var errors []error
 
 	// Collect from all collectors that are ready.
 	var next time.Time
-	var metrics []v1.Metric
+	metrics := map[string]v1.MetricVal{}
 	for _, c := range cm.Collectors {
 		if c.nextCollectionTime.Before(time.Now()) {
-			nextCollection, newMetrics, err := c.collector.Collect()
+			var err error
+			c.nextCollectionTime, metrics, err = c.collector.Collect(metrics)
 			if err != nil {
 				errors = append(errors, err)
 			}
-			metrics = append(metrics, newMetrics...)
-			c.nextCollectionTime = nextCollection
 		}
 
 		// Keep track of the next collector that will be ready.

@@ -439,6 +439,12 @@ func (c *containerData) updateSpec() error {
 		}
 		return err
 	}
+
+	customMetrics, err := c.collectorManager.GetSpec()
+	if len(customMetrics) > 0 {
+		spec.HasCustomMetrics = true
+		spec.CustomMetrics = customMetrics
+	}
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.info.Spec = spec
@@ -523,7 +529,7 @@ func (c *containerData) updateStats() error {
 	return customStatsErr
 }
 
-func (c *containerData) updateCustomStats() ([]info.Metric, error) {
+func (c *containerData) updateCustomStats() (map[string]info.MetricVal, error) {
 	_, customStats, customStatsErr := c.collectorManager.Collect()
 	if customStatsErr != nil {
 		if !c.handler.Exists() {
