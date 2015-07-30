@@ -60,7 +60,7 @@ func TestConfigWithErrors(t *testing.T) {
 			{
 				 "name" : "activeConnections,  
 		  		 "metric_type" : "gauge",
-		 	 	 "units" : "integer",
+		 	 	 "data_type" : "int",
 		  		 "polling_frequency" : 10,
 		    		 "regex" : "Active connections: ([0-9]+)"			
 			}
@@ -90,14 +90,14 @@ func TestConfigWithRegexErrors(t *testing.T) {
                         {
                                  "name" : "activeConnections",
                                  "metric_type" : "gauge",
-                                 "units" : "integer",
+                                 "data_type" : "int",
                                  "polling_frequency" : 10,
                                  "regex" : "Active connections: (+)"
                         },
                         {
                                  "name" : "reading",
                                  "metric_type" : "gauge",
-                                 "units" : "integer",
+                                 "data_type" : "int",
                                  "polling_frequency" : 10,
                                  "regex" : "Reading: ([0-9]+) .*"
                         }

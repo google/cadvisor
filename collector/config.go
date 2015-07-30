@@ -35,8 +35,12 @@ type MetricConfig struct {
 	//enum type for the metric type
 	MetricType v1.MetricType `json:"metric_type"`
 
-	//data type of the metric (eg: integer, string)
+	// metric units to display on UI and in storage (eg: MB, cores)
+	// this is only used for display.
 	Units string `json:"units"`
+
+	//data type of the metric (eg: int, float)
+	DataType v1.DataType `json:"data_type"`
 
 	//the frequency at which the metric should be collected
 	PollingFrequency time.Duration `json:"polling_frequency"`

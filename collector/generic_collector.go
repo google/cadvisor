@@ -99,8 +99,10 @@ func (collector *GenericCollector) Name() string {
 
 func (collector *GenericCollector) configToSpec(config MetricConfig) v1.MetricSpec {
 	return v1.MetricSpec{
-		Name: config.Name,
-		Type: config.MetricType,
+		Name:   config.Name,
+		Type:   config.MetricType,
+		Format: config.DataType,
+		Units:  config.Units,
 	}
 }
 
@@ -135,7 +137,7 @@ func (collector *GenericCollector) Collect(metrics map[string]v1.MetricVal) (tim
 	for ind, metricConfig := range collector.configFile.MetricsConfig {
 		matchString := collector.info.regexps[ind].FindStringSubmatch(string(pageContent))
 		if matchString != nil {
-			if metricConfig.Units == "float" {
+			if metricConfig.DataType == v1.FloatType {
 				regVal, err := strconv.ParseFloat(strings.TrimSpace(matchString[1]), 64)
 				if err != nil {
 					errorSlice = append(errorSlice, err)
@@ -143,7 +145,7 @@ func (collector *GenericCollector) Collect(metrics map[string]v1.MetricVal) (tim
 				metrics[metricConfig.Name] = v1.MetricVal{
 					FloatValue: regVal, Timestamp: currentTime,
 				}
-			} else if metricConfig.Units == "integer" || metricConfig.Units == "int" {
+			} else if metricConfig.DataType == v1.IntType {
 				regVal, err := strconv.ParseInt(strings.TrimSpace(matchString[1]), 10, 64)
 				if err != nil {
 					errorSlice = append(errorSlice, err)
@@ -153,7 +155,7 @@ func (collector *GenericCollector) Collect(metrics map[string]v1.MetricVal) (tim
 				}
 
 			} else {
-				errorSlice = append(errorSlice, fmt.Errorf("Unexpected value of 'units' for metric '%v' in config ", metricConfig.Name))
+				errorSlice = append(errorSlice, fmt.Errorf("Unexpected value of 'data_type' for metric '%v' in config ", metricConfig.Name))
 			}
 		} else {
 			errorSlice = append(errorSlice, fmt.Errorf("No match found for regexp: %v for metric '%v' in config", metricConfig.Regex, metricConfig.Name))
