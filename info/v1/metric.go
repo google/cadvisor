@@ -32,6 +32,14 @@ const (
 	MetricDelta = "delta"
 )
 
+// DataType for metric being exported.
+type DataType string
+
+const (
+	IntType   DataType = "int"
+	FloatType          = "float"
+)
+
 // Spec for custom metric.
 type MetricSpec struct {
 	// The name of the metric.
@@ -39,6 +47,12 @@ type MetricSpec struct {
 
 	// Type of the metric.
 	Type MetricType `json:"type"`
+
+	// Data Type for the stats.
+	Format DataType `json:"format"`
+
+	// Display Units for the stats.
+	Units string `json:"units"`
 }
 
 // An exported metric.
