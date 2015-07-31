@@ -645,6 +645,15 @@ function drawCharts(machineInfo, containerInfo) {
                 });
 	}
 
+	// Custom Metrics
+	if (containerInfo.spec.has_custom_metrics) {
+		steps.push(function() {
+        		getCustomMetrics(window.cadvisor.rootDir, window.cadvisor.containerName, function(metricsInfo) {
+                		drawCustomMetrics("custom-metrics-chart", containerInfo, metricsInfo)
+		        });
+		});
+	}
+
 	stepExecute(steps);
 }
 
@@ -696,10 +705,68 @@ function refreshStats() {
 			}
 			if (containerInfo.spec.has_network) {
 				startNetwork("network-selection", containerInfo);
+			}	
+			if (containerInfo.spec.has_custom_metrics) {
+				startCustomMetrics("custom-metrics-chart", containerInfo);
 			}
 		}
 			drawCharts(machineInfo, containerInfo);
 	});
+}
+
+function startCustomMetrics(elementId, containerInfo) {
+	var metrics = containerInfo.spec.custom_metrics;
+	var el=$("<div>");
+	for (i = 0; i<metrics.length; i++) {
+		divText = "<div id='"+elementId+"-"+metrics[i].name+"'></div>";
+		el.append($(divText));
+	}
+	el.append($("</div>"));
+	
+	$("#"+elementId).append(el);
+}
+
+function getCustomMetrics(rootDir, containerName, callback) {
+        $.getJSON(rootDir + "api/v2.0/appmetrics/" + containerName)
+        .done(function(data) {
+                callback(data);
+        })
+        .fail(function(jqhxr, textStatus, error) {
+	        callback([]);
+        });
+}
+
+function drawCustomMetrics(elementId, containerInfo, metricsInfo) {
+	if(metricsInfo.length == 0) {
+		return;
+	}
+
+        var metricSpec = containerInfo.spec.custom_metrics;
+
+	for (var containerName in metricsInfo) {
+		var container = metricsInfo[containerName];
+		for (i=0; i<metricSpec.length; i++) {
+			metricName = metricSpec[i].name;
+			metricUnits = metricSpec[i].units;
+
+			var titles = ["Time", metricUnits];
+			var data = [];
+			metricVal = container[metricName];
+			for (var index in metricVal) {
+                                metric = metricVal[index];
+                                var elements = [];
+                                for (var attribute in metric) {
+                                        value = metric[attribute];
+                                        elements.push(value);
+                                }
+                                if (elements.length<2) {
+                                        elements.push(0);
+                                }
+                                data.push(elements);
+                        }
+                       drawLineChart(titles, data, elementId+"-"+metricName, metricName);			
+		}
+	}
 }
 
 // Executed when the page finishes loading.
