@@ -717,7 +717,10 @@ function refreshStats() {
 function startCustomMetrics(elementId, containerInfo) {
 	var metrics = containerInfo.spec.custom_metrics;
 	var el=$("<div>");
-	for (i = 0; i<metrics.length; i++) {
+	for (i = 0; i < metrics.length; i++) {
+		if (metrics[i].no_display) {
+			continue;
+		}
 		divText = "<div id='"+elementId+"-"+metrics[i].name+"'></div>";
 		el.append($(divText));
 	}
@@ -737,7 +740,7 @@ function getCustomMetrics(rootDir, containerName, callback) {
 }
 
 function drawCustomMetrics(elementId, containerInfo, metricsInfo) {
-	if(metricsInfo.length == 0) {
+	if (metricsInfo.length == 0) {
 		return;
 	}
 
@@ -745,10 +748,12 @@ function drawCustomMetrics(elementId, containerInfo, metricsInfo) {
 
 	for (var containerName in metricsInfo) {
 		var container = metricsInfo[containerName];
-		for (i=0; i<metricSpec.length; i++) {
+		for (i=0; i < metricSpec.length; i++) {
+			if (metricSpec[i].no_display) {
+				continue;
+			}
 			metricName = metricSpec[i].name;
 			metricUnits = metricSpec[i].units;
-
 			var titles = ["Time", metricName];
 			var data = [];
 			metricVal = container[metricName];
