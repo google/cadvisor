@@ -99,10 +99,11 @@ func (collector *GenericCollector) Name() string {
 
 func (collector *GenericCollector) configToSpec(config MetricConfig) v1.MetricSpec {
 	return v1.MetricSpec{
-		Name:   config.Name,
-		Type:   config.MetricType,
-		Format: config.DataType,
-		Units:  config.Units,
+		Name:      config.Name,
+		Type:      config.MetricType,
+		Format:    config.DataType,
+		Units:     config.Units,
+		NoDisplay: config.NoDisplay,
 	}
 }
 

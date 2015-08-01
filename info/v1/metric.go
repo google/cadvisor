@@ -53,6 +53,9 @@ type MetricSpec struct {
 
 	// Display Units for the stats.
 	Units string `json:"units"`
+
+	// Do not include metric in UI.
+	NoDisplay bool `json:"no_display"`
 }
 
 // An exported metric.

@@ -29,22 +29,26 @@ type Config struct {
 
 // metricConfig holds information extracted from the config file about a metric
 type MetricConfig struct {
-	//the name of the metric
+	// the name of the metric
 	Name string `json:"name"`
 
-	//enum type for the metric type
+	// enum type for the metric type
 	MetricType v1.MetricType `json:"metric_type"`
 
 	// metric units to display on UI and in storage (eg: MB, cores)
 	// this is only used for display.
 	Units string `json:"units"`
 
-	//data type of the metric (eg: int, float)
+	// data type of the metric (eg: int, float)
 	DataType v1.DataType `json:"data_type"`
 
-	//the frequency at which the metric should be collected
+	// the frequency at which the metric should be collected
 	PollingFrequency time.Duration `json:"polling_frequency"`
 
-	//the regular expression that can be used to extract the metric
+	// the regular expression that can be used to extract the metric
 	Regex string `json:"regex"`
+
+	// Add this metric to UI or not.
+	// Use negative to make 'always display' as the default.
+	NoDisplay bool `json:"no_display"`
 }
