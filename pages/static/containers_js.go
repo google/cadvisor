@@ -749,7 +749,7 @@ function drawCustomMetrics(elementId, containerInfo, metricsInfo) {
 			metricName = metricSpec[i].name;
 			metricUnits = metricSpec[i].units;
 
-			var titles = ["Time", metricUnits];
+			var titles = ["Time", metricName];
 			var data = [];
 			metricVal = container[metricName];
 			for (var index in metricVal) {
@@ -764,7 +764,7 @@ function drawCustomMetrics(elementId, containerInfo, metricsInfo) {
                                 }
                                 data.push(elements);
                         }
-                       drawLineChart(titles, data, elementId+"-"+metricName, metricName);			
+                       drawLineChart(titles, data, elementId+"-"+metricName, metricUnits);			
 		}
 	}
 }
