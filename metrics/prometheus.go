@@ -513,6 +513,11 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			}
 		}
 
+		for labelKey, labelValue := range container.Spec.Labels {
+			baseLabels = append(baseLabels, labelKey)
+			baseLabelValues = append(baseLabelValues, labelValue)
+		}
+
 		// Container spec
 		desc := prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", baseLabels, nil)
 		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(container.Spec.CreationTime.Unix()), baseLabelValues...)
