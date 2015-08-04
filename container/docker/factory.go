@@ -42,6 +42,8 @@ var DockerNamespace = "docker"
 var dockerRootDir = flag.String("docker_root", "/var/lib/docker", "Absolute path to the Docker state root directory (default: /var/lib/docker)")
 var dockerRunDir = flag.String("docker_run", "/var/run/docker", "Absolute path to the Docker run directory (default: /var/run/docker)")
 
+var dockerMetadataEnvs = flag.String("docker_metadata_env", "", "Comma seperated list with names of env variables, which will be exported as metadata (default: empty)")
+
 // TODO(vmarmol): Export run dir too for newer Dockers.
 // Directory holding Docker container state information.
 func DockerStateDir() string {
@@ -101,6 +103,9 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 	if err != nil {
 		return
 	}
+
+	exposedMetadata := strings.Split(*dockerMetadataEnvs, ",")
+
 	handler, err = newDockerContainerHandler(
 		client,
 		name,
@@ -109,6 +114,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.usesAufsDriver,
 		&self.cgroupSubsystems,
 		inHostNamespace,
+		exposedMetadata,
 	)
 	return
 }

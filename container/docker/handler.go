@@ -93,6 +93,7 @@ func newDockerContainerHandler(
 	usesAufsDriver bool,
 	cgroupSubsystems *containerLibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
+	exposedMetadata []string,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
@@ -140,6 +141,18 @@ func newDockerContainerHandler(
 	handler.labels = ctnr.Config.Labels
 	handler.image = ctnr.Config.Image
 	handler.networkMode = ctnr.HostConfig.NetworkMode
+
+	// split env vars to get metadata map.
+	if len(exposedMetadata) > 0 {
+		for _, envVar := range ctnr.Config.Env {
+			splits := strings.SplitN(envVar, "=", 2)
+			for _, exposedVar := range exposedMetadata {
+				if splits[0] == exposedVar {
+					handler.labels[strings.ToLower(exposedVar)] = splits[1]
+				}
+			}
+		}
+	}
 
 	return handler, nil
 }
