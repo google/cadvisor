@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package io
+package stdout
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 )
 
-type ioStorage struct {
+type stdoutStorage struct {
 	Namespace string
 }
 
@@ -46,7 +46,7 @@ const (
 	colFsUsage = "fs_usage"
 )
 
-func (driver *ioStorage) containerStatsToValues(stats *info.ContainerStats) (series map[string]uint64) {
+func (driver *stdoutStorage) containerStatsToValues(stats *info.ContainerStats) (series map[string]uint64) {
 	series = make(map[string]uint64)
 
 	// Cumulative Cpu Usage
@@ -67,7 +67,7 @@ func (driver *ioStorage) containerStatsToValues(stats *info.ContainerStats) (ser
 	return series
 }
 
-func (driver *ioStorage) containerFsStatsToValues(series *map[string]uint64, stats *info.ContainerStats) {
+func (driver *stdoutStorage) containerFsStatsToValues(series *map[string]uint64, stats *info.ContainerStats) {
 	for _, fsStat := range stats.Filesystem {
 		// Summary stats.
 		(*series)[colFsSummary+"."+colFsLimit] += fsStat.Limit
@@ -79,7 +79,7 @@ func (driver *ioStorage) containerFsStatsToValues(series *map[string]uint64, sta
 	}
 }
 
-func (driver *ioStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (driver *stdoutStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
@@ -105,13 +105,13 @@ func (driver *ioStorage) AddStats(ref info.ContainerReference, stats *info.Conta
 	return nil
 }
 
-func (driver *ioStorage) Close() error {
+func (driver *stdoutStorage) Close() error {
 	return nil
 }
 
-func New(namespace string) (*ioStorage, error) {
-	ioStorage := &ioStorage{
+func New(namespace string) (*stdoutStorage, error) {
+	stdoutStorage := &stdoutStorage{
 		Namespace: namespace,
 	}
-	return ioStorage, nil
+	return stdoutStorage, nil
 }
