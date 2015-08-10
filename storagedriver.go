@@ -25,6 +25,7 @@ import (
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/bigquery"
 	"github.com/google/cadvisor/storage/influxdb"
+	"github.com/google/cadvisor/storage/io"
 	"github.com/google/cadvisor/storage/redis"
 	"github.com/google/cadvisor/storage/statsd"
 )
@@ -92,6 +93,10 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 	case "statsd":
 		backendStorage, err = statsd.New(
 			*argDbName,
+			*argDbHost,
+		)
+	case "io":
+		backendStorage, err = io.New(
 			*argDbHost,
 		)
 	default:
