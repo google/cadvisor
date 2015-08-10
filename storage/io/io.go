@@ -46,7 +46,7 @@ const (
 	colFsUsage = "fs_usage"
 )
 
-func (self *ioStorage) containerStatsToValues(stats *info.ContainerStats) (series map[string]uint64) {
+func (driver *ioStorage) containerStatsToValues(stats *info.ContainerStats) (series map[string]uint64) {
 	series = make(map[string]uint64)
 
 	// Cumulative Cpu Usage
@@ -67,7 +67,7 @@ func (self *ioStorage) containerStatsToValues(stats *info.ContainerStats) (serie
 	return series
 }
 
-func (self *ioStorage) containerFsStatsToValues(series *map[string]uint64, stats *info.ContainerStats) {
+func (driver *ioStorage) containerFsStatsToValues(series *map[string]uint64, stats *info.ContainerStats) {
 	for _, fsStat := range stats.Filesystem {
 		// Summary stats.
 		(*series)[colFsSummary+"."+colFsLimit] += fsStat.Limit
@@ -79,7 +79,7 @@ func (self *ioStorage) containerFsStatsToValues(series *map[string]uint64, stats
 	}
 }
 
-func (self *ioStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (driver *ioStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
@@ -92,10 +92,10 @@ func (self *ioStorage) AddStats(ref info.ContainerReference, stats *info.Contain
 	}
 
 	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf("cName=%s host=%s", containerName, self.Namespace))
+	buffer.WriteString(fmt.Sprintf("cName=%s host=%s", containerName, driver.Namespace))
 
-	series := self.containerStatsToValues(stats)
-	self.containerFsStatsToValues(&series, stats)
+	series := driver.containerStatsToValues(stats)
+	driver.containerFsStatsToValues(&series, stats)
 	for key, value := range series {
 		buffer.WriteString(fmt.Sprintf(" %s=%v", key, value))
 	}
@@ -105,7 +105,7 @@ func (self *ioStorage) AddStats(ref info.ContainerReference, stats *info.Contain
 	return nil
 }
 
-func (self *ioStorage) Close() error {
+func (driver *ioStorage) Close() error {
 	return nil
 }
 
