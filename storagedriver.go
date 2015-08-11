@@ -27,6 +27,7 @@ import (
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/redis"
 	"github.com/google/cadvisor/storage/statsd"
+	"github.com/google/cadvisor/storage/stdout"
 )
 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
@@ -92,6 +93,10 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 	case "statsd":
 		backendStorage, err = statsd.New(
 			*argDbName,
+			*argDbHost,
+		)
+	case "stdout":
+		backendStorage, err = stdout.New(
 			*argDbHost,
 		)
 	default:
