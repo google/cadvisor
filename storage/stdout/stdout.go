@@ -97,6 +97,7 @@ func (driver *stdoutStorage) AddStats(ref info.ContainerReference, stats *info.C
 	series := driver.containerStatsToValues(stats)
 	driver.containerFsStatsToValues(&series, stats)
 	for key, value := range series {
+		//Creating string with all the metrics needed
 		buffer.WriteString(fmt.Sprintf(" %s=%v", key, value))
 	}
 
