@@ -122,6 +122,13 @@ func NewPrometheusCollector(infoProvider infoProvider) *PrometheusCollector {
 					return values
 				},
 			}, {
+				name:      "container_memory_failcnt",
+				help:      "Number of memory usage hits limits",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Failcnt)}}
+				},
+			}, {
 				name:      "container_memory_usage_bytes",
 				help:      "Current memory usage in bytes.",
 				valueType: prometheus.GaugeValue,
