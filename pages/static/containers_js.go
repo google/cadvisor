@@ -740,31 +740,31 @@ function drawCustomMetrics(elementId, containerInfo, metricsInfo) {
 	if(metricsInfo.length == 0) {
 		return;
 	}
-
         var metricSpec = containerInfo.spec.custom_metrics;
-
 	for (var containerName in metricsInfo) {
 		var container = metricsInfo[containerName];
 		for (i=0; i<metricSpec.length; i++) {
 			metricName = metricSpec[i].name;
 			metricUnits = metricSpec[i].units;
-
 			var titles = ["Time", metricName];
 			var data = [];
-			metricVal = container[metricName];
-			for (var index in metricVal) {
-                                metric = metricVal[index];
-                                var elements = [];
-                                for (var attribute in metric) {
-                                        value = metric[attribute];
-                                        elements.push(value);
-                                }
-                                if (elements.length<2) {
-                                        elements.push(0);
-                                }
-                                data.push(elements);
-                        }
-                       drawLineChart(titles, data, elementId+"-"+metricName, metricUnits);			
+			metricLabelVal = container[metricName];
+			for (var label in metricLabelVal) {
+				metricVal = metricLabelVal[label];
+				for (var index in metricVal) {
+        	                        metric = metricVal[index];
+                	                var elements = [];
+                        	        for (var attribute in metric) {
+                                	        value = metric[attribute];
+                                        	elements.push(value);
+                                	}
+                    	       		if (elements.length<2) {
+                        	                elements.push(0);
+                                	}
+                                	data.push(elements);
+                        	}
+  		                drawLineChart(titles, data, elementId+"-"+metricName, metricUnits);
+			}
 		}
 	}
 }
