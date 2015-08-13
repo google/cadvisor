@@ -529,7 +529,7 @@ func (c *containerData) updateStats() error {
 	return customStatsErr
 }
 
-func (c *containerData) updateCustomStats() (map[string]info.MetricVal, error) {
+func (c *containerData) updateCustomStats() (map[string][]info.MetricVal, error) {
 	_, customStats, customStatsErr := c.collectorManager.Collect()
 	if customStatsErr != nil {
 		if !c.handler.Exists() {
