@@ -44,16 +44,16 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 	var storageDriver *memory.InMemoryCache
 	var backendStorage storage.StorageDriver
 	var err error
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
 	switch backendStorageName {
 	case "":
 		backendStorage = nil
 	case "influxdb":
-		var hostname string
-		hostname, err = os.Hostname()
-		if err != nil {
-			return nil, err
-		}
-
 		backendStorage, err = influxdb.New(
 			hostname,
 			*argDbTable,
@@ -65,11 +65,6 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 			*argDbBufferDuration,
 		)
 	case "bigquery":
-		var hostname string
-		hostname, err = os.Hostname()
-		if err != nil {
-			return nil, err
-		}
 		backendStorage, err = bigquery.New(
 			hostname,
 			*argDbTable,
@@ -79,13 +74,8 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 		//machineName: We use os.Hostname as the machineName (A unique identifier to identify the host that runs the current cAdvisor)
 		//argDbName: the key for redis's data
 		//argDbHost: the redis's server host
-		var machineName string
-		machineName, err = os.Hostname()
-		if err != nil {
-			return nil, err
-		}
 		backendStorage, err = redis.New(
-			machineName,
+			hostname,
 			*argDbName,
 			*argDbHost,
 			*argDbBufferDuration,
@@ -97,10 +87,10 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 		)
 	case "stdout":
 		backendStorage, err = stdout.New(
-			*argDbHost,
+			hostname,
 		)
 	default:
-		err = fmt.Errorf("unknown backend storage driver: %v", *argDbDriver)
+		err = fmt.Errorf("unknown backend storage driver in %s: %v", hostname, *argDbDriver)
 	}
 	if err != nil {
 		return nil, err
