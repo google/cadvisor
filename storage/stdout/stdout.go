@@ -26,19 +26,19 @@ type stdoutStorage struct {
 }
 
 const (
-	colCpuCumulativeUsage string = "cpu_cumulative_usage"
+	colCpuCumulativeUsage = "cpu_cumulative_usage"
 	// Memory Usage
-	colMemoryUsage string = "memory_usage"
+	colMemoryUsage = "memory_usage"
 	// Working set size
-	colMemoryWorkingSet string = "memory_working_set"
+	colMemoryWorkingSet = "memory_working_set"
 	// Cumulative count of bytes received.
-	colRxBytes string = "rx_bytes"
+	colRxBytes = "rx_bytes"
 	// Cumulative count of receive errors encountered.
-	colRxErrors string = "rx_errors"
+	colRxErrors = "rx_errors"
 	// Cumulative count of bytes transmitted.
-	colTxBytes string = "tx_bytes"
+	colTxBytes = "tx_bytes"
 	// Cumulative count of transmit errors encountered.
-	colTxErrors string = "tx_errors"
+	colTxErrors = "tx_errors"
 	// Filesystem summary
 	colFsSummary = "fs_summary"
 	// Filesystem limit.
@@ -99,9 +99,9 @@ func (driver *stdoutStorage) AddStats(ref info.ContainerReference, stats *info.C
 		buffer.WriteString(fmt.Sprintf(" %s=%v", key, value))
 	}
 
-	fmt.Println(buffer.String())
+	_, err := fmt.Println(buffer.String())
 
-	return nil
+	return err
 }
 
 func (driver *stdoutStorage) Close() error {
