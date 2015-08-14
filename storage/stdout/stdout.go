@@ -17,6 +17,7 @@ package stdout
 import (
 	"bytes"
 	"fmt"
+
 	info "github.com/google/cadvisor/info/v1"
 )
 
@@ -84,11 +85,9 @@ func (driver *stdoutStorage) AddStats(ref info.ContainerReference, stats *info.C
 		return nil
 	}
 
-	var containerName string
+	containerName := ref.Name
 	if len(ref.Aliases) > 0 {
 		containerName = ref.Aliases[0]
-	} else {
-		containerName = ref.Name
 	}
 
 	var buffer bytes.Buffer
