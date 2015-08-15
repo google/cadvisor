@@ -108,7 +108,7 @@ func (driver *stdoutStorage) Close() error {
 	return nil
 }
 
-func New(hostname, namespace string) (*stdoutStorage, error) {
+func New(hostname string) (*stdoutStorage, error) {
 	stdoutStorage := &stdoutStorage{
 		Hostname: hostname,
 	}
