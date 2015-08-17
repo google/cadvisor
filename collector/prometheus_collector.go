@@ -17,6 +17,7 @@ package collector
 import (
 	"encoding/json"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -152,6 +153,9 @@ func (collector *PrometheusCollector) Collect(metrics map[string][]v1.MetricVal)
 			metVal, err := strconv.ParseFloat(line[spaceIndex+1:], 64)
 			if err != nil {
 				errorSlice = append(errorSlice, err)
+			}
+			if math.IsNaN(metVal) {
+				metVal = 0
 			}
 
 			metric := v1.MetricVal{
