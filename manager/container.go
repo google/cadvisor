@@ -416,6 +416,8 @@ func (c *containerData) housekeeping() {
 		// Schedule the next housekeeping. Sleep until that time.
 		if time.Now().Before(next) {
 			time.Sleep(next.Sub(time.Now()))
+		} else {
+			next = time.Now()
 		}
 		lastHousekeeping = next
 	}
