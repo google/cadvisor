@@ -221,7 +221,7 @@ func (self *manager) Start() error {
 		} else {
 			err = cpuLoadReader.Start()
 			if err != nil {
-				glog.Warning("Could not start cpu load stat collector: %s", err)
+				glog.Warningf("Could not start cpu load stat collector: %s", err)
 			} else {
 				self.loadReader = cpuLoadReader
 			}
