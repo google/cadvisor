@@ -21,10 +21,6 @@
 			"Rev": "e1c259484b495133836706f46319f5897f1e9bf6"
 		},
 		{
-			"ImportPath": "github.com/GoogleCloudPlatform/gcloud-golang/compute/metadata",
-			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
-		},
-		{
 			"ImportPath": "github.com/SeanDolphin/bqschema",
 			"Rev": "a713d26df274e999ec10e9bbc7e73a1c4791053c"
 		},
@@ -199,6 +195,10 @@
 		{
 			"ImportPath": "golang.org/x/oauth2",
 			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
+		},
+		{
+			"ImportPath": "google.golang.org/cloud/compute/metadata",
+			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
 		},
 		{
 			"ImportPath": "google.golang.org/cloud/internal",

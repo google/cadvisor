@@ -20,7 +20,7 @@ import (
 	"os/exec"
 	"regexp"
 
-	"github.com/GoogleCloudPlatform/gcloud-golang/compute/metadata"
+	"google.golang.org/cloud/compute/metadata"
 )
 
 var zone = flag.String("zone", "us-central1-f", "Zone the instances are running in")
