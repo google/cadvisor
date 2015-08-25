@@ -185,6 +185,10 @@
 			"Rev": "8e4cdcb3c22b40d5e330ade0b68cb2e2a3cf6f98"
 		},
 		{
+			"ImportPath": "github.com/vishvananda/netns",
+			"Rev": "604eaf189ee867d8c147fafc28def2394e878d25"
+		},
+		{
 			"ImportPath": "golang.org/x/exp/inotify",
 			"Rev": "d00e13ec443927751b2bd49e97dea7bf3b6a6487"
 		},
