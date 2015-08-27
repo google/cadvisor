@@ -326,15 +326,7 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	nd, err := self.GetRootNetworkDevices()
-	if err != nil {
-		return new(info.ContainerStats), err
-	}
-	networkInterfaces := make([]string, len(nd))
-	for i := range nd {
-		networkInterfaces[i] = nd[i].Name
-	}
-	stats, err := libcontainer.GetStats(self.cgroupManager, networkInterfaces, -1)
+	stats, err := libcontainer.GetStats(self.cgroupManager, os.Getpid())
 	if err != nil {
 		return stats, err
 	}

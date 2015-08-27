@@ -29,7 +29,6 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils/sysinfo"
 	"github.com/vishvananda/netns"
 )
 
@@ -82,7 +81,7 @@ var supportedSubsystems map[string]struct{} = map[string]struct{}{
 }
 
 // Get cgroup and networking stats of the specified container
-func GetStats(cgroupManager cgroups.Manager, networkInterfaces []string, pid int) (*info.ContainerStats, error) {
+func GetStats(cgroupManager cgroups.Manager, pid int) (*info.ContainerStats, error) {
 	cgroupStats, err := cgroupManager.GetStats()
 	if err != nil {
 		return nil, err
@@ -92,19 +91,8 @@ func GetStats(cgroupManager cgroups.Manager, networkInterfaces []string, pid int
 	}
 	stats := toContainerStats(libcontainerStats)
 
-	// TODO(rjnagal): Use networking stats directly from libcontainer.
-	stats.Network.Interfaces = make([]info.InterfaceStats, len(networkInterfaces))
-	for i := range networkInterfaces {
-		interfaceStats, err := sysinfo.GetNetworkStats(networkInterfaces[i])
-		if err != nil {
-			return stats, err
-		}
-		stats.Network.Interfaces[i] = interfaceStats
-	}
-
-	// If we know the pid & we haven't discovered any network interfaces yet
 	// try the network namespace.
-	if pid > 0 && len(stats.Network.Interfaces) == 0 {
+	if pid > 0 {
 		nsStats, err := networkStatsFromNs(pid)
 		if err != nil {
 			glog.V(2).Infof("Unable to get network stats from pid %d: %v", pid, err)
@@ -172,9 +160,21 @@ const (
 	netStatsFile = "/proc/net/dev"
 )
 
-func scanInterfaceStats() (map[string]info.InterfaceStats, error) {
-	re := regexp.MustCompile("[  ]*(.+):([  ]+[0-9]+){16}")
+var (
+	ignoredDevicePrefixes = []string{"lo", "veth", "docker"}
+	re                    = regexp.MustCompile("[  ]*(.+):([  ]+[0-9]+){16}")
+)
 
+func isIgnoredDevice(ifName string) bool {
+	for _, prefix := range ignoredDevicePrefixes {
+		if strings.HasPrefix(strings.ToLower(ifName), prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func scanInterfaceStats() (map[string]info.InterfaceStats, error) {
 	var (
 		bkt uint64
 	)
@@ -209,7 +209,9 @@ func scanInterfaceStats() (map[string]info.InterfaceStats, error) {
 				return stats, fmt.Errorf("failure opening %s: %v", netStatsFile, err)
 			}
 
-			stats[i.Name] = i
+			if !isIgnoredDevice(i.Name) {
+				stats[i.Name] = i
+			}
 		}
 	}
 
@@ -332,28 +334,6 @@ func toContainerStats2(s *cgroups.Stats, ret *info.ContainerStats) {
 	}
 }
 
-func toContainerStats3(libcontainerStats *libcontainer.Stats, ret *info.ContainerStats) {
-	ret.Network.Interfaces = make([]info.InterfaceStats, len(libcontainerStats.Interfaces))
-	for i := range libcontainerStats.Interfaces {
-		ret.Network.Interfaces[i] = info.InterfaceStats{
-			Name:      libcontainerStats.Interfaces[i].Name,
-			RxBytes:   libcontainerStats.Interfaces[i].RxBytes,
-			RxPackets: libcontainerStats.Interfaces[i].RxPackets,
-			RxErrors:  libcontainerStats.Interfaces[i].RxErrors,
-			RxDropped: libcontainerStats.Interfaces[i].RxDropped,
-			TxBytes:   libcontainerStats.Interfaces[i].TxBytes,
-			TxPackets: libcontainerStats.Interfaces[i].TxPackets,
-			TxErrors:  libcontainerStats.Interfaces[i].TxErrors,
-			TxDropped: libcontainerStats.Interfaces[i].TxDropped,
-		}
-	}
-
-	// Add to base struct for backwards compatibility.
-	if len(ret.Network.Interfaces) > 0 {
-		ret.Network.InterfaceStats = ret.Network.Interfaces[0]
-	}
-}
-
 func toContainerStats(libcontainerStats *libcontainer.Stats) *info.ContainerStats {
 	s := libcontainerStats.CgroupStats
 	ret := new(info.ContainerStats)
@@ -363,9 +343,6 @@ func toContainerStats(libcontainerStats *libcontainer.Stats) *info.ContainerStat
 		toContainerStats0(s, ret)
 		toContainerStats1(s, ret)
 		toContainerStats2(s, ret)
-	}
-	if len(libcontainerStats.Interfaces) > 0 {
-		toContainerStats3(libcontainerStats, ret)
 	}
 	return ret
 }
