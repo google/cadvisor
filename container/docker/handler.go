@@ -74,6 +74,9 @@ type dockerContainerHandler struct {
 
 	// The container PID used to switch namespaces as required
 	pid int
+
+	// Image name used for this container.
+	image string
 }
 
 func newDockerContainerHandler(
@@ -123,6 +126,7 @@ func newDockerContainerHandler(
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"))
 	handler.aliases = append(handler.aliases, id)
 	handler.labels = ctnr.Config.Labels
+	handler.image = ctnr.Config.Image
 
 	return handler, nil
 }
@@ -211,6 +215,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 		spec.HasFilesystem = true
 	}
 	spec.Labels = self.labels
+	spec.Image = self.image
 
 	return spec, err
 }

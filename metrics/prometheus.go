@@ -61,7 +61,7 @@ type containerMetric struct {
 }
 
 func (cm *containerMetric) desc() *prometheus.Desc {
-	return prometheus.NewDesc(cm.name, cm.help, append([]string{"name", "id"}, cm.extraLabels...), nil)
+	return prometheus.NewDesc(cm.name, cm.help, append([]string{"name", "id", "image"}, cm.extraLabels...), nil)
 }
 
 // PrometheusCollector implements prometheus.Collector.
@@ -401,12 +401,13 @@ func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
 		if len(container.Aliases) > 0 {
 			name = container.Aliases[0]
 		}
+		image := container.Spec.Image
 		stats := container.Stats[0]
 
 		for _, cm := range c.containerMetrics {
 			desc := cm.desc()
 			for _, metricValue := range cm.getValues(stats) {
-				ch <- prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append([]string{name, id}, metricValue.labels...)...)
+				ch <- prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append([]string{name, id, image}, metricValue.labels...)...)
 			}
 		}
 	}
