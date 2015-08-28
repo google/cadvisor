@@ -287,60 +287,124 @@ func NewPrometheusCollector(infoProvider subcontainersInfoProvider) *PrometheusC
 					})
 				},
 			}, {
-				name:      "container_network_receive_bytes_total",
-				help:      "Cumulative count of bytes received",
-				valueType: prometheus.CounterValue,
+				name:        "container_network_receive_bytes_total",
+				help:        "Cumulative count of bytes received",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"interface"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Network.RxBytes)}}
+					values := make(metricValues, 0, len(s.Network.Interfaces))
+					for _, value := range s.Network.Interfaces {
+						values = append(values, metricValue{
+							value:  float64(value.RxBytes),
+							labels: []string{value.Name},
+						})
+					}
+					return values
 				},
 			}, {
-				name:      "container_network_receive_packets_total",
-				help:      "Cumulative count of packets received",
-				valueType: prometheus.CounterValue,
+				name:        "container_network_receive_packets_total",
+				help:        "Cumulative count of packets received",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"interface"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Network.RxPackets)}}
+					values := make(metricValues, 0, len(s.Network.Interfaces))
+					for _, value := range s.Network.Interfaces {
+						values = append(values, metricValue{
+							value:  float64(value.RxPackets),
+							labels: []string{value.Name},
+						})
+					}
+					return values
 				},
 			}, {
-				name:      "container_network_receive_packets_dropped_total",
-				help:      "Cumulative count of packets dropped while receiving",
-				valueType: prometheus.CounterValue,
+				name:        "container_network_receive_packets_dropped_total",
+				help:        "Cumulative count of packets dropped while receiving",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"interface"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Network.RxDropped)}}
+					values := make(metricValues, 0, len(s.Network.Interfaces))
+					for _, value := range s.Network.Interfaces {
+						values = append(values, metricValue{
+							value:  float64(value.RxDropped),
+							labels: []string{value.Name},
+						})
+					}
+					return values
 				},
 			}, {
-				name:      "container_network_receive_errors_total",
-				help:      "Cumulative count of errors encountered while receiving",
-				valueType: prometheus.CounterValue,
+				name:        "container_network_receive_errors_total",
+				help:        "Cumulative count of errors encountered while receiving",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"interface"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Network.RxErrors)}}
+					values := make(metricValues, 0, len(s.Network.Interfaces))
+					for _, value := range s.Network.Interfaces {
+						values = append(values, metricValue{
+							value:  float64(value.RxErrors),
+							labels: []string{value.Name},
+						})
+					}
+					return values
 				},
 			}, {
-				name:      "container_network_transmit_bytes_total",
-				help:      "Cumulative count of bytes transmitted",
-				valueType: prometheus.CounterValue,
+				name:        "container_network_transmit_bytes_total",
+				help:        "Cumulative count of bytes transmitted",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"interface"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Network.TxBytes)}}
+					values := make(metricValues, 0, len(s.Network.Interfaces))
+					for _, value := range s.Network.Interfaces {
+						values = append(values, metricValue{
+							value:  float64(value.TxBytes),
+							labels: []string{value.Name},
+						})
+					}
+					return values
 				},
 			}, {
-				name:      "container_network_transmit_packets_total",
-				help:      "Cumulative count of packets transmitted",
-				valueType: prometheus.CounterValue,
+				name:        "container_network_transmit_packets_total",
+				help:        "Cumulative count of packets transmitted",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"interface"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Network.TxPackets)}}
+					values := make(metricValues, 0, len(s.Network.Interfaces))
+					for _, value := range s.Network.Interfaces {
+						values = append(values, metricValue{
+							value:  float64(value.TxPackets),
+							labels: []string{value.Name},
+						})
+					}
+					return values
 				},
 			}, {
-				name:      "container_network_transmit_packets_dropped_total",
-				help:      "Cumulative count of packets dropped while transmitting",
-				valueType: prometheus.CounterValue,
+				name:        "container_network_transmit_packets_dropped_total",
+				help:        "Cumulative count of packets dropped while transmitting",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"interface"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Network.TxDropped)}}
+					values := make(metricValues, 0, len(s.Network.Interfaces))
+					for _, value := range s.Network.Interfaces {
+						values = append(values, metricValue{
+							value:  float64(value.TxDropped),
+							labels: []string{value.Name},
+						})
+					}
+					return values
 				},
 			}, {
-				name:      "container_network_transmit_errors_total",
-				help:      "Cumulative count of errors encountered while transmitting",
-				valueType: prometheus.CounterValue,
+				name:        "container_network_transmit_errors_total",
+				help:        "Cumulative count of errors encountered while transmitting",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"interface"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Network.TxErrors)}}
+					values := make(metricValues, 0, len(s.Network.Interfaces))
+					for _, value := range s.Network.Interfaces {
+						values = append(values, metricValue{
+							value:  float64(value.TxErrors),
+							labels: []string{value.Name},
+						})
+					}
+					return values
 				},
 			}, {
 				name:        "container_tasks_state",
