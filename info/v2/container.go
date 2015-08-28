@@ -80,6 +80,9 @@ type ContainerSpec struct {
 	HasNetwork    bool `json:"has_network"`
 	HasFilesystem bool `json:"has_filesystem"`
 	HasDiskIo     bool `json:"has_diskio"`
+
+	// Image name used for this container.
+	Image string `json:"image,omitempty"`
 }
 
 type ContainerStats struct {

@@ -34,6 +34,9 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 			ContainerReference: info.ContainerReference{
 				Name: "testcontainer",
 			},
+			Spec: info.ContainerSpec{
+				Image: "test",
+			},
 			Stats: []*info.ContainerStats{
 				{
 					Cpu: info.CpuStats{

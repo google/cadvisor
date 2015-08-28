@@ -380,6 +380,7 @@ func (self *manager) getV2Spec(cinfo *containerInfo) v2.ContainerSpec {
 		HasNetwork:       specV1.HasNetwork,
 		HasDiskIo:        specV1.HasDiskIo,
 		HasCustomMetrics: specV1.HasCustomMetrics,
+		Image:            specV1.Image,
 	}
 	if specV1.HasCpu {
 		specV2.Cpu.Limit = specV1.Cpu.Limit
