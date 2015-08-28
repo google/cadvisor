@@ -17,11 +17,10 @@ package libcontainer
 import (
 	"bufio"
 	"fmt"
-	"net"
-	"os/exec"
+	"io/ioutil"
 	"path"
 	"regexp"
-	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,8 +28,6 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils/sysinfo"
-	"github.com/vishvananda/netns"
 )
 
 type CgroupSubsystems struct {
@@ -82,7 +79,7 @@ var supportedSubsystems map[string]struct{} = map[string]struct{}{
 }
 
 // Get cgroup and networking stats of the specified container
-func GetStats(cgroupManager cgroups.Manager, networkInterfaces []string, pid int) (*info.ContainerStats, error) {
+func GetStats(cgroupManager cgroups.Manager, rootFs string, pid int) (*info.ContainerStats, error) {
 	cgroupStats, err := cgroupManager.GetStats()
 	if err != nil {
 		return nil, err
@@ -92,24 +89,13 @@ func GetStats(cgroupManager cgroups.Manager, networkInterfaces []string, pid int
 	}
 	stats := toContainerStats(libcontainerStats)
 
-	// TODO(rjnagal): Use networking stats directly from libcontainer.
-	stats.Network.Interfaces = make([]info.InterfaceStats, len(networkInterfaces))
-	for i := range networkInterfaces {
-		interfaceStats, err := sysinfo.GetNetworkStats(networkInterfaces[i])
-		if err != nil {
-			return stats, err
-		}
-		stats.Network.Interfaces[i] = interfaceStats
-	}
-
-	// If we know the pid & we haven't discovered any network interfaces yet
-	// try the network namespace.
-	if pid > 0 && len(stats.Network.Interfaces) == 0 {
-		nsStats, err := networkStatsFromNs(pid)
+	// If we know the pid then get network stats from /proc/<pid>/net/dev
+	if pid > 0 {
+		netStats, err := networkStatsFromProc(rootFs, pid)
 		if err != nil {
 			glog.V(2).Infof("Unable to get network stats from pid %d: %v", pid, err)
 		} else {
-			stats.Network.Interfaces = append(stats.Network.Interfaces, nsStats...)
+			stats.Network.Interfaces = append(stats.Network.Interfaces, netStats...)
 		}
 	}
 
@@ -121,70 +107,39 @@ func GetStats(cgroupManager cgroups.Manager, networkInterfaces []string, pid int
 	return stats, nil
 }
 
-func networkStatsFromNs(pid int) ([]info.InterfaceStats, error) {
-	// Lock the OS Thread so we only change the ns for this thread exclusively
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
+func networkStatsFromProc(rootFs string, pid int) ([]info.InterfaceStats, error) {
+	netStatsFile := path.Join(rootFs, "proc", strconv.Itoa(pid), "/net/dev")
 
-	stats := []info.InterfaceStats{}
-
-	// Save the current network namespace
-	origns, _ := netns.Get()
-	defer origns.Close()
-
-	// Switch to the pid netns
-	pidns, err := netns.GetFromPid(pid)
-	defer pidns.Close()
+	ifaceStats, err := scanInterfaceStats(netStatsFile)
 	if err != nil {
-		return stats, nil
-	}
-	netns.Set(pidns)
-
-	// Defer setting back to original ns
-	defer netns.Set(origns)
-
-	ifaceStats, err := scanInterfaceStats()
-	if err != nil {
-		return stats, fmt.Errorf("couldn't read network stats: %v", err)
+		return []info.InterfaceStats{}, fmt.Errorf("couldn't read network stats: %v", err)
 	}
 
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return stats, fmt.Errorf("cannot find interfaces: %v", err)
-	}
-
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagLoopback == 0 {
-			if s, ok := ifaceStats[iface.Name]; ok {
-				stats = append(stats, s)
-			}
-		}
-	}
-
-	return stats, nil
+	return ifaceStats, nil
 }
 
-// Borrowed from libnetwork Stats - https://github.com/docker/libnetwork/blob/master/sandbox/interface_linux.go
-// In older kernels (like the one in Centos 6.6 distro) sysctl does not have netns support. Therefore
-// we cannot gather the statistics from /sys/class/net/<dev>/statistics/<counter> files. Per-netns stats
-// are naturally found in /proc/net/dev in kernels which support netns (ifconfig relyes on that).
-const (
-	netStatsFile = "/proc/net/dev"
+var (
+	ignoredDevicePrefixes = []string{"lo", "veth", "docker"}
+	netStatLineRE         = regexp.MustCompile("[  ]*(.+):([  ]+[0-9]+){16}")
 )
 
-func scanInterfaceStats() (map[string]info.InterfaceStats, error) {
-	re := regexp.MustCompile("[  ]*(.+):([  ]+[0-9]+){16}")
+func isIgnoredDevice(ifName string) bool {
+	for _, prefix := range ignoredDevicePrefixes {
+		if strings.HasPrefix(strings.ToLower(ifName), prefix) {
+			return true
+		}
+	}
+	return false
+}
 
+func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
 	var (
 		bkt uint64
 	)
 
-	stats := map[string]info.InterfaceStats{}
+	stats := []info.InterfaceStats{}
 
-	// For some reason ioutil.ReadFile(netStatsFile) reads the file in
-	// the default netns when this code is invoked from docker.
-	// Executing "cat <netStatsFile>" works as expected.
-	data, err := exec.Command("cat", netStatsFile).Output()
+	data, err := ioutil.ReadFile(netStatsFile)
 	if err != nil {
 		return stats, fmt.Errorf("failure opening %s: %v", netStatsFile, err)
 	}
@@ -196,7 +151,7 @@ func scanInterfaceStats() (map[string]info.InterfaceStats, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if re.MatchString(line) {
+		if netStatLineRE.MatchString(line) {
 			line = strings.Replace(line, ":", "", -1)
 
 			i := info.InterfaceStats{}
@@ -209,7 +164,9 @@ func scanInterfaceStats() (map[string]info.InterfaceStats, error) {
 				return stats, fmt.Errorf("failure opening %s: %v", netStatsFile, err)
 			}
 
-			stats[i.Name] = i
+			if !isIgnoredDevice(i.Name) {
+				stats = append(stats, i)
+			}
 		}
 	}
 

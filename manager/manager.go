@@ -737,7 +737,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 
 // Create a container.
 func (m *manager) createContainer(containerName string) error {
-	handler, accept, err := container.NewContainerHandler(containerName)
+	handler, accept, err := container.NewContainerHandler(containerName, m.inHostNamespace)
 	if err != nil {
 		return err
 	}
