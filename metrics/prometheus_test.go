@@ -71,6 +71,19 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							TxErrors:  20,
 							TxDropped: 21,
 						},
+						Interfaces: []info.InterfaceStats{
+							{
+								Name:      "eth0",
+								RxBytes:   14,
+								RxPackets: 15,
+								RxErrors:  16,
+								RxDropped: 17,
+								TxBytes:   18,
+								TxPackets: 19,
+								TxErrors:  20,
+								TxDropped: 21,
+							},
+						},
 					},
 					Filesystem: []info.FsStats{
 						{

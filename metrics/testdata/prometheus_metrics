@@ -79,28 +79,28 @@ container_memory_usage_bytes{id="testcontainer",image="test",name="testcontainer
 container_memory_working_set_bytes{id="testcontainer",image="test",name="testcontainer"} 9
 # HELP container_network_receive_bytes_total Cumulative count of bytes received
 # TYPE container_network_receive_bytes_total counter
-container_network_receive_bytes_total{id="testcontainer",image="test",name="testcontainer"} 14
+container_network_receive_bytes_total{id="testcontainer",image="test",interface="eth0",name="testcontainer"} 14
 # HELP container_network_receive_errors_total Cumulative count of errors encountered while receiving
 # TYPE container_network_receive_errors_total counter
-container_network_receive_errors_total{id="testcontainer",image="test",name="testcontainer"} 16
+container_network_receive_errors_total{id="testcontainer",image="test",interface="eth0",name="testcontainer"} 16
 # HELP container_network_receive_packets_dropped_total Cumulative count of packets dropped while receiving
 # TYPE container_network_receive_packets_dropped_total counter
-container_network_receive_packets_dropped_total{id="testcontainer",image="test",name="testcontainer"} 17
+container_network_receive_packets_dropped_total{id="testcontainer",image="test",interface="eth0",name="testcontainer"} 17
 # HELP container_network_receive_packets_total Cumulative count of packets received
 # TYPE container_network_receive_packets_total counter
-container_network_receive_packets_total{id="testcontainer",image="test",name="testcontainer"} 15
+container_network_receive_packets_total{id="testcontainer",image="test",interface="eth0",name="testcontainer"} 15
 # HELP container_network_transmit_bytes_total Cumulative count of bytes transmitted
 # TYPE container_network_transmit_bytes_total counter
-container_network_transmit_bytes_total{id="testcontainer",image="test",name="testcontainer"} 18
+container_network_transmit_bytes_total{id="testcontainer",image="test",interface="eth0",name="testcontainer"} 18
 # HELP container_network_transmit_errors_total Cumulative count of errors encountered while transmitting
 # TYPE container_network_transmit_errors_total counter
-container_network_transmit_errors_total{id="testcontainer",image="test",name="testcontainer"} 20
+container_network_transmit_errors_total{id="testcontainer",image="test",interface="eth0",name="testcontainer"} 20
 # HELP container_network_transmit_packets_dropped_total Cumulative count of packets dropped while transmitting
 # TYPE container_network_transmit_packets_dropped_total counter
-container_network_transmit_packets_dropped_total{id="testcontainer",image="test",name="testcontainer"} 21
+container_network_transmit_packets_dropped_total{id="testcontainer",image="test",interface="eth0",name="testcontainer"} 21
 # HELP container_network_transmit_packets_total Cumulative count of packets transmitted
 # TYPE container_network_transmit_packets_total counter
-container_network_transmit_packets_total{id="testcontainer",image="test",name="testcontainer"} 19
+container_network_transmit_packets_total{id="testcontainer",image="test",interface="eth0",name="testcontainer"} 19
 # HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
 # TYPE container_scrape_error gauge
 container_scrape_error 0
