@@ -29,6 +29,7 @@ const (
 	netDir     = "/sys/class/net"
 	dmiDir     = "/sys/class/dmi"
 	ppcDevTree = "/proc/device-tree"
+	s390xDevTree = "/etc" // s390/s390x changes
 )
 
 type CacheInfo struct {
@@ -242,7 +243,11 @@ func (self *realSysFs) GetSystemUUID() (string, error) {
 			//If running on a KVM guest on Power then UUID is /proc/device-tree/vm,uuid
 			id, err = ioutil.ReadFile(path.Join(ppcDevTree, "vm,uuid"))
 			if err != nil {
-				return "", err
+				// s390/s390x changes
+				id, err = ioutil.ReadFile(path.Join(s390xDevTree, "machine-id"))
+				if err != nil {
+					return "", err
+				}
 			}
 		}
 	}
