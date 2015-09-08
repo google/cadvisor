@@ -24,6 +24,7 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/bigquery"
+	"github.com/google/cadvisor/storage/elasticsearch"
 	"github.com/google/cadvisor/storage/influxdb"
 	"github.com/google/cadvisor/storage/redis"
 	"github.com/google/cadvisor/storage/statsd"
@@ -38,6 +39,9 @@ var argDbTable = flag.String("storage_driver_table", "stats", "table name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
 var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*time.Second, "Writes in the storage driver will be buffered for this duration, and committed to the non memory backends as a single transaction")
 var storageDuration = flag.Duration("storage_duration", 2*time.Minute, "How long to keep data stored (Default: 2min).")
+var argElasticHost = flag.String("storage_driver_es_host", "http://localhost:9200", "database host:port")
+var argIndexName = flag.String("storage_driver_index", "cadvisor", "index name")
+var argTypeName = flag.String("storage_driver_type", "stats", "type name")
 
 // Creates a memory storage with an optional backend storage option.
 func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) {
@@ -89,6 +93,21 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 			*argDbName,
 			*argDbHost,
 			*argDbBufferDuration,
+		)
+	case "elasticsearch":
+		//argIndexName: the index for elasticsearch
+		//argTypeName: the type for index
+		//argElasticHost: the elasticsearch's server host
+		var machineName string
+		machineName, err = os.Hostname()
+		if err != nil {
+			return nil, err
+		}
+		backendStorage, err = elasticsearch.New(
+			machineName,
+			*argIndexName,
+			*argTypeName,
+			*argElasticHost,
 		)
 	case "statsd":
 		backendStorage, err = statsd.New(
