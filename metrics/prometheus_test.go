@@ -38,6 +38,13 @@ func (p testSubcontainersInfoProvider) GetVersionInfo() (*info.VersionInfo, erro
 	}, nil
 }
 
+func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
+	return &info.MachineInfo{
+		NumCores:       4,
+		MemoryCapacity: 1024,
+	}, nil
+}
+
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
 	return []*info.ContainerInfo{
 		{
