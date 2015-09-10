@@ -138,6 +138,12 @@ http_response_size_bytes{handler="prometheus",quantile="0.9"} 0
 http_response_size_bytes{handler="prometheus",quantile="0.99"} 0
 http_response_size_bytes_sum{handler="prometheus"} 0
 http_response_size_bytes_count{handler="prometheus"} 0
+# HELP machine_cpu_cores Number of CPU cores on the machine.
+# TYPE machine_cpu_cores gauge
+machine_cpu_cores 4
+# HELP machine_memory_bytes Amount of memory installed on the machine.
+# TYPE machine_memory_bytes gauge
+machine_memory_bytes 1024
 # HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
 # TYPE process_cpu_seconds_total counter
 process_cpu_seconds_total 0
