@@ -39,9 +39,10 @@ var argDbTable = flag.String("storage_driver_table", "stats", "table name")
 var argDbIsSecure = flag.Bool("storage_driver_secure", false, "use secure connection with database")
 var argDbBufferDuration = flag.Duration("storage_driver_buffer_duration", 60*time.Second, "Writes in the storage driver will be buffered for this duration, and committed to the non memory backends as a single transaction")
 var storageDuration = flag.Duration("storage_duration", 2*time.Minute, "How long to keep data stored (Default: 2min).")
-var argElasticHost = flag.String("storage_driver_es_host", "http://localhost:9200", "database host:port")
-var argIndexName = flag.String("storage_driver_index", "cadvisor", "index name")
-var argTypeName = flag.String("storage_driver_type", "stats", "type name")
+var argElasticHost = flag.String("storage_driver_es_host", "http://localhost:9200", "ElasticSearch host:port")
+var argIndexName = flag.String("storage_driver_es_index", "cadvisor", "ElasticSearch index name")
+var argTypeName = flag.String("storage_driver_es_type", "stats", "ElasticSearch type name")
+var argEnableSniffer = flag.Bool("storage_driver_es_enable_sniffer", false, "ElasticSearch uses a sniffing process to find all nodes of your cluster by default, automatically")
 
 // Creates a memory storage with an optional backend storage option.
 func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) {
@@ -108,6 +109,7 @@ func NewMemoryStorage(backendStorageName string) (*memory.InMemoryCache, error) 
 			*argIndexName,
 			*argTypeName,
 			*argElasticHost,
+			*argEnableSniffer,
 		)
 	case "statsd":
 		backendStorage, err = statsd.New(
