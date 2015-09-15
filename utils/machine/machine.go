@@ -20,7 +20,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
+	
+    	// s390/s390x changes
+    	"syscall"
+    	"runtime"
+    	
 	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
@@ -39,6 +43,11 @@ var swapCapacityRegexp = regexp.MustCompile("SwapTotal: *([0-9]+) kB")
 
 // GetClockSpeed returns the CPU clock speed, given a []byte formatted as the /proc/cpuinfo file.
 func GetClockSpeed(procInfo []byte) (uint64, error) {
+	// s390/s390x changes
+	if (true == isSystemZ()) {
+		return 0, nil
+	}
+		
 	// First look through sys to find a max supported cpu frequency.
 	const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 	if utils.FileExists(maxFreqFile) {
@@ -119,6 +128,12 @@ func parseCapacity(b []byte, r *regexp.Regexp) (int64, error) {
 
 func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 	nodes := []info.Node{}
+	
+    	// s390/s390x changes
+    	if true == isSystemZ() {
+            	return nodes, getNumCores(), nil
+    	}	
+		
 	numCores := 0
 	lastThread := -1
 	lastCore := -1
@@ -240,4 +255,43 @@ func addNode(nodes *[]info.Node, id int) (int, error) {
 		idx = len(*nodes) - 1
 	}
 	return idx, nil
+}
+
+// s390/s390x changes
+func getMachineArch() (string, error) {
+    	uname := syscall.Utsname{}
+    	err := syscall.Uname(&uname)
+    	if err != nil {
+        	return "", err
+    	}
+
+    	var arch string
+    	for _, val := range uname.Machine {
+        	arch += string(int(val))
+    	}
+
+    	return arch, nil
+}
+
+// s390/s390x changes
+func isSystemZ() bool {
+    	arch, err := getMachineArch()
+    	if err == nil {
+        	if (true == strings.Contains(arch, "390")) {
+            		return true
+        	}
+    	}
+    	return false
+}
+
+// s390/s390x changes
+func getNumCores() int {
+    	maxProcs := runtime.GOMAXPROCS(0)
+    	numCPU := runtime.NumCPU()
+	
+    	if maxProcs < numCPU {
+        	return maxProcs
+    	}
+	
+    	return numCPU
 }
