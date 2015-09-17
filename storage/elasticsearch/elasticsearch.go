@@ -17,6 +17,7 @@ package elasticsearch
 import (
 	"fmt"
 	"sync"
+	"time"
 
 	info "github.com/google/cadvisor/info/v1"
 	storage "github.com/google/cadvisor/storage"
@@ -67,7 +68,7 @@ func (self *elasticStorage) AddStats(ref info.ContainerReference, stats *info.Co
 		// Add some default params based on ContainerStats
 		detail := self.containerStatsAndDefaultValues(ref, stats)
 		// Index a cadvisor (using JSON serialization)
-		put, err := self.client.Index().
+		_, err := self.client.Index().
 			Index(self.indexName).
 			Type(self.typeName).
 			BodyJson(detail).
@@ -76,7 +77,6 @@ func (self *elasticStorage) AddStats(ref info.ContainerReference, stats *info.Co
 			// Handle error
 			panic(fmt.Errorf("failed to write stats to ElasticSearch- %s", err))
 		}
-		fmt.Printf("Indexed tweet %s to index %s, type %s\n", put.Id, put.Index, put.Type)
 	}()
 	return nil
 }
@@ -93,19 +93,24 @@ func New(machineName,
 	indexName,
 	typeName,
 	elasticHost string,
+	enableSniffer bool,
 ) (storage.StorageDriver, error) {
 	// Obtain a client and connect to the default Elasticsearch installation
 	// on 127.0.0.1:9200. Of course you can configure your client to connect
 	// to other hosts and configure it in various other ways.
 	client, err := elastic.NewClient(
-		elastic.SetURL(elasticHost))
+		elastic.SetHealthcheck(true),
+		elastic.SetSniff(enableSniffer),
+		elastic.SetHealthcheckInterval(30*time.Second),
+		elastic.SetURL(elasticHost),
+	)
 	if err != nil {
 		// Handle error
 		panic(err)
 	}
 
 	// Ping the Elasticsearch server to get e.g. the version number
-	info, code, err := client.Ping().Do()
+	info, code, err := client.Ping().URL(elasticHost).Do()
 	if err != nil {
 		// Handle error
 		panic(err)
