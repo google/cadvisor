@@ -136,10 +136,25 @@ func FullContainerName(dockerId string) string {
 	}
 }
 
+// Returns true if container name matches pattern
+func isContainerName(name string) bool {
+	id := path.Base(name)
+	if UseSystemd() {
+		return strings.HasPrefix(id, "docker-") && strings.HasSuffix(id, ".scope")
+	} else {
+		return true
+	}
+}
+
 // Docker handles all containers under /docker
 func (self *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	// docker factory accepts all containers it can handle.
 	canAccept := true
+	// Validate systemd cgroup name as Docker ID
+	if !isContainerName(name) {
+		return false, canAccept, fmt.Errorf("failed to match container name")
+	}
+
 	// Check if the container is known to docker and it is active.
 	id := ContainerNameToDockerId(name)
 
