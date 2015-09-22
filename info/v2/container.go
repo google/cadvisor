@@ -109,6 +109,8 @@ type ContainerStats struct {
 	// Task load statistics
 	HasLoad bool         `json:"has_load"`
 	Load    v1.LoadStats `json:"load_stats,omitempty"`
+	//TCP statistics
+	TcpStat TcpStats `json:"tcpstat,omitempty"`
 	// Custom Metrics
 	HasCustomMetrics bool                      `json:"has_custom_metrics"`
 	CustomMetrics    map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
@@ -209,6 +211,25 @@ type ProcessInfo struct {
 type NetworkStats struct {
 	// Network stats by interface.
 	Interfaces []v1.InterfaceStats `json:"interfaces,omitempty"`
+}
+
+type TcpStat struct {
+	Established uint64
+	SynSent     uint64
+	SynRecv     uint64
+	FinWait1    uint64
+	FinWait2    uint64
+	TimeWait    uint64
+	Close       uint64
+	CloseWait   uint64
+	LastAck     uint64
+	Listen      uint64
+	Closing     uint64
+}
+
+type TcpStats struct {
+	Tcp  TcpStat `json:"tcp"`
+	Tcp6 TcpStat `json:"tcp6"`
 }
 
 // Instantaneous CPU stats

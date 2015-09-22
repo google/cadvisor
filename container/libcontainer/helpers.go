@@ -97,6 +97,20 @@ func GetStats(cgroupManager cgroups.Manager, rootFs string, pid int) (*info.Cont
 		} else {
 			stats.Network.Interfaces = append(stats.Network.Interfaces, netStats...)
 		}
+
+		t, err := tcpStatsFromProc(rootFs, pid, "net/tcp")
+		if err != nil {
+			glog.V(2).Infof("Unable to get tcp stats from pid %d: %v", pid, err)
+		} else {
+			stats.TcpStat.Tcp = t
+		}
+
+		t6, err := tcpStatsFromProc(rootFs, pid, "net/tcp6")
+		if err != nil {
+			glog.V(2).Infof("Unable to get tcp6 stats from pid %d: %v", pid, err)
+		} else {
+			stats.TcpStat.Tcp6 = t6
+		}
 	}
 
 	// For backwards compatibility.
@@ -171,6 +185,78 @@ func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
 	}
 
 	return stats, nil
+}
+
+func tcpStatsFromProc(rootFs string, pid int, file string) (info.TcpStat, error) {
+	tcpStatsFile := path.Join(rootFs, "proc", strconv.Itoa(pid), file)
+
+	tcpStats, err := scanTcpStats(tcpStatsFile)
+	if err != nil {
+		return tcpStats, fmt.Errorf("couldn't read tcp stats: %v", err)
+	}
+
+	return tcpStats, nil
+}
+
+func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
+
+	//FIXME besser lösen
+	var s info.TcpStat
+	data, err := ioutil.ReadFile(tcpStatsFile)
+	if err != nil {
+		return s, fmt.Errorf("failure opening %s: %v", tcpStatsFile, err)
+	}
+
+	tcpStateMap := map[string]uint64{
+		"01": 0, //ESTABLISHED
+		"02": 0, //SYN_SENT
+		"03": 0, //SYN_RECV
+		"04": 0, //FIN_WAIT1
+		"05": 0, //FIN_WAIT2
+		"06": 0, //TIME_WAIT
+		"07": 0, //CLOSE
+		"08": 0, //CLOSE_WAIT
+		"09": 0, //LAST_ACK
+		"0A": 0, //LISTEN
+		"0B": 0, //CLOSING
+	}
+
+	reader := strings.NewReader(string(data))
+	scanner := bufio.NewScanner(reader)
+
+	scanner.Split(bufio.ScanLines)
+
+	r, _ := regexp.Compile("[0-9:].*")
+
+	for scanner.Scan() {
+
+		line := scanner.Text()
+		//skip header
+		matched := r.MatchString(line)
+
+		if matched {
+			state := strings.Fields(line)
+			//sl local_address rem_address st tx_queue rx_queue tr tm->when retrnsmt  uid timeout inode
+			tcpStateMap[state[3]]++
+
+		}
+	}
+
+	tcpStats := info.TcpStat{
+		Established: tcpStateMap["01"],
+		SynSent:     tcpStateMap["02"],
+		SynRecv:     tcpStateMap["03"],
+		FinWait1:    tcpStateMap["04"],
+		FinWait2:    tcpStateMap["05"],
+		TimeWait:    tcpStateMap["06"],
+		Close:       tcpStateMap["07"],
+		CloseWait:   tcpStateMap["08"],
+		LastAck:     tcpStateMap["09"],
+		Listen:      tcpStateMap["0A"],
+		Closing:     tcpStateMap["0B"],
+	}
+
+	return tcpStats, nil
 }
 
 func GetProcesses(cgroupManager cgroups.Manager) ([]int, error) {

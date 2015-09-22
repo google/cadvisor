@@ -347,6 +347,25 @@ type NetworkStats struct {
 	Interfaces     []InterfaceStats `json:"interfaces,omitempty"`
 }
 
+type TcpStat struct {
+	Established uint64
+	SynSent     uint64
+	SynRecv     uint64
+	FinWait1    uint64
+	FinWait2    uint64
+	TimeWait    uint64
+	Close       uint64
+	CloseWait   uint64
+	LastAck     uint64
+	Listen      uint64
+	Closing     uint64
+}
+
+type TcpStats struct {
+	Tcp  TcpStat `json:"tcp"`
+	Tcp6 TcpStat `json:"tcp6"`
+}
+
 type FsStats struct {
 	// The block device name associated with the filesystem.
 	Device string `json:"device,omitempty"`
@@ -428,6 +447,9 @@ type ContainerStats struct {
 
 	// Task load stats
 	TaskStats LoadStats `json:"task_stats,omitempty"`
+
+	//TCP statistics
+	TcpStat TcpStats `json:"tcpstat,omitempty"`
 
 	//Custom metrics from all collectors
 	CustomMetrics map[string][]MetricVal `json:"custom_metrics,omitempty"`
