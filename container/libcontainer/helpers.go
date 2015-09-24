@@ -200,12 +200,14 @@ func tcpStatsFromProc(rootFs string, pid int, file string) (info.TcpStat, error)
 
 func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 
-	//FIXME besser lösen
-	var s info.TcpStat
+	var stats info.TcpStat
+
 	data, err := ioutil.ReadFile(tcpStatsFile)
 	if err != nil {
-		return s, fmt.Errorf("failure opening %s: %v", tcpStatsFile, err)
+		return stats, fmt.Errorf("failure opening %s: %v", tcpStatsFile, err)
 	}
+
+	tcpStatLineRE, _ := regexp.Compile("[0-9:].*")
 
 	tcpStateMap := map[string]uint64{
 		"01": 0, //ESTABLISHED
@@ -226,23 +228,21 @@ func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 
 	scanner.Split(bufio.ScanLines)
 
-	r, _ := regexp.Compile("[0-9:].*")
-
 	for scanner.Scan() {
 
 		line := scanner.Text()
 		//skip header
-		matched := r.MatchString(line)
+		matched := tcpStatLineRE.MatchString(line)
 
 		if matched {
 			state := strings.Fields(line)
+			//#file header tcp state is the 4 filed:
 			//sl local_address rem_address st tx_queue rx_queue tr tm->when retrnsmt  uid timeout inode
 			tcpStateMap[state[3]]++
-
 		}
 	}
 
-	tcpStats := info.TcpStat{
+	stats = info.TcpStat{
 		Established: tcpStateMap["01"],
 		SynSent:     tcpStateMap["02"],
 		SynRecv:     tcpStateMap["03"],
@@ -256,7 +256,7 @@ func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 		Closing:     tcpStateMap["0B"],
 	}
 
-	return tcpStats, nil
+	return stats, nil
 }
 
 func GetProcesses(cgroupManager cgroups.Manager) ([]int, error) {

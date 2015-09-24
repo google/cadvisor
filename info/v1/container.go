@@ -348,17 +348,28 @@ type NetworkStats struct {
 }
 
 type TcpStat struct {
+	//Count of TCP connections in state "Established"
 	Established uint64
-	SynSent     uint64
-	SynRecv     uint64
-	FinWait1    uint64
-	FinWait2    uint64
-	TimeWait    uint64
-	Close       uint64
-	CloseWait   uint64
-	LastAck     uint64
-	Listen      uint64
-	Closing     uint64
+	//Count of TCP connections in state "Syn_Sent"
+	SynSent uint64
+	//Count of TCP connections in state "Syn_Recv"
+	SynRecv uint64
+	//Count of TCP connections in state "Fin_Wait2"
+	FinWait1 uint64
+	//Count of TCP connections in state "Fin_Wait2"
+	FinWait2 uint64
+	//Count of TCP connections in state "Time_Wait
+	TimeWait uint64
+	//Count of TCP connections in state "Close"
+	Close uint64
+	//Count of TCP connections in state "Close_Wait"
+	CloseWait uint64
+	//Count of TCP connections in state "Listen_Ack"
+	LastAck uint64
+	//Count of TCP connections in state "Listen"
+	Listen uint64
+	//Count of TCP connections in state "Closing"
+	Closing uint64
 }
 
 type TcpStats struct {
