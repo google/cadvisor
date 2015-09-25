@@ -102,14 +102,14 @@ func GetStats(cgroupManager cgroups.Manager, rootFs string, pid int) (*info.Cont
 		if err != nil {
 			glog.V(2).Infof("Unable to get tcp stats from pid %d: %v", pid, err)
 		} else {
-			stats.TcpStat.Tcp = t
+			stats.Network.Tcp = t
 		}
 
 		t6, err := tcpStatsFromProc(rootFs, pid, "net/tcp6")
 		if err != nil {
 			glog.V(2).Infof("Unable to get tcp6 stats from pid %d: %v", pid, err)
 		} else {
-			stats.TcpStat.Tcp6 = t6
+			stats.Network.Tcp6 = t6
 		}
 	}
 

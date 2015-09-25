@@ -109,8 +109,6 @@ type ContainerStats struct {
 	// Task load statistics
 	HasLoad bool         `json:"has_load"`
 	Load    v1.LoadStats `json:"load_stats,omitempty"`
-	//TCP statistics
-	TcpStat TcpStats `json:"tcpstat,omitempty"`
 	// Custom Metrics
 	HasCustomMetrics bool                      `json:"has_custom_metrics"`
 	CustomMetrics    map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
@@ -208,11 +206,6 @@ type ProcessInfo struct {
 	Cmd           string  `json:"cmd"`
 }
 
-type NetworkStats struct {
-	// Network stats by interface.
-	Interfaces []v1.InterfaceStats `json:"interfaces,omitempty"`
-}
-
 type TcpStat struct {
 	Established uint64
 	SynSent     uint64
@@ -227,8 +220,12 @@ type TcpStat struct {
 	Closing     uint64
 }
 
-type TcpStats struct {
-	Tcp  TcpStat `json:"tcp"`
+type NetworkStats struct {
+	// Network stats by interface.
+	Interfaces []v1.InterfaceStats `json:"interfaces,omitempty"`
+	// TCP connection stats (Established, Listen...)
+	Tcp TcpStat `json:"tcp"`
+	// TCP6 connection stats (Established, Listen...)
 	Tcp6 TcpStat `json:"tcp6"`
 }
 

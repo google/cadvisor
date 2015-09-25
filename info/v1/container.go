@@ -345,6 +345,10 @@ type InterfaceStats struct {
 type NetworkStats struct {
 	InterfaceStats `json:",inline"`
 	Interfaces     []InterfaceStats `json:"interfaces,omitempty"`
+	// TCP connection stats (Established, Listen...)
+	Tcp TcpStat `json:"tcp"`
+	// TCP6 connection stats (Established, Listen...)
+	Tcp6 TcpStat `json:"tcp6"`
 }
 
 type TcpStat struct {
@@ -370,11 +374,6 @@ type TcpStat struct {
 	Listen uint64
 	//Count of TCP connections in state "Closing"
 	Closing uint64
-}
-
-type TcpStats struct {
-	Tcp  TcpStat `json:"tcp"`
-	Tcp6 TcpStat `json:"tcp6"`
 }
 
 type FsStats struct {
@@ -458,9 +457,6 @@ type ContainerStats struct {
 
 	// Task load stats
 	TaskStats LoadStats `json:"task_stats,omitempty"`
-
-	//TCP statistics
-	TcpStat TcpStats `json:"tcpstat,omitempty"`
 
 	//Custom metrics from all collectors
 	CustomMetrics map[string][]MetricVal `json:"custom_metrics,omitempty"`
