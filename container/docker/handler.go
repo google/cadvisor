@@ -294,32 +294,8 @@ func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 }
 
 func (self *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	if self.name != "/docker" {
-		return []info.ContainerReference{}, nil
-	}
-	opt := docker.ListContainersOptions{
-		All: true,
-	}
-	containers, err := self.client.ListContainers(opt)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]info.ContainerReference, 0, len(containers)+1)
-	for _, c := range containers {
-		if !strings.HasPrefix(c.Status, "Up ") {
-			continue
-		}
-
-		ref := info.ContainerReference{
-			Name:      FullContainerName(c.ID),
-			Aliases:   append(c.Names, c.ID),
-			Namespace: DockerNamespace,
-		}
-		ret = append(ret, ref)
-	}
-
-	return ret, nil
+	// No-op for Docker driver.
+	return []info.ContainerReference{}, nil
 }
 
 func (self *dockerContainerHandler) GetCgroupPath(resource string) (string, error) {

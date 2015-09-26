@@ -131,16 +131,6 @@ func ContainerNameToDockerId(name string) string {
 	return id
 }
 
-// Returns a full container name for the specified Docker ID.
-func FullContainerName(dockerId string) string {
-	// Add the full container name.
-	if UseSystemd() {
-		return path.Join("/system.slice", fmt.Sprintf("docker-%s.scope", dockerId))
-	} else {
-		return path.Join("/docker", dockerId)
-	}
-}
-
 // Docker handles all containers under /docker
 func (self *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	// docker factory accepts all containers it can handle.
