@@ -44,7 +44,7 @@ var dockerRunDir = flag.String("docker_run", "/var/run/docker", "Absolute path t
 
 // Regexp that identifies docker cgroups, containers started with
 // --cgroup-parent have another prefix than 'docker'
-var dockerCgroupRegexp = regexp.MustCompile(`[A-z]+-([a-z0-9]+)\.scope`)
+var dockerCgroupRegexp = regexp.MustCompile(`.+-([a-z0-9]{64})\.scope$`)
 
 // TODO(vmarmol): Export run dir too for newer Dockers.
 // Directory holding Docker container state information.
