@@ -44,7 +44,7 @@ var dockerRunDir = flag.String("docker_run", "/var/run/docker", "Absolute path t
 
 // Regexp that identifies docker cgroups, containers started with
 // --cgroup-parent have another prefix than 'docker'
-var dockerCgroupRegexp = regexp.MustCompile(`[A-z]+-([a-z0-9]+)\.scope`)
+var dockerCgroupRegexp = regexp.MustCompile(`(.+)-([a-z0-9]{64})\.scope$`)
 
 // TODO(vmarmol): Export run dir too for newer Dockers.
 // Directory holding Docker container state information.
@@ -118,24 +118,24 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 }
 
 // Returns the Docker ID from the full container name.
-func ContainerNameToDockerId(name string) string {
+func ContainerNameToDockerId(name string) (string, string) {
 	id := path.Base(name)
 
 	// Turn systemd cgroup name into Docker ID.
 	if UseSystemd() {
 		if matches := dockerCgroupRegexp.FindStringSubmatch(id); matches != nil {
-			id = matches[1]
+			return matches[2], matches[1]
 		}
 	}
 
-	return id
+	return id, ""
 }
 
 // Returns a full container name for the specified Docker ID.
-func FullContainerName(dockerId string) string {
+func FullContainerName(dockerId string, cgroupParent string) string {
 	// Add the full container name.
 	if UseSystemd() {
-		return path.Join("/system.slice", fmt.Sprintf("docker-%s.scope", dockerId))
+		return path.Join("/system.slice", fmt.Sprintf("%s-%s.scope", cgroupParent, dockerId))
 	} else {
 		return path.Join("/docker", dockerId)
 	}
@@ -147,12 +147,12 @@ func (self *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	canAccept := true
 
 	// When using Systemd all docker containers have a .scope suffix
-	if UseSystemd() && !strings.HasSuffix(path.Base(name), ".scope") {
+	if UseSystemd() && !dockerCgroupRegexp.MatchString(path.Base(name)) {
 		return false, canAccept, nil
 	}
 
 	// Check if the container is known to docker and it is active.
-	id := ContainerNameToDockerId(name)
+	id, _ := ContainerNameToDockerId(name)
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := self.client.InspectContainer(id)

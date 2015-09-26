@@ -42,6 +42,7 @@ type dockerContainerHandler struct {
 	client             *docker.Client
 	name               string
 	id                 string
+	cgroupParent       string
 	aliases            []string
 	machineInfoFactory info.MachineInfoFactory
 
@@ -113,11 +114,12 @@ func newDockerContainerHandler(
 		rootFs = "/rootfs"
 	}
 
-	id := ContainerNameToDockerId(name)
+	id, cgroupParent := ContainerNameToDockerId(name)
 	handler := &dockerContainerHandler{
 		id:                 id,
 		client:             client,
 		name:               name,
+		cgroupParent:       cgroupParent,
 		machineInfoFactory: machineInfoFactory,
 		cgroupPaths:        cgroupPaths,
 		cgroupManager:      cgroupManager,
@@ -312,7 +314,7 @@ func (self *dockerContainerHandler) ListContainers(listType container.ListType) 
 		}
 
 		ref := info.ContainerReference{
-			Name:      FullContainerName(c.ID),
+			Name:      FullContainerName(c.ID, self.cgroupParent),
 			Aliases:   append(c.Names, c.ID),
 			Namespace: DockerNamespace,
 		}
