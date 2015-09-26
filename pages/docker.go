@@ -93,7 +93,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 			ParentContainers: []link{
 				{
 					Text: dockerContainersText,
-					Link: DockerPage,
+					Link: path.Join(rootDir, DockerPage),
 				}},
 			Subcontainers:      subcontainers,
 			Root:               rootDir,
@@ -115,12 +115,12 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 		// Make a list of the parent containers and their links
 		var parentContainers []link
 		parentContainers = append(parentContainers, link{
-			Text: "Docker containers",
-			Link: DockerPage,
+			Text: "Docker Containers",
+			Link: path.Join(rootDir, DockerPage),
 		})
 		parentContainers = append(parentContainers, link{
 			Text: displayName,
-			Link: path.Join(DockerPage, docker.ContainerNameToDockerId(cont.Name)),
+			Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerId(cont.Name)),
 		})
 
 		// Get the MachineInfo
