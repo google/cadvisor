@@ -55,6 +55,9 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 			Spec: info.ContainerSpec{
 				Image:        "test",
 				CreationTime: time.Unix(1257894000, 0),
+				Labels: map[string]string{
+					"foo": "bar",
+				},
 			},
 			Stats: []*info.ContainerStats{
 				{
