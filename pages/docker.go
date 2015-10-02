@@ -68,9 +68,10 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 		}
 		subcontainers := make([]link, 0, len(conts))
 		for _, cont := range conts {
+			id, _ := docker.ContainerNameToDockerId(cont.ContainerReference.Name)
 			subcontainers = append(subcontainers, link{
 				Text: getContainerDisplayName(cont.ContainerReference),
-				Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerId(cont.ContainerReference.Name)),
+				Link: path.Join(rootDir, DockerPage, id),
 			})
 		}
 
@@ -118,9 +119,10 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) error
 			Text: "Docker Containers",
 			Link: path.Join(rootDir, DockerPage),
 		})
+		id, _ := docker.ContainerNameToDockerId(cont.ContainerReference.Name)
 		parentContainers = append(parentContainers, link{
 			Text: displayName,
-			Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerId(cont.Name)),
+			Link: path.Join(rootDir, DockerPage, id),
 		})
 
 		// Get the MachineInfo
