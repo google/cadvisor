@@ -68,6 +68,9 @@ container_fs_writes_total{device="sda2",id="testcontainer",image="test",name="te
 # HELP container_last_seen Last time a container was seen by the exporter
 # TYPE container_last_seen gauge
 container_last_seen{id="testcontainer",image="test",name="testcontaineralias"} 1.426203694e+09
+# HELP container_memory_failcnt Number of memory usage hits limits
+# TYPE container_memory_failcnt counter
+container_memory_failcnt{id="testcontainer",image="test",name="testcontaineralias"} 0
 # HELP container_memory_failures_total Cumulative count of memory allocation failures.
 # TYPE container_memory_failures_total counter
 container_memory_failures_total{id="testcontainer",image="test",name="testcontaineralias",scope="container",type="pgfault"} 10
