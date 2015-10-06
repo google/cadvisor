@@ -360,7 +360,7 @@ type TcpStat struct {
 	SynSent uint64
 	//Count of TCP connections in state "Syn_Recv"
 	SynRecv uint64
-	//Count of TCP connections in state "Fin_Wait2"
+	//Count of TCP connections in state "Fin_Wait1"
 	FinWait1 uint64
 	//Count of TCP connections in state "Fin_Wait2"
 	FinWait2 uint64
