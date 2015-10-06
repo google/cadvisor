@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	"github.com/docker/libcontainer/cgroups"
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -38,19 +38,11 @@ var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "do
 // The namespace under which Docker aliases are unique.
 var DockerNamespace = "docker"
 
-// Basepath to all container specific information that libcontainer stores.
-var dockerRootDir = flag.String("docker_root", "/var/lib/docker", "Absolute path to the Docker state root directory (default: /var/lib/docker)")
 var dockerRunDir = flag.String("docker_run", "/var/run/docker", "Absolute path to the Docker run directory (default: /var/run/docker)")
 
 // Regexp that identifies docker cgroups, containers started with
 // --cgroup-parent have another prefix than 'docker'
 var dockerCgroupRegexp = regexp.MustCompile(`.+-([a-z0-9]{64})\.scope$`)
-
-// TODO(vmarmol): Export run dir too for newer Dockers.
-// Directory holding Docker container state information.
-func DockerStateDir() string {
-	return libcontainer.DockerStateDir(*dockerRootDir)
-}
 
 // Whether the system is using Systemd.
 var useSystemd bool
@@ -77,10 +69,6 @@ func UseSystemd() bool {
 	return useSystemd
 }
 
-func RootDir() string {
-	return *dockerRootDir
-}
-
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
@@ -94,6 +82,9 @@ type dockerFactory struct {
 
 	// Information about mounted filesystems.
 	fsInfo fs.FsInfo
+
+	// Path to the storage directory.
+	dockerStorageDir string
 }
 
 func (self *dockerFactory) String() string {
@@ -113,6 +104,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.usesAufsDriver,
 		&self.cgroupSubsystems,
 		inHostNamespace,
+		self.dockerStorageDir,
 	)
 	return
 }
@@ -211,22 +203,23 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 	if err != nil {
 		return fmt.Errorf("failed to detect Docker info: %v", err)
 	}
-	usesNativeDriver := false
-	for _, val := range *information {
-		if strings.Contains(val, "ExecutionDriver=") && strings.Contains(val, "native") {
-			usesNativeDriver = true
-			break
-		}
-	}
+	usesNativeDriver := strings.Contains(information.Get("ExecutionDriver"), "native")
 	if !usesNativeDriver {
 		return fmt.Errorf("docker found, but not using native exec driver")
 	}
+	usesAufsDriver := strings.Contains(information.Get("Driver"), "aufs")
+	var storageOpts [][]string
+	if err := information.GetJSON("DriverStatus", &storageOpts); err != nil {
+		return err
+	}
 
-	usesAufsDriver := false
-	for _, val := range *information {
-		if strings.Contains(val, "Driver=") && strings.Contains(val, "aufs") {
-			usesAufsDriver = true
-			break
+	var storageDir string
+	for _, val := range storageOpts {
+		if len(val) != 2 {
+			return fmt.Errorf("unexpected storage driver opts: %v", val)
+		}
+		if val[0] == "Root Dir" {
+			storageDir = val[1]
 		}
 	}
 
@@ -246,7 +239,9 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 		usesAufsDriver:     usesAufsDriver,
 		cgroupSubsystems:   cgroupSubsystems,
 		fsInfo:             fsInfo,
+		dockerStorageDir:   storageDir,
 	}
+	fsInfo.AddLabels(fs.Context{storageDir})
 	container.RegisterContainerHandlerFactory(f)
 	return nil
 }

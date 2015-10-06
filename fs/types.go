@@ -63,4 +63,7 @@ type FsInfo interface {
 
 	// Returns the mountpoint associated with a particular device.
 	GetMountpointForDevice(device string) (string, error)
+
+	// Computes and adds labels for devices.
+	AddLabels(context Context)
 }
