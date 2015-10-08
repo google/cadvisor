@@ -15,7 +15,11 @@
 package fs
 
 import (
+	"io/ioutil"
+	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetDiskStatsMap(t *testing.T) {
@@ -75,4 +79,24 @@ func TestFileNotExist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("getDiskStatsMap must not error for absent file: %s", err)
 	}
+}
+
+func TestDirUsage(t *testing.T) {
+	as := assert.New(t)
+	fsInfo, err := NewFsInfo(Context{})
+	as.NoError(err)
+	dir, err := ioutil.TempDir(os.TempDir(), "")
+	as.NoError(err)
+	defer os.RemoveAll(dir)
+	dataSize := 1024 * 100 //100 KB
+	b := make([]byte, dataSize)
+	f, err := ioutil.TempFile(dir, "")
+	as.NoError(err)
+	as.NoError(ioutil.WriteFile(f.Name(), b, 0700))
+	fi, err := f.Stat()
+	as.NoError(err)
+	expectedSize := uint64(fi.Size())
+	size, err := fsInfo.GetDirUsage(dir)
+	as.NoError(err)
+	as.True(expectedSize <= size, "expected dir size to be at-least %d; got size: %d", expectedSize, size)
 }
