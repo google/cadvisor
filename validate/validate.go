@@ -19,7 +19,6 @@ package validate
 
 import (
 	"fmt"
-	"github.com/google/cadvisor/manager"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -29,6 +28,8 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	dclient "github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container/docker"
+	"github.com/google/cadvisor/container/libcontainer"
+	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/utils"
 )
 
@@ -198,7 +199,8 @@ func validateDockerInfo() (string, string) {
 				desc += "\tCgroups are being created through cgroup filesystem.\n"
 			}
 			if strings.Contains(execDriver, "native") {
-				stateFile := docker.DockerStateDir()
+				rootDir := info.Get("DockerRootDir")
+				stateFile := libcontainer.DockerStateDir(rootDir)
 				if !utils.FileExists(stateFile) {
 					desc += fmt.Sprintf("\tDocker container state directory %q is not accessible.\n", stateFile)
 					return Unsupported, desc

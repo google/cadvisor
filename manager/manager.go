@@ -126,8 +126,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	}
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
-	context := fs.Context{DockerRoot: docker.RootDir()}
-	fsInfo, err := fs.NewFsInfo(context)
+	fsInfo, err := fs.NewFsInfo()
 	if err != nil {
 		return nil, err
 	}

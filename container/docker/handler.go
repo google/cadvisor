@@ -25,7 +25,7 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
 	libcontainerConfigs "github.com/docker/libcontainer/configs"
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
 	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
@@ -33,10 +33,20 @@ import (
 	"github.com/google/cadvisor/utils"
 )
 
-// Path to aufs dir where all the files exist.
-// aufs/layers is ignored here since it does not hold a lot of data.
-// aufs/mnt contains the mount points used to compose the rootfs. Hence it is also ignored.
-var pathToAufsDir = "aufs/diff"
+type fsHandler struct {
+	lastUpdate time.Time
+	usageBytes uint64
+	frequency  time.Duration
+}
+
+func (fh *fsHandler) needsUpdate() bool {
+	return time.Now().After(fh.lastUpdate.Add(fh.frequency))
+}
+
+func (fh *fsHandler) update(usage uint64) {
+	fh.lastUpdate = time.Now()
+	fh.usageBytes = usage
+}
 
 type dockerContainerHandler struct {
 	client             *docker.Client
@@ -81,8 +91,13 @@ type dockerContainerHandler struct {
 	// The host root FS to read
 	rootFs string
 
+	// Docker root directory
+	dockerRootDir string
+
 	// The network mode of the container
 	networkMode string
+
+	fsHandler fsHandler
 }
 
 func newDockerContainerHandler(
@@ -93,6 +108,7 @@ func newDockerContainerHandler(
 	usesAufsDriver bool,
 	cgroupSubsystems *containerLibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
+	dockerRootDir string,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
@@ -124,8 +140,10 @@ func newDockerContainerHandler(
 		usesAufsDriver:     usesAufsDriver,
 		fsInfo:             fsInfo,
 		rootFs:             rootFs,
+		fsHandler:          fsHandler{lastUpdate: time.Time{}, usageBytes: 0, frequency: time.Minute},
+		dockerRootDir:      dockerRootDir,
 	}
-	handler.storageDirs = append(handler.storageDirs, path.Join(*dockerRootDir, pathToAufsDir, id))
+	handler.storageDirs = append(handler.storageDirs, path.Join(dockerRootDir, "diff", id))
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := client.InspectContainer(id)
@@ -153,7 +171,7 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 }
 
 func (self *dockerContainerHandler) readLibcontainerConfig() (*libcontainerConfigs.Config, error) {
-	config, err := containerLibcontainer.ReadConfig(*dockerRootDir, *dockerRunDir, self.id)
+	config, err := containerLibcontainer.ReadConfig(self.dockerRootDir, *dockerRunDir, self.id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read libcontainer config: %v", err)
 	}
@@ -255,15 +273,19 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
 
-	var usage uint64 = 0
-	for _, dir := range self.storageDirs {
-		// TODO(Vishh): Add support for external mounts.
-		dirUsage, err := self.fsInfo.GetDirUsage(dir)
-		if err != nil {
-			return err
+	var usage uint64 = self.fsHandler.usageBytes
+	if self.fsHandler.needsUpdate() {
+		for _, dir := range self.storageDirs {
+			// TODO(Vishh): Add support for external mounts.
+			dirUsage, err := self.fsInfo.GetDirUsage(dir)
+			if err != nil {
+				return err
+			}
+			usage += dirUsage
 		}
-		usage += dirUsage
+		self.fsHandler.update(usage)
 	}
+
 	fsStat.Usage = usage
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 
@@ -329,7 +351,7 @@ func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
 }
 
 func (self *dockerContainerHandler) Exists() bool {
-	return containerLibcontainer.Exists(*dockerRootDir, *dockerRunDir, self.id)
+	return containerLibcontainer.Exists(self.dockerRootDir, *dockerRunDir, self.id)
 }
 
 func DockerInfo() (map[string]string, error) {
