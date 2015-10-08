@@ -25,7 +25,7 @@ import (
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
 	libcontainerConfigs "github.com/docker/libcontainer/configs"
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
 	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
@@ -83,6 +83,9 @@ type dockerContainerHandler struct {
 
 	// The network mode of the container
 	networkMode string
+
+	// Filesystem handler.
+	fsHandler fsHandler
 }
 
 func newDockerContainerHandler(
@@ -114,6 +117,9 @@ func newDockerContainerHandler(
 	}
 
 	id := ContainerNameToDockerId(name)
+
+	storageDirs := []string{path.Join(*dockerRootDir, pathToAufsDir, id)}
+
 	handler := &dockerContainerHandler{
 		id:                 id,
 		client:             client,
@@ -124,8 +130,13 @@ func newDockerContainerHandler(
 		usesAufsDriver:     usesAufsDriver,
 		fsInfo:             fsInfo,
 		rootFs:             rootFs,
+		storageDirs:        storageDirs,
+		fsHandler:          newFsHandler(time.Minute, storageDirs, fsInfo),
 	}
-	handler.storageDirs = append(handler.storageDirs, path.Join(*dockerRootDir, pathToAufsDir, id))
+
+	if usesAufsDriver {
+		handler.fsHandler.start()
+	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := client.InspectContainer(id)
@@ -255,16 +266,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
 
-	var usage uint64 = 0
-	for _, dir := range self.storageDirs {
-		// TODO(Vishh): Add support for external mounts.
-		dirUsage, err := self.fsInfo.GetDirUsage(dir)
-		if err != nil {
-			return err
-		}
-		usage += dirUsage
-	}
-	fsStat.Usage = usage
+	fsStat.Usage = self.fsHandler.usage()
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 
 	return nil
