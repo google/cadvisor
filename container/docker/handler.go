@@ -38,21 +38,6 @@ import (
 // aufs/mnt contains the mount points used to compose the rootfs. Hence it is also ignored.
 var pathToAufsDir = "aufs/diff"
 
-type fsHandler struct {
-	lastUpdate time.Time
-	usageBytes uint64
-	frequency  time.Duration
-}
-
-func (fh *fsHandler) needsUpdate() bool {
-	return time.Now().After(fh.lastUpdate.Add(fh.frequency))
-}
-
-func (fh *fsHandler) update(usage uint64) {
-	fh.lastUpdate = time.Now()
-	fh.usageBytes = usage
-}
-
 type dockerContainerHandler struct {
 	client             *docker.Client
 	name               string
@@ -132,6 +117,9 @@ func newDockerContainerHandler(
 	}
 
 	id := ContainerNameToDockerId(name)
+
+	storageDirs := []string{path.Join(*dockerRootDir, pathToAufsDir, id)}
+
 	handler := &dockerContainerHandler{
 		id:                 id,
 		client:             client,
@@ -142,9 +130,13 @@ func newDockerContainerHandler(
 		usesAufsDriver:     usesAufsDriver,
 		fsInfo:             fsInfo,
 		rootFs:             rootFs,
-		fsHandler:          fsHandler{lastUpdate: time.Time{}, usageBytes: 0, frequency: time.Minute},
+		storageDirs:        storageDirs,
+		fsHandler:          newFsHandler(time.Minute, storageDirs, fsInfo),
 	}
-	handler.storageDirs = append(handler.storageDirs, path.Join(*dockerRootDir, pathToAufsDir, id))
+
+	if usesAufsDriver {
+		handler.fsHandler.start()
+	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := client.InspectContainer(id)
@@ -274,19 +266,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
 
-	var usage uint64 = self.fsHandler.usageBytes
-	if self.fsHandler.needsUpdate() {
-		for _, dir := range self.storageDirs {
-			// TODO(Vishh): Add support for external mounts.
-			dirUsage, err := self.fsInfo.GetDirUsage(dir)
-			if err != nil {
-				return err
-			}
-			usage += dirUsage
-		}
-		self.fsHandler.update(usage)
-	}
-	fsStat.Usage = usage
+	fsStat.Usage = self.fsHandler.usage()
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 
 	return nil
