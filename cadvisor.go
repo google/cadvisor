@@ -78,10 +78,12 @@ func main() {
 	mux := http.DefaultServeMux
 
 	// Register all HTTP handlers.
-	err = cadvisorHttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *prometheusEndpoint)
+	err = cadvisorHttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
 	if err != nil {
 		glog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
+
+	cadvisorHttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, nil)
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {

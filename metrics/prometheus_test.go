@@ -153,7 +153,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 }
 
 func TestPrometheusCollector(t *testing.T) {
-	prometheus.MustRegister(NewPrometheusCollector(testSubcontainersInfoProvider{}))
+	prometheus.MustRegister(NewPrometheusCollector(testSubcontainersInfoProvider{}, nil))
 
 	rw := httptest.NewRecorder()
 	prometheus.Handler().ServeHTTP(rw, &http.Request{})

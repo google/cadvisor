@@ -68,17 +68,21 @@ func (cm *containerMetric) desc(baseLabels []string) *prometheus.Desc {
 	return prometheus.NewDesc(cm.name, cm.help, append(baseLabels, cm.extraLabels...), nil)
 }
 
+type ContainerNameToLabelsFunc func(containerName string) map[string]string
+
 // PrometheusCollector implements prometheus.Collector.
 type PrometheusCollector struct {
-	infoProvider     infoProvider
-	errors           prometheus.Gauge
-	containerMetrics []containerMetric
+	infoProvider          infoProvider
+	errors                prometheus.Gauge
+	containerMetrics      []containerMetric
+	containerNameToLabels ContainerNameToLabelsFunc
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector.
-func NewPrometheusCollector(infoProvider infoProvider) *PrometheusCollector {
+func NewPrometheusCollector(infoProvider infoProvider, f ContainerNameToLabelsFunc) *PrometheusCollector {
 	c := &PrometheusCollector{
-		infoProvider: infoProvider,
+		infoProvider:          infoProvider,
+		containerNameToLabels: f,
 		errors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: "container",
 			Name:      "scrape_error",
@@ -499,6 +503,14 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			baseLabels = append(baseLabels, "image")
 		}
 		baseLabelValues := []string{id, name, image}[:len(baseLabels)]
+
+		if c.containerNameToLabels != nil {
+			newLabels := c.containerNameToLabels(name)
+			for k, v := range newLabels {
+				baseLabels = append(baseLabels, k)
+				baseLabelValues = append(baseLabelValues, v)
+			}
+		}
 
 		// Container spec
 		desc := prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", baseLabels, nil)
