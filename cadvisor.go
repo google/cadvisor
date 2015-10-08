@@ -54,7 +54,7 @@ func main() {
 	flag.Parse()
 
 	if *versionFlag {
-		fmt.Printf("cAdvisor version %s\n", version.VERSION)
+		fmt.Printf("cAdvisor version %s (%s)\n", version.Info["version"], version.Info["revision"])
 		os.Exit(0)
 	}
 
@@ -91,7 +91,7 @@ func main() {
 	// Install signal handler.
 	installSignalHandler(containerManager)
 
-	glog.Infof("Starting cAdvisor version: %q on port %d", version.VERSION, *argPort)
+	glog.Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
 
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
 	glog.Fatal(http.ListenAndServe(addr, nil))
