@@ -13,6 +13,7 @@ type RangeFilter struct {
 	from         *interface{}
 	to           *interface{}
 	timeZone     string
+	format       string
 	includeLower bool
 	includeUpper bool
 	cache        *bool
@@ -26,8 +27,16 @@ func NewRangeFilter(name string) RangeFilter {
 	return f
 }
 
+// TimeZone allows for adjusting the from/to fields using a time zone.
+// Only valid for date fields.
 func (f RangeFilter) TimeZone(timeZone string) RangeFilter {
 	f.timeZone = timeZone
+	return f
+}
+
+// Format is a valid option for date fields in a Range filter.
+func (f RangeFilter) Format(format string) RangeFilter {
+	f.format = format
 	return f
 }
 
@@ -116,6 +125,9 @@ func (f RangeFilter) Source() interface{} {
 	params["to"] = f.to
 	if f.timeZone != "" {
 		params["time_zone"] = f.timeZone
+	}
+	if f.format != "" {
+		params["format"] = f.format
 	}
 	params["include_lower"] = f.includeLower
 	params["include_upper"] = f.includeUpper

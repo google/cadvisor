@@ -13,6 +13,7 @@ type RangeQuery struct {
 	from         *interface{}
 	to           *interface{}
 	timeZone     string
+	format       string
 	includeLower bool
 	includeUpper bool
 	boost        *float64
@@ -24,9 +25,17 @@ func NewRangeQuery(name string) RangeQuery {
 	return q
 }
 
-func (f RangeQuery) TimeZone(timeZone string) RangeQuery {
-	f.timeZone = timeZone
-	return f
+// TimeZone allows for adjusting the from/to fields using a time zone.
+// Only valid for date fields.
+func (q RangeQuery) TimeZone(timeZone string) RangeQuery {
+	q.timeZone = timeZone
+	return q
+}
+
+// Format is a valid option for date fields in a Range query.
+func (q RangeQuery) Format(format string) RangeQuery {
+	q.format = format
+	return q
 }
 
 func (q RangeQuery) From(from interface{}) RangeQuery {
@@ -104,6 +113,9 @@ func (q RangeQuery) Source() interface{} {
 	params["to"] = q.to
 	if q.timeZone != "" {
 		params["time_zone"] = q.timeZone
+	}
+	if q.format != "" {
+		params["format"] = q.format
 	}
 	params["include_lower"] = q.includeLower
 	params["include_upper"] = q.includeUpper

@@ -311,7 +311,7 @@ on the command line.
 - [x] `terms`
 - [ ] `top_children`
 - [x] `wildcard`
-- [ ] `minimum_should_match`
+- [x] `minimum_should_match`
 - [ ] `multi_term_query_rewrite`
 - [x] `template_query`
 

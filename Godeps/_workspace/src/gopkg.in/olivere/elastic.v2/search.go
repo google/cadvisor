@@ -121,8 +121,8 @@ func (s *SearchService) SearchType(searchType string) *SearchService {
 }
 
 // Routing allows for (a comma-separated) list of specific routing values.
-func (s *SearchService) Routing(routing string) *SearchService {
-	s.routing = routing
+func (s *SearchService) Routing(routings ...string) *SearchService {
+	s.routing = strings.Join(routings, ",")
 	return s
 }
 
@@ -150,6 +150,19 @@ func (s *SearchService) Query(query Query) *SearchService {
 // for details.
 func (s *SearchService) PostFilter(postFilter Filter) *SearchService {
 	s.searchSource = s.searchSource.PostFilter(postFilter)
+	return s
+}
+
+// FetchSource indicates whether the response should contain the stored
+// _source for every hit.
+func (s *SearchService) FetchSource(fetchSource bool) *SearchService {
+	s.searchSource = s.searchSource.FetchSource(fetchSource)
+	return s
+}
+
+// FetchSourceContext indicates how the _source should be fetched.
+func (s *SearchService) FetchSourceContext(fetchSourceContext *FetchSourceContext) *SearchService {
+	s.searchSource = s.searchSource.FetchSourceContext(fetchSourceContext)
 	return s
 }
 
@@ -313,6 +326,9 @@ func (s *SearchService) Do() (*SearchResult, error) {
 	if s.searchType != "" {
 		params.Set("search_type", s.searchType)
 	}
+	if s.routing != "" {
+		params.Set("routing", s.routing)
+	}
 
 	// Perform request
 	var body interface{}
@@ -391,7 +407,7 @@ type SearchHit struct {
 	Source         *json.RawMessage               `json:"_source"`         // stored document source
 	Fields         map[string]interface{}         `json:"fields"`          // returned fields
 	Explanation    *SearchExplanation             `json:"_explanation"`    // explains how the score was computed
-	MatchedQueries map[string]interface{}         `json:"matched_queries"` // matched queries
+	MatchedQueries []string                       `json:"matched_queries"` // matched queries
 	InnerHits      map[string]*SearchHitInnerHits `json:"inner_hits"`      // inner hits with ES >= 1.5.0
 
 	// Shard
