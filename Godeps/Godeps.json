@@ -11,18 +11,8 @@
 			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
 		},
 		{
-			"ImportPath": "code.google.com/p/google-api-go-client/bigquery/v2",
-			"Comment": "release-101",
-			"Rev": "e1c259484b495133836706f46319f5897f1e9bf6"
-		},
-		{
-			"ImportPath": "code.google.com/p/google-api-go-client/googleapi",
-			"Comment": "release-101",
-			"Rev": "e1c259484b495133836706f46319f5897f1e9bf6"
-		},
-		{
 			"ImportPath": "github.com/SeanDolphin/bqschema",
-			"Rev": "a713d26df274e999ec10e9bbc7e73a1c4791053c"
+			"Rev": "f92a08f515e1bf718e995076a37c2f534b1deb08"
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -137,28 +127,26 @@
 			"Rev": "6807e777504f54ad073ecef66747de158294b639"
 		},
 		{
-			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/ext",
-			"Rev": "ba7d65ac66e9da93a714ca18f6d1bc7a0c09100c"
-		},
-		{
-			"ImportPath": "github.com/prometheus/client_golang/model",
-			"Comment": "0.3.2",
-			"Rev": "1cf6d4b964951c63779ba7513c57fe389b609014"
+			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
+			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
-			"Comment": "0.3.2",
-			"Rev": "1cf6d4b964951c63779ba7513c57fe389b609014"
-		},
-		{
-			"ImportPath": "github.com/prometheus/client_golang/text",
-			"Comment": "0.3.2",
-			"Rev": "1cf6d4b964951c63779ba7513c57fe389b609014"
+			"Comment": "0.7.0-52-ge51041b",
+			"Rev": "e51041b3fa41cece0dca035740ba6411905be473"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_model/go",
 			"Comment": "model-0.0.2-12-gfa8ad6f",
 			"Rev": "fa8ad6fec33561be4280a8f0514318c79d7f6cb6"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/expfmt",
+			"Rev": "1cc3e4c3b28fd42633a8c389c98cfbadf42621b1"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/model",
+			"Rev": "1cc3e4c3b28fd42633a8c389c98cfbadf42621b1"
 		},
 		{
 			"ImportPath": "github.com/prometheus/procfs",
@@ -197,12 +185,25 @@
 			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
 		},
 		{
+			"ImportPath": "google.golang.org/api/bigquery/v2",
+			"Rev": "0c2979aeaa5b573e60d3ddffe5ce8dca8df309bd"
+		},
+		{
+			"ImportPath": "google.golang.org/api/googleapi",
+			"Rev": "0c2979aeaa5b573e60d3ddffe5ce8dca8df309bd"
+		},
+		{
 			"ImportPath": "google.golang.org/cloud/compute/metadata",
 			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
 		},
 		{
 			"ImportPath": "google.golang.org/cloud/internal",
 			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
+		},
+		{
+			"ImportPath": "gopkg.in/olivere/elastic.v2",
+			"Comment": "v2.0.12",
+			"Rev": "3cfe88295d20b6299bd935131fc0fd17316405ad"
 		}
 	]
 }

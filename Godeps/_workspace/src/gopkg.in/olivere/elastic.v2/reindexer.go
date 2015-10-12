@@ -36,6 +36,7 @@ type Reindexer struct {
 	query                      Query
 	scanFields                 []string
 	bulkSize                   int
+	size                       int
 	scroll                     string
 	reindexerFunc              ReindexerFunc
 	progress                   ReindexerProgressFunc
@@ -116,8 +117,16 @@ func (ix *Reindexer) ScanFields(scanFields ...string) *Reindexer {
 
 // BulkSize returns the number of documents to send to Elasticsearch per chunk.
 // The default is 500.
-func (ix *Reindexer) BulkSize(size int) *Reindexer {
-	ix.bulkSize = size
+func (ix *Reindexer) BulkSize(bulkSize int) *Reindexer {
+	ix.bulkSize = bulkSize
+	return ix
+}
+
+// Size is the number of results to return per shard, not per request.
+// So a size of 10 which hits 5 shards will return a maximum of 50 results
+// per scan request.
+func (ix *Reindexer) Size(size int) *Reindexer {
+	ix.size = size
 	return ix
 }
 
@@ -178,6 +187,9 @@ func (ix *Reindexer) Do() (*ReindexerResponse, error) {
 	scanner := ix.sourceClient.Scan(ix.sourceIndex).Scroll(ix.scroll).Fields(ix.scanFields...)
 	if ix.query != nil {
 		scanner = scanner.Query(ix.query)
+	}
+	if ix.size > 0 {
+		scanner = scanner.Size(ix.size)
 	}
 	cursor, err := scanner.Do()
 

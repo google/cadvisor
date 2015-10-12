@@ -1,11 +1,12 @@
 package bqschema
 
 import (
-	"code.google.com/p/google-api-go-client/bigquery/v2"
-
 	"errors"
 	"reflect"
+	"strings"
 	"time"
+
+	"google.golang.org/api/bigquery/v2"
 )
 
 var (
@@ -21,34 +22,52 @@ func ToSchema(src interface{}) (*bigquery.TableSchema, error) {
 	schema := &bigquery.TableSchema{}
 
 	if t.Kind() == reflect.Struct {
-		schema.Fields = make([]*bigquery.TableFieldSchema, t.NumField())
+		schema.Fields = make([]*bigquery.TableFieldSchema, 0, t.NumField())
 		for i := 0; i < t.NumField(); i++ {
 			sf := t.Field(i)
+			if sf.PkgPath != "" { // unexported
+				continue
+			}
 			v := pointerGuard(value.Field(i))
 
-			schema.Fields[i] = &bigquery.TableFieldSchema{
+			var name string
+			jsonTag := sf.Tag.Get("json")
+			switch jsonTag {
+			case "-":
+				continue
+			case "":
+				name = sf.Name
+			default:
+				name = strings.Split(jsonTag, ",")[0]
+			}
+
+			tfs := &bigquery.TableFieldSchema{
 				Mode: "required",
-				Name: sf.Name,
+				Name: name,
 				Type: "",
 			}
+			schema.Fields = append(schema.Fields, tfs)
 
 			kind := v.Kind()
 			t, isSimple := simpleType(kind)
 
 			if isSimple {
-				schema.Fields[i].Type = t
+				tfs.Type = t
 			} else {
 				switch kind {
 				case reflect.Struct:
-					schema.Fields[i].Mode = "nullable"
+					tfs.Mode = "nullable"
 					if t, fields, err := structConversion(v.Interface()); err == nil {
-						schema.Fields[i].Type = t
-						schema.Fields[i].Fields = fields
+						tfs.Type = t
+						if t == "string" {
+							tfs.Mode = "required"
+						}
+						tfs.Fields = fields
 					} else {
 						return schema, err
 					}
 				case reflect.Array, reflect.Slice:
-					schema.Fields[i].Mode = "repeated"
+					tfs.Mode = "repeated"
 					subKind := pointerGuard(v.Type().Elem()).Kind()
 					t, isSimple := simpleType(subKind)
 					if isSimple {
@@ -105,7 +124,9 @@ func simpleType(kind reflect.Kind) (string, bool) {
 
 func structConversion(src interface{}) (string, []*bigquery.TableFieldSchema, error) {
 	v := reflect.ValueOf(src)
-	if v.Type().ConvertibleTo(reflect.TypeOf(time.Time{})) {
+	if v.Type().Name() == "Key" && strings.Contains(v.Type().PkgPath(), "appengine") {
+		return "string", nil, nil
+	} else if v.Type().ConvertibleTo(reflect.TypeOf(time.Time{})) {
 		return "timestamp", nil, nil
 	} else {
 		schema, err := ToSchema(src)
