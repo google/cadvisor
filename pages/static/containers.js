@@ -1,20 +1,5 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+google.load('visualization','1',{packages: ['corechart', 'gauge', 'default', 'format', 'ui', 'table']});
 
-package static
-
-const containersJs = gchartsJs + `
 function humanize(num, size, units) {
     var unit;
     for (unit = units.pop(); units.length && num >= size; unit = units.pop()) {
@@ -609,7 +594,7 @@ function drawCharts(machineInfo, containerInfo) {
 		steps.push(function() {
 			drawCpuTotalUsage("cpu-total-usage-chart", machineInfo, containerInfo);
 		});
-		// TODO(rjnagal): Re-enable CPU Load after understanding resource usage. 
+		// TODO(rjnagal): Re-enable CPU Load after understanding resource usage.
 		// steps.push(function() {
 		// 	drawCpuLoad("cpu-load-chart", machineInfo, containerInfo);
 		// });
@@ -705,7 +690,7 @@ function refreshStats() {
 			}
 			if (containerInfo.spec.has_network) {
 				startNetwork("network-selection", containerInfo);
-			}	
+			}
 			if (containerInfo.spec.has_custom_metrics) {
 				startCustomMetrics("custom-metrics-chart", containerInfo);
 			}
@@ -748,9 +733,9 @@ function addAllLabels(containerInfo, metricsInfo) {
 function getMetricIndex(metricName) {
 	for (i = 0; i<window.cadvisor.metricLabelPair.length; ++i) {
 		if (window.cadvisor.metricLabelPair[i][0] == metricName)
-			return i; 
+			return i;
 	}
-	return -1;	
+	return -1;
 }
 
 function setLabel(metric, label) {
@@ -765,7 +750,7 @@ function setLabel(metric, label) {
 	} else {
 		window.cadvisor.metricLabelPair[index][1] = label;
 	}
-        
+
         refreshStats();
 }
 
@@ -793,7 +778,7 @@ function startCustomMetrics(elementId, containerInfo) {
 		el.append($(divText));
 	}
 	el.append($("</div>"));
-	
+
 	$("#"+elementId).append(el);
 }
 
@@ -821,7 +806,7 @@ function drawCustomMetrics(elementId, containerInfo, metricsInfo) {
 			metricLabelVal = container[metricName];
 			if (window.cadvisor.firstCustomCollection) {
 				window.cadvisor.firstCustomCollection = false;
-				addAllLabels(containerInfo, metricsInfo);				
+				addAllLabels(containerInfo, metricsInfo);
 			}
 			var data = [];
 			selectedLabel = getSelectedLabel(metricName);
@@ -857,7 +842,7 @@ function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
 	window.cadvisor.containerName = containerName;
 
 	window.cadvisor.firstCustomCollection = true;
-	window.cadvisor.metricLabelPair = [];	
+	window.cadvisor.metricLabelPair = [];
 	window.cadvisor.maxCustomMetrics = 10;
 
 	// Draw process information at start and refresh every 60s.
@@ -878,4 +863,3 @@ function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
 		}, 1000);
 	});
 }
-`
