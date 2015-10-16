@@ -109,20 +109,8 @@ func dockerHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFu
 }
 
 // Register http handlers
-func RegisterHandlersDigest(mux httpMux.Mux, containerManager manager.Manager, authenticator *auth.DigestAuth) error {
+func RegisterHandlers(mux httpMux.Mux, containerManager manager.Manager, authenticator auth.AuthenticatorInterface) error {
 	// Register the handler for the containers page.
-	if authenticator != nil {
-		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
-		mux.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
-	} else {
-		mux.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
-		mux.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
-	}
-	return nil
-}
-
-func RegisterHandlersBasic(mux httpMux.Mux, containerManager manager.Manager, authenticator *auth.BasicAuth) error {
-	// Register the handler for the containers and docker age.
 	if authenticator != nil {
 		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
 		mux.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))

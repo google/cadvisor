@@ -53,36 +53,32 @@ func RegisterHandlers(mux httpMux.Mux, containerManager manager.Manager, httpAut
 	// Redirect / to containers page.
 	mux.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
 
-	var authenticated bool = false
+	var authenticator auth.AuthenticatorInterface
+
+	staticHandler := static.FileServer()
 
 	// Setup the authenticator object
 	if httpAuthFile != "" {
 		glog.Infof("Using auth file %s", httpAuthFile)
 		secrets := auth.HtpasswdFileProvider(httpAuthFile)
-		authenticator := auth.NewBasicAuthenticator(httpAuthRealm, secrets)
-		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
-		if err := pages.RegisterHandlersBasic(mux, containerManager, authenticator); err != nil {
-			return fmt.Errorf("failed to register pages auth handlers: %s", err)
-		}
-		authenticated = true
+		authenticator = auth.NewBasicAuthenticator(httpAuthRealm, secrets)
 	}
 	if httpAuthFile == "" && httpDigestFile != "" {
 		glog.Infof("Using digest file %s", httpDigestFile)
 		secrets := auth.HtdigestFileProvider(httpDigestFile)
-		authenticator := auth.NewDigestAuthenticator(httpDigestRealm, secrets)
-		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
-		if err := pages.RegisterHandlersDigest(mux, containerManager, authenticator); err != nil {
-			return fmt.Errorf("failed to register pages digest handlers: %s", err)
-		}
-		authenticated = true
+		authenticator = auth.NewDigestAuthenticator(httpDigestRealm, secrets)
 	}
 
-	// Change handler based on authenticator initalization
-	if !authenticated {
-		mux.HandleFunc(static.StaticResource, staticHandlerNoAuth)
-		if err := pages.RegisterHandlersBasic(mux, containerManager, nil); err != nil {
-			return fmt.Errorf("failed to register pages handlers: %s", err)
-		}
+	if err := pages.RegisterHandlers(mux, containerManager, authenticator); err != nil {
+		return fmt.Errorf("failed to register pages auth handlers: %s", err)
+	}
+
+	if authenticator != nil {
+		mux.Handle(static.StaticResource, authenticator.Wrap(func(w http.ResponseWriter, ar *auth.AuthenticatedRequest) {
+			staticHandler.ServeHTTP(w, &ar.Request)
+		}))
+	} else {
+		mux.Handle(static.StaticResource, staticHandler)
 	}
 
 	return nil
@@ -92,18 +88,4 @@ func RegisterPrometheusHandler(mux httpMux.Mux, containerManager manager.Manager
 	collector := metrics.NewPrometheusCollector(containerManager, containerNameToLabelsFunc)
 	prometheus.MustRegister(collector)
 	mux.Handle(prometheusEndpoint, prometheus.Handler())
-}
-
-func staticHandlerNoAuth(w http.ResponseWriter, r *http.Request) {
-	err := static.HandleRequest(w, r.URL)
-	if err != nil {
-		fmt.Fprintf(w, "%s", err)
-	}
-}
-
-func staticHandler(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
-	err := static.HandleRequest(w, r.URL)
-	if err != nil {
-		fmt.Fprintf(w, "%s", err)
-	}
 }

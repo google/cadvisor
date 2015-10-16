@@ -18,18 +18,14 @@ const containersHtmlTemplate = `
 <html>
   <head>
     <title>cAdvisor - {{.DisplayName}}</title>
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="{{.Root}}static/bootstrap-3.1.1.min.css">
 
-    <!-- Optional theme -->
-    <link rel="stylesheet" href="{{.Root}}static/bootstrap-theme-3.1.1.min.css">
-
+    <link rel="stylesheet" href="{{.Root}}static/bootstrap.css">
+    <link rel="stylesheet" href="{{.Root}}static/bootstrap-theme.css">
     <link rel="stylesheet" href="{{.Root}}static/containers.css">
 
-    <!-- Latest compiled and minified JavaScript -->
-    <script src="{{.Root}}static/jquery-1.10.2.min.js"></script>
-    <script src="{{.Root}}static/bootstrap-3.1.1.min.js"></script>
-    <script type="text/javascript" src="{{.Root}}static/google-jsapi.js"></script>
+    <script src="{{.Root}}static/jquery.js"></script>
+    <script src="{{.Root}}static/bootstrap.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 
     <script type="text/javascript" src="{{.Root}}static/containers.js"></script>
   </head>

@@ -11,14 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 
-GO := godep go
+GODEP := godep
+GO := $(GODEP) go
 pkgs  = $(shell $(GO) list ./...)
 
 all: format build test
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short $(pkgs)
+	@$(GO) test -v -race -test.short github.com/google/cadvisor/...
 
 format:
 	@echo ">> formatting code"
@@ -35,4 +36,13 @@ build:
 docker:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
 
-.PHONY: all format build test vet docker
+assets:
+	@echo ">> writing assets"
+	@$(GODEP) get github.com/GeertJohan/go.rice/rice
+	@rice -i github.com/google/cadvisor/pages/static embed-go
+
+clean:
+	@rm -f pages/static/.rice-box.go
+	@rm -f cadvisor
+
+.PHONY: all format build test vet docker assets clean
