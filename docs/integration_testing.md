@@ -1,6 +1,6 @@
 # Integration Testing cAdvisor
 
-The cAdvisor integration tests can be found in `integration/tests`. These run queries on a running cAdvisor. To run these tests:
+The cAdvisor integration tests can be found in `integration/tests`. These queries run on a running cAdvisor. To run these tests:
 
 ```
 $ godep go run integration/runner/runner.go -port=PORT <hosts to test>
