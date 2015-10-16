@@ -17,13 +17,6 @@
 // Provides Filesystem Stats
 package fs
 
-/*
- extern int getBytesFree(const char *path, unsigned long long *bytes);
- extern int getBytesTotal(const char *path, unsigned long long *bytes);
- extern int getBytesAvail(const char *path, unsigned long long *bytes);
-*/
-import "C"
-
 import (
 	"bufio"
 	"fmt"
@@ -35,7 +28,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-	"unsafe"
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/golang/glog"
@@ -266,8 +258,8 @@ func minor(devNumber uint64) uint {
 }
 
 func (self *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) {
-	var buf syscall.Stat_t
-	err := syscall.Stat(dir, &buf)
+	buf := new(syscall.Stat_t)
+	err := syscall.Stat(dir, buf)
 	if err != nil {
 		return nil, fmt.Errorf("stat failed on %s with error: %s", dir, err)
 	}
@@ -293,22 +285,13 @@ func (self *RealFsInfo) GetDirUsage(dir string) (uint64, error) {
 	return usageInKb * 1024, nil
 }
 
-func getVfsStats(path string) (total uint64, free uint64, avail uint64, err error) {
-	_p0, err := syscall.BytePtrFromString(path)
-	if err != nil {
+func getVfsStats(path string) (uint64, uint64, uint64, error) {
+	var s syscall.Statfs_t
+	if err := syscall.Statfs(path, &s); err != nil {
 		return 0, 0, 0, err
 	}
-	res, err := C.getBytesFree((*C.char)(unsafe.Pointer(_p0)), (*_Ctype_ulonglong)(unsafe.Pointer(&free)))
-	if res != 0 {
-		return 0, 0, 0, err
-	}
-	res, err = C.getBytesTotal((*C.char)(unsafe.Pointer(_p0)), (*_Ctype_ulonglong)(unsafe.Pointer(&total)))
-	if res != 0 {
-		return 0, 0, 0, err
-	}
-	res, err = C.getBytesAvail((*C.char)(unsafe.Pointer(_p0)), (*_Ctype_ulonglong)(unsafe.Pointer(&avail)))
-	if res != 0 {
-		return 0, 0, 0, err
-	}
+	total := uint64(s.Frsize) * s.Blocks
+	free := uint64(s.Frsize) * s.Bfree
+	avail := uint64(s.Frsize) * s.Bavail
 	return total, free, avail, nil
 }
