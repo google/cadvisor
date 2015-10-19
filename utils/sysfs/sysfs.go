@@ -24,11 +24,11 @@ import (
 )
 
 const (
-	blockDir   = "/sys/block"
-	cacheDir   = "/sys/devices/system/cpu/cpu"
-	netDir     = "/sys/class/net"
-	dmiDir     = "/sys/class/dmi"
-	ppcDevTree = "/proc/device-tree"
+	blockDir     = "/sys/block"
+	cacheDir     = "/sys/devices/system/cpu/cpu"
+	netDir       = "/sys/class/net"
+	dmiDir       = "/sys/class/dmi"
+	ppcDevTree   = "/proc/device-tree"
 	s390xDevTree = "/etc" // s390/s390x changes
 )
 
@@ -235,15 +235,15 @@ func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 }
 
 func (self *realSysFs) GetSystemUUID() (string, error) {
-        if id, err := ioutil.ReadFile(path.Join(dmiDir, "id", "product_uuid")); err == nil {
-                return strings.TrimSpace(string(id)), nil
-        } else if id, err = ioutil.ReadFile(path.Join(ppcDevTree, "system-id")); err == nil {
-                return strings.TrimSpace(string(id)), nil
-        } else if id, err = ioutil.ReadFile(path.Join(ppcDevTree, "vm,uuid")); err == nil {
-                return strings.TrimSpace(string(id)), nil
-        } else if id, err = ioutil.ReadFile(path.Join(s390xDevTree, "machine-id")); err == nil {
-                return strings.TrimSpace(string(id)), nil
-        } else {
-                return "", err
-        }
+	if id, err := ioutil.ReadFile(path.Join(dmiDir, "id", "product_uuid")); err == nil {
+		return strings.TrimSpace(string(id)), nil
+	} else if id, err = ioutil.ReadFile(path.Join(ppcDevTree, "system-id")); err == nil {
+		return strings.TrimSpace(string(id)), nil
+	} else if id, err = ioutil.ReadFile(path.Join(ppcDevTree, "vm,uuid")); err == nil {
+		return strings.TrimSpace(string(id)), nil
+	} else if id, err = ioutil.ReadFile(path.Join(s390xDevTree, "machine-id")); err == nil {
+		return strings.TrimSpace(string(id)), nil
+	} else {
+		return "", err
+	}
 }
