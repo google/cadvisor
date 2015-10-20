@@ -335,7 +335,7 @@ func (self *dockerContainerHandler) Exists() bool {
 }
 
 func DockerInfo() (map[string]string, error) {
-	client, err := docker.NewClient(*ArgDockerEndpoint)
+	client, err := Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
@@ -347,7 +347,7 @@ func DockerInfo() (map[string]string, error) {
 }
 
 func DockerImages() ([]docker.APIImages, error) {
-	client, err := docker.NewClient(*ArgDockerEndpoint)
+	client, err := Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}

@@ -101,7 +101,7 @@ func (self *dockerFactory) String() string {
 }
 
 func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
-	client, err := docker.NewClient(*ArgDockerEndpoint)
+	client, err := Client()
 	if err != nil {
 		return
 	}
@@ -184,7 +184,7 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
-	client, err := docker.NewClient(*ArgDockerEndpoint)
+	client, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
