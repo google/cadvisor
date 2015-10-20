@@ -347,8 +347,8 @@ func toContainerStats1(s *cgroups.Stats, ret *info.ContainerStats) {
 }
 
 func toContainerStats2(s *cgroups.Stats, ret *info.ContainerStats) {
-	ret.Memory.Usage = s.MemoryStats.Usage
-	ret.Memory.Failcnt = s.MemoryStats.Failcnt
+	ret.Memory.Usage = s.MemoryStats.Usage.Usage
+	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
 	if v, ok := s.MemoryStats.Stats["pgfault"]; ok {
 		ret.Memory.ContainerData.Pgfault = v
 		ret.Memory.HierarchicalData.Pgfault = v
