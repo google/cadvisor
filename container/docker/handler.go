@@ -21,7 +21,7 @@ import (
 	"path"
 	"strings"
 	"time"
-
+	"regexp"
 	"github.com/docker/libcontainer/cgroups"
 	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
 	libcontainerConfigs "github.com/docker/libcontainer/configs"
@@ -213,6 +213,10 @@ var (
 )
 
 func hasNet(networkMode string) bool {
+	matched, _ := regexp.MatchString("container:*", networkMode)
+	if matched == true {
+		return true
+	}	
 	return hasNetworkModes[networkMode]
 }
 
