@@ -25,7 +25,7 @@ build_date=$( date +%Y%m%d-%H:%M:%S )
 go_version=$( go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/' )
 
 if [ "$(go env GOOS)" = "windows" ]; then
-› ext=".exe"
+  ext=".exe"
 fi
 
 ldflags="
