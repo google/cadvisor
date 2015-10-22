@@ -32,6 +32,9 @@ build:
 	@echo ">> building binaries"
 	@./build/build.sh
 
+release: build
+	@./build/release.sh
+
 docker:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
 
