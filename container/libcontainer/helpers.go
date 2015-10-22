@@ -98,7 +98,8 @@ func GetStats(cgroupManager cgroups.Manager, rootFs string, pid int) (*info.Cont
 			stats.Network.Interfaces = append(stats.Network.Interfaces, netStats...)
 		}
 
-		t, err := tcpStatsFromProc(rootFs, pid, "net/tcp")
+		// Commenting out to disable: too CPU intensive
+		/*t, err := tcpStatsFromProc(rootFs, pid, "net/tcp")
 		if err != nil {
 			glog.V(2).Infof("Unable to get tcp stats from pid %d: %v", pid, err)
 		} else {
@@ -110,7 +111,7 @@ func GetStats(cgroupManager cgroups.Manager, rootFs string, pid int) (*info.Cont
 			glog.V(2).Infof("Unable to get tcp6 stats from pid %d: %v", pid, err)
 		} else {
 			stats.Network.Tcp6 = t6
-		}
+		}*/
 	}
 
 	// For backwards compatibility.
