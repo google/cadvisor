@@ -23,11 +23,11 @@ import (
 	"time"
 
 	"github.com/docker/libcontainer/cgroups"
-	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
-	libcontainerConfigs "github.com/docker/libcontainer/configs"
+	cgroupfs "github.com/docker/libcontainer/cgroups/fs"
+	libcontainerconfigs "github.com/docker/libcontainer/configs"
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/google/cadvisor/container"
-	containerLibcontainer "github.com/google/cadvisor/container/libcontainer"
+	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
@@ -94,7 +94,7 @@ func newDockerContainerHandler(
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
 	storageDriver storageDriver,
-	cgroupSubsystems *containerLibcontainer.CgroupSubsystems,
+	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
@@ -104,8 +104,8 @@ func newDockerContainerHandler(
 	}
 
 	// Generate the equivalent cgroup manager for this container.
-	cgroupManager := &cgroup_fs.Manager{
-		Cgroups: &libcontainerConfigs.Cgroup{
+	cgroupManager := &cgroupfs.Manager{
+		Cgroups: &libcontainerconfigs.Cgroup{
 			Name: name,
 		},
 		Paths: cgroupPaths,
@@ -164,15 +164,15 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 	}, nil
 }
 
-func (self *dockerContainerHandler) readLibcontainerConfig() (*libcontainerConfigs.Config, error) {
-	config, err := containerLibcontainer.ReadConfig(*dockerRootDir, *dockerRunDir, self.id)
+func (self *dockerContainerHandler) readLibcontainerConfig() (*libcontainerconfigs.Config, error) {
+	config, err := containerlibcontainer.ReadConfig(*dockerRootDir, *dockerRunDir, self.id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read libcontainer config: %v", err)
 	}
 
 	// Replace cgroup parent and name with our own since we may be running in a different context.
 	if config.Cgroups == nil {
-		config.Cgroups = new(libcontainerConfigs.Cgroup)
+		config.Cgroups = new(libcontainerconfigs.Cgroup)
 	}
 	config.Cgroups.Name = self.name
 	config.Cgroups.Parent = "/"
@@ -180,7 +180,7 @@ func (self *dockerContainerHandler) readLibcontainerConfig() (*libcontainerConfi
 	return config, nil
 }
 
-func libcontainerConfigToContainerSpec(config *libcontainerConfigs.Config, mi *info.MachineInfo) info.ContainerSpec {
+func libcontainerConfigToContainerSpec(config *libcontainerconfigs.Config, mi *info.MachineInfo) info.ContainerSpec {
 	var spec info.ContainerSpec
 	spec.HasMemory = true
 	spec.Memory.Limit = math.MaxUint64
@@ -274,7 +274,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 // TODO(vmarmol): Get from libcontainer API instead of cgroup manager when we don't have to support older Dockers.
 func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := containerLibcontainer.GetStats(self.cgroupManager, self.rootFs, self.pid)
+	stats, err := containerlibcontainer.GetStats(self.cgroupManager, self.rootFs, self.pid)
 	if err != nil {
 		return stats, err
 	}
@@ -318,7 +318,7 @@ func (self *dockerContainerHandler) GetContainerLabels() map[string]string {
 }
 
 func (self *dockerContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	return containerLibcontainer.GetProcesses(self.cgroupManager)
+	return containerlibcontainer.GetProcesses(self.cgroupManager)
 }
 
 func (self *dockerContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {
@@ -331,7 +331,7 @@ func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
 }
 
 func (self *dockerContainerHandler) Exists() bool {
-	return containerLibcontainer.Exists(*dockerRootDir, *dockerRunDir, self.id)
+	return containerlibcontainer.Exists(*dockerRootDir, *dockerRunDir, self.id)
 }
 
 func DockerInfo() (map[string]string, error) {

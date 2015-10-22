@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/docker/libcontainer/cgroups"
-	cgroup_fs "github.com/docker/libcontainer/cgroups/fs"
+	cgroupfs "github.com/docker/libcontainer/cgroups/fs"
 	"github.com/docker/libcontainer/configs"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
@@ -78,7 +78,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 	}
 
 	// Generate the equivalent cgroup manager for this container.
-	cgroupManager := &cgroup_fs.Manager{
+	cgroupManager := &cgroupfs.Manager{
 		Cgroups: &configs.Cgroup{
 			Name: name,
 		},

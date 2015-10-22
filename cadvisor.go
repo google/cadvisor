@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	cadvisorHttp "github.com/google/cadvisor/http"
+	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
@@ -78,12 +78,12 @@ func main() {
 	mux := http.DefaultServeMux
 
 	// Register all HTTP handlers.
-	err = cadvisorHttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
+	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
 	if err != nil {
 		glog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
 
-	cadvisorHttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, nil)
+	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, nil)
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {
