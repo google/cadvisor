@@ -129,7 +129,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 
 	dockerInfo, err := docker.DockerInfo()
 	if err != nil {
-		return nil, err
+		glog.Warningf("Unable to connect to Docker: %v", err)
 	}
 	context := fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo}
 	fsInfo, err := fs.NewFsInfo(context)
