@@ -135,7 +135,6 @@ func networkStatsFromProc(rootFs string, pid int) ([]info.InterfaceStats, error)
 
 var (
 	ignoredDevicePrefixes = []string{"lo", "veth", "docker"}
-	netStatLineRE         = regexp.MustCompile("[  ]*(.+):([  ]+[0-9]+){16}")
 )
 
 func isIgnoredDevice(ifName string) bool {
@@ -146,6 +145,8 @@ func isIgnoredDevice(ifName string) bool {
 	}
 	return false
 }
+
+const netstatsLine = `%s %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d`
 
 func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
 	var (
@@ -166,22 +167,16 @@ func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
 
 	for scanner.Scan() {
 		line := scanner.Text()
-		if netStatLineRE.MatchString(line) {
-			line = strings.Replace(line, ":", "", -1)
+		line = strings.Replace(line, ":", "", -1)
 
-			i := info.InterfaceStats{}
+		i := info.InterfaceStats{}
 
-			_, err := fmt.Sscanf(line, "%s %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
-				&i.Name, &i.RxBytes, &i.RxPackets, &i.RxErrors, &i.RxDropped, &bkt, &bkt, &bkt,
-				&bkt, &i.TxBytes, &i.TxPackets, &i.TxErrors, &i.TxDropped, &bkt, &bkt, &bkt, &bkt)
+		numRead, _ := fmt.Sscanf(line, netstatsLine,
+			&i.Name, &i.RxBytes, &i.RxPackets, &i.RxErrors, &i.RxDropped, &bkt, &bkt, &bkt,
+			&bkt, &i.TxBytes, &i.TxPackets, &i.TxErrors, &i.TxDropped, &bkt, &bkt, &bkt, &bkt)
 
-			if err != nil {
-				return stats, fmt.Errorf("failure opening %s: %v", netStatsFile, err)
-			}
-
-			if !isIgnoredDevice(i.Name) {
-				stats = append(stats, i)
-			}
+		if numRead == 17 && !isIgnoredDevice(i.Name) {
+			stats = append(stats, i)
 		}
 	}
 
