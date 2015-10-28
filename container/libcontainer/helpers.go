@@ -171,11 +171,11 @@ func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
 
 		i := info.InterfaceStats{}
 
-		numRead, _ := fmt.Sscanf(line, netstatsLine,
+		_, err := fmt.Sscanf(line, netstatsLine,
 			&i.Name, &i.RxBytes, &i.RxPackets, &i.RxErrors, &i.RxDropped, &bkt, &bkt, &bkt,
 			&bkt, &i.TxBytes, &i.TxPackets, &i.TxErrors, &i.TxDropped, &bkt, &bkt, &bkt, &bkt)
 
-		if numRead == 17 && !isIgnoredDevice(i.Name) {
+		if err == nil && !isIgnoredDevice(i.Name) {
 			stats = append(stats, i)
 		}
 	}
