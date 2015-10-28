@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"regexp"
 	"strconv"
@@ -155,15 +156,13 @@ func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
 
 	stats := []info.InterfaceStats{}
 
-	data, err := ioutil.ReadFile(netStatsFile)
+	file, err := os.Open(netStatsFile)
 	if err != nil {
 		return stats, fmt.Errorf("failure opening %s: %v", netStatsFile, err)
 	}
+	defer file.Close()
 
-	reader := strings.NewReader(string(data))
-	scanner := bufio.NewScanner(reader)
-
-	scanner.Split(bufio.ScanLines)
+	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
 		line := scanner.Text()
