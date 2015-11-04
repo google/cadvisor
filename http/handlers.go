@@ -22,7 +22,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/healthz"
-	httpMux "github.com/google/cadvisor/http/mux"
+	httpmux "github.com/google/cadvisor/http/mux"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/pages"
@@ -31,7 +31,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func RegisterHandlers(mux httpMux.Mux, containerManager manager.Manager, httpAuthFile, httpAuthRealm, httpDigestFile, httpDigestRealm string) error {
+func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAuthFile, httpAuthRealm, httpDigestFile, httpDigestRealm string) error {
 	// Basic health handler.
 	if err := healthz.RegisterHandler(mux); err != nil {
 		return fmt.Errorf("failed to register healthz handler: %s", err)
@@ -88,7 +88,7 @@ func RegisterHandlers(mux httpMux.Mux, containerManager manager.Manager, httpAut
 	return nil
 }
 
-func RegisterPrometheusHandler(mux httpMux.Mux, containerManager manager.Manager, prometheusEndpoint string, containerNameToLabelsFunc metrics.ContainerNameToLabelsFunc) {
+func RegisterPrometheusHandler(mux httpmux.Mux, containerManager manager.Manager, prometheusEndpoint string, containerNameToLabelsFunc metrics.ContainerNameToLabelsFunc) {
 	collector := metrics.NewPrometheusCollector(containerManager, containerNameToLabelsFunc)
 	prometheus.MustRegister(collector)
 	mux.Handle(prometheusEndpoint, prometheus.Handler())
