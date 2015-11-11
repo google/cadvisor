@@ -36,7 +36,10 @@ import (
 // Path to aufs dir where all the files exist.
 // aufs/layers is ignored here since it does not hold a lot of data.
 // aufs/mnt contains the mount points used to compose the rootfs. Hence it is also ignored.
-var pathToAufsDir = "aufs/diff"
+const (
+	pathToAufsDir       = "aufs/diff"
+	pathToContainersDir = "containers"
+)
 
 type dockerContainerHandler struct {
 	client             *docker.Client
@@ -118,7 +121,14 @@ func newDockerContainerHandler(
 
 	id := ContainerNameToDockerId(name)
 
-	storageDirs := []string{path.Join(*dockerRootDir, pathToAufsDir, id)}
+	// Add the Containers dir where the log files are stored.
+	storageDirs := []string{path.Join(*dockerRootDir, pathToContainersDir, id)}
+
+	switch storageDriver {
+	case aufsStorageDriver:
+		// Add writable layer for aufs.
+		storageDirs = append(storageDirs, path.Join(*dockerRootDir, pathToAufsDir, id))
+	}
 
 	handler := &dockerContainerHandler{
 		id:                 id,
@@ -134,10 +144,8 @@ func newDockerContainerHandler(
 		fsHandler:          newFsHandler(time.Minute, storageDirs, fsInfo),
 	}
 
-	switch storageDriver {
-	case aufsStorageDriver:
-		handler.fsHandler.start()
-	}
+	// Start the filesystem handler.
+	handler.fsHandler.start()
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := client.InspectContainer(id)
