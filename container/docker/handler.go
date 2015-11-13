@@ -34,12 +34,15 @@ import (
 	libcontainerconfigs "github.com/opencontainers/runc/libcontainer/configs"
 )
 
-// Path to aufs dir where all the files exist.
-// aufs/layers is ignored here since it does not hold a lot of data.
-// aufs/mnt contains the mount points used to compose the rootfs. Hence it is also ignored.
 const (
-	pathToAufsDir       = "aufs/diff"
+	// Path to aufs dir where all the files exist.
+	// aufs/layers is ignored here since it does not hold a lot of data.
+	// aufs/mnt contains the mount points used to compose the rootfs. Hence it is also ignored.
+	pathToAufsDir = "aufs/diff"
+	// Path to the directory where docker stores log files if the json logging driver is enabled.
 	pathToContainersDir = "containers"
+	// Path to the overlayfs storage driver directory.
+	pathToOverlayDir = "overlay"
 )
 
 type dockerContainerHandler struct {
@@ -119,6 +122,8 @@ func newDockerContainerHandler(
 	case aufsStorageDriver:
 		// Add writable layer for aufs.
 		storageDirs = append(storageDirs, path.Join(*dockerRootDir, pathToAufsDir, id))
+	case overlayStorageDriver:
+		storageDirs = append(storageDirs, path.Join(*dockerRootDir, pathToOverlayDir, id))
 	}
 
 	handler := &dockerContainerHandler{
@@ -228,8 +233,14 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 
 	spec := libcontainerConfigToContainerSpec(libcontainerConfig, mi)
 	spec.CreationTime = self.creationTime
-	// For now only enable for aufs filesystems
-	spec.HasFilesystem = self.storageDriver == aufsStorageDriver
+
+	spec.HasFilesystem = false
+	switch self.storageDriver {
+	case aufsStorageDriver:
+	case overlayStorageDriver:
+		spec.HasFilesystem = true
+	}
+
 	spec.Labels = self.labels
 	spec.Image = self.image
 	spec.HasNetwork = hasNet(self.networkMode)
@@ -238,8 +249,11 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 }
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
-	// No support for non-aufs storage drivers.
-	if self.storageDriver != aufsStorageDriver {
+	switch self.storageDriver {
+	case aufsStorageDriver:
+	case overlayStorageDriver:
+		break
+	default:
 		return nil
 	}
 
