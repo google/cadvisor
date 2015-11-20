@@ -43,8 +43,8 @@ var swapCapacityRegexp = regexp.MustCompile("SwapTotal: *([0-9]+) kB")
 
 // GetClockSpeed returns the CPU clock speed, given a []byte formatted as the /proc/cpuinfo file.
 func GetClockSpeed(procInfo []byte) (uint64, error) {
-	// s390/s390x changes
-	if true == isSystemZ() {
+	// s390/s390x and aarch64 changes
+	if true == isSystemZ() || true == isAArch64() {
 		return 0, nil
 	}
 
@@ -271,6 +271,17 @@ func getMachineArch() (string, error) {
 	}
 
 	return arch, nil
+}
+
+// aarch64 changes
+func isAArch64() bool {
+	arch, err := getMachineArch()
+	if err == nil {
+		if true == strings.Contains(arch, "aarch64") {
+			return true
+		}
+	}
+	return false
 }
 
 // s390/s390x changes
