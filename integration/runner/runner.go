@@ -49,17 +49,20 @@ func RunCommand(cmd string, args ...string) error {
 func PushAndRunTests(host, testDir string) error {
 	// Push binary.
 	glog.Infof("Pushing cAdvisor binary to %q...", host)
-	err := RunCommand("gcloud", "compute", "ssh", common.GetZoneFlag(), host, "--", "mkdir", "-p", testDir)
+	args := common.GetGCComputeArgs("ssh", host, "--", "mkdir", "-p", testDir)
+	err := RunCommand("gcloud", args...)
 	if err != nil {
 		return fmt.Errorf("failed to make remote testing directory: %v", err)
 	}
 	defer func() {
-		err := RunCommand("gcloud", "compute", "ssh", common.GetZoneFlag(), host, "--", "rm", "-rf", testDir)
+		args := common.GetGCComputeArgs("ssh", host, "--", "rm", "-rf", testDir)
+		err := RunCommand("gcloud", args...)
 		if err != nil {
 			glog.Errorf("Failed to cleanup test directory: %v", err)
 		}
 	}()
-	err = RunCommand("gcloud", "compute", "copy-files", common.GetZoneFlag(), cadvisorBinary, fmt.Sprintf("%s:%s", host, testDir))
+	args = common.GetGCComputeArgs("copy-files", cadvisorBinary, fmt.Sprintf("%s:%s", host, testDir))
+	err = RunCommand("gcloud", args...)
 	if err != nil {
 		return fmt.Errorf("failed to copy binary: %v", err)
 	}
@@ -70,13 +73,15 @@ func PushAndRunTests(host, testDir string) error {
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error)
 	go func() {
-		err = RunCommand("gcloud", "compute", "ssh", common.GetZoneFlag(), host, "--command", fmt.Sprintf("sudo %s --port %s --logtostderr", path.Join(testDir, cadvisorBinary), portStr))
+		args = common.GetGCComputeArgs("ssh", host, "--", fmt.Sprintf("sudo %s --port %s --logtostderr", path.Join(testDir, cadvisorBinary), portStr))
+		err = RunCommand("gcloud", args...)
 		if err != nil {
 			errChan <- fmt.Errorf("error running cAdvisor: %v", err)
 		}
 	}()
 	defer func() {
-		err := RunCommand("gcloud", "compute", "ssh", common.GetZoneFlag(), host, "--", "sudo", "pkill", cadvisorBinary)
+		args = common.GetGCComputeArgs("ssh", host, "--", "sudo", "pkill", cadvisorBinary)
+		err := RunCommand("gcloud", args...)
 		if err != nil {
 			glog.Errorf("Failed to cleanup: %v", err)
 		}

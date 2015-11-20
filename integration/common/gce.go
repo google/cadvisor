@@ -24,6 +24,7 @@ import (
 )
 
 var zone = flag.String("zone", "us-central1-f", "Zone the instances are running in")
+var project = flag.String("project", "", "Project the instances are running in")
 
 var gceInternalIpRegexp = regexp.MustCompile(" +networkIP: +([0-9.:]+)\n")
 var gceExternalIpRegexp = regexp.MustCompile(" +natIP: +([0-9.:]+)\n")
@@ -34,7 +35,12 @@ func GetGceIp(hostname string) (string, error) {
 		return "127.0.0.1", nil
 	}
 
-	out, err := exec.Command("gcloud", "compute", "instances", "describe", GetZoneFlag(), hostname).CombinedOutput()
+	args := []string{"compute"}
+	args = append(args, getProjectFlag()...)
+	args = append(args, "instances", "describe")
+	args = append(args, getZoneFlag()...)
+	args = append(args, hostname)
+	out, err := exec.Command("gcloud", args...).CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("failed to get instance information for %q with error %v and output %s", hostname, err, string(out))
 	}
@@ -52,6 +58,24 @@ func GetGceIp(hostname string) (string, error) {
 	return matches[1], nil
 }
 
-func GetZoneFlag() string {
-	return fmt.Sprintf("--zone=%s", *zone)
+func getZoneFlag() []string {
+	if *zone == "" {
+		return []string{}
+	}
+	return []string{"--zone", *zone}
+}
+
+func getProjectFlag() []string {
+	if *project == "" {
+		return []string{}
+	}
+	return []string{"--project", *project}
+}
+func GetGCComputeArgs(cmd string, cmdArgs ...string) []string {
+	args := []string{"compute"}
+	args = append(args, getProjectFlag()...)
+	args = append(args, cmd)
+	args = append(args, getZoneFlag()...)
+	args = append(args, cmdArgs...)
+	return args
 }
