@@ -359,8 +359,8 @@ func dockerDMDevice(driverStatus string) (string, uint, uint, uint, error) {
 	)
 
 	_, err = fmt.Fscanf(bytes.NewReader(dmTable),
-		"%d %d %s %d:%d %d:%d %d %d %d %s",
-		&bkt, &bkt, &bkts, &bkt, &bkt, &major, &minor, &dataBlkSize, &bkt, &bkt, &bkts)
+		"%d %d %s %d:%d %d:%d %d",
+		&bkt, &bkt, &bkts, &bkt, &bkt, &major, &minor, &dataBlkSize)
 	if err != nil {
 		return "", 0, 0, 0, err
 	}
@@ -379,8 +379,8 @@ func getDMStats(poolName string, dataBlkSize uint) (uint64, uint64, uint64, erro
 	)
 
 	_, err = fmt.Fscanf(bytes.NewReader(dmStatus),
-		"%d %d %s %d %d/%d %d/%d %s %s %s %s",
-		&bkt, &bkt, &bkts, &bkt, &bkt, &bkt, &used, &total, &bkts, &bkts, &bkts, &bkts)
+		"%d %d %s %d %d/%d %d/%d",
+		&bkt, &bkt, &bkts, &bkt, &bkt, &bkt, &used, &total)
 	if err != nil {
 		return 0, 0, 0, err
 	}
