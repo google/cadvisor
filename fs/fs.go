@@ -336,6 +336,8 @@ func dockerStatusValue(status [][]string, target string) string {
 	return ""
 }
 
+// Devicemapper thin provisioning is detailed at
+// https://www.kernel.org/doc/Documentation/device-mapper/thin-provisioning.txt
 func dockerDMDevice(driverStatus string) (string, uint, uint, uint, error) {
 	var config [][]string
 	err := json.Unmarshal([]byte(driverStatus), &config)
