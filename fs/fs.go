@@ -19,7 +19,6 @@ package fs
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -348,39 +347,46 @@ func dockerDMDevice(driverStatus string) (string, uint, uint, uint, error) {
 		return "", 0, 0, 0, fmt.Errorf("Could not get dm pool name")
 	}
 
-	dmTable, err := exec.Command("dmsetup", "table", poolName).Output()
+	out, err := exec.Command("dmsetup", "table", poolName).Output()
 	if err != nil {
 		return "", 0, 0, 0, err
 	}
 
-	var (
-		major, minor, dataBlkSize, bkt uint
-		bkts                           string
-	)
+	dmTable := string(out)
+	dmTable = strings.Replace(dmTable, ":", " ", -1)
+	dmFields := strings.Fields(dmTable)
 
-	_, err = fmt.Fscanf(bytes.NewReader(dmTable),
-		"%d %d %s %d:%d %d:%d %d",
-		&bkt, &bkt, &bkts, &bkt, &bkt, &major, &minor, &dataBlkSize)
+	major, err := strconv.ParseUint(dmFields[5], 10, 32)
 	if err != nil {
 		return "", 0, 0, 0, err
 	}
-	return poolName, major, minor, dataBlkSize, nil
+	minor, err := strconv.ParseUint(dmFields[6], 10, 32)
+	if err != nil {
+		return "", 0, 0, 0, err
+	}
+	dataBlkSize, err := strconv.ParseUint(dmFields[7], 10, 32)
+	if err != nil {
+		return "", 0, 0, 0, err
+	}
+
+	return poolName, uint(major), uint(minor), uint(dataBlkSize), nil
 }
 
 func getDMStats(poolName string, dataBlkSize uint) (uint64, uint64, uint64, error) {
-	dmStatus, err := exec.Command("dmsetup", "status", poolName).Output()
+	out, err := exec.Command("dmsetup", "status", poolName).Output()
 	if err != nil {
 		return 0, 0, 0, err
 	}
 
-	var (
-		total, used, bkt uint64
-		bkts             string
-	)
+	dmStatus := string(out)
+	dmStatus = strings.Replace(dmStatus, "/", " ", -1)
+	dmFields := strings.Fields(dmStatus)
 
-	_, err = fmt.Fscanf(bytes.NewReader(dmStatus),
-		"%d %d %s %d %d/%d %d/%d",
-		&bkt, &bkt, &bkts, &bkt, &bkt, &bkt, &used, &total)
+	used, err := strconv.ParseUint(dmFields[6], 10, 64)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	total, err := strconv.ParseUint(dmFields[7], 10, 64)
 	if err != nil {
 		return 0, 0, 0, err
 	}
