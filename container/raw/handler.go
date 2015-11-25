@@ -138,7 +138,7 @@ func readString(dirpath string, file string) string {
 	return strings.TrimSpace(string(out))
 }
 
-func readInt64(dirpath string, file string) uint64 {
+func readUInt64(dirpath string, file string) uint64 {
 	out := readString(dirpath, file)
 	if out == "" {
 		return 0
@@ -199,7 +199,7 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	if ok {
 		if utils.FileExists(cpuRoot) {
 			spec.HasCpu = true
-			spec.Cpu.Limit = readInt64(cpuRoot, "cpu.shares")
+			spec.Cpu.Limit = readUInt64(cpuRoot, "cpu.shares")
 		}
 	}
 
@@ -238,8 +238,8 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 		if ok {
 			if utils.FileExists(memoryRoot) {
 				spec.HasMemory = true
-				spec.Memory.Limit = readInt64(memoryRoot, "memory.limit_in_bytes")
-				spec.Memory.SwapLimit = readInt64(memoryRoot, "memory.memsw.limit_in_bytes")
+				spec.Memory.Limit = readUInt64(memoryRoot, "memory.limit_in_bytes")
+				spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.memsw.limit_in_bytes")
 			}
 		}
 	}
