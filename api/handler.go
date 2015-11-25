@@ -56,7 +56,7 @@ func RegisterHandlers(mux httpmux.Mux, m manager.Manager) error {
 }
 
 // Captures the API version, requestType [optional], and remaining request [optional].
-var apiRegexp = regexp.MustCompile("/api/([^/]+)/?([^/]+)?(.*)")
+var apiRegexp = regexp.MustCompile(`/api/([^/]+)/?([^/]+)?(.*)`)
 
 const (
 	apiVersion = iota + 1

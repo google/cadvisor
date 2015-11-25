@@ -35,8 +35,6 @@ import (
 	"github.com/golang/glog"
 )
 
-var partitionRegex = regexp.MustCompile("^(:?(:?s|xv)d[a-z]+\\d*|dm-\\d+)$")
-
 const (
 	LabelSystemRoot   = "root"
 	LabelDockerImages = "docker-images"
@@ -223,6 +221,8 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 	}
 	return filesystems, nil
 }
+
+var partitionRegex = regexp.MustCompile(`^(?:(?:s|xv)d[a-z]+\d*|dm-\d+)$`)
 
 func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 	diskStatsMap := make(map[string]DiskStats)

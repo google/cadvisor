@@ -172,9 +172,12 @@ func (self *dockerFactory) DebugInfo() map[string][]string {
 	return map[string][]string{}
 }
 
+var (
+	version_regexp_string = `(\d+)\.(\d+)\.(\d+)`
+	version_re            = regexp.MustCompile(version_regexp_string)
+)
+
 func parseDockerVersion(full_version_string string) ([]int, error) {
-	version_regexp_string := "(\\d+)\\.(\\d+)\\.(\\d+)"
-	version_re := regexp.MustCompile(version_regexp_string)
 	matches := version_re.FindAllStringSubmatch(full_version_string, -1)
 	if len(matches) != 1 {
 		return nil, fmt.Errorf("version string \"%v\" doesn't match expected regular expression: \"%v\"", full_version_string, version_regexp_string)

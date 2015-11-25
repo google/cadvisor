@@ -26,8 +26,8 @@ import (
 var zone = flag.String("zone", "us-central1-f", "Zone the instances are running in")
 var project = flag.String("project", "", "Project the instances are running in")
 
-var gceInternalIpRegexp = regexp.MustCompile(" +networkIP: +([0-9.:]+)\n")
-var gceExternalIpRegexp = regexp.MustCompile(" +natIP: +([0-9.:]+)\n")
+var gceInternalIpRegexp = regexp.MustCompile(`\s+networkIP:\s+([0-9.:]+)\n`)
+var gceExternalIpRegexp = regexp.MustCompile(`\s+natIP:\s+([0-9.:]+)\n`)
 
 // Gets the IP of the specified GCE instance.
 func GetGceIp(hostname string) (string, error) {

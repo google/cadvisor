@@ -40,7 +40,7 @@ func TestTopology(t *testing.T) {
 	sysFs.SetCacheInfo(c)
 	topology, numCores, err := GetTopology(sysFs, string(testcpuinfo))
 	if err != nil {
-		t.Errorf("failed to get topology for sample cpuinfo %s", string(testcpuinfo))
+		t.Errorf("failed to get topology for sample cpuinfo %s: %v", string(testcpuinfo), err)
 	}
 
 	if numCores != 12 {
