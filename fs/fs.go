@@ -352,24 +352,36 @@ func dockerDMDevice(driverStatus string) (string, uint, uint, uint, error) {
 		return "", 0, 0, 0, err
 	}
 
-	dmTable := string(out)
+	major, minor, dataBlkSize, err := parseDMTable(string(out))
+	if err != nil {
+		return "", 0, 0, 0, err
+	}
+
+	return poolName, major, minor, dataBlkSize, nil
+}
+
+func parseDMTable(dmTable string) (uint, uint, uint, error) {
 	dmTable = strings.Replace(dmTable, ":", " ", -1)
 	dmFields := strings.Fields(dmTable)
 
+	if len(dmFields) < 8 {
+		return 0, 0, 0, fmt.Errorf("Invalid dmsetup status output: %s", dmTable)
+	}
+
 	major, err := strconv.ParseUint(dmFields[5], 10, 32)
 	if err != nil {
-		return "", 0, 0, 0, err
+		return 0, 0, 0, err
 	}
 	minor, err := strconv.ParseUint(dmFields[6], 10, 32)
 	if err != nil {
-		return "", 0, 0, 0, err
+		return 0, 0, 0, err
 	}
 	dataBlkSize, err := strconv.ParseUint(dmFields[7], 10, 32)
 	if err != nil {
-		return "", 0, 0, 0, err
+		return 0, 0, 0, err
 	}
 
-	return poolName, uint(major), uint(minor), uint(dataBlkSize), nil
+	return uint(major), uint(minor), uint(dataBlkSize), nil
 }
 
 func getDMStats(poolName string, dataBlkSize uint) (uint64, uint64, uint64, error) {
@@ -378,22 +390,34 @@ func getDMStats(poolName string, dataBlkSize uint) (uint64, uint64, uint64, erro
 		return 0, 0, 0, err
 	}
 
-	dmStatus := string(out)
-	dmStatus = strings.Replace(dmStatus, "/", " ", -1)
-	dmFields := strings.Fields(dmStatus)
-
-	used, err := strconv.ParseUint(dmFields[6], 10, 64)
-	if err != nil {
-		return 0, 0, 0, err
-	}
-	total, err := strconv.ParseUint(dmFields[7], 10, 64)
+	used, total, err := parseDMStatus(string(out))
 	if err != nil {
 		return 0, 0, 0, err
 	}
 
-	total *= 512 * uint64(dataBlkSize)
 	used *= 512 * uint64(dataBlkSize)
+	total *= 512 * uint64(dataBlkSize)
 	free := total - used
 
 	return total, free, free, nil
+}
+
+func parseDMStatus(dmStatus string) (uint64, uint64, error) {
+	dmStatus = strings.Replace(dmStatus, "/", " ", -1)
+	dmFields := strings.Fields(dmStatus)
+
+	if len(dmFields) < 8 {
+		return 0, 0, fmt.Errorf("Invalid dmsetup status output: %s", dmStatus)
+	}
+
+	used, err := strconv.ParseUint(dmFields[6], 10, 64)
+	if err != nil {
+		return 0, 0, err
+	}
+	total, err := strconv.ParseUint(dmFields[7], 10, 64)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return used, total, nil
 }
