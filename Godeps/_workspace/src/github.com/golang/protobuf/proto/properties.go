@@ -595,7 +595,7 @@ func (p *Properties) init(typ reflect.Type, name, tag string, f *reflect.StructF
 }
 
 var (
-	mutex         sync.Mutex
+	propertiesMu  sync.RWMutex
 	propertiesMap = make(map[reflect.Type]*StructProperties)
 )
 
@@ -605,13 +605,26 @@ func GetProperties(t reflect.Type) *StructProperties {
 	if t.Kind() != reflect.Struct {
 		panic("proto: type must have kind struct")
 	}
-	mutex.Lock()
-	sprop := getPropertiesLocked(t)
-	mutex.Unlock()
+
+	// Most calls to GetProperties in a long-running program will be
+	// retrieving details for types we have seen before.
+	propertiesMu.RLock()
+	sprop, ok := propertiesMap[t]
+	propertiesMu.RUnlock()
+	if ok {
+		if collectStats {
+			stats.Chit++
+		}
+		return sprop
+	}
+
+	propertiesMu.Lock()
+	sprop = getPropertiesLocked(t)
+	propertiesMu.Unlock()
 	return sprop
 }
 
-// getPropertiesLocked requires that mutex is held.
+// getPropertiesLocked requires that propertiesMu is held.
 func getPropertiesLocked(t reflect.Type) *StructProperties {
 	if prop, ok := propertiesMap[t]; ok {
 		if collectStats {

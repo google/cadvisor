@@ -24,10 +24,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/libcontainer"
-	"github.com/docker/libcontainer/cgroups"
 	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/opencontainers/runc/libcontainer"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 )
 
 type CgroupSubsystems struct {

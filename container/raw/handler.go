@@ -24,9 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker/libcontainer/cgroups"
-	cgroupfs "github.com/docker/libcontainer/cgroups/fs"
-	"github.com/docker/libcontainer/configs"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -34,6 +31,9 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
 	"github.com/google/cadvisor/utils/machine"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
+	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
+	"github.com/opencontainers/runc/libcontainer/configs"
 	"golang.org/x/exp/inotify"
 )
 

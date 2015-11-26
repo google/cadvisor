@@ -23,7 +23,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/libcontainer/cgroups"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/golang/glog"
 	"github.com/google/cadvisor/container"
@@ -31,6 +30,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 )
 
 var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")

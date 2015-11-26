@@ -19,9 +19,9 @@ import (
 	"io/ioutil"
 	"path"
 
-	"github.com/docker/libcontainer"
-	"github.com/docker/libcontainer/configs"
 	"github.com/google/cadvisor/utils"
+	"github.com/opencontainers/runc/libcontainer"
+	"github.com/opencontainers/runc/libcontainer/configs"
 )
 
 // State represents a running container's state

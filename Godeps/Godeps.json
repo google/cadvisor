@@ -8,7 +8,7 @@
 		{
 			"ImportPath": "bitbucket.org/ww/goautoneg",
 			"Comment": "null-5",
-			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
+			"Rev": "'75cd24fc2f2c2a2088577d12123ddee5f54e0675'"
 		},
 		{
 			"ImportPath": "github.com/SeanDolphin/bqschema",
@@ -16,8 +16,8 @@
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
-			"Comment": "v0.6.2-10-g51fe59a",
-			"Rev": "51fe59aca108dc5680109e7b2051cbdcfa5a253c"
+			"Comment": "v0.7.3-2-g26709e2",
+			"Rev": "26709e2714106fb8ad40b773b711ebce25b78914"
 		},
 		{
 			"ImportPath": "github.com/abbot/go-http-auth",
@@ -29,32 +29,36 @@
 		},
 		{
 			"ImportPath": "github.com/coreos/go-systemd/dbus",
-			"Comment": "v2-27-g97e243d",
-			"Rev": "97e243d21a8e232e9d8af38ba2366dfcfceebeba"
+			"Comment": "v4",
+			"Rev": "b4a58d95188dd092ae20072bac14cece0e67c388"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-systemd/util",
+			"Comment": "v4",
+			"Rev": "b4a58d95188dd092ae20072bac14cece0e67c388"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/mount",
-			"Comment": "v1.8.3-1-g2732df1",
-			"Rev": "2732df1dfb35f797a90e163afffe23564600407b"
+			"Comment": "v1.9.1",
+			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/symlink",
-			"Comment": "v1.8.3-1-g2732df1",
-			"Rev": "2732df1dfb35f797a90e163afffe23564600407b"
+			"Comment": "v1.9.1",
+			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
+		},
+		{
+			"ImportPath": "github.com/docker/docker/pkg/system",
+			"Comment": "v1.9.1",
+			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/units",
-			"Comment": "v1.8.3-1-g2732df1",
-			"Rev": "2732df1dfb35f797a90e163afffe23564600407b"
-		},
-		{
-			"ImportPath": "github.com/docker/libcontainer",
-			"Comment": "v2.2.1",
-			"Rev": "5dc7ba0f24332273461e45bc49edcb4d5aa6c44c"
+			"Comment": "v1.9.1",
+			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Comment": "0.2.1-764-g412c004",
 			"Rev": "412c004d923b7b89701e7a1632de83f843657a03"
 		},
 		{
@@ -67,8 +71,8 @@
 		},
 		{
 			"ImportPath": "github.com/godbus/dbus",
-			"Comment": "0-7-g939230d",
-			"Rev": "939230d2086a4f1870e04c52e0a376c25bae0ec4"
+			"Comment": "v3",
+			"Rev": "c7fdd8b5cd55e87b4e1f4e372cdb1db61dd6c66f"
 		},
 		{
 			"ImportPath": "github.com/golang/glog",
@@ -80,7 +84,7 @@
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/proto",
-			"Rev": "c22ae3cf020a21ebb7ae566dccbe90fc8ea4f9ea"
+			"Rev": "f7137ae6b19afbfd61a94b746fda3b3fe0491874"
 		},
 		{
 			"ImportPath": "github.com/influxdb/influxdb/client",
@@ -99,6 +103,11 @@
 		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
+		},
+		{
+			"ImportPath": "github.com/opencontainers/runc/libcontainer",
+			"Comment": "v0.0.5",
+			"Rev": "97bc9a7faf3dd660d9be90a2880b2e37f3cdbf38"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
@@ -140,7 +149,11 @@
 		},
 		{
 			"ImportPath": "github.com/syndtr/gocapability/capability",
-			"Rev": "8e4cdcb3c22b40d5e330ade0b68cb2e2a3cf6f98"
+			"Rev": "2c00daeb6c3b45114c80ac44119e7b8801fdd852"
+		},
+		{
+			"ImportPath": "github.com/vishvananda/netlink",
+			"Rev": "1e2e08e8a2dcdacaae3f14ac44c5cfa31361f270"
 		},
 		{
 			"ImportPath": "golang.org/x/exp/inotify",
@@ -148,7 +161,7 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
-			"Rev": "7dbad50ab5b31073856416cdcfeb2796d682f844"
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
 		},
 		{
 			"ImportPath": "golang.org/x/oauth2",
