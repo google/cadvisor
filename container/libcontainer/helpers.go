@@ -20,7 +20,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -202,8 +201,6 @@ func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 		return stats, fmt.Errorf("failure opening %s: %v", tcpStatsFile, err)
 	}
 
-	tcpStatLineRE, _ := regexp.Compile("[0-9:].*")
-
 	tcpStateMap := map[string]uint64{
 		"01": 0, //ESTABLISHED
 		"02": 0, //SYN_SENT
@@ -223,18 +220,24 @@ func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 
 	scanner.Split(bufio.ScanLines)
 
+	// Discard header line
+	b := scanner.Scan()
+	if !b {
+		return stats, scanner.Err()
+	}
+
 	for scanner.Scan() {
-
 		line := scanner.Text()
-		//skip header
-		matched := tcpStatLineRE.MatchString(line)
 
-		if matched {
-			state := strings.Fields(line)
-			//#file header tcp state is the 4 filed:
-			//sl local_address rem_address st tx_queue rx_queue tr tm->when retrnsmt  uid timeout inode
-			tcpStateMap[state[3]]++
+		state := strings.Fields(line)
+		// TCP state is the 4th field.
+		// Format: sl local_address rem_address st tx_queue rx_queue tr tm->when retrnsmt  uid timeout inode
+		tcpState := state[3]
+		_, ok := tcpStateMap[tcpState]
+		if !ok {
+			return stats, fmt.Errorf("invalid TCP stats line: %v", line)
 		}
+		tcpStateMap[tcpState]++
 	}
 
 	stats = info.TcpStat{

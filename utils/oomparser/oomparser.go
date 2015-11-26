@@ -29,12 +29,11 @@ import (
 	"github.com/google/cadvisor/utils"
 )
 
-var containerRegexp *regexp.Regexp = regexp.MustCompile(
-	`Task in (.*) killed as a result of limit of (.*)`)
-var lastLineRegexp *regexp.Regexp = regexp.MustCompile(
-	`(^[A-Z]{1}[a-z]{2} .*[0-9]{1,2} [0-9]{1,2}:[0-9]{2}:[0-9]{2}) .* Killed process ([0-9]+) \(([0-9A-Za-z_]+)\)`)
-var firstLineRegexp *regexp.Regexp = regexp.MustCompile(
-	`invoked oom-killer:`)
+var (
+	containerRegexp = regexp.MustCompile(`Task in (.*) killed as a result of limit of (.*)`)
+	lastLineRegexp  = regexp.MustCompile(`(^[A-Z][a-z]{2} .*[0-9]{1,2} [0-9]{1,2}:[0-9]{2}:[0-9]{2}) .* Killed process ([0-9]+) \(([\w]+)\)`)
+	firstLineRegexp = regexp.MustCompile(`invoked oom-killer:`)
+)
 
 // struct to hold file from which we obtain OomInstances
 type OomParser struct {

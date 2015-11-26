@@ -152,6 +152,11 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 	}, nil
 }
 
+var (
+	includeRe = regexp.MustCompile(`^(?:(?:# HELP |# TYPE)container_|cadvisor_version_info\{)`)
+	ignoreRe  = regexp.MustCompile(`^container_last_seen\{`)
+)
+
 func TestPrometheusCollector(t *testing.T) {
 	prometheus.MustRegister(NewPrometheusCollector(testSubcontainersInfoProvider{}, nil))
 
@@ -171,8 +176,6 @@ func TestPrometheusCollector(t *testing.T) {
 	// (https://github.com/prometheus/client_golang/issues/58), we simply compare
 	// verbatim text-format metrics outputs, but ignore certain metric lines
 	// whose value depends on the current time or local circumstances.
-	includeRe := regexp.MustCompile("^(?:(?:# HELP |# TYPE)container_|cadvisor_version_info{)")
-	ignoreRe := regexp.MustCompile("^container_last_seen{")
 	for i, want := range wantLines {
 		if !includeRe.MatchString(want) || ignoreRe.MatchString(want) {
 			continue
