@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -190,7 +189,6 @@ type manager struct {
 	quitChannels             []chan error
 	cadvisorContainer        string
 	inHostNamespace          bool
-	dockerContainersRegexp   *regexp.Regexp
 	loadReader               cpuload.CpuLoadReader
 	eventHandler             events.EventManager
 	startupTime              time.Time
@@ -1195,7 +1193,10 @@ func (m *manager) DockerInfo() (DockerStatus, error) {
 	}
 	if val, ok := info["DriverStatus"]; ok {
 		var driverStatus [][]string
-		err = json.Unmarshal([]byte(val), &driverStatus)
+		err := json.Unmarshal([]byte(val), &driverStatus)
+		if err != nil {
+			return DockerStatus{}, err
+		}
 		out.DriverStatus = make(map[string]string)
 		for _, v := range driverStatus {
 			if len(v) == 2 {

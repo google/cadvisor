@@ -92,16 +92,16 @@ func (self *Client) httpGetResponse(postData interface{}, url, infoName string) 
 	var err error
 
 	if postData != nil {
-		data, err := json.Marshal(postData)
-		if err != nil {
-			return nil, fmt.Errorf("unable to marshal data: %v", err)
+		data, marshalErr := json.Marshal(postData)
+		if marshalErr != nil {
+			return nil, fmt.Errorf("unable to marshal data: %v", marshalErr)
 		}
 		resp, err = http.Post(url, "application/json", bytes.NewBuffer(data))
 	} else {
 		resp, err = http.Get(url)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("unable to get %q from %q: %v", infoName, url, err)
+		return nil, fmt.Errorf("unable to post %q to %q: %v", infoName, url, err)
 	}
 	if resp == nil {
 		return nil, fmt.Errorf("received empty response for %q from %q", infoName, url)

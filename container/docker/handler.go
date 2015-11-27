@@ -48,16 +48,6 @@ type dockerContainerHandler struct {
 	aliases            []string
 	machineInfoFactory info.MachineInfoFactory
 
-	// Path to the libcontainer config file.
-	libcontainerConfigPath string
-
-	// Path to the libcontainer state file.
-	libcontainerStatePath string
-
-	// TODO(vmarmol): Remove when we depend on a newer Docker.
-	// Path to the libcontainer pid file.
-	libcontainerPidPath string
-
 	// Absolute path to the cgroup hierarchies of this container.
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
 	cgroupPaths map[string]string

@@ -115,9 +115,6 @@ type watch struct {
 	request *Request
 	// a channel used to send event back to the caller.
 	eventChannel *EventChannel
-	// unique identifier of a watch that is used as a key in events' watchers
-	// map
-	id int
 }
 
 func NewEventChannel(watchId int) *EventChannel {

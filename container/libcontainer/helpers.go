@@ -17,7 +17,6 @@ package libcontainer
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -146,8 +145,6 @@ func isIgnoredDevice(ifName string) bool {
 	return false
 }
 
-const netstatsLine = `%s %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d`
-
 func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
 	file, err := os.Open(netStatsFile)
 	if err != nil {
@@ -213,6 +210,7 @@ func setInterfaceStatValues(fields []string, pointers []*uint64) error {
 	return nil
 }
 
+/*
 func tcpStatsFromProc(rootFs string, pid int, file string) (info.TcpStat, error) {
 	tcpStatsFile := path.Join(rootFs, "proc", strconv.Itoa(pid), file)
 
@@ -287,6 +285,7 @@ func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 
 	return stats, nil
 }
+*/
 
 func GetProcesses(cgroupManager cgroups.Manager) ([]int, error) {
 	pids, err := cgroupManager.GetPids()
