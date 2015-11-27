@@ -443,6 +443,9 @@ func (c *containerData) updateSpec() error {
 	}
 
 	customMetrics, err := c.collectorManager.GetSpec()
+	if err != nil {
+		return err
+	}
 	if len(customMetrics) > 0 {
 		spec.HasCustomMetrics = true
 		spec.CustomMetrics = customMetrics

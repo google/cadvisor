@@ -160,9 +160,9 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 	var err error
 
 	if postData != nil {
-		data, err := json.Marshal(postData)
-		if err != nil {
-			return fmt.Errorf("unable to marshal data: %v", err)
+		data, marshalErr := json.Marshal(postData)
+		if marshalErr != nil {
+			return fmt.Errorf("unable to marshal data: %v", marshalErr)
 		}
 		resp, err = http.Post(url, "application/json", bytes.NewBuffer(data))
 	} else {

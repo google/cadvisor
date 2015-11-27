@@ -33,6 +33,9 @@ func TestHealthzOk(t *testing.T) {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if string(body) != "ok" {
 		t.Fatalf("cAdvisor returned unexpected healthz status of %q", body)

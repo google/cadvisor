@@ -155,7 +155,6 @@ func (self *OomParser) StreamOoms(outStream chan *OomInstance) {
 				}
 				line = <-lineChannel
 			}
-			in_oom_kernel_log = false
 			outStream <- oomCurrentInstance
 		}
 	}

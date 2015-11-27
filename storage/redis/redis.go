@@ -79,7 +79,6 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 		b, _ := json.Marshal(detail)
 		if self.readyToFlush() {
 			seriesToFlush = b
-			b = nil
 			self.lastWrite = time.Now()
 		}
 	}()
