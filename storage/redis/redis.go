@@ -16,6 +16,7 @@ package redis
 
 import (
 	"encoding/json"
+	"os"
 	"sync"
 	"time"
 
@@ -24,6 +25,10 @@ import (
 
 	redis "github.com/garyburd/redigo/redis"
 )
+
+func init() {
+	storage.RegisterStorageDriver("redis", new)
+}
 
 type redisStorage struct {
 	conn           redis.Conn
@@ -40,6 +45,19 @@ type detailSpec struct {
 	MachineName    string               `json:"machine_name,omitempty"`
 	ContainerName  string               `json:"container_Name,omitempty"`
 	ContainerStats *info.ContainerStats `json:"container_stats,omitempty"`
+}
+
+func new() (storage.StorageDriver, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+	return newStorage(
+		hostname,
+		*storage.ArgDbName,
+		*storage.ArgDbHost,
+		*storage.ArgDbBufferDuration,
+	)
 }
 
 func (self *redisStorage) defaultReadyToFlush() bool {
@@ -99,7 +117,8 @@ func (self *redisStorage) Close() error {
 // instance is running on.
 // redisHost: The host which runs redis.
 // redisKey: The key for the Data that stored in the redis
-func New(machineName,
+func newStorage(
+	machineName,
 	redisKey,
 	redisHost string,
 	bufferDuration time.Duration,
