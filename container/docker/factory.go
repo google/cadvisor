@@ -87,8 +87,7 @@ func RootDir() string {
 type storageDriver string
 
 const (
-	devicemapperStorageDriver storageDriver = "devicemapper"
-	aufsStorageDriver         storageDriver = "aufs"
+	aufsStorageDriver storageDriver = "aufs"
 )
 
 type dockerFactory struct {
