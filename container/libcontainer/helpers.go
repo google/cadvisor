@@ -149,36 +149,68 @@ func isIgnoredDevice(ifName string) bool {
 const netstatsLine = `%s %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d`
 
 func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
-	var (
-		bkt uint64
-	)
-
-	stats := []info.InterfaceStats{}
-
 	file, err := os.Open(netStatsFile)
 	if err != nil {
-		return stats, fmt.Errorf("failure opening %s: %v", netStatsFile, err)
+		return nil, fmt.Errorf("failure opening %s: %v", netStatsFile, err)
 	}
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 
+	// Discard header lines
+	for i := 0; i < 2; i++ {
+		if b := scanner.Scan(); !b {
+			return nil, scanner.Err()
+		}
+	}
+
+	stats := []info.InterfaceStats{}
 	for scanner.Scan() {
 		line := scanner.Text()
 		line = strings.Replace(line, ":", "", -1)
 
-		i := info.InterfaceStats{}
-
-		_, err := fmt.Sscanf(line, netstatsLine,
-			&i.Name, &i.RxBytes, &i.RxPackets, &i.RxErrors, &i.RxDropped, &bkt, &bkt, &bkt,
-			&bkt, &i.TxBytes, &i.TxPackets, &i.TxErrors, &i.TxDropped, &bkt, &bkt, &bkt, &bkt)
-
-		if err == nil && !isIgnoredDevice(i.Name) {
-			stats = append(stats, i)
+		fields := strings.Fields(line)
+		// If the format of the  line is invalid then don't trust any of the stats
+		// in this file.
+		if len(fields) != 17 {
+			return nil, fmt.Errorf("invalid interface stats line: %v", line)
 		}
+
+		devName := fields[0]
+		if isIgnoredDevice(devName) {
+			continue
+		}
+
+		i := info.InterfaceStats{
+			Name: devName,
+		}
+
+		statFields := append(fields[1:5], fields[9:13]...)
+		statPointers := []*uint64{
+			&i.RxBytes, &i.RxPackets, &i.RxErrors, &i.RxDropped,
+			&i.TxBytes, &i.TxPackets, &i.TxErrors, &i.TxDropped,
+		}
+
+		err := setInterfaceStatValues(statFields, statPointers)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse interface stats (%v): %v", err, line)
+		}
+
+		stats = append(stats, i)
 	}
 
 	return stats, nil
+}
+
+func setInterfaceStatValues(fields []string, pointers []*uint64) error {
+	for i, v := range fields {
+		val, err := strconv.ParseUint(v, 10, 64)
+		if err != nil {
+			return err
+		}
+		*pointers[i] = val
+	}
+	return nil
 }
 
 func tcpStatsFromProc(rootFs string, pid int, file string) (info.TcpStat, error) {
@@ -221,8 +253,7 @@ func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 	scanner.Split(bufio.ScanLines)
 
 	// Discard header line
-	b := scanner.Scan()
-	if !b {
+	if b := scanner.Scan(); !b {
 		return stats, scanner.Err()
 	}
 
