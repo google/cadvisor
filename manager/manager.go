@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -190,7 +189,6 @@ type manager struct {
 	quitChannels             []chan error
 	cadvisorContainer        string
 	inHostNamespace          bool
-	dockerContainersRegexp   *regexp.Regexp
 	loadReader               cpuload.CpuLoadReader
 	eventHandler             events.EventManager
 	startupTime              time.Time
