@@ -155,7 +155,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		allowDynamicHousekeeping: allowDynamicHousekeeping,
 	}
 
-	machineInfo, err := getMachineInfo(sysfs, fsInfo)
+	machineInfo, err := getMachineInfo(sysfs, fsInfo, inHostNamespace)
 	if err != nil {
 		return nil, err
 	}
