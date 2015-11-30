@@ -22,7 +22,7 @@ import (
 )
 
 type stdoutStorage struct {
-	Namespace string
+	Hostname string
 }
 
 const (
@@ -91,7 +91,7 @@ func (driver *stdoutStorage) AddStats(ref info.ContainerReference, stats *info.C
 	}
 
 	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf("cName=%s host=%s", containerName, driver.Namespace))
+	buffer.WriteString(fmt.Sprintf("cName=%s host=%s", containerName, driver.Hostname))
 
 	series := driver.containerStatsToValues(stats)
 	driver.containerFsStatsToValues(&series, stats)
@@ -108,9 +108,9 @@ func (driver *stdoutStorage) Close() error {
 	return nil
 }
 
-func New(namespace string) (*stdoutStorage, error) {
+func New(hostname string) (*stdoutStorage, error) {
 	stdoutStorage := &stdoutStorage{
-		Namespace: namespace,
+		Hostname: hostname,
 	}
 	return stdoutStorage, nil
 }
