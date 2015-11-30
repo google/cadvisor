@@ -25,9 +25,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
+
+	"github.com/golang/glog"
 )
 
 const ContainersPage = "/containers/"

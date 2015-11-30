@@ -23,6 +23,7 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/integration/framework"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

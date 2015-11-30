@@ -28,8 +28,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/docker/docker/pkg/units"
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
@@ -37,6 +35,9 @@ import (
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
+
+	"github.com/docker/docker/pkg/units"
+	"github.com/golang/glog"
 )
 
 // Housekeeping interval.

@@ -20,6 +20,7 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
+
 	influxdb "github.com/influxdb/influxdb/client"
 )
 

@@ -25,8 +25,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/utils"
+
+	"github.com/golang/glog"
 )
 
 var (

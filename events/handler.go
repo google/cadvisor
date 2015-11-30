@@ -21,9 +21,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
+
+	"github.com/golang/glog"
 )
 
 type byTimestamp []*info.Event

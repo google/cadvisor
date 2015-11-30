@@ -19,9 +19,10 @@ import (
 	"sync"
 	"time"
 
-	redis "github.com/garyburd/redigo/redis"
 	info "github.com/google/cadvisor/info/v1"
 	storage "github.com/google/cadvisor/storage"
+
+	redis "github.com/garyburd/redigo/redis"
 )
 
 type redisStorage struct {

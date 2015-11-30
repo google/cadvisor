@@ -28,8 +28,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/integration/common"
+
+	"github.com/golang/glog"
 )
 
 const cadvisorBinary = "cadvisor"

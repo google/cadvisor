@@ -21,6 +21,7 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	storage "github.com/google/cadvisor/storage"
+
 	"gopkg.in/olivere/elastic.v2"
 )
 
