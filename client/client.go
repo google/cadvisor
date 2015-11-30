@@ -25,8 +25,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
+
+	"github.com/golang/glog"
 )
 
 // Client represents the base URL for a cAdvisor client.

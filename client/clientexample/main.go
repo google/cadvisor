@@ -17,9 +17,10 @@ package main
 import (
 	"flag"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
 	info "github.com/google/cadvisor/info/v1"
+
+	"github.com/golang/glog"
 )
 
 func staticClientExample() {

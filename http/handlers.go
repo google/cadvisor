@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	auth "github.com/abbot/go-http-auth"
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/healthz"
 	httpmux "github.com/google/cadvisor/http/mux"
@@ -28,6 +26,9 @@ import (
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
 	"github.com/google/cadvisor/validate"
+
+	auth "github.com/abbot/go-http-auth"
+	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

@@ -25,11 +25,12 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysinfo"
+
+	"github.com/golang/glog"
 )
 
 // The utils/machine package contains functions that extract machine-level specs.

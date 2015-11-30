@@ -21,11 +21,12 @@ import (
 	"net/url"
 	"strings"
 
-	auth "github.com/abbot/go-http-auth"
-	"github.com/golang/glog"
 	httpmux "github.com/google/cadvisor/http/mux"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
+
+	auth "github.com/abbot/go-http-auth"
+	"github.com/golang/glog"
 )
 
 var pageTemplate *template.Template

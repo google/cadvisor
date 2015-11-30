@@ -21,7 +21,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -30,6 +29,8 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysinfo"
 	version "github.com/google/cadvisor/version"
+
+	"github.com/golang/glog"
 )
 
 var machineIdFilePath = flag.String("machine_id_file", "/etc/machine-id,/var/lib/dbus/machine-id", "Comma-separated list of files to check for machine-id. Use the first one that exists.")

@@ -24,6 +24,7 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 

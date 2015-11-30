@@ -24,6 +24,7 @@ import (
 	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
+
 	"github.com/stretchr/testify/assert"
 )
 

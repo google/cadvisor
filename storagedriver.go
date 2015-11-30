@@ -20,7 +20,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/storage/bigquery"
@@ -29,6 +28,8 @@ import (
 	"github.com/google/cadvisor/storage/redis"
 	"github.com/google/cadvisor/storage/statsd"
 	"github.com/google/cadvisor/storage/stdout"
+
+	"github.com/golang/glog"
 )
 
 var argDbUsername = flag.String("storage_driver_user", "root", "database username")
