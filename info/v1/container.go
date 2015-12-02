@@ -87,7 +87,7 @@ func (self ContainerReferenceSlice) Len() int           { return len(self) }
 func (self ContainerReferenceSlice) Swap(i, j int)      { self[i], self[j] = self[j], self[i] }
 func (self ContainerReferenceSlice) Less(i, j int) bool { return self[i].Name < self[j].Name }
 
-// ContainerInfoQuery is used when users check a container info from the REST api.
+// ContainerInfoRequest is used when users check a container info from the REST API.
 // It specifies how much data users want to get about a container
 type ContainerInfoRequest struct {
 	// Max number of stats to return. Specify -1 for all stats currently available.
