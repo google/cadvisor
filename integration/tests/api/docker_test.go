@@ -253,6 +253,9 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	containerId := fm.Docker().RunBusybox("watch", "-n1", "wget", "https://www.google.com/")
 	waitForContainer(containerId, fm)
 
+	// Add a little sleep to let the request complete a few times
+	time.Sleep(10 * time.Second)
+
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
