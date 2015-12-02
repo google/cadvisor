@@ -88,7 +88,10 @@ func RootDir() string {
 type storageDriver string
 
 const (
-	aufsStorageDriver storageDriver = "aufs"
+	// TODO: Add support for devicemapper storage usage.
+	devicemapperStorageDriver storageDriver = "devicemapper"
+	aufsStorageDriver         storageDriver = "aufs"
+	overlayStorageDriver      storageDriver = "overlay"
 )
 
 type dockerFactory struct {
