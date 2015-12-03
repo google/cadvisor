@@ -234,11 +234,11 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec := libcontainerConfigToContainerSpec(libcontainerConfig, mi)
 	spec.CreationTime = self.creationTime
 
-	spec.HasFilesystem = false
 	switch self.storageDriver {
-	case aufsStorageDriver:
-	case overlayStorageDriver:
+	case aufsStorageDriver, overlayStorageDriver:
 		spec.HasFilesystem = true
+	default:
+		spec.HasFilesystem = false
 	}
 
 	spec.Labels = self.labels
@@ -250,9 +250,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
 	switch self.storageDriver {
-	case aufsStorageDriver:
-	case overlayStorageDriver:
-		break
+	case aufsStorageDriver, overlayStorageDriver:
 	default:
 		return nil
 	}
