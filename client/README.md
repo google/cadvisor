@@ -40,7 +40,7 @@ Given a container name and a ContainerInfoRequest, will return all information a
 request := info.ContainerInfoRequest{10}
 sInfo, err := client.ContainerInfo("/docker/d9d3eb10179e6f93a...", &request)
 ```
-Returns a [ContainerInfo struct](../info/container.go)
+Returns a [ContainerInfo struct](../info/v1/container.go)
 
 ### SubcontainersInfo
 
@@ -51,4 +51,4 @@ request := info.ContainerInfoRequest{10}
 sInfo, err := client.SubcontainersInfo("/docker", &request)
 ```
 
-Returns a [ContainerInfo struct](../info/container.go) with the Subcontainers field populated.
+Returns a [ContainerInfo struct](../info/v1/container.go) with the Subcontainers field populated.
