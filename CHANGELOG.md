@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.19.3.1 (2015-12-03)
+- Fix for #947. Add a flag `--no-systemd` to avoid using systemd with docker.
+
 ### 0.18.0 (2015-09-23)
 - Large bunch of bug-fixes
 - Fixed networking stats for newer docker versions using libnetwork.
