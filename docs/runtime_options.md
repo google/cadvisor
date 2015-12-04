@@ -62,6 +62,7 @@ cAdvisor-native flags that help in debugging:
 ```
 --log_cadvisor_usage=false: Whether to log the usage of the cAdvisor container
 --version=false: print cAdvisor version and exit
+--profiling=false: Enable profiling via web interface host:port/debug/pprof/
 ```
 
 From [glog](https://github.com/golang/glog) here are some flags we find useful:
