@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.19.3.2 (2015-12-04)
+- Fix for #994. Fix goroutine leak in docker container filesystem usage handler.
+
 ### 0.19.3.1 (2015-12-03)
 - Fix for #947. Add a flag `--no-systemd` to avoid using systemd with docker.
 
