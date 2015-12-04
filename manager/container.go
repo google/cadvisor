@@ -45,9 +45,6 @@ var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second,
 
 var cgroupPathRegExp = regexp.MustCompile(`.*devices.*:(.*?)[,;$].*`)
 
-// Decay value used for load average smoothing. Interval length of 10 seconds is used.
-var loadDecay = math.Exp(float64(-1 * (*HousekeepingInterval).Seconds() / 10))
-
 type containerInfo struct {
 	info.ContainerReference
 	Subcontainers []info.ContainerReference
@@ -67,6 +64,9 @@ type containerData struct {
 	allowDynamicHousekeeping bool
 	lastUpdatedTime          time.Time
 	lastErrorTime            time.Time
+
+	// Decay value used for load average smoothing. Interval length of 10 seconds is used.
+	loadDecay float64
 
 	// Whether to log the usage of this container when it is updated.
 	logUsage bool
@@ -317,6 +317,8 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 	}
 	cont.info.ContainerReference = ref
 
+	cont.loadDecay = math.Exp(float64(-cont.housekeepingInterval.Seconds() / 10))
+
 	err = cont.updateSpec()
 	if err != nil {
 		return nil, err
@@ -464,7 +466,7 @@ func (c *containerData) updateLoad(newLoad uint64) {
 	if c.loadAvg < 0 {
 		c.loadAvg = float64(newLoad) // initialize to the first seen sample for faster stabilization.
 	} else {
-		c.loadAvg = c.loadAvg*loadDecay + float64(newLoad)*(1.0-loadDecay)
+		c.loadAvg = c.loadAvg*c.loadDecay + float64(newLoad)*(1.0-c.loadDecay)
 	}
 }
 
