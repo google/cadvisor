@@ -18,7 +18,11 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -125,6 +129,7 @@ type CadvisorActions interface {
 	// Returns a cAdvisor client to the machine being tested.
 	Client() *client.Client
 	ClientV2() *v2.Client
+	GetGoRoutines() (int, error)
 }
 
 type realFramework struct {
@@ -161,6 +166,28 @@ func (self HostnameInfo) FullHostname() string {
 
 func (self *realFramework) T() *testing.T {
 	return self.t
+}
+
+func (self *realFramework) GetGoRoutines() (int, error) {
+
+	pprofURL := fmt.Sprintf("%s/debug/pprof", self.Hostname().FullHostname())
+	resp, err := http.Get(pprofURL)
+	if err != nil {
+		return -1, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return -1, err
+	}
+	r := regexp.MustCompile("right>([0-9]+)<td")
+	for _, line := range strings.Split(string(body), "\n") {
+		// <tr><td align=right>42<td><a href="goroutine?debug=1">goroutine</a>
+		if strings.Contains(line, "goroutine") {
+			return strconv.Atoi(r.FindStringSubmatch(line)[1])
+		}
+	}
+	return -1, fmt.Errorf("failed to find number of goroutines from '/debug/pprof' output - %q", string(body))
 }
 
 func (self *realFramework) Hostname() HostnameInfo {

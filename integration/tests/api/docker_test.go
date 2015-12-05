@@ -270,3 +270,22 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	assert.NotEqual(stat.Network.RxBytes, stat.Network.TxBytes, "Network tx and rx bytes should not be equal")
 	assert.NotEqual(stat.Network.RxPackets, stat.Network.TxPackets, "Network tx and rx packets should not be equal")
 }
+
+// Tests goroutine leaks in docker handler.
+func TestGoRoutineSanity(t *testing.T) {
+	fm := framework.New(t)
+
+	assert := assert.New(t)
+	initialGoRoutines, err := fm.Cadvisor().GetGoRoutines()
+	assert.NoError(err)
+	containerId1 := fm.Docker().RunPause()
+	containerId2 := fm.Docker().RunPause()
+	waitForContainer(containerId1, fm)
+	waitForContainer(containerId2, fm)
+	fm.Cleanup()
+	// Adding the sleep here to let cAdvisor stabilize internally.
+	time.Sleep(5 * time.Second)
+	goRoutines, err := fm.Cadvisor().GetGoRoutines()
+	assert.NoError(err)
+	assert.True(goRoutines <= initialGoRoutines, "expected initial go routines to match current count.")
+}
