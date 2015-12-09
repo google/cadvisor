@@ -63,3 +63,38 @@ func TestPrometheus(t *testing.T) {
 	goRoutines := metrics["go_goroutines"]
 	assert.Equal(goRoutines[0].FloatValue, 16)
 }
+
+func TestPrometheusFiltersMetrics(t *testing.T) {
+	assert := assert.New(t)
+
+	//Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
+	configFile, err := ioutil.ReadFile("config/sample_config_prometheus_filtered.json")
+	collector, err := NewPrometheusCollector("Prometheus", configFile)
+	assert.NoError(err)
+	assert.Equal(collector.name, "Prometheus")
+	assert.Equal(collector.configFile.Endpoint, "http://localhost:8080/metrics")
+
+	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		text := "# HELP go_gc_duration_seconds A summary of the GC invocation durations.\n"
+		text += "# TYPE go_gc_duration_seconds summary\n"
+		text += "go_gc_duration_seconds{quantile=\"0\"} 5.8348000000000004e-05\n"
+		text += "go_gc_duration_seconds{quantile=\"1\"} 0.000499764\n"
+		text += "# HELP go_goroutines Number of goroutines that currently exist.\n"
+		text += "# TYPE go_goroutines gauge\n"
+		text += "go_goroutines 16"
+		fmt.Fprintln(w, text)
+	}))
+
+	defer tempServer.Close()
+
+	collector.configFile.Endpoint = tempServer.URL
+	metrics := map[string][]v1.MetricVal{}
+	_, metrics, errMetric := collector.Collect(metrics)
+
+	assert.NoError(errMetric)
+	assert.Len(metrics, 1)
+
+	goRoutines := metrics["go_goroutines"]
+	assert.Equal(goRoutines[0].FloatValue, 16)
+}
