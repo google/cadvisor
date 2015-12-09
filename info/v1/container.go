@@ -91,7 +91,6 @@ func (self ContainerReferenceSlice) Less(i, j int) bool { return self[i].Name < 
 // It specifies how much data users want to get about a container
 type ContainerInfoRequest struct {
 	// Max number of stats to return. Specify -1 for all stats currently available.
-	// If start and end time are specified this limit is ignored.
 	// Default: 60
 	NumStats int `json:"num_stats,omitempty"`
 
