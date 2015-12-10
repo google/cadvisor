@@ -61,19 +61,18 @@ Another sample config that collects only selected metrics:
 {
   "endpoint" : "http://localhost:8000/metrics",
   "metrics_config" : [
-    {
-      "scheduler_binding_latency",
-      "scheduler_e2e_scheduling_latency",
-      "scheduling_algorithm_latency"
-    }
+    "scheduler_binding_latency",
+    "scheduler_e2e_scheduling_latency",
+    "scheduling_algorithm_latency"
   ]
 }
 ```
 
 ## Passing the configuration to cAdvisor
 
-cAdvisor can discover any configurations for a container using Docker labels. Any label starting with ```io.cadvisor.metric``` is parsed as a cadvisor application-metric label.
-cAdvisor uses the value as an indicator of where the configuration can be found.
+cAdvisor can discover any configurations for a container using Docker container labels. Any label starting with ```io.cadvisor.metric``` is parsed as a cadvisor application-metric label.
+cAdvisor uses the value as an indicator of where the configuration can be found.  Labels of the form ```io.cadvisor.metric.prometheus-xyz``` indicate that the configuration points to a
+Prometheus metrics endpoint.
 
 The configuration file can either be part of the container image or can be added on at runtime with a volume. This makes sure that there is no connection between the host where the container is running and the application metrics configuration. A container is self-contained for its metric information.
 
@@ -87,6 +86,9 @@ Dockerfile (or runtime):
 ```
 
 cAdvisor will then reach into the container image at runtime, process the config, and start collecting and exposing application metrics.
+
+Note that cAdvisor specifically looks at the container labels to extract this information.  In Docker 1.8, containers don't inherit labels
+from their images, and thus you must specify the label at runtime.
 
 ## API access to application-specific metrics
 
