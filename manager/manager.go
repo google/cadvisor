@@ -704,38 +704,54 @@ func (m *manager) GetProcessList(containerName string, options v2.RequestOptions
 	return ps, nil
 }
 
-func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *containerData) error {
-	for k, v := range collectorConfigs {
+func (m *manager) registerCollector(name string, config []byte, cont *containerData) error {
+	if strings.HasPrefix(name, "prometheus") || strings.HasPrefix(name, "Prometheus") {
+		newCollector, err := collector.NewPrometheusCollector(name, config)
+		if err != nil {
+			glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, name, err)
+			return err
+		}
+		err = cont.collectorManager.RegisterCollector(newCollector)
+		if err != nil {
+			glog.Infof("failed to register collector for container %q, config %q: %v", cont.info.Name, name, err)
+			return err
+		}
+	} else {
+		newCollector, err := collector.NewCollector(name, config)
+		if err != nil {
+			glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, name, err)
+			return err
+		}
+		err = cont.collectorManager.RegisterCollector(newCollector)
+		if err != nil {
+			glog.Infof("failed to register collector for container %q, config %q: %v", cont.info.Name, name, err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *manager) registerCollectors(collectorConfigFiles map[string]string, collectorConfigBlobs map[string]string, cont *containerData) error {
+	for k, v := range collectorConfigFiles {
 		configFile, err := cont.ReadFile(v, m.inHostNamespace)
 		if err != nil {
 			return fmt.Errorf("failed to read config file %q for config %q, container %q: %v", k, v, cont.info.Name, err)
 		}
 		glog.V(3).Infof("Got config from %q: %q", v, configFile)
 
-		if strings.HasPrefix(k, "prometheus") || strings.HasPrefix(k, "Prometheus") {
-			newCollector, err := collector.NewPrometheusCollector(k, configFile)
-			if err != nil {
-				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
-				return err
-			}
-			err = cont.collectorManager.RegisterCollector(newCollector)
-			if err != nil {
-				glog.Infof("failed to register collector for container %q, config %q: %v", cont.info.Name, k, err)
-				return err
-			}
-		} else {
-			newCollector, err := collector.NewCollector(k, configFile)
-			if err != nil {
-				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
-				return err
-			}
-			err = cont.collectorManager.RegisterCollector(newCollector)
-			if err != nil {
-				glog.Infof("failed to register collector for container %q, config %q: %v", cont.info.Name, k, err)
-				return err
-			}
+		if err := m.registerCollector(k, configFile, cont); err != nil {
+			return err
 		}
 	}
+
+	for k, v := range collectorConfigBlobs {
+		glog.V(3).Infof("Got config from label: %q", v)
+		if err := m.registerCollector(k, []byte(v), cont); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -763,8 +779,9 @@ func (m *manager) createContainer(containerName string) error {
 
 	// Add collectors
 	labels := handler.GetContainerLabels()
-	collectorConfigs := collector.GetCollectorConfigs(labels)
-	err = m.registerCollectors(collectorConfigs, cont)
+	collectorConfigFiles := collector.GetCollectorConfigs(labels)
+	collectorConfigBlobs := collector.GetInLabelCollectorConfigs(labels)
+	err = m.registerCollectors(collectorConfigFiles, collectorConfigBlobs, cont)
 	if err != nil {
 		glog.Infof("failed to register collectors for %q: %v", containerName, err)
 		return err

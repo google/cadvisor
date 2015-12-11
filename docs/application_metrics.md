@@ -70,7 +70,7 @@ Another sample config that collects only selected metrics:
 
 ## Passing the configuration to cAdvisor
 
-cAdvisor can discover any configurations for a container using Docker container labels. Any label starting with ```io.cadvisor.metric``` is parsed as a cadvisor application-metric label.
+cAdvisor can discover any configurations for a container using Docker container labels. Any label starting with ```io.cadvisor.metric.``` is parsed as a cadvisor application-metric label.
 cAdvisor uses the value as an indicator of where the configuration can be found.  Labels of the form ```io.cadvisor.metric.prometheus-xyz``` indicate that the configuration points to a
 Prometheus metrics endpoint.
 
@@ -84,6 +84,8 @@ Dockerfile (or runtime):
  ADD ADD redis_config.json /var/cadvisor/redis_config.json
  LABEL io.cadvisor.metric.redis="/var/cadvisor/redis_config.json"
 ```
+
+It is also possible to store the configuration JSON itself directly in the label.  To do so, simply use a label with the prefix ```io.cadvisor.metric-config.```.
 
 cAdvisor will then reach into the container image at runtime, process the config, and start collecting and exposing application metrics.
 
