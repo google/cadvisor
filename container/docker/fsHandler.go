@@ -78,6 +78,7 @@ func (fh *realFsHandler) update() error {
 }
 
 func (fh *realFsHandler) trackUsage() {
+	fh.update()
 	for {
 		select {
 		case <-fh.stopChan:

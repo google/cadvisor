@@ -239,7 +239,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec.CreationTime = self.creationTime
 
 	switch self.storageDriver {
-	case aufsStorageDriver, overlayStorageDriver:
+	case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
 		spec.HasFilesystem = true
 	default:
 		spec.HasFilesystem = false
@@ -254,7 +254,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
 	switch self.storageDriver {
-	case aufsStorageDriver, overlayStorageDriver:
+	case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
 	default:
 		return nil
 	}

@@ -92,6 +92,7 @@ const (
 	devicemapperStorageDriver storageDriver = "devicemapper"
 	aufsStorageDriver         storageDriver = "aufs"
 	overlayStorageDriver      storageDriver = "overlay"
+	zfsStorageDriver          storageDriver = "zfs"
 )
 
 type dockerFactory struct {
