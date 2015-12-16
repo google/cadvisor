@@ -22,7 +22,10 @@ import (
 	"github.com/google/cadvisor/info/v1"
 )
 
-const metricLabelPrefix = "io.cadvisor.metric."
+const (
+	metricLabelPrefix   = "io.cadvisor.metric."
+	metricInLabelPrefix = "io.cadvisor.metric-config."
+)
 
 type GenericCollectorManager struct {
 	Collectors         []*collectorData
@@ -42,15 +45,23 @@ func NewCollectorManager() (CollectorManager, error) {
 	}, nil
 }
 
-func GetCollectorConfigs(labels map[string]string) map[string]string {
+func getConfigLabelsWithPrefix(prefix string, labels map[string]string) map[string]string {
 	configs := map[string]string{}
 	for k, v := range labels {
-		if strings.HasPrefix(k, metricLabelPrefix) {
-			name := strings.TrimPrefix(k, metricLabelPrefix)
+		if strings.HasPrefix(k, prefix) {
+			name := strings.TrimPrefix(k, prefix)
 			configs[name] = v
 		}
 	}
 	return configs
+}
+
+func GetCollectorConfigs(labels map[string]string) map[string]string {
+	return getConfigLabelsWithPrefix(metricLabelPrefix, labels)
+}
+
+func GetInLabelCollectorConfigs(labels map[string]string) map[string]string {
+	return getConfigLabelsWithPrefix(metricInLabelPrefix, labels)
 }
 
 func (cm *GenericCollectorManager) RegisterCollector(collector Collector) error {
