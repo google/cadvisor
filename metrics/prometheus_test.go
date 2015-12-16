@@ -58,7 +58,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 				Image:        "test",
 				CreationTime: time.Unix(1257894000, 0),
 				Labels: map[string]string{
-					"foo": "bar",
+					"foo.metric": "bar",
 				},
 			},
 			Stats: []*info.ContainerStats{
@@ -162,7 +162,13 @@ var (
 )
 
 func TestPrometheusCollector(t *testing.T) {
-	prometheus.MustRegister(NewPrometheusCollector(testSubcontainersInfoProvider{}, nil))
+	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(name string) map[string]string {
+		return map[string]string{
+			"zone.name": "hello",
+		}
+	})
+	prometheus.MustRegister(c)
+	defer prometheus.Unregister(c)
 
 	rw := httptest.NewRecorder()
 	prometheus.Handler().ServeHTTP(rw, &http.Request{})

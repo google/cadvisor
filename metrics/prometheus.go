@@ -16,6 +16,7 @@ package metrics
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -508,13 +509,13 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		if c.containerNameToLabels != nil {
 			newLabels := c.containerNameToLabels(name)
 			for k, v := range newLabels {
-				baseLabels = append(baseLabels, k)
+				baseLabels = append(baseLabels, sanitizeLabelName(k))
 				baseLabelValues = append(baseLabelValues, v)
 			}
 		}
 
 		for labelKey, labelValue := range container.Spec.Labels {
-			baseLabels = append(baseLabels, labelKey)
+			baseLabels = append(baseLabels, sanitizeLabelName(labelKey))
 			baseLabelValues = append(baseLabelValues, labelValue)
 		}
 
@@ -575,4 +576,12 @@ func specMemoryValue(v uint64) float64 {
 		return 0
 	}
 	return float64(v)
+}
+
+var invalidLabelCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
+
+// sanitizeLabelName replaces anything that doesn't match
+// client_label.LabelNameRE with an underscore.
+func sanitizeLabelName(name string) string {
+	return invalidLabelCharRE.ReplaceAllString(name, "_")
 }
