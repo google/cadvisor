@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.19.3.3 (2015-12-15)
+- Fix housekeeping_interval flag.
+
 ### 0.19.3.2 (2015-12-04)
 - Fix for #994. Fix goroutine leak in docker container filesystem usage handler.
 
