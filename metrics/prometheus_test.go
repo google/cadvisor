@@ -157,7 +157,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 }
 
 var (
-	includeRe = regexp.MustCompile(`^(?:(?:# HELP |# TYPE)container_|cadvisor_version_info\{)`)
+	includeRe = regexp.MustCompile(`^(?:(?:# HELP |# TYPE )?container_|cadvisor_version_info\{)`)
 	ignoreRe  = regexp.MustCompile(`^container_last_seen\{`)
 )
 
