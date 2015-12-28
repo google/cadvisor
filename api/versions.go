@@ -31,6 +31,7 @@ const (
 	containersApi    = "containers"
 	subcontainersApi = "subcontainers"
 	machineApi       = "machine"
+	machineStatsApi  = "machinestats"
 	dockerApi        = "docker"
 	summaryApi       = "summary"
 	statsApi         = "stats"
@@ -62,6 +63,7 @@ func getApiVersions() []ApiVersion {
 	v1_2 := newVersion1_2(v1_1)
 	v1_3 := newVersion1_3(v1_2)
 	v2_0 := newVersion2_0()
+	v2_1 := newVersion2_1()
 
 	return []ApiVersion{v1_0, v1_1, v1_2, v1_3, v2_0}
 
@@ -446,6 +448,56 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		return writeResult(ps, w)
 	default:
 		return fmt.Errorf("unknown request type %q", requestType)
+	}
+}
+
+type version2_1 struct {
+	baseVersion *version2_0
+}
+
+func newVersion2_1(v *version2_0) *version2_1 {
+	return &version2_1{
+		baseVersion: v,
+	}
+}
+
+func (self *version2_1) Version() string {
+	return "v2.1"
+}
+
+func (self *version2_1) SupportedRequestTypes() []string {
+	return self.baseVersion.SupportedRequestTypes()
+}
+
+func (self *version2_1) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+	// Get the query request.
+	opt, err := getContainerInfoRequest(r.Body)
+	if err != nil {
+		return err
+	}
+
+	switch requestType {
+	case machineStatsApi:
+		glog.V(4).Infof("Api - MachineStats(%v)", request)
+		cont, err := m.GetRequestedContainersInfo("/", opt)
+		if err != nil {
+			return err
+		}
+		return writeResult(convertMachineStats(cont), w)
+	case statsApi:
+		name := getContainerName(request)
+		glog.V(4).Infof("Api - Stats: Looking for stats for container %q, options %+v", name, opt)
+		conts, err := m.GetRequestedContainersInfo(name, opt)
+		if err != nil {
+			return err
+		}
+		contStats := make(map[string][]v2.ContainerStats, 0)
+		for name, cont := range conts {
+			contStats[name] = convertStats(cont)
+		}
+		return writeResult(contStats, w)
+	default:
+		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
 }
 

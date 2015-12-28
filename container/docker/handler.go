@@ -59,9 +59,9 @@ type dockerContainerHandler struct {
 	// Manager of this container's cgroups.
 	cgroupManager cgroups.Manager
 
-	storageDriver storageDriver
-	fsInfo        fs.FsInfo
-	storageDirs   []string
+	storageDriver    storageDriver
+	fsInfo           fs.FsInfo
+	rootfsStorageDir string
 
 	// Time at which this container was created.
 	creationTime time.Time
@@ -118,14 +118,13 @@ func newDockerContainerHandler(
 	id := ContainerNameToDockerId(name)
 
 	// Add the Containers dir where the log files are stored.
-	storageDirs := []string{path.Join(*dockerRootDir, pathToContainersDir, id)}
-
+	otherStorageDir := path.Join(*dockerRootDir, pathToContainersDir, id)
+	var rootfsStorageDir string
 	switch storageDriver {
 	case aufsStorageDriver:
-		// Add writable layer for aufs.
-		storageDirs = append(storageDirs, path.Join(*dockerRootDir, pathToAufsDir, id))
+		rootfsStorageDir = path.Join(*dockerRootDir, pathToAufsDir, id)
 	case overlayStorageDriver:
-		storageDirs = append(storageDirs, path.Join(*dockerRootDir, pathToOverlayDir, id))
+		rootfsStorageDir = path.Join(*dockerRootDir, pathToOverlayDir, id)
 	}
 
 	handler := &dockerContainerHandler{
@@ -138,8 +137,8 @@ func newDockerContainerHandler(
 		storageDriver:      storageDriver,
 		fsInfo:             fsInfo,
 		rootFs:             rootFs,
-		storageDirs:        storageDirs,
-		fsHandler:          newFsHandler(time.Minute, storageDirs, fsInfo),
+		rootfsStorageDir:   rootfsStorageDir,
+		fsHandler:          newFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo),
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -274,9 +273,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 		return nil
 	}
 
-	// As of now we assume that all the storage dirs are on the same device.
-	// The first storage dir will be that of the image layers.
-	deviceInfo, err := self.fsInfo.GetDirFsDevice(self.storageDirs[0])
+	deviceInfo, err := self.fsInfo.GetDirFsDevice(self.rootfsStorageDir)
 	if err != nil {
 		return err
 	}
@@ -296,7 +293,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
 
-	fsStat.Usage = self.fsHandler.usage()
+	fs.Stat.BaseUsage, fsStat.Usage = self.fsHandler.usage()
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 
 	return nil

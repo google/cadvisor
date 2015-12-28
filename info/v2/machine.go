@@ -16,6 +16,8 @@ package v2
 
 import (
 	// TODO(rjnagal): Move structs from v1.
+	"time"
+
 	"github.com/google/cadvisor/info/v1"
 )
 
@@ -85,4 +87,126 @@ func GetAttributes(mi *v1.MachineInfo, vi *v1.VersionInfo) Attributes {
 		CloudProvider:      mi.CloudProvider,
 		InstanceType:       mi.InstanceType,
 	}
+}
+
+// MachineStats contains usage statistics for the entire machine.
+type MachineStats struct {
+	// The time of this stat point.
+	Timestamp time.Time `json:"timestamp"`
+	// In nanoseconds (aggregated)
+	Cpu *v1.CpuStats `json:"cpu,omitempty"`
+	// In nanocores per second (instantaneous)
+	CpuInst *CpuInstStats `json:"cpu_inst,omitempty"`
+	// Disk IO statistics
+	DiskIo *v1.DiskIoStats `json:"diskio,omitempty"`
+	// Memory statistics
+	Memory *v1.MemoryStats `json:"memory,omitempty"`
+	// Network statistics
+	Network *NetworkStats `json:"network,omitempty"`
+	// Filesystem statistics
+	Filesystem []MachineFsStats `json:"filesystem,omitempty"`
+	// Task load statistics
+	Load *v1.LoadStats `json:"load_stats,omitempty"`
+}
+
+// MachineFsStats contains per filesystem capacity and usage information.
+type MachineFsStats struct {
+	// The block device name associated with the filesystem.
+	Device string `json:"device"`
+
+	// Number of bytes that can be consumed on this filesystem.
+	Capacity *uint64 `json:"capacity,omitempty"`
+
+	// Number of bytes that is currently consumed on this filesystem.
+	Usage *uint64 `json:"usage,omitempty"`
+
+	// Number of bytes available for non-root user on this filesystem.
+	Available *uint64 `json:"available,omitempty"`
+
+	// DiskStats for this device.
+	DiskStats `json:"inline"`
+}
+
+// DiskStats contains per partition usage information.
+// This information is only available at the machine level.
+type DiskStats struct {
+	// Number of reads completed
+	// This is the total number of reads completed successfully.
+	ReadsCompleted *uint64 `json:"reads_completed,omitempty"`
+
+	// Number of reads merged
+	// Reads and writes which are adjacent to each other may be merged for
+	// efficiency.  Thus two 4K reads may become one 8K read before it is
+	// ultimately handed to the disk, and so it will be counted (and queued)
+	// as only one I/O.  This field lets you know how often this was done.
+	ReadsMerged *uint64 `json:"reads_merged,omitempty"`
+
+	// Number of sectors read
+	// This is the total number of sectors read successfully.
+	SectorsRead *uint64 `json:"sectors_read,omitempty"`
+
+	// Number of milliseconds spent reading
+	// This is the total number of milliseconds spent by all reads (as
+	// measured from __make_request() to end_that_request_last()).
+	ReadTime *uint64 `json:"read_time,omitempty"`
+
+	// Number of writes completed
+	// This is the total number of writes completed successfully.
+	WritesCompleted *uint64 `json:"writes_completed,omitempty"`
+
+	// Number of writes merged
+	// See the description of reads merged.
+	WritesMerged *uint64 `json:"writes_merged,omitempty"`
+
+	// Number of sectors written
+	// This is the total number of sectors written successfully.
+	SectorsWritten *uint64 `json:"sectors_written,omitempty"`
+
+	// Number of milliseconds spent writing
+	// This is the total number of milliseconds spent by all writes (as
+	// measured from __make_request() to end_that_request_last()).
+	WriteTime *uint64 `json:"write_time,omitempty"`
+
+	// Number of I/Os currently in progress
+	// The only field that should go to zero. Incremented as requests are
+	// given to appropriate struct request_queue and decremented as they finish.
+	IoInProgress *uint64 `json:"io_in_progress,omitempty"`
+
+	// Number of milliseconds spent doing I/Os
+	// This field increases so long as field 9 is nonzero.
+	IoTime *uint64 `json:"io_time,omitempty"`
+
+	// weighted number of milliseconds spent doing I/Os
+	// This field is incremented at each I/O start, I/O completion, I/O
+	// merge, or read of these stats by the number of I/Os in progress
+	// (field 9) times the number of milliseconds spent doing I/O since the
+	// last update of this field.  This can provide an easy measure of both
+	// I/O completion time and the backlog that may be accumulating.
+	WeightedIoTime *uint64 `json:"weighted_io_time,omitempty"`
+}
+
+func GetMachineFsStats(fsStats []v1.FsStats) []MachineFsStats {
+	var result []MachineFsStats
+	for _, stat := range fsStats {
+		result = append(result, MachineFsStats{
+			Device:    stat.Device,
+			Capacity:  &stat.Limit,
+			Usage:     &stat.Usage,
+			Available: &stat.Available,
+			DiskStats: DiskStats{
+				ReadsCompleted:  &stat.ReadsCompleted,
+				ReadsMerged:     &stat.ReadsMerged,
+				SectorsRead:     &stat.SectorsRead,
+				ReadTime:        &stat.ReadTime,
+				WritesCompleted: &stat.WritesCompleted,
+				WritesMerged:    &stat.WritesMerged,
+				SectorsWritten:  &stat.SectorsWritten,
+				WriteTime:       &stat.WriteTime,
+				IoInProgress:    &stat.IoInProgress,
+				IoTime:          &stat.IoTime,
+				WeightedIoTime:  &stat.WeightedIoTime,
+			},
+		})
+	}
+	return result
 }
