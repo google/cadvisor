@@ -103,7 +103,7 @@ func (self *elasticStorage) AddStats(ref info.ContainerReference, stats *info.Co
 			Do()
 		if err != nil {
 			// Handle error
-			fmt.Errorf("failed to write stats to ElasticSearch - %s", err)
+			fmt.Printf("failed to write stats to ElasticSearch - %s", err)
 			return
 		}
 	}()
