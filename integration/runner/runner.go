@@ -120,7 +120,10 @@ func PushAndRunTests(host, testDir string) error {
 	glog.Infof("Running integration tests targeting %q...", host)
 
 	// Only retry on test failures caused by these known flaky failure conditions
-	retryRegex := regexp.MustCompile("Network tx and rx bytes should not be equal")
+	retryStrings := []string{
+		"Network tx and rx bytes should not be equal",
+		"Network tx and rx packets should not be equal"}
+	retryRegex := regexp.MustCompile(strings.Join(retryStrings, "|"))
 	for i := 0; i <= *testRetryCount; i++ {
 		// Check if this is a retry
 		if i > 0 {
@@ -135,9 +138,11 @@ func PushAndRunTests(host, testDir string) error {
 		}
 		if !retryRegex.Match([]byte(err.Error())) {
 			// If error not in whitelist, break out of loop
+			glog.Warningf("Skipping retry for tests on host %s because error is not whitelisted: %s", *testRetryCount, host, err.Error())
 			break
 		}
 	}
+
 	if err != nil {
 		err = fmt.Errorf("error on host %s: %v", host, err)
 	}
