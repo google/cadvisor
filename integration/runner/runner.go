@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -117,6 +118,9 @@ func PushAndRunTests(host, testDir string) error {
 
 	// Run the tests in a retry loop.
 	glog.Infof("Running integration tests targeting %q...", host)
+
+	// Only retry on test failures caused by these known flaky failure conditions
+	retryRegex := regexp.MustCompile("Network tx and rx bytes should not be equal")
 	for i := 0; i <= *testRetryCount; i++ {
 		// Check if this is a retry
 		if i > 0 {
@@ -127,6 +131,10 @@ func PushAndRunTests(host, testDir string) error {
 		err = RunCommand("godep", "go", "test", "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr)
 		if err == nil {
 			// On success, break out of retry loop
+			break
+		}
+		if !retryRegex.Match([]byte(err.Error())) {
+			// If error not in whitelist, break out of loop
 			break
 		}
 	}
