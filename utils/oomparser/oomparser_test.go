@@ -16,8 +16,10 @@ package oomparser
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -92,7 +94,8 @@ func TestGetProcessNamePid(t *testing.T) {
 	}
 
 	const longForm = "Jan _2 15:04:05 2006"
-	correctTime, err := time.ParseInLocation(longForm, "Jan 21 22:01:49 2015", time.Local)
+	stringYear := strconv.Itoa(time.Now().Year())
+	correctTime, err := time.ParseInLocation(longForm, fmt.Sprintf("Jan 21 22:01:49 %s", stringYear), time.Local)
 	couldParseLine, err = getProcessNamePid(endLine, currentOomInstance)
 	if err != nil {
 		t.Errorf("good line fed to getProcessNamePid should yield no error, but had error %v", err)
