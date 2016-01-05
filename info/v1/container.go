@@ -306,7 +306,9 @@ type MemoryStats struct {
 	// Units: Bytes.
 	Usage uint64 `json:"usage"`
 
-	// Stats
+	// Various statistics reported in memory.stat in cgroupfs. See the section
+	// "5.2 stat file" of https://www.kernel.org/doc/Documentation/cgroups/memory.txt
+	// for details.
 	Stats map[string]uint64 `json:"stats"`
 
 	// The amount of working set memory, this includes recently accessed memory,
