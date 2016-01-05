@@ -49,7 +49,7 @@ var dockerCgroupRegexp = regexp.MustCompile(`.+-([a-z0-9]{64})\.scope$`)
 
 var noSystemd = flag.Bool("nosystemd", false, "Explicitly disable systemd support for Docker containers")
 
-var dockerMetadataEnvs = flag.String("docker_metadata_env", "", "Comma seperated list with names of env variables, which will be exported as metadata (default: empty)")
+var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys that needs to be collected for docker containers")
 
 // TODO(vmarmol): Export run dir too for newer Dockers.
 // Directory holding Docker container state information.
@@ -120,7 +120,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		return
 	}
 
-	exposedMetadata := strings.Split(*dockerMetadataEnvs, ",")
+	metadataEnvs := strings.Split(*dockerEnvWhitelist, ",")
 
 	handler, err = newDockerContainerHandler(
 		client,
@@ -130,7 +130,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.storageDriver,
 		&self.cgroupSubsystems,
 		inHostNamespace,
-		exposedMetadata,
+		metadataEnvs,
 	)
 	return
 }

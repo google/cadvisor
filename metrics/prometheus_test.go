@@ -58,7 +58,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 				Image:        "test",
 				CreationTime: time.Unix(1257894000, 0),
 				Labels: map[string]string{
-					"foo.metric": "bar",
+					"foo.label": "bar",
+				},
+				Envs: map[string]string{
+					"foo+env": "prod",
 				},
 			},
 			Stats: []*info.ContainerStats{
