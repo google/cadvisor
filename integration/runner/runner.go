@@ -121,7 +121,6 @@ func PushAndRunTests(host, testDir string) error {
 
 	// Run the tests in a retry loop.
 	glog.Infof("Running integration tests targeting %q...", host)
-
 	for i := 0; i <= *testRetryCount; i++ {
 		// Check if this is a retry
 		if i > 0 {
@@ -141,7 +140,6 @@ func PushAndRunTests(host, testDir string) error {
 			break
 		}
 	}
-
 	if err != nil {
 		err = fmt.Errorf("error on host %s: %v", host, err)
 	}
