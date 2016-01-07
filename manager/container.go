@@ -43,7 +43,7 @@ import (
 // Housekeeping interval.
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 
-var cgroupPathRegExp = regexp.MustCompile(`.*devices.*:(.*?)[,;$].*`)
+var cgroupPathRegExp = regexp.MustCompile(`devices[^:]*:(.*?)[,;$]`)
 
 type containerInfo struct {
 	info.ContainerReference

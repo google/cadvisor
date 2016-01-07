@@ -37,6 +37,7 @@ const cadvisorBinary = "cadvisor"
 
 var cadvisorTimeout = flag.Duration("cadvisor_timeout", 15*time.Second, "Time to wait for cAdvisor to come up on the remote host")
 var port = flag.Int("port", 8080, "Port in which to start cAdvisor in the remote host")
+var testRetryCount = flag.Int("test-retry-count", 3, "Number of times to retry failed tests before failing.")
 
 func RunCommand(cmd string, args ...string) error {
 	output, err := exec.Command(cmd, args...).CombinedOutput()
@@ -114,14 +115,26 @@ func PushAndRunTests(host, testDir string) error {
 		return fmt.Errorf("timed out waiting for cAdvisor to come up at host %q", host)
 	}
 
-	// Run the tests.
+	// Run the tests in a retry loop.
 	glog.Infof("Running integration tests targeting %q...", host)
-	err = RunCommand("godep", "go", "test", "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr)
+	for i := 0; i <= *testRetryCount; i++ {
+		// Check if this is a retry
+		if i > 0 {
+			time.Sleep(time.Second * 15) // Wait 15 seconds before retrying
+			glog.Warningf("Retrying (%d of %d) tests on host %s due to error %v", i, *testRetryCount, host, err)
+		}
+		// Run the command
+		err = RunCommand("godep", "go", "test", "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr)
+		if err == nil {
+			// On success, break out of retry loop
+			break
+		}
+	}
 	if err != nil {
-		return err
+		err = fmt.Errorf("error on host %s: %v", host, err)
 	}
 
-	return nil
+	return err
 }
 
 func Run() error {

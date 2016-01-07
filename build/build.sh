@@ -29,12 +29,12 @@ if [ "$(go env GOOS)" = "windows" ]; then
 fi
 
 ldflags="
-  -X ${repo_path}/version.Version ${version}
-  -X ${repo_path}/version.Revision ${revision}
-  -X ${repo_path}/version.Branch ${branch}
-  -X ${repo_path}/version.BuildUser ${USER}@${host}
-  -X ${repo_path}/version.BuildDate ${build_date}
-  -X ${repo_path}/version.GoVersion ${go_version}"
+  -X ${repo_path}/version.Version=${version}
+  -X ${repo_path}/version.Revision=${revision}
+  -X ${repo_path}/version.Branch=${branch}
+  -X ${repo_path}/version.BuildUser=${USER}@${host}
+  -X ${repo_path}/version.BuildDate=${build_date}
+  -X ${repo_path}/version.GoVersion=${go_version}"
 
 echo " >   cadvisor"
 godep go build -ldflags "${ldflags}" -o cadvisor${ext} ${repo_path}
