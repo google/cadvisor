@@ -16,8 +16,8 @@ package influxdb
 
 import (
 	"fmt"
-	"os"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 
