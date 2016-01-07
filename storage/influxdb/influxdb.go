@@ -353,27 +353,17 @@ func checkResponseForErrors(response *influxdb.Response) error {
 
 // Some stats have type unsigned integer, but the InfluxDB client accepts only signed integers.
 func toSignedIfUnsigned(value interface{}) interface{} {
-	switch value.(type) {
+	switch v := value.(type) {
 	case uint64:
-		if v, ok := value.(uint64); ok {
-			return int64(v)
-		}
+		return int64(v)
 	case uint32:
-		if v, ok := value.(uint32); ok {
-			return int32(v)
-		}
+		return int32(v)
 	case uint16:
-		if v, ok := value.(uint16); ok {
-			return int16(v)
-		}
+		return int16(v)
 	case uint8:
-		if v, ok := value.(uint8); ok {
-			return int8(v)
-		}
+		return int8(v)
 	case uint:
-		if v, ok := value.(uint); ok {
-			return int(v)
-		}
+		return int(v)
 	}
 	return value
 }
