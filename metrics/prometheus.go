@@ -130,7 +130,7 @@ func NewPrometheusCollector(infoProvider infoProvider, f ContainerNameToLabelsFu
 				name:        "container_memory_stats",
 				help:        `Various memory statistics. See the section "5.2 stat file" of https://www.kernel.org/doc/Documentation/cgroups/memory.txt for details`,
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"stat_name"},
+				extraLabels: []string{"name"},
 				getValues: func(s *info.ContainerStats) metricValues {
 					values := make(metricValues, 0, len(s.Memory.Stats))
 					for key, value := range s.Memory.Stats {
