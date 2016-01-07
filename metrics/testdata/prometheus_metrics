@@ -77,6 +77,10 @@ container_memory_failures_total{id="testcontainer",image="test",name="testcontai
 container_memory_failures_total{id="testcontainer",image="test",name="testcontaineralias",scope="container",type="pgmajfault"} 11
 container_memory_failures_total{id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",type="pgfault"} 12
 container_memory_failures_total{id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",type="pgmajfault"} 13
+# HELP container_memory_stats Various memory statistics. See the section "5.2 stat file" of https://www.kernel.org/doc/Documentation/cgroups/memory.txt for details
+# TYPE container_memory_stats gauge
+container_memory_stats{id="testcontainer",image="test",name="testcontaineralias",name="cache"} 14
+container_memory_stats{id="testcontainer",image="test",name="testcontaineralias",name="rss"} 15
 # HELP container_memory_usage_bytes Current memory usage in bytes.
 # TYPE container_memory_usage_bytes gauge
 container_memory_usage_bytes{id="testcontainer",image="test",name="testcontaineralias"} 8
