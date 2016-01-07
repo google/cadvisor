@@ -92,9 +92,9 @@ func new() (storage.StorageDriver, error) {
 
 // Field names
 const (
-	fieldValue    string = "value"
-	fieldType     string = "type"
-	fieldInstance string = "instance"
+	fieldValue  string = "value"
+	fieldType   string = "type"
+	fieldDevice string = "device"
 )
 
 // Tag names
@@ -111,8 +111,8 @@ func (self *influxdbStorage) containerFilesystemStatsToPoints(
 	}
 	for _, fsStat := range stats.Filesystem {
 		tagsFsUsage := map[string]string{
-			fieldInstance: fsStat.Device,
-			fieldType:     "usage",
+			fieldDevice: fsStat.Device,
+			fieldType:   "usage",
 		}
 		fieldsFsUsage := map[string]interface{}{
 			fieldValue: int64(fsStat.Usage),
@@ -124,8 +124,8 @@ func (self *influxdbStorage) containerFilesystemStatsToPoints(
 		}
 
 		tagsFsLimit := map[string]string{
-			fieldInstance: fsStat.Device,
-			fieldType:     "limit",
+			fieldDevice: fsStat.Device,
+			fieldType:   "limit",
 		}
 		fieldsFsLimit := map[string]interface{}{
 			fieldValue: int64(fsStat.Limit),
