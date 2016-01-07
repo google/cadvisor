@@ -205,8 +205,8 @@ func Run() error {
 	return nil
 }
 
-// initWhiltelist initializes the whitelist of test failures that can be retried.
-func initWhitelist() {
+// initRetryWhitelist initializes the whitelist of test failures that can be retried.
+func initRetryWhitelist() {
 	if *testRetryWhitelist == "" {
 		return
 	}
@@ -238,7 +238,7 @@ func main() {
 	if len(flag.Args()) == 0 {
 		glog.Fatalf("USAGE: runner <hosts to test>")
 	}
-	initWhitelist()
+	initRetryWhitelist()
 
 	// Run the tests.
 	err := Run()
