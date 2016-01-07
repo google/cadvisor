@@ -92,6 +92,11 @@
 			"Rev": "9eab56311373ee6f788ae5dfc87e2240038f0eb4"
 		},
 		{
+			"ImportPath": "github.com/influxdb/influxdb/models",
+			"Comment": "v0.9.5.1",
+			"Rev": "9eab56311373ee6f788ae5dfc87e2240038f0eb4"
+		},
+		{
 			"ImportPath": "github.com/kr/pretty",
 			"Comment": "go.weekly.2011-12-22-20-g088c856",
 			"Rev": "088c856450c08c03eb32f7a6c221e6eefaa10e6f"
