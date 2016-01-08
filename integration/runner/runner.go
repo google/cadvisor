@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"flag"
@@ -23,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -38,6 +40,8 @@ const cadvisorBinary = "cadvisor"
 var cadvisorTimeout = flag.Duration("cadvisor_timeout", 15*time.Second, "Time to wait for cAdvisor to come up on the remote host")
 var port = flag.Int("port", 8080, "Port in which to start cAdvisor in the remote host")
 var testRetryCount = flag.Int("test-retry-count", 3, "Number of times to retry failed tests before failing.")
+var testRetryWhitelist = flag.String("test-retry-whitelist", "", "Path to newline separated list of regexexp for test failures that should be retried.  If empty, no tests are retried.")
+var retryRegex *regexp.Regexp
 
 func RunCommand(cmd string, args ...string) error {
 	output, err := exec.Command(cmd, args...).CombinedOutput()
@@ -129,6 +133,12 @@ func PushAndRunTests(host, testDir string) error {
 			// On success, break out of retry loop
 			break
 		}
+
+		// Only retry on test failures caused by these known flaky failure conditions
+		if retryRegex == nil || !retryRegex.Match([]byte(err.Error())) {
+			glog.Warningf("Skipping retry for tests on host %s because error is not whitelisted: %s", host, err.Error())
+			break
+		}
 	}
 	if err != nil {
 		err = fmt.Errorf("error on host %s: %v", host, err)
@@ -195,6 +205,32 @@ func Run() error {
 	return nil
 }
 
+// initRetryWhitelist initializes the whitelist of test failures that can be retried.
+func initRetryWhitelist() {
+	if *testRetryWhitelist == "" {
+		return
+	}
+
+	file, err := os.Open(*testRetryWhitelist)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	defer file.Close()
+
+	retryStrings := []string{}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		text := scanner.Text()
+		if text != "" {
+			retryStrings = append(retryStrings, text)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		glog.Fatal(err)
+	}
+	retryRegex = regexp.MustCompile(strings.Join(retryStrings, "|"))
+}
+
 func main() {
 	flag.Parse()
 
@@ -202,6 +238,7 @@ func main() {
 	if len(flag.Args()) == 0 {
 		glog.Fatalf("USAGE: runner <hosts to test>")
 	}
+	initRetryWhitelist()
 
 	// Run the tests.
 	err := Run()
