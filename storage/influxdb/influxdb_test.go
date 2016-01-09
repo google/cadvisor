@@ -107,6 +107,7 @@ func (self *influxDbTestStorageDriver) StatsEq(a, b *info.ContainerStats) bool {
 
 func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bufferCount int) {
 	machineName := "machineA"
+	table := "cadvisor_table"
 	database := "cadvisor_test"
 	username := "root"
 	password := "root"
@@ -131,7 +132,8 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	// Delete all data by the end of the call.
 	//defer client.Query(influxdb.Query{Command: fmt.Sprintf("drop database \"%v\"", database)})
 
-	driver, err := New(machineName,
+	driver, err := newStorage(machineName,
+		table,
 		database,
 		username,
 		password,
@@ -150,7 +152,8 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	test.StorageDriverFillRandomStatsFunc("containerOnSameMachine", 100, testDriver, t)
 
 	// Generate another container's data on another machine.
-	driverForAnotherMachine, err := New("machineB",
+	driverForAnotherMachine, err := newStorage("machineB",
+		table,
 		database,
 		username,
 		password,
@@ -198,12 +201,14 @@ func TestContainerFileSystemStatsToPoints(t *testing.T) {
 	assert := assert.New(t)
 
 	machineName := "testMachine"
+	table := "cadvisor_table"
 	database := "cadvisor_test"
 	username := "root"
 	password := "root"
 	influxdbHost := "localhost:8086"
 
-	storage, err := New(machineName,
+	storage, err := newStorage(machineName,
+		table,
 		database,
 		username,
 		password,
@@ -267,12 +272,14 @@ func assertContainsPointWithValue(t *testing.T, points []*influxdb.Point, name s
 
 func createTestStorage() (*influxdbStorage, error) {
 	machineName := "testMachine"
+	table := "cadvisor_table"
 	database := "cadvisor_test"
 	username := "root"
 	password := "root"
 	influxdbHost := "localhost:8086"
 
-	storage, err := New(machineName,
+	storage, err := newStorage(machineName,
+		table,
 		database,
 		username,
 		password,
