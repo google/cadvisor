@@ -61,30 +61,8 @@ func (self *influxDbTestStorageDriver) StatsEq(a, b *info.ContainerStats) bool {
 		return false
 	}
 	// Check only the stats populated in influxdb.
-	if a.Cpu.Usage.Total != b.Cpu.Usage.Total {
+	if !reflect.DeepEqual(a.Cpu.Usage, b.Cpu.Usage) {
 		return false
-	}
-	if a.Cpu.Usage.System != b.Cpu.Usage.System {
-		return false
-	}
-	if a.Cpu.Usage.User != b.Cpu.Usage.User {
-		return false
-	}
-
-	// TODO simpler way to check if arrays are equal?
-	if a.Cpu.Usage.PerCpu == nil && b.Cpu.Usage.PerCpu != nil {
-		return false
-	}
-	if a.Cpu.Usage.PerCpu != nil && b.Cpu.Usage.PerCpu == nil {
-		return false
-	}
-	if len(a.Cpu.Usage.PerCpu) != len(b.Cpu.Usage.PerCpu) {
-		return false
-	}
-	for i, usage := range a.Cpu.Usage.PerCpu {
-		if usage != b.Cpu.Usage.PerCpu[i] {
-			return false
-		}
 	}
 
 	if a.Memory.Usage != b.Memory.Usage {
