@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	v1 "github.com/google/cadvisor/info/v1"
-	info "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/info/v2"
 )
 
 // Client represents the base URL for a cAdvisor client.
@@ -40,7 +40,7 @@ func NewClient(url string) (*Client, error) {
 	}
 
 	return &Client{
-		baseUrl: fmt.Sprintf("%sapi/v2.0/", url),
+		baseUrl: fmt.Sprintf("%sapi/v2.1/", url),
 	}, nil
 }
 
@@ -57,6 +57,16 @@ func (self *Client) MachineInfo() (minfo *v1.MachineInfo, err error) {
 	return
 }
 
+// MachineStats returns the JSON machine statistics for this client.
+// A non-nil error result indicates a problem with obtaining
+// the JSON machine information data.
+func (self *Client) MachineStats() ([]v2.MachineStats, error) {
+	var ret []v2.MachineStats
+	u := self.machineStatsUrl()
+	err := self.httpGetJsonData(&ret, nil, u, "machine stats")
+	return ret, err
+}
+
 // VersionInfo returns the version info for cAdvisor.
 func (self *Client) VersionInfo() (version string, err error) {
 	u := self.versionInfoUrl()
@@ -65,9 +75,9 @@ func (self *Client) VersionInfo() (version string, err error) {
 }
 
 // Attributes returns hardware and software attributes of the machine.
-func (self *Client) Attributes() (attr *info.Attributes, err error) {
+func (self *Client) Attributes() (attr *v2.Attributes, err error) {
 	u := self.attributesUrl()
-	ret := new(info.Attributes)
+	ret := new(v2.Attributes)
 	if err = self.httpGetJsonData(ret, nil, u, "attributes"); err != nil {
 		return
 	}
@@ -77,6 +87,10 @@ func (self *Client) Attributes() (attr *info.Attributes, err error) {
 
 func (self *Client) machineInfoUrl() string {
 	return self.baseUrl + path.Join("machine")
+}
+
+func (self *Client) machineStatsUrl() string {
+	return self.baseUrl + path.Join("machinestats")
 }
 
 func (self *Client) versionInfoUrl() string {

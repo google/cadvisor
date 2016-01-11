@@ -73,7 +73,12 @@ func MachineStatsFromV1(cont *v1.ContainerInfo) []MachineStats {
 			stat.Memory = &val.Memory
 		}
 		if cont.Spec.HasNetwork {
-			stat.Network.Interfaces = val.Network.Interfaces
+			stat.Network = &NetworkStats{
+				// FIXME: Use reflection instead.
+				Tcp:        TcpStat(val.Network.Tcp),
+				Tcp6:       TcpStat(val.Network.Tcp6),
+				Interfaces: val.Network.Interfaces,
+			}
 		}
 		if cont.Spec.HasFilesystem {
 			stat.Filesystem = machineFsStatsFromV1(val.Filesystem)

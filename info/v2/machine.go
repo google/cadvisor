@@ -143,7 +143,7 @@ type DiskStats struct {
 	// This is the total number of sectors read successfully.
 	SectorsRead *uint64 `json:"sectors_read,omitempty"`
 
-	// Number of milliseconds spent reading
+	// Time spent reading
 	// This is the total number of milliseconds spent by all reads (as
 	// measured from __make_request() to end_that_request_last()).
 	ReadDuration *time.Duration `json:"read_duration,omitempty"`
@@ -160,7 +160,7 @@ type DiskStats struct {
 	// This is the total number of sectors written successfully.
 	SectorsWritten *uint64 `json:"sectors_written,omitempty"`
 
-	// Number of milliseconds spent writing
+	// Time spent writing
 	// This is the total number of milliseconds spent by all writes (as
 	// measured from __make_request() to end_that_request_last()).
 	WriteDuration *time.Duration `json:"write_duration,omitempty"`
@@ -170,11 +170,11 @@ type DiskStats struct {
 	// given to appropriate struct request_queue and decremented as they finish.
 	IoInProgress *uint64 `json:"io_in_progress,omitempty"`
 
-	// Number of milliseconds spent doing I/Os
+	// Time spent doing I/Os
 	// This field increases so long as field 9 is nonzero.
 	IoDuration *time.Duration `json:"io_duration,omitempty"`
 
-	// weighted number of milliseconds spent doing I/Os
+	// weighted time spent doing I/Os
 	// This field is incremented at each I/O start, I/O completion, I/O
 	// merge, or read of these stats by the number of I/Os in progress
 	// (field 9) times the number of milliseconds spent doing I/O since the
