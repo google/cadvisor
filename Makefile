@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 
 GO := godep go
-pkgs  = $(shell $(GO) list ./...)
+docker_tag = $(shell build/what-tag.sh)
+pkgs = $(shell $(GO) list ./...)
 
 all: format build test
 
-test:
+deps:
+	go get github.com/tools/godep
+
+test: deps
 	@echo ">> running tests"
 	@$(GO) test -short $(pkgs)
 
-format:
+format: deps
 	@echo ">> formatting code"
 	@$(GO) fmt $(pkgs)
 
@@ -28,14 +32,17 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
-build:
+build: deps
 	@echo ">> building binaries"
 	@./build/build.sh
 
 release: build
 	@./build/release.sh
 
-docker:
-	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
+docker-build: all
+	@docker build -t google/cadvisor:$(docker_tag) .
 
-.PHONY: all format build test vet docker
+docker-push: docker-build
+	@docker push google/cadvisor:$(docker_tag)
+
+.PHONY: all format build test vet docker-build docker-push deps
