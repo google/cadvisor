@@ -26,7 +26,7 @@ import (
 
 type fsHandler interface {
 	start()
-	usage() uint64
+	usage() (uint64, uint64)
 	stop()
 }
 
@@ -36,8 +36,8 @@ type realFsHandler struct {
 	usageBytes     uint64
 	baseUsageBytes uint64
 	period         time.Duration
-	writable       string
-	other          string
+	rootfs         string
+	extraDir       string
 	fsInfo         fs.FsInfo
 	// Tells the container to stop.
 	stopChan chan struct{}
@@ -47,14 +47,14 @@ const longDu = time.Second
 
 var _ fsHandler = &realFsHandler{}
 
-func newFsHandler(period time.Duration, rootfs, other string, fsInfo fs.FsInfo) fsHandler {
+func newFsHandler(period time.Duration, rootfs, extraDir string, fsInfo fs.FsInfo) fsHandler {
 	return &realFsHandler{
 		lastUpdate:     time.Time{},
 		usageBytes:     0,
 		baseUsageBytes: 0,
 		period:         period,
 		rootfs:         rootfs,
-		other:          other,
+		extraDir:       extraDir,
 		fsInfo:         fsInfo,
 		stopChan:       make(chan struct{}, 1),
 	}
@@ -71,7 +71,7 @@ func (fh *realFsHandler) update() error {
 		return err
 	}
 
-	otherUsage, error := fh.fsInfo.GetDirUsage(fh.other)
+	extraDirUsage, err := fh.fsInfo.GetDirUsage(fh.extraDir)
 	if err != nil {
 		return err
 	}
@@ -79,8 +79,8 @@ func (fh *realFsHandler) update() error {
 	fh.Lock()
 	defer fh.Unlock()
 	fh.lastUpdate = time.Now()
-	fh.usageBytes = baseUsage + otherUsage
-	fh.baseUsage = baseUsage
+	fh.usageBytes = baseUsage + extraDirUsage
+	fh.baseUsageBytes = baseUsage
 	return nil
 }
 
@@ -97,7 +97,7 @@ func (fh *realFsHandler) trackUsage() {
 			}
 			duration := time.Since(start)
 			if duration > longDu {
-				glog.V(3).Infof("`du` on following dirs took %v: %v", duration, fh.storageDirs)
+				glog.V(3).Infof("`du` on following dirs took %v: %v", duration, []string{fh.rootfs, fh.extraDir})
 			}
 		}
 	}

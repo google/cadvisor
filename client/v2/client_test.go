@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	info "github.com/google/cadvisor/info/v1"
 	infoV2 "github.com/google/cadvisor/info/v2"
@@ -152,6 +153,39 @@ func TestGetAttributes(t *testing.T) {
 	}
 	if !reflect.DeepEqual(returned, attr) {
 		t.Fatalf("received unexpected attributes")
+	}
+}
+
+// TestMachineStats performs one test to check if MachineStats()
+// in a cAdvisor client returns the correct result.
+func TestMachineStats(t *testing.T) {
+	machineStats := []v2.MachineStats{
+		{
+			Timestamp: time.Now(),
+			Cpu: &v1.CpuStats{
+				Usage: v1.CpuUsage{
+					Total: 100000,
+				},
+				LoadAverage: 10,
+			},
+			Filesystem: []v2.MachineFsStats{
+				{
+					Device: "sda1",
+				},
+			},
+		},
+	}
+	client, server, err := cadvisorTestClient("/api/v2.1/machinestats", nil, &machineStats, t)
+	if err != nil {
+		t.Fatalf("unable to get a client %v", err)
+	}
+	defer server.Close()
+	returned, err := client.MachineStats()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(returned, machineStats) {
+		t.Fatalf("received unexpected machine stats\nExp: %v\nAct: %v", machineStats, returned)
 	}
 }
 

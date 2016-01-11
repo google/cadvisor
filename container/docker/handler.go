@@ -293,7 +293,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
 
-	fs.Stat.BaseUsage, fsStat.Usage = self.fsHandler.usage()
+	fsStat.BaseUsage, fsStat.Usage = self.fsHandler.usage()
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 
 	return nil

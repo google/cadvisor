@@ -97,8 +97,6 @@ type MachineStats struct {
 	Cpu *v1.CpuStats `json:"cpu,omitempty"`
 	// In nanocores per second (instantaneous)
 	CpuInst *CpuInstStats `json:"cpu_inst,omitempty"`
-	// Disk IO statistics
-	DiskIo *v1.DiskIoStats `json:"diskio,omitempty"`
 	// Memory statistics
 	Memory *v1.MemoryStats `json:"memory,omitempty"`
 	// Network statistics
@@ -148,7 +146,7 @@ type DiskStats struct {
 	// Number of milliseconds spent reading
 	// This is the total number of milliseconds spent by all reads (as
 	// measured from __make_request() to end_that_request_last()).
-	ReadTime *uint64 `json:"read_time,omitempty"`
+	ReadDuration *time.Duration `json:"read_duration,omitempty"`
 
 	// Number of writes completed
 	// This is the total number of writes completed successfully.
@@ -165,7 +163,7 @@ type DiskStats struct {
 	// Number of milliseconds spent writing
 	// This is the total number of milliseconds spent by all writes (as
 	// measured from __make_request() to end_that_request_last()).
-	WriteTime *uint64 `json:"write_time,omitempty"`
+	WriteDuration *time.Duration `json:"write_duration,omitempty"`
 
 	// Number of I/Os currently in progress
 	// The only field that should go to zero. Incremented as requests are
@@ -174,7 +172,7 @@ type DiskStats struct {
 
 	// Number of milliseconds spent doing I/Os
 	// This field increases so long as field 9 is nonzero.
-	IoTime *uint64 `json:"io_time,omitempty"`
+	IoDuration *time.Duration `json:"io_duration,omitempty"`
 
 	// weighted number of milliseconds spent doing I/Os
 	// This field is incremented at each I/O start, I/O completion, I/O
@@ -182,31 +180,5 @@ type DiskStats struct {
 	// (field 9) times the number of milliseconds spent doing I/O since the
 	// last update of this field.  This can provide an easy measure of both
 	// I/O completion time and the backlog that may be accumulating.
-	WeightedIoTime *uint64 `json:"weighted_io_time,omitempty"`
-}
-
-func GetMachineFsStats(fsStats []v1.FsStats) []MachineFsStats {
-	var result []MachineFsStats
-	for _, stat := range fsStats {
-		result = append(result, MachineFsStats{
-			Device:    stat.Device,
-			Capacity:  &stat.Limit,
-			Usage:     &stat.Usage,
-			Available: &stat.Available,
-			DiskStats: DiskStats{
-				ReadsCompleted:  &stat.ReadsCompleted,
-				ReadsMerged:     &stat.ReadsMerged,
-				SectorsRead:     &stat.SectorsRead,
-				ReadTime:        &stat.ReadTime,
-				WritesCompleted: &stat.WritesCompleted,
-				WritesMerged:    &stat.WritesMerged,
-				SectorsWritten:  &stat.SectorsWritten,
-				WriteTime:       &stat.WriteTime,
-				IoInProgress:    &stat.IoInProgress,
-				IoTime:          &stat.IoTime,
-				WeightedIoTime:  &stat.WeightedIoTime,
-			},
-		})
-	}
-	return result
+	WeightedIoDuration *time.Duration `json:"weighted_io_duration,omitempty"`
 }

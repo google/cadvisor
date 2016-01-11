@@ -424,7 +424,7 @@ func (self *manager) GetContainerInfoV2(containerName string, options v2.Request
 
 		infos[name] = v2.ContainerInfo{
 			Spec:  self.getV2Spec(cinfo),
-			Stats: v2.ContainerStatsFromV1(stats, &cinfo.Spec),
+			Stats: v2.ContainerStatsFromV1(&cinfo.Spec, stats),
 		}
 	}
 
