@@ -79,6 +79,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							Pgfault:    12,
 							Pgmajfault: 13,
 						},
+						Stats: map[string]uint64{
+							"cache": 14,
+							"rss":   15,
+						},
 					},
 					Network: info.NetworkStats{
 						InterfaceStats: info.InterfaceStats{
