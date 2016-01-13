@@ -66,8 +66,9 @@ type dockerContainerHandler struct {
 	// Time at which this container was created.
 	creationTime time.Time
 
-	// Metadata labels associated with the container.
+	// Metadata associated with the container.
 	labels map[string]string
+	envs   map[string]string
 
 	// The container PID used to switch namespaces as required
 	pid int
@@ -93,6 +94,7 @@ func newDockerContainerHandler(
 	storageDriver storageDriver,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
+	metadataEnvs []string,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
@@ -156,6 +158,16 @@ func newDockerContainerHandler(
 	handler.labels = ctnr.Config.Labels
 	handler.image = ctnr.Config.Image
 	handler.networkMode = ctnr.HostConfig.NetworkMode
+
+	// split env vars to get metadata map.
+	for _, exposedEnv := range metadataEnvs {
+		for _, envVar := range ctnr.Config.Env {
+			splits := strings.SplitN(envVar, "=", 2)
+			if splits[0] == exposedEnv {
+				handler.envs[strings.ToLower(exposedEnv)] = splits[1]
+			}
+		}
+	}
 
 	return handler, nil
 }
@@ -246,6 +258,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	}
 
 	spec.Labels = self.labels
+	spec.Envs = self.envs
 	spec.Image = self.image
 	spec.HasNetwork = hasNet(self.networkMode)
 

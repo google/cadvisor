@@ -45,6 +45,8 @@ type ContainerSpec struct {
 
 	// Metadata labels associated with this container.
 	Labels map[string]string `json:"labels,omitempty"`
+	// Metadata envs associated with this container. Only whitelisted envs are added.
+	Envs map[string]string `json:"envs,omitempty"`
 
 	HasCpu bool    `json:"has_cpu"`
 	Cpu    CpuSpec `json:"cpu,omitempty"`

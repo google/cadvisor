@@ -57,6 +57,12 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 			Spec: info.ContainerSpec{
 				Image:        "test",
 				CreationTime: time.Unix(1257894000, 0),
+				Labels: map[string]string{
+					"foo.label": "bar",
+				},
+				Envs: map[string]string{
+					"foo+env": "prod",
+				},
 			},
 			Stats: []*info.ContainerStats{
 				{
@@ -154,12 +160,18 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 }
 
 var (
-	includeRe = regexp.MustCompile(`^(?:(?:# HELP |# TYPE)container_|cadvisor_version_info\{)`)
+	includeRe = regexp.MustCompile(`^(?:(?:# HELP |# TYPE )?container_|cadvisor_version_info\{)`)
 	ignoreRe  = regexp.MustCompile(`^container_last_seen\{`)
 )
 
 func TestPrometheusCollector(t *testing.T) {
-	prometheus.MustRegister(NewPrometheusCollector(testSubcontainersInfoProvider{}, nil))
+	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(name string) map[string]string {
+		return map[string]string{
+			"zone.name": "hello",
+		}
+	})
+	prometheus.MustRegister(c)
+	defer prometheus.Unregister(c)
 
 	rw := httptest.NewRecorder()
 	prometheus.Handler().ServeHTTP(rw, &http.Request{})
