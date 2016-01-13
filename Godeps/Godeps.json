@@ -117,9 +117,18 @@
 			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
 		},
 		{
+			"ImportPath": "github.com/mistifyio/go-zfs",
+			"Comment": "v2.1.1-5-g1b4ae6f",
+			"Rev": "1b4ae6fb4e77b095934d4430860ff202060169f8"
+		},
+		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer",
 			"Comment": "v0.0.5",
 			"Rev": "97bc9a7faf3dd660d9be90a2880b2e37f3cdbf38"
+		},
+		{
+			"ImportPath": "github.com/pborman/uuid",
+			"Rev": "cccd189d45f7ac3368a0d127efb7f4d08ae0b655"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
