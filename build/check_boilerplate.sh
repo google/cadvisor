@@ -14,20 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-REF_FILE="./build/boilerplate.go.txt"
-if [ ! -e $REF_FILE ]; then
-  echo "Missing reference file: " ${REF_FILE}
+set -o errexit
+set -o nounset
+set -o pipefail
+
+GIT_ROOT=$(dirname "${BASH_SOURCE}")/..
+boiler="${GIT_ROOT}/build/boilerplate/boilerplate.py"
+
+files_need_boilerplate=($(${boiler} "$@"))
+
+if [[ ${#files_need_boilerplate[@]} -gt 0 ]]; then
+  for file in "${files_need_boilerplate[@]}"; do
+    echo "Boilerplate header is wrong for: ${file}"
+  done
+
   exit 1
 fi
-
-LINES=$(cat "${REF_FILE}" | wc -l | tr -d ' ')
-GO_FILES=$(find . -not -wholename "*Godeps*" -name "*.go")
-
-for FILE in ${GO_FILES}; do
-  DIFFER=$(cat "${FILE}" | sed 's/2015/2014/g' | head "-${LINES}" | diff -q - "${REF_FILE}")
-
-  if [[ ! -z "${DIFFER}" ]]; then
-    echo "${FILE} does not have the correct copyright notice."
-    exit 1
-  fi
-done
