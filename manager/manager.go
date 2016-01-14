@@ -746,6 +746,18 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 
 // Create a container.
 func (m *manager) createContainer(containerName string) error {
+	m.containersLock.Lock()
+	defer m.containersLock.Unlock()
+
+	namespacedName := namespacedContainerName{
+		Name: containerName,
+	}
+
+	// Check that the container didn't already exist.
+	if _, ok := m.containers[namespacedName]; ok {
+		return nil
+	}
+
 	handler, accept, err := container.NewContainerHandler(containerName, m.inHostNamespace)
 	if err != nil {
 		return err
@@ -775,35 +787,15 @@ func (m *manager) createContainer(containerName string) error {
 		return err
 	}
 
-	// Add to the containers map.
-	alreadyExists := func() bool {
-		m.containersLock.Lock()
-		defer m.containersLock.Unlock()
-
-		namespacedName := namespacedContainerName{
-			Name: containerName,
-		}
-
-		// Check that the container didn't already exist.
-		_, ok := m.containers[namespacedName]
-		if ok {
-			return true
-		}
-
-		// Add the container name and all its aliases. The aliases must be within the namespace of the factory.
-		m.containers[namespacedName] = cont
-		for _, alias := range cont.info.Aliases {
-			m.containers[namespacedContainerName{
-				Namespace: cont.info.Namespace,
-				Name:      alias,
-			}] = cont
-		}
-
-		return false
-	}()
-	if alreadyExists {
-		return nil
+	// Add the container name and all its aliases. The aliases must be within the namespace of the factory.
+	m.containers[namespacedName] = cont
+	for _, alias := range cont.info.Aliases {
+		m.containers[namespacedContainerName{
+			Namespace: cont.info.Namespace,
+			Name:      alias,
+		}] = cont
 	}
+
 	glog.V(3).Infof("Added container: %q (aliases: %v, namespace: %q)", containerName, cont.info.Aliases, cont.info.Namespace)
 
 	contSpec, err := cont.handler.GetSpec()
@@ -827,9 +819,7 @@ func (m *manager) createContainer(containerName string) error {
 	}
 
 	// Start the container's housekeeping.
-	cont.Start()
-
-	return nil
+	return cont.Start()
 }
 
 func (m *manager) destroyContainer(containerName string) error {

@@ -142,9 +142,6 @@ func newDockerContainerHandler(
 		fsHandler:          newFsHandler(time.Minute, storageDirs, fsInfo),
 	}
 
-	// Start the filesystem handler.
-	handler.fsHandler.start()
-
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := client.InspectContainer(id)
 	if err != nil {
@@ -170,6 +167,11 @@ func newDockerContainerHandler(
 	}
 
 	return handler, nil
+}
+
+func (self *dockerContainerHandler) Start() {
+	// Start the filesystem handler.
+	self.fsHandler.start()
 }
 
 func (self *dockerContainerHandler) Cleanup() {
