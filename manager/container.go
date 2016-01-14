@@ -361,6 +361,9 @@ func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Tim
 
 // TODO(vmarmol): Implement stats collecting as a custom collector.
 func (c *containerData) housekeeping() {
+	// Start any background goroutines - must be cleaned up in c.handler.Cleanup().
+	c.handler.Start()
+
 	// Long housekeeping is either 100ms or half of the housekeeping interval.
 	longHousekeeping := 100 * time.Millisecond
 	if *HousekeepingInterval/2 < longHousekeeping {
