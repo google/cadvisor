@@ -68,6 +68,9 @@ container_fs_writes_total{device="sda2",foo_env="prod",foo_label="bar",id="testc
 # HELP container_last_seen Last time a container was seen by the exporter
 # TYPE container_last_seen gauge
 container_last_seen{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.426203694e+09
+# HELP container_memory_cache Number of bytes of page cache memory.
+# TYPE container_memory_cache gauge
+container_memory_cache{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 14
 # HELP container_memory_failcnt Number of memory usage hits limits
 # TYPE container_memory_failcnt counter
 container_memory_failcnt{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0
@@ -77,6 +80,9 @@ container_memory_failures_total{foo_env="prod",foo_label="bar",id="testcontainer
 container_memory_failures_total{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="container",type="pgmajfault",zone_name="hello"} 11
 container_memory_failures_total{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",type="pgfault",zone_name="hello"} 12
 container_memory_failures_total{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",type="pgmajfault",zone_name="hello"} 13
+# HELP container_memory_rss Size of RSS in bytes.
+# TYPE container_memory_rss gauge
+container_memory_rss{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 15
 # HELP container_memory_usage_bytes Current memory usage in bytes.
 # TYPE container_memory_usage_bytes gauge
 container_memory_usage_bytes{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8

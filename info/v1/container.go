@@ -308,6 +308,15 @@ type MemoryStats struct {
 	// Units: Bytes.
 	Usage uint64 `json:"usage"`
 
+	// Number of bytes of page cache memory.
+	// Units: Bytes.
+	Cache uint64 `json:"cache"`
+
+	// The amount of anonymous and swap cache memory (includes transparent
+	// hugepages).
+	// Units: Bytes.
+	RSS uint64 `json:"rss"`
+
 	// The amount of working set memory, this includes recently accessed memory,
 	// dirty memory, and kernel memory. Working set is <= "usage".
 	// Units: Bytes.
