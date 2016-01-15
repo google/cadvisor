@@ -128,6 +128,13 @@ func NewPrometheusCollector(infoProvider infoProvider, f ContainerNameToLabelsFu
 					return values
 				},
 			}, {
+				name:      "container_memory_cache",
+				help:      "Number of bytes of page cache memory.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Cache)}}
+				},
+			}, {
 				name:      "container_memory_rss",
 				help:      "Size of RSS in bytes",
 				valueType: prometheus.GaugeValue,
