@@ -23,6 +23,7 @@ import (
 	_ "github.com/google/cadvisor/storage/bigquery"
 	_ "github.com/google/cadvisor/storage/elasticsearch"
 	_ "github.com/google/cadvisor/storage/influxdb"
+	_ "github.com/google/cadvisor/storage/kafka"
 	_ "github.com/google/cadvisor/storage/redis"
 	_ "github.com/google/cadvisor/storage/statsd"
 	_ "github.com/google/cadvisor/storage/stdout"

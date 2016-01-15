@@ -179,9 +179,11 @@ func (self *dockerContainerHandler) Cleanup() {
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
 	return info.ContainerReference{
+		Id:        self.id,
 		Name:      self.name,
 		Aliases:   self.aliases,
 		Namespace: DockerNamespace,
+		Labels:    self.labels,
 	}, nil
 }
 
