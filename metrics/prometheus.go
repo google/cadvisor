@@ -136,7 +136,7 @@ func NewPrometheusCollector(infoProvider infoProvider, f ContainerNameToLabelsFu
 				},
 			}, {
 				name:      "container_memory_rss",
-				help:      "Size of RSS in bytes",
+				help:      "Size of RSS in bytes.",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.RSS)}}
