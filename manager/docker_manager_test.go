@@ -39,9 +39,9 @@ func createManagerAndAddContainers(
 	containers []string,
 	f func(*container.MockContainerHandler),
 	t *testing.T,
-) *manager {
+) *docker_manager {
 	container.ClearContainerHandlerFactories()
-	mif := &manager{
+	mif := &docker_manager{
 		containers:   make(map[namespacedContainerName]*containerData),
 		quitChannels: make([]chan error, 0, 2),
 		memoryCache:  memoryCache,
@@ -74,7 +74,7 @@ func createManagerAndAddContainers(
 
 // Expect a manager with the specified containers and query. Returns the manager, map of ContainerInfo objects,
 // and map of MockContainerHandler objects.}
-func expectManagerWithContainers(containers []string, query *info.ContainerInfoRequest, t *testing.T) (*manager, map[string]*info.ContainerInfo, map[string]*container.MockContainerHandler) {
+func expectManagerWithContainers(containers []string, query *info.ContainerInfoRequest, t *testing.T) (*docker_manager, map[string]*info.ContainerInfo, map[string]*container.MockContainerHandler) {
 	infosMap := make(map[string]*info.ContainerInfo, len(containers))
 	handlerMap := make(map[string]*container.MockContainerHandler, len(containers))
 
