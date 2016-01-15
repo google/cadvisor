@@ -15,6 +15,11 @@
 			"Rev": "f92a08f515e1bf718e995076a37c2f534b1deb08"
 		},
 		{
+			"ImportPath": "github.com/Shopify/sarama",
+			"Comment": "v1.7.0",
+			"Rev": "87ec8d76e89cc002ff5673ee7598ae1db2f32424"
+		},
+		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.7.3-2-g26709e2",
 			"Rev": "26709e2714106fb8ad40b773b711ebce25b78914"
@@ -89,6 +94,10 @@
 			"Rev": "f7137ae6b19afbfd61a94b746fda3b3fe0491874"
 		},
 		{
+			"ImportPath": "github.com/golang/snappy",
+			"Rev": "723cc1e459b8eea2dea4583200fd60757d40097a"
+		},
+		{
 			"ImportPath": "github.com/influxdb/influxdb/client",
 			"Comment": "v0.9.5.1",
 			"Rev": "9eab56311373ee6f788ae5dfc87e2240038f0eb4"
@@ -102,6 +111,10 @@
 			"ImportPath": "github.com/influxdb/influxdb/pkg/escape",
 			"Comment": "v0.9.5.1",
 			"Rev": "9eab56311373ee6f788ae5dfc87e2240038f0eb4"
+		},
+		{
+			"ImportPath": "github.com/klauspost/crc32",
+			"Rev": "a3b15ae34567abb20a22992b989cd76f48d09c47"
 		},
 		{
 			"ImportPath": "github.com/kr/pretty",
