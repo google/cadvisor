@@ -18,7 +18,10 @@ all: format build test
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short $(pkgs)
+	@$(GO) test -short -race $(pkgs)
+
+test-integration: test
+	@./build/integration.sh
 
 format:
 	@echo ">> formatting code"

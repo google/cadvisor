@@ -31,6 +31,7 @@ const (
 	containersApi    = "containers"
 	subcontainersApi = "subcontainers"
 	machineApi       = "machine"
+	machineStatsApi  = "machinestats"
 	dockerApi        = "docker"
 	summaryApi       = "summary"
 	statsApi         = "stats"
@@ -62,8 +63,9 @@ func getApiVersions() []ApiVersion {
 	v1_2 := newVersion1_2(v1_1)
 	v1_3 := newVersion1_3(v1_2)
 	v2_0 := newVersion2_0()
+	v2_1 := newVersion2_1(v2_0)
 
-	return []ApiVersion{v1_0, v1_1, v1_2, v1_3, v2_0}
+	return []ApiVersion{v1_0, v1_1, v1_2, v1_3, v2_0, v2_1}
 
 }
 
@@ -357,13 +359,13 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 	case statsApi:
 		name := getContainerName(request)
 		glog.V(4).Infof("Api - Stats: Looking for stats for container %q, options %+v", name, opt)
-		infos, err := m.GetContainerInfoV2(name, opt)
+		infos, err := m.GetRequestedContainersInfo(name, opt)
 		if err != nil {
 			return err
 		}
-		contStats := make(map[string][]*v2.ContainerStats, 0)
+		contStats := make(map[string][]v2.DeprecatedContainerStats, 0)
 		for name, cinfo := range infos {
-			contStats[name] = cinfo.Stats
+			contStats[name] = v2.DeprecatedStatsFromV1(cinfo)
 		}
 		return writeResult(contStats, w)
 	case customMetricsApi:
@@ -377,26 +379,27 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		for _, cinfo := range infos {
 			metrics := make(map[string]map[string][]info.MetricValBasic, 0)
 			for _, contStat := range cinfo.Stats {
-				if contStat.HasCustomMetrics {
-					for name, allLabels := range contStat.CustomMetrics {
-						metricLabels := make(map[string][]info.MetricValBasic, 0)
-						for _, metric := range allLabels {
-							if !metric.Timestamp.IsZero() {
-								metVal := info.MetricValBasic{
-									Timestamp:  metric.Timestamp,
-									IntValue:   metric.IntValue,
-									FloatValue: metric.FloatValue,
-								}
-								labels := metrics[name]
-								if labels != nil {
-									values := labels[metric.Label]
-									values = append(values, metVal)
-									labels[metric.Label] = values
-									metrics[name] = labels
-								} else {
-									metricLabels[metric.Label] = []info.MetricValBasic{metVal}
-									metrics[name] = metricLabels
-								}
+				if len(contStat.CustomMetrics) == 0 {
+					continue
+				}
+				for name, allLabels := range contStat.CustomMetrics {
+					metricLabels := make(map[string][]info.MetricValBasic, 0)
+					for _, metric := range allLabels {
+						if !metric.Timestamp.IsZero() {
+							metVal := info.MetricValBasic{
+								Timestamp:  metric.Timestamp,
+								IntValue:   metric.IntValue,
+								FloatValue: metric.FloatValue,
+							}
+							labels := metrics[name]
+							if labels != nil {
+								values := labels[metric.Label]
+								values = append(values, metVal)
+								labels[metric.Label] = values
+								metrics[name] = labels
+							} else {
+								metricLabels[metric.Label] = []info.MetricValBasic{metVal}
+								metrics[name] = metricLabels
 							}
 						}
 					}
@@ -446,6 +449,56 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 		return writeResult(ps, w)
 	default:
 		return fmt.Errorf("unknown request type %q", requestType)
+	}
+}
+
+type version2_1 struct {
+	baseVersion *version2_0
+}
+
+func newVersion2_1(v *version2_0) *version2_1 {
+	return &version2_1{
+		baseVersion: v,
+	}
+}
+
+func (self *version2_1) Version() string {
+	return "v2.1"
+}
+
+func (self *version2_1) SupportedRequestTypes() []string {
+	return self.baseVersion.SupportedRequestTypes()
+}
+
+func (self *version2_1) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+	// Get the query request.
+	opt, err := getRequestOptions(r)
+	if err != nil {
+		return err
+	}
+
+	switch requestType {
+	case machineStatsApi:
+		glog.V(4).Infof("Api - MachineStats(%v)", request)
+		cont, err := m.GetRequestedContainersInfo("/", opt)
+		if err != nil {
+			return err
+		}
+		return writeResult(v2.MachineStatsFromV1(cont["/"]), w)
+	case statsApi:
+		name := getContainerName(request)
+		glog.V(4).Infof("Api - Stats: Looking for stats for container %q, options %+v", name, opt)
+		conts, err := m.GetRequestedContainersInfo(name, opt)
+		if err != nil {
+			return err
+		}
+		contStats := make(map[string][]*v2.ContainerStats, len(conts))
+		for name, cont := range conts {
+			contStats[name] = v2.ContainerStatsFromV1(&cont.Spec, cont.Stats)
+		}
+		return writeResult(contStats, w)
+	default:
+		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
 }
 

@@ -25,7 +25,7 @@ import (
 	"path"
 	"strings"
 
-	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v1"
 
 	"github.com/golang/glog"
 )
@@ -35,7 +35,7 @@ type Client struct {
 	baseUrl string
 }
 
-// NewClient returns a new client with the specified base URL.
+// NewClient returns a new v1.3 client with the specified base URL.
 func NewClient(url string) (*Client, error) {
 	if !strings.HasSuffix(url, "/") {
 		url += "/"
@@ -47,9 +47,9 @@ func NewClient(url string) (*Client, error) {
 }
 
 // Returns all past events that satisfy the request
-func (self *Client) EventStaticInfo(name string) (einfo []*info.Event, err error) {
+func (self *Client) EventStaticInfo(name string) (einfo []*v1.Event, err error) {
 	u := self.eventsInfoUrl(name)
-	ret := new([]*info.Event)
+	ret := new([]*v1.Event)
 	if err = self.httpGetJsonData(ret, nil, u, "event info"); err != nil {
 		return
 	}
@@ -59,7 +59,7 @@ func (self *Client) EventStaticInfo(name string) (einfo []*info.Event, err error
 
 // Streams all events that occur that satisfy the request into the channel
 // that is passed
-func (self *Client) EventStreamingInfo(name string, einfo chan *info.Event) (err error) {
+func (self *Client) EventStreamingInfo(name string, einfo chan *v1.Event) (err error) {
 	u := self.eventsInfoUrl(name)
 	if err = self.getEventStreamingData(u, einfo); err != nil {
 		return
@@ -70,9 +70,9 @@ func (self *Client) EventStreamingInfo(name string, einfo chan *info.Event) (err
 // MachineInfo returns the JSON machine information for this client.
 // A non-nil error result indicates a problem with obtaining
 // the JSON machine information data.
-func (self *Client) MachineInfo() (minfo *info.MachineInfo, err error) {
+func (self *Client) MachineInfo() (minfo *v1.MachineInfo, err error) {
 	u := self.machineInfoUrl()
-	ret := new(info.MachineInfo)
+	ret := new(v1.MachineInfo)
 	if err = self.httpGetJsonData(ret, nil, u, "machine info"); err != nil {
 		return
 	}
@@ -82,9 +82,9 @@ func (self *Client) MachineInfo() (minfo *info.MachineInfo, err error) {
 
 // ContainerInfo returns the JSON container information for the specified
 // container and request.
-func (self *Client) ContainerInfo(name string, query *info.ContainerInfoRequest) (cinfo *info.ContainerInfo, err error) {
+func (self *Client) ContainerInfo(name string, query *v1.ContainerInfoRequest) (cinfo *v1.ContainerInfo, err error) {
 	u := self.containerInfoUrl(name)
-	ret := new(info.ContainerInfo)
+	ret := new(v1.ContainerInfo)
 	if err = self.httpGetJsonData(ret, query, u, fmt.Sprintf("container info for %q", name)); err != nil {
 		return
 	}
@@ -93,12 +93,12 @@ func (self *Client) ContainerInfo(name string, query *info.ContainerInfoRequest)
 }
 
 // Returns the information about all subcontainers (recursive) of the specified container (including itself).
-func (self *Client) SubcontainersInfo(name string, query *info.ContainerInfoRequest) ([]info.ContainerInfo, error) {
-	var response []info.ContainerInfo
+func (self *Client) SubcontainersInfo(name string, query *v1.ContainerInfoRequest) ([]v1.ContainerInfo, error) {
+	var response []v1.ContainerInfo
 	url := self.subcontainersInfoUrl(name)
 	err := self.httpGetJsonData(&response, query, url, fmt.Sprintf("subcontainers container info for %q", name))
 	if err != nil {
-		return []info.ContainerInfo{}, err
+		return []v1.ContainerInfo{}, err
 
 	}
 	return response, nil
@@ -106,9 +106,9 @@ func (self *Client) SubcontainersInfo(name string, query *info.ContainerInfoRequ
 
 // Returns the JSON container information for the specified
 // Docker container and request.
-func (self *Client) DockerContainer(name string, query *info.ContainerInfoRequest) (cinfo info.ContainerInfo, err error) {
+func (self *Client) DockerContainer(name string, query *v1.ContainerInfoRequest) (cinfo v1.ContainerInfo, err error) {
 	u := self.dockerInfoUrl(name)
-	ret := make(map[string]info.ContainerInfo)
+	ret := make(map[string]v1.ContainerInfo)
 	if err = self.httpGetJsonData(&ret, query, u, fmt.Sprintf("Docker container info for %q", name)); err != nil {
 		return
 	}
@@ -123,13 +123,13 @@ func (self *Client) DockerContainer(name string, query *info.ContainerInfoReques
 }
 
 // Returns the JSON container information for all Docker containers.
-func (self *Client) AllDockerContainers(query *info.ContainerInfoRequest) (cinfo []info.ContainerInfo, err error) {
+func (self *Client) AllDockerContainers(query *v1.ContainerInfoRequest) (cinfo []v1.ContainerInfo, err error) {
 	u := self.dockerInfoUrl("/")
-	ret := make(map[string]info.ContainerInfo)
+	ret := make(map[string]v1.ContainerInfo)
 	if err = self.httpGetJsonData(&ret, query, u, "all Docker containers info"); err != nil {
 		return
 	}
-	cinfo = make([]info.ContainerInfo, 0, len(ret))
+	cinfo = make([]v1.ContainerInfo, 0, len(ret))
 	for _, cont := range ret {
 		cinfo = append(cinfo, cont)
 	}
@@ -191,7 +191,7 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 	return nil
 }
 
-func (self *Client) getEventStreamingData(url string, einfo chan *info.Event) error {
+func (self *Client) getEventStreamingData(url string, einfo chan *v1.Event) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -205,7 +205,7 @@ func (self *Client) getEventStreamingData(url string, einfo chan *info.Event) er
 	}
 
 	dec := json.NewDecoder(resp.Body)
-	var m *info.Event = &info.Event{}
+	var m *v1.Event = &v1.Event{}
 	for {
 		err := dec.Decode(m)
 		if err != nil {

@@ -398,6 +398,10 @@ type FsStats struct {
 	// Number of bytes that is consumed by the container on this filesystem.
 	Usage uint64 `json:"usage"`
 
+	// Base Usage that is consumed by the container's writable layer.
+	// This field is only applicable for docker container's as of now.
+	BaseUsage uint64 `json:"base_usage"`
+
 	// Number of bytes available for non-root user.
 	Available uint64 `json:"available"`
 

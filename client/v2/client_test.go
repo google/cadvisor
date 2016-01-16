@@ -22,9 +22,11 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
-	info "github.com/google/cadvisor/info/v1"
-	infoV2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kr/pretty"
 )
@@ -43,11 +45,11 @@ func testGetJsonData(
 	return nil
 }
 
-func cadvisorTestClient(path string, expectedPostObj *info.ContainerInfoRequest, replyObj interface{}, t *testing.T) (*Client, *httptest.Server, error) {
+func cadvisorTestClient(path string, expectedPostObj *v1.ContainerInfoRequest, replyObj interface{}, t *testing.T) (*Client, *httptest.Server, error) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == path {
 			if expectedPostObj != nil {
-				expectedPostObjEmpty := new(info.ContainerInfoRequest)
+				expectedPostObjEmpty := new(v1.ContainerInfoRequest)
 				decoder := json.NewDecoder(r.Body)
 				if err := decoder.Decode(expectedPostObjEmpty); err != nil {
 					t.Errorf("Received invalid object: %v", err)
@@ -60,7 +62,7 @@ func cadvisorTestClient(path string, expectedPostObj *info.ContainerInfoRequest,
 			}
 			encoder := json.NewEncoder(w)
 			encoder.Encode(replyObj)
-		} else if r.URL.Path == "/api/v2.0/version" {
+		} else if r.URL.Path == "/api/v2.1/version" {
 			fmt.Fprintf(w, "0.1.2")
 		} else {
 			w.WriteHeader(http.StatusNotFound)
@@ -77,11 +79,11 @@ func cadvisorTestClient(path string, expectedPostObj *info.ContainerInfoRequest,
 
 // TestGetMachineInfo performs one test to check if MachineInfo()
 // in a cAdvisor client returns the correct result.
-func TestGetMachineinfo(t *testing.T) {
-	minfo := &info.MachineInfo{
+func TestGetMachineInfo(t *testing.T) {
+	mv1 := &v1.MachineInfo{
 		NumCores:       8,
 		MemoryCapacity: 31625871360,
-		DiskMap: map[string]info.DiskInfo{
+		DiskMap: map[string]v1.DiskInfo{
 			"8:0": {
 				Name:  "sda",
 				Major: 8,
@@ -90,7 +92,7 @@ func TestGetMachineinfo(t *testing.T) {
 			},
 		},
 	}
-	client, server, err := cadvisorTestClient("/api/v2.0/machine", nil, minfo, t)
+	client, server, err := cadvisorTestClient("/api/v2.1/machine", nil, mv1, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
@@ -99,14 +101,14 @@ func TestGetMachineinfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(returned, minfo) {
-		t.Fatalf("received unexpected machine info")
+	if !reflect.DeepEqual(returned, mv1) {
+		t.Fatalf("received unexpected machine v1")
 	}
 }
 
-// TestGetVersionInfo performs one test to check if VersionInfo()
+// TestGetVersionV1 performs one test to check if VersionV1()
 // in a cAdvisor client returns the correct result.
-func TestGetVersioninfo(t *testing.T) {
+func TestGetVersionv1(t *testing.T) {
 	version := "0.1.2"
 	client, server, err := cadvisorTestClient("", nil, version, t)
 	if err != nil {
@@ -118,21 +120,21 @@ func TestGetVersioninfo(t *testing.T) {
 		t.Fatal(err)
 	}
 	if returned != version {
-		t.Fatalf("received unexpected version info")
+		t.Fatalf("received unexpected version v1")
 	}
 }
 
 // TestAttributes performs one test to check if Attributes()
 // in a cAdvisor client returns the correct result.
 func TestGetAttributes(t *testing.T) {
-	attr := &infoV2.Attributes{
+	attr := &v2.Attributes{
 		KernelVersion:      "3.3.0",
 		ContainerOsVersion: "Ubuntu 14.4",
 		DockerVersion:      "Docker 1.5",
 		CadvisorVersion:    "0.1.2",
 		NumCores:           8,
 		MemoryCapacity:     31625871360,
-		DiskMap: map[string]info.DiskInfo{
+		DiskMap: map[string]v1.DiskInfo{
 			"8:0": {
 				Name:  "sda",
 				Major: 8,
@@ -141,7 +143,7 @@ func TestGetAttributes(t *testing.T) {
 			},
 		},
 	}
-	client, server, err := cadvisorTestClient("/api/v2.0/attributes", nil, attr, t)
+	client, server, err := cadvisorTestClient("/api/v2.1/attributes", nil, attr, t)
 	if err != nil {
 		t.Fatalf("unable to get a client %v", err)
 	}
@@ -152,6 +154,43 @@ func TestGetAttributes(t *testing.T) {
 	}
 	if !reflect.DeepEqual(returned, attr) {
 		t.Fatalf("received unexpected attributes")
+	}
+}
+
+// TestMachineStats performs one test to check if MachineStats()
+// in a cAdvisor client returns the correct result.
+func TestMachineStats(t *testing.T) {
+	machineStats := []v2.MachineStats{
+		{
+			Timestamp: time.Now(),
+			Cpu: &v1.CpuStats{
+				Usage: v1.CpuUsage{
+					Total: 100000,
+				},
+				LoadAverage: 10,
+			},
+			Filesystem: []v2.MachineFsStats{
+				{
+					Device: "sda1",
+				},
+			},
+		},
+	}
+	client, server, err := cadvisorTestClient("/api/v2.1/machinestats", nil, &machineStats, t)
+	if err != nil {
+		t.Fatalf("unable to get a client %v", err)
+	}
+	defer server.Close()
+	returned, err := client.MachineStats()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Len(t, returned, len(machineStats))
+	if !reflect.DeepEqual(returned[0].Cpu, machineStats[0].Cpu) {
+		t.Fatalf("received unexpected machine stats\nExp: %+v\nAct: %+v", machineStats, returned)
+	}
+	if !reflect.DeepEqual(returned[0].Filesystem, machineStats[0].Filesystem) {
+		t.Fatalf("received unexpected machine stats\nExp: %+v\nAct: %+v", machineStats, returned)
 	}
 }
 
