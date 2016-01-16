@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.20.2 (2016-01-15)
+- New v2.1 API with better filesystem stats
+- Internal refactoring
+- Bug fixes.
+
 ### 0.18.0 (2015-09-23)
 - Large bunch of bug-fixes
 - Fixed networking stats for newer docker versions using libnetwork.
