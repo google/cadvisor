@@ -110,7 +110,10 @@ func ContainerStatsFromV1(spec *v1.ContainerSpec, stats []*v1.ContainerStats) []
 			stat.Memory = &val.Memory
 		}
 		if spec.HasNetwork {
-			stat.Network.Interfaces = val.Network.Interfaces
+			// TODO: Handle TcpStats
+			stat.Network = &NetworkStats{
+				Interfaces: val.Network.Interfaces,
+			}
 		}
 		if spec.HasFilesystem {
 			if len(val.Filesystem) == 1 {
@@ -118,7 +121,7 @@ func ContainerStatsFromV1(spec *v1.ContainerSpec, stats []*v1.ContainerStats) []
 					TotalUsageBytes: &val.Filesystem[0].Usage,
 					BaseUsageBytes:  &val.Filesystem[0].BaseUsage,
 				}
-			} else {
+			} else if len(val.Filesystem) > 1 {
 				// Cannot handle multiple devices per container.
 				glog.Errorf("failed to handle multiple devices for container. Skipping Filesystem stats")
 			}
