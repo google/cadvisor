@@ -28,7 +28,7 @@ var (
 	labels    = map[string]string{"foo": "bar"}
 )
 
-func TestConvertSpec(t *testing.T) {
+func TestContanierSpecFromV1(t *testing.T) {
 	v1Spec := v1.ContainerSpec{
 		CreationTime: timestamp,
 		Labels:       labels,
@@ -93,6 +93,105 @@ func TestConvertSpec(t *testing.T) {
 	v2Spec := ContainerSpecFromV1(&v1Spec, aliases, namespace)
 	if !reflect.DeepEqual(v2Spec, expectedV2Spec) {
 		t.Errorf("Converted spec differs from expectation!\nExpected: %+v\n Got: %+v\n", expectedV2Spec, v2Spec)
+	}
+}
+
+func TestContainerStatsFromV1(t *testing.T) {
+	v1Spec := v1.ContainerSpec{
+		CreationTime: timestamp,
+		Labels:       labels,
+		HasCpu:       true,
+		Cpu: v1.CpuSpec{
+			Limit:    2048,
+			MaxLimit: 4096,
+			Mask:     "cpu_mask",
+		},
+		HasMemory: true,
+		Memory: v1.MemorySpec{
+			Limit:       2048,
+			Reservation: 1024,
+			SwapLimit:   8192,
+		},
+		HasNetwork:       true,
+		HasFilesystem:    true,
+		HasDiskIo:        true,
+		HasCustomMetrics: true,
+		CustomMetrics: []v1.MetricSpec{{
+			Name:   "foo",
+			Type:   v1.MetricGauge,
+			Format: v1.IntType,
+			Units:  "bars",
+		}},
+		Image: "gcr.io/kubernetes/kubernetes:v1",
+	}
+	v1Stats := v1.ContainerStats{
+		Timestamp: timestamp,
+		Memory: v1.MemoryStats{
+			Usage:      1,
+			Cache:      2,
+			RSS:        3,
+			WorkingSet: 4,
+			Failcnt:    5,
+			ContainerData: v1.MemoryStatsMemoryData{
+				Pgfault:    1,
+				Pgmajfault: 2,
+			},
+			HierarchicalData: v1.MemoryStatsMemoryData{
+				Pgfault:    10,
+				Pgmajfault: 20,
+			},
+		},
+		Network: v1.NetworkStats{
+			InterfaceStats: v1.InterfaceStats{
+				Name:      "",
+				RxBytes:   1,
+				RxPackets: 2,
+				RxErrors:  3,
+				RxDropped: 4,
+				TxBytes:   5,
+				TxPackets: 6,
+				TxErrors:  7,
+				TxDropped: 8,
+			},
+			Interfaces: []v1.InterfaceStats{{
+				Name:      "eth0",
+				RxBytes:   10,
+				RxPackets: 20,
+				RxErrors:  30,
+				RxDropped: 40,
+				TxBytes:   50,
+				TxPackets: 60,
+				TxErrors:  70,
+				TxDropped: 80,
+			}},
+		},
+		Filesystem: []v1.FsStats{{
+			Device:    "dev0",
+			Limit:     500,
+			Usage:     100,
+			BaseUsage: 50,
+			Available: 300,
+		}},
+	}
+	expectedV2Stats := ContainerStats{
+		Timestamp: timestamp,
+		Cpu:       &v1Stats.Cpu,
+		DiskIo:    &v1Stats.DiskIo,
+		Memory:    &v1Stats.Memory,
+		Network: &NetworkStats{
+			Interfaces: v1Stats.Network.Interfaces,
+		},
+		Filesystem: &FilesystemStats{
+			TotalUsageBytes: &v1Stats.Filesystem[0].Usage,
+			BaseUsageBytes:  &v1Stats.Filesystem[0].BaseUsage,
+		},
+	}
+
+	v2Stats := ContainerStatsFromV1(&v1Spec, []*v1.ContainerStats{&v1Stats})
+	actualV2Stats := *v2Stats[0]
+
+	if !reflect.DeepEqual(expectedV2Stats, actualV2Stats) {
+		t.Errorf("Converted stats differs from expectation!\nExpected: %+v\n Got: %+v\n", expectedV2Stats, actualV2Stats)
 	}
 }
 
