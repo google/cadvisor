@@ -139,6 +139,7 @@ func newDockerContainerHandler(
 		rootFs:             rootFs,
 		rootfsStorageDir:   rootfsStorageDir,
 		fsHandler:          newFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo),
+		envs:               make(map[string]string),
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
