@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.20.3 (2016-01-19)
+- Bug fixes
+- Jitter added to housekeeping to smooth CPU usage.
+
 ### 0.20.2 (2016-01-15)
 - New v2.1 API with better filesystem stats
 - Internal refactoring
