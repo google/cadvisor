@@ -117,14 +117,27 @@ func NewFsInfo(context Context) (FsInfo, error) {
 
 func (self *RealFsInfo) addLabels(context Context) {
 	dockerPaths := getDockerImagePaths(context)
+
+	// Determine if Docker is using devicemapper for its storage driver. If so, don't invoke
+	// self.updateDockerImagesPath below, as that will incorrectly override the device associated with
+	// LabelDockerImages (set previously up above in NewFsInfo).
+	dockerUsesDeviceMapper := false
+	for dev, p := range self.partitions {
+		if p.fsType == "devicemapper" && self.labels[LabelDockerImages] == dev {
+			dockerUsesDeviceMapper = true
+			break
+		}
+	}
+
 	for src, p := range self.partitions {
 		if p.mountpoint == "/" {
 			if _, ok := self.labels[LabelSystemRoot]; !ok {
 				self.labels[LabelSystemRoot] = src
 			}
 		}
-		self.updateDockerImagesPath(src, p.mountpoint, dockerPaths)
-		// TODO(rjnagal): Add label for docker devicemapper pool.
+		if !dockerUsesDeviceMapper {
+			self.updateDockerImagesPath(src, p.mountpoint, dockerPaths)
+		}
 	}
 }
 
@@ -356,6 +369,10 @@ func dockerDMDevice(driverStatus string) (string, uint, uint, uint, error) {
 	poolName := dockerStatusValue(config, "Pool Name")
 	if len(poolName) == 0 {
 		return "", 0, 0, 0, fmt.Errorf("Could not get dm pool name")
+	}
+	dataLoopFile := dockerStatusValue(config, "Data loop file")
+	if len(dataLoopFile) > 0 {
+		return "", 0, 0, 0, fmt.Errorf("Loopback device in use - will report underlying partition information")
 	}
 
 	out, err := exec.Command("dmsetup", "table", poolName).Output()
