@@ -37,7 +37,7 @@ import (
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
 
-	"github.com/docker/docker/pkg/units"
+	units "github.com/docker/go-units"
 	"github.com/golang/glog"
 )
 

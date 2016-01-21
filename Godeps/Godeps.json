@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/google/cadvisor",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.5.3",
 	"Packages": [
 		"./..."
 	],
@@ -38,11 +38,6 @@
 			"Rev": "b4a58d95188dd092ae20072bac14cece0e67c388"
 		},
 		{
-			"ImportPath": "github.com/docker/docker/pkg/longpath",
-			"Comment": "v1.9.1",
-			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
-		},
-		{
 			"ImportPath": "github.com/docker/docker/pkg/mount",
 			"Comment": "v1.9.1",
 			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
@@ -61,6 +56,11 @@
 			"ImportPath": "github.com/docker/docker/pkg/units",
 			"Comment": "v1.9.1",
 			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
+		},
+		{
+			"ImportPath": "github.com/docker/go-units",
+			"Comment": "v0.1.0-21-g0bbddae",
+			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
 		},
 		{
 			"ImportPath": "github.com/fsouza/go-dockerclient",
@@ -151,10 +151,6 @@
 		{
 			"ImportPath": "github.com/prometheus/procfs",
 			"Rev": "6c34ef819e19b4e16f410100ace4aa006f0e3bf8"
-		},
-		{
-			"ImportPath": "github.com/seccomp/libseccomp-golang",
-			"Rev": "1b506fc7c24eec5a3693cdcbed40d9c226cfc6a1"
 		},
 		{
 			"ImportPath": "github.com/stretchr/objx",
