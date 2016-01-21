@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.20.4 (2016-01-20)
+- Godep updates
+
 ### 0.20.3 (2016-01-19)
 - Bug fixes
 - Jitter added to housekeeping to smooth CPU usage.
