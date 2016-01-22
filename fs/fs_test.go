@@ -15,8 +15,10 @@
 package fs
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -157,112 +159,188 @@ func TestParseDMTable(t *testing.T) {
 	}
 }
 
-func TestAddLabels(t *testing.T) {
+func TestAddSystemRootLabel(t *testing.T) {
+	fsInfo := &RealFsInfo{
+		labels: map[string]string{},
+		partitions: map[string]partition{
+			"/dev/mapper/vg_vagrant-lv_root": {
+				mountpoint: "/",
+			},
+			"vg_vagrant-docker--pool": {
+				mountpoint: "",
+				fsType:     "devicemapper",
+			},
+		},
+	}
+
+	fsInfo.addSystemRootLabel()
+	if e, a := "/dev/mapper/vg_vagrant-lv_root", fsInfo.labels[LabelSystemRoot]; e != a {
+		t.Errorf("expected %q, got %q", e, a)
+	}
+}
+
+type testDmsetup struct {
+	data []byte
+	err  error
+}
+
+func (t *testDmsetup) table(poolName string) ([]byte, error) {
+	return t.data, t.err
+}
+
+func TestGetDockerDeviceMapperInfo(t *testing.T) {
 	tests := []struct {
-		name                     string
-		partitions               map[string]partition
-		dockerImagesDevice       string
-		expectedDockerDevice     string
-		expectedSystemRootDevice string
+		name              string
+		driver            string
+		driverStatus      string
+		dmsetupTable      string
+		dmsetupTableError error
+		expectedDevice    string
+		expectedPartition *partition
+		expectedError     bool
 	}{
 		{
-			name: "/ in 1 LV, images in another LV",
+			name:              "not devicemapper",
+			driver:            "btrfs",
+			expectedDevice:    "",
+			expectedPartition: nil,
+			expectedError:     false,
+		},
+		{
+			name:              "error unmarshaling driver status",
+			driver:            "devicemapper",
+			driverStatus:      "{[[[asdf",
+			expectedDevice:    "",
+			expectedPartition: nil,
+			expectedError:     true,
+		},
+		{
+			name:              "loopback",
+			driver:            "devicemapper",
+			driverStatus:      `[["Data loop file","/var/lib/docker/devicemapper/devicemapper/data"]]`,
+			expectedDevice:    "",
+			expectedPartition: nil,
+			expectedError:     false,
+		},
+		{
+			name:              "missing pool name",
+			driver:            "devicemapper",
+			driverStatus:      `[[]]`,
+			expectedDevice:    "",
+			expectedPartition: nil,
+			expectedError:     true,
+		},
+		{
+			name:              "error invoking dmsetup",
+			driver:            "devicemapper",
+			driverStatus:      `[["Pool Name", "vg_vagrant-docker--pool"]]`,
+			dmsetupTableError: errors.New("foo"),
+			expectedDevice:    "",
+			expectedPartition: nil,
+			expectedError:     true,
+		},
+		{
+			name:              "unable to parse dmsetup table",
+			driver:            "devicemapper",
+			driverStatus:      `[["Pool Name", "vg_vagrant-docker--pool"]]`,
+			dmsetupTable:      "no data here!",
+			expectedDevice:    "",
+			expectedPartition: nil,
+			expectedError:     true,
+		},
+		{
+			name:           "happy path",
+			driver:         "devicemapper",
+			driverStatus:   `[["Pool Name", "vg_vagrant-docker--pool"]]`,
+			dmsetupTable:   "0 53870592 thin-pool 253:2 253:3 1024 0 1 skip_block_zeroing",
+			expectedDevice: "vg_vagrant-docker--pool",
+			expectedPartition: &partition{
+				fsType:    "devicemapper",
+				major:     253,
+				minor:     3,
+				blockSize: 1024,
+			},
+			expectedError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		fsInfo := &RealFsInfo{
+			dmsetup: &testDmsetup{
+				data: []byte(tt.dmsetupTable),
+			},
+		}
+
+		dockerInfo := map[string]string{
+			"Driver":       tt.driver,
+			"DriverStatus": tt.driverStatus,
+		}
+
+		device, partition, err := fsInfo.getDockerDeviceMapperInfo(dockerInfo)
+
+		if tt.expectedError && err == nil {
+			t.Errorf("%s: expected error but got nil", tt.name)
+			continue
+		}
+		if !tt.expectedError && err != nil {
+			t.Errorf("%s: unexpected error: %v", tt.name, err)
+			continue
+		}
+
+		if e, a := tt.expectedDevice, device; e != a {
+			t.Errorf("%s: device: expected %q, got %q", tt.name, e, a)
+		}
+
+		if e, a := tt.expectedPartition, partition; !reflect.DeepEqual(e, a) {
+			t.Errorf("%s: partition: expected %#v, got %#v", tt.name, e, a)
+		}
+	}
+}
+
+func TestAddDockerImagesLabel(t *testing.T) {
+	tests := []struct {
+		name                           string
+		driver                         string
+		driverStatus                   string
+		dmsetupTable                   string
+		getDockerDeviceMapperInfoError error
+		partitions                     map[string]partition
+		expectedDockerDevice           string
+		expectedPartition              *partition
+	}{
+		{
+			name:         "devicemapper, not loopback",
+			driver:       "devicemapper",
+			driverStatus: `[["Pool Name", "vg_vagrant-docker--pool"]]`,
+			dmsetupTable: "0 53870592 thin-pool 253:2 253:3 1024 0 1 skip_block_zeroing",
 			partitions: map[string]partition{
 				"/dev/mapper/vg_vagrant-lv_root": {
 					mountpoint: "/",
 					fsType:     "devicemapper",
 				},
-				"vg_vagrant-docker--pool": {
-					mountpoint: "",
-					fsType:     "devicemapper",
-				},
 			},
-			dockerImagesDevice:       "vg_vagrant-docker--pool",
-			expectedDockerDevice:     "vg_vagrant-docker--pool",
-			expectedSystemRootDevice: "/dev/mapper/vg_vagrant-lv_root",
+			expectedDockerDevice: "vg_vagrant-docker--pool",
+			expectedPartition: &partition{
+				fsType:    "devicemapper",
+				major:     253,
+				minor:     3,
+				blockSize: 1024,
+			},
 		},
 		{
-			name: "/ in 1 LV, images on non-devicemapper mount",
+			name:         "devicemapper, loopback on non-root partition",
+			driver:       "devicemapper",
+			driverStatus: `[["Data loop file","/var/lib/docker/devicemapper/devicemapper/data"]]`,
 			partitions: map[string]partition{
 				"/dev/mapper/vg_vagrant-lv_root": {
 					mountpoint: "/",
 					fsType:     "devicemapper",
-				},
-				"/dev/sda1": {
-					mountpoint: "/var/lib/docker",
-					fsType:     "ext4",
-				},
-			},
-			dockerImagesDevice:       "",
-			expectedDockerDevice:     "/dev/sda1",
-			expectedSystemRootDevice: "/dev/mapper/vg_vagrant-lv_root",
-		},
-		{
-			name: "just 1 / partition, devicemapper",
-			partitions: map[string]partition{
-				"/dev/mapper/vg_vagrant-lv_root": {
-					mountpoint: "/",
-					fsType:     "devicemapper",
-				},
-			},
-			dockerImagesDevice:       "",
-			expectedDockerDevice:     "/dev/mapper/vg_vagrant-lv_root",
-			expectedSystemRootDevice: "/dev/mapper/vg_vagrant-lv_root",
-		},
-		{
-			name: "just 1 / partition, not devicemapper",
-			partitions: map[string]partition{
-				"/dev/sda1": {
-					mountpoint: "/",
-					fsType:     "ext4",
-				},
-			},
-			dockerImagesDevice:       "",
-			expectedDockerDevice:     "/dev/sda1",
-			expectedSystemRootDevice: "/dev/sda1",
-		},
-		{
-			name: "devicemapper loopback on non-root partition",
-			partitions: map[string]partition{
-				"/dev/sda1": {
-					mountpoint: "/",
-					fsType:     "ext4",
 				},
 				"/dev/sdb1": {
 					mountpoint: "/var/lib/docker/devicemapper",
-					fsType:     "ext4",
-				},
-				"docker-253:0-34470016-pool": {
-					// pretend that the loopback file is at /var/lib/docker/devicemapper/devicemapper/data and
-					// /var/lib/docker/devicemapper is on a different partition than /
-					mountpoint: "",
-					fsType:     "devicemapper",
 				},
 			},
-			// dockerImagesDevice is empty b/c this simulates a loopback setup
-			dockerImagesDevice:       "",
-			expectedDockerDevice:     "/dev/sdb1",
-			expectedSystemRootDevice: "/dev/sda1",
-		},
-		{
-			name: "devicemapper, not loopback, /var/lib/docker/devicemapper on non-root partition",
-			partitions: map[string]partition{
-				"/dev/sda1": {
-					mountpoint: "/",
-					fsType:     "ext4",
-				},
-				"/dev/sdb1": {
-					mountpoint: "/var/lib/docker/devicemapper",
-					fsType:     "ext4",
-				},
-				"vg_vagrant-docker--pool": {
-					mountpoint: "",
-					fsType:     "devicemapper",
-				},
-			},
-			dockerImagesDevice:       "vg_vagrant-docker--pool",
-			expectedDockerDevice:     "vg_vagrant-docker--pool",
-			expectedSystemRootDevice: "/dev/sda1",
+			expectedDockerDevice: "/dev/sdb1",
 		},
 		{
 			name: "multiple mounts - innermost check",
@@ -280,117 +358,38 @@ func TestAddLabels(t *testing.T) {
 					fsType:     "btrfs",
 				},
 			},
-			dockerImagesDevice:       "",
-			expectedDockerDevice:     "/dev/sdb2",
-			expectedSystemRootDevice: "/dev/sda1",
+			expectedDockerDevice: "/dev/sdb2",
 		},
 	}
 
 	for _, tt := range tests {
 		fsInfo := &RealFsInfo{
-			labels:     map[string]string{LabelDockerImages: tt.dockerImagesDevice},
+			labels:     map[string]string{},
 			partitions: tt.partitions,
+			dmsetup: &testDmsetup{
+				data: []byte(tt.dmsetupTable),
+			},
 		}
 
-		context := Context{DockerRoot: "/var/lib/docker"}
+		context := Context{
+			DockerRoot: "/var/lib/docker",
+			DockerInfo: map[string]string{
+				"Driver":       tt.driver,
+				"DriverStatus": tt.driverStatus,
+			},
+		}
 
-		fsInfo.addLabels(context)
+		fsInfo.addDockerImagesLabel(context)
 
 		if e, a := tt.expectedDockerDevice, fsInfo.labels[LabelDockerImages]; e != a {
 			t.Errorf("%s: docker device: expected %q, got %q", tt.name, e, a)
 		}
-		if e, a := tt.expectedSystemRootDevice, fsInfo.labels[LabelSystemRoot]; e != a {
-			t.Errorf("%s: system root: expected %q, got %q", tt.name, e, a)
+
+		if tt.expectedPartition == nil {
+			continue
 		}
-	}
-}
-
-// This test ensures that NewFsInfo won't assign the devicemapper device used for Docker storage to
-// LabelDockerImages if the devicemapper device is using loopback. If we did set the label for a
-// loopback device, that would result in the loopback device's capacity/available/used information
-// being reported back, which could greatly exceed the actual physical capacity of the actual device
-// on which the loopback file resides.
-func TestDockerDMDeviceReturnsErrorForLoopback(t *testing.T) {
-	driverStatus := `[
-        [
-            "Pool Name",
-            "docker-253:0-34470016-pool"
-        ],
-        [
-            "Pool Blocksize",
-            "65.54 kB"
-        ],
-        [
-            "Base Device Size",
-            "107.4 GB"
-        ],
-        [
-            "Backing Filesystem",
-            ""
-        ],
-        [
-            "Data file",
-            "/dev/loop0"
-        ],
-        [
-            "Metadata file",
-            "/dev/loop1"
-        ],
-        [
-            "Data Space Used",
-            "7.684 GB"
-        ],
-        [
-            "Data Space Total",
-            "107.4 GB"
-        ],
-        [
-            "Data Space Available",
-            "2.753 GB"
-        ],
-        [
-            "Metadata Space Used",
-            "12.21 MB"
-        ],
-        [
-            "Metadata Space Total",
-            "2.147 GB"
-        ],
-        [
-            "Metadata Space Available",
-            "2.135 GB"
-        ],
-        [
-            "Udev Sync Supported",
-            "true"
-        ],
-        [
-            "Deferred Removal Enabled",
-            "false"
-        ],
-        [
-            "Deferred Deletion Enabled",
-            "false"
-        ],
-        [
-            "Deferred Deleted Device Count",
-            "0"
-        ],
-        [
-            "Data loop file",
-            "/var/lib/docker/devicemapper/devicemapper/data"
-        ],
-        [
-            "Metadata loop file",
-            "/var/lib/docker/devicemapper/devicemapper/metadata"
-        ],
-        [
-            "Library Version",
-            "1.02.109 (2015-09-22)"
-        ]
-    ]`
-
-	if _, _, _, _, err := dockerDMDevice(driverStatus); err == nil {
-		t.Errorf("unexpected nil error")
+		if e, a := *tt.expectedPartition, fsInfo.partitions[tt.expectedDockerDevice]; !reflect.DeepEqual(e, a) {
+			t.Errorf("%s: docker partition: expected %#v, got %#v", tt.name, e, a)
+		}
 	}
 }
