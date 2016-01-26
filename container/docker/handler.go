@@ -226,16 +226,8 @@ func libcontainerConfigToContainerSpec(config *libcontainerconfigs.Config, mi *i
 	return spec
 }
 
-var (
-	hasNetworkModes = map[string]bool{
-		"host":    true,
-		"bridge":  true,
-		"default": true,
-	}
-)
-
 func hasNet(networkMode string) bool {
-	return hasNetworkModes[networkMode]
+	return !strings.HasPrefix(networkMode, "container:")
 }
 
 func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
