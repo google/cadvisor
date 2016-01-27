@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.20.5 (2016-01-27)
+- Breaking: Use uint64 for memory stats
+- Bug: Fix devicemapper partition labelling
+- Bug: Fix network stats when using new Docker network functionality
+- Bug: Fix env var label mapping initialization
+- Dependencies: libcontainer update
+
 ### 0.20.4 (2016-01-20)
 - Godep updates
 
