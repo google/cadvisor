@@ -14,8 +14,11 @@ import (
 type Status int
 
 const (
+	// The container exists but has not been run yet
+	Created Status = iota
+
 	// The container exists and is running.
-	Running Status = iota + 1
+	Running
 
 	// The container exists, it is in the process of being paused.
 	Pausing
@@ -32,6 +35,8 @@ const (
 
 func (s Status) String() string {
 	switch s {
+	case Created:
+		return "created"
 	case Running:
 		return "running"
 	case Pausing:
@@ -43,7 +48,7 @@ func (s Status) String() string {
 	case Destroyed:
 		return "destroyed"
 	default:
-		return "undefined"
+		return "unknown"
 	}
 }
 

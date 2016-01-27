@@ -18,6 +18,10 @@ const (
 	procRun
 )
 
+type syncT struct {
+	Type syncType `json:"type"`
+}
+
 var errorTemplate = template.Must(template.New("error").Parse(`Timestamp: {{.Timestamp}}
 Code: {{.ECode}}
 {{if .Message }}

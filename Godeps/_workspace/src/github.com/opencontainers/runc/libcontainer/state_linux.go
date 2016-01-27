@@ -117,7 +117,7 @@ func (r *runningState) transition(s containerState) error {
 		}
 		r.c.state = s
 		return nil
-	case *pausedState, *nullState:
+	case *pausedState:
 		r.c.state = s
 		return nil
 	case *runningState:
@@ -202,22 +202,22 @@ func (r *restoredState) destroy() error {
 	return destroy(r.c)
 }
 
-// nullState is used whenever a container is restored, loaded, or setting additional
+// createdState is used whenever a container is restored, loaded, or setting additional
 // processes inside and it should not be destroyed when it is exiting.
-type nullState struct {
+type createdState struct {
 	c *linuxContainer
 	s Status
 }
 
-func (n *nullState) status() Status {
+func (n *createdState) status() Status {
 	return n.s
 }
 
-func (n *nullState) transition(s containerState) error {
+func (n *createdState) transition(s containerState) error {
 	n.c.state = s
 	return nil
 }
 
-func (n *nullState) destroy() error {
+func (n *createdState) destroy() error {
 	return nil
 }

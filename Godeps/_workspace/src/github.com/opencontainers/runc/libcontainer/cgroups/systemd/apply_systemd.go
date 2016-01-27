@@ -387,6 +387,28 @@ func joinPids(c *configs.Cgroup, pid int) error {
 	return nil
 }
 
+// systemd represents slice heirarchy using `-`, so we need to follow suit when
+// generating the path of slice. Essentially, test-a-b.slice becomes
+// test.slice/test-a.slice/test-a-b.slice.
+func expandSlice(slice string) (string, error) {
+	suffix := ".slice"
+	sliceName := strings.TrimSuffix(slice, suffix)
+
+	var path, prefix string
+	for _, component := range strings.Split(sliceName, "-") {
+		// test--a.slice isn't permitted, nor is -test.slice.
+		if component == "" {
+			return "", fmt.Errorf("invalid slice name: %s", slice)
+		}
+
+		// Append the component to the path and to the prefix.
+		path += prefix + component + suffix + "/"
+		prefix += component + "-"
+	}
+
+	return path, nil
+}
+
 func getSubsystemPath(c *configs.Cgroup, subsystem string) (string, error) {
 	mountpoint, err := cgroups.FindCgroupMountpoint(subsystem)
 	if err != nil {
@@ -401,6 +423,11 @@ func getSubsystemPath(c *configs.Cgroup, subsystem string) (string, error) {
 	slice := "system.slice"
 	if c.Parent != "" {
 		slice = c.Parent
+	}
+
+	slice, err = expandSlice(slice)
+	if err != nil {
+		return "", err
 	}
 
 	return filepath.Join(mountpoint, initPath, slice, getUnitName(c)), nil

@@ -18,6 +18,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/cgroups/systemd"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/configs/validate"
+	"github.com/opencontainers/runc/libcontainer/utils"
 )
 
 const (
@@ -202,7 +203,7 @@ func (l *LinuxFactory) Load(id string) (Container, error) {
 		cgroupManager: l.NewCgroupsManager(state.Config.Cgroups, state.CgroupPaths),
 		root:          containerRoot,
 	}
-	c.state = &nullState{c: c}
+	c.state = &createdState{c: c, s: Created}
 	if err := c.refreshState(); err != nil {
 		return nil, err
 	}
@@ -235,15 +236,15 @@ func (l *LinuxFactory) StartInitialization() (err error) {
 		if err != nil {
 			if _, ok := i.(*linuxStandardInit); ok {
 				//  Synchronisation only necessary for standard init.
-				if err := json.NewEncoder(pipe).Encode(procError); err != nil {
+				if err := utils.WriteJSON(pipe, syncT{procError}); err != nil {
 					panic(err)
 				}
 			}
-			if err := json.NewEncoder(pipe).Encode(newSystemError(err)); err != nil {
+			if err := utils.WriteJSON(pipe, newSystemError(err)); err != nil {
 				panic(err)
 			}
 		} else {
-			if err := json.NewEncoder(pipe).Encode(procStart); err != nil {
+			if err := utils.WriteJSON(pipe, syncT{procStart}); err != nil {
 				panic(err)
 			}
 		}
