@@ -21,6 +21,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/criurpc"
+	"github.com/opencontainers/runc/libcontainer/utils"
 	"github.com/vishvananda/netlink/nl"
 )
 
@@ -964,7 +965,7 @@ func (c *linuxContainer) saveState(s *State) error {
 		return err
 	}
 	defer f.Close()
-	return json.NewEncoder(f).Encode(s)
+	return utils.WriteJSON(f, s)
 }
 
 func (c *linuxContainer) deleteState() error {

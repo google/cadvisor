@@ -16,6 +16,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/system"
+	"github.com/opencontainers/runc/libcontainer/utils"
 )
 
 type parentProcess interface {
@@ -84,7 +85,7 @@ func (p *setnsProcess) start() (err error) {
 			return newSystemError(err)
 		}
 	}
-	if err := json.NewEncoder(p.parentPipe).Encode(p.config); err != nil {
+	if err := utils.WriteJSON(p.parentPipe, p.config); err != nil {
 		return newSystemError(err)
 	}
 
@@ -231,9 +232,8 @@ func (p *initProcess) start() (err error) {
 	if err := p.sendConfig(); err != nil {
 		return newSystemError(err)
 	}
-
 	var (
-		procSync syncType
+		procSync syncT
 		sentRun  bool
 		ierr     *genericError
 	)
@@ -246,8 +246,7 @@ loop:
 			}
 			return newSystemError(err)
 		}
-
-		switch procSync {
+		switch procSync.Type {
 		case procStart:
 			break loop
 		case procReady:
@@ -255,7 +254,7 @@ loop:
 				return newSystemError(err)
 			}
 			// Sync with child.
-			if err := json.NewEncoder(p.parentPipe).Encode(procRun); err != nil {
+			if err := utils.WriteJSON(p.parentPipe, syncT{procRun}); err != nil {
 				return newSystemError(err)
 			}
 			sentRun = true
@@ -317,10 +316,7 @@ func (p *initProcess) startTime() (string, error) {
 
 func (p *initProcess) sendConfig() error {
 	// send the state to the container's init process then shutdown writes for the parent
-	if err := json.NewEncoder(p.parentPipe).Encode(p.config); err != nil {
-		return err
-	}
-	return nil
+	return utils.WriteJSON(p.parentPipe, p.config)
 }
 
 func (p *initProcess) createNetworkInterfaces() error {

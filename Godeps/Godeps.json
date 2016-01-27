@@ -124,7 +124,7 @@
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer",
 			"Comment": "v0.0.7",
-			"Rev": "3268a1ea007f54f16e4d969c0900efb59beb3d08"
+			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
 		},
 		{
 			"ImportPath": "github.com/pborman/uuid",

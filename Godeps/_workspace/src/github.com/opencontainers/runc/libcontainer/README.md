@@ -69,6 +69,7 @@ config := &configs.Config{
 		{Type: configs.NEWUTS},
 		{Type: configs.NEWIPC},
 		{Type: configs.NEWPID},
+		{Type: configs.NEWUSER},
 		{Type: configs.NEWNET},
 	}),
 	Cgroups: &configs.Cgroup{
@@ -127,6 +128,20 @@ config := &configs.Config{
 			Destination: "/sys",
 			Device:      "sysfs",
 			Flags:       defaultMountFlags | syscall.MS_RDONLY,
+		},
+	},
+	UidMappings: []configs.IDMap{
+		{
+			ContainerID: 0,
+			Host: 1000,
+			size: 65536,
+		},
+	},
+	GidMappings: []configs.IDMap{
+		{
+			ContainerID: 0,
+			Host: 1000,
+			size: 65536,
 		},
 	},
 	Networks: []*configs.Network{
