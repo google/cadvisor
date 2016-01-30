@@ -116,6 +116,8 @@ type dockerFactory struct {
 
 	// Information about mounted filesystems.
 	fsInfo fs.FsInfo
+
+	dockerVersion []int
 }
 
 func (self *dockerFactory) String() string {
@@ -140,6 +142,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		&self.cgroupSubsystems,
 		inHostNamespace,
 		metadataEnvs,
+		self.dockerVersion,
 	)
 	return
 }
@@ -253,20 +256,21 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
+	var dockerVersion []int
 	if version, err := client.Version(); err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	} else {
 		expected_version := []int{1, 0, 0}
 		version_string := version.Get("Version")
-		version, err := parseDockerVersion(version_string)
+		dockerVersion, err = parseDockerVersion(version_string)
 		if err != nil {
 			return fmt.Errorf("couldn't parse docker version: %v", err)
 		}
-		for index, number := range version {
+		for index, number := range dockerVersion {
 			if number > expected_version[index] {
 				break
 			} else if number < expected_version[index] {
-				return fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as \"%v\"", expected_version, version, version_string)
+				return fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as \"%v\"", expected_version, dockerVersion, version_string)
 			}
 		}
 	}
@@ -298,12 +302,13 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 
 	glog.Infof("Registering Docker factory")
 	f := &dockerFactory{
-		machineInfoFactory: factory,
+		cgroupSubsystems:   cgroupSubsystems,
 		client:             client,
+		dockerVersion:      dockerVersion,
+		fsInfo:             fsInfo,
+		machineInfoFactory: factory,
 		storageDriver:      storageDriver(sd),
 		storageDriverDir:   storageDir,
-		cgroupSubsystems:   cgroupSubsystems,
-		fsInfo:             fsInfo,
 	}
 	container.RegisterContainerHandlerFactory(f)
 	return nil
