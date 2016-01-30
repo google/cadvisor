@@ -35,14 +35,10 @@ import (
 )
 
 const (
-	// Path to aufs dir where all the files exist.
-	// aufs/layers is ignored here since it does not hold a lot of data.
-	// aufs/mnt contains the mount points used to compose the rootfs. Hence it is also ignored.
-	pathToAufsDir = "aufs/diff"
+	// The read write layers exist here.
+	aufsRWLayer = "diff"
 	// Path to the directory where docker stores log files if the json logging driver is enabled.
 	pathToContainersDir = "containers"
-	// Path to the overlayfs storage driver directory.
-	pathToOverlayDir = "overlay"
 )
 
 type dockerContainerHandler struct {
@@ -92,6 +88,7 @@ func newDockerContainerHandler(
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
 	storageDriver storageDriver,
+	storageDriverDir string,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
 	metadataEnvs []string,
@@ -118,13 +115,13 @@ func newDockerContainerHandler(
 	id := ContainerNameToDockerId(name)
 
 	// Add the Containers dir where the log files are stored.
-	otherStorageDir := path.Join(*dockerRootDir, pathToContainersDir, id)
+	otherStorageDir := path.Join(path.Dir(storageDriverDir), pathToContainersDir, id)
 	var rootfsStorageDir string
 	switch storageDriver {
 	case aufsStorageDriver:
-		rootfsStorageDir = path.Join(*dockerRootDir, pathToAufsDir, id)
+		rootfsStorageDir = path.Join(storageDriverDir, aufsRWLayer, id)
 	case overlayStorageDriver:
-		rootfsStorageDir = path.Join(*dockerRootDir, pathToOverlayDir, id)
+		rootfsStorageDir = path.Join(storageDriverDir, id)
 	}
 
 	handler := &dockerContainerHandler{
