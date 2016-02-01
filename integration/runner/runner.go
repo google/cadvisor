@@ -17,9 +17,11 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -32,6 +34,8 @@ import (
 
 	"github.com/google/cadvisor/integration/common"
 
+	cadvisorApi "github.com/google/cadvisor/info/v2"
+
 	"github.com/golang/glog"
 )
 
@@ -42,6 +46,27 @@ var port = flag.Int("port", 8080, "Port in which to start cAdvisor in the remote
 var testRetryCount = flag.Int("test-retry-count", 3, "Number of times to retry failed tests before failing.")
 var testRetryWhitelist = flag.String("test-retry-whitelist", "", "Path to newline separated list of regexexp for test failures that should be retried.  If empty, no tests are retried.")
 var retryRegex *regexp.Regexp
+
+func getAttributes(ipAddress, portStr string) (*cadvisorApi.Attributes, error) {
+	// Get host attributes and log attributes if the tests fail.
+	var attributes cadvisorApi.Attributes
+	resp, err := http.Get(fmt.Sprintf("http://%s:%s/api/v2.1/attributes", ipAddress, portStr))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get attributes - %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to get attributes. Status code - %v", resp.StatusCode)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read attributes response body - %v", err)
+	}
+	if err := json.Unmarshal(body, &attributes); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal attributes - %v", err)
+	}
+	return &attributes, nil
+}
 
 func RunCommand(cmd string, args ...string) error {
 	output, err := exec.Command(cmd, args...).CombinedOutput()
@@ -73,13 +98,12 @@ func PushAndRunTests(host, testDir string) error {
 		return fmt.Errorf("failed to copy binary: %v", err)
 	}
 
-	// TODO(vmarmol): Get logs in case of failures.
 	// Start cAdvisor.
 	glog.Infof("Running cAdvisor on %q...", host)
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error)
 	go func() {
-		args = common.GetGCComputeArgs("ssh", host, "--", fmt.Sprintf("sudo %s --port %s --logtostderr", path.Join(testDir, cadvisorBinary), portStr))
+		args = common.GetGCComputeArgs("ssh", host, "--", fmt.Sprintf("sudo %s --port %s --logtostderr &> %s/log.txt", path.Join(testDir, cadvisorBinary), portStr, testDir))
 		err = RunCommand("gcloud", args...)
 		if err != nil {
 			errChan <- fmt.Errorf("error running cAdvisor: %v", err)
@@ -119,6 +143,11 @@ func PushAndRunTests(host, testDir string) error {
 		return fmt.Errorf("timed out waiting for cAdvisor to come up at host %q", host)
 	}
 
+	// Get attributes for debugging purposes.
+	attributes, err := getAttributes(ipAddress, portStr)
+	if err != nil {
+		return fmt.Errorf("%v - %q", err, host)
+	}
 	// Run the tests in a retry loop.
 	glog.Infof("Running integration tests targeting %q...", host)
 	for i := 0; i <= *testRetryCount; i++ {
@@ -141,9 +170,20 @@ func PushAndRunTests(host, testDir string) error {
 		}
 	}
 	if err != nil {
-		err = fmt.Errorf("error on host %s: %v", host, err)
+		err = fmt.Errorf("error on host %s: %v\n%+v", host, err, attributes)
+		// Copy logs from the host
+		args = common.GetGCComputeArgs("copy-files", fmt.Sprintf("%s:%s/log.txt", host, testDir), "./")
+		err = RunCommand("gcloud", args...)
+		if err != nil {
+			return fmt.Errorf("error fetching logs: %v", err)
+		}
+		defer os.Remove("./log.txt")
+		logs, err := ioutil.ReadFile("./log.txt")
+		if err != nil {
+			return fmt.Errorf("error reading local log file: %v", err)
+		}
+		glog.Errorf("%v", logs)
 	}
-
 	return err
 }
 
