@@ -170,7 +170,6 @@ func PushAndRunTests(host, testDir string) error {
 		}
 	}
 	if err != nil {
-		err = fmt.Errorf("error on host %s: %v\n%+v", host, err, attributes)
 		// Copy logs from the host
 		args = common.GetGCComputeArgs("copy-files", fmt.Sprintf("%s:%s/log.txt", host, testDir), "./")
 		err = RunCommand("gcloud", args...)
@@ -182,7 +181,8 @@ func PushAndRunTests(host, testDir string) error {
 		if err != nil {
 			return fmt.Errorf("error reading local log file: %v", err)
 		}
-		glog.Errorf("%v", logs)
+		glog.Errorf("%v", string(logs))
+		err = fmt.Errorf("error on host %s: %v\n%+v", host, err, attributes)
 	}
 	return err
 }
