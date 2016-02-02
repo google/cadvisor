@@ -1,0 +1,128 @@
+package: github.com/google/cadvisor
+import:
+- package: bitbucket.org/ww/goautoneg
+  version: '''75cd24fc2f2c2a2088577d12123ddee5f54e0675'''
+- package: github.com/SeanDolphin/bqschema
+  version: f92a08f515e1bf718e995076a37c2f534b1deb08
+- package: github.com/Shopify/sarama
+  version: 87ec8d76e89cc002ff5673ee7598ae1db2f32424
+- package: github.com/Sirupsen/logrus
+  version: 26709e2714106fb8ad40b773b711ebce25b78914
+- package: github.com/abbot/go-http-auth
+  version: c0ef4539dfab4d21c8ef20ba2924f9fc6f186d35
+- package: github.com/beorn7/perks
+  version: b965b613227fddccbfffe13eae360ed3fa822f8d
+  subpackages:
+  - quantile
+- package: github.com/coreos/go-systemd
+  version: b4a58d95188dd092ae20072bac14cece0e67c388
+  subpackages:
+  - dbus
+  - util
+- package: github.com/docker/docker
+  version: a34a1d598c6096ed8b5ce5219e77d68e5cd85462
+  subpackages:
+  - pkg/mount
+  - pkg/symlink
+  - pkg/system
+  - pkg/units
+- package: github.com/docker/go-units
+  version: 0bbddae09c5a5419a8c6dcdd7ff90da3d450393b
+- package: github.com/fsouza/go-dockerclient
+  version: 412c004d923b7b89701e7a1632de83f843657a03
+- package: github.com/garyburd/redigo
+  version: 535138d7bcd717d6531c701ef5933d98b1866257
+  subpackages:
+  - internal
+  - redis
+- package: github.com/godbus/dbus
+  version: c7fdd8b5cd55e87b4e1f4e372cdb1db61dd6c66f
+- package: github.com/golang/glog
+  version: fca8c8854093a154ff1eb580aae10276ad6b1b5f
+- package: github.com/golang/protobuf
+  version: f7137ae6b19afbfd61a94b746fda3b3fe0491874
+  subpackages:
+  - proto
+- package: github.com/golang/snappy
+  version: 723cc1e459b8eea2dea4583200fd60757d40097a
+- package: github.com/influxdb/influxdb
+  version: 9eab56311373ee6f788ae5dfc87e2240038f0eb4
+  subpackages:
+  - client
+  - models
+  - pkg/escape
+- package: github.com/klauspost/crc32
+  version: a3b15ae34567abb20a22992b989cd76f48d09c47
+- package: github.com/kr/pretty
+  version: 088c856450c08c03eb32f7a6c221e6eefaa10e6f
+- package: github.com/kr/text
+  version: 6807e777504f54ad073ecef66747de158294b639
+- package: github.com/matttproud/golang_protobuf_extensions
+  version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
+  subpackages:
+  - pbutil
+- package: github.com/mistifyio/go-zfs
+  version: 1b4ae6fb4e77b095934d4430860ff202060169f8
+- package: github.com/opencontainers/runc
+  version: 7ca2aa4873aea7cb4265b1726acb24b90d8726c6
+  subpackages:
+  - libcontainer
+  - libcontainer/cgroups
+  - libcontainer/cgroups/fs
+  - libcontainer/configs
+- package: github.com/pborman/uuid
+  version: cccd189d45f7ac3368a0d127efb7f4d08ae0b655
+- package: github.com/prometheus/client_golang
+  version: e51041b3fa41cece0dca035740ba6411905be473
+  subpackages:
+  - prometheus
+- package: github.com/prometheus/client_model
+  version: fa8ad6fec33561be4280a8f0514318c79d7f6cb6
+  subpackages:
+  - go
+- package: github.com/prometheus/common
+  version: 1cc3e4c3b28fd42633a8c389c98cfbadf42621b1
+  subpackages:
+  - expfmt
+  - model
+- package: github.com/prometheus/procfs
+  version: 6c34ef819e19b4e16f410100ace4aa006f0e3bf8
+- package: github.com/stretchr/objx
+  version: cbeaeb16a013161a98496fad62933b1d21786672
+- package: github.com/stretchr/testify
+  version: 8ce79b9f0b77745113f82c17d0756771456ccbd3
+  subpackages:
+  - assert
+  - mock
+  - require
+- package: github.com/syndtr/gocapability
+  version: 2c00daeb6c3b45114c80ac44119e7b8801fdd852
+  subpackages:
+  - capability
+- package: github.com/vishvananda/netlink
+  version: 1e2e08e8a2dcdacaae3f14ac44c5cfa31361f270
+- package: golang.org/x/exp
+  version: d00e13ec443927751b2bd49e97dea7bf3b6a6487
+  subpackages:
+  - inotify
+- package: golang.org/x/net
+  version: 5627bad10b821d907ac4dc81fb3535ec7dd81c2b
+  subpackages:
+  - context
+- package: golang.org/x/oauth2
+  version: ca8a464d23d55afd32571475db223e065ffd8a52
+  subpackages:
+  - jwt
+- package: google.golang.org/api/bigquery/v2
+  version: 0c2979aeaa5b573e60d3ddffe5ce8dca8df309bd
+- package: google.golang.org/api
+  version: 0c2979aeaa5b573e60d3ddffe5ce8dca8df309bd
+  subpackages:
+  - googleapi
+- package: google.golang.org/cloud
+  version: 542bfb014d8e28df6e27be847dfdc40c510dab1a
+  subpackages:
+  - compute/metadata
+  - internal
+- package: gopkg.in/olivere/elastic.v2
+  version: 3cfe88295d20b6299bd935131fc0fd17316405ad
