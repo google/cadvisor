@@ -113,6 +113,8 @@ type DockerActions interface {
 	//   -> docker run busybox ping www.google.com
 	Run(args DockerRunArgs, cmd ...string) string
 	RunStress(args DockerRunArgs, cmd ...string) string
+
+	Version() []string
 }
 
 type ShellActions interface {
@@ -253,6 +255,15 @@ func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
 	})
 	return containerId
+}
+
+func (self dockerActions) Version() []string {
+	dockerCommand := []string{"docker", "version", "-f", "'{{.Server.Version}}'"}
+	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
+	if len(output) < 1 {
+		self.fm.T().Fatalf("need 1 arguments in output %v to get the version but have %v", output, len(output))
+	}
+	return strings.Split(output, ".")
 }
 
 func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
