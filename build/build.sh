@@ -38,6 +38,6 @@ ldflags="
   -X ${repo_path}/version.GoVersion=${go_version}"
 
 echo " >   cadvisor"
-godep go build -ldflags "${ldflags}" -o cadvisor${ext} ${repo_path}
+go build -ldflags "${ldflags}" -o cadvisor${ext} ${repo_path}
 
 exit 0

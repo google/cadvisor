@@ -157,7 +157,7 @@ func PushAndRunTests(host, testDir string) error {
 			glog.Warningf("Retrying (%d of %d) tests on host %s due to error %v", i, *testRetryCount, host, err)
 		}
 		// Run the command
-		err = RunCommand("godep", "go", "test", "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr)
+		err = RunCommand("", "go", "test", "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr)
 		if err == nil {
 			// On success, break out of retry loop
 			break
@@ -200,7 +200,7 @@ func Run() error {
 
 	// Build cAdvisor.
 	glog.Infof("Building cAdvisor...")
-	err := RunCommand("godep", "go", "build", "github.com/google/cadvisor")
+	err := RunCommand("go", "build", "github.com/google/cadvisor")
 	if err != nil {
 		return err
 	}

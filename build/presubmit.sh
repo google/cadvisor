@@ -17,8 +17,11 @@
 set -e
 set -x
 
+export GO15VENDOREXPERIMENT=1
 ./build/check_gofmt.sh .
 ./build/check_boilerplate.sh
-go vet github.com/google/cadvisor/...
-godep go test -v -race -test.short github.com/google/cadvisor/...
-godep go build github.com/google/cadvisor
+go vet $(shell $(GO) list ./... | grep -v /vendor/)
+go get github.com/Masterminds/glide
+go install github.com/Masterminds/glide
+go test -v -race -test.short $(glide novendor)
+go build github.com/google/cadvisor

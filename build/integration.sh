@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export GO15VENDOREXPERIMENT=1
 echo ">> starting cAdvisor locally"
 sudo ./cadvisor &
 echo ">> running integration tests against local cAdvisor"
-godep go test github.com/google/cadvisor/integration/tests/... --vmodule=*=2
+go test github.com/google/cadvisor/integration/tests/... --vmodule=*=2
 if [ $? -ne 0 ]
 then
     echo "Integration tests failed"

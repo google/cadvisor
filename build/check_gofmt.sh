@@ -21,7 +21,7 @@ if [ $# -ne 1 ]; then
 fi
 
 # Check formatting on non Godep'd code.
-GOFMT_PATHS=$(find . -not -wholename "*.git*" -not -wholename "*Godeps*" -not -name "." -type d)
+GOFMT_PATHS=$(find . -not -wholename "*.git*" -not -wholename "*vendor*" -not -name "." -type d)
 
 # Find any files with gofmt problems
 BAD_FILES=$(gofmt -s -l $GOFMT_PATHS)

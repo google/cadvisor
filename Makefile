@@ -11,8 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 
-GO := godep go
-pkgs  = $(shell $(GO) list ./...)
+GO := go
+GLIDE := glide
+pkgs := $(shell $(GO) list ./... | grep -v /vendor/)
+
+export GO15VENDOREXPERIMENT=1
 
 all: format build test
 
