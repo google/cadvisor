@@ -15,6 +15,7 @@
 package docker
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"path"
@@ -40,6 +41,7 @@ var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "do
 var DockerNamespace = "docker"
 
 // Basepath to all container specific information that libcontainer stores.
+// TODO: Deprecate this flag
 var dockerRootDir = flag.String("docker_root", "/var/lib/docker", "Absolute path to the Docker state root directory (default: /var/lib/docker)")
 var dockerRunDir = flag.String("docker_run", "/var/run/docker", "Absolute path to the Docker run directory (default: /var/run/docker)")
 
@@ -60,6 +62,10 @@ func DockerStateDir() string {
 // Whether the system is using Systemd.
 var useSystemd = false
 var check = sync.Once{}
+
+const (
+	dockerRootDirKey = "Root Dir"
+)
 
 func UseSystemd() bool {
 	check.Do(func() {
@@ -100,7 +106,8 @@ const (
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
-	storageDriver storageDriver
+	storageDriver    storageDriver
+	storageDriverDir string
 
 	client *docker.Client
 
@@ -129,6 +136,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.machineInfoFactory,
 		self.fsInfo,
 		self.storageDriver,
+		self.storageDriverDir,
 		&self.cgroupSubsystems,
 		inHostNamespace,
 		metadataEnvs,
@@ -204,6 +212,37 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 	return version_array, nil
 }
 
+func getStorageDir(dockerInfo *docker.Env) (string, error) {
+	storageDriverInfo := dockerInfo.GetList("DriverStatus")
+	if len(storageDriverInfo) == 0 {
+		return "", fmt.Errorf("failed to find docker storage driver options")
+	}
+
+	var storageDir string
+	for _, data := range storageDriverInfo {
+		if data == "" {
+			continue
+		}
+		var parts [][]string
+		if err := json.Unmarshal([]byte(data), &parts); err != nil {
+			return "", fmt.Errorf("failed to parse docker storage driver options - %+v", data)
+		}
+		for _, part := range parts {
+			if len(part) != 2 {
+				return "", fmt.Errorf("failed to parse docker storage driver options - %+v", part)
+			}
+			if part[0] == dockerRootDirKey {
+				storageDir = part[1]
+				break
+			}
+		}
+	}
+	if storageDir == "" {
+		return "", fmt.Errorf("failed to find docker storage directory from docker info. Expected key %q in storage driver info %v", dockerRootDirKey, storageDriverInfo)
+	}
+	return storageDir, nil
+}
+
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 	if UseSystemd() {
@@ -232,18 +271,26 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 		}
 	}
 
-	// Check that the libcontainer execdriver is used.
-	information, err := DockerInfo()
+	information, err := client.Info()
 	if err != nil {
 		return fmt.Errorf("failed to detect Docker info: %v", err)
 	}
-	execDriver, ok := information["ExecutionDriver"]
-	if !ok || !strings.HasPrefix(execDriver, "native") {
+
+	// Check that the libcontainer execdriver is used.
+	execDriver := information.Get("ExecutionDriver")
+	if !strings.HasPrefix(execDriver, "native") {
 		return fmt.Errorf("docker found, but not using native exec driver")
 	}
 
-	sd, _ := information["Driver"]
+	sd := information.Get("Driver")
+	if sd == "" {
+		return fmt.Errorf("failed to find docker storage driver")
+	}
 
+	storageDir, err := getStorageDir(information)
+	if err != nil {
+		return err
+	}
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
@@ -254,6 +301,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 		machineInfoFactory: factory,
 		client:             client,
 		storageDriver:      storageDriver(sd),
+		storageDriverDir:   storageDir,
 		cgroupSubsystems:   cgroupSubsystems,
 		fsInfo:             fsInfo,
 	}
