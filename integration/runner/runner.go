@@ -181,7 +181,7 @@ func PushAndRunTests(host, testDir string) error {
 		if err != nil {
 			return fmt.Errorf("error reading local log file: %v", err)
 		}
-		glog.Errorf("%v", string(logs))
+		glog.Errorf("----------------------\nLogs from Host: %q\n%v\n", host, string(logs))
 		err = fmt.Errorf("error on host %s: %v\n%+v", host, err, attributes)
 	}
 	return err

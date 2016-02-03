@@ -22,6 +22,7 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/integration/framework"
 
 	"github.com/stretchr/testify/assert"
@@ -34,6 +35,14 @@ import (
 func sanityCheck(alias string, containerInfo info.ContainerInfo, t *testing.T) {
 	assert.Contains(t, containerInfo.Aliases, alias, "Alias %q should be in list of aliases %v", alias, containerInfo.Aliases)
 	assert.NotEmpty(t, containerInfo.Stats, "Expected container to have stats")
+}
+
+// Sanity check the container by:
+// - Checking that the specified alias is a valid one for this container.
+// - Verifying that stats are not empty.
+func sanityCheckV2(alias string, info v2.ContainerInfo, t *testing.T) {
+	assert.Contains(t, info.Spec.Aliases, alias, "Alias %q should be in list of aliases %v", alias, info.Spec.Aliases)
+	assert.NotEmpty(t, info.Stats, "Expected container to have stats")
 }
 
 // Waits up to 5s for a container with the specified alias to appear.
@@ -263,6 +272,7 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	containerId := fm.Docker().RunBusybox("watch", "-n1", "wget", "https://www.google.com/")
 	waitForContainer(containerId, fm)
 
+	time.Sleep(10 * time.Second)
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
@@ -279,4 +289,38 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	assert.NotEqual(0, stat.Network.RxPackets, "Network rx packets should not be zero")
 	assert.NotEqual(stat.Network.RxBytes, stat.Network.TxBytes, "Network tx and rx bytes should not be equal")
 	assert.NotEqual(stat.Network.RxPackets, stat.Network.TxPackets, "Network tx and rx packets should not be equal")
+}
+
+func TestDockerFilesystemStats(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	storageDriver := fm.Docker().StorageDriver()
+	switch storageDriver {
+	case framework.Aufs:
+	case framework.Overlay:
+	default:
+		t.Skip("skipping filesystem stats test")
+	}
+	// Wait for the container to show up.
+	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", "dd if=/dev/zero of=/file count=1 bs=1M & ping www.google.com")
+	waitForContainer(containerId, fm)
+	time.Sleep(time.Minute)
+	request := &v2.RequestOptions{
+		IdType: v2.TypeDocker,
+		Count:  1,
+	}
+	containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerId, request)
+	time.Sleep(time.Minute)
+	require.NoError(t, err)
+	require.True(t, len(containerInfo) == 1)
+	var info v2.ContainerInfo
+	for _, cInfo := range containerInfo {
+		info = cInfo
+	}
+	sanityCheckV2(containerId, info, t)
+	require.NotNil(t, info.Stats[0].Filesystem.BaseUsageBytes)
+	assert.True(t, *info.Stats[0].Filesystem.BaseUsageBytes > (1<<6), "expected base fs usage to be greater than 1MB")
+	require.NotNil(t, info.Stats[0].Filesystem.TotalUsageBytes)
+	assert.True(t, *info.Stats[0].Filesystem.TotalUsageBytes > (1<<6), "expected total fs usage to be greater than 1MB")
 }

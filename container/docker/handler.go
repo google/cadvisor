@@ -91,7 +91,7 @@ func getRwLayerID(containerID, storageDriverDir string, dockerVersion []int) (st
 		rwLayerIDDir  = "../image/aufs/layerdb/mounts/"
 		rwLayerIDFile = "mount-id"
 	)
-	if dockerVersion[1] < randomizedRWLayerMinorVersion {
+	if (dockerVersion[0] <= 1) && (dockerVersion[1] < randomizedRWLayerMinorVersion) {
 		return containerID, nil
 	}
 	bytes, err := ioutil.ReadFile(path.Join(storageDriverDir, rwLayerIDDir, containerID, rwLayerIDFile))

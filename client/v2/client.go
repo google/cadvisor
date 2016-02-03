@@ -21,7 +21,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path"
+	"strconv"
 	"strings"
 
 	v1 "github.com/google/cadvisor/info/v1"
@@ -85,6 +87,23 @@ func (self *Client) Attributes() (attr *v2.Attributes, err error) {
 	return
 }
 
+// Stats returns stats for the requested container.
+func (self *Client) Stats(name string, request *v2.RequestOptions) (map[string]v2.ContainerInfo, error) {
+	u := self.statsUrl(name)
+	ret := make(map[string]v2.ContainerInfo)
+	data := url.Values{
+		"type":      []string{request.IdType},
+		"count":     []string{strconv.Itoa(request.Count)},
+		"recursive": []string{strconv.FormatBool(request.Recursive)},
+	}
+
+	u = fmt.Sprintf("%s?%s", u, data.Encode())
+	if err := self.httpGetJsonData(&ret, nil, u, "stats"); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
 func (self *Client) machineInfoUrl() string {
 	return self.baseUrl + path.Join("machine")
 }
@@ -101,7 +120,11 @@ func (self *Client) attributesUrl() string {
 	return self.baseUrl + path.Join("attributes")
 }
 
-func (self *Client) httpGetResponse(postData interface{}, url, infoName string) ([]byte, error) {
+func (self *Client) statsUrl(name string) string {
+	return path.Join(self.baseUrl, "stats", name)
+}
+
+func (self *Client) httpGetResponse(postData interface{}, urlPath, infoName string) ([]byte, error) {
 	var resp *http.Response
 	var err error
 
@@ -110,24 +133,24 @@ func (self *Client) httpGetResponse(postData interface{}, url, infoName string) 
 		if marshalErr != nil {
 			return nil, fmt.Errorf("unable to marshal data: %v", marshalErr)
 		}
-		resp, err = http.Post(url, "application/json", bytes.NewBuffer(data))
+		resp, err = http.Post(urlPath, "application/json", bytes.NewBuffer(data))
 	} else {
-		resp, err = http.Get(url)
+		resp, err = http.Get(urlPath)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("unable to post %q to %q: %v", infoName, url, err)
+		return nil, fmt.Errorf("unable to post %q to %q: %v", infoName, urlPath, err)
 	}
 	if resp == nil {
-		return nil, fmt.Errorf("received empty response for %q from %q", infoName, url)
+		return nil, fmt.Errorf("received empty response for %q from %q", infoName, urlPath)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		err = fmt.Errorf("unable to read all %q from %q: %v", infoName, url, err)
+		err = fmt.Errorf("unable to read all %q from %q: %v", infoName, urlPath, err)
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("request %q failed with error: %q", url, strings.TrimSpace(string(body)))
+		return nil, fmt.Errorf("request %q failed with error: %q", urlPath, strings.TrimSpace(string(body)))
 	}
 	return body, nil
 }
