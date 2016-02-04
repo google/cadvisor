@@ -55,7 +55,13 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 				Aliases: []string{"testcontaineralias"},
 			},
 			Spec: info.ContainerSpec{
-				Image:        "test",
+				Image:  "test",
+				HasCpu: true,
+				Cpu: info.CpuSpec{
+					Limit:  1000,
+					Period: 10,
+					Quota:  10000,
+				},
 				CreationTime: time.Unix(1257894000, 0),
 				Labels: map[string]string{
 					"foo.label": "bar",

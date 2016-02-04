@@ -116,6 +116,15 @@ container_network_transmit_packets_total{foo_env="prod",foo_label="bar",id="test
 # HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
 # TYPE container_scrape_error gauge
 container_scrape_error 0
+# HELP container_spec_cpu_period CPU period of the container.
+# TYPE container_spec_cpu_period gauge
+container_spec_cpu_period{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 10
+# HELP container_spec_cpu_quota CPU quota of the container.
+# TYPE container_spec_cpu_quota gauge
+container_spec_cpu_quota{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 10000
+# HELP container_spec_cpu_shares CPU share of the container.
+# TYPE container_spec_cpu_shares gauge
+container_spec_cpu_shares{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1000
 # HELP container_start_time_seconds Start time of the container since unix epoch in seconds.
 # TYPE container_start_time_seconds gauge
 container_start_time_seconds{foo_env="prod",foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.257894e+09
