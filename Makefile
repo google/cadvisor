@@ -20,7 +20,7 @@ test:
 	@echo ">> running tests"
 	@$(GO) test -short -race $(pkgs)
 
-test-integration: test
+test-integration: build test
 	@./build/integration.sh
 
 format:
