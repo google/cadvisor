@@ -293,7 +293,8 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 
 	storageDir, err := getStorageDir(information)
 	if err != nil {
-		return err
+		glog.V(2).Infof("failed to detect storage directory from docker. Defaulting to using the value in --docker_root: %q", err, *dockerRootDir)
+		storageDir = path.Join(*dockerRootDir, sd)
 	}
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
