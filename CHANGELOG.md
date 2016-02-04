@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.21.0 (2016-02-03)
+- Support for filesystem stats with docker v1.10
+- Bug fixes.
+
 ### 0.20.5 (2016-01-27)
 - Breaking: Use uint64 for memory stats
 - Bug: Fix devicemapper partition labelling
