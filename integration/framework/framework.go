@@ -268,10 +268,12 @@ func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 func (self dockerActions) Version() []string {
 	dockerCommand := []string{"docker", "version", "-f", "'{{.Server.Version}}'"}
 	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
-	if len(output) != 1 {
-		self.fm.T().Fatalf("need 1 arguments in output %v to get the version but have %v", output, len(output))
+	output = strings.TrimSpace(output)
+	ret := strings.Split(output, ".")
+	if len(ret) != 3 {
+		self.fm.T().Fatalf("invalid version %v", output)
 	}
-	return strings.Split(output, ".")
+	return ret
 }
 
 func (self dockerActions) StorageDriver() string {
