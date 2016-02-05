@@ -26,7 +26,7 @@ import (
 
 func TestStorageDirDetectionWithOldVersions(t *testing.T) {
 	as := assert.New(t)
-	rwLayer, err := getRwLayerID("abcd", "/", []int{1, 9, 0})
+	rwLayer, err := getRwLayerID("abcd", "/", aufsStorageDriver, []int{1, 9, 0})
 	as.Nil(err)
 	as.Equal(rwLayer, "abcd")
 }
@@ -40,10 +40,10 @@ func TestStorageDirDetectionWithNewVersions(t *testing.T) {
 	randomIDPath := path.Join(testDir, "image/aufs/layerdb/mounts/", containerID)
 	as.Nil(os.MkdirAll(randomIDPath, os.ModePerm))
 	as.Nil(ioutil.WriteFile(path.Join(randomIDPath, "mount-id"), []byte(randomizedID), os.ModePerm))
-	rwLayer, err := getRwLayerID(containerID, path.Join(testDir, "aufs"), []int{1, 10, 0})
+	rwLayer, err := getRwLayerID(containerID, testDir, "aufs", []int{1, 10, 0})
 	as.Nil(err)
 	as.Equal(rwLayer, randomizedID)
-	rwLayer, err = getRwLayerID(containerID, path.Join(testDir, "aufs"), []int{1, 10, 0})
+	rwLayer, err = getRwLayerID(containerID, testDir, "aufs", []int{1, 10, 0})
 	as.Nil(err)
 	as.Equal(rwLayer, randomizedID)
 

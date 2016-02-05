@@ -15,7 +15,6 @@
 package docker
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"path"
@@ -106,8 +105,8 @@ const (
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
-	storageDriver    storageDriver
-	storageDriverDir string
+	storageDriver storageDriver
+	storageDir    string
 
 	client *docker.Client
 
@@ -138,7 +137,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.machineInfoFactory,
 		self.fsInfo,
 		self.storageDriver,
-		self.storageDriverDir,
+		self.storageDir,
 		&self.cgroupSubsystems,
 		inHostNamespace,
 		metadataEnvs,
@@ -215,37 +214,6 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 	return version_array, nil
 }
 
-func getStorageDir(dockerInfo *docker.Env) (string, error) {
-	storageDriverInfo := dockerInfo.GetList("DriverStatus")
-	if len(storageDriverInfo) == 0 {
-		return "", fmt.Errorf("failed to find docker storage driver options")
-	}
-
-	var storageDir string
-	for _, data := range storageDriverInfo {
-		if data == "" {
-			continue
-		}
-		var parts [][]string
-		if err := json.Unmarshal([]byte(data), &parts); err != nil {
-			return "", fmt.Errorf("failed to parse docker storage driver options - %+v", data)
-		}
-		for _, part := range parts {
-			if len(part) != 2 {
-				return "", fmt.Errorf("failed to parse docker storage driver options - %+v", part)
-			}
-			if part[0] == dockerRootDirKey {
-				storageDir = part[1]
-				break
-			}
-		}
-	}
-	if storageDir == "" {
-		return "", fmt.Errorf("failed to find docker storage directory from docker info. Expected key %q in storage driver info %v", dockerRootDirKey, storageDriverInfo)
-	}
-	return storageDir, nil
-}
-
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 	if UseSystemd() {
@@ -291,10 +259,9 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 		return fmt.Errorf("failed to find docker storage driver")
 	}
 
-	storageDir, err := getStorageDir(information)
-	if err != nil {
-		glog.V(2).Infof("failed to detect storage directory from docker. Defaulting to using the value in --docker_root: %q", err, *dockerRootDir)
-		storageDir = path.Join(*dockerRootDir, sd)
+	storageDir := information.Get("DockerRootDir")
+	if storageDir == "" {
+		storageDir = *dockerRootDir
 	}
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
@@ -309,7 +276,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 		fsInfo:             fsInfo,
 		machineInfoFactory: factory,
 		storageDriver:      storageDriver(sd),
-		storageDriverDir:   storageDir,
+		storageDir:         storageDir,
 	}
 	container.RegisterContainerHandlerFactory(f)
 	return nil
