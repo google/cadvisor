@@ -98,13 +98,6 @@ func New(t *testing.T) Framework {
 	return fm
 }
 
-const (
-	Aufs         string = "aufs"
-	Overlay      string = "overlay"
-	DeviceMapper string = "devicemapper"
-	Unknown      string = ""
-)
-
 type DockerActions interface {
 	// Run the no-op pause Docker container and return its ID.
 	RunPause() string
@@ -120,9 +113,6 @@ type DockerActions interface {
 	//   -> docker run busybox ping www.google.com
 	Run(args DockerRunArgs, cmd ...string) string
 	RunStress(args DockerRunArgs, cmd ...string) string
-
-	Version() []string
-	StorageDriver() string
 }
 
 type ShellActions interface {
@@ -263,44 +253,6 @@ func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
 	})
 	return containerId
-}
-
-func (self dockerActions) Version() []string {
-	dockerCommand := []string{"docker", "version", "-f", "'{{.Server.Version}}'"}
-	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
-	output = strings.TrimSpace(output)
-	ret := strings.Split(output, ".")
-	if len(ret) != 3 {
-		self.fm.T().Fatalf("invalid version %v", output)
-	}
-	return ret
-}
-
-func (self dockerActions) StorageDriver() string {
-	dockerCommand := []string{"docker", "info"}
-	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
-	if len(output) < 1 {
-		self.fm.T().Fatalf("failed to find docker storage driver - %v", output)
-	}
-	for _, line := range strings.Split(output, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "Storage Driver: ") {
-			idx := strings.LastIndex(line, ": ") + 2
-			driver := line[idx:]
-			switch driver {
-			case Aufs:
-				return Aufs
-			case Overlay:
-				return Overlay
-			case DeviceMapper:
-				return DeviceMapper
-			default:
-				return Unknown
-			}
-		}
-	}
-	self.fm.T().Fatalf("failed to find docker storage driver from info - %v", output)
-	return Unknown
 }
 
 func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
