@@ -215,7 +215,7 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 	return version_array, nil
 }
 
-func getStorageDir(dockerInfo *docker.Env) (string, error) {
+func getStorageDir(dockerInfo *docker.Env, sd storageDriver) (string, error) {
 	storageDriverInfo := dockerInfo.GetList("DriverStatus")
 	if len(storageDriverInfo) == 0 {
 		return "", fmt.Errorf("failed to find docker storage driver options")
@@ -241,6 +241,9 @@ func getStorageDir(dockerInfo *docker.Env) (string, error) {
 		}
 	}
 	if storageDir == "" {
+		if sd == devicemapperStorageDriver {
+			return "", nil
+		}
 		return "", fmt.Errorf("failed to find docker storage directory from docker info. Expected key %q in storage driver info %v", dockerRootDirKey, storageDriverInfo)
 	}
 	return storageDir, nil
@@ -291,7 +294,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 		return fmt.Errorf("failed to find docker storage driver")
 	}
 
-	storageDir, err := getStorageDir(information)
+	storageDir, err := getStorageDir(information, storageDriver(sd))
 	if err != nil {
 		glog.V(2).Infof("failed to detect storage directory from docker. Defaulting to using the value in --docker_root: %q", err, *dockerRootDir)
 		storageDir = path.Join(*dockerRootDir, sd)
