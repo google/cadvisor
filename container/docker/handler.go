@@ -137,16 +137,27 @@ func newDockerContainerHandler(
 	// Add the Containers dir where the log files are stored.
 	otherStorageDir := path.Join(path.Dir(storageDriverDir), pathToContainersDir, id)
 
-	rwLayerID, err := getRwLayerID(id, storageDriverDir, dockerVersion)
-	if err != nil {
-		return nil, err
-	}
 	var rootfsStorageDir string
 	switch storageDriver {
 	case aufsStorageDriver:
+		rwLayerID, err := getRwLayerID(id, storageDriverDir, dockerVersion)
+		if err != nil {
+			return nil, err
+		}
 		rootfsStorageDir = path.Join(storageDriverDir, aufsRWLayer, rwLayerID)
 	case overlayStorageDriver:
+		rwLayerID, err := getRwLayerID(id, storageDriverDir, dockerVersion)
+		if err != nil {
+			return nil, err
+		}
 		rootfsStorageDir = path.Join(storageDriverDir, rwLayerID)
+	}
+
+	var fs fsHandler
+	if storageDriver == aufsStorageDriver ||
+		storageDriver == overlayStorageDriver ||
+		storageDriver == zfsStorageDriver {
+		fs = newFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo)
 	}
 
 	handler := &dockerContainerHandler{
@@ -160,7 +171,7 @@ func newDockerContainerHandler(
 		fsInfo:             fsInfo,
 		rootFs:             rootFs,
 		rootfsStorageDir:   rootfsStorageDir,
-		fsHandler:          newFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo),
+		fsHandler:          fs,
 		envs:               make(map[string]string),
 	}
 
@@ -193,11 +204,15 @@ func newDockerContainerHandler(
 
 func (self *dockerContainerHandler) Start() {
 	// Start the filesystem handler.
-	self.fsHandler.start()
+	if self.fsHandler != nil {
+		self.fsHandler.start()
+	}
 }
 
 func (self *dockerContainerHandler) Cleanup() {
-	self.fsHandler.stop()
+	if self.fsHandler != nil {
+		self.fsHandler.stop()
+	}
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
@@ -287,9 +302,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 }
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
-	switch self.storageDriver {
-	case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
-	default:
+	if self.fsHandler == nil {
 		return nil
 	}
 
