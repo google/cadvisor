@@ -116,8 +116,6 @@ type dockerFactory struct {
 
 	// Information about mounted filesystems.
 	fsInfo fs.FsInfo
-
-	dockerVersion []int
 }
 
 func (self *dockerFactory) String() string {
@@ -142,7 +140,6 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		&self.cgroupSubsystems,
 		inHostNamespace,
 		metadataEnvs,
-		self.dockerVersion,
 	)
 	return
 }
@@ -256,21 +253,20 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	var dockerVersion []int
 	if version, err := client.Version(); err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	} else {
 		expected_version := []int{1, 0, 0}
 		version_string := version.Get("Version")
-		dockerVersion, err = parseDockerVersion(version_string)
+		version, err := parseDockerVersion(version_string)
 		if err != nil {
 			return fmt.Errorf("couldn't parse docker version: %v", err)
 		}
-		for index, number := range dockerVersion {
+		for index, number := range version {
 			if number > expected_version[index] {
 				break
 			} else if number < expected_version[index] {
-				return fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as \"%v\"", expected_version, dockerVersion, version_string)
+				return fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as \"%v\"", expected_version, version, version_string)
 			}
 		}
 	}
@@ -293,8 +289,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 
 	storageDir, err := getStorageDir(information)
 	if err != nil {
-		glog.V(2).Infof("failed to detect storage directory from docker. Defaulting to using the value in --docker_root: %q", err, *dockerRootDir)
-		storageDir = path.Join(*dockerRootDir, sd)
+		return err
 	}
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
@@ -303,13 +298,12 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 
 	glog.Infof("Registering Docker factory")
 	f := &dockerFactory{
-		cgroupSubsystems:   cgroupSubsystems,
-		client:             client,
-		dockerVersion:      dockerVersion,
-		fsInfo:             fsInfo,
 		machineInfoFactory: factory,
+		client:             client,
 		storageDriver:      storageDriver(sd),
 		storageDriverDir:   storageDir,
+		cgroupSubsystems:   cgroupSubsystems,
+		fsInfo:             fsInfo,
 	}
 	container.RegisterContainerHandlerFactory(f)
 	return nil

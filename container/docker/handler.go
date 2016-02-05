@@ -17,7 +17,6 @@ package docker
 
 import (
 	"fmt"
-	"io/ioutil"
 	"math"
 	"path"
 	"strings"
@@ -83,24 +82,6 @@ type dockerContainerHandler struct {
 	fsHandler fsHandler
 }
 
-func getRwLayerID(containerID, storageDriverDir string, dockerVersion []int) (string, error) {
-	const (
-		// Docker version >=1.10.0 have a randomized ID for the root fs of a container.
-		randomizedRWLayerMinorVersion = 10
-		// Directory where the file containinig the randomized ID of the root fs of a container is stored in versions >= 1.10.0
-		rwLayerIDDir  = "../image/aufs/layerdb/mounts/"
-		rwLayerIDFile = "mount-id"
-	)
-	if (dockerVersion[0] <= 1) && (dockerVersion[1] < randomizedRWLayerMinorVersion) {
-		return containerID, nil
-	}
-	bytes, err := ioutil.ReadFile(path.Join(storageDriverDir, rwLayerIDDir, containerID, rwLayerIDFile))
-	if err != nil {
-		return "", fmt.Errorf("failed to identify the read-write layer ID for container %q. - %v", containerID, err)
-	}
-	return string(bytes), err
-}
-
 func newDockerContainerHandler(
 	client *docker.Client,
 	name string,
@@ -111,7 +92,6 @@ func newDockerContainerHandler(
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
 	metadataEnvs []string,
-	dockerVersion []int,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
@@ -136,17 +116,12 @@ func newDockerContainerHandler(
 
 	// Add the Containers dir where the log files are stored.
 	otherStorageDir := path.Join(path.Dir(storageDriverDir), pathToContainersDir, id)
-
-	rwLayerID, err := getRwLayerID(id, storageDriverDir, dockerVersion)
-	if err != nil {
-		return nil, err
-	}
 	var rootfsStorageDir string
 	switch storageDriver {
 	case aufsStorageDriver:
-		rootfsStorageDir = path.Join(storageDriverDir, aufsRWLayer, rwLayerID)
+		rootfsStorageDir = path.Join(storageDriverDir, aufsRWLayer, id)
 	case overlayStorageDriver:
-		rootfsStorageDir = path.Join(storageDriverDir, rwLayerID)
+		rootfsStorageDir = path.Join(storageDriverDir, id)
 	}
 
 	handler := &dockerContainerHandler{
