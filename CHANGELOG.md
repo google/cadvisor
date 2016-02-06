@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.21.1 (2016-02-03)
+- Compatiblity with non-aufs storage drivers.
+
 ### 0.21.0 (2016-02-03)
 - Support for filesystem stats with docker v1.10
 - Bug fixes.
