@@ -87,9 +87,7 @@ func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersio
 	const (
 		// Docker version >=1.10.0 have a randomized ID for the root fs of a container.
 		randomizedRWLayerMinorVersion = 10
-		// Directory where the file containinig the randomized ID of the root fs of a container is stored in versions >= 1.10.0
-		rwLayerIDDirTemplate = "image/%s/layerdb/mounts/"
-		rwLayerIDFile        = "mount-id"
+		rwLayerIDFile                 = "mount-id"
 	)
 	if (dockerVersion[0] <= 1) && (dockerVersion[1] < randomizedRWLayerMinorVersion) {
 		return containerID, nil
