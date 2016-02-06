@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if [[ -n "${JENKINS_HOME}" ]]
+then 
+    exec ./jenkins_e2e.sh
+fi
 echo ">> starting cAdvisor locally"
 sudo ./cadvisor &
 echo ">> running integration tests against local cAdvisor"
