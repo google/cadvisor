@@ -121,7 +121,7 @@ func (self *Client) attributesUrl() string {
 }
 
 func (self *Client) statsUrl(name string) string {
-	return path.Join(self.baseUrl, "stats", name)
+	return self.baseUrl + path.Join("stats", name)
 }
 
 func (self *Client) httpGetResponse(postData interface{}, urlPath, infoName string) ([]byte, error) {

@@ -83,18 +83,19 @@ type dockerContainerHandler struct {
 	fsHandler fsHandler
 }
 
-func getRwLayerID(containerID, storageDriverDir string, dockerVersion []int) (string, error) {
+func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersion []int) (string, error) {
 	const (
 		// Docker version >=1.10.0 have a randomized ID for the root fs of a container.
 		randomizedRWLayerMinorVersion = 10
 		// Directory where the file containinig the randomized ID of the root fs of a container is stored in versions >= 1.10.0
-		rwLayerIDDir  = "../image/aufs/layerdb/mounts/"
-		rwLayerIDFile = "mount-id"
+		rwLayerIDDirTemplate = "image/%s/layerdb/mounts/"
+		rwLayerIDFile        = "mount-id"
 	)
 	if (dockerVersion[0] <= 1) && (dockerVersion[1] < randomizedRWLayerMinorVersion) {
 		return containerID, nil
 	}
-	bytes, err := ioutil.ReadFile(path.Join(storageDriverDir, rwLayerIDDir, containerID, rwLayerIDFile))
+
+	bytes, err := ioutil.ReadFile(path.Join(storageDir, "image", string(sd), "layerdb", "mounts", containerID, rwLayerIDFile))
 	if err != nil {
 		return "", fmt.Errorf("failed to identify the read-write layer ID for container %q. - %v", containerID, err)
 	}
@@ -107,7 +108,7 @@ func newDockerContainerHandler(
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
 	storageDriver storageDriver,
-	storageDriverDir string,
+	storageDir string,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
 	metadataEnvs []string,
@@ -135,18 +136,19 @@ func newDockerContainerHandler(
 	id := ContainerNameToDockerId(name)
 
 	// Add the Containers dir where the log files are stored.
-	otherStorageDir := path.Join(path.Dir(storageDriverDir), pathToContainersDir, id)
+	// FIXME: Give `otherStorageDir` a more descriptive name.
+	otherStorageDir := path.Join(storageDir, pathToContainersDir, id)
 
-	rwLayerID, err := getRwLayerID(id, storageDriverDir, dockerVersion)
+	rwLayerID, err := getRwLayerID(id, storageDir, storageDriver, dockerVersion)
 	if err != nil {
 		return nil, err
 	}
 	var rootfsStorageDir string
 	switch storageDriver {
 	case aufsStorageDriver:
-		rootfsStorageDir = path.Join(storageDriverDir, aufsRWLayer, rwLayerID)
+		rootfsStorageDir = path.Join(storageDir, string(aufsStorageDriver), aufsRWLayer, rwLayerID)
 	case overlayStorageDriver:
-		rootfsStorageDir = path.Join(storageDriverDir, rwLayerID)
+		rootfsStorageDir = path.Join(storageDir, string(overlayStorageDriver), rwLayerID)
 	}
 
 	handler := &dockerContainerHandler{
