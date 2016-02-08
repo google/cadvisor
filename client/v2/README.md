@@ -15,14 +15,14 @@ Obviously, replace the URL with the path to your actual cAdvisor REST endpoint.
 client.MachineInfo()
 ```
 
-This method returns a cadvisor/info.MachineInfo struct with all the fields filled in.  Here is an example return value:
+There is no v2 MachineInfo API, so the v2 client exposes the [v1 MachineInfo](../../info/v1/machine.go#L131)
 
 ```
-(*info.MachineInfo)(0xc208022b10)({
+(*v1.MachineInfo)(0xc208022b10)({
  NumCores: (int) 4,
  MemoryCapacity: (int64) 2106028032,
- Filesystems: ([]info.FsInfo) (len=1 cap=4) {
-  (info.FsInfo) {
+ Filesystems: ([]v1.FsInfo) (len=1 cap=4) {
+  (v1.FsInfo) {
    Device: (string) (len=9) "/dev/sda1",
    Capacity: (uint64) 19507089408
   }
@@ -30,7 +30,7 @@ This method returns a cadvisor/info.MachineInfo struct with all the fields fille
 })
 ```
 
-You can see the full specification of the [MachineInfo struct in the source](../../info/v1/machine.go)
+You can see the full specification of the [MachineInfo struct in the source](../../info/v1/machine.go#L131)
 
 ### VersionInfo
 
@@ -46,7 +46,7 @@ This method returns the cAdvisor version.
 client.Attributes()
 ```
 
-This method returns a [cadvisor/info/v2/Attributes](../../info/v2/machine.go) struct with all the fields filled in. Attributes includes hardware attributes (as returned by MachineInfo) as well as software attributes (eg. software versions). Here is an example return value:
+This method returns a [cadvisor/info/v2/Attributes](../../info/v2/machine.go#L24) struct with all the fields filled in. Attributes includes hardware attributes (as returned by MachineInfo) as well as software attributes (eg. software versions). Here is an example return value:
 
 ```
 (*v2.Attributes)({
@@ -56,8 +56,8 @@ This method returns a [cadvisor/info/v2/Attributes](../../info/v2/machine.go) st
  CadvisorVersion: (string) (len=6) "0.10.1"
  NumCores: (int) 4,
  MemoryCapacity: (int64) 2106028032,
- Filesystems: ([]info.FsInfo) (len=1 cap=4) {
-  (info.FsInfo) {
+ Filesystems: ([]v2.FsInfo) (len=1 cap=4) {
+  (v2.FsInfo) {
    Device: (string) (len=9) "/dev/sda1",
    Capacity: (uint64) 19507089408
   }
@@ -65,5 +65,5 @@ This method returns a [cadvisor/info/v2/Attributes](../../info/v2/machine.go) st
 })
 ```
 
-You can see the full specification of the [Attributes struct in the source](../../info/v2/machine.go)
+You can see the full specification of the [Attributes struct in the source](../../info/v2/machine.go#L24)
 

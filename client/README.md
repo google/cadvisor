@@ -15,14 +15,14 @@ Obviously, replace the URL with the path to your actual cAdvisor REST endpoint.
 client.MachineInfo()
 ```
 
-This method returns a cadvisor/info.MachineInfo struct with all the fields filled in.  Here is an example return value:
+This method returns a cadvisor/v1.MachineInfo struct with all the fields filled in.  Here is an example return value:
 
 ```
-(*info.MachineInfo)(0xc208022b10)({
+(*v1.MachineInfo)(0xc208022b10)({
  NumCores: (int) 4,
  MemoryCapacity: (int64) 2106028032,
- Filesystems: ([]info.FsInfo) (len=1 cap=4) {
-  (info.FsInfo) {
+ Filesystems: ([]v1.FsInfo) (len=1 cap=4) {
+  (v1.FsInfo) {
    Device: (string) (len=9) "/dev/sda1",
    Capacity: (uint64) 19507089408
   }
@@ -34,21 +34,21 @@ You can see the full specification of the [MachineInfo struct in the source](../
 
 ### ContainerInfo
 
-Given a container name and a ContainerInfoRequest, will return all information about the specified container.  The ContainerInfoRequest struct just has one field, NumStats, which is the number of stat entries that you want returned.
+Given a container name and a [ContainerInfoRequest](../info/v1/container.go#L101), will return all information about the specified container.  See the [ContainerInfoRequest struct in the source](../info/v1/container.go#L101) for the full specification.
 
 ```go
-request := info.ContainerInfoRequest{10}
+request := v1.ContainerInfoRequest{NumStats: 10}
 sInfo, err := client.ContainerInfo("/docker/d9d3eb10179e6f93a...", &request)
 ```
-Returns a [ContainerInfo struct](../info/v1/container.go#L120)
+Returns a [ContainerInfo struct](../info/v1/container.go#L128)
 
 ### SubcontainersInfo
 
-Given a container name and a ContainerInfoRequest, will recursively return all info about the container and all subcontainers contained within the container.  The ContainerInfoRequest struct just has one field, NumStats, which is the number of stat entries that you want returned.
+Given a container name and a [ContainerInfoRequest](../info/v1/container.go#L101), will recursively return all info about the container and all subcontainers contained within the container.  See the [ContainerInfoRequest struct in the source](../info/v1/container.go#L101) for the full specification.
 
 ```go
-request := info.ContainerInfoRequest{10}
+request := v1.ContainerInfoRequest{NumStats: 10}
 sInfo, err := client.SubcontainersInfo("/docker", &request)
 ```
 
-Returns a [ContainerInfo struct](../info/v1/container.go#L120) with the Subcontainers field populated.
+Returns a [ContainerInfo struct](../info/v1/container.go#L128) with the Subcontainers field populated.
