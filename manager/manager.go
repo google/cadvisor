@@ -31,6 +31,7 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
+	"github.com/google/cadvisor/container/rkt"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -119,6 +120,10 @@ type Manager interface {
 
 // New takes a memory storage and returns a new manager.
 func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool) (Manager, error) {
+	return NewWithContainerRuntime(memoryCache, sysfs, maxHousekeepingInterval, allowDynamicHousekeeping, "docker")
+}
+
+func NewWithContainerRuntime(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, containerRuntime string) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -130,11 +135,24 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	}
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
-	dockerInfo, err := docker.DockerInfo()
-	if err != nil {
-		glog.Warningf("Unable to connect to Docker: %v", err)
+	var dockerInfo map[string]string
+	switch containerRuntime {
+	case "docker":
+		dockerInfo, err = docker.DockerInfo()
+		if err != nil {
+			glog.Warningf("Unable to connect to Docker: %v", err)
+		}
+	default:
+		glog.Warningf("need to implement other container runtime info")
 	}
-	context := fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo}
+
+	var context fs.Context
+	switch containerRuntime {
+	case "docker":
+		context = fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo}
+	case "rkt":
+		context = fs.Context{RktPath: rkt.RktPath()}
+	}
 	fsInfo, err := fs.NewFsInfo(context)
 	if err != nil {
 		return nil, err
@@ -147,6 +165,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		inHostNamespace = true
 	}
 	newManager := &manager{
+		containerRuntime:         containerRuntime,
 		containers:               make(map[namespacedContainerName]*containerData),
 		quitChannels:             make([]chan error, 0, 2),
 		memoryCache:              memoryCache,
@@ -185,6 +204,7 @@ type namespacedContainerName struct {
 }
 
 type manager struct {
+	containerRuntime         string
 	containers               map[namespacedContainerName]*containerData
 	containersLock           sync.RWMutex
 	memoryCache              *memory.InMemoryCache
@@ -202,20 +222,26 @@ type manager struct {
 
 // Start the container manager.
 func (self *manager) Start() error {
-	// Register Docker container factory.
-	err := docker.Register(self, self.fsInfo)
-	if err != nil {
-		glog.Errorf("Docker container factory registration failed: %v.", err)
-	}
-
-	// Register the raw driver.
-	err = raw.Register(self, self.fsInfo)
+	err := raw.Register(self, self.fsInfo)
 	if err != nil {
 		glog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
 
-	self.DockerInfo()
-	self.DockerImages()
+	switch self.containerRuntime {
+	case "docker":
+		err = docker.Register(self, self.fsInfo)
+		if err != nil {
+			glog.Errorf("Docker container factory registration failed: %v.", err)
+		}
+		self.DockerInfo()
+		self.DockerImages()
+
+	case "rkt":
+		err := rkt.Register(self, self.fsInfo)
+		if err != nil {
+			glog.Errorf("Rkt container factory registration failed: %v.", err)
+		}
+	}
 
 	if *enableLoadReader {
 		// Create cpu load reader.
