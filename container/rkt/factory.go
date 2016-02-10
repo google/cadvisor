@@ -24,7 +24,7 @@ import (
 )
 
 // Basepath to all container specific information that libcontainer stores.
-var rktPath = flag.String("rktPath", "/var/lib/rkt", "Absolute path to the Rkt root directory (default: /var/lib/rkt)")
+var rktPath = flag.String("rkt_path", "/var/lib/rkt", "Absolute path to the Rkt root directory")
 
 // The namespace under which Docker aliases are unique.
 var RktNamespace = "rkt"
