@@ -118,13 +118,28 @@ type Manager interface {
 	DebugInfo() map[string][]string
 }
 
-// New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool) (Manager, error) {
-	return NewWithContainerRuntime(memoryCache, sysfs, maxHousekeepingInterval, allowDynamicHousekeeping, "docker")
+type Config struct {
+	memoryCache              *memory.InMemoryCache
+	sysfs                    sysfs.SysFs
+	maxHousekeepingInterval  time.Duration
+	allowDynamicHousekeeping bool
+	containerRuntime         string
 }
 
-func NewWithContainerRuntime(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, containerRuntime string) (Manager, error) {
-	if memoryCache == nil {
+// New takes a memory storage and returns a new manager.
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool) (Manager, error) {
+	config := Config{
+		memoryCache: memoryCache,
+		sysfs:       sysfs,
+		maxHousekeepingInterval:  maxHousekeepingInterval,
+		allowDynamicHousekeeping: allowDynamicHousekeeping,
+		containerRuntime:         "docker",
+	}
+	return NewWithConfig(config)
+}
+
+func NewWithConfig(c Config) (Manager, error) {
+	if c.memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
 
@@ -136,7 +151,7 @@ func NewWithContainerRuntime(memoryCache *memory.InMemoryCache, sysfs sysfs.SysF
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
 	var dockerInfo map[string]string
-	switch containerRuntime {
+	switch c.containerRuntime {
 	case "docker":
 		dockerInfo, err = docker.DockerInfo()
 		if err != nil {
@@ -147,7 +162,7 @@ func NewWithContainerRuntime(memoryCache *memory.InMemoryCache, sysfs sysfs.SysF
 	}
 
 	var context fs.Context
-	switch containerRuntime {
+	switch c.containerRuntime {
 	case "docker":
 		context = fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo}
 	case "rkt":
@@ -165,19 +180,19 @@ func NewWithContainerRuntime(memoryCache *memory.InMemoryCache, sysfs sysfs.SysF
 		inHostNamespace = true
 	}
 	newManager := &manager{
-		containerRuntime:         containerRuntime,
+		containerRuntime:         c.containerRuntime,
 		containers:               make(map[namespacedContainerName]*containerData),
 		quitChannels:             make([]chan error, 0, 2),
-		memoryCache:              memoryCache,
+		memoryCache:              c.memoryCache,
 		fsInfo:                   fsInfo,
 		cadvisorContainer:        selfContainer,
 		inHostNamespace:          inHostNamespace,
 		startupTime:              time.Now(),
-		maxHousekeepingInterval:  maxHousekeepingInterval,
-		allowDynamicHousekeeping: allowDynamicHousekeeping,
+		maxHousekeepingInterval:  c.maxHousekeepingInterval,
+		allowDynamicHousekeeping: c.allowDynamicHousekeeping,
 	}
 
-	machineInfo, err := getMachineInfo(sysfs, fsInfo, inHostNamespace)
+	machineInfo, err := getMachineInfo(c.sysfs, fsInfo, inHostNamespace)
 	if err != nil {
 		return nil, err
 	}
