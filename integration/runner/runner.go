@@ -172,14 +172,15 @@ func PushAndRunTests(host, testDir string) error {
 	if err != nil {
 		// Copy logs from the host
 		args = common.GetGCComputeArgs("copy-files", fmt.Sprintf("%s:%s/log.txt", host, testDir), "./")
-		err = RunCommand("gcloud", args...)
-		if err != nil {
-			return fmt.Errorf("error fetching logs: %v", err)
+		// Declare new error or it will get shadowed by logs, err := <>  and we won't be able to unset it from nil
+		err2 := RunCommand("gcloud", args...)
+		if err2 != nil {
+			return fmt.Errorf("error fetching logs: %v for %v", err2, err)
 		}
 		defer os.Remove("./log.txt")
-		logs, err := ioutil.ReadFile("./log.txt")
-		if err != nil {
-			return fmt.Errorf("error reading local log file: %v", err)
+		logs, err2 := ioutil.ReadFile("./log.txt")
+		if err2 != nil {
+			return fmt.Errorf("error reading local log file: %v for %v", err2, err)
 		}
 		glog.Errorf("----------------------\nLogs from Host: %q\n%v\n", host, string(logs))
 		err = fmt.Errorf("error on host %s: %v\n%+v", host, err, attributes)
