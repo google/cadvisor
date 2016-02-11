@@ -237,11 +237,7 @@ type manager struct {
 
 // Start the container manager.
 func (self *manager) Start() error {
-	err := raw.Register(self, self.fsInfo)
-	if err != nil {
-		glog.Errorf("Registration of the raw container factory failed: %v", err)
-	}
-
+	var err error
 	switch self.containerRuntime {
 	case "docker":
 		err = docker.Register(self, self.fsInfo)
@@ -256,6 +252,11 @@ func (self *manager) Start() error {
 		if err != nil {
 			glog.Errorf("Rkt container factory registration failed: %v.", err)
 		}
+	}
+
+	err = raw.Register(self, self.fsInfo)
+	if err != nil {
+		glog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
 
 	if *enableLoadReader {
