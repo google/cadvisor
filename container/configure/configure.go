@@ -1,4 +1,4 @@
-// Copyright 2016 The CAdvisor Authors All rights reserved.
+// Copyright 2014 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ func GetContConfigure(runtime string) (ContainerConfiguration, error) {
 	case "docker":
 		return dockerConfigure{}, nil
 	case "rkt":
-		return nil, fmt.Errorf("to be filled in")
+		return rktConfigure{}, nil
 	default:
 		return nil, fmt.Errorf("Unknown container runtime: %v", runtime)
 	}
