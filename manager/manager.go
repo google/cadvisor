@@ -29,9 +29,9 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/configure"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
-	"github.com/google/cadvisor/container/rkt"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -93,6 +93,8 @@ type Manager interface {
 	// Get version information about different components we depend on.
 	GetVersionInfo() (*info.VersionInfo, error)
 
+	GetRuntime() string
+
 	// Get filesystem information for a given label.
 	// Returns information for all global filesystems if label is empty.
 	GetFsInfo(label string) ([]v2.FsInfo, error)
@@ -150,25 +152,16 @@ func NewWithConfig(c Config) (Manager, error) {
 	}
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
-	var dockerInfo map[string]string
-	switch c.containerRuntime {
-	case "docker":
-		dockerInfo, err = docker.DockerInfo()
-		if err != nil {
-			glog.Warningf("Unable to connect to Docker: %v", err)
-		}
-	default:
-		glog.Warningf("need to implement other container runtime info")
+	contConfigure, err := configure.GetContConfigure(c.containerRuntime)
+	if err != nil {
+		return nil, err
 	}
 
-	var context fs.Context
-	switch c.containerRuntime {
-	case "docker":
-		context = fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo}
-	case "rkt":
-		context = fs.Context{RktPath: rkt.RktPath()}
+	fsContext, err := contConfigure.GetFsContext()
+	if err != nil {
+		return nil, err
 	}
-	fsInfo, err := fs.NewFsInfo(context)
+	fsInfo, err := fs.NewFsInfo(fsContext)
 	if err != nil {
 		return nil, err
 	}
@@ -190,6 +183,7 @@ func NewWithConfig(c Config) (Manager, error) {
 		startupTime:              time.Now(),
 		maxHousekeepingInterval:  c.maxHousekeepingInterval,
 		allowDynamicHousekeeping: c.allowDynamicHousekeeping,
+		contConfigure:            contConfigure,
 	}
 
 	machineInfo, err := getMachineInfo(c.sysfs, fsInfo, inHostNamespace)
@@ -233,25 +227,14 @@ type manager struct {
 	startupTime              time.Time
 	maxHousekeepingInterval  time.Duration
 	allowDynamicHousekeeping bool
+	contConfigure            configure.ContainerConfiguration
 }
 
 // Start the container manager.
 func (self *manager) Start() error {
-	var err error
-	switch self.containerRuntime {
-	case "docker":
-		err = docker.Register(self, self.fsInfo)
-		if err != nil {
-			glog.Errorf("Docker container factory registration failed: %v.", err)
-		}
-		self.DockerInfo()
-		self.DockerImages()
-
-	case "rkt":
-		err := rkt.Register(self, self.fsInfo)
-		if err != nil {
-			glog.Errorf("Rkt container factory registration failed: %v.", err)
-		}
+	err := self.contConfigure.RegisterRuntime(self, self.fsInfo)
+	if err != nil {
+		glog.Errorf("Container Runtime (%v) factory registration failed: %v.", self.containerRuntime, err)
 	}
 
 	err = raw.Register(self, self.fsInfo)
@@ -1278,4 +1261,8 @@ func (m *manager) DebugInfo() map[string][]string {
 
 	debugInfo["Managed containers"] = lines
 	return debugInfo
+}
+
+func (m *manager) GetRuntime() string {
+	return m.containerRuntime
 }
