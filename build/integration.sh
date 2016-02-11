@@ -16,7 +16,7 @@
 
 if [[ -n "${JENKINS_HOME}" ]]
 then 
-    exec ./jenkins_e2e.sh
+    exec ./build/jenkins_e2e.sh
 fi
 echo ">> starting cAdvisor locally"
 sudo ./cadvisor &
