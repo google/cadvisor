@@ -25,11 +25,11 @@ import (
 
 	"github.com/google/cadvisor/client"
 	"github.com/google/cadvisor/client/v2"
-	"github.com/google/cadvisor/integration/common"
 )
 
 var host = flag.String("host", "localhost", "Address of the host being tested")
 var port = flag.Int("port", 8080, "Port of the application on the host being tested")
+var sshOptions = flag.String("ssh-options", "", "Command line options for ssh")
 
 // Integration test framework.
 type Framework interface {
@@ -69,21 +69,10 @@ func New(t *testing.T) Framework {
 	}
 
 	// Try to see if non-localhost hosts are GCE instances.
-	var gceInstanceName string
-	hostname := *host
-	if hostname != "localhost" {
-		gceInstanceName = hostname
-		gceIp, err := common.GetGceIp(hostname)
-		if err == nil {
-			hostname = gceIp
-		}
-	}
-
 	fm := &realFramework{
 		hostname: HostnameInfo{
-			Host:            hostname,
-			Port:            *port,
-			GceInstanceName: gceInstanceName,
+			Host: *host,
+			Port: *port,
 		},
 		t:        t,
 		cleanups: make([]func(), 0),
@@ -159,9 +148,8 @@ type dockerActions struct {
 }
 
 type HostnameInfo struct {
-	Host            string
-	Port            int
-	GceInstanceName string
+	Host string
+	Port int
 }
 
 // Returns: http://<host>:<port>/
@@ -328,8 +316,11 @@ func (self shellActions) Run(command string, args ...string) (string, string) {
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		args = append(common.GetGCComputeArgs("ssh", self.fm.Hostname().GceInstanceName, "--", command), args...)
-		cmd = exec.Command("gcloud", args...)
+		args = append([]string{self.fm.Hostname().Host, "--", command}, args...)
+		if *sshOptions != "" {
+			args = append(strings.Split(*sshOptions, " "), args...)
+		}
+		cmd = exec.Command("ssh", args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -350,8 +341,11 @@ func (self shellActions) RunStress(command string, args ...string) (string, stri
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		args = append(common.GetGCComputeArgs("ssh", self.fm.Hostname().GceInstanceName, "--", command), args...)
-		cmd = exec.Command("gcloud", args...)
+		args = append([]string{self.fm.Hostname().Host, "--", command}, args...)
+		if *sshOptions != "" {
+			args = append(strings.Split(*sshOptions, " "), args...)
+		}
+		cmd = exec.Command("ssh", args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
