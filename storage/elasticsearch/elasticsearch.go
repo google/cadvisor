@@ -15,7 +15,6 @@
 package elasticsearch
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"sync"
@@ -23,6 +22,7 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	storage "github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/utils/flag"
 
 	"gopkg.in/olivere/elastic.v2"
 )

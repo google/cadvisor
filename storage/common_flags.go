@@ -15,8 +15,9 @@
 package storage
 
 import (
-	"flag"
 	"time"
+
+	"github.com/google/cadvisor/utils/flag"
 )
 
 var ArgDbUsername = flag.String("storage_driver_user", "root", "database username")

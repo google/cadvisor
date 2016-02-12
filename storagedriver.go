@@ -15,7 +15,6 @@
 package main
 
 import (
-	"flag"
 	"time"
 
 	"github.com/google/cadvisor/cache/memory"
@@ -27,6 +26,7 @@ import (
 	_ "github.com/google/cadvisor/storage/redis"
 	_ "github.com/google/cadvisor/storage/statsd"
 	_ "github.com/google/cadvisor/storage/stdout"
+	"github.com/google/cadvisor/utils/flag"
 
 	"github.com/golang/glog"
 )

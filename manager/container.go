@@ -15,7 +15,6 @@
 package manager
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -36,6 +35,7 @@ import (
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
+	"github.com/google/cadvisor/utils/flag"
 
 	units "github.com/docker/go-units"
 	"github.com/golang/glog"

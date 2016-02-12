@@ -17,7 +17,6 @@ package manager
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -36,6 +35,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/cpuload"
+	"github.com/google/cadvisor/utils/flag"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
 

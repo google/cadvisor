@@ -15,13 +15,13 @@
 package raw
 
 import (
-	"flag"
 	"fmt"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/utils/flag"
 
 	"github.com/golang/glog"
 )

@@ -15,7 +15,6 @@
 package docker
 
 import (
-	"flag"
 	"fmt"
 	"path"
 	"regexp"
@@ -26,6 +25,7 @@ import (
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/utils/flag"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/golang/glog"
