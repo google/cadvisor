@@ -18,7 +18,7 @@ all: format build test
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short -race $(pkgs)
+	@$(GO) test -tags test -short -race $(pkgs)
 
 test-integration: build test
 	@./build/integration.sh
