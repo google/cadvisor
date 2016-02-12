@@ -121,27 +121,29 @@ type Manager interface {
 }
 
 type Config struct {
-	memoryCache              *memory.InMemoryCache
-	sysfs                    sysfs.SysFs
-	maxHousekeepingInterval  time.Duration
-	allowDynamicHousekeeping bool
-	containerRuntime         string
+	MemoryCache              *memory.InMemoryCache
+	Sysfs                    sysfs.SysFs
+	MaxHousekeepingInterval  time.Duration
+	AllowDynamicHousekeeping bool
+	ContainerRuntime         string
 }
 
 // New takes a memory storage and returns a new manager.
 func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool) (Manager, error) {
 	config := Config{
-		memoryCache: memoryCache,
-		sysfs:       sysfs,
-		maxHousekeepingInterval:  maxHousekeepingInterval,
-		allowDynamicHousekeeping: allowDynamicHousekeeping,
-		containerRuntime:         "docker",
+		MemoryCache: memoryCache,
+		Sysfs:       sysfs,
+		MaxHousekeepingInterval:  maxHousekeepingInterval,
+		AllowDynamicHousekeeping: allowDynamicHousekeeping,
+		ContainerRuntime:         "docker",
 	}
 	return NewWithConfig(config)
 }
 
 func NewWithConfig(c Config) (Manager, error) {
-	if c.memoryCache == nil {
+	glog.Info("cAdvisor: containerRuntme = %v", c.ContainerRuntime)
+
+	if c.MemoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
 
@@ -152,7 +154,7 @@ func NewWithConfig(c Config) (Manager, error) {
 	}
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
-	contConfigure, err := configure.GetContConfigure(c.containerRuntime)
+	contConfigure, err := configure.GetContConfigure(c.ContainerRuntime)
 	if err != nil {
 		return nil, err
 	}
@@ -173,20 +175,20 @@ func NewWithConfig(c Config) (Manager, error) {
 		inHostNamespace = true
 	}
 	newManager := &manager{
-		containerRuntime:         c.containerRuntime,
+		containerRuntime:         c.ContainerRuntime,
 		containers:               make(map[namespacedContainerName]*containerData),
 		quitChannels:             make([]chan error, 0, 2),
-		memoryCache:              c.memoryCache,
+		memoryCache:              c.MemoryCache,
 		fsInfo:                   fsInfo,
 		cadvisorContainer:        selfContainer,
 		inHostNamespace:          inHostNamespace,
 		startupTime:              time.Now(),
-		maxHousekeepingInterval:  c.maxHousekeepingInterval,
-		allowDynamicHousekeeping: c.allowDynamicHousekeeping,
+		maxHousekeepingInterval:  c.MaxHousekeepingInterval,
+		allowDynamicHousekeeping: c.AllowDynamicHousekeeping,
 		contConfigure:            contConfigure,
 	}
 
-	machineInfo, err := getMachineInfo(c.sysfs, fsInfo, inHostNamespace)
+	machineInfo, err := getMachineInfo(c.Sysfs, fsInfo, inHostNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -646,6 +648,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 }
 
 func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
+	glog.Infof("cadvisor: GetFsInfo: label = %v", label)
 	var empty time.Time
 	// Get latest data from filesystems hanging off root container.
 	stats, err := self.memoryCache.RecentStats("/", empty, empty, 1)
@@ -680,6 +683,7 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 			Available:  fs.Available,
 			Labels:     labels,
 		}
+		glog.Infof("cadvisor: GetFsInfo: mount = %v free size = %v", mountpoint, fs.Available)
 		fsInfo = append(fsInfo, fi)
 	}
 	return fsInfo, nil
