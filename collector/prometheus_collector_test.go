@@ -31,7 +31,7 @@ func TestPrometheus(t *testing.T) {
 
 	//Create a prometheus collector using the config file 'sample_config_prometheus.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus.json")
-	collector, err := NewPrometheusCollector("Prometheus", configFile)
+	collector, err := NewPrometheusCollector("Prometheus", configFile, 100)
 	assert.NoError(err)
 	assert.Equal(collector.name, "Prometheus")
 	assert.Equal(collector.configFile.Endpoint, "http://localhost:8080/metrics")
@@ -64,12 +64,40 @@ func TestPrometheus(t *testing.T) {
 	assert.Equal(goRoutines[0].FloatValue, 16)
 }
 
+func TestPrometheusMetricCountLimit(t *testing.T) {
+	assert := assert.New(t)
+
+	//Create a prometheus collector using the config file 'sample_config_prometheus.json'
+	configFile, err := ioutil.ReadFile("config/sample_config_prometheus.json")
+	collector, err := NewPrometheusCollector("Prometheus", configFile, 10)
+	assert.NoError(err)
+	assert.Equal(collector.name, "Prometheus")
+	assert.Equal(collector.configFile.Endpoint, "http://localhost:8080/metrics")
+
+	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for i := 0; i < 30; i++ {
+			fmt.Fprintf(w, "# HELP m%d Number of goroutines that currently exist.\n", i)
+			fmt.Fprintf(w, "# TYPE m%d gauge\n", i)
+			fmt.Fprintf(w, "m%d %d", i, i)
+		}
+	}))
+	defer tempServer.Close()
+
+	collector.configFile.Endpoint = tempServer.URL
+	metrics := map[string][]v1.MetricVal{}
+	_, result, errMetric := collector.Collect(metrics)
+
+	assert.Error(errMetric)
+	assert.Equal(len(metrics), 0)
+	assert.Nil(result)
+}
+
 func TestPrometheusFiltersMetrics(t *testing.T) {
 	assert := assert.New(t)
 
 	//Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus_filtered.json")
-	collector, err := NewPrometheusCollector("Prometheus", configFile)
+	collector, err := NewPrometheusCollector("Prometheus", configFile, 100)
 	assert.NoError(err)
 	assert.Equal(collector.name, "Prometheus")
 	assert.Equal(collector.configFile.Endpoint, "http://localhost:8080/metrics")
@@ -97,4 +125,13 @@ func TestPrometheusFiltersMetrics(t *testing.T) {
 
 	goRoutines := metrics["go_goroutines"]
 	assert.Equal(goRoutines[0].FloatValue, 16)
+}
+
+func TestPrometheusFiltersMetricsCountLimit(t *testing.T) {
+	assert := assert.New(t)
+
+	//Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
+	configFile, err := ioutil.ReadFile("config/sample_config_prometheus_filtered.json")
+	_, err = NewPrometheusCollector("Prometheus", configFile, 1)
+	assert.Error(err)
 }

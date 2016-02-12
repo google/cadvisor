@@ -44,7 +44,7 @@ func TestEmptyConfig(t *testing.T) {
 	configFile, err := ioutil.ReadFile("temp.json")
 	assert.NoError(err)
 
-	_, err = NewCollector("tempCollector", configFile)
+	_, err = NewCollector("tempCollector", configFile, 100)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -74,7 +74,7 @@ func TestConfigWithErrors(t *testing.T) {
 	configFile, err := ioutil.ReadFile("temp.json")
 	assert.NoError(err)
 
-	_, err = NewCollector("tempCollector", configFile)
+	_, err = NewCollector("tempCollector", configFile, 100)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -112,7 +112,7 @@ func TestConfigWithRegexErrors(t *testing.T) {
 	configFile, err := ioutil.ReadFile("temp.json")
 	assert.NoError(err)
 
-	_, err = NewCollector("tempCollector", configFile)
+	_, err = NewCollector("tempCollector", configFile, 100)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -125,7 +125,7 @@ func TestConfig(t *testing.T) {
 	configFile, err := ioutil.ReadFile("config/sample_config.json")
 	assert.NoError(err)
 
-	collector, err := NewCollector("nginx", configFile)
+	collector, err := NewCollector("nginx", configFile, 100)
 	assert.NoError(err)
 	assert.Equal(collector.name, "nginx")
 	assert.Equal(collector.configFile.Endpoint, "http://localhost:8000/nginx_status")
@@ -139,7 +139,7 @@ func TestMetricCollection(t *testing.T) {
 	configFile, err := ioutil.ReadFile("config/sample_config.json")
 	assert.NoError(err)
 
-	fakeCollector, err := NewCollector("nginx", configFile)
+	fakeCollector, err := NewCollector("nginx", configFile, 100)
 	assert.NoError(err)
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -165,4 +165,15 @@ func TestMetricCollection(t *testing.T) {
 	// waiting = 2
 	assert.Equal(metrics[metricNames[3]][0].IntValue, 2)
 	assert.Equal(metrics[metricNames[3]][0].FloatValue, 0)
+}
+
+func TestMetricCollectionLimit(t *testing.T) {
+	assert := assert.New(t)
+
+	//Collect nginx metrics from a fake nginx endpoint
+	configFile, err := ioutil.ReadFile("config/sample_config.json")
+	assert.NoError(err)
+
+	_, err = NewCollector("nginx", configFile, 1)
+	assert.Error(err)
 }

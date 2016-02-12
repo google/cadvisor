@@ -48,6 +48,7 @@ var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log th
 var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
 var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h", "Max length of time for which to store events (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is a duration. Default is applied to all non-specified event types")
 var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
+var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
 
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
@@ -718,7 +719,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 		glog.V(3).Infof("Got config from %q: %q", v, configFile)
 
 		if strings.HasPrefix(k, "prometheus") || strings.HasPrefix(k, "Prometheus") {
-			newCollector, err := collector.NewPrometheusCollector(k, configFile)
+			newCollector, err := collector.NewPrometheusCollector(k, configFile, *applicationMetricsCountLimit)
 			if err != nil {
 				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
@@ -729,7 +730,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 				return err
 			}
 		} else {
-			newCollector, err := collector.NewCollector(k, configFile)
+			newCollector, err := collector.NewCollector(k, configFile, *applicationMetricsCountLimit)
 			if err != nil {
 				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
@@ -784,7 +785,6 @@ func (m *manager) createContainer(containerName string) error {
 	err = m.registerCollectors(collectorConfigs, cont)
 	if err != nil {
 		glog.Infof("failed to register collectors for %q: %v", containerName, err)
-		return err
 	}
 
 	// Add the container name and all its aliases. The aliases must be within the namespace of the factory.
