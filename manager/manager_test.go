@@ -205,7 +205,7 @@ func TestDockerContainersInfo(t *testing.T) {
 }
 
 func TestNewNilManager(t *testing.T) {
-	_, err := New(nil, nil, 60*time.Second, true)
+	_, err := New(nil, nil, 60*time.Second, true, "")
 	if err == nil {
 		t.Fatalf("Expected nil manager to return error")
 	}

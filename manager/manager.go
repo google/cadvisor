@@ -119,7 +119,7 @@ type Manager interface {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, rktPath string) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -135,7 +135,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	if err != nil {
 		glog.Warningf("Unable to connect to Docker: %v", err)
 	}
-	context := fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo}
+	context := fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo, RktPath: rktPath}
 	fsInfo, err := fs.NewFsInfo(context)
 	if err != nil {
 		return nil, err

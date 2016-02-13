@@ -73,7 +73,7 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping)
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, "")
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
