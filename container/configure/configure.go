@@ -66,6 +66,6 @@ func (r rktConfigure) GetFsContext() (fs.Context, error) {
 }
 
 func (r rktConfigure) RegisterRuntime(m info.MachineInfoFactory, f fs.FsInfo) error {
-//	return rkt.Register(m, f)
+	//	return rkt.Register(m, f)
 	return nil
 }
