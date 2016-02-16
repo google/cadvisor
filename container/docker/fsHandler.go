@@ -43,7 +43,10 @@ type realFsHandler struct {
 	stopChan chan struct{}
 }
 
-const longDu = time.Second
+const (
+	longDu    = time.Second
+	duTimeout = time.Minute
+)
 
 var _ fsHandler = &realFsHandler{}
 
@@ -66,12 +69,12 @@ func (fh *realFsHandler) needsUpdate() bool {
 
 func (fh *realFsHandler) update() error {
 	// TODO(vishh): Add support for external mounts.
-	baseUsage, err := fh.fsInfo.GetDirUsage(fh.rootfs)
+	baseUsage, err := fh.fsInfo.GetDirUsage(fh.rootfs, duTimeout)
 	if err != nil {
 		return err
 	}
 
-	extraDirUsage, err := fh.fsInfo.GetDirUsage(fh.extraDir)
+	extraDirUsage, err := fh.fsInfo.GetDirUsage(fh.extraDir, duTimeout)
 	if err != nil {
 		return err
 	}
@@ -93,11 +96,11 @@ func (fh *realFsHandler) trackUsage() {
 		case <-time.After(fh.period):
 			start := time.Now()
 			if err := fh.update(); err != nil {
-				glog.V(2).Infof("failed to collect filesystem stats - %v", err)
+				glog.Errorf("failed to collect filesystem stats - %v", err)
 			}
 			duration := time.Since(start)
 			if duration > longDu {
-				glog.V(3).Infof("`du` on following dirs took %v: %v", duration, []string{fh.rootfs, fh.extraDir})
+				glog.V(2).Infof("`du` on following dirs took %v: %v", duration, []string{fh.rootfs, fh.extraDir})
 			}
 		}
 	}
