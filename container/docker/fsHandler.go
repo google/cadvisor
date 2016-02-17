@@ -36,6 +36,7 @@ type realFsHandler struct {
 	usageBytes     uint64
 	baseUsageBytes uint64
 	period         time.Duration
+	minPeriod      time.Duration
 	rootfs         string
 	extraDir       string
 	fsInfo         fs.FsInfo
@@ -44,8 +45,9 @@ type realFsHandler struct {
 }
 
 const (
-	longDu    = time.Second
-	duTimeout = time.Minute
+	longDu             = time.Second
+	duTimeout          = time.Minute
+	maxDuBackoffFactor = 20
 )
 
 var _ fsHandler = &realFsHandler{}
@@ -56,15 +58,12 @@ func newFsHandler(period time.Duration, rootfs, extraDir string, fsInfo fs.FsInf
 		usageBytes:     0,
 		baseUsageBytes: 0,
 		period:         period,
+		minPeriod:      period,
 		rootfs:         rootfs,
 		extraDir:       extraDir,
 		fsInfo:         fsInfo,
 		stopChan:       make(chan struct{}, 1),
 	}
-}
-
-func (fh *realFsHandler) needsUpdate() bool {
-	return time.Now().After(fh.lastUpdate.Add(fh.period))
 }
 
 func (fh *realFsHandler) update() error {
@@ -97,6 +96,12 @@ func (fh *realFsHandler) trackUsage() {
 			start := time.Now()
 			if err := fh.update(); err != nil {
 				glog.Errorf("failed to collect filesystem stats - %v", err)
+				fh.period = fh.period * 2
+				if fh.period > maxDuBackoffFactor*fh.minPeriod {
+					fh.period = maxDuBackoffFactor * fh.minPeriod
+				}
+			} else {
+				fh.period = fh.minPeriod
 			}
 			duration := time.Since(start)
 			if duration > longDu {
