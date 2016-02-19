@@ -292,36 +292,62 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 }
 
 func TestDockerFilesystemStats(t *testing.T) {
-	t.Skip("enable this once this test does not cause timeouts.")
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
-	storageDriver := fm.Docker().StorageDriver()
-	switch storageDriver {
-	case framework.Aufs:
-	case framework.Overlay:
-	default:
-		t.Skip("skipping filesystem stats test")
-	}
+	const (
+		ddUsage       = uint64(1 << 3) // 1 KB
+		sleepDuration = 10 * time.Second
+	)
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", "dd if=/dev/zero of=/file count=1 bs=1M & ping www.google.com")
+	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", fmt.Sprintf("'dd if=/dev/zero of=/file count=2 bs=%d & sleep 10000'", ddUsage))
+
 	waitForContainer(containerId, fm)
-	time.Sleep(time.Minute)
 	request := &v2.RequestOptions{
 		IdType: v2.TypeDocker,
 		Count:  1,
 	}
-	containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerId, request)
-	time.Sleep(time.Minute)
-	require.NoError(t, err)
-	require.True(t, len(containerInfo) == 1)
-	var info v2.ContainerInfo
-	for _, cInfo := range containerInfo {
-		info = cInfo
+	needsBaseUsageCheck := false
+	storageDriver := fm.Docker().StorageDriver()
+	switch storageDriver {
+	case framework.Aufs, framework.Overlay:
+		needsBaseUsageCheck = true
 	}
-	sanityCheckV2(containerId, info, t)
-	require.NotNil(t, info.Stats[0].Filesystem.BaseUsageBytes)
-	assert.True(t, *info.Stats[0].Filesystem.BaseUsageBytes > (1<<6), "expected base fs usage to be greater than 1MB")
-	require.NotNil(t, info.Stats[0].Filesystem.TotalUsageBytes)
-	assert.True(t, *info.Stats[0].Filesystem.TotalUsageBytes > (1<<6), "expected total fs usage to be greater than 1MB")
+	pass := false
+	// We need to wait for the `dd` operation to complete.
+	for i := 0; i < 10; i++ {
+		containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerId, request)
+		require.NoError(t, err)
+		require.Equal(t, len(containerInfo), 1)
+		var info v2.ContainerInfo
+		// There is only one container in containerInfo. Since it is a map with unknown key,
+		// use the value blindly.
+		for _, cInfo := range containerInfo {
+			info = cInfo
+		}
+		sanityCheckV2(containerId, info, t)
+
+		require.NotNil(t, info.Stats[0].Filesystem.TotalUsageBytes)
+		if *info.Stats[0].Filesystem.TotalUsageBytes >= ddUsage {
+			if !needsBaseUsageCheck {
+				pass = true
+				break
+			}
+			require.NotNil(t, info.Stats[0].Filesystem.BaseUsageBytes)
+			if *info.Stats[0].Filesystem.BaseUsageBytes >= ddUsage {
+				pass = true
+				break
+			}
+		}
+		t.Logf("expected total usage %d bytes to be greater than %d bytes", *info.Stats[0].Filesystem.TotalUsageBytes, ddUsage)
+		if needsBaseUsageCheck {
+			t.Logf("expected base %d bytes to be greater than %d bytes", *info.Stats[0].Filesystem.BaseUsageBytes, ddUsage)
+		}
+		t.Logf("retrying after %s...", sleepDuration.String())
+		time.Sleep(sleepDuration)
+	}
+
+	if !pass {
+		t.Fail()
+	}
 }
