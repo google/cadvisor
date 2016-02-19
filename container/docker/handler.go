@@ -129,6 +129,7 @@ func newDockerContainerHandler(
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
+		storageDir = path.Join(rootFs, storageDir)
 	}
 
 	id := ContainerNameToDockerId(name)
