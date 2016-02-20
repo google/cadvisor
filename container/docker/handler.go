@@ -81,6 +81,8 @@ type dockerContainerHandler struct {
 
 	// Filesystem handler.
 	fsHandler fsHandler
+
+	ignoreMetrics container.MetricSet
 }
 
 func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersion []int) (string, error) {
@@ -111,6 +113,7 @@ func newDockerContainerHandler(
 	inHostNamespace bool,
 	metadataEnvs []string,
 	dockerVersion []int,
+	ignoreMetrics container.MetricSet,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
@@ -161,8 +164,12 @@ func newDockerContainerHandler(
 		fsInfo:             fsInfo,
 		rootFs:             rootFs,
 		rootfsStorageDir:   rootfsStorageDir,
-		fsHandler:          newFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo),
 		envs:               make(map[string]string),
+		ignoreMetrics:      ignoreMetrics,
+	}
+
+	if !ignoreMetrics.Has(container.DiskUsageMetrics) {
+		handler.fsHandler = newFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo)
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -255,8 +262,11 @@ func libcontainerConfigToContainerSpec(config *libcontainerconfigs.Config, mi *i
 	return spec
 }
 
-func hasNet(networkMode string) bool {
-	return !strings.HasPrefix(networkMode, "container:")
+func (self *dockerContainerHandler) needNet() bool {
+	if !self.ignoreMetrics.Has(container.NetworkUsageMetrics) {
+		return !strings.HasPrefix(self.networkMode, "container:")
+	}
+	return false
 }
 
 func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
@@ -272,22 +282,25 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec := libcontainerConfigToContainerSpec(libcontainerConfig, mi)
 	spec.CreationTime = self.creationTime
 
-	switch self.storageDriver {
-	case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
-		spec.HasFilesystem = true
-	default:
-		spec.HasFilesystem = false
+	if !self.ignoreMetrics.Has(container.DiskUsageMetrics) {
+		switch self.storageDriver {
+		case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
+			spec.HasFilesystem = true
+		}
 	}
 
 	spec.Labels = self.labels
 	spec.Envs = self.envs
 	spec.Image = self.image
-	spec.HasNetwork = hasNet(self.networkMode)
+	spec.HasNetwork = self.needNet()
 
 	return spec, err
 }
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
+	if self.ignoreMetrics.Has(container.DiskUsageMetrics) {
+		return nil
+	}
 	switch self.storageDriver {
 	case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
 	default:
@@ -322,7 +335,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 // TODO(vmarmol): Get from libcontainer API instead of cgroup manager when we don't have to support older Dockers.
 func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := containerlibcontainer.GetStats(self.cgroupManager, self.rootFs, self.pid)
+	stats, err := containerlibcontainer.GetStats(self.cgroupManager, self.rootFs, self.pid, self.ignoreMetrics)
 	if err != nil {
 		return stats, err
 	}
@@ -330,7 +343,7 @@ func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 	// includes containers running in Kubernetes pods that use the network of the
 	// infrastructure container. This stops metrics being reported multiple times
 	// for each container in a pod.
-	if !hasNet(self.networkMode) {
+	if !self.needNet() {
 		stats.Network = info.NetworkStats{}
 	}
 

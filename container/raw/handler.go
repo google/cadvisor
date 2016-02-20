@@ -57,16 +57,16 @@ type rawContainerHandler struct {
 	// Manager of this container's cgroups.
 	cgroupManager cgroups.Manager
 
-	// Whether this container has network isolation enabled.
-	hasNetwork bool
-
 	fsInfo         fs.FsInfo
 	externalMounts []mount
 
 	rootFs string
+
+	// Metrics to be ignored.
+	ignoreMetrics container.MetricSet
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *InotifyWatcher, rootFs string) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *InotifyWatcher, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
 	for key, val := range cgroupSubsystems.MountPoints {
@@ -86,15 +86,9 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		Paths: cgroupPaths,
 	}
 
-	hasNetwork := false
 	var externalMounts []mount
 	for _, container := range cHints.AllHosts {
 		if name == container.FullName {
-			/*libcontainerState.NetworkState = network.NetworkState{
-				VethHost:  container.NetworkInterface.VethHost,
-				VethChild: container.NetworkInterface.VethChild,
-			}
-			hasNetwork = true*/
 			externalMounts = container.Mounts
 			break
 		}
@@ -108,10 +102,10 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		cgroupPaths:        cgroupPaths,
 		cgroupManager:      cgroupManager,
 		fsInfo:             fsInfo,
-		hasNetwork:         hasNetwork,
 		externalMounts:     externalMounts,
 		watcher:            watcher,
 		rootFs:             rootFs,
+		ignoreMetrics:      ignoreMetrics,
 	}, nil
 }
 
@@ -266,9 +260,6 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 		spec.HasFilesystem = true
 	}
 
-	//Network
-	spec.HasNetwork = self.hasNetwork
-
 	// DiskIo.
 	if blkioRoot, ok := self.cgroupPaths["blkio"]; ok && utils.FileExists(blkioRoot) {
 		spec.HasDiskIo = true
@@ -346,7 +337,7 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := libcontainer.GetStats(self.cgroupManager, self.rootFs, os.Getpid())
+	stats, err := libcontainer.GetStats(self.cgroupManager, self.rootFs, os.Getpid(), self.ignoreMetrics)
 	if err != nil {
 		return stats, err
 	}

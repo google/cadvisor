@@ -86,6 +86,8 @@ type dockerFactory struct {
 	fsInfo fs.FsInfo
 
 	dockerVersion []int
+
+	ignoreMetrics container.MetricSet
 }
 
 func (self *dockerFactory) String() string {
@@ -111,6 +113,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		inHostNamespace,
 		metadataEnvs,
 		self.dockerVersion,
+		self.ignoreMetrics,
 	)
 	return
 }
@@ -178,7 +181,7 @@ func parseDockerVersion(full_version_string string) ([]int, error) {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet) error {
 	client, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
@@ -236,6 +239,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo) error {
 		machineInfoFactory: factory,
 		storageDriver:      storageDriver(sd),
 		storageDir:         storageDir,
+		ignoreMetrics:      ignoreMetrics,
 	}
 
 	container.RegisterContainerHandlerFactory(f)
