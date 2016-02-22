@@ -71,36 +71,6 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 
 	glog.Infof("raw name = %q", name)
 	splits := strings.Split(name, "/")
-	//	glog.Infof("%q\n", splits)
-
-	if len(splits) >= 3 {
-		if strings.Compare(splits[1], "machine.slice") == 0 {
-			newsplits := strings.Split(splits[2], ".scope")
-			if len(newsplits) >= 1 {
-				//			glog.Infof("%q\n", newsplits[0])
-				escaped := strings.Split(newsplits[0], "\\x2d")
-				//			glog.Infof("len of escaped = %v", len(escaped))
-				machine := strings.Join(escaped, "-")
-				glog.Infof("machine = %q", machine)
-				newsplits = strings.Split(machine, "machine-rkt-")
-				if len(newsplits) >= 2 {
-					//				glog.Infof("%q\n", newsplits[1])
-					machine = newsplits[1]
-					if len(splits) >= 5 {
-						newnewsplits := strings.Split(splits[4], ".service")
-						if len(newnewsplits) > 1 {
-							container := newnewsplits[0]
-							//						glog.Infof("%q\n", newnewsplits[0])
-
-							output := machine + ":" + container
-
-							glog.Infof("container_id: %q", output)
-						}
-					}
-				}
-			}
-		}
-	}
 
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
