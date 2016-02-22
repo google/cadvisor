@@ -24,10 +24,8 @@ func parseName(name string) (*parsedName, error) {
 		parsed := &parsedName{}
 
 		if splits[1] == "machine.slice" {
-			replacer := strings.NewReplacer("machine-rkt-", "", ".scope", "", "\\x2d", "-")
+			replacer := strings.NewReplacer("machine-rkt\\x2d", "", ".scope", "", "\\x2d", "-")
 			parsed.Pod = replacer.Replace(splits[2])
-			//hack as the Replacer doesn't work on machine-rkt-"
-			parsed.Pod = strings.Replace(parsed.Pod, "machine-rkt-", "", -1)
 			if len(splits) == 3 {
 				return parsed, nil
 			}
