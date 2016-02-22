@@ -18,21 +18,21 @@ func verifyName(name string) (bool, error) {
 	return true, nil
 }
 
-//FIXME: need to figure out the \x2d situation
 func parseName(name string) (*parsedName, error) {
 	splits := strings.Split(name, "/")
 	if len(splits) == 3 || len(splits) == 5 {
 		parsed := &parsedName{}
 
 		if splits[1] == "machine.slice" {
-			machine_split := strings.Split(splits[2], ".scope")
-			parsed.Pod = machine_split[0]
+			replacer := strings.NewReplacer("machine-rkt-", "", ".scope", "", "\\x2d", "-")
+			parsed.Pod = replacer.Replace(splits[2])
+			//hack as the Replacer doesn't work on machine-rkt-"
+			parsed.Pod = strings.Replace(parsed.Pod, "machine-rkt-", "", -1)
 			if len(splits) == 3 {
 				return parsed, nil
 			}
 			if splits[3] == "system.slice" {
-				container_split := strings.Split(splits[4], ".scope")
-				parsed.Container = container_split[0]
+				parsed.Container = strings.Replace(splits[4], ".service", "", -1)
 				return parsed, nil
 			}
 		}
