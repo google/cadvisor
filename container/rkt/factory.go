@@ -15,7 +15,6 @@
 package rkt
 
 import (
-	"flag"
 	"fmt"
 
 	"github.com/google/cadvisor/container"
@@ -26,8 +25,6 @@ import (
 
 	"github.com/golang/glog"
 )
-
-var runtimeOnly = flag.Bool("runtime_only", false, "Only report runtime manged containers in addition to root stats")
 
 type rktFactory struct {
 	// Factory for machine information.
@@ -57,7 +54,7 @@ func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (
 
 func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	accept, err := verifyName(name)
-	return true, accept, err
+	return accept, accept, err
 }
 
 func (self *rktFactory) DebugInfo() map[string][]string {
