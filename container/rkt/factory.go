@@ -16,6 +16,7 @@ package rkt
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
@@ -25,6 +26,8 @@ import (
 
 	"github.com/golang/glog"
 )
+
+var RktNamespace = "rkt"
 
 type rktFactory struct {
 	// Factory for machine information.
@@ -53,8 +56,11 @@ func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (
 }
 
 func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
-	accept, err := verifyName(name)
-	return accept, accept, err
+	if strings.HasPrefix(name, "/machine.slice/machine-rkt\\x2d") {
+		accept, err := verifyName(name)
+		return true, accept, err
+	}
+	return false, false, fmt.Errorf("%s not handled by rkt handler", name)
 }
 
 func (self *rktFactory) DebugInfo() map[string][]string {
