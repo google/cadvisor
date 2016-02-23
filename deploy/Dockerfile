@@ -8,7 +8,7 @@ RUN apk add --update ca-certificates device-mapper && \
     wget https://github.com/andyshinn/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk && \
     apk add --allow-untrusted glibc-${GLIBC_VERSION}.apk glibc-bin-${GLIBC_VERSION}.apk && \
     apk add zfs-utils  --update-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted  && \
-    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc/usr/lib && \
+    /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
 
