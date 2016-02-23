@@ -155,8 +155,9 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 func (self *rktContainerHandler) ContainerReference() (info.ContainerReference, error) {
 	// We only know the container by its one name.
 	return info.ContainerReference{
-		Name:    self.name,
-		Aliases: self.aliases,
+		Name:      self.name,
+		Aliases:   self.aliases,
+		Namespace: RktNamespace,
 	}, nil
 }
 
@@ -215,56 +216,39 @@ func (self *rktContainerHandler) GetContainerLabels() map[string]string {
 	return map[string]string{}
 }
 
-// Lists all directories under "path" and outputs the results as children of "parent".
-func listDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}) error {
-	// Ignore if this hierarchy does not exist.
-	if !utils.FileExists(dirpath) {
-		return nil
-	}
-
-	entries, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return err
-	}
-	for _, entry := range entries {
-		// We only grab directories.
-		if entry.IsDir() {
-			name := path.Join(parent, entry.Name())
-			output[name] = struct{}{}
-
-			// List subcontainers if asked to.
-			if recursive {
-				err := listDirectories(path.Join(dirpath, entry.Name()), name, true, output)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func (self *rktContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	//want to be smart, if it's a pod, list its containers, for now wont return anything
-	return []info.ContainerReference{}, nil
+	containers := make(map[string]struct{})
+	if self.isPod == false {
+		var ret []info.ContainerReference
+		return ret, nil
+	}
 
-	/*	containers := make(map[string]struct{})
-		for _, cgroupPath := range self.cgroupPaths {
-			err := listDirectories(cgroupPath, self.name, listType == container.ListRecursive, containers)
-			if err != nil {
-				return nil, err
-			}
+	for _, cgroupPath := range self.cgroupPaths {
+		glog.Infof("ListContainers: self.name = %q, cgroupPath = %q, listType = %v", self.name, cgroupPath, listType)
+		err := common.ListDirectories(path.Join(cgroupPath, "system.slice"), path.Join(self.name, "system.slice"), listType == container.ListRecursive, containers)
+		if err != nil {
+			return nil, err
 		}
+	}
 
-		// Make into container references.
-		ret := make([]info.ContainerReference, 0, len(containers))
-		for cont := range containers {
-			ret = append(ret, info.ContainerReference{
-				Name: cont,
-			})
+	// Make into container references.
+	ret := make([]info.ContainerReference, 0, len(containers))
+	for cont := range containers {
+		aliases := make([]string, 1)
+		parsed, err := parseName(cont)
+		if err != nil {
+			return nil, fmt.Errorf("this should be impossible!, unable to parse rkt subcontainer name = %s", cont)
 		}
+		aliases = append(aliases, parsed.Pod+":"+parsed.Container)
 
-		return ret, nil */
+		ret = append(ret, info.ContainerReference{
+			Name:      cont,
+			Aliases:   aliases,
+			Namespace: RktNamespace,
+		})
+	}
+
+	return ret, nil
 }
 
 func (self *rktContainerHandler) ListThreads(listType container.ListType) ([]int, error) {
