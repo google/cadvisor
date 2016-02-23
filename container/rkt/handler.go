@@ -66,6 +66,8 @@ type rktContainerHandler struct {
 	isPod bool
 
 	aliases []string
+
+	pid int
 }
 
 func (self *rktContainerHandler) GetCgroupPaths() map[string]string {
@@ -82,6 +84,10 @@ func (self *rktContainerHandler) GetName() string {
 
 func (self *rktContainerHandler) GetExternalMounts() []common.Mount {
 	return self.externalMounts
+}
+
+func (self *rktContainerHandler) HasNetwork() bool {
+	return self.hasNetwork
 }
 
 func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string) (container.ContainerHandler, error) {
@@ -121,7 +127,20 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		Paths: cgroupPaths,
 	}
 
+	pid := os.Getpid()
+	if isPod {
+		pids, err := cgroups.GetPids(cgroupPaths["cpu"])
+		if err == nil {
+			pid = pids[0]
+		} else {
+			glog.Infof("couldn't get processes as %v", err)
+		}
+	}
+
 	hasNetwork := false
+	if isPod {
+		hasNetwork = true
+	}
 	var externalMounts []common.Mount
 	for _, container := range cHints.AllHosts {
 		if name == container.FullName {
@@ -149,6 +168,7 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		rootFs:             rootFs,
 		isPod:              isPod,
 		aliases:            aliases,
+		pid:                pid,
 	}, nil
 }
 
@@ -190,7 +210,7 @@ func (self *rktContainerHandler) getFsStats(stats *info.ContainerStats) error {
 }
 
 func (self *rktContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := libcontainer.GetStats(self.cgroupManager, self.rootFs, os.Getpid())
+	stats, err := libcontainer.GetStats(self.cgroupManager, self.rootFs, self.pid)
 	if err != nil {
 		return stats, err
 	}

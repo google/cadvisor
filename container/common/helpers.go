@@ -52,6 +52,7 @@ type AbstractContainerHandler interface {
 	GetName() string
 	GetRootNetworkDevices() ([]info.NetInfo, error)
 	GetExternalMounts() []Mount
+	HasNetwork() bool
 }
 
 func GetSpec(self AbstractContainerHandler) (info.ContainerSpec, error) {
@@ -144,7 +145,7 @@ func GetSpec(self AbstractContainerHandler) (info.ContainerSpec, error) {
 	}
 
 	//Network
-	spec.HasNetwork = false //raw is false today
+	spec.HasNetwork = self.HasNetwork()
 
 	// DiskIo.
 	if blkioRoot, ok := cgroupPaths["blkio"]; ok && utils.FileExists(blkioRoot) {
