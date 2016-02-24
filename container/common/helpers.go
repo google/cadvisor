@@ -224,3 +224,12 @@ func ListDirectories(dirpath string, parent string, recursive bool, output map[s
 	}
 	return nil
 }
+
+func MakeCgroupPaths(mountPoints map[string]string, name string) map[string]string {
+	cgroupPaths := make(map[string]string, len(mountPoints))
+	for key, val := range mountPoints {
+		cgroupPaths[key] = path.Join(val, name)
+	}
+
+	return cgroupPaths
+}

@@ -111,19 +111,15 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 	if err != nil {
 		return nil, fmt.Errorf("this should be impossible!, new handler failing, but factory allowed, name = %s", name)
 	}
+
 	if parsed.Container == "" {
 		isPod = true
 		aliases = append(aliases, parsed.Pod)
 	} else {
 		aliases = append(aliases, parsed.Pod+":"+parsed.Container)
 	}
-	glog.Infof("aliases = %s", aliases)
 
-	// Create the cgroup paths.
-	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
-	for key, val := range cgroupSubsystems.MountPoints {
-		cgroupPaths[key] = path.Join(val, name)
-	}
+	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
 	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
 	if err != nil {
@@ -139,7 +135,10 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 	}
 
 	pid := os.Getpid()
+	hasNetwork := false
 	if isPod {
+		hasNetwork = true
+
 		pids, err := cgroups.GetPids(cgroupPaths["cpu"])
 		if err == nil {
 			pid = pids[0]
@@ -148,10 +147,7 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		}
 	}
 
-	hasNetwork := false
-	if isPod {
-		hasNetwork = true
-	}
+	//SJP: unsure the point of this code, if it event does anything today?
 	var externalMounts []common.Mount
 	for _, container := range cHints.AllHosts {
 		if name == container.FullName {
@@ -188,7 +184,6 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 }
 
 func (self *rktContainerHandler) ContainerReference() (info.ContainerReference, error) {
-	// We only know the container by its one name.
 	return info.ContainerReference{
 		Name:      self.name,
 		Aliases:   self.aliases,
@@ -196,17 +191,16 @@ func (self *rktContainerHandler) ContainerReference() (info.ContainerReference, 
 	}, nil
 }
 
+//SJP: Should a Rkt containe have have htis?
 func (self *rktContainerHandler) GetRootNetworkDevices() ([]info.NetInfo, error) {
 	nd := []info.NetInfo{}
 	return nd, nil
 }
 
-// Nothing to start up.
 func (self *rktContainerHandler) Start() {
 	self.fsHandler.Start()
 }
 
-// Nothing to clean up.
 func (self *rktContainerHandler) Cleanup() {
 	self.fsHandler.Stop()
 }
@@ -230,7 +224,9 @@ func (self *rktContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		return err
 	}
 	var limit uint64 = 0
-	// Docker does not impose any filesystem limits for containers. So use capacity as limit.
+
+	// SJP: Docker does not impose any filesystem limits for containers. So it uses capacity as limit.
+	// Doing the same for Rkt.  is this true?
 	for _, fs := range mi.Filesystems {
 		if fs.Device == deviceInfo.Device {
 			limit = fs.Capacity
@@ -276,11 +272,14 @@ func (self *rktContainerHandler) GetContainerLabels() map[string]string {
 
 func (self *rktContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	containers := make(map[string]struct{})
+
+	// Rkt containers do not have subcontainers, only the "Pod" does.
 	if self.isPod == false {
 		var ret []info.ContainerReference
 		return ret, nil
 	}
 
+	// Turn the system.slice cgroups  into the Pod's subcontainers
 	for _, cgroupPath := range self.cgroupPaths {
 		glog.Infof("ListContainers: self.name = %q, cgroupPath = %q, listType = %v", self.name, cgroupPath, listType)
 		err := common.ListDirectories(path.Join(cgroupPath, "system.slice"), path.Join(self.name, "system.slice"), listType == container.ListRecursive, containers)
@@ -289,7 +288,7 @@ func (self *rktContainerHandler) ListContainers(listType container.ListType) ([]
 		}
 	}
 
-	// Make into container references.
+	// Create the container references. for the Pod's subcontainers
 	ret := make([]info.ContainerReference, 0, len(containers))
 	for cont := range containers {
 		aliases := make([]string, 1)
