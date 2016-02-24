@@ -16,7 +16,11 @@ package rkt
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path"
 	"strings"
+
+	"github.com/golang/glog"
 )
 
 type parsedName struct {
@@ -51,4 +55,24 @@ func parseName(name string) (*parsedName, error) {
 	}
 
 	return nil, fmt.Errorf("%s not handled by rkt handler", name)
+}
+
+func GetRootFs(root string, parsed *parsedName) string {
+	///var/lib/rkt/pods/run/bc793ec6-c48f-4480-99b5-6bec16d52210/appsinfo/alpine-sh/treeStoreID
+	if parsed.Container == "" {
+		return ""
+	}
+
+	tree := path.Join(root, "pods/run", parsed.Pod, "appsinfo", parsed.Container, "treeStoreID")
+	glog.Infof("tree = %q", tree)
+	bytes, err := ioutil.ReadFile(tree)
+	if err != nil {
+		glog.Infof("ReadFile failed: %v", err)
+		return ""
+	}
+
+	s := string(bytes)
+
+	///var/lib/rkt/pods/run/bc793ec6-c48f-4480-99b5-6bec16d52210/overlay/deps-sha512-82a099e560a596662b15dec835e9adabab539cad1f41776a30195a01a8f2f22b/
+	return path.Join(root, "pods/run", parsed.Pod, "overlay", s)
 }

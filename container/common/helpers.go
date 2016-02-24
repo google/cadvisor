@@ -53,6 +53,7 @@ type AbstractContainerHandler interface {
 	GetRootNetworkDevices() ([]info.NetInfo, error)
 	GetExternalMounts() []Mount
 	HasNetwork() bool
+	HasFilesystem() bool
 }
 
 func GetSpec(self AbstractContainerHandler) (info.ContainerSpec, error) {
@@ -140,7 +141,7 @@ func GetSpec(self AbstractContainerHandler) (info.ContainerSpec, error) {
 	}
 
 	// Fs.
-	if name == "/" || externalMounts != nil {
+	if name == "/" || externalMounts != nil || self.HasFilesystem() {
 		spec.HasFilesystem = true
 	}
 

@@ -21,6 +21,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
@@ -68,6 +69,11 @@ type rktContainerHandler struct {
 	aliases []string
 
 	pid int
+
+	rootfsStorageDir string
+
+	// Filesystem handler.
+	fsHandler common.FsHandler
 }
 
 func (self *rktContainerHandler) GetCgroupPaths() map[string]string {
@@ -90,7 +96,12 @@ func (self *rktContainerHandler) HasNetwork() bool {
 	return self.hasNetwork
 }
 
+func (self *rktContainerHandler) HasFilesystem() bool {
+	return true
+}
+
 func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string) (container.ContainerHandler, error) {
+	rktPath := "/var/lib/rkt"
 
 	glog.Infof("rkt cgroup name = %q", name)
 	aliases := make([]string, 1)
@@ -154,6 +165,8 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		}
 	}
 
+	rootfsStorageDir := GetRootFs(rktPath, parsed)
+
 	return &rktContainerHandler{
 		name:               name,
 		cgroupSubsystems:   cgroupSubsystems,
@@ -169,6 +182,8 @@ func newRktContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		isPod:              isPod,
 		aliases:            aliases,
 		pid:                pid,
+		rootfsStorageDir:   rootfsStorageDir,
+		fsHandler:          common.NewFsHandler(time.Minute, rootfsStorageDir, "", fsInfo),
 	}, nil
 }
 
@@ -194,17 +209,47 @@ func (self *rktContainerHandler) GetRootNetworkDevices() ([]info.NetInfo, error)
 }
 
 // Nothing to start up.
-func (self *rktContainerHandler) Start() {}
+func (self *rktContainerHandler) Start() {
+	self.fsHandler.Start()
+}
 
 // Nothing to clean up.
-func (self *rktContainerHandler) Cleanup() {}
+func (self *rktContainerHandler) Cleanup() {
+	self.fsHandler.Stop()
+}
 
 func (self *rktContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	return common.GetSpec(self)
 }
 
 func (self *rktContainerHandler) getFsStats(stats *info.ContainerStats) error {
-	//docker doesn't do anything for overlay fs, so should we be the same?
+	if self.isPod {
+		return nil
+	}
+
+	deviceInfo, err := self.fsInfo.GetDirFsDevice(self.rootfsStorageDir)
+	if err != nil {
+		return err
+	}
+
+	mi, err := self.machineInfoFactory.GetMachineInfo()
+	if err != nil {
+		return err
+	}
+	var limit uint64 = 0
+	// Docker does not impose any filesystem limits for containers. So use capacity as limit.
+	for _, fs := range mi.Filesystems {
+		if fs.Device == deviceInfo.Device {
+			limit = fs.Capacity
+			break
+		}
+	}
+
+	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
+
+	fsStat.BaseUsage, fsStat.Usage = self.fsHandler.Usage()
+
+	stats.Filesystem = append(stats.Filesystem, fsStat)
 
 	return nil
 }
