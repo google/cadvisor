@@ -358,6 +358,9 @@ func (self *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) {
 }
 
 func (self *RealFsInfo) GetDirUsage(dir string, timeout time.Duration) (uint64, error) {
+	if dir == "" {
+		return 0, fmt.Errorf("invalid directory")
+	}
 	cmd := exec.Command("nice", "-n", "19", "du", "-s", dir)
 	stdoutp, err := cmd.StdoutPipe()
 	if err != nil {

@@ -67,15 +67,23 @@ func newFsHandler(period time.Duration, rootfs, extraDir string, fsInfo fs.FsInf
 }
 
 func (fh *realFsHandler) update() error {
+	var (
+		baseUsage, extraDirUsage uint64
+		err                      error
+	)
 	// TODO(vishh): Add support for external mounts.
-	baseUsage, err := fh.fsInfo.GetDirUsage(fh.rootfs, duTimeout)
-	if err != nil {
-		return err
+	if fh.rootfs != "" {
+		baseUsage, err = fh.fsInfo.GetDirUsage(fh.rootfs, duTimeout)
+		if err != nil {
+			return err
+		}
 	}
 
-	extraDirUsage, err := fh.fsInfo.GetDirUsage(fh.extraDir, duTimeout)
-	if err != nil {
-		return err
+	if fh.extraDir != "" {
+		extraDirUsage, err = fh.fsInfo.GetDirUsage(fh.extraDir, duTimeout)
+		if err != nil {
+			return err
+		}
 	}
 
 	fh.Lock()
