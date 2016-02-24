@@ -210,7 +210,7 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 			spec.Cpu.Period = readUInt64(cpuRoot, "cpu.cfs_period_us")
 			quota := readString(cpuRoot, "cpu.cfs_quota_us")
 
-			if quota != "-1" {
+			if quota != "" && quota != "-1" {
 				val, err := strconv.ParseUint(quota, 10, 64)
 				if err != nil {
 					glog.Errorf("raw driver: Failed to parse CPUQuota from %q: %s", path.Join(cpuRoot, "cpu.cfs_quota_us"), err)

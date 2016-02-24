@@ -21,6 +21,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -29,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/golang/glog"
@@ -355,14 +357,37 @@ func (self *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) {
 	return nil, fmt.Errorf("could not find device with major: %d, minor: %d in cached partitions map", major, minor)
 }
 
-func (self *RealFsInfo) GetDirUsage(dir string) (uint64, error) {
-	out, err := exec.Command("nice", "-n", "19", "du", "-s", dir).CombinedOutput()
+func (self *RealFsInfo) GetDirUsage(dir string, timeout time.Duration) (uint64, error) {
+	cmd := exec.Command("nice", "-n", "19", "du", "-s", dir)
+	stdoutp, err := cmd.StdoutPipe()
 	if err != nil {
-		return 0, fmt.Errorf("du command failed on %s with output %s - %s", dir, out, err)
+		return 0, fmt.Errorf("failed to setup stdout for cmd %v - %v", cmd.Args, err)
 	}
-	usageInKb, err := strconv.ParseUint(strings.Fields(string(out))[0], 10, 64)
+	stderrp, err := cmd.StderrPipe()
 	if err != nil {
-		return 0, fmt.Errorf("cannot parse 'du' output %s - %s", out, err)
+		return 0, fmt.Errorf("failed to setup stderr for cmd %v - %v", cmd.Args, err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		return 0, fmt.Errorf("failed to exec du - %v", err)
+	}
+	stdoutb, souterr := ioutil.ReadAll(stdoutp)
+	stderrb, _ := ioutil.ReadAll(stderrp)
+	timer := time.AfterFunc(timeout, func() {
+		glog.Infof("killing cmd %v due to timeout(%s)", cmd.Args, timeout.String())
+		cmd.Process.Kill()
+	})
+	if err := cmd.Wait(); err != nil {
+		return 0, fmt.Errorf("du command failed on %s with output stdout: %s, stderr: %s - %v", dir, string(stdoutb), string(stderrb), err)
+	}
+	stdout := string(stdoutb)
+	if souterr != nil {
+		glog.Errorf("failed to read from stdout for cmd %v - %v", cmd.Args, souterr)
+	}
+	timer.Stop()
+	usageInKb, err := strconv.ParseUint(strings.Fields(stdout)[0], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("cannot parse 'du' output %s - %s", stdout, err)
 	}
 	return usageInKb * 1024, nil
 }

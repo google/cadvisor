@@ -39,13 +39,17 @@ import (
 // must be able to ssh into hosts without password
 // godep go run ./integration/runner/runner.go --logtostderr --v 2 --ssh-config <.ssh/config file> <list of hosts>
 
-const cadvisorBinary = "cadvisor"
+const (
+	cadvisorBinary = "cadvisor"
+	testTimeout    = 15 * time.Minute
+)
 
 var cadvisorTimeout = flag.Duration("cadvisor_timeout", 15*time.Second, "Time to wait for cAdvisor to come up on the remote host")
 var port = flag.Int("port", 8080, "Port in which to start cAdvisor in the remote host")
 var testRetryCount = flag.Int("test-retry-count", 3, "Number of times to retry failed tests before failing.")
 var testRetryWhitelist = flag.String("test-retry-whitelist", "", "Path to newline separated list of regexexp for test failures that should be retried.  If empty, no tests are retried.")
 var sshOptions = flag.String("ssh-options", "", "Commandline options passed to ssh.")
+var testArgs = flag.String("test_args", "", "arguments to be passed to the integrationt tests")
 var retryRegex *regexp.Regexp
 
 func getAttributes(ipAddress, portStr string) (*cadvisorApi.Attributes, error) {
@@ -158,7 +162,7 @@ func PushAndRunTests(host, testDir string) error {
 		}
 		// Run the command
 
-		err = RunCommand("godep", "go", "test", "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr, "--ssh-options", *sshOptions)
+		err = RunCommand("godep", "go", "test", "--timeout", testTimeout.String(), *testArgs, "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr, "--ssh-options", *sshOptions)
 		if err == nil {
 			// On success, break out of retry loop
 			break
@@ -166,7 +170,7 @@ func PushAndRunTests(host, testDir string) error {
 
 		// Only retry on test failures caused by these known flaky failure conditions
 		if retryRegex == nil || !retryRegex.Match([]byte(err.Error())) {
-			glog.Warningf("Skipping retry for tests on host %s because error is not whitelisted: %s", host, err.Error())
+			glog.Warningf("Skipping retry for tests on host %s because error is not whitelisted", host)
 			break
 		}
 	}
