@@ -198,13 +198,6 @@ func (self *rktContainerHandler) ContainerReference() (info.ContainerReference, 
 
 func (self *rktContainerHandler) GetRootNetworkDevices() ([]info.NetInfo, error) {
 	nd := []info.NetInfo{}
-	if self.name == "/" {
-		mi, err := self.machineInfoFactory.GetMachineInfo()
-		if err != nil {
-			return nd, err
-		}
-		return mi.NetworkDevices, nil
-	}
 	return nd, nil
 }
 
