@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -45,7 +46,7 @@ type rawContainerHandler struct {
 	machineInfoFactory info.MachineInfoFactory
 
 	// Inotify event watcher.
-	watcher *InotifyWatcher
+	watcher *common.InotifyWatcher
 
 	// Signal for watcher thread to stop.
 	stopWatcher chan error
@@ -61,19 +62,21 @@ type rawContainerHandler struct {
 	hasNetwork bool
 
 	fsInfo         fs.FsInfo
-	externalMounts []mount
+	externalMounts []common.Mount
 
 	rootFs string
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *InotifyWatcher, rootFs string) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string) (container.ContainerHandler, error) {
+	glog.Infof("raw name = %q", name)
+
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
 	for key, val := range cgroupSubsystems.MountPoints {
 		cgroupPaths[key] = path.Join(val, name)
 	}
 
-	cHints, err := getContainerHintsFromFile(*argContainerHints)
+	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +90,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 	}
 
 	hasNetwork := false
-	var externalMounts []mount
+	var externalMounts []common.Mount
 	for _, container := range cHints.AllHosts {
 		if name == container.FullName {
 			/*libcontainerState.NetworkState = network.NetworkState{

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package raw
+package common
 
 import (
 	"testing"
 )
 
 func TestGetContainerHintsFromFile(t *testing.T) {
-	cHints, err := getContainerHintsFromFile("test_resources/container_hints.json")
+	cHints, err := GetContainerHintsFromFile("test_resources/container_hints.json")
 
 	if err != nil {
 		t.Fatalf("Error in unmarshalling: %s", err)
@@ -50,8 +50,8 @@ func TestGetContainerHintsFromFile(t *testing.T) {
 }
 
 func TestFileNotExist(t *testing.T) {
-	_, err := getContainerHintsFromFile("/file_does_not_exist.json")
+	_, err := GetContainerHintsFromFile("/file_does_not_exist.json")
 	if err != nil {
-		t.Fatalf("getContainerHintsFromFile must not error for blank file: %s", err)
+		t.Fatalf("GetContainerHintsFromFile must not error for blank file: %s", err)
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package raw
+package rkt
 
 import (
-	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
@@ -27,9 +27,9 @@ import (
 	"github.com/golang/glog"
 )
 
-var runtimeOnly = flag.Bool("runtime_only", false, "Only report runtime manged containers in addition to root stats")
+var RktNamespace = "rkt"
 
-type rawFactory struct {
+type rktFactory struct {
 	// Factory for machine information.
 	machineInfoFactory info.MachineInfoFactory
 
@@ -43,25 +43,27 @@ type rawFactory struct {
 	watcher *common.InotifyWatcher
 }
 
-func (self *rawFactory) String() string {
-	return "raw"
+func (self *rktFactory) String() string {
+	return "rkt"
 }
 
-func (self *rawFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
 	}
-	return newRawContainerHandler(name, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, self.watcher, rootFs)
+	return newRktContainerHandler(name, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, self.watcher, rootFs)
 }
 
-// The raw factory can handle any container. If --docker_only is set to false, non-docker containers are ignored.
-func (self *rawFactory) CanHandleAndAccept(name string) (bool, bool, error) {
-	accept := name == "/" || !*runtimeOnly
-	return true, accept, nil
+func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+	if strings.HasPrefix(name, "/machine.slice/machine-rkt\\x2d") {
+		accept, err := verifyName(name)
+		return true, accept, err
+	}
+	return false, false, fmt.Errorf("%s not handled by rkt handler", name)
 }
 
-func (self *rawFactory) DebugInfo() map[string][]string {
+func (self *rktFactory) DebugInfo() map[string][]string {
 	return common.DebugInfo(self.watcher.GetWatches())
 }
 
@@ -79,8 +81,8 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo) erro
 		return err
 	}
 
-	glog.Infof("Registering Raw factory")
-	factory := &rawFactory{
+	glog.Infof("Registering Rkt factory")
+	factory := &rktFactory{
 		machineInfoFactory: machineInfoFactory,
 		fsInfo:             fsInfo,
 		cgroupSubsystems:   &cgroupSubsystems,

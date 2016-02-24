@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/common"
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -80,7 +81,7 @@ type dockerContainerHandler struct {
 	networkMode string
 
 	// Filesystem handler.
-	fsHandler fsHandler
+	fsHandler common.FsHandler
 }
 
 func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersion []int) (string, error) {
@@ -160,7 +161,7 @@ func newDockerContainerHandler(
 		fsInfo:             fsInfo,
 		rootFs:             rootFs,
 		rootfsStorageDir:   rootfsStorageDir,
-		fsHandler:          newFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo),
+		fsHandler:          common.NewFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo),
 		envs:               make(map[string]string),
 	}
 
@@ -193,11 +194,11 @@ func newDockerContainerHandler(
 
 func (self *dockerContainerHandler) Start() {
 	// Start the filesystem handler.
-	self.fsHandler.start()
+	self.fsHandler.Start()
 }
 
 func (self *dockerContainerHandler) Cleanup() {
-	self.fsHandler.stop()
+	self.fsHandler.Stop()
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
@@ -313,7 +314,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
 
-	fsStat.BaseUsage, fsStat.Usage = self.fsHandler.usage()
+	fsStat.BaseUsage, fsStat.Usage = self.fsHandler.Usage()
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 
 	return nil

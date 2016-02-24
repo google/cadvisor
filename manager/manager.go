@@ -31,6 +31,7 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
+	"github.com/google/cadvisor/container/rkt"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -207,6 +208,12 @@ func (self *manager) Start() error {
 	err := docker.Register(self, self.fsInfo)
 	if err != nil {
 		glog.Errorf("Docker container factory registration failed: %v.", err)
+	}
+
+	// Register rkt container factory.
+	err = rkt.Register(self, self.fsInfo)
+	if err != nil {
+		glog.Errorf("Rkt container factory registration failed: %v.", err)
 	}
 
 	// Register the raw driver.
