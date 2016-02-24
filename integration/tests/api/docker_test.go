@@ -327,7 +327,9 @@ func TestDockerFilesystemStats(t *testing.T) {
 		}
 		sanityCheckV2(containerId, info, t)
 
-		require.NotNil(t, info.Stats[0].Filesystem.TotalUsageBytes)
+		require.NotNil(t, info.Stats[0], "got info: %+v", info)
+		require.NotNil(t, info.Stats[0].Filesystem, "got info: %+v", info)
+		require.NotNil(t, info.Stats[0].Filesystem.TotalUsageBytes, "got info: %+v", info.Stats[0].Filesystem)
 		if *info.Stats[0].Filesystem.TotalUsageBytes >= ddUsage {
 			if !needsBaseUsageCheck {
 				pass = true

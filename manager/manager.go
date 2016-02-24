@@ -54,10 +54,10 @@ var (
 	// Metrics to be ignored.
 	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{}}
 	// List of metrics that can be ignored.
-	ignoreWhitelist = map[string]struct{}{
-		container.DiskUsageMetrics.String():       {},
-		container.NetworkUsageMetrics.String():    {},
-		container.NetworkTcpUsageMetrics.String(): {},
+	ignoreWhitelist = container.MetricSet{
+		container.DiskUsageMetrics:       struct{}{},
+		container.NetworkUsageMetrics:    struct{}{},
+		container.NetworkTcpUsageMetrics: struct{}{},
 	}
 )
 
@@ -77,7 +77,7 @@ func (ml *metricSetValue) String() string {
 
 func (ml *metricSetValue) Set(value string) error {
 	for _, metric := range strings.Split(value, ",") {
-		if _, exists := ignoreWhitelist[metric]; exists {
+		if ignoreWhitelist.Has(container.MetricKind(metric)) {
 			(*ml).Add(container.MetricKind(metric))
 		} else {
 			return fmt.Errorf("unsupported metric %q specified in disable_metrics", metric)
