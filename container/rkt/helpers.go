@@ -36,6 +36,7 @@ func verifyName(name string) (bool, error) {
 	return true, nil
 }
 
+// Parse cgroup name into a pod/container name struct
 func parseName(name string) (*parsedName, error) {
 	splits := strings.Split(name, "/")
 	if len(splits) == 3 || len(splits) == 5 {
@@ -57,8 +58,11 @@ func parseName(name string) (*parsedName, error) {
 	return nil, fmt.Errorf("%s not handled by rkt handler", name)
 }
 
+// Gets a Rkt container's overlay upper dir
 func GetRootFs(root string, parsed *parsedName) string {
-	///var/lib/rkt/pods/run/bc793ec6-c48f-4480-99b5-6bec16d52210/appsinfo/alpine-sh/treeStoreID
+	/* Example of where it stores the upper dir key
+	/var/lib/rkt/pods/run/bc793ec6-c48f-4480-99b5-6bec16d52210/appsinfo/alpine-sh/treeStoreID
+	*/
 	if parsed.Container == "" {
 		return ""
 	}
@@ -73,6 +77,8 @@ func GetRootFs(root string, parsed *parsedName) string {
 
 	s := string(bytes)
 
-	///var/lib/rkt/pods/run/bc793ec6-c48f-4480-99b5-6bec16d52210/overlay/deps-sha512-82a099e560a596662b15dec835e9adabab539cad1f41776a30195a01a8f2f22b/
+	/* Example of where the upper dir is stored via key read above
+	   /var/lib/rkt/pods/run/bc793ec6-c48f-4480-99b5-6bec16d52210/overlay/deps-sha512-82a099e560a596662b15dec835e9adabab539cad1f41776a30195a01a8f2f22b/
+	*/
 	return path.Join(root, "pods/run", parsed.Pod, "overlay", s)
 }

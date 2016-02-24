@@ -56,6 +56,8 @@ func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (
 }
 
 func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+	// SJP: will ignore all cgroup names that don't either correspond to the machine.slice that is the pod
+	// or the containers that belong to the pod
 	if strings.HasPrefix(name, "/machine.slice/machine-rkt\\x2d") {
 		accept, err := verifyName(name)
 		return true, accept, err
