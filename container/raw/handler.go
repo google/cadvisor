@@ -296,9 +296,11 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 			stats.Filesystem = append(stats.Filesystem,
 				info.FsStats{
 					Device:          fs.Device,
+					Type:            fs.Type.String(),
 					Limit:           fs.Capacity,
 					Usage:           fs.Capacity - fs.Free,
 					Available:       fs.Available,
+					InodesFree:      fs.InodesFree,
 					ReadsCompleted:  fs.DiskStats.ReadsCompleted,
 					ReadsMerged:     fs.DiskStats.ReadsMerged,
 					SectorsRead:     fs.DiskStats.SectorsRead,
@@ -326,8 +328,10 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 			stats.Filesystem = append(stats.Filesystem,
 				info.FsStats{
 					Device:          fs.Device,
+					Type:            fs.Type.String(),
 					Limit:           fs.Capacity,
 					Usage:           fs.Capacity - fs.Free,
+					InodesFree:      fs.InodesFree,
 					ReadsCompleted:  fs.DiskStats.ReadsCompleted,
 					ReadsMerged:     fs.DiskStats.ReadsMerged,
 					SectorsRead:     fs.DiskStats.SectorsRead,

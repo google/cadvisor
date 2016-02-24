@@ -301,7 +301,6 @@ func TestDockerFilesystemStats(t *testing.T) {
 	)
 	// Wait for the container to show up.
 	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", fmt.Sprintf("'dd if=/dev/zero of=/file count=2 bs=%d & sleep 10000'", ddUsage))
-
 	waitForContainer(containerId, fm)
 	request := &v2.RequestOptions{
 		IdType: v2.TypeDocker,
@@ -317,7 +316,13 @@ func TestDockerFilesystemStats(t *testing.T) {
 	// We need to wait for the `dd` operation to complete.
 	for i := 0; i < 10; i++ {
 		containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerId, request)
-		require.NoError(t, err)
+		if err != nil {
+			t.Logf("stats unavailable - %v", err)
+			t.Logf("retrying after %s...", sleepDuration.String())
+			time.Sleep(sleepDuration)
+
+			continue
+		}
 		require.Equal(t, len(containerInfo), 1)
 		var info v2.ContainerInfo
 		// There is only one container in containerInfo. Since it is a map with unknown key,
