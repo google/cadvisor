@@ -46,5 +46,10 @@ func TestMachineInformationIsReturned(t *testing.T) {
 		if fs.Capacity < 0 || fs.Capacity >= (1<<60 /* 1 EB*/) {
 			t.Errorf("Unexpected capacity in device %q: %v", fs.Device, fs.Capacity)
 		}
+		if fs.Type == "" {
+			t.Errorf("Filesystem type is not set")
+		} else if fs.Type == "vfs" && fs.Inodes == 0 {
+			t.Errorf("Inodes not available for device %q", fs.Device)
+		}
 	}
 }

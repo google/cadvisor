@@ -114,7 +114,7 @@ func getMachineInfo(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (
 	}
 
 	for _, fs := range filesystems {
-		machineInfo.Filesystems = append(machineInfo.Filesystems, info.FsInfo{Device: fs.Device, Capacity: fs.Capacity})
+		machineInfo.Filesystems = append(machineInfo.Filesystems, info.FsInfo{Device: fs.Device, Type: fs.Type.String(), Capacity: fs.Capacity, Inodes: fs.Inodes})
 	}
 
 	return machineInfo, nil

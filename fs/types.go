@@ -22,12 +22,27 @@ type DeviceInfo struct {
 	Minor  uint
 }
 
+type FsType string
+
+func (ft FsType) String() string {
+	return string(ft)
+}
+
+const (
+	ZFS          FsType = "zfs"
+	DeviceMapper FsType = "devicemapper"
+	VFS          FsType = "vfs"
+)
+
 type Fs struct {
 	DeviceInfo
-	Capacity  uint64
-	Free      uint64
-	Available uint64
-	DiskStats DiskStats
+	Type       FsType
+	Capacity   uint64
+	Free       uint64
+	Available  uint64
+	Inodes     uint64
+	InodesFree uint64
+	DiskStats  DiskStats
 }
 
 type DiskStats struct {

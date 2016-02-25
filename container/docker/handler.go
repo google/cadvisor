@@ -303,16 +303,21 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 	if err != nil {
 		return err
 	}
-	var limit uint64 = 0
+	var (
+		limit  uint64
+		fsType string
+	)
+
 	// Docker does not impose any filesystem limits for containers. So use capacity as limit.
 	for _, fs := range mi.Filesystems {
 		if fs.Device == deviceInfo.Device {
 			limit = fs.Capacity
+			fsType = fs.Type
 			break
 		}
 	}
 
-	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
+	fsStat := info.FsStats{Device: deviceInfo.Device, Type: fsType, Limit: limit}
 
 	fsStat.BaseUsage, fsStat.Usage = self.fsHandler.usage()
 	stats.Filesystem = append(stats.Filesystem, fsStat)
