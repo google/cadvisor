@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/common"
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -80,7 +81,7 @@ type dockerContainerHandler struct {
 	networkMode string
 
 	// Filesystem handler.
-	fsHandler fsHandler
+	fsHandler common.FsHandler
 
 	ignoreMetrics container.MetricSet
 }
@@ -169,7 +170,7 @@ func newDockerContainerHandler(
 	}
 
 	if !ignoreMetrics.Has(container.DiskUsageMetrics) {
-		handler.fsHandler = newFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo)
+		handler.fsHandler = common.NewFsHandler(time.Minute, rootfsStorageDir, otherStorageDir, fsInfo)
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -200,15 +201,14 @@ func newDockerContainerHandler(
 }
 
 func (self *dockerContainerHandler) Start() {
-	// Start the filesystem handler.
 	if self.fsHandler != nil {
-		self.fsHandler.start()
+		self.fsHandler.Start()
 	}
 }
 
 func (self *dockerContainerHandler) Cleanup() {
 	if self.fsHandler != nil {
-		self.fsHandler.stop()
+		self.fsHandler.Stop()
 	}
 }
 
@@ -317,6 +317,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 	if err != nil {
 		return err
 	}
+
 	var (
 		limit  uint64
 		fsType string
@@ -333,7 +334,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 	fsStat := info.FsStats{Device: deviceInfo.Device, Type: fsType, Limit: limit}
 
-	fsStat.BaseUsage, fsStat.Usage = self.fsHandler.usage()
+	fsStat.BaseUsage, fsStat.Usage = self.fsHandler.Usage()
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 
 	return nil
