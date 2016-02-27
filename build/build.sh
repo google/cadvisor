@@ -29,13 +29,19 @@ if [ "$(go env GOOS)" = "windows" ]; then
   ext=".exe"
 fi
 
+# go 1.4 requires ldflags format to be "-X key value", not "-X key=value"
+ldseparator="="
+if [ "${go_version:0:3}" = "1.4" ]; then
+	ldseparator=" "
+fi
+
 ldflags="
-  -X ${repo_path}/version.Version=${version}
-  -X ${repo_path}/version.Revision=${revision}
-  -X ${repo_path}/version.Branch=${branch}
-  -X ${repo_path}/version.BuildUser=${USER}@${host}
-  -X ${repo_path}/version.BuildDate=${build_date}
-  -X ${repo_path}/version.GoVersion=${go_version}"
+  -X ${repo_path}/version.Version${ldseparator}${version}
+  -X ${repo_path}/version.Revision${ldseparator}${revision}
+  -X ${repo_path}/version.Branch${ldseparator}${branch}
+  -X ${repo_path}/version.BuildUser${ldseparator}${USER}@${host}
+  -X ${repo_path}/version.BuildDate${ldseparator}${build_date}
+  -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
 
 echo " >   cadvisor"
 godep go build -ldflags "${ldflags}" -o cadvisor${ext} ${repo_path}
