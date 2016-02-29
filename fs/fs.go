@@ -383,14 +383,15 @@ func (self *RealFsInfo) GetDirUsage(dir string, timeout time.Duration) (uint64, 
 		glog.Infof("killing cmd %v due to timeout(%s)", cmd.Args, timeout.String())
 		cmd.Process.Kill()
 	})
-	if err := cmd.Wait(); err != nil {
+	err = cmd.Wait()
+	timer.Stop()
+	if err != nil {
 		return 0, fmt.Errorf("du command failed on %s with output stdout: %s, stderr: %s - %v", dir, string(stdoutb), string(stderrb), err)
 	}
 	stdout := string(stdoutb)
 	if souterr != nil {
 		glog.Errorf("failed to read from stdout for cmd %v - %v", cmd.Args, souterr)
 	}
-	timer.Stop()
 	usageInKb, err := strconv.ParseUint(strings.Fields(stdout)[0], 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("cannot parse 'du' output %s - %s", stdout, err)
