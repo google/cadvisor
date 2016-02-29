@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
 	"github.com/google/cadvisor/client/v2"
 )
@@ -239,8 +240,8 @@ type DockerRunArgs struct {
 // RunDockerContainer(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 //   -> docker run busybox ping www.google.com
 func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
-	dockerCommand := append(append(append([]string{"docker", "run", "-d"}, args.Args...), args.Image), cmd...)
-
+	dockerCommand := append(append([]string{"docker", "run", "-d"}, args.Args...), args.Image)
+	dockerCommand = append(dockerCommand, cmd...)
 	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
 
 	// The last line is the container ID.
@@ -252,7 +253,6 @@ func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 	})
 	return containerId
 }
-
 func (self dockerActions) Version() []string {
 	dockerCommand := []string{"docker", "version", "-f", "'{{.Server.Version}}'"}
 	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
@@ -309,6 +309,16 @@ func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
 	return containerId
 }
 
+func (self shellActions) wrapSsh(command string, args ...string) *exec.Cmd {
+	cmd := []string{self.fm.Hostname().Host, "--", "sh", "-c", "\"", command}
+	cmd = append(cmd, args...)
+	cmd = append(cmd, "\"")
+	if *sshOptions != "" {
+		cmd = append(strings.Split(*sshOptions, " "), cmd...)
+	}
+	return exec.Command("ssh", cmd...)
+}
+
 func (self shellActions) Run(command string, args ...string) (string, string) {
 	var cmd *exec.Cmd
 	if self.fm.Hostname().Host == "localhost" {
@@ -316,16 +326,13 @@ func (self shellActions) Run(command string, args ...string) (string, string) {
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		args = append([]string{self.fm.Hostname().Host, "--", command}, args...)
-		if *sshOptions != "" {
-			args = append(strings.Split(*sshOptions, " "), args...)
-		}
-		cmd = exec.Command("ssh", args...)
+		cmd = self.wrapSsh(command, args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	glog.Errorf("About to run - %v", cmd.Args)
 	err := cmd.Run()
 	if err != nil {
 		self.fm.T().Fatalf("Failed to run %q %v in %q with error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())
@@ -341,11 +348,7 @@ func (self shellActions) RunStress(command string, args ...string) (string, stri
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		args = append([]string{self.fm.Hostname().Host, "--", command}, args...)
-		if *sshOptions != "" {
-			args = append(strings.Split(*sshOptions, " "), args...)
-		}
-		cmd = exec.Command("ssh", args...)
+		cmd = self.wrapSsh(command, args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
