@@ -300,7 +300,7 @@ func TestDockerFilesystemStats(t *testing.T) {
 		sleepDuration = 10 * time.Second
 	)
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", fmt.Sprintf("'dd if=/dev/zero of=/file count=2 bs=%d & sleep 10000'", ddUsage))
+	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", fmt.Sprintf("dd if=/dev/zero of=/file count=2 bs=%d & sleep 10000", ddUsage))
 	waitForContainer(containerId, fm)
 	request := &v2.RequestOptions{
 		IdType: v2.TypeDocker,
