@@ -201,11 +201,15 @@ func newDockerContainerHandler(
 
 func (self *dockerContainerHandler) Start() {
 	// Start the filesystem handler.
-	self.fsHandler.start()
+	if self.fsHandler != nil {
+		self.fsHandler.start()
+	}
 }
 
 func (self *dockerContainerHandler) Cleanup() {
-	self.fsHandler.stop()
+	if self.fsHandler != nil {
+		self.fsHandler.stop()
+	}
 }
 
 func (self *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
