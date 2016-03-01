@@ -287,10 +287,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec.CreationTime = self.creationTime
 
 	if !self.ignoreMetrics.Has(container.DiskUsageMetrics) {
-		switch self.storageDriver {
-		case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
-			spec.HasFilesystem = true
-		}
+		spec.HasFilesystem = true
 	}
 
 	spec.Labels = self.labels
