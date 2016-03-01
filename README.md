@@ -30,7 +30,7 @@ We have detailed [instructions](docs/running.md#standalone) on running cAdvisor 
 
 ## Building and Testing
 
-See the more detailed instructions in the [build page](docs/build.md). This includes instructions for building and deploying the cAdvisor Docker image.
+See the more detailed instructions in the [build page](docs/development/build.md). This includes instructions for building and deploying the cAdvisor Docker image.
 
 ## InfluxDB and Cluster Monitoring
 
