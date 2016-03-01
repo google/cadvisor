@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/docker/pkg/mount"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -161,22 +162,29 @@ func TestParseDMTable(t *testing.T) {
 }
 
 func TestAddSystemRootLabel(t *testing.T) {
-	fsInfo := &RealFsInfo{
-		labels: map[string]string{},
-		partitions: map[string]partition{
-			"/dev/mapper/vg_vagrant-lv_root": {
-				mountpoint: "/",
+	tests := []struct {
+		mounts   []*mount.Info
+		expected string
+	}{
+		{
+			mounts: []*mount.Info{
+				{Source: "/dev/sda1", Mountpoint: "/foo"},
+				{Source: "/dev/sdb1", Mountpoint: "/"},
 			},
-			"vg_vagrant-docker--pool": {
-				mountpoint: "",
-				fsType:     "devicemapper",
-			},
+			expected: "/dev/sdb1",
 		},
 	}
 
-	fsInfo.addSystemRootLabel()
-	if e, a := "/dev/mapper/vg_vagrant-lv_root", fsInfo.labels[LabelSystemRoot]; e != a {
-		t.Errorf("expected %q, got %q", e, a)
+	for i, tt := range tests {
+		fsInfo := &RealFsInfo{
+			labels:     map[string]string{},
+			partitions: map[string]partition{},
+		}
+		fsInfo.addSystemRootLabel(tt.mounts)
+
+		if source, ok := fsInfo.labels[LabelSystemRoot]; !ok || source != tt.expected {
+			t.Errorf("case %d: expected mount source '%s', got '%s'", i, tt.expected, source)
+		}
 	}
 }
 
@@ -305,7 +313,7 @@ func TestAddDockerImagesLabel(t *testing.T) {
 		driverStatus                   string
 		dmsetupTable                   string
 		getDockerDeviceMapperInfoError error
-		partitions                     map[string]partition
+		mounts                         []*mount.Info
 		expectedDockerDevice           string
 		expectedPartition              *partition
 	}{
@@ -314,10 +322,11 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			driver:       "devicemapper",
 			driverStatus: `[["Pool Name", "vg_vagrant-docker--pool"]]`,
 			dmsetupTable: "0 53870592 thin-pool 253:2 253:3 1024 0 1 skip_block_zeroing",
-			partitions: map[string]partition{
-				"/dev/mapper/vg_vagrant-lv_root": {
-					mountpoint: "/",
-					fsType:     "devicemapper",
+			mounts: []*mount.Info{
+				{
+					Source:     "/dev/mapper/vg_vagrant-lv_root",
+					Mountpoint: "/",
+					Fstype:     "devicemapper",
 				},
 			},
 			expectedDockerDevice: "vg_vagrant-docker--pool",
@@ -332,41 +341,62 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			name:         "devicemapper, loopback on non-root partition",
 			driver:       "devicemapper",
 			driverStatus: `[["Data loop file","/var/lib/docker/devicemapper/devicemapper/data"]]`,
-			partitions: map[string]partition{
-				"/dev/mapper/vg_vagrant-lv_root": {
-					mountpoint: "/",
-					fsType:     "devicemapper",
+			mounts: []*mount.Info{
+				{
+					Source:     "/dev/mapper/vg_vagrant-lv_root",
+					Mountpoint: "/",
+					Fstype:     "devicemapper",
 				},
-				"/dev/sdb1": {
-					mountpoint: "/var/lib/docker/devicemapper",
+				{
+					Source:     "/dev/sdb1",
+					Mountpoint: "/var/lib/docker/devicemapper",
 				},
 			},
 			expectedDockerDevice: "/dev/sdb1",
 		},
 		{
 			name: "multiple mounts - innermost check",
-			partitions: map[string]partition{
-				"/dev/sda1": {
-					mountpoint: "/",
-					fsType:     "ext4",
+			mounts: []*mount.Info{
+				{
+					Source:     "/dev/sda1",
+					Mountpoint: "/",
+					Fstype:     "ext4",
 				},
-				"/dev/sdb1": {
-					mountpoint: "/var/lib/docker",
-					fsType:     "ext4",
+				{
+					Source:     "/dev/sdb1",
+					Mountpoint: "/var/lib/docker",
+					Fstype:     "ext4",
 				},
-				"/dev/sdb2": {
-					mountpoint: "/var/lib/docker/btrfs",
-					fsType:     "btrfs",
+				{
+					Source:     "/dev/sdb2",
+					Mountpoint: "/var/lib/docker/btrfs",
+					Fstype:     "btrfs",
 				},
 			},
 			expectedDockerDevice: "/dev/sdb2",
+		},
+		{
+			name: "root fs inside container, docker-images bindmount",
+			mounts: []*mount.Info{
+				{
+					Source:     "overlay",
+					Mountpoint: "/",
+					Fstype:     "overlay",
+				},
+				{
+					Source:     "/dev/sda1",
+					Mountpoint: "/var/lib/docker",
+					Fstype:     "ext4",
+				},
+			},
+			expectedDockerDevice: "/dev/sda1",
 		},
 	}
 
 	for _, tt := range tests {
 		fsInfo := &RealFsInfo{
 			labels:     map[string]string{},
-			partitions: tt.partitions,
+			partitions: map[string]partition{},
 			dmsetup: &testDmsetup{
 				data: []byte(tt.dmsetupTable),
 			},
@@ -380,7 +410,7 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			},
 		}
 
-		fsInfo.addDockerImagesLabel(context)
+		fsInfo.addDockerImagesLabel(context, tt.mounts)
 
 		if e, a := tt.expectedDockerDevice, fsInfo.labels[LabelDockerImages]; e != a {
 			t.Errorf("%s: docker device: expected %q, got %q", tt.name, e, a)
