@@ -300,7 +300,14 @@ func TestDockerFilesystemStats(t *testing.T) {
 		sleepDuration = 10 * time.Second
 	)
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", fmt.Sprintf("'dd if=/dev/zero of=/file count=2 bs=%d & sleep 10000'", ddUsage))
+	// FIXME: Tests should be bundled and run on the remote host instead of being run over ssh.
+	// Escaping bash over ssh is ugly.
+	// Once github issue 1130 is fixed, this logic can be removed.
+	dockerCmd := fmt.Sprintf("dd if=/dev/zero of=/file count=2 bs=%d & ping google.com", ddUsage)
+	if fm.Hostname().Host != "localhost" {
+		dockerCmd = fmt.Sprintf("'%s'", dockerCmd)
+	}
+	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", dockerCmd)
 	waitForContainer(containerId, fm)
 	request := &v2.RequestOptions{
 		IdType: v2.TypeDocker,
@@ -317,7 +324,7 @@ func TestDockerFilesystemStats(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerId, request)
 		if err != nil {
-			t.Logf("stats unavailable - %v", err)
+			t.Logf("%v stats unavailable - %v", time.Now().String(), err)
 			t.Logf("retrying after %s...", sleepDuration.String())
 			time.Sleep(sleepDuration)
 
