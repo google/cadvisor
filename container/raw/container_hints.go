@@ -20,9 +20,10 @@ package raw
 
 import (
 	"encoding/json"
-	"flag"
 	"io/ioutil"
 	"os"
+
+	"github.com/google/cadvisor/utils/flag"
 )
 
 var argContainerHints = flag.String("container_hints", "/etc/cadvisor/container_hints.json", "location of the container hints file")

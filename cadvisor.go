@@ -15,7 +15,7 @@
 package main
 
 import (
-	"flag"
+	goflag "flag"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
@@ -27,6 +27,7 @@ import (
 
 	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
+	"github.com/google/cadvisor/utils/flag"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
@@ -54,7 +55,8 @@ var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web in
 
 func main() {
 	defer glog.Flush()
-	flag.Parse()
+	flag.AddAllFlags(goflag.CommandLine)
+	goflag.Parse()
 
 	if *versionFlag {
 		fmt.Printf("cAdvisor version %s (%s)\n", version.Info["version"], version.Info["revision"])

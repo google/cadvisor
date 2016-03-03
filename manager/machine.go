@@ -16,7 +16,6 @@ package manager
 
 import (
 	"bytes"
-	"flag"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -26,6 +25,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/cloudinfo"
+	"github.com/google/cadvisor/utils/flag"
 	"github.com/google/cadvisor/utils/machine"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysinfo"

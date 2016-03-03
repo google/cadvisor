@@ -15,10 +15,11 @@
 package client
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"strings"
+
+	"github.com/google/cadvisor/utils/flag"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/jwt"
