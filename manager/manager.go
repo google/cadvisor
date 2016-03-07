@@ -31,6 +31,7 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
+	"github.com/google/cadvisor/container/rkt"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -135,7 +136,12 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	if err != nil {
 		glog.Warningf("Unable to connect to Docker: %v", err)
 	}
-	context := fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo}
+	rktPath, err := rkt.RktPath()
+	if err != nil {
+		glog.Warningf("unable to connect to Rkt api service: %v", err)
+	}
+
+	context := fs.Context{DockerRoot: docker.RootDir(), DockerInfo: dockerInfo, RktPath: rktPath}
 	fsInfo, err := fs.NewFsInfo(context)
 	if err != nil {
 		return nil, err
@@ -206,13 +212,16 @@ type manager struct {
 
 // Start the container manager.
 func (self *manager) Start() error {
-	// Register Docker container factory.
 	err := docker.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
 		glog.Errorf("Docker container factory registration failed: %v.", err)
 	}
 
-	// Register the raw driver.
+	err = rkt.Register(self, self.fsInfo, self.ignoreMetrics)
+	if err != nil {
+		glog.Errorf("Registration of the rkt container factory failed: %v", err)
+	}
+
 	err = raw.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
 		glog.Errorf("Registration of the raw container factory failed: %v", err)

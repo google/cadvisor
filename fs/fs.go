@@ -40,6 +40,7 @@ import (
 const (
 	LabelSystemRoot   = "root"
 	LabelDockerImages = "docker-images"
+	LabelRktImages    = "rkt-images"
 )
 
 type partition struct {
@@ -64,6 +65,7 @@ type Context struct {
 	// docker root directory.
 	DockerRoot string
 	DockerInfo map[string]string
+	RktPath    string
 }
 
 func NewFsInfo(context Context) (FsInfo, error) {
@@ -79,6 +81,7 @@ func NewFsInfo(context Context) (FsInfo, error) {
 
 	fsInfo.addSystemRootLabel(mounts)
 	fsInfo.addDockerImagesLabel(context, mounts)
+	fsInfo.addRktImagesLabel(context, mounts)
 
 	supportedFsType := map[string]bool{
 		// all ext systems are checked through prefix.
@@ -168,7 +171,21 @@ func (self *RealFsInfo) addDockerImagesLabel(context Context, mounts []*mount.In
 		self.partitions[dockerDev] = *dockerPartition
 		self.labels[LabelDockerImages] = dockerDev
 	} else {
-		self.updateDockerImagesPath(mounts, getDockerImagePaths(context))
+		self.updateContainerImagesPath(LabelDockerImages, mounts, getDockerImagePaths(context))
+	}
+}
+
+func (self *RealFsInfo) addRktImagesLabel(context Context, mounts []*mount.Info) {
+	if context.RktPath != "" {
+		rktPath := context.RktPath
+		rktImagesPaths := map[string]struct{}{
+			"/": {},
+		}
+		for rktPath != "/" && rktPath != "." {
+			rktImagesPaths[rktPath] = struct{}{}
+			rktPath = filepath.Dir(rktPath)
+		}
+		self.updateContainerImagesPath(LabelRktImages, mounts, rktImagesPaths)
 	}
 }
 
@@ -194,10 +211,10 @@ func getDockerImagePaths(context Context) map[string]struct{} {
 
 // This method compares the mountpoints with possible docker image mount points. If a match is found,
 // docker images label is added to the partition.
-func (self *RealFsInfo) updateDockerImagesPath(mounts []*mount.Info, dockerImagePaths map[string]struct{}) {
+func (self *RealFsInfo) updateContainerImagesPath(label string, mounts []*mount.Info, containerImagePaths map[string]struct{}) {
 	var useMount *mount.Info
 	for _, m := range mounts {
-		if _, ok := dockerImagePaths[m.Mountpoint]; ok {
+		if _, ok := containerImagePaths[m.Mountpoint]; ok {
 			if useMount == nil || (len(useMount.Mountpoint) < len(m.Mountpoint)) {
 				useMount = m
 			}
@@ -210,7 +227,7 @@ func (self *RealFsInfo) updateDockerImagesPath(mounts []*mount.Info, dockerImage
 			major:      uint(useMount.Major),
 			minor:      uint(useMount.Minor),
 		}
-		self.labels[LabelDockerImages] = useMount.Source
+		self.labels[label] = useMount.Source
 	}
 }
 
