@@ -20,16 +20,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
-	"github.com/google/cadvisor/utils/machine"
 
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
@@ -45,7 +43,7 @@ type rawContainerHandler struct {
 	machineInfoFactory info.MachineInfoFactory
 
 	// Inotify event watcher.
-	watcher *InotifyWatcher
+	watcher *common.InotifyWatcher
 
 	// Signal for watcher thread to stop.
 	stopWatcher chan error
@@ -58,7 +56,7 @@ type rawContainerHandler struct {
 	cgroupManager cgroups.Manager
 
 	fsInfo         fs.FsInfo
-	externalMounts []mount
+	externalMounts []common.Mount
 
 	rootFs string
 
@@ -66,14 +64,34 @@ type rawContainerHandler struct {
 	ignoreMetrics container.MetricSet
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *InotifyWatcher, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
-	// Create the cgroup paths.
-	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
-	for key, val := range cgroupSubsystems.MountPoints {
-		cgroupPaths[key] = path.Join(val, name)
-	}
+func (self *rawContainerHandler) GetCgroupPaths() map[string]string {
+	return self.cgroupPaths
+}
 
-	cHints, err := getContainerHintsFromFile(*argContainerHints)
+func (self *rawContainerHandler) GetMachineInfoFactory() info.MachineInfoFactory {
+	return self.machineInfoFactory
+}
+
+func (self *rawContainerHandler) GetName() string {
+	return self.name
+}
+
+func (self *rawContainerHandler) GetExternalMounts() []common.Mount {
+	return self.externalMounts
+}
+
+func (self *rawContainerHandler) HasNetwork() bool {
+	return false
+}
+
+func (self *rawContainerHandler) HasFilesystem() bool {
+	return false
+}
+
+func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
+	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
+
+	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +104,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		Paths: cgroupPaths,
 	}
 
-	var externalMounts []mount
+	var externalMounts []common.Mount
 	for _, container := range cHints.AllHosts {
 		if name == container.FullName {
 			externalMounts = container.Mounts
@@ -116,38 +134,6 @@ func (self *rawContainerHandler) ContainerReference() (info.ContainerReference, 
 	}, nil
 }
 
-func readString(dirpath string, file string) string {
-	cgroupFile := path.Join(dirpath, file)
-
-	// Ignore non-existent files
-	if !utils.FileExists(cgroupFile) {
-		return ""
-	}
-
-	// Read
-	out, err := ioutil.ReadFile(cgroupFile)
-	if err != nil {
-		glog.Errorf("raw driver: Failed to read %q: %s", cgroupFile, err)
-		return ""
-	}
-	return strings.TrimSpace(string(out))
-}
-
-func readUInt64(dirpath string, file string) uint64 {
-	out := readString(dirpath, file)
-	if out == "" {
-		return 0
-	}
-
-	val, err := strconv.ParseUint(out, 10, 64)
-	if err != nil {
-		glog.Errorf("raw driver: Failed to parse int %q from file %q: %s", out, path.Join(dirpath, file), err)
-		return 0
-	}
-
-	return val
-}
-
 func (self *rawContainerHandler) GetRootNetworkDevices() ([]info.NetInfo, error) {
 	nd := []info.NetInfo{}
 	if self.name == "/" {
@@ -167,113 +153,7 @@ func (self *rawContainerHandler) Start() {}
 func (self *rawContainerHandler) Cleanup() {}
 
 func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	var spec info.ContainerSpec
-
-	// The raw driver assumes unified hierarchy containers.
-
-	// Get the lowest creation time from all hierarchies as the container creation time.
-	now := time.Now()
-	lowestTime := now
-	for _, cgroupPath := range self.cgroupPaths {
-		// The modified time of the cgroup directory changes whenever a subcontainer is created.
-		// eg. /docker will have creation time matching the creation of latest docker container.
-		// Use clone_children as a workaround as it isn't usually modified. It is only likely changed
-		// immediately after creating a container.
-		cgroupPath = path.Join(cgroupPath, "cgroup.clone_children")
-		fi, err := os.Stat(cgroupPath)
-		if err == nil && fi.ModTime().Before(lowestTime) {
-			lowestTime = fi.ModTime()
-		}
-	}
-	if lowestTime != now {
-		spec.CreationTime = lowestTime
-	}
-
-	// Get machine info.
-	mi, err := self.machineInfoFactory.GetMachineInfo()
-	if err != nil {
-		return spec, err
-	}
-
-	// CPU.
-	cpuRoot, ok := self.cgroupPaths["cpu"]
-	if ok {
-		if utils.FileExists(cpuRoot) {
-			spec.HasCpu = true
-			spec.Cpu.Limit = readUInt64(cpuRoot, "cpu.shares")
-			spec.Cpu.Period = readUInt64(cpuRoot, "cpu.cfs_period_us")
-			quota := readString(cpuRoot, "cpu.cfs_quota_us")
-
-			if quota != "" && quota != "-1" {
-				val, err := strconv.ParseUint(quota, 10, 64)
-				if err != nil {
-					glog.Errorf("raw driver: Failed to parse CPUQuota from %q: %s", path.Join(cpuRoot, "cpu.cfs_quota_us"), err)
-				}
-				spec.Cpu.Quota = val
-			}
-		}
-	}
-
-	// Cpu Mask.
-	// This will fail for non-unified hierarchies. We'll return the whole machine mask in that case.
-	cpusetRoot, ok := self.cgroupPaths["cpuset"]
-	if ok {
-		if utils.FileExists(cpusetRoot) {
-			spec.HasCpu = true
-			mask := readString(cpusetRoot, "cpuset.cpus")
-			spec.Cpu.Mask = utils.FixCpuMask(mask, mi.NumCores)
-		}
-	}
-
-	// Memory
-	if self.name == "/" {
-		// Get memory and swap limits of the running machine
-		memLimit, err := machine.GetMachineMemoryCapacity()
-		if err != nil {
-			glog.Warningf("failed to obtain memory limit for machine container")
-			spec.HasMemory = false
-		} else {
-			spec.Memory.Limit = uint64(memLimit)
-			// Spec is marked to have memory only if the memory limit is set
-			spec.HasMemory = true
-		}
-
-		swapLimit, err := machine.GetMachineSwapCapacity()
-		if err != nil {
-			glog.Warningf("failed to obtain swap limit for machine container")
-		} else {
-			spec.Memory.SwapLimit = uint64(swapLimit)
-		}
-	} else {
-		memoryRoot, ok := self.cgroupPaths["memory"]
-		if ok {
-			if utils.FileExists(memoryRoot) {
-				spec.HasMemory = true
-				spec.Memory.Limit = readUInt64(memoryRoot, "memory.limit_in_bytes")
-				spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.memsw.limit_in_bytes")
-			}
-		}
-	}
-
-	// Fs.
-	if self.name == "/" || self.externalMounts != nil {
-		spec.HasFilesystem = true
-	}
-
-	// DiskIo.
-	if blkioRoot, ok := self.cgroupPaths["blkio"]; ok && utils.FileExists(blkioRoot) {
-		spec.HasDiskIo = true
-	}
-
-	// Check physical network devices for root container.
-	nd, err := self.GetRootNetworkDevices()
-	if err != nil {
-		return spec, err
-	}
-	if len(nd) != 0 {
-		spec.HasNetwork = true
-	}
-	return spec, nil
+	return common.GetSpec(self)
 }
 
 func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
@@ -367,39 +247,10 @@ func (self *rawContainerHandler) GetContainerLabels() map[string]string {
 	return map[string]string{}
 }
 
-// Lists all directories under "path" and outputs the results as children of "parent".
-func listDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}) error {
-	// Ignore if this hierarchy does not exist.
-	if !utils.FileExists(dirpath) {
-		return nil
-	}
-
-	entries, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return err
-	}
-	for _, entry := range entries {
-		// We only grab directories.
-		if entry.IsDir() {
-			name := path.Join(parent, entry.Name())
-			output[name] = struct{}{}
-
-			// List subcontainers if asked to.
-			if recursive {
-				err := listDirectories(path.Join(dirpath, entry.Name()), name, true, output)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
 func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	containers := make(map[string]struct{})
 	for _, cgroupPath := range self.cgroupPaths {
-		err := listDirectories(cgroupPath, self.name, listType == container.ListRecursive, containers)
+		err := common.ListDirectories(cgroupPath, self.name, listType == container.ListRecursive, containers)
 		if err != nil {
 			return nil, err
 		}
