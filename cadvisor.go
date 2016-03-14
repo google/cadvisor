@@ -56,7 +56,8 @@ var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web in
 
 var (
 	// Metrics to be ignored.
-	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{}}
+	// Tcp metrics are ignored by default.
+	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{container.NetworkTcpUsageMetrics: struct{}{}}}
 
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
@@ -87,8 +88,6 @@ func (ml *metricSetValue) Set(value string) error {
 
 func init() {
 	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of metrics to be disabled. Options are `disk`, `network`, `tcp`. Note: tcp is disabled by default due to high CPU usage.")
-	// Tcp metrics are ignored by default.
-	flag.Set("disable_metrics", "tcp")
 }
 
 func main() {
