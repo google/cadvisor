@@ -58,7 +58,6 @@ var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
 	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{container.NetworkTcpUsageMetrics: struct{}{}}}
-
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
 		container.DiskUsageMetrics:       struct{}{},
@@ -111,7 +110,7 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping)
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
