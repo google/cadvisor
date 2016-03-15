@@ -49,7 +49,6 @@ var port = flag.Int("port", 8080, "Port in which to start cAdvisor in the remote
 var testRetryCount = flag.Int("test-retry-count", 3, "Number of times to retry failed tests before failing.")
 var testRetryWhitelist = flag.String("test-retry-whitelist", "", "Path to newline separated list of regexexp for test failures that should be retried.  If empty, no tests are retried.")
 var sshOptions = flag.String("ssh-options", "", "Commandline options passed to ssh.")
-var testArgs = flag.String("test_args", "", "arguments to be passed to the integrationt tests")
 var retryRegex *regexp.Regexp
 
 func getAttributes(ipAddress, portStr string) (*cadvisorApi.Attributes, error) {
@@ -162,7 +161,7 @@ func PushAndRunTests(host, testDir string) error {
 		}
 		// Run the command
 
-		err = RunCommand("godep", "go", "test", "--timeout", testTimeout.String(), *testArgs, "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr, "--ssh-options", *sshOptions)
+		err = RunCommand("godep", "go", "test", "--timeout", testTimeout.String(), "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr, "--ssh-options", *sshOptions)
 		if err == nil {
 			// On success, break out of retry loop
 			break
