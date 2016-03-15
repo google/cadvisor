@@ -18,7 +18,6 @@ package raw
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
 	"strings"
 
@@ -62,6 +61,8 @@ type rawContainerHandler struct {
 
 	// Metrics to be ignored.
 	ignoreMetrics container.MetricSet
+
+	pid int
 }
 
 func (self *rawContainerHandler) GetCgroupPaths() map[string]string {
@@ -88,6 +89,10 @@ func (self *rawContainerHandler) HasFilesystem() bool {
 	return false
 }
 
+func isRootCgroup(name string) bool {
+	return name == "/"
+}
+
 func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
@@ -112,6 +117,11 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		}
 	}
 
+	pid := 0
+	if isRootCgroup(name) {
+		pid = 1
+	}
+
 	return &rawContainerHandler{
 		name:               name,
 		cgroupSubsystems:   cgroupSubsystems,
@@ -124,6 +134,7 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		watcher:            watcher,
 		rootFs:             rootFs,
 		ignoreMetrics:      ignoreMetrics,
+		pid:                pid,
 	}, nil
 }
 
@@ -136,7 +147,7 @@ func (self *rawContainerHandler) ContainerReference() (info.ContainerReference, 
 
 func (self *rawContainerHandler) GetRootNetworkDevices() ([]info.NetInfo, error) {
 	nd := []info.NetInfo{}
-	if self.name == "/" {
+	if isRootCgroup(self.name) {
 		mi, err := self.machineInfoFactory.GetMachineInfo()
 		if err != nil {
 			return nd, err
@@ -158,7 +169,7 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 
 func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 	// Get Filesystem information only for the root cgroup.
-	if self.name == "/" {
+	if isRootCgroup(self.name) {
 		filesystems, err := self.fsInfo.GetGlobalFsInfo()
 		if err != nil {
 			return err
@@ -221,7 +232,7 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 }
 
 func (self *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := libcontainer.GetStats(self.cgroupManager, self.rootFs, os.Getpid(), self.ignoreMetrics)
+	stats, err := libcontainer.GetStats(self.cgroupManager, self.rootFs, self.pid, self.ignoreMetrics)
 	if err != nil {
 		return stats, err
 	}
