@@ -22,11 +22,9 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"strings"
 	"syscall"
 	"time"
 
-	"github.com/google/cadvisor/container"
 	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/utils/sysfs"
@@ -54,43 +52,6 @@ var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Wh
 
 var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web interface host:port/debug/pprof/")
 
-var (
-	// Metrics to be ignored.
-	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{}}
-
-	// List of metrics that can be ignored.
-	ignoreWhitelist = container.MetricSet{
-		container.DiskUsageMetrics:       struct{}{},
-		container.NetworkUsageMetrics:    struct{}{},
-		container.NetworkTcpUsageMetrics: struct{}{},
-	}
-)
-
-type metricSetValue struct {
-	container.MetricSet
-}
-
-func (ml *metricSetValue) String() string {
-	return fmt.Sprint(*ml)
-}
-
-func (ml *metricSetValue) Set(value string) error {
-	for _, metric := range strings.Split(value, ",") {
-		if ignoreWhitelist.Has(container.MetricKind(metric)) {
-			(*ml).Add(container.MetricKind(metric))
-		} else {
-			return fmt.Errorf("unsupported metric %q specified in disable_metrics", metric)
-		}
-	}
-	return nil
-}
-
-func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of metrics to be disabled. Options are `disk`, `network`, `tcp`. Note: tcp is disabled by default due to high CPU usage.")
-	// Tcp metrics are ignored by default.
-	flag.Set("disable_metrics", "tcp")
-}
-
 func main() {
 	defer glog.Flush()
 	flag.Parse()
@@ -112,7 +73,7 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet)
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}

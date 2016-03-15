@@ -29,6 +29,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
+	"github.com/stretchr/testify/assert"
 )
 
 // TODO(vmarmol): Refactor these tests.
@@ -205,8 +206,12 @@ func TestDockerContainersInfo(t *testing.T) {
 }
 
 func TestNewNilManager(t *testing.T) {
-	_, err := New(nil, nil, 60*time.Second, true, container.MetricSet{})
+	_, err := New(nil, nil, 60*time.Second, true)
 	if err == nil {
 		t.Fatalf("Expected nil manager to return error")
 	}
+}
+
+func TestTcpMetricsAreDisabledByDefault(t *testing.T) {
+	assert.True(t, ignoreMetrics.Has(container.NetworkTcpUsageMetrics))
 }
