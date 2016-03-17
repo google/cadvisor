@@ -36,6 +36,12 @@ See the more detailed instructions in the [build page](docs/development/build.md
 
 cAdvisor supports exporting stats to various storage plugins. See the [documentation](docs/storage/README.md) for more details and examples.
 
+## Axibase Time Series Database
+
+[Axibase Time Series Database](http://axibase.com/products/axibase-time-series-database/) can collect Docker metrics through cAdvisor for long-term retention, analytics and visualization. A single ATSD instance can collect metrics from many Docker hosts and cAdvisors.
+
+See the [documentation](/docs/atsd_install.md) for more information.
+
 ## Web UI
 
 cAdvisor exposes a web UI at its port:
