@@ -30,6 +30,11 @@
 			"ImportPath": "github.com/SeanDolphin/bqschema",
 			"Rev": "f92a08f515e1bf718e995076a37c2f534b1deb08"
 		},
+	  	{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Comment": "v0.1.0-21-g056c9bc",
+			"Rev": "056c9bc7be7190eaa7715723883caffa5f8fa3e4"
+	  	},
 		{
 			"ImportPath": "github.com/Shopify/sarama",
 			"Comment": "v1.8.0",
@@ -43,6 +48,18 @@
 		{
 			"ImportPath": "github.com/abbot/go-http-auth",
 			"Rev": "c0ef4539dfab4d21c8ef20ba2924f9fc6f186d35"
+		},
+		{
+			"ImportPath": "github.com/axibase/atsd-api-go/http",
+			"Rev": "b1f6603f85a066d621fafc6b4daa804083e3cb68"
+		},
+		{
+			"ImportPath": "github.com/axibase/atsd-api-go/net",
+			"Rev": "b1f6603f85a066d621fafc6b4daa804083e3cb68"
+		},
+		{
+			"ImportPath": "github.com/axibase/atsd-storage-driver/storage",
+			"Rev": "7c2f7b504713b4186bbecd28c056e8d21c544564"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
