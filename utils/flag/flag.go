@@ -96,7 +96,11 @@ func AddFlags(fs *flag.FlagSet, flags []string) error {
 	return nil
 }
 
-// Adds all registered flags to the given FlagSet.
+// Adds all registered flags to the given FlagSet. Calling more than once on the
+// same flag set will result in a panic.
+// NOTE: Flags added after AddAllFlags is called will not be added to the
+// FlagSet. This means that if AddAllFlags is called in a package init()
+// function, there is an implicit dependency on the import ordering.
 func AddAllFlags(fs *flag.FlagSet) {
 	Flags.VisitAll(func(f *flag.Flag) {
 		addFlag(fs, f)
