@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,9 +15,11 @@
 package atsd
 
 import (
+	"strconv"
+	"time"
+
 	atsdNet "github.com/axibase/atsd-api-go/net"
 	info "github.com/google/cadvisor/info/v1"
-	"strconv"
 )
 
 const (
@@ -35,34 +37,32 @@ const (
 var oldStats = map[string]*info.ContainerStats{}
 
 // derived stats which cannot be calculated within atsd for now
-func CalculateDerivedSeriesCpuCommands(entity string, stats *info.ContainerStats) []*atsdNet.SeriesCommand {
-	if ostats, ok := oldStats[entity]; ok {
-		if ostats.Timestamp.Before(stats.Timestamp) {
-			time := uint64(stats.Timestamp.UnixNano() / 1e6)
-			deltaT := float64(stats.Timestamp.UnixNano() - ostats.Timestamp.UnixNano())
-			cpuCount := float64(len(stats.Cpu.Usage.PerCpu))
+func CalculateDerivedSeriesCpuCommands(entity string, curStats *info.ContainerStats) []*atsdNet.SeriesCommand {
+	commands := []*atsdNet.SeriesCommand{}
+	if prevStats, ok := oldStats[entity]; ok {
+		if prevStats.Timestamp.Before(curStats.Timestamp) {
+			time := uint64(curStats.Timestamp.UnixNano() / time.Millisecond.Nanoseconds())
+			deltaT := curStats.Timestamp.UnixNano() - prevStats.Timestamp.UnixNano()
+			cpuCount := len(curStats.Cpu.Usage.PerCpu)
 			metricsMap := map[string]float64{}
-			if stats.Cpu.Usage.System >= ostats.Cpu.Usage.System {
-				metricsMap[containerCpuUsageSystemPct] = 1e2 * float64(stats.Cpu.Usage.System-ostats.Cpu.Usage.System) / deltaT
-			}
-			if stats.Cpu.Usage.Total >= ostats.Cpu.Usage.Total {
-				metricsMap[containerCpuUsageTotalPct] = 1e2 * float64(stats.Cpu.Usage.Total-ostats.Cpu.Usage.Total) / deltaT
-			}
-			if stats.Cpu.Usage.User >= ostats.Cpu.Usage.User {
-				metricsMap[containerCpuUsageUserPct] = 1e2 * float64(stats.Cpu.Usage.User-ostats.Cpu.Usage.User) / deltaT
-			}
-			if cpuCount > 0 {
-				if stats.Cpu.Usage.System >= ostats.Cpu.Usage.System {
-					metricsMap[containerCpuHostUsageSystemPct] = 1e2 * float64(stats.Cpu.Usage.System-ostats.Cpu.Usage.System) / (cpuCount * deltaT)
-				}
-				if stats.Cpu.Usage.Total >= ostats.Cpu.Usage.Total {
-					metricsMap[containerCpuHostUsageTotalPct] = 1e2 * float64(stats.Cpu.Usage.Total-ostats.Cpu.Usage.Total) / (cpuCount * deltaT)
-				}
-				if stats.Cpu.Usage.User >= ostats.Cpu.Usage.User {
-					metricsMap[containerCpuHostUsageUserPct] = 1e2 * float64(stats.Cpu.Usage.User-ostats.Cpu.Usage.User) / (cpuCount * deltaT)
+			if curStats.Cpu.Usage.System >= prevStats.Cpu.Usage.System {
+				metricsMap[containerCpuUsageSystemPct] = 1e2 * float64(curStats.Cpu.Usage.System-prevStats.Cpu.Usage.System) / float64(deltaT)
+				if cpuCount > 0 {
+					metricsMap[containerCpuHostUsageSystemPct] = metricsMap[containerCpuUsageSystemPct] / float64(cpuCount)
 				}
 			}
-			commands := []*atsdNet.SeriesCommand{}
+			if curStats.Cpu.Usage.User >= prevStats.Cpu.Usage.User {
+				metricsMap[containerCpuUsageUserPct] = 1e2 * float64(curStats.Cpu.Usage.User-prevStats.Cpu.Usage.User) / float64(deltaT)
+				if cpuCount > 0 {
+					metricsMap[containerCpuHostUsageUserPct] = metricsMap[containerCpuUsageUserPct] / float64(cpuCount)
+				}
+			}
+			if curStats.Cpu.Usage.Total >= prevStats.Cpu.Usage.Total {
+				metricsMap[containerCpuUsageTotalPct] = 1e2 * float64(curStats.Cpu.Usage.Total-prevStats.Cpu.Usage.Total) / float64(deltaT)
+				if cpuCount > 0 {
+					metricsMap[containerCpuHostUsageTotalPct] = metricsMap[containerCpuUsageTotalPct] / float64(cpuCount)
+				}
+			}
 			var command *atsdNet.SeriesCommand
 			for key, val := range metricsMap {
 				if command == nil {
@@ -75,20 +75,17 @@ func CalculateDerivedSeriesCpuCommands(entity string, stats *info.ContainerStats
 				command.SetTimestamp(atsdNet.Millis(time))
 				commands = append(commands, command)
 			}
-			for i, cpuUsage := range stats.Cpu.Usage.PerCpu {
-				if i < len(ostats.Cpu.Usage.PerCpu) && cpuUsage >= ostats.Cpu.Usage.PerCpu[i] {
-					commands = append(commands, atsdNet.NewSeriesCommand(entity, containerCpuUsagePerCpuPct, atsdNet.Float32(1e2*float64(cpuUsage-ostats.Cpu.Usage.PerCpu[i])/deltaT)).
+			for i, cpuUsage := range curStats.Cpu.Usage.PerCpu {
+				if i < len(prevStats.Cpu.Usage.PerCpu) && cpuUsage >= prevStats.Cpu.Usage.PerCpu[i] {
+					commands = append(commands, atsdNet.NewSeriesCommand(entity, containerCpuUsagePerCpuPct, atsdNet.Float32(1e2*float64(cpuUsage-prevStats.Cpu.Usage.PerCpu[i])/float64(deltaT))).
 						SetTag(cpu, strconv.FormatInt(int64(i), 10)).
 						SetTimestamp(atsdNet.Millis(time)))
 				}
 			}
-			oldStats[entity] = stats
-			return commands
-		} else {
-			return []*atsdNet.SeriesCommand{}
+			oldStats[entity] = curStats
 		}
 	} else {
-		oldStats[entity] = stats
-		return []*atsdNet.SeriesCommand{}
+		oldStats[entity] = curStats
 	}
+	return commands
 }

@@ -16,7 +16,7 @@ type Config struct {
 	SelfMetricEntity     string
 
 	ConnectionLimit uint
-	MemstoreLimit   uint64
+	MemstoreLimit   uint
 
 	Username string
 	Password string
@@ -34,8 +34,8 @@ func GetDefaultConfig() Config {
 		Protocol:             "tcp",
 		MetricPrefix:         "storagedriver",
 		SelfMetricEntity:     "hostname",
-		ConnectionLimit:      uint(1),
-		MemstoreLimit:        uint64(1000000),
+		ConnectionLimit:      1,
+		MemstoreLimit:        1000000,
 		Username:             "admin",
 		Password:             "admin",
 		UpdateInterval:       1 * time.Minute,
@@ -88,7 +88,7 @@ func (self *Config) UnmarshalTOML(data interface{}) error {
 
 	if ml, ok := d["memstore_limit"]; ok {
 		memstoreLimit, _ := ml.(int64)
-		self.MemstoreLimit = uint64(memstoreLimit)
+		self.MemstoreLimit = uint(memstoreLimit)
 	}
 
 	if u, ok := d["username"]; ok {

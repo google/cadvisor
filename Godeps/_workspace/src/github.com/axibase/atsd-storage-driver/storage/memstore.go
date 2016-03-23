@@ -32,10 +32,10 @@ type MemStore struct {
 
 	sync.Mutex
 
-	Limit uint64
+	Limit uint
 }
 
-func NewMemStore(limit uint64) *MemStore {
+func NewMemStore(limit uint) *MemStore {
 	ms := &MemStore{
 		seriesCommandMap: &map[string]*Chunk{},
 		Limit:            limit,
@@ -45,7 +45,7 @@ func NewMemStore(limit uint64) *MemStore {
 func (self *MemStore) AppendSeriesCommands(commands []*net.SeriesCommand) {
 	self.Lock()
 	defer self.Unlock()
-	if uint64(self.Size()) < self.Limit {
+	if uint(self.Size()) < self.Limit {
 		for i := 0; i < len(commands); i++ {
 			key := self.getKey(commands[i])
 			if _, ok := (*self.seriesCommandMap)[key]; !ok {
@@ -58,21 +58,21 @@ func (self *MemStore) AppendSeriesCommands(commands []*net.SeriesCommand) {
 func (self *MemStore) AppendPropertyCommands(propertyCommands []*net.PropertyCommand) {
 	self.Lock()
 	defer self.Unlock()
-	if uint64(self.Size()) < self.Limit {
+	if self.Size() < self.Limit {
 		self.properties = append(self.properties, propertyCommands...)
 	}
 }
 func (self *MemStore) AppendEntityTagCommands(entityUpdateCommands []*net.EntityTagCommand) {
 	self.Lock()
 	defer self.Unlock()
-	if uint64(self.Size()) < self.Limit {
+	if self.Size() < self.Limit {
 		self.entityTagCommands = append(self.entityTagCommands, entityUpdateCommands...)
 	}
 }
 func (self *MemStore) AppendMessageCommands(messageCommands []*net.MessageCommand) {
 	self.Lock()
 	defer self.Unlock()
-	if uint64(self.Size()) < self.Limit {
+	if self.Size() < self.Limit {
 		self.messages = append(self.messages, messageCommands...)
 	}
 
@@ -103,28 +103,28 @@ func (self *MemStore) ReleaseEntityTagCommands() []*net.EntityTagCommand {
 	self.entityTagCommands = nil
 	return entityTagCommands
 }
-func (self *MemStore) SeriesCommandCount() uint64 {
+func (self *MemStore) SeriesCommandCount() uint {
 
-	commandCount := uint64(0)
+	commandCount := uint(0)
 
 	for _, val := range *(self.seriesCommandMap) {
-		commandCount += uint64(val.Len())
+		commandCount += uint(val.Len())
 	}
 	return commandCount
 }
-func (self *MemStore) PropertiesCount() uint64 {
+func (self *MemStore) PropertiesCount() uint {
 
-	return uint64(len(self.properties))
+	return uint(len(self.properties))
 }
-func (self *MemStore) MessagesCount() uint64 {
+func (self *MemStore) MessagesCount() uint {
 
-	return uint64(len(self.messages))
+	return uint(len(self.messages))
 }
-func (self *MemStore) EntitiesCount() uint64 {
+func (self *MemStore) EntitiesCount() uint {
 
-	return uint64(len(self.entityTagCommands))
+	return uint(len(self.entityTagCommands))
 }
-func (self *MemStore) Size() uint64 {
+func (self *MemStore) Size() uint {
 	return self.EntitiesCount() + self.PropertiesCount() + self.SeriesCommandCount() + self.MessagesCount()
 }
 

@@ -28,7 +28,7 @@ type StorageFactory interface {
 type NetworkStorageFactory struct {
 	selfMetricsEntity string
 	metricPrefix      string
-	memstoreLimit     uint64
+	memstoreLimit     uint
 	protocol          string
 	receiverHostport  string
 	connectionLimit   uint
@@ -46,7 +46,7 @@ func NewNetworkStorageFactory(
 	url url.URL,
 	username,
 	password string,
-	memstoreLimit uint64,
+	memstoreLimit uint,
 	connectionLimit uint,
 	updateInterval time.Duration,
 	metricPrefix string,
@@ -94,7 +94,7 @@ func NewHttpStorageFactory(
 	url url.URL,
 	username,
 	password string,
-	memstoreLimit uint64,
+	memstoreLimit uint,
 	updateInterval time.Duration,
 	metricPrefix string,
 	groupParams map[string]DeduplicationParams,
@@ -113,7 +113,7 @@ func NewHttpStorageFactory(
 
 type HttpStorageFactory struct {
 	selfMetricsEntity string
-	memstoreLimit     uint64
+	memstoreLimit     uint
 
 	url      *url.URL
 	username string

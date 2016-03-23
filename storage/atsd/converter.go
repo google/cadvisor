@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 package atsd
 
 import (
-	atsdNet "github.com/axibase/atsd-api-go/net"
-	info "github.com/google/cadvisor/info/v1"
 	"strconv"
 	"strings"
 	"time"
+
+	atsdNet "github.com/axibase/atsd-api-go/net"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 const (
@@ -122,16 +123,13 @@ const (
 
 // Tags
 const (
-	device = "device"
-	fsType = "type"
-	minor  = "minor"
-	major  = "major"
-	disk   = "disk"
-	cpu    = "cpu"
-)
-
-const (
-	delta = 15 * time.Second
+	device        = "device"
+	fsType        = "type"
+	minor         = "minor"
+	major         = "major"
+	disk          = "disk"
+	cpu           = "cpu"
+	interfaceName = "name"
 )
 
 func CpuSeriesCommandsFromStats(machineName string, ref info.ContainerReference, stats *info.ContainerStats) []*atsdNet.SeriesCommand {
@@ -147,10 +145,7 @@ func CpuSeriesCommandsFromStats(machineName string, ref info.ContainerReference,
 			SetTag(cpu, strconv.FormatInt(int64(index), 10)))
 	}
 
-	for _, c := range seriesCommands {
-		time := uint64(stats.Timestamp.UnixNano() / 1e6)
-		c.SetTimestamp(atsdNet.Millis(time))
-	}
+	setSeriesTimestamp(seriesCommands, stats.Timestamp)
 
 	return seriesCommands
 }
@@ -166,10 +161,7 @@ func IOSeriesCommandsFromStats(machineName string, ref info.ContainerReference, 
 	seriesCommands = append(seriesCommands, diskIoStatsToSeriesCommands(entity, containerDiskIoIoWaitTime, includeAllMajorNumbers, &stats.DiskIo.IoWaitTime)...)
 	seriesCommands = append(seriesCommands, diskIoStatsToSeriesCommands(entity, containerDiskIoSectors, includeAllMajorNumbers, &stats.DiskIo.Sectors)...)
 
-	for _, c := range seriesCommands {
-		time := uint64(stats.Timestamp.UnixNano() / 1e6)
-		c.SetTimestamp(atsdNet.Millis(time))
-	}
+	setSeriesTimestamp(seriesCommands, stats.Timestamp)
 
 	return seriesCommands
 }
@@ -187,26 +179,15 @@ func MemorySeriesCommandsFromStats(machineName string, ref info.ContainerReferen
 			SetMetricValue(containerMemoryContainerDataPgmajfault, atsdNet.Uint64(stats.Memory.ContainerData.Pgmajfault)).
 			SetMetricValue(containerMemoryFailcnt, atsdNet.Uint64(stats.Memory.Failcnt)),
 	}
-	for _, c := range seriesCommands {
-		time := uint64(stats.Timestamp.UnixNano() / 1e6)
-		c.SetTimestamp(atsdNet.Millis(time))
-	}
+
+	setSeriesTimestamp(seriesCommands, stats.Timestamp)
 
 	return seriesCommands
 }
 func NetworkSeriesCommandsFromStats(machineName string, ref info.ContainerReference, stats *info.ContainerStats) []*atsdNet.SeriesCommand {
 	entity := machineName + ref.Name
-
 	seriesCommands := []*atsdNet.SeriesCommand{
-		atsdNet.NewSeriesCommand(entity, containerNetworkRxBytes, atsdNet.Uint64(stats.Network.RxBytes)).
-			SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(stats.Network.RxDropped)).
-			SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(stats.Network.RxErrors)).
-			SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(stats.Network.RxPackets)).
-			SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(stats.Network.TxBytes)).
-			SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(stats.Network.TxDropped)).
-			SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(stats.Network.TxErrors)).
-			SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(stats.Network.TxPackets)).
-			SetMetricValue(containerNetworkTcpStatEstablished, atsdNet.Uint64(stats.Network.Tcp.Established)).
+		atsdNet.NewSeriesCommand(entity, containerNetworkTcpStatEstablished, atsdNet.Uint64(stats.Network.Tcp.Established)).
 			SetMetricValue(containerNetworkTcpStatSynSent, atsdNet.Uint64(stats.Network.Tcp.SynSent)).
 			SetMetricValue(containerNetworkTcpStatSynRecv, atsdNet.Uint64(stats.Network.Tcp.SynRecv)).
 			SetMetricValue(containerNetworkTcpStatFinWait1, atsdNet.Uint64(stats.Network.Tcp.FinWait1)).
@@ -229,10 +210,21 @@ func NetworkSeriesCommandsFromStats(machineName string, ref info.ContainerRefere
 			SetMetricValue(containerNetworkTcp6StatListen, atsdNet.Uint64(stats.Network.Tcp6.Listen)).
 			SetMetricValue(containerNetworkTcp6StatClosing, atsdNet.Uint64(stats.Network.Tcp6.Closing)),
 	}
-	for _, c := range seriesCommands {
-		time := uint64(stats.Timestamp.UnixNano() / 1e6)
-		c.SetTimestamp(atsdNet.Millis(time))
+
+	for _, networkInterface := range stats.Network.Interfaces {
+		seriesCommands = append(seriesCommands,
+			atsdNet.NewSeriesCommand(entity, containerNetworkRxBytes, atsdNet.Uint64(networkInterface.RxBytes)).
+				SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(networkInterface.RxDropped)).
+				SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(networkInterface.RxErrors)).
+				SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(networkInterface.RxPackets)).
+				SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(networkInterface.TxBytes)).
+				SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(networkInterface.TxDropped)).
+				SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(networkInterface.TxErrors)).
+				SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(networkInterface.TxPackets)).
+				SetTag(interfaceName, networkInterface.Name))
 	}
+
+	setSeriesTimestamp(seriesCommands, stats.Timestamp)
 
 	return seriesCommands
 }
@@ -247,10 +239,7 @@ func TaskSeriesCommandsFromStats(machineName string, ref info.ContainerReference
 			SetMetricValue(containerTaskStatsNrUninterruptible, atsdNet.Uint64(stats.TaskStats.NrUninterruptible)),
 	}
 
-	for _, c := range seriesCommands {
-		time := uint64(stats.Timestamp.UnixNano() / 1e6)
-		c.SetTimestamp(atsdNet.Millis(time))
-	}
+	setSeriesTimestamp(seriesCommands, stats.Timestamp)
 
 	return seriesCommands
 }
@@ -280,20 +269,24 @@ func FileSystemSeriesCommandsFromStats(machineName string, ref info.ContainerRef
 			SetTag(fsType, fsStats.Type))
 	}
 
-	for _, c := range seriesCommands {
-		time := uint64(stats.Timestamp.UnixNano() / 1e6)
-		c.SetTimestamp(atsdNet.Millis(time))
-	}
+	setSeriesTimestamp(seriesCommands, stats.Timestamp)
 
 	return seriesCommands
 }
 
-func RefToPropertyCommands(machineName string, ref info.ContainerReference, timestamp uint64) []*atsdNet.PropertyCommand {
+func setSeriesTimestamp(seriesCommands []*atsdNet.SeriesCommand, timestamp time.Time) {
+	for _, c := range seriesCommands {
+		time := uint64(timestamp.UnixNano() / time.Millisecond.Nanoseconds())
+		c.SetTimestamp(atsdNet.Millis(time))
+	}
+}
+
+func RefToPropertyCommands(machineName string, ref info.ContainerReference, timestamp time.Time) []*atsdNet.PropertyCommand {
 	entity := machineName + ref.Name
 
 	var propertyCommand *atsdNet.PropertyCommand
 
-	aliases := make([]string, len(ref.Aliases), cap(ref.Aliases))
+	aliases := make([]string, len(ref.Aliases))
 	copy(aliases, ref.Aliases)
 
 	if ref.Namespace == "" {
@@ -331,18 +324,17 @@ func RefToPropertyCommands(machineName string, ref info.ContainerReference, time
 		propertyCommand = atsdNet.NewPropertyCommand(propertyType, entity, containerNamespaceTag, ref.Namespace)
 	}
 	if len(aliases) > 0 {
-		var count int64 = 0
+		count := 0
 		for i := range aliases {
 			if "/"+ref.Namespace+"/"+aliases[i] == ref.Name || len(aliases) == 1 {
 				propertyCommand.SetTag(containerIdTag, aliases[i])
 			} else {
 				if count == 0 {
 					propertyCommand.SetTag(containerAliasPropertyTag, aliases[i])
-					count++
 				} else {
-					propertyCommand.SetTag(containerAliasTagPrefix+strconv.FormatInt(count, 10), aliases[i])
-					count++
+					propertyCommand.SetTag(containerAliasTagPrefix+strconv.FormatInt(int64(count), 10), aliases[i])
 				}
+				count++
 			}
 		}
 	}
@@ -350,7 +342,7 @@ func RefToPropertyCommands(machineName string, ref info.ContainerReference, time
 	for key, val := range ref.Labels {
 		propertyCommand.SetTag(containerLabelTagPrefix+key, val)
 	}
-	propertyCommand.SetTimestamp(atsdNet.Millis(timestamp / 1e6))
+	propertyCommand.SetTimestamp(atsdNet.Millis(timestamp.UnixNano() / time.Millisecond.Nanoseconds()))
 	return []*atsdNet.PropertyCommand{propertyCommand}
 }
 func RefToEntityCommands(machineName string, ref info.ContainerReference) []*atsdNet.EntityTagCommand {
@@ -369,8 +361,7 @@ func RefToEntityCommands(machineName string, ref info.ContainerReference) []*ats
 	for _, a := range ref.Aliases {
 		// is container alias
 		if a != ref.Id {
-			alias := a
-			tags[containerAliasEntityTag] = alias
+			tags[containerAliasEntityTag] = a
 			break
 		}
 	}
@@ -406,16 +397,4 @@ func diskIoStatsToSeriesCommands(entity, metric string, includeAllMajorNumbers b
 		}
 	}
 	return seriesCommands
-}
-
-type ByTimestamp []atsdNet.Millis
-
-func (integers ByTimestamp) Len() int {
-	return len(integers)
-}
-func (integers ByTimestamp) Swap(i, j int) {
-	integers[i], integers[j] = integers[j], integers[i]
-}
-func (integers ByTimestamp) Less(i, j int) bool {
-	return integers[i] < integers[j]
 }

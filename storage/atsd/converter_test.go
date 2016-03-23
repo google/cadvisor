@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 package atsd
 
 import (
-	atsdNet "github.com/axibase/atsd-api-go/net"
-	info "github.com/google/cadvisor/info/v1"
 	"reflect"
 	"testing"
 	"time"
+
+	atsdNet "github.com/axibase/atsd-api-go/net"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 type MetaTestCase struct {
@@ -102,7 +103,7 @@ func TestRefToPropertyAndEntityTags(t *testing.T) {
 		assertProps := tests[i].props
 		assertEntityTagCommands := tests[i].entityTagCommands
 
-		props := RefToPropertyCommands(machineName, *ref, uint64(timestamp)*1e6)
+		props := RefToPropertyCommands(machineName, *ref, time.Unix(0, int64(timestamp)*time.Millisecond.Nanoseconds()))
 		if !IsPropertiesEqual(props, assertProps) {
 			t.Error("IsPropertiesEqual = false result props: ", props, "assert props: ", assertProps)
 		}
@@ -163,17 +164,6 @@ func TestStatsToSeries(t *testing.T) {
 					Failcnt:          123,
 				},
 				Network: info.NetworkStats{
-					InterfaceStats: info.InterfaceStats{
-						Name:      "eth",
-						RxBytes:   123,
-						RxPackets: 123,
-						RxErrors:  123,
-						RxDropped: 123,
-						TxBytes:   123,
-						TxPackets: 123,
-						TxErrors:  123,
-						TxDropped: 123,
-					},
 					Tcp: info.TcpStat{
 						Established: 123,
 						SynSent:     123,
@@ -200,7 +190,30 @@ func TestStatsToSeries(t *testing.T) {
 						Listen:      123,
 						Closing:     123,
 					},
-					Interfaces: []info.InterfaceStats{},
+					Interfaces: []info.InterfaceStats{
+						{
+							Name:      "eth0",
+							RxBytes:   123,
+							RxPackets: 123,
+							RxErrors:  123,
+							RxDropped: 123,
+							TxBytes:   123,
+							TxPackets: 123,
+							TxErrors:  123,
+							TxDropped: 123,
+						},
+						{
+							Name:      "eth1",
+							RxBytes:   123,
+							RxPackets: 123,
+							RxErrors:  123,
+							RxDropped: 123,
+							TxBytes:   123,
+							TxPackets: 123,
+							TxErrors:  123,
+							TxDropped: 123,
+						},
+					},
 				},
 				Filesystem: []info.FsStats{
 					{
@@ -255,15 +268,7 @@ func TestStatsToSeries(t *testing.T) {
 					SetMetricValue(containerTaskStatsNrStopped, atsdNet.Uint64(123)).
 					SetMetricValue(containerTaskStatsNrUninterruptible, atsdNet.Uint64(123)).
 					SetTimestamp(atsdNet.Millis(123456789)),
-				atsdNet.NewSeriesCommand(entityName, containerNetworkRxBytes, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTcpStatEstablished, atsdNet.Uint64(123)).
+				atsdNet.NewSeriesCommand(entityName, containerNetworkTcpStatEstablished, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcpStatSynSent, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcpStatSynRecv, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcpStatFinWait1, atsdNet.Uint64(123)).
@@ -285,6 +290,26 @@ func TestStatsToSeries(t *testing.T) {
 					SetMetricValue(containerNetworkTcp6StatLastAck, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcp6StatListen, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcp6StatClosing, atsdNet.Uint64(123)).
+					SetTimestamp(atsdNet.Millis(123456789)),
+				atsdNet.NewSeriesCommand(entityName, containerNetworkRxBytes, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(123)).
+					SetTag(interfaceName, "eth0").
+					SetTimestamp(atsdNet.Millis(123456789)),
+				atsdNet.NewSeriesCommand(entityName, containerNetworkRxBytes, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(123)).
+					SetTag(interfaceName, "eth1").
 					SetTimestamp(atsdNet.Millis(123456789)),
 				atsdNet.NewSeriesCommand(entityName, containerCpuUsagePerCpu, atsdNet.Uint64(123)).
 					SetTag(cpu, "0").
@@ -382,15 +407,7 @@ func TestStatsToSeries(t *testing.T) {
 					SetMetricValue(containerTaskStatsNrStopped, atsdNet.Uint64(0)).
 					SetMetricValue(containerTaskStatsNrUninterruptible, atsdNet.Uint64(0)).
 					SetTimestamp(atsdNet.Millis(123456789)),
-				atsdNet.NewSeriesCommand(entityName, containerNetworkRxBytes, atsdNet.Uint64(0)).
-					SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(0)).
-					SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(0)).
-					SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(0)).
-					SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(0)).
-					SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(0)).
-					SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(0)).
-					SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(0)).
-					SetMetricValue(containerNetworkTcpStatEstablished, atsdNet.Uint64(0)).
+				atsdNet.NewSeriesCommand(entityName, containerNetworkTcpStatEstablished, atsdNet.Uint64(0)).
 					SetMetricValue(containerNetworkTcpStatSynSent, atsdNet.Uint64(0)).
 					SetMetricValue(containerNetworkTcpStatSynRecv, atsdNet.Uint64(0)).
 					SetMetricValue(containerNetworkTcpStatFinWait1, atsdNet.Uint64(0)).
@@ -447,17 +464,6 @@ func TestStatsToSeries(t *testing.T) {
 					Failcnt:          123,
 				},
 				Network: info.NetworkStats{
-					InterfaceStats: info.InterfaceStats{
-						Name:      "eth",
-						RxBytes:   123,
-						RxPackets: 123,
-						RxErrors:  123,
-						RxDropped: 123,
-						TxBytes:   123,
-						TxPackets: 123,
-						TxErrors:  123,
-						TxDropped: 123,
-					},
 					Tcp: info.TcpStat{
 						Established: 123,
 						SynSent:     123,
@@ -484,7 +490,30 @@ func TestStatsToSeries(t *testing.T) {
 						Listen:      123,
 						Closing:     123,
 					},
-					Interfaces: []info.InterfaceStats{},
+					Interfaces: []info.InterfaceStats{
+						{
+							Name:      "eth0",
+							RxBytes:   123,
+							RxPackets: 123,
+							RxErrors:  123,
+							RxDropped: 123,
+							TxBytes:   123,
+							TxPackets: 123,
+							TxErrors:  123,
+							TxDropped: 123,
+						},
+						{
+							Name:      "eth1",
+							RxBytes:   123,
+							RxPackets: 123,
+							RxErrors:  123,
+							RxDropped: 123,
+							TxBytes:   123,
+							TxPackets: 123,
+							TxErrors:  123,
+							TxDropped: 123,
+						},
+					},
 				},
 				Filesystem: []info.FsStats{},
 				TaskStats: info.LoadStats{
@@ -518,15 +547,7 @@ func TestStatsToSeries(t *testing.T) {
 					SetMetricValue(containerTaskStatsNrStopped, atsdNet.Uint64(123)).
 					SetMetricValue(containerTaskStatsNrUninterruptible, atsdNet.Uint64(123)).
 					SetTimestamp(atsdNet.Millis(123456789)),
-				atsdNet.NewSeriesCommand(entityName, containerNetworkRxBytes, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(123)).
-					SetMetricValue(containerNetworkTcpStatEstablished, atsdNet.Uint64(123)).
+				atsdNet.NewSeriesCommand(entityName, containerNetworkTcpStatEstablished, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcpStatSynSent, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcpStatSynRecv, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcpStatFinWait1, atsdNet.Uint64(123)).
@@ -548,6 +569,26 @@ func TestStatsToSeries(t *testing.T) {
 					SetMetricValue(containerNetworkTcp6StatLastAck, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcp6StatListen, atsdNet.Uint64(123)).
 					SetMetricValue(containerNetworkTcp6StatClosing, atsdNet.Uint64(123)).
+					SetTimestamp(atsdNet.Millis(123456789)),
+				atsdNet.NewSeriesCommand(entityName, containerNetworkRxBytes, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(123)).
+					SetTag(interfaceName, "eth0").
+					SetTimestamp(atsdNet.Millis(123456789)),
+				atsdNet.NewSeriesCommand(entityName, containerNetworkRxBytes, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxDropped, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxErrors, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkRxPackets, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxBytes, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxDropped, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxErrors, atsdNet.Uint64(123)).
+					SetMetricValue(containerNetworkTxPackets, atsdNet.Uint64(123)).
+					SetTag(interfaceName, "eth1").
 					SetTimestamp(atsdNet.Millis(123456789)),
 
 				atsdNet.NewSeriesCommand(entityName, containerDiskIoIoServiceBytes+"."+"read", atsdNet.Uint64(1)).SetTag(major, "1").SetTag(minor, "2").SetTimestamp(atsdNet.Millis(123456789)),

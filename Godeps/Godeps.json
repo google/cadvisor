@@ -59,7 +59,7 @@
 		},
 		{
 			"ImportPath": "github.com/axibase/atsd-storage-driver/storage",
-			"Rev": "7c2f7b504713b4186bbecd28c056e8d21c544564"
+			"Rev": "d7a9d6e93c4ebe6dd9fe350ee21b3bf15fb04df1"
 		},
 		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
