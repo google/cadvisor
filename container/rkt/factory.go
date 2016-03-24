@@ -18,12 +18,10 @@ import (
 	"fmt"
 	"strings"
 
-	rktapi "github.com/coreos/rkt/api/v1alpha"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"golang.org/x/net/context"
 
 	"github.com/golang/glog"
 )
@@ -60,8 +58,9 @@ func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (
 }
 
 func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
-	// TODO{SJP}: will ignore all cgroup names that don't either correspond to the machine.slice that is the pod
-	// or the containers that belong to the pod
+	// will ignore all cgroup names that don't either correspond to the machine.slice that is the pod or the containers that belong to the pod
+	// only works for machined rkt pods at the moment
+
 	if strings.HasPrefix(name, "/machine.slice/machine-rkt\\x2d") {
 		accept, err := verifyName(name)
 		return true, accept, err
@@ -74,16 +73,15 @@ func (self *rktFactory) DebugInfo() map[string][]string {
 }
 
 func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet) error {
-	client, err := Client()
+	_, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with Rkt api service: %v", err)
 	}
 
-	resp, err := client.GetInfo(context.Background(), &rktapi.GetInfoRequest{})
+	rktPath, err := RktPath()
 	if err != nil {
-		return fmt.Errorf("couldn't GetInfo from rkt api servie: %v", err)
+		return fmt.Errorf("unable to get the RktPath variable %v", err)
 	}
-	rktPath := resp.Info.GlobalFlags.Dir
 
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {

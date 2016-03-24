@@ -58,7 +58,7 @@ func RktPath() (string, error) {
 
 	resp, err := client.GetInfo(context.Background(), &rktapi.GetInfoRequest{})
 	if err != nil {
-		return "", fmt.Errorf("couldn't GetInfo from rkt api servie: %v", err)
+		return "", fmt.Errorf("couldn't GetInfo from rkt api service: %v", err)
 	}
 
 	return resp.Info.GlobalFlags.Dir, nil

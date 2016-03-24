@@ -209,8 +209,8 @@ func getDockerImagePaths(context Context) map[string]struct{} {
 	return dockerImagePaths
 }
 
-// This method compares the mountpoints with possible docker image mount points. If a match is found,
-// docker images label is added to the partition.
+// This method compares the mountpoints with possible container image mount points. If a match is found,
+// the label is added to the partition.
 func (self *RealFsInfo) updateContainerImagesPath(label string, mounts []*mount.Info, containerImagePaths map[string]struct{}) {
 	var useMount *mount.Info
 	for _, m := range mounts {

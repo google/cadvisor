@@ -39,6 +39,7 @@ func verifyName(name string) (bool, error) {
    pod - /sys/fs/cgroup/cpu/machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/
    container under pod - /sys/fs/cgroup/cpu/machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/system.slice/alpine-sh.service
 */
+//TODO{sjpotter}: this currently only recognizes machined started pods, which actually doesn't help with k8s which uses them as systemd services, need a solution for both
 func parseName(name string) (*parsedName, error) {
 	splits := strings.Split(name, "/")
 	if len(splits) == 3 || len(splits) == 5 {
@@ -79,7 +80,7 @@ func getRootFs(root string, parsed *parsedName) string {
 
 	bytes, err := ioutil.ReadFile(tree)
 	if err != nil {
-		glog.Infof("ReadFile failed: %v", err)
+		glog.Infof("ReadFile failed, couldn't read %v to get upper dir: %v", tree, err)
 		return ""
 	}
 
