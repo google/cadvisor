@@ -17,6 +17,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -35,6 +36,7 @@ import (
 	"github.com/golang/glog"
 )
 
+var argPath = flag.String("listen_path", "", "Path to listen on (UNIX socket), defaults to empty (use TCP instead)")
 var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
 var argPort = flag.Int("port", 8080, "port to listen")
 var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
@@ -142,13 +144,37 @@ func main() {
 		glog.Fatalf("Failed to start container manager: %v", err)
 	}
 
+	var listener net.Listener
+
+	if *argPath != "" {
+		if _, err := os.Stat(*argPath); err == nil {
+			glog.Infof("Deleting existing socket at %s", *argPath)
+			os.Remove(*argPath)
+		}
+
+		var err error
+		listener, err = net.Listen("unix", *argPath)
+		if err != nil {
+			glog.Fatalf("Failed to start listening on UNIX socket at %s: %v", *argPath, err)
+		}
+		if err := os.Chmod(*argPath, 0660); err != nil {
+			glog.Fatalf("Failed to change permissions on UNIX socket at %s: %v", *argPath, err)
+		}
+	} else {
+		var err error
+		listener, err = net.Listen("tcp", fmt.Sprintf("%s:%d", *argIp, *argPort))
+		if err != nil {
+			glog.Fatalf("Failed to start listening on TCP socket at %s:%d: %v", *argIp, *argPort, err)
+		}
+	}
+
+	glog.Infof("Starting cAdvisor version: %s-%s on %s", version.Info["version"], version.Info["revision"], listener.Addr())
+
 	// Install signal handler.
-	installSignalHandler(containerManager)
+	installSignalHandler(containerManager, listener)
 
-	glog.Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
-
-	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
-	glog.Fatal(http.ListenAndServe(addr, mux))
+	// Start serving requests
+	glog.Fatal(http.Serve(listener, mux))
 }
 
 func setMaxProcs() {
@@ -169,16 +195,19 @@ func setMaxProcs() {
 	}
 }
 
-func installSignalHandler(containerManager manager.Manager) {
+func installSignalHandler(containerManager manager.Manager, listener net.Listener) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	// Block until a signal is received.
 	go func() {
 		sig := <-c
+		glog.Infof("Exiting containerManager")
 		if err := containerManager.Stop(); err != nil {
 			glog.Errorf("Failed to stop container manager: %v", err)
 		}
+		glog.Infof("Exiting listener")
+		listener.Close()
 		glog.Infof("Exiting given signal: %v", sig)
 		os.Exit(0)
 	}()
