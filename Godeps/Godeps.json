@@ -108,6 +108,11 @@
 			"Rev": "b4a58d95188dd092ae20072bac14cece0e67c388"
 		},
 		{
+			"ImportPath": "github.com/coreos/rkt/api/v1alpha",
+			"Comment": "v1.1.0-36-gf13ae40",
+			"Rev": "f13ae40259c68c88a89ad6ef8c95df24133e97a3"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/longpath",
 			"Comment": "v1.9.1",
 			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
@@ -236,7 +241,7 @@
 		},
 		{
 			"ImportPath": "github.com/golang/protobuf/proto",
-			"Rev": "f7137ae6b19afbfd61a94b746fda3b3fe0491874"
+			"Rev": "b982704f8bb716bb608144408cff30e15fbde841"
 		},
 		{
 			"ImportPath": "github.com/golang/snappy",
@@ -426,6 +431,22 @@
 			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
 		},
 		{
+			"ImportPath": "golang.org/x/net/http2",
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
+		},
+		{
+			"ImportPath": "golang.org/x/net/http2/hpack",
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
+		},
+		{
+			"ImportPath": "golang.org/x/net/internal/timeseries",
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
+		},
+		{
+			"ImportPath": "golang.org/x/net/trace",
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
+		},
+		{
 			"ImportPath": "golang.org/x/oauth2",
 			"Rev": "ca8a464d23d55afd32571475db223e065ffd8a52"
 		},
@@ -460,6 +481,38 @@
 		{
 			"ImportPath": "google.golang.org/cloud/internal",
 			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc",
+			"Rev": "3c4302b7131d2b14bb9c8aff7aa909bc20540145"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/codes",
+			"Rev": "3c4302b7131d2b14bb9c8aff7aa909bc20540145"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/credentials",
+			"Rev": "3c4302b7131d2b14bb9c8aff7aa909bc20540145"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/grpclog",
+			"Rev": "3c4302b7131d2b14bb9c8aff7aa909bc20540145"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/metadata",
+			"Rev": "3c4302b7131d2b14bb9c8aff7aa909bc20540145"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/naming",
+			"Rev": "3c4302b7131d2b14bb9c8aff7aa909bc20540145"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/peer",
+			"Rev": "3c4302b7131d2b14bb9c8aff7aa909bc20540145"
+		},
+		{
+			"ImportPath": "google.golang.org/grpc/transport",
+			"Rev": "3c4302b7131d2b14bb9c8aff7aa909bc20540145"
 		},
 		{
 			"ImportPath": "gopkg.in/olivere/elastic.v2",
