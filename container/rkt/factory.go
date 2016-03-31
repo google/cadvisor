@@ -44,20 +44,29 @@ func (self *rktFactory) String() string {
 	return "rkt"
 }
 
-func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, bool, error) {
+	handle, accept, err := self.canHandleAndAccept(name)
+
+	if handle == false || accept == false || err != nil {
+		return nil, !accept, err
+	}
+
 	client, err := Client()
 	if err != nil {
-		return nil, err
+		return nil, !accept, err
 	}
 
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
 	}
-	return newRktContainerHandler(name, client, self.rktPath, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, rootFs, self.ignoreMetrics)
+
+	handler, err := newRktContainerHandler(name, client, self.rktPath, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, rootFs, self.ignoreMetrics)
+
+	return handler, !accept, err
 }
 
-func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+func (self *rktFactory) canHandleAndAccept(name string) (bool, bool, error) {
 	// will ignore all cgroup names that don't either correspond to the machine.slice that is the pod or the containers that belong to the pod
 	// only works for machined rkt pods at the moment
 
