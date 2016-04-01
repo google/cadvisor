@@ -116,12 +116,12 @@ func (self *FactoryForMockContainerHandler) String() string {
 	return self.Name
 }
 
-func (self *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (ContainerHandler, bool, error) {
+func (self *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (ContainerHandler, error) {
 	handler := &MockContainerHandler{}
 	if self.PrepareContainerHandlerFunc != nil {
 		self.PrepareContainerHandlerFunc(name, handler)
 	}
-	return handler, false, nil
+	return handler, nil
 }
 
 func (self *FactoryForMockContainerHandler) CanHandle(name string) bool {

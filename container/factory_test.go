@@ -39,15 +39,16 @@ func (self *mockContainerHandlerFactory) CanHandleAndAccept(name string) (bool, 
 	return self.CanHandleValue, self.CanAcceptValue, nil
 }
 
-func (self *mockContainerHandlerFactory) NewContainerHandler(name string, isHostNamespace bool) (ContainerHandler, bool, error) {
+func (self *mockContainerHandlerFactory) NewContainerHandler(name string, isHostNamespace bool) (ContainerHandler, error) {
 	if !self.CanHandleValue {
-		return nil, false, nil
+		return nil, nil
 	}
 	if self.CanHandleValue && !self.CanAcceptValue {
-		return nil, true, nil
+		handler := NewIgnoreHandler(self.Name)
+		return handler, nil
 	}
 	args := self.Called(name)
-	return args.Get(0).(ContainerHandler), false, args.Error(2)
+	return args.Get(0).(ContainerHandler), args.Error(1)
 }
 
 const testContainerName = "/test"
@@ -66,11 +67,11 @@ func TestNewContainerHandler_FirstMatches(t *testing.T) {
 	RegisterContainerHandlerFactory(allwaysYes)
 
 	// The yes factory should be asked to create the ContainerHandler.
-	mockContainer, _, err := mockFactory.NewContainerHandler(testContainerName, true)
+	mockContainer, err := mockFactory.NewContainerHandler(testContainerName, true)
 	if err != nil {
 		t.Error(err)
 	}
-	allwaysYes.On("NewContainerHandler", testContainerName).Return(mockContainer, false, nil)
+	allwaysYes.On("NewContainerHandler", testContainerName).Return(mockContainer, nil)
 
 	cont, err := NewContainerHandler(testContainerName, true)
 	if err != nil {
@@ -99,11 +100,11 @@ func TestNewContainerHandler_SecondMatches(t *testing.T) {
 	RegisterContainerHandlerFactory(allwaysYes)
 
 	// The yes factory should be asked to create the ContainerHandler.
-	mockContainer, _, err := mockFactory.NewContainerHandler(testContainerName, true)
+	mockContainer, err := mockFactory.NewContainerHandler(testContainerName, true)
 	if err != nil {
 		t.Error(err)
 	}
-	allwaysYes.On("NewContainerHandler", testContainerName).Return(mockContainer, false, nil)
+	allwaysYes.On("NewContainerHandler", testContainerName).Return(mockContainer, nil)
 
 	cont, err := NewContainerHandler(testContainerName, true)
 	if err != nil {
@@ -154,11 +155,11 @@ func TestNewContainerHandler_Accept(t *testing.T) {
 	}
 	RegisterContainerHandlerFactory(cannotAccept)
 
-	cont, err := NewContainerHandler(testContainerName, true)
+	handler, err := NewContainerHandler(testContainerName, true)
 	if err != nil {
 		t.Error("Expected NewContainerHandler to succeed")
 	}
-	if cont != nil {
+	if _, ok := handler.(*ignoreHandler); ok {
 		t.Error("Expected NewContainerHandler to ignore the container.")
 	}
 }

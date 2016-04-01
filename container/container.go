@@ -86,3 +86,65 @@ type ContainerHandler interface {
 	// It is expected that most implementations will be a no-op.
 	Start()
 }
+
+func NewIgnoreHandler(name string) ContainerHandler {
+	return &ignoreHandler{
+		cGroupPath: name,
+	}
+}
+
+type ignoreHandler struct {
+	cGroupPath string
+}
+
+func (handler *ignoreHandler) ContainerReference() (info.ContainerReference, error) {
+	cr := info.ContainerReference{}
+
+	return cr, nil
+}
+
+func (handler *ignoreHandler) GetSpec() (info.ContainerSpec, error) {
+	cs := info.ContainerSpec{}
+
+	return cs, nil
+}
+
+func (handler *ignoreHandler) GetStats() (*info.ContainerStats, error) {
+	return nil, nil
+}
+
+func (handler *ignoreHandler) ListContainers(listType ListType) ([]info.ContainerReference, error) {
+	return nil, nil
+}
+
+func (handler *ignoreHandler) ListThreads(listType ListType) ([]int, error) {
+	return nil, nil
+}
+
+func (handler *ignoreHandler) ListProcesses(listType ListType) ([]int, error) {
+	return nil, nil
+}
+
+func (handler *ignoreHandler) WatchSubcontainers(events chan SubcontainerEvent) error {
+	return nil
+}
+
+func (handler *ignoreHandler) StopWatchingSubcontainers() error {
+	return nil
+}
+
+func (handler *ignoreHandler) GetCgroupPath(resource string) (string, error) {
+	return handler.cGroupPath, nil
+}
+
+func (handler *ignoreHandler) GetContainerLabels() map[string]string {
+	return nil
+}
+
+func (handler *ignoreHandler) Exists() bool {
+	return false
+}
+
+func (handler *ignoreHandler) Cleanup() {}
+
+func (handler *ignoreHandler) Start() {}

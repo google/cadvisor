@@ -94,15 +94,22 @@ func (self *dockerFactory) String() string {
 	return DockerNamespace
 }
 
-func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, ignoring bool, err error) {
+func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
 	handle, accept, err := self.canHandleAndAccept(name)
-	if handle != true || accept != true || err != nil {
-		return nil, !accept, err
+	if handle != true {
+		return nil, nil
+	}
+	if accept != true {
+		ignore := container.NewIgnoreHandler(name)
+		return ignore, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	client, err := Client()
 	if err != nil {
-		return nil, !accept, err
+		return nil, err
 	}
 
 	metadataEnvs := strings.Split(*dockerEnvWhitelist, ",")
@@ -120,7 +127,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.dockerVersion,
 		self.ignoreMetrics,
 	)
-	return handler, !accept, err
+	return handler, err
 }
 
 // Returns the Docker ID from the full container name.

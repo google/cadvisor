@@ -23,7 +23,7 @@ import (
 
 type ContainerHandlerFactory interface {
 	// Create a new ContainerHandler using this factory. CanHandleAndAccept() must have returned true.
-	NewContainerHandler(name string, inHostNamespace bool) (c ContainerHandler, ignore bool, err error)
+	NewContainerHandler(name string, inHostNamespace bool) (c ContainerHandler, err error)
 
 	// Name of the factory.
 	String() string
@@ -92,15 +92,15 @@ func NewContainerHandler(name string, inHostNamespace bool) (ContainerHandler, e
 
 	// Create the ContainerHandler with the first factory that supports it.
 	for _, factory := range factories {
-		handler, ignore, err := factory.NewContainerHandler(name, inHostNamespace)
+		handler, err := factory.NewContainerHandler(name, inHostNamespace)
 		if err != nil {
 			glog.V(4).Infof("Error trying to work out if we can handle %s: %v", name, err)
-		}
-		if handler != nil {
+		} else if handler != nil {
+			if _, ok := handler.(*ignoreHandler); ok {
+				glog.V(3).Infof("Factory %q can handle container %q, but ignoring.", factory, name)
+				return nil, nil
+			}
 			return handler, err
-		} else if ignore {
-			glog.V(3).Infof("Factory %q can handle container %q, but ignoring.", factory, name)
-			return nil, nil
 		} else {
 			glog.V(4).Infof("Factory %q was unable to handle container %q", factory, name)
 		}

@@ -44,16 +44,22 @@ func (self *rktFactory) String() string {
 	return "rkt"
 }
 
-func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, bool, error) {
+func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
 	handle, accept, err := self.canHandleAndAccept(name)
-
-	if handle == false || accept == false || err != nil {
-		return nil, !accept, err
+	if handle != true {
+		return nil, nil
+	}
+	if accept != true {
+		ignore := container.NewIgnoreHandler(name)
+		return ignore, nil
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	client, err := Client()
 	if err != nil {
-		return nil, !accept, err
+		return nil, err
 	}
 
 	rootFs := "/"
@@ -63,7 +69,7 @@ func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (
 
 	handler, err := newRktContainerHandler(name, client, self.rktPath, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, rootFs, self.ignoreMetrics)
 
-	return handler, !accept, err
+	return handler, err
 }
 
 func (self *rktFactory) canHandleAndAccept(name string) (bool, bool, error) {
