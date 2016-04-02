@@ -101,9 +101,9 @@ func NewContainerHandler(name string, inHostNamespace bool) (ContainerHandler, e
 				return nil, nil
 			}
 			return handler, err
-		} else {
-			glog.V(4).Infof("Factory %q was unable to handle container %q", factory, name)
 		}
+
+		glog.V(4).Infof("Factory %q was unable to handle container %q", factory, name)
 	}
 
 	return nil, fmt.Errorf("no known factory can handle creation of container")
