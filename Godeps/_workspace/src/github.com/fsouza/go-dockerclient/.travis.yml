@@ -3,13 +3,26 @@ sudo: required
 go:
   - 1.3.3
   - 1.4.2
-  - 1.5.1
+  - 1.5.3
+  - 1.6
   - tip
 env:
-  - GOARCH=amd64
-  - GOARCH=386
+  - GOARCH=amd64 DOCKER_VERSION=1.7.1
+  - GOARCH=386   DOCKER_VERSION=1.7.1
+  - GOARCH=amd64 DOCKER_VERSION=1.8.3
+  - GOARCH=386   DOCKER_VERSION=1.8.3
+  - GOARCH=amd64 DOCKER_VERSION=1.9.1
+  - GOARCH=386   DOCKER_VERSION=1.9.1
+  - GOARCH=amd64 DOCKER_VERSION=1.10.3
+  - GOARCH=386   DOCKER_VERSION=1.10.3
+install:
+  - travis_retry make prepare_docker
 script:
-  - make test
+  - travis-scripts/run-tests.bash
   - DOCKER_HOST=tcp://127.0.0.1:2375 make integration
 services:
   - docker
+matrix:
+  fast_finish: true
+  allow_failures:
+    - go: tip

@@ -32,6 +32,7 @@ import (
 	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/opts"
 	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/homedir"
 	"github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/stdcopy"
+	"github.com/fsouza/go-dockerclient/external/github.com/hashicorp/go-cleanhttp"
 )
 
 const userAgent = "go-dockerclient"
@@ -59,7 +60,8 @@ func NewAPIVersion(input string) (APIVersion, error) {
 	if !strings.Contains(input, ".") {
 		return nil, fmt.Errorf("Unable to parse version %q", input)
 	}
-	arr := strings.Split(input, ".")
+	raw := strings.Split(input, "-")
+	arr := strings.Split(raw[0], ".")
 	ret := make(APIVersion, len(arr))
 	var err error
 	for i, val := range arr {
@@ -191,7 +193,7 @@ func NewVersionedClient(endpoint string, apiVersionString string) (*Client, erro
 		}
 	}
 	return &Client{
-		HTTPClient:          &http.Client{},
+		HTTPClient:          cleanhttp.DefaultClient(),
 		Dialer:              &net.Dialer{},
 		endpoint:            endpoint,
 		endpointURL:         u,
@@ -294,9 +296,8 @@ func NewVersionedTLSClientFromBytes(endpoint string, certPEMBlock, keyPEMBlock, 
 		}
 		tlsConfig.RootCAs = caPool
 	}
-	tr := &http.Transport{
-		TLSClientConfig: tlsConfig,
-	}
+	tr := cleanhttp.DefaultTransport()
+	tr.TLSClientConfig = tlsConfig
 	if err != nil {
 		return nil, err
 	}
@@ -554,32 +555,41 @@ type hijackOptions struct {
 	data           interface{}
 }
 
-func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error {
+// CloseWaiter is an interface with methods for closing the underlying resource
+// and then waiting for it to finish processing.
+type CloseWaiter interface {
+	io.Closer
+	Wait() error
+}
+
+type waiterFunc func() error
+
+func (w waiterFunc) Wait() error { return w() }
+
+type closerFunc func() error
+
+func (c closerFunc) Close() error { return c() }
+
+func (c *Client) hijack(method, path string, hijackOptions hijackOptions) (CloseWaiter, error) {
 	if path != "/version" && !c.SkipServerVersionCheck && c.expectedAPIVersion == nil {
 		err := c.checkAPIVersion()
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 	var params io.Reader
 	if hijackOptions.data != nil {
 		buf, err := json.Marshal(hijackOptions.data)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		params = bytes.NewBuffer(buf)
 	}
-	if hijackOptions.stdout == nil {
-		hijackOptions.stdout = ioutil.Discard
-	}
-	if hijackOptions.stderr == nil {
-		hijackOptions.stderr = ioutil.Discard
-	}
 	req, err := http.NewRequest(method, c.getURL(path), params)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	req.Header.Set("Content-Type", "plain/text")
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Connection", "Upgrade")
 	req.Header.Set("Upgrade", "tcp")
 	protocol := c.endpointURL.Scheme
@@ -592,58 +602,103 @@ func (c *Client) hijack(method, path string, hijackOptions hijackOptions) error 
 	if c.TLSConfig != nil && protocol != "unix" {
 		dial, err = tlsDialWithDialer(c.Dialer, protocol, address, c.TLSConfig)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		dial, err = c.Dialer.Dial(protocol, address)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	clientconn := httputil.NewClientConn(dial, nil)
-	defer clientconn.Close()
-	clientconn.Do(req)
-	if hijackOptions.success != nil {
-		hijackOptions.success <- struct{}{}
-		<-hijackOptions.success
-	}
-	rwc, br := clientconn.Hijack()
-	defer rwc.Close()
-	errChanOut := make(chan error, 1)
-	errChanIn := make(chan error, 1)
+
+	errs := make(chan error)
+	quit := make(chan struct{})
 	go func() {
-		defer func() {
-			if hijackOptions.in != nil {
-				if closer, ok := hijackOptions.in.(io.Closer); ok {
-					errChanIn <- nil
-					closer.Close()
-				}
-			}
-		}()
-		var err error
-		if hijackOptions.setRawTerminal {
-			_, err = io.Copy(hijackOptions.stdout, br)
+		clientconn := httputil.NewClientConn(dial, nil)
+		defer clientconn.Close()
+		clientconn.Do(req)
+		if hijackOptions.success != nil {
+			hijackOptions.success <- struct{}{}
+			<-hijackOptions.success
+		}
+		rwc, br := clientconn.Hijack()
+		defer rwc.Close()
+
+		errChanOut := make(chan error, 1)
+		errChanIn := make(chan error, 1)
+		if hijackOptions.stdout == nil && hijackOptions.stderr == nil {
+			close(errChanOut)
 		} else {
-			_, err = stdcopy.StdCopy(hijackOptions.stdout, hijackOptions.stderr, br)
+			// Only copy if hijackOptions.stdout and/or hijackOptions.stderr is actually set.
+			// Otherwise, if the only stream you care about is stdin, your attach session
+			// will "hang" until the container terminates, even though you're not reading
+			// stdout/stderr
+			if hijackOptions.stdout == nil {
+				hijackOptions.stdout = ioutil.Discard
+			}
+			if hijackOptions.stderr == nil {
+				hijackOptions.stderr = ioutil.Discard
+			}
+
+			go func() {
+				defer func() {
+					if hijackOptions.in != nil {
+						if closer, ok := hijackOptions.in.(io.Closer); ok {
+							closer.Close()
+						}
+						errChanIn <- nil
+					}
+				}()
+
+				var err error
+				if hijackOptions.setRawTerminal {
+					_, err = io.Copy(hijackOptions.stdout, br)
+				} else {
+					_, err = stdcopy.StdCopy(hijackOptions.stdout, hijackOptions.stderr, br)
+				}
+				errChanOut <- err
+			}()
 		}
-		errChanOut <- err
-	}()
-	go func() {
-		var err error
-		if hijackOptions.in != nil {
-			_, err = io.Copy(rwc, hijackOptions.in)
+
+		go func() {
+			var err error
+			if hijackOptions.in != nil {
+				_, err = io.Copy(rwc, hijackOptions.in)
+			}
+			errChanIn <- err
+			rwc.(interface {
+				CloseWrite() error
+			}).CloseWrite()
+		}()
+
+		var errIn error
+		select {
+		case errIn = <-errChanIn:
+		case <-quit:
+			return
 		}
-		errChanIn <- err
-		rwc.(interface {
-			CloseWrite() error
-		}).CloseWrite()
+
+		var errOut error
+		select {
+		case errOut = <-errChanOut:
+		case <-quit:
+			return
+		}
+
+		if errIn != nil {
+			errs <- errIn
+		} else {
+			errs <- errOut
+		}
 	}()
-	errIn := <-errChanIn
-	errOut := <-errChanOut
-	if errIn != nil {
-		return errIn
-	}
-	return errOut
+
+	return struct {
+		closerFunc
+		waiterFunc
+	}{
+		closerFunc(func() error { close(quit); return nil }),
+		waiterFunc(func() error { return <-errs }),
+	}, nil
 }
 
 func (c *Client) getURL(path string) string {
@@ -678,13 +733,13 @@ func (c *Client) unixClient() *http.Client {
 		return c.unixHTTPClient
 	}
 	socketPath := c.endpointURL.Path
-	c.unixHTTPClient = &http.Client{
-		Transport: &http.Transport{
-			Dial: func(network, addr string) (net.Conn, error) {
-				return c.Dialer.Dial("unix", socketPath)
-			},
+	tr := &http.Transport{
+		Dial: func(network, addr string) (net.Conn, error) {
+			return c.Dialer.Dial("unix", socketPath)
 		},
 	}
+	cleanhttp.SetTransportFinalizer(tr)
+	c.unixHTTPClient = &http.Client{Transport: tr}
 	return c.unixHTTPClient
 }
 
@@ -783,6 +838,9 @@ func (e *Error) Error() string {
 }
 
 func parseEndpoint(endpoint string, tls bool) (*url.URL, error) {
+	if endpoint != "" && !strings.Contains(endpoint, "://") {
+		endpoint = "tcp://" + endpoint
+	}
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, ErrInvalidEndpoint

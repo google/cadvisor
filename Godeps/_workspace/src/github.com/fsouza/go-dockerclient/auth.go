@@ -82,10 +82,12 @@ func parseDockerConfig(r io.Reader) (map[string]dockerConfig, error) {
 	buf.ReadFrom(r)
 	byteData := buf.Bytes()
 
-	var confsWrapper map[string]map[string]dockerConfig
+	confsWrapper := struct {
+		Auths map[string]dockerConfig `json:"auths"`
+	}{}
 	if err := json.Unmarshal(byteData, &confsWrapper); err == nil {
-		if confs, ok := confsWrapper["auths"]; ok {
-			return confs, nil
+		if len(confsWrapper.Auths) > 0 {
+			return confsWrapper.Auths, nil
 		}
 	}
 
@@ -106,7 +108,7 @@ func authConfigs(confs map[string]dockerConfig) (*AuthConfigurations, error) {
 		if err != nil {
 			return nil, err
 		}
-		userpass := strings.Split(string(data), ":")
+		userpass := strings.SplitN(string(data), ":", 2)
 		if len(userpass) != 2 {
 			return nil, ErrCannotParseDockercfg
 		}
