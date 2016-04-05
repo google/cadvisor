@@ -75,7 +75,7 @@ func getAttributes(ipAddress, portStr string) (*cadvisorApi.Attributes, error) {
 func RunCommand(cmd string, args ...string) error {
 	output, err := exec.Command(cmd, args...).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("command %q %q failed with error: %v and output: %q", cmd, args, err, output)
+		return fmt.Errorf("command %q %q failed with error: %v and output: %v", cmd, args, err, output)
 	}
 
 	return nil
