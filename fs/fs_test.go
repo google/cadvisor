@@ -201,7 +201,7 @@ func TestGetDockerDeviceMapperInfo(t *testing.T) {
 	tests := []struct {
 		name              string
 		driver            string
-		driverStatus      string
+		driverStatus      map[string]string
 		dmsetupTable      string
 		dmsetupTableError error
 		expectedDevice    string
@@ -216,9 +216,9 @@ func TestGetDockerDeviceMapperInfo(t *testing.T) {
 			expectedError:     false,
 		},
 		{
-			name:              "error unmarshaling driver status",
+			name:              "nil driver status",
 			driver:            "devicemapper",
-			driverStatus:      "{[[[asdf",
+			driverStatus:      nil,
 			expectedDevice:    "",
 			expectedPartition: nil,
 			expectedError:     true,
@@ -226,7 +226,7 @@ func TestGetDockerDeviceMapperInfo(t *testing.T) {
 		{
 			name:              "loopback",
 			driver:            "devicemapper",
-			driverStatus:      `[["Data loop file","/var/lib/docker/devicemapper/devicemapper/data"]]`,
+			driverStatus:      map[string]string{"Data loop file": "/var/lib/docker/devicemapper/devicemapper/data"},
 			expectedDevice:    "",
 			expectedPartition: nil,
 			expectedError:     false,
@@ -234,7 +234,7 @@ func TestGetDockerDeviceMapperInfo(t *testing.T) {
 		{
 			name:              "missing pool name",
 			driver:            "devicemapper",
-			driverStatus:      `[[]]`,
+			driverStatus:      map[string]string{},
 			expectedDevice:    "",
 			expectedPartition: nil,
 			expectedError:     true,
@@ -242,7 +242,7 @@ func TestGetDockerDeviceMapperInfo(t *testing.T) {
 		{
 			name:              "error invoking dmsetup",
 			driver:            "devicemapper",
-			driverStatus:      `[["Pool Name", "vg_vagrant-docker--pool"]]`,
+			driverStatus:      map[string]string{"Pool Name": "vg_vagrant-docker--pool"},
 			dmsetupTableError: errors.New("foo"),
 			expectedDevice:    "",
 			expectedPartition: nil,
@@ -251,7 +251,7 @@ func TestGetDockerDeviceMapperInfo(t *testing.T) {
 		{
 			name:              "unable to parse dmsetup table",
 			driver:            "devicemapper",
-			driverStatus:      `[["Pool Name", "vg_vagrant-docker--pool"]]`,
+			driverStatus:      map[string]string{"Pool Name": "vg_vagrant-docker--pool"},
 			dmsetupTable:      "no data here!",
 			expectedDevice:    "",
 			expectedPartition: nil,
@@ -260,7 +260,7 @@ func TestGetDockerDeviceMapperInfo(t *testing.T) {
 		{
 			name:           "happy path",
 			driver:         "devicemapper",
-			driverStatus:   `[["Pool Name", "vg_vagrant-docker--pool"]]`,
+			driverStatus:   map[string]string{"Pool Name": "vg_vagrant-docker--pool"},
 			dmsetupTable:   "0 53870592 thin-pool 253:2 253:3 1024 0 1 skip_block_zeroing",
 			expectedDevice: "vg_vagrant-docker--pool",
 			expectedPartition: &partition{
@@ -280,12 +280,12 @@ func TestGetDockerDeviceMapperInfo(t *testing.T) {
 			},
 		}
 
-		dockerInfo := map[string]string{
-			"Driver":       tt.driver,
-			"DriverStatus": tt.driverStatus,
+		dockerCtx := DockerContext{
+			Driver:       tt.driver,
+			DriverStatus: tt.driverStatus,
 		}
 
-		device, partition, err := fsInfo.getDockerDeviceMapperInfo(dockerInfo)
+		device, partition, err := fsInfo.getDockerDeviceMapperInfo(dockerCtx)
 
 		if tt.expectedError && err == nil {
 			t.Errorf("%s: expected error but got nil", tt.name)
@@ -310,7 +310,7 @@ func TestAddDockerImagesLabel(t *testing.T) {
 	tests := []struct {
 		name                           string
 		driver                         string
-		driverStatus                   string
+		driverStatus                   map[string]string
 		dmsetupTable                   string
 		getDockerDeviceMapperInfoError error
 		mounts                         []*mount.Info
@@ -320,7 +320,7 @@ func TestAddDockerImagesLabel(t *testing.T) {
 		{
 			name:         "devicemapper, not loopback",
 			driver:       "devicemapper",
-			driverStatus: `[["Pool Name", "vg_vagrant-docker--pool"]]`,
+			driverStatus: map[string]string{"Pool Name": "vg_vagrant-docker--pool"},
 			dmsetupTable: "0 53870592 thin-pool 253:2 253:3 1024 0 1 skip_block_zeroing",
 			mounts: []*mount.Info{
 				{
@@ -340,7 +340,7 @@ func TestAddDockerImagesLabel(t *testing.T) {
 		{
 			name:         "devicemapper, loopback on non-root partition",
 			driver:       "devicemapper",
-			driverStatus: `[["Data loop file","/var/lib/docker/devicemapper/devicemapper/data"]]`,
+			driverStatus: map[string]string{"Data loop file": "/var/lib/docker/devicemapper/devicemapper/data"},
 			mounts: []*mount.Info{
 				{
 					Source:     "/dev/mapper/vg_vagrant-lv_root",
@@ -403,10 +403,10 @@ func TestAddDockerImagesLabel(t *testing.T) {
 		}
 
 		context := Context{
-			DockerRoot: "/var/lib/docker",
-			DockerInfo: map[string]string{
-				"Driver":       tt.driver,
-				"DriverStatus": tt.driverStatus,
+			Docker: DockerContext{
+				Root:         "/var/lib/docker",
+				Driver:       tt.driver,
+				DriverStatus: tt.driverStatus,
 			},
 		}
 

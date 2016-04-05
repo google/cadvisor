@@ -32,6 +32,7 @@ type APIImages struct {
 // Image is the type representing a docker image and its various properties
 type Image struct {
 	ID              string    `json:"Id" yaml:"Id"`
+	RepoTags        []string  `json:"RepoTags,omitempty" yaml:"RepoTags,omitempty"`
 	Parent          string    `json:"Parent,omitempty" yaml:"Parent,omitempty"`
 	Comment         string    `json:"Comment,omitempty" yaml:"Comment,omitempty"`
 	Created         time.Time `json:"Created,omitempty" yaml:"Created,omitempty"`
@@ -43,6 +44,7 @@ type Image struct {
 	Architecture    string    `json:"Architecture,omitempty" yaml:"Architecture,omitempty"`
 	Size            int64     `json:"Size,omitempty" yaml:"Size,omitempty"`
 	VirtualSize     int64     `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty"`
+	RepoDigests     []string  `json:"RepoDigests,omitempty" yaml:"RepoDigests,omitempty"`
 }
 
 // ImagePre012 serves the same purpose as the Image type except that it is for
@@ -89,6 +91,7 @@ type ListImagesOptions struct {
 	All     bool
 	Filters map[string][]string
 	Digests bool
+	Filter  string
 }
 
 // ListImages returns the list of available images in the server.
@@ -408,6 +411,8 @@ type BuildImageOptions struct {
 	Memory              int64              `qs:"memory"`
 	Memswap             int64              `qs:"memswap"`
 	CPUShares           int64              `qs:"cpushares"`
+	CPUQuota            int64              `qs:"cpuquota"`
+	CPUPeriod           int64              `qs:"cpuperiod"`
 	CPUSetCPUs          string             `qs:"cpusetcpus"`
 	InputStream         io.Reader          `qs:"-"`
 	OutputStream        io.Writer          `qs:"-"`
@@ -417,6 +422,17 @@ type BuildImageOptions struct {
 	AuthConfigs         AuthConfigurations `qs:"-"` // for newer docker X-Registry-Config header
 	ContextDir          string             `qs:"-"`
 	Ulimits             []ULimit           `qs:"-"`
+	BuildArgs           []BuildArg         `qs:"-"`
+}
+
+// BuildArg represents arguments that can be passed to the image when building
+// it from a Dockerfile.
+//
+// For more details about the Docker building process, see
+// http://goo.gl/tlPXPu.
+type BuildArg struct {
+	Name  string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
 }
 
 // BuildImage builds an image from a tarball's url or a Dockerfile in the input
@@ -455,6 +471,18 @@ func (c *Client) BuildImage(opts BuildImageOptions) error {
 		if b, err := json.Marshal(opts.Ulimits); err == nil {
 			item := url.Values(map[string][]string{})
 			item.Add("ulimits", string(b))
+			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
+		}
+	}
+
+	if len(opts.BuildArgs) > 0 {
+		v := make(map[string]string)
+		for _, arg := range opts.BuildArgs {
+			v[arg.Name] = arg.Value
+		}
+		if b, err := json.Marshal(v); err == nil {
+			item := url.Values(map[string][]string{})
+			item.Add("buildargs", string(b))
 			qs = fmt.Sprintf("%s&%s", qs, item.Encode())
 		}
 	}

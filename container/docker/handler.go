@@ -402,16 +402,16 @@ func (self *dockerContainerHandler) Exists() bool {
 	return containerlibcontainer.Exists(*dockerRootDir, *dockerRunDir, self.id)
 }
 
-func DockerInfo() (map[string]string, error) {
+func DockerInfo() (docker.DockerInfo, error) {
 	client, err := Client()
 	if err != nil {
-		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
+		return docker.DockerInfo{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
 	info, err := client.Info()
 	if err != nil {
-		return nil, err
+		return docker.DockerInfo{}, err
 	}
-	return info.Map(), nil
+	return *info, nil
 }
 
 func DockerImages() ([]docker.APIImages, error) {
