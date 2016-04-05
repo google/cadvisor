@@ -425,3 +425,38 @@ func DockerImages() ([]docker.APIImages, error) {
 	}
 	return images, nil
 }
+
+// Checks whether the dockerInfo reflects a valid docker setup, and returns it if it does, or an
+// error otherwise.
+func ValidateInfo() (*docker.DockerInfo, error) {
+	client, err := Client()
+	if err != nil {
+		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
+	}
+
+	dockerInfo, err := client.Info()
+	if err != nil {
+		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
+	}
+
+	version, err := parseDockerVersion(dockerInfo.ServerVersion)
+	if err != nil {
+		return nil, err
+	}
+	if version[0] < 1 {
+		return nil, fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as %q", []int{1, 0, 0}, version, dockerInfo.ServerVersion)
+	}
+
+	// Check that the libcontainer execdriver is used if the version is < 1.11
+	// (execution drivers are no longer supported as of 1.11).
+	if version[0] <= 1 && version[1] <= 10 &&
+		!strings.HasPrefix(dockerInfo.ExecutionDriver, "native") {
+		return nil, fmt.Errorf("docker found, but not using native exec driver")
+	}
+
+	if dockerInfo.Driver == "" {
+		return nil, fmt.Errorf("failed to find docker storage driver")
+	}
+
+	return dockerInfo, nil
+}

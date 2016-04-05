@@ -185,24 +185,19 @@ func validateCgroups() (string, string) {
 }
 
 func validateDockerInfo() (string, string) {
-	info, err := docker.DockerInfo()
+	info, err := docker.ValidateInfo()
 	if err != nil {
-		return Unknown, "Docker remote API not reachable\n\t"
+		return Unsupported, fmt.Sprintf("Docker setup is invalid: %v", err)
 	}
 
 	desc := fmt.Sprintf("Docker exec driver is %s. Storage driver is %s.\n", info.ExecutionDriver, info.Driver)
-	if strings.Contains(info.ExecutionDriver, "native") {
-		stateFile := docker.DockerStateDir()
-		if !utils.FileExists(stateFile) {
-			desc += fmt.Sprintf("\tDocker container state directory %q is not accessible.\n", stateFile)
-			return Unsupported, desc
-		}
-		desc += fmt.Sprintf("\tDocker container state directory is at %q and is accessible.\n", stateFile)
-		return Recommended, desc
-	} else if strings.Contains(info.ExecutionDriver, "lxc") {
-		return Supported, desc
+	stateFile := docker.DockerStateDir()
+	if !utils.FileExists(stateFile) {
+		desc += fmt.Sprintf("\tDocker container state directory %q is not accessible.\n", stateFile)
+		return Unsupported, desc
 	}
-	return Unknown, desc
+	desc += fmt.Sprintf("\tDocker container state directory is at %q and is accessible.\n", stateFile)
+	return Recommended, desc
 }
 
 func validateCgroupMounts() (string, string) {
