@@ -27,7 +27,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/golang/glog"
 )
 
@@ -205,23 +205,21 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		}
 	}
 
-	information, err := client.Info()
+	dockerInfo, err := client.Info()
 	if err != nil {
 		return fmt.Errorf("failed to detect Docker info: %v", err)
 	}
 
 	// Check that the libcontainer execdriver is used.
-	execDriver := information.Get("ExecutionDriver")
-	if !strings.HasPrefix(execDriver, "native") {
+	if !strings.HasPrefix(dockerInfo.ExecutionDriver, "native") {
 		return fmt.Errorf("docker found, but not using native exec driver")
 	}
 
-	sd := information.Get("Driver")
-	if sd == "" {
+	if dockerInfo.Driver == "" {
 		return fmt.Errorf("failed to find docker storage driver")
 	}
 
-	storageDir := information.Get("DockerRootDir")
+	storageDir := dockerInfo.DockerRootDir
 	if storageDir == "" {
 		storageDir = *dockerRootDir
 	}
@@ -237,7 +235,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		dockerVersion:      dockerVersion,
 		fsInfo:             fsInfo,
 		machineInfoFactory: factory,
-		storageDriver:      storageDriver(sd),
+		storageDriver:      storageDriver(dockerInfo.Driver),
 		storageDir:         storageDir,
 		ignoreMetrics:      ignoreMetrics,
 	}

@@ -185,28 +185,24 @@ func validateCgroups() (string, string) {
 }
 
 func validateDockerInfo() (string, string) {
-	client, err := docker.Client()
-	if err == nil {
-		info, err := client.Info()
-		if err == nil {
-			execDriver := info.Get("ExecutionDriver")
-			storageDriver := info.Get("Driver")
-			desc := fmt.Sprintf("Docker exec driver is %s. Storage driver is %s.\n", execDriver, storageDriver)
-			if strings.Contains(execDriver, "native") {
-				stateFile := docker.DockerStateDir()
-				if !utils.FileExists(stateFile) {
-					desc += fmt.Sprintf("\tDocker container state directory %q is not accessible.\n", stateFile)
-					return Unsupported, desc
-				}
-				desc += fmt.Sprintf("\tDocker container state directory is at %q and is accessible.\n", stateFile)
-				return Recommended, desc
-			} else if strings.Contains(execDriver, "lxc") {
-				return Supported, desc
-			}
-			return Unknown, desc
-		}
+	info, err := docker.DockerInfo()
+	if err != nil {
+		return Unknown, "Docker remote API not reachable\n\t"
 	}
-	return Unknown, "Docker remote API not reachable\n\t"
+
+	desc := fmt.Sprintf("Docker exec driver is %s. Storage driver is %s.\n", info.ExecutionDriver, info.Driver)
+	if strings.Contains(info.ExecutionDriver, "native") {
+		stateFile := docker.DockerStateDir()
+		if !utils.FileExists(stateFile) {
+			desc += fmt.Sprintf("\tDocker container state directory %q is not accessible.\n", stateFile)
+			return Unsupported, desc
+		}
+		desc += fmt.Sprintf("\tDocker container state directory is at %q and is accessible.\n", stateFile)
+		return Recommended, desc
+	} else if strings.Contains(info.ExecutionDriver, "lxc") {
+		return Supported, desc
+	}
+	return Unknown, desc
 }
 
 func validateCgroupMounts() (string, string) {
