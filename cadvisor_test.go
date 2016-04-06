@@ -27,3 +27,9 @@ func TestTcpMetricsAreDisabledByDefault(t *testing.T) {
 	flag.Parse()
 	assert.True(t, ignoreMetrics.Has(container.NetworkTcpUsageMetrics))
 }
+
+func TestTcpMetricsAreEnabledOnDemand(t *testing.T) {
+	assert.True(t, ignoreMetrics.Has(container.NetworkTcpUsageMetrics))
+	ignoreMetrics.Set("")
+	assert.False(t, ignoreMetrics.Has(container.NetworkTcpUsageMetrics))
+}
