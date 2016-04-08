@@ -68,7 +68,7 @@ func getMachineInfo(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (
 		return nil, err
 	}
 
-	filesystems, err := fsInfo.GetGlobalFsInfo()
+	filesystems, err := fsInfo.GetGlobalFsInfo(false)
 	if err != nil {
 		glog.Errorf("Failed to get global filesystem information: %v", err)
 	}

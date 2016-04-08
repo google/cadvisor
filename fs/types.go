@@ -72,10 +72,13 @@ type FsInfo interface {
 	RefreshCache()
 
 	// Returns capacity and free space, in bytes, of all the ext2, ext3, ext4 filesystems on the host.
-	GetGlobalFsInfo() ([]Fs, error)
+	GetGlobalFsInfo(withIoStats bool) ([]Fs, error)
 
 	// Returns capacity and free space, in bytes, of the set of mounts passed.
-	GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error)
+	GetFsInfoForMounts(mountSet map[string]struct{}, withIoStats bool) ([]Fs, error)
+
+	// Returns capacity and free space, in bytes, of the set of devices passed.
+	GetFsInfoForDevices(deviceSet map[string]struct{}, withIoStats bool) ([]Fs, error)
 
 	// Returns number of bytes occupied by 'dir'.
 	GetDirUsage(dir string, timeout time.Duration) (uint64, error)

@@ -89,52 +89,88 @@ func (self *RealFsInfo) GetMountpointForDevice(dev string) (string, error) {
 	return p.mountpoint, nil
 }
 
-func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error) {
-	filesystems := make([]Fs, 0)
-	deviceSet := make(map[string]struct{})
-	diskStatsMap, err := getDiskStatsMap("/proc/diskstats")
+func (self *RealFsInfo) getFilteredFsInfo(filter func(device string, partition partition) bool, withIoStats bool) ([]Fs, error) {
+	filesystemsOut := make([]Fs, 0)
+
+	err := self.partitionCache.ApplyOverPartitions(func(device string, partition partition) error {
+		if !filter(device, partition) {
+			return nil
+		}
+
+		var (
+			err error
+			fs  Fs
+		)
+
+		switch partition.fsType {
+		case DeviceMapper.String():
+			fs.Capacity, fs.Free, fs.Available, err = getDMStats(device, partition.blockSize)
+			fs.Type = DeviceMapper
+		case ZFS.String():
+			fs.Capacity, fs.Free, fs.Available, err = getZfstats(device)
+			fs.Type = ZFS
+		default:
+			fs.Capacity, fs.Free, fs.Available, fs.Inodes, fs.InodesFree, err = getVfsStats(partition.mountpoint)
+			fs.Type = VFS
+		}
+
+		if err != nil {
+			// Only log, don't throw an error
+			glog.Errorf("Stat fs for %q failed. Error: %v", device, err)
+			return nil
+		}
+
+		fs.DeviceInfo = DeviceInfo{
+			Device: device,
+			Major:  uint(partition.major),
+			Minor:  uint(partition.minor),
+		}
+
+		filesystemsOut = append(filesystemsOut, fs)
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	self.partitionCache.ApplyOverPartitions(func(device string, partition partition) error {
-		_, hasMount := mountSet[partition.mountpoint]
-		_, hasDevice := deviceSet[device]
-		if mountSet == nil || (hasMount && !hasDevice) {
-			var (
-				err error
-				fs  Fs
-			)
-			switch partition.fsType {
-			case DeviceMapper.String():
-				fs.Capacity, fs.Free, fs.Available, err = getDMStats(device, partition.blockSize)
-				fs.Type = DeviceMapper
-			case ZFS.String():
-				fs.Capacity, fs.Free, fs.Available, err = getZfstats(device)
-				fs.Type = ZFS
-			default:
-				fs.Capacity, fs.Free, fs.Available, fs.Inodes, fs.InodesFree, err = getVfsStats(partition.mountpoint)
-				fs.Type = VFS
-			}
-
-			if err != nil {
-				glog.Errorf("Stat fs failed. Error: %v", err)
-			} else {
-				deviceSet[device] = struct{}{}
-				fs.DeviceInfo = DeviceInfo{
-					Device: device,
-					Major:  uint(partition.major),
-					Minor:  uint(partition.minor),
-				}
-				fs.DiskStats = diskStatsMap[device]
-				filesystems = append(filesystems, fs)
-			}
+	if withIoStats {
+		diskStatsMap, err := getDiskStatsMap("/proc/diskstats")
+		if err != nil {
+			return nil, err
 		}
 
-		return nil
-	})
+		for _, fs := range filesystemsOut {
+			diskStats, ok := diskStatsMap[fs.DeviceInfo.Device]
+			if !ok {
+				glog.Errorf("Disk stats for %q not found", fs.DeviceInfo.Device)
+				continue
+			}
+			fs.DiskStats = diskStats
+		}
+	}
 
-	return filesystems, nil
+	return filesystemsOut, nil
+}
+
+func (self *RealFsInfo) GetFsInfoForMounts(mountSet map[string]struct{}, withIoStats bool) ([]Fs, error) {
+	return self.getFilteredFsInfo(func(_ string, partition partition) bool {
+		_, hasMount := mountSet[partition.mountpoint]
+		return hasMount
+	}, withIoStats)
+}
+
+func (self *RealFsInfo) GetFsInfoForDevices(deviceSet map[string]struct{}, withIoStats bool) ([]Fs, error) {
+	return self.getFilteredFsInfo(func(device string, _ partition) bool {
+		_, hasDevice := deviceSet[device]
+		return hasDevice
+	}, withIoStats)
+}
+
+func (self *RealFsInfo) GetGlobalFsInfo(withIoStats bool) ([]Fs, error) {
+	return self.getFilteredFsInfo(func(_ string, _ partition) bool {
+		return true
+	}, withIoStats)
 }
 
 var partitionRegex = regexp.MustCompile(`^(?:(?:s|xv)d[a-z]+\d*|dm-\d+)$`)
@@ -190,10 +226,6 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 		diskStatsMap[deviceName] = diskStats
 	}
 	return diskStatsMap, nil
-}
-
-func (self *RealFsInfo) GetGlobalFsInfo() ([]Fs, error) {
-	return self.GetFsInfoForPath(nil)
 }
 
 func major(devNumber uint64) uint {

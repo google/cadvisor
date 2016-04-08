@@ -152,7 +152,7 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 	}
 
 	if !ignoreMetrics.Has(container.DiskUsageMetrics) {
-		handler.fsHandler = common.NewFsHandler(time.Minute, rootfsStorageDir, "", fsInfo)
+		handler.fsHandler = common.NewFsHandler(time.Minute, []string{rootfsStorageDir}, []string{}, fsInfo)
 	}
 
 	return handler, nil
@@ -200,34 +200,18 @@ func (handler *rktContainerHandler) GetSpec() (info.ContainerSpec, error) {
 }
 
 func (handler *rktContainerHandler) getFsStats(stats *info.ContainerStats) error {
-	if handler.ignoreMetrics.Has(container.DiskUsageMetrics) {
+	if handler.fsHandler == nil {
 		return nil
 	}
+	fsStats, err := handler.fsHandler.Usage()
 
-	deviceInfo, err := handler.fsInfo.GetDirFsDevice(handler.rootfsStorageDir)
 	if err != nil {
 		return err
 	}
 
-	mi, err := handler.machineInfoFactory.GetMachineInfo()
-	if err != nil {
-		return err
+	for _, stat := range fsStats {
+		stats.Filesystem = append(stats.Filesystem, *stat)
 	}
-	var limit uint64 = 0
-
-	// Use capacity as limit.
-	for _, fs := range mi.Filesystems {
-		if fs.Device == deviceInfo.Device {
-			limit = fs.Capacity
-			break
-		}
-	}
-
-	fsStat := info.FsStats{Device: deviceInfo.Device, Limit: limit}
-
-	fsStat.BaseUsage, fsStat.Usage = handler.fsHandler.Usage()
-
-	stats.Filesystem = append(stats.Filesystem, fsStat)
 
 	return nil
 }

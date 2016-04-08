@@ -16,6 +16,10 @@
 package common
 
 import (
+	"flag"
+	"fmt"
+	info "github.com/google/cadvisor/info/v1"
+	"regexp"
 	"sync"
 	"time"
 
@@ -26,20 +30,58 @@ import (
 
 type FsHandler interface {
 	Start()
-	Usage() (baseUsageBytes uint64, totalUsageBytes uint64)
+	Usage() ([]*info.FsStats, error)
 	Stop()
+	update() error // Exposed privately for tests
+}
+
+type skippedDevices struct {
+	r *regexp.Regexp
+}
+
+var (
+	defaultSkippedDevicesRegexp = regexp.MustCompile("$^") // Regexp that matches nothing
+	skipDevicesFlag             = skippedDevices{
+		r: defaultSkippedDevicesRegexp,
+	}
+)
+
+func (self *skippedDevices) String() string {
+	return self.r.String()
+}
+
+func (self *skippedDevices) Set(value string) error {
+	r, err := regexp.Compile(value)
+
+	if err != nil {
+		return err
+	}
+
+	self.r = r
+	return nil
+}
+
+func (self *skippedDevices) Has(device string) bool {
+	return self.r.MatchString(device)
+}
+
+var skipDuFlag = flag.Bool("disk_skip_du", false, "do not use du for disk metrics (use raw FS stats instead)")
+
+func init() {
+	flag.Var(&skipDevicesFlag, "disk_skip_devices", "Regex representing devices to ignore when reporting disk metrics")
 }
 
 type realFsHandler struct {
 	sync.RWMutex
-	lastUpdate     time.Time
-	usageBytes     uint64
-	baseUsageBytes uint64
-	period         time.Duration
-	minPeriod      time.Duration
-	rootfs         string
-	extraDir       string
-	fsInfo         fs.FsInfo
+	lastUpdate  time.Time
+	fsStats     []*info.FsStats
+	period      time.Duration
+	minPeriod   time.Duration
+	skipDu      bool
+	skipDevices skippedDevices
+	fsInfo      fs.FsInfo
+	baseDirs    map[string]struct{}
+	allDirs     map[string]struct{}
 	// Tells the container to stop.
 	stopChan chan struct{}
 }
@@ -50,55 +92,175 @@ const (
 	maxDuBackoffFactor = 20
 )
 
+// Enforce that realFsHandler conforms to fsHandler interface
 var _ FsHandler = &realFsHandler{}
 
-func NewFsHandler(period time.Duration, rootfs, extraDir string, fsInfo fs.FsInfo) FsHandler {
+func NewFsHandler(period time.Duration, baseDirs []string, extraDirs []string, fsInfo fs.FsInfo) FsHandler {
+	allDirsSet := make(map[string]struct{})
+	baseDirsSet := make(map[string]struct{})
+
+	for _, dir := range baseDirs {
+		allDirsSet[dir] = struct{}{}
+		baseDirsSet[dir] = struct{}{}
+	}
+
+	for _, dir := range extraDirs {
+		allDirsSet[dir] = struct{}{}
+	}
+
 	return &realFsHandler{
-		lastUpdate:     time.Time{},
-		usageBytes:     0,
-		baseUsageBytes: 0,
-		period:         period,
-		minPeriod:      period,
-		rootfs:         rootfs,
-		extraDir:       extraDir,
-		fsInfo:         fsInfo,
-		stopChan:       make(chan struct{}, 1),
+		lastUpdate:  time.Time{},
+		fsStats:     nil,
+		period:      period,
+		minPeriod:   period,
+		skipDu:      *skipDuFlag,
+		skipDevices: skipDevicesFlag,
+		baseDirs:    baseDirsSet,
+		allDirs:     allDirsSet,
+		fsInfo:      fsInfo,
+		stopChan:    make(chan struct{}, 1),
 	}
 }
 
-func (fh *realFsHandler) update() error {
-	var (
-		baseUsage, extraDirUsage uint64
-		err                      error
-	)
-	// TODO(vishh): Add support for external mounts.
-	if fh.rootfs != "" {
-		baseUsage, err = fh.fsInfo.GetDirUsage(fh.rootfs, duTimeout)
-		if err != nil {
-			return err
-		}
+func addOrDefault(m map[string]uint64, key string, add uint64) {
+	value, ok := m[key]
+	if ok {
+		m[key] = value + add
+	} else {
+		m[key] = add
+	}
+}
+
+func (fh *realFsHandler) gatherDiskUsage(devices map[string]struct{}) (map[string]uint64, map[string]uint64, error) {
+	deviceToBaseUsageBytes := make(map[string]uint64)
+	deviceToTotalUsageBytes := make(map[string]uint64)
+
+	if fh.skipDu {
+		return deviceToBaseUsageBytes, deviceToTotalUsageBytes, nil
 	}
 
-	if fh.extraDir != "" {
-		extraDirUsage, err = fh.fsInfo.GetDirUsage(fh.extraDir, duTimeout)
-		if err != nil {
-			return err
+	// Go through all directories and get their usage
+	for dir := range fh.allDirs {
+		if dir == "" {
+			// This should not happen if we're called properly, but it's
+			// presumably not worth crashing for.
+			glog.Warningf("FS handler received an empty dir: %q", dir)
+			continue
 		}
+
+		deviceInfo, err := fh.fsInfo.GetDirFsDevice(dir)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Check whether this device was ignored prior to running du on it.
+		_, collectUsageForDevice := devices[deviceInfo.Device]
+		if !collectUsageForDevice {
+			continue
+		}
+
+		usage, err := fh.fsInfo.GetDirUsage(dir, duTimeout)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Only count usage against baseUsage if this directory is a base directory
+		var baseUsage uint64 = 0
+		_, isBaseDir := fh.baseDirs[dir]
+		if isBaseDir {
+			baseUsage = usage
+		}
+
+		addOrDefault(deviceToTotalUsageBytes, deviceInfo.Device, usage)
+		addOrDefault(deviceToBaseUsageBytes, deviceInfo.Device, baseUsage)
+	}
+
+	return deviceToBaseUsageBytes, deviceToTotalUsageBytes, nil
+}
+
+func (fh *realFsHandler) update() error {
+	// Start with figuring out which devices we care about
+	deviceSet := make(map[string]struct{})
+	for dir := range fh.allDirs {
+		fsDevice, err := fh.fsInfo.GetDirFsDevice(dir)
+		if err != nil {
+			glog.Warningf("Unable to find device for directory %q: %v", dir, err)
+			continue
+		}
+
+		if fh.skipDevices.Has(fsDevice.Device) {
+			continue
+		}
+
+		deviceSet[fsDevice.Device] = struct{}{}
+	}
+
+	// If we are relying on du for metrics, then gather the usage for each of those devices
+	deviceToBaseUsageBytes, deviceToTotalUsageBytes, err := fh.gatherDiskUsage(deviceSet)
+	if err != nil {
+		return err
+	}
+
+	// Then, grab the usage limit for each of those devices, as well as usage if we
+	// are relying on df for metrics.
+	fsStats := make([]*info.FsStats, 0)
+
+	// Request Fs info for all the device in use, but skip io stats (we won't report them,
+	// since per-container data is available via cgroups)
+	filesystems, err := fh.fsInfo.GetFsInfoForDevices(deviceSet, false)
+	if err != nil {
+		return err
+	}
+
+	for _, fs := range filesystems {
+		stat := info.FsStats{
+			Device: fs.Device,
+			Type:   string(fs.Type),
+			Limit:  fs.Capacity,
+		}
+
+		// If we're using du, then use the metrics we collected above.
+		// If we're using df, then simply use the value provided by GetGlobalFsInfo.
+		if fh.skipDu {
+			stat.Usage = fs.Capacity - fs.Available
+		} else {
+			baseUsage, ok := deviceToBaseUsageBytes[fs.Device]
+			if !ok {
+				return fmt.Errorf("Base usage for device %q expected but not collected!", fs.Device)
+			}
+
+			totalUsage, ok := deviceToTotalUsageBytes[fs.Device]
+			if !ok {
+				return fmt.Errorf("Total usage for device %q expected but not collected!", fs.Device)
+			}
+			stat.BaseUsage = baseUsage
+			stat.Usage = totalUsage
+		}
+
+		fsStats = append(fsStats, &stat)
+	}
+
+	if err != nil {
+		return err
 	}
 
 	fh.Lock()
 	defer fh.Unlock()
 	fh.lastUpdate = time.Now()
-	fh.usageBytes = baseUsage + extraDirUsage
-	fh.baseUsageBytes = baseUsage
+	fh.fsStats = fsStats
 	return nil
 }
 
 func (fh *realFsHandler) trackUsage() {
-	fh.update()
+	err := fh.update()
+	if err != nil {
+		glog.Errorf("failed to collect filesystem stats - %v", err)
+	}
+
 	for {
 		select {
 		case <-fh.stopChan:
+			// TODO: Does this work without sending anything in?
 			return
 		case <-time.After(fh.period):
 			start := time.Now()
@@ -113,7 +275,7 @@ func (fh *realFsHandler) trackUsage() {
 			}
 			duration := time.Since(start)
 			if duration > longDu {
-				glog.V(2).Infof("`du` on following dirs took %v: %v", duration, []string{fh.rootfs, fh.extraDir})
+				glog.V(2).Infof("`du` on following dirs took %v: %v", duration, fh.allDirs)
 			}
 		}
 	}
@@ -127,8 +289,12 @@ func (fh *realFsHandler) Stop() {
 	close(fh.stopChan)
 }
 
-func (fh *realFsHandler) Usage() (baseUsageBytes, totalUsageBytes uint64) {
+func (fh *realFsHandler) Usage() ([]*info.FsStats, error) {
 	fh.RLock()
 	defer fh.RUnlock()
-	return fh.baseUsageBytes, fh.usageBytes
+	if (fh.lastUpdate == time.Time{}) {
+		// Do not report metrics if we don't have any!
+		return []*info.FsStats{}, fmt.Errorf("No disk usage metrics available yet")
+	}
+	return fh.fsStats, nil
 }

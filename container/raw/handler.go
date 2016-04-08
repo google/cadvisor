@@ -180,7 +180,7 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 	// Get Filesystem information only for the root cgroup.
 	if isRootCgroup(self.name) {
-		filesystems, err := self.fsInfo.GetGlobalFsInfo()
+		filesystems, err := self.fsInfo.GetGlobalFsInfo(true)
 		if err != nil {
 			return err
 		}
@@ -212,7 +212,7 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		for _, mount := range self.externalMounts {
 			mountSet[mount.HostDir] = struct{}{}
 		}
-		filesystems, err := self.fsInfo.GetFsInfoForPath(mountSet)
+		filesystems, err := self.fsInfo.GetFsInfoForMounts(mountSet, true)
 		if err != nil {
 			return err
 		}
