@@ -16,6 +16,14 @@ package fs
 
 import "time"
 
+type partition struct {
+	mountpoint string
+	major      uint
+	minor      uint
+	fsType     string
+	blockSize  uint
+}
+
 type DeviceInfo struct {
 	Device string
 	Major  uint
@@ -60,6 +68,9 @@ type DiskStats struct {
 }
 
 type FsInfo interface {
+	// Refreshes the cache
+	RefreshCache()
+
 	// Returns capacity and free space, in bytes, of all the ext2, ext3, ext4 filesystems on the host.
 	GetGlobalFsInfo() ([]Fs, error)
 
@@ -80,4 +91,14 @@ type FsInfo interface {
 
 	// Returns the mountpoint associated with a particular device.
 	GetMountpointForDevice(device string) (string, error)
+}
+
+type PartitionCache interface {
+	Refresh() error
+	Clear()
+	PartitionForDevice(device string) (partition, error)
+	DeviceInfoForMajorMinor(major uint, minor uint) (*DeviceInfo, error)
+	ApplyOverPartitions(f func(device string, p partition) error) error
+	DeviceNameForLabel(label string) (string, error)
+	ApplyOverLabels(f func(label string, device string) error) error
 }
