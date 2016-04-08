@@ -439,10 +439,19 @@ func ValidateInfo() (*docker.DockerInfo, error) {
 		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
 	}
 
+	// Fall back to version API if ServerVersion is not set in info.
+	if dockerInfo.ServerVersion == "" {
+		version, err := client.Version()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get docker version: %v", err)
+		}
+		dockerInfo.ServerVersion = version.Get("Version")
+	}
 	version, err := parseDockerVersion(dockerInfo.ServerVersion)
 	if err != nil {
 		return nil, err
 	}
+
 	if version[0] < 1 {
 		return nil, fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as %q", []int{1, 0, 0}, version, dockerInfo.ServerVersion)
 	}
