@@ -14,18 +14,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [[ -n "${JENKINS_HOME}" ]]
-then 
+if [[ -n "${JENKINS_HOME}" ]]; then
     exec ./build/jenkins_e2e.sh
 fi
+
+sudo -v || exit 1
+
 echo ">> starting cAdvisor locally"
 sudo ./cadvisor &
+
+readonly TIMEOUT=120 # Timeout to wait for cAdvisor, in seconds.
+START=$(date +%s)
+while [ "$(curl -Gs http://localhost:8080/healthz)" != "ok" ]; do
+  if (( $(date +%s) - $START > $TIMEOUT )); then
+    echo "Timed out waiting for cAdvisor to start"
+    sudo pkill -9 cadvisor
+    exit 1
+  fi
+  echo "Waiting for cAdvisor to start ..."
+  sleep 1
+done
+
 echo ">> running integration tests against local cAdvisor"
 godep go test github.com/google/cadvisor/integration/tests/... --vmodule=*=2
-if [ $? -ne 0 ]
-then
+STATUS=$?
+if [ $STATUS -ne 0 ]; then
     echo "Integration tests failed"
 fi
 echo ">> stopping cAdvisor"
 sudo pkill -9 cadvisor
 
+exit $STATUS
