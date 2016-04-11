@@ -233,7 +233,6 @@ func (self *manager) Start() error {
 		glog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
 
-	// FIXME - delete?
 	self.DockerInfo()
 	self.DockerImages()
 

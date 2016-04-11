@@ -163,6 +163,7 @@ var (
 	version_re            = regexp.MustCompile(version_regexp_string)
 )
 
+// TODO: switch to a semantic versioning library.
 func parseDockerVersion(full_version_string string) ([]int, error) {
 	matches := version_re.FindAllStringSubmatch(full_version_string, -1)
 	if len(matches) != 1 {
@@ -186,38 +187,14 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	var dockerVersion []int
-	if version, err := client.Version(); err != nil {
-		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
-	} else {
-		expected_version := []int{1, 0, 0}
-		version_string := version.Get("Version")
-		dockerVersion, err = parseDockerVersion(version_string)
-		if err != nil {
-			return fmt.Errorf("couldn't parse docker version: %v", err)
-		}
-		for index, number := range dockerVersion {
-			if number > expected_version[index] {
-				break
-			} else if number < expected_version[index] {
-				return fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as \"%v\"", expected_version, dockerVersion, version_string)
-			}
-		}
-	}
 
-	dockerInfo, err := client.Info()
+	dockerInfo, err := ValidateInfo()
 	if err != nil {
-		return fmt.Errorf("failed to detect Docker info: %v", err)
+		return fmt.Errorf("failed to validate Docker info: %v", err)
 	}
 
-	// Check that the libcontainer execdriver is used.
-	if !strings.HasPrefix(dockerInfo.ExecutionDriver, "native") {
-		return fmt.Errorf("docker found, but not using native exec driver")
-	}
-
-	if dockerInfo.Driver == "" {
-		return fmt.Errorf("failed to find docker storage driver")
-	}
+	// Version already validated above, assume no error here.
+	dockerVersion, _ := parseDockerVersion(dockerInfo.ServerVersion)
 
 	storageDir := dockerInfo.DockerRootDir
 	if storageDir == "" {
