@@ -27,8 +27,9 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 
-	docker "github.com/fsouza/go-dockerclient"
+	docker "github.com/docker/engine-api/client"
 	"github.com/golang/glog"
+	"golang.org/x/net/context"
 )
 
 var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
@@ -146,7 +147,7 @@ func (self *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	id := ContainerNameToDockerId(name)
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	ctnr, err := self.client.InspectContainer(id)
+	ctnr, err := self.client.ContainerInspect(context.Background(), id)
 	if err != nil || !ctnr.State.Running {
 		return false, canAccept, fmt.Errorf("error inspecting container: %v", err)
 	}

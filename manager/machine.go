@@ -32,6 +32,7 @@ import (
 	version "github.com/google/cadvisor/version"
 
 	"github.com/golang/glog"
+	"golang.org/x/net/context"
 )
 
 var machineIdFilePath = flag.String("machine_id_file", "/etc/machine-id,/var/lib/dbus/machine-id", "Comma-separated list of files to check for machine-id. Use the first one that exists.")
@@ -156,9 +157,9 @@ func getDockerVersion() string {
 	docker_version := "Unknown"
 	client, err := docker.Client()
 	if err == nil {
-		version, err := client.Version()
+		version, err := client.ServerVersion(context.Background())
 		if err == nil {
-			docker_version = version.Get("Version")
+			docker_version = version.Version
 		}
 	}
 	return docker_version

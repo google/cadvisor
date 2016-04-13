@@ -28,10 +28,13 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 
-	docker "github.com/fsouza/go-dockerclient"
+	docker "github.com/docker/engine-api/client"
+	dockertypes "github.com/docker/engine-api/types"
+	dockercontainer "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	libcontainerconfigs "github.com/opencontainers/runc/libcontainer/configs"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -76,7 +79,7 @@ type dockerContainerHandler struct {
 	rootFs string
 
 	// The network mode of the container
-	networkMode string
+	networkMode dockercontainer.NetworkMode
 
 	// Filesystem handler.
 	fsHandler common.FsHandler
@@ -172,11 +175,16 @@ func newDockerContainerHandler(
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	ctnr, err := client.InspectContainer(id)
+	ctnr, err := client.ContainerInspect(context.Background(), id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 	}
-	handler.creationTime = ctnr.Created
+	// Timestamp returned by Docker is in time.RFC3339Nano format.
+	handler.creationTime, err = time.Parse(time.RFC3339Nano, ctnr.Created)
+	if err != nil {
+		// This should not happen, report the error just in case
+		return nil, fmt.Errorf("failed to parse the create timestamp %q for container %q: %v", ctnr.Created, id, err)
+	}
 	handler.pid = ctnr.State.Pid
 
 	// Add the name and bare ID as aliases of the container.
@@ -222,7 +230,7 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 
 func (self *dockerContainerHandler) needNet() bool {
 	if !self.ignoreMetrics.Has(container.NetworkUsageMetrics) {
-		return !strings.HasPrefix(self.networkMode, "container:")
+		return !self.networkMode.IsContainer()
 	}
 	return false
 }
@@ -342,50 +350,42 @@ func (self *dockerContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
 
-func DockerInfo() (docker.DockerInfo, error) {
+func DockerInfo() (dockertypes.Info, error) {
 	client, err := Client()
 	if err != nil {
-		return docker.DockerInfo{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
+		return dockertypes.Info{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	info, err := client.Info()
-	if err != nil {
-		return docker.DockerInfo{}, err
-	}
-	return *info, nil
+	return client.Info(context.Background())
 }
 
-func DockerImages() ([]docker.APIImages, error) {
+func DockerImages() ([]dockertypes.Image, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	images, err := client.ListImages(docker.ListImagesOptions{All: false})
-	if err != nil {
-		return nil, err
-	}
-	return images, nil
+	return client.ImageList(context.Background(), dockertypes.ImageListOptions{All: false})
 }
 
 // Checks whether the dockerInfo reflects a valid docker setup, and returns it if it does, or an
 // error otherwise.
-func ValidateInfo() (*docker.DockerInfo, error) {
+func ValidateInfo() (*dockertypes.Info, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
 
-	dockerInfo, err := client.Info()
+	dockerInfo, err := client.Info(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
 	}
 
 	// Fall back to version API if ServerVersion is not set in info.
 	if dockerInfo.ServerVersion == "" {
-		version, err := client.Version()
+		version, err := client.ServerVersion(context.Background())
 		if err != nil {
 			return nil, fmt.Errorf("unable to get docker version: %v", err)
 		}
-		dockerInfo.ServerVersion = version.Get("Version")
+		dockerInfo.ServerVersion = version.Version
 	}
 	version, err := parseDockerVersion(dockerInfo.ServerVersion)
 	if err != nil {
@@ -407,5 +407,5 @@ func ValidateInfo() (*docker.DockerInfo, error) {
 		return nil, fmt.Errorf("failed to find docker storage driver")
 	}
 
-	return dockerInfo, nil
+	return &dockerInfo, nil
 }
