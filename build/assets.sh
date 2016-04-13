@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2015 Google Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -10,36 +12,9 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
+# limitations under the License.
 
-GO := godep go
-pkgs  = $(shell $(GO) list ./...)
+GIT_ROOT=$(dirname "${BASH_SOURCE}")/..
 
-all: format build test
-
-test:
-	@echo ">> running tests"
-	@$(GO) test -tags test -short -race $(pkgs)
-
-test-integration: build test
-	@./build/integration.sh
-
-format:
-	@echo ">> formatting code"
-	@$(GO) fmt $(pkgs)
-
-vet:
-	@echo ">> vetting code"
-	@$(GO) vet $(pkgs)
-
-build:
-	@echo ">> building binaries"
-	@./build/assets.sh
-	@./build/build.sh
-
-release: build
-	@./build/release.sh
-
-docker:
-	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
-
-.PHONY: all format build test vet docker
+go get -u github.com/jteeuwen/go-bindata/...
+go-bindata -o $GIT_ROOT/pages/static/assets.go -pkg static $GIT_ROOT/assets/...
