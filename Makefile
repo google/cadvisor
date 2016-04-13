@@ -33,6 +33,7 @@ vet:
 
 build:
 	@echo ">> building binaries"
+	@./build/assets.sh
 	@./build/build.sh
 
 release: build
