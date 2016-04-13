@@ -178,8 +178,12 @@ type v1State struct {
 	Config v1Config `json:"config"`
 }
 
-// Relative path to the libcontainer execdriver directory.
-const libcontainerExecDriverPath = "execdriver/native"
+const (
+	// Relative path to the libcontainer execdriver directory.
+	libcontainerExecDriverPath = "execdriver/native"
+	// Absolute path of the containerd directory.
+	containerdPath = "/run/containerd"
+)
 
 // TODO(vmarmol): Deprecate over time as old Dockers are phased out.
 func ReadConfig(dockerRoot, dockerRun, containerID string) (*configs.Config, error) {
@@ -327,7 +331,7 @@ func convertOldConfigToNew(config v1Config) *configs.Config {
 
 func readState(dockerRoot, containerID string) (preAPIState, error) {
 	// pre-API libcontainer changed how its state was stored, try the old way of a "pid" file
-	statePath := path.Join(dockerRoot, libcontainerExecDriverPath, containerID, "state.json")
+	statePath := configPath(dockerRoot, containerID)
 	if !utils.FileExists(statePath) {
 		pidPath := path.Join(dockerRoot, libcontainerExecDriverPath, containerID, "pid")
 		if utils.FileExists(pidPath) {
@@ -352,7 +356,13 @@ func readState(dockerRoot, containerID string) (preAPIState, error) {
 
 // Gets the path to the libcontainer configuration.
 func configPath(dockerRun, containerID string) string {
-	return path.Join(dockerRun, libcontainerExecDriverPath, containerID, "state.json")
+	const file = "state.json"
+	cp := path.Join(containerdPath, containerID, file)
+	if utils.FileExists(cp) {
+		return cp
+	}
+	// Fallback to execdriver path.
+	return path.Join(dockerRun, libcontainerExecDriverPath, containerID, file)
 }
 
 // Gets the path to the old libcontainer configuration.
