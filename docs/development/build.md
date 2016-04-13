@@ -43,3 +43,13 @@ Now you can run the built binary:
 ```
 $GOPATH/src/github.com/google/cadvisor $ sudo ./cadvisor
 ```
+
+## Compiling Assets 
+
+If you modify files in the /assets folder, you will need to rebuild the assets:
+
+```
+$GOPATH/src/github.com/google/cadvisor $ ./build/assets.sh
+$GOPATH/src/github.com/google/cadvisor $ godep go build .
+```
+
