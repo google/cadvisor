@@ -25,7 +25,6 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
-	"github.com/google/cadvisor/utils/machine"
 
 	"github.com/golang/glog"
 )
@@ -45,26 +44,10 @@ func DebugInfo(watches map[string][]string) map[string][]string {
 	return out
 }
 
-type AbstractContainerHandler interface {
-	GetCgroupPaths() map[string]string
-	GetMachineInfoFactory() info.MachineInfoFactory
-	GetName() string
-	GetRootNetworkDevices() ([]info.NetInfo, error)
-	GetExternalMounts() []Mount
-	HasNetwork() bool
-	HasFilesystem() bool
-}
-
-func GetSpec(handler AbstractContainerHandler) (info.ContainerSpec, error) {
-	cgroupPaths := handler.GetCgroupPaths()
-	machineInfoFactory := handler.GetMachineInfoFactory()
-	name := handler.GetName()
-	externalMounts := handler.GetExternalMounts()
-
+func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoFactory, hasNetwork, hasFilesystem bool) (info.ContainerSpec, error) {
 	var spec info.ContainerSpec
 
-	// The raw driver assumes unified hierarchy containers.
-
+	// Assume unified hierarchy containers.
 	// Get the lowest creation time from all hierarchies as the container creation time.
 	now := time.Now()
 	lowestTime := now
@@ -120,50 +103,21 @@ func GetSpec(handler AbstractContainerHandler) (info.ContainerSpec, error) {
 	}
 
 	// Memory
-	if name == "/" {
-		// Get memory and swap limits of the running machine
-		memLimit, err := machine.GetMachineMemoryCapacity()
-		if err != nil {
-			glog.Warningf("failed to obtain memory limit for machine container")
-			spec.HasMemory = false
-		} else {
-			spec.Memory.Limit = uint64(memLimit)
-			// Spec is marked to have memory only if the memory limit is set
+	memoryRoot, ok := cgroupPaths["memory"]
+	if ok {
+		if utils.FileExists(memoryRoot) {
 			spec.HasMemory = true
-		}
-
-		swapLimit, err := machine.GetMachineSwapCapacity()
-		if err != nil {
-			glog.Warningf("failed to obtain swap limit for machine container")
-		} else {
-			spec.Memory.SwapLimit = uint64(swapLimit)
-		}
-	} else {
-		memoryRoot, ok := cgroupPaths["memory"]
-		if ok {
-			if utils.FileExists(memoryRoot) {
-				spec.HasMemory = true
-				spec.Memory.Limit = readUInt64(memoryRoot, "memory.limit_in_bytes")
-				spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.memsw.limit_in_bytes")
-			}
+			spec.Memory.Limit = readUInt64(memoryRoot, "memory.limit_in_bytes")
+			spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.memsw.limit_in_bytes")
 		}
 	}
 
-	spec.HasFilesystem = name == "/" || externalMounts != nil || handler.HasFilesystem()
-
-	spec.HasNetwork = handler.HasNetwork()
+	spec.HasNetwork = hasNetwork
+	spec.HasFilesystem = hasFilesystem
 
 	if blkioRoot, ok := cgroupPaths["blkio"]; ok && utils.FileExists(blkioRoot) {
 		spec.HasDiskIo = true
 	}
-
-	// Check physical network devices for root container.
-	nd, err := handler.GetRootNetworkDevices()
-	if err != nil {
-		return spec, err
-	}
-
-	spec.HasNetwork = spec.HasNetwork || len(nd) != 0
 
 	return spec, nil
 }
