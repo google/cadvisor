@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package manager
+package machine
 
 import (
 	"bytes"
@@ -26,10 +26,8 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/cloudinfo"
-	"github.com/google/cadvisor/utils/machine"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysinfo"
-	version "github.com/google/cadvisor/version"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
@@ -52,19 +50,19 @@ func getInfoFromFiles(filePaths string) string {
 	return ""
 }
 
-func getMachineInfo(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.MachineInfo, error) {
+func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.MachineInfo, error) {
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
 	}
 
 	cpuinfo, err := ioutil.ReadFile(filepath.Join(rootFs, "/proc/cpuinfo"))
-	clockSpeed, err := machine.GetClockSpeed(cpuinfo)
+	clockSpeed, err := GetClockSpeed(cpuinfo)
 	if err != nil {
 		return nil, err
 	}
 
-	memoryCapacity, err := machine.GetMachineMemoryCapacity()
+	memoryCapacity, err := GetMachineMemoryCapacity()
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +82,7 @@ func getMachineInfo(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (
 		glog.Errorf("Failed to get network devices: %v", err)
 	}
 
-	topology, numCores, err := machine.GetTopology(sysFs, string(cpuinfo))
+	topology, numCores, err := GetTopology(sysFs, string(cpuinfo))
 	if err != nil {
 		glog.Errorf("Failed to get topology information: %v", err)
 	}
@@ -121,22 +119,7 @@ func getMachineInfo(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (
 	return machineInfo, nil
 }
 
-func getVersionInfo() (*info.VersionInfo, error) {
-
-	kernel_version := getKernelVersion()
-	container_os := getContainerOsVersion()
-	docker_version := getDockerVersion()
-
-	return &info.VersionInfo{
-		KernelVersion:      kernel_version,
-		ContainerOsVersion: container_os,
-		DockerVersion:      docker_version,
-		CadvisorVersion:    version.Info["version"],
-		CadvisorRevision:   version.Info["revision"],
-	}, nil
-}
-
-func getContainerOsVersion() string {
+func ContainerOsVersion() string {
 	container_os := "Unknown"
 	os_release, err := ioutil.ReadFile("/etc/os-release")
 	if err == nil {
@@ -153,7 +136,7 @@ func getContainerOsVersion() string {
 	return container_os
 }
 
-func getDockerVersion() string {
+func DockerVersion() string {
 	docker_version := "Unknown"
 	client, err := docker.Client()
 	if err == nil {
@@ -165,7 +148,7 @@ func getDockerVersion() string {
 	return docker_version
 }
 
-func getKernelVersion() string {
+func KernelVersion() string {
 	uname := &syscall.Utsname{}
 
 	if err := syscall.Uname(uname); err != nil {

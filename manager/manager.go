@@ -37,8 +37,10 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/cpuload"
+	"github.com/google/cadvisor/utils/machine"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
+	"github.com/google/cadvisor/version"
 
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
@@ -174,7 +176,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		ignoreMetrics:            ignoreMetricsSet,
 	}
 
-	machineInfo, err := getMachineInfo(sysfs, fsInfo, inHostNamespace)
+	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
 	if err != nil {
 		return nil, err
 	}
@@ -1233,4 +1235,19 @@ func (m *manager) DebugInfo() map[string][]string {
 
 	debugInfo["Managed containers"] = lines
 	return debugInfo
+}
+
+func getVersionInfo() (*info.VersionInfo, error) {
+
+	kernel_version := machine.KernelVersion()
+	container_os := machine.ContainerOsVersion()
+	docker_version := machine.DockerVersion()
+
+	return &info.VersionInfo{
+		KernelVersion:      kernel_version,
+		ContainerOsVersion: container_os,
+		DockerVersion:      docker_version,
+		CadvisorVersion:    version.Info["version"],
+		CadvisorRevision:   version.Info["revision"],
+	}, nil
 }
