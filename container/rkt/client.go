@@ -16,6 +16,7 @@ package rkt
 
 import (
 	"fmt"
+	"net"
 	"sync"
 	"time"
 
@@ -37,6 +38,13 @@ var (
 
 func Client() (rktapi.PublicAPIClient, error) {
 	once.Do(func() {
+		_, err := net.Dial("tcp", "localhost:15441")
+		if err != nil {
+			rktClient = nil
+			rktClientErr = fmt.Errorf("rkt: cannot connect to rkt api service: %v", err)
+			return
+		}
+
 		apisvcConn, err := grpc.Dial(defaultRktAPIServiceAddr, grpc.WithInsecure(), grpc.WithTimeout(5*time.Second))
 		if err != nil {
 			rktClient = nil
