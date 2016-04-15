@@ -184,19 +184,27 @@ func TestDockerContainerSpec(t *testing.T) {
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
-	cpuShares := uint64(2048)
-	cpuMask := "0"
-	memoryLimit := uint64(1 << 30) // 1GB
+	var (
+		cpuShares   = uint64(2048)
+		cpuMask     = "0"
+		memoryLimit = uint64(1 << 30) // 1GB
+		image       = "kubernetes/pause"
+		env         = map[string]string{"test_var": "FOO"}
+		labels      = map[string]string{"bar": "baz"}
+	)
+
 	cpusetArg := "--cpuset"
 	if getDockerMinorVersion(fm) >= 10 {
 		cpusetArg = "--cpuset-cpus"
 	}
 	containerId := fm.Docker().Run(framework.DockerRunArgs{
-		Image: "kubernetes/pause",
+		Image: image,
 		Args: []string{
 			"--cpu-shares", strconv.FormatUint(cpuShares, 10),
 			cpusetArg, cpuMask,
 			"--memory", strconv.FormatUint(memoryLimit, 10),
+			"--env", "TEST_VAR=FOO",
+			"--label", "bar=baz",
 		},
 	})
 
@@ -213,12 +221,16 @@ func TestDockerContainerSpec(t *testing.T) {
 	assert := assert.New(t)
 
 	assert.True(containerInfo.Spec.HasCpu, "CPU should be isolated")
-	assert.Equal(containerInfo.Spec.Cpu.Limit, cpuShares, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
-	assert.Equal(containerInfo.Spec.Cpu.Mask, cpuMask, "Cpu mask should be %q, but is %q", cpuMask, containerInfo.Spec.Cpu.Mask)
+	assert.Equal(cpuShares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
+	assert.Equal(cpuMask, containerInfo.Spec.Cpu.Mask, "Cpu mask should be %q, but is %q", cpuMask, containerInfo.Spec.Cpu.Mask)
 	assert.True(containerInfo.Spec.HasMemory, "Memory should be isolated")
-	assert.Equal(containerInfo.Spec.Memory.Limit, memoryLimit, "Container should have memory limit of %d, has %d", memoryLimit, containerInfo.Spec.Memory.Limit)
+	assert.Equal(memoryLimit, containerInfo.Spec.Memory.Limit, "Container should have memory limit of %d, has %d", memoryLimit, containerInfo.Spec.Memory.Limit)
 	assert.True(containerInfo.Spec.HasNetwork, "Network should be isolated")
 	assert.True(containerInfo.Spec.HasDiskIo, "Blkio should be isolated")
+
+	assert.Equal(image, containerInfo.Spec.Image, "Spec should include container image")
+	assert.Equal(env, containerInfo.Spec.Envs, "Spec should include environment variables")
+	assert.Equal(labels, containerInfo.Spec.Labels, "Spec should include labels")
 }
 
 // Check the CPU ContainerStats.

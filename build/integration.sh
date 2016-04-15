@@ -21,7 +21,7 @@ fi
 sudo -v || exit 1
 
 echo ">> starting cAdvisor locally"
-sudo ./cadvisor &
+sudo ./cadvisor --docker_env_metadata_whitelist=TEST_VAR &
 
 readonly TIMEOUT=120 # Timeout to wait for cAdvisor, in seconds.
 START=$(date +%s)
