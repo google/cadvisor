@@ -18,7 +18,6 @@ package docker
 import (
 	"fmt"
 	"io/ioutil"
-	"math"
 	"path"
 	"strings"
 	"time"
@@ -28,7 +27,6 @@ import (
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils"
 
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
@@ -222,50 +220,6 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 	}, nil
 }
 
-func (self *dockerContainerHandler) readLibcontainerConfig() (*libcontainerconfigs.Config, error) {
-	config, err := containerlibcontainer.ReadConfig(*dockerRootDir, *dockerRunDir, self.id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read libcontainer config: %v", err)
-	}
-
-	// Replace cgroup parent and name with our own since we may be running in a different context.
-	if config.Cgroups == nil {
-		config.Cgroups = new(libcontainerconfigs.Cgroup)
-	}
-	config.Cgroups.Name = self.name
-	config.Cgroups.Parent = "/"
-
-	return config, nil
-}
-
-func libcontainerConfigToContainerSpec(config *libcontainerconfigs.Config, mi *info.MachineInfo) info.ContainerSpec {
-	var spec info.ContainerSpec
-	spec.HasMemory = true
-	spec.Memory.Limit = math.MaxUint64
-	spec.Memory.SwapLimit = math.MaxUint64
-
-	if config.Cgroups.Resources != nil {
-		if config.Cgroups.Resources.Memory > 0 {
-			spec.Memory.Limit = uint64(config.Cgroups.Resources.Memory)
-		}
-		if config.Cgroups.Resources.MemorySwap > 0 {
-			spec.Memory.SwapLimit = uint64(config.Cgroups.Resources.MemorySwap)
-		}
-
-		// Get CPU info
-		spec.HasCpu = true
-		spec.Cpu.Limit = 1024
-		if config.Cgroups.Resources.CpuShares != 0 {
-			spec.Cpu.Limit = uint64(config.Cgroups.Resources.CpuShares)
-		}
-		spec.Cpu.Mask = utils.FixCpuMask(config.Cgroups.Resources.CpusetCpus, mi.NumCores)
-	}
-
-	spec.HasDiskIo = true
-
-	return spec
-}
-
 func (self *dockerContainerHandler) needNet() bool {
 	if !self.ignoreMetrics.Has(container.NetworkUsageMetrics) {
 		return !strings.HasPrefix(self.networkMode, "container:")
@@ -274,28 +228,8 @@ func (self *dockerContainerHandler) needNet() bool {
 }
 
 func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	mi, err := self.machineInfoFactory.GetMachineInfo()
-	if err != nil {
-		return info.ContainerSpec{}, err
-	}
-	libcontainerConfig, err := self.readLibcontainerConfig()
-	if err != nil {
-		return info.ContainerSpec{}, err
-	}
-
-	spec := libcontainerConfigToContainerSpec(libcontainerConfig, mi)
-	spec.CreationTime = self.creationTime
-
-	if !self.ignoreMetrics.Has(container.DiskUsageMetrics) {
-		spec.HasFilesystem = true
-	}
-
-	spec.Labels = self.labels
-	spec.Envs = self.envs
-	spec.Image = self.image
-	spec.HasNetwork = self.needNet()
-
-	return spec, err
+	hasFilesystem := !self.ignoreMetrics.Has(container.DiskUsageMetrics)
+	return common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem)
 }
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
