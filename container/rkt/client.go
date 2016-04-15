@@ -38,17 +38,19 @@ var (
 
 func Client() (rktapi.PublicAPIClient, error) {
 	once.Do(func() {
-		_, err := net.Dial("tcp", "localhost:15441")
+		conn, err := net.DialTimeout("tcp", defaultRktAPIServiceAddr, 2*time.Second)
 		if err != nil {
 			rktClient = nil
-			rktClientErr = fmt.Errorf("rkt: cannot connect to rkt api service: %v", err)
+			rktClientErr = fmt.Errorf("rkt: cannot tcp Dial rkt api service: %v", err)
 			return
 		}
+
+		conn.Close()
 
 		apisvcConn, err := grpc.Dial(defaultRktAPIServiceAddr, grpc.WithInsecure(), grpc.WithTimeout(5*time.Second))
 		if err != nil {
 			rktClient = nil
-			rktClientErr = fmt.Errorf("rkt: cannot connect to rkt api service: %v", err)
+			rktClientErr = fmt.Errorf("rkt: cannot grpc Dial rkt api service: %v", err)
 			return
 		}
 
