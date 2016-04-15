@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build test
-
-package container
+package testing
 
 import (
+	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 
 	"github.com/stretchr/testify/mock"
@@ -67,12 +66,12 @@ func (self *MockContainerHandler) GetStats() (*info.ContainerStats, error) {
 	return args.Get(0).(*info.ContainerStats), args.Error(1)
 }
 
-func (self *MockContainerHandler) ListContainers(listType ListType) ([]info.ContainerReference, error) {
+func (self *MockContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	args := self.Called(listType)
 	return args.Get(0).([]info.ContainerReference), args.Error(1)
 }
 
-func (self *MockContainerHandler) ListProcesses(listType ListType) ([]int, error) {
+func (self *MockContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
 	args := self.Called(listType)
 	return args.Get(0).([]int), args.Error(1)
 }
@@ -92,9 +91,9 @@ func (self *MockContainerHandler) GetContainerLabels() map[string]string {
 	return args.Get(0).(map[string]string)
 }
 
-func (self *MockContainerHandler) Type() ContainerType {
+func (self *MockContainerHandler) Type() container.ContainerType {
 	args := self.Called()
-	return args.Get(0).(ContainerType)
+	return args.Get(0).(container.ContainerType)
 }
 
 type FactoryForMockContainerHandler struct {
@@ -106,7 +105,7 @@ func (self *FactoryForMockContainerHandler) String() string {
 	return self.Name
 }
 
-func (self *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (ContainerHandler, error) {
+func (self *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
 	handler := &MockContainerHandler{}
 	if self.PrepareContainerHandlerFunc != nil {
 		self.PrepareContainerHandlerFunc(name, handler)
