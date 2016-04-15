@@ -229,7 +229,13 @@ func (self *dockerContainerHandler) needNet() bool {
 
 func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := !self.ignoreMetrics.Has(container.DiskUsageMetrics)
-	return common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem)
+	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem)
+
+	spec.Labels = self.labels
+	spec.Envs = self.envs
+	spec.Image = self.image
+
+	return spec, err
 }
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
