@@ -16,7 +16,6 @@ package rkt
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -58,14 +57,8 @@ func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (
 }
 
 func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
-	// will ignore all cgroup names that don't either correspond to the machine.slice that is the pod or the containers that belong to the pod
-	// only works for machined rkt pods at the moment
-
-	if strings.HasPrefix(name, "/machine.slice/machine-rkt\\x2d") {
-		accept, err := verifyName(name)
-		return true, accept, err
-	}
-	return false, false, fmt.Errorf("%s not handled by rkt handler", name)
+	//TODO: will only work for rkt's app container reliably at the moment
+	return verifyPod(name)
 }
 
 func (self *rktFactory) DebugInfo() map[string][]string {

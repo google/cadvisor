@@ -17,10 +17,12 @@ package rkt
 import (
 	"fmt"
 	"io/ioutil"
-	"path"
+	"path/filepath"
 	"strings"
 
+	rktapi "github.com/coreos/rkt/api/v1alpha"
 	"github.com/golang/glog"
+	"golang.org/x/net/context"
 )
 
 type parsedName struct {
@@ -28,37 +30,78 @@ type parsedName struct {
 	Container string
 }
 
-func verifyName(name string) (bool, error) {
-	_, err := parseName(name)
-	return err == nil, err
+func verifyPod(name string) (bool, bool, error) {
+	splits := strings.Split(name, "/")
+	_, err := convertCgroup(name)
+
+	return err == nil, len(splits) != 4, err
 }
 
-/* Parse cgroup name into a pod/container name struct
-   Example cgroup fs name
+func convertCgroup(name string) (*parsedName, error) {
+	glog.V(4).Infof("convertCgroup: name = %v", name)
 
-   pod - /sys/fs/cgroup/cpu/machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/
-   container under pod - /sys/fs/cgroup/cpu/machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/system.slice/alpine-sh.service
-*/
-//TODO{sjpotter}: this currently only recognizes machined started pods, which actually doesn't help with k8s which uses them as systemd services, need a solution for both
-func parseName(name string) (*parsedName, error) {
+	uuid, err := getRktUUID(name)
+	if err != nil {
+		glog.V(4).Infof("convertCgroup: getRktUUID failed: %v", err)
+		return nil, fmt.Errorf("%s not handled by rkt handler", name)
+	}
+
 	splits := strings.Split(name, "/")
 	if len(splits) == 3 || len(splits) == 5 {
 		parsed := &parsedName{}
+		parsed.Pod = uuid
 
-		if splits[1] == "machine.slice" {
-			replacer := strings.NewReplacer("machine-rkt\\x2d", "", ".scope", "", "\\x2d", "-")
-			parsed.Pod = replacer.Replace(splits[2])
-			if len(splits) == 3 {
-				return parsed, nil
-			}
-			if splits[3] == "system.slice" {
-				parsed.Container = strings.Replace(splits[4], ".service", "", -1)
-				return parsed, nil
-			}
+		if len(splits) == 3 {
+			return parsed, nil
+		} else {
+			parsed.Container = strings.Replace(splits[4], ".service", "", -1)
+			return parsed, nil
 		}
 	}
 
+	glog.V(4).Infof("convertCgroup: why did we get here: len(splits) = %v, splits = %v", len(splits), splits)
+
 	return nil, fmt.Errorf("%s not handled by rkt handler", name)
+}
+
+func getRktUUID(name string) (string, error) {
+	glog.V(4).Infof("getRktUUID: name = %v", name)
+	splits := strings.Split(name, "/")
+
+	test_path := name
+
+	if len(splits) >= 4 && splits[3] == "system.slice" {
+		//cgroup path correspond to the first 3 elements (really 2, but first is blank)
+		test_path = strings.Join(splits[:3], "/")
+	} else if len(splits) == 3 {
+		test_path = name
+	} else {
+		return "", fmt.Errorf("%v not supported by rkt handler path", name)
+	}
+
+	rktClient, err := Client()
+	if err != nil {
+		return "", fmt.Errorf("couldn't get rkt api service: %v", err)
+	}
+
+	resp, err := rktClient.ListPods(context.Background(), &rktapi.ListPodsRequest{
+		Filters: []*rktapi.PodFilter{
+			{
+				Cgroups: []string{test_path},
+			},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("%s not handled by rkt handler", name)
+	}
+
+	for _, pod := range resp.Pods {
+		if pod.State == rktapi.PodState_POD_STATE_RUNNING {
+			return pod.Id, nil
+		}
+	}
+
+	return "", fmt.Errorf("%s didn't match any running pods out of %v pods", name, len(resp.Pods))
 }
 
 // Gets a Rkt container's overlay upper dir
@@ -73,9 +116,9 @@ func getRootFs(root string, parsed *parsedName) string {
 
 	var tree string
 	if parsed.Container == "" {
-		tree = path.Join(root, "pods/run", parsed.Pod, "stage1TreeStoreID")
+		tree = filepath.Join(root, "pods/run", parsed.Pod, "stage1TreeStoreID")
 	} else {
-		tree = path.Join(root, "pods/run", parsed.Pod, "appsinfo", parsed.Container, "treeStoreID")
+		tree = filepath.Join(root, "pods/run", parsed.Pod, "appsinfo", parsed.Container, "treeStoreID")
 	}
 
 	bytes, err := ioutil.ReadFile(tree)
@@ -89,5 +132,5 @@ func getRootFs(root string, parsed *parsedName) string {
 	/* Example of where the upper dir is stored via key read above
 	   /var/lib/rkt/pods/run/bc793ec6-c48f-4480-99b5-6bec16d52210/overlay/deps-sha512-82a099e560a596662b15dec835e9adabab539cad1f41776a30195a01a8f2f22b/
 	*/
-	return path.Join(root, "pods/run", parsed.Pod, "overlay", s)
+	return filepath.Join(root, "pods/run", parsed.Pod, "overlay", s)
 }

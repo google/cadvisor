@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	rktapi "github.com/coreos/rkt/api/v1alpha"
@@ -80,7 +81,7 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 
 	apiPod := &rktapi.Pod{}
 
-	parsed, err := parseName(name)
+	parsed, err := convertCgroup(name)
 	if err != nil {
 		return nil, fmt.Errorf("this should be impossible!, new handler failing, but factory allowed, name = %s", name)
 	}
@@ -101,15 +102,15 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 	if err != nil {
 		return nil, err
 	} else {
-		var annotations []*rktapi.KeyValue
+		annotations := resp.Pod.Annotations
 		if parsed.Container == "" {
 			pid = int(resp.Pod.Pid)
 			apiPod = resp.Pod
-			annotations = resp.Pod.Annotations
 		} else {
-			var ok bool
-			if annotations, ok = findAnnotations(resp.Pod.Apps, parsed.Container); !ok {
+			if app_annotations, ok := findAnnotations(resp.Pod.Apps, parsed.Container); !ok {
 				glog.Warningf("couldn't find application in Pod matching %v", parsed.Container)
+			} else {
+				annotations = append(annotations, app_annotations...)
 			}
 		}
 		labels = createLabels(annotations)
@@ -161,7 +162,10 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 func findAnnotations(apps []*rktapi.App, container string) ([]*rktapi.KeyValue, bool) {
 	for _, app := range apps {
 		if app.Name == container {
-			return app.Annotations, true
+			annotations := app.Annotations
+			annotations = append(annotations, app.Image.Annotations...)
+
+			return annotations, true
 		}
 	}
 	return nil, false
@@ -196,7 +200,11 @@ func (handler *rktContainerHandler) Cleanup() {
 func (handler *rktContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasNetwork := handler.hasNetwork && !handler.ignoreMetrics.Has(container.NetworkUsageMetrics)
 	hasFilesystem := !handler.ignoreMetrics.Has(container.DiskUsageMetrics)
-	return common.GetSpec(handler.cgroupPaths, handler.machineInfoFactory, hasNetwork, hasFilesystem)
+	spec, err := common.GetSpec(handler.cgroupPaths, handler.machineInfoFactory, hasNetwork, hasFilesystem)
+
+	spec.Labels = handler.labels
+
+	return spec, err
 }
 
 func (handler *rktContainerHandler) getFsStats(stats *info.ContainerStats) error {
@@ -279,25 +287,15 @@ func (handler *rktContainerHandler) ListContainers(listType container.ListType) 
 	// Create the container references. for the Pod's subcontainers
 	ret := make([]info.ContainerReference, 0, len(handler.apiPod.Apps))
 	for cont := range containers {
-		aliases := make([]string, 1)
-		parsed, err := parseName(cont)
-		if err != nil {
-			return nil, fmt.Errorf("this should be impossible!, unable to parse rkt subcontainer name = %s", cont)
-		}
-		aliases = append(aliases, parsed.Pod+":"+parsed.Container)
-
-		labels := make(map[string]string)
-		if annotations, ok := findAnnotations(handler.apiPod.Apps, parsed.Container); !ok {
-			glog.Warningf("couldn't find application in Pod matching %v", parsed.Container)
-		} else {
-			labels = createLabels(annotations)
+		splits := strings.Split(cont, "/")
+		if len(splits) == 4 { //system.slice is last directory
+			glog.V(4).Infof("ListContainers: skipping %v", cont)
+			continue
 		}
 
 		ret = append(ret, info.ContainerReference{
 			Name:      cont,
-			Aliases:   aliases,
 			Namespace: RktNamespace,
-			Labels:    labels,
 		})
 	}
 
