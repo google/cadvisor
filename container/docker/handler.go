@@ -333,7 +333,7 @@ func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
 }
 
 func (self *dockerContainerHandler) Exists() bool {
-	return containerlibcontainer.Exists(*dockerRootDir, *dockerRunDir, self.id)
+	return common.CgroupExists(self.cgroupPaths)
 }
 
 func DockerInfo() (docker.DockerInfo, error) {

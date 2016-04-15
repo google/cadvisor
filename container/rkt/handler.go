@@ -27,7 +27,6 @@ import (
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils"
 	"golang.org/x/net/context"
 
 	"github.com/golang/glog"
@@ -324,11 +323,5 @@ func (handler *rktContainerHandler) StopWatchingSubcontainers() error {
 }
 
 func (handler *rktContainerHandler) Exists() bool {
-	// If any cgroup exists, the container is still alive.
-	for _, cgroupPath := range handler.cgroupPaths {
-		if utils.FileExists(cgroupPath) {
-			return true
-		}
-	}
-	return false
+	return common.CgroupExists(handler.cgroupPaths)
 }
