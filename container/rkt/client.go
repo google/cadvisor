@@ -28,7 +28,7 @@ import (
 
 const (
 	defaultRktAPIServiceAddr = "localhost:15441"
-	timeout = 2*time.Second
+	timeout                  = 2 * time.Second
 )
 
 var (
