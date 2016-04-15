@@ -26,7 +26,7 @@ import (
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils"
+	"github.com/google/cadvisor/utils/machine"
 
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
@@ -63,30 +63,6 @@ type rawContainerHandler struct {
 	ignoreMetrics container.MetricSet
 
 	pid int
-}
-
-func (self *rawContainerHandler) GetCgroupPaths() map[string]string {
-	return self.cgroupPaths
-}
-
-func (self *rawContainerHandler) GetMachineInfoFactory() info.MachineInfoFactory {
-	return self.machineInfoFactory
-}
-
-func (self *rawContainerHandler) GetName() string {
-	return self.name
-}
-
-func (self *rawContainerHandler) GetExternalMounts() []common.Mount {
-	return self.externalMounts
-}
-
-func (self *rawContainerHandler) HasNetwork() bool {
-	return false
-}
-
-func (self *rawContainerHandler) HasFilesystem() bool {
-	return false
 }
 
 func isRootCgroup(name string) bool {
@@ -164,7 +140,41 @@ func (self *rawContainerHandler) Start() {}
 func (self *rawContainerHandler) Cleanup() {}
 
 func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	return common.GetSpec(self)
+	const hasNetwork = false
+	hasFilesystem := isRootCgroup(self.name) || len(self.externalMounts) > 0
+	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, hasNetwork, hasFilesystem)
+	if err != nil {
+		return spec, err
+	}
+
+	if isRootCgroup(self.name) {
+		// Check physical network devices for root container.
+		nd, err := self.GetRootNetworkDevices()
+		if err != nil {
+			return spec, err
+		}
+		spec.HasNetwork = spec.HasNetwork || len(nd) != 0
+
+		// Get memory and swap limits of the running machine
+		memLimit, err := machine.GetMachineMemoryCapacity()
+		if err != nil {
+			glog.Warningf("failed to obtain memory limit for machine container")
+			spec.HasMemory = false
+		} else {
+			spec.Memory.Limit = uint64(memLimit)
+			// Spec is marked to have memory only if the memory limit is set
+			spec.HasMemory = true
+		}
+
+		swapLimit, err := machine.GetMachineSwapCapacity()
+		if err != nil {
+			glog.Warningf("failed to obtain swap limit for machine container")
+		} else {
+			spec.Memory.SwapLimit = uint64(swapLimit)
+		}
+	}
+
+	return spec, nil
 }
 
 func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
@@ -433,11 +443,5 @@ func (self *rawContainerHandler) StopWatchingSubcontainers() error {
 }
 
 func (self *rawContainerHandler) Exists() bool {
-	// If any cgroup exists, the container is still alive.
-	for _, cgroupPath := range self.cgroupPaths {
-		if utils.FileExists(cgroupPath) {
-			return true
-		}
-	}
-	return false
+	return common.CgroupExists(self.cgroupPaths)
 }

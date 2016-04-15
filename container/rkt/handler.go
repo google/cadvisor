@@ -27,7 +27,6 @@ import (
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils"
 	"golang.org/x/net/context"
 
 	"github.com/golang/glog"
@@ -53,8 +52,7 @@ type rktContainerHandler struct {
 	// Whether this container has network isolation enabled.
 	hasNetwork bool
 
-	fsInfo         fs.FsInfo
-	externalMounts []common.Mount
+	fsInfo fs.FsInfo
 
 	rootFs string
 
@@ -74,33 +72,6 @@ type rktContainerHandler struct {
 	ignoreMetrics container.MetricSet
 
 	apiPod *rktapi.Pod
-}
-
-func (handler *rktContainerHandler) GetCgroupPaths() map[string]string {
-	return handler.cgroupPaths
-}
-
-func (handler *rktContainerHandler) GetMachineInfoFactory() info.MachineInfoFactory {
-	return handler.machineInfoFactory
-}
-
-func (handler *rktContainerHandler) GetName() string {
-	return handler.name
-}
-
-func (handler *rktContainerHandler) GetExternalMounts() []common.Mount {
-	return handler.externalMounts
-}
-
-func (handler *rktContainerHandler) HasNetwork() bool {
-	return handler.hasNetwork && !handler.ignoreMetrics.Has(container.NetworkUsageMetrics)
-}
-
-func (handler *rktContainerHandler) HasFilesystem() bool {
-	if !handler.ignoreMetrics.Has(container.DiskUsageMetrics) {
-		return true
-	}
-	return false
 }
 
 func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPath string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
@@ -214,12 +185,6 @@ func (handler *rktContainerHandler) ContainerReference() (info.ContainerReferenc
 	}, nil
 }
 
-//Only the Raw handler will return something of value here
-func (handler *rktContainerHandler) GetRootNetworkDevices() ([]info.NetInfo, error) {
-	nd := []info.NetInfo{}
-	return nd, nil
-}
-
 func (handler *rktContainerHandler) Start() {
 	handler.fsHandler.Start()
 }
@@ -229,7 +194,9 @@ func (handler *rktContainerHandler) Cleanup() {
 }
 
 func (handler *rktContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	return common.GetSpec(handler)
+	hasNetwork := handler.hasNetwork && !handler.ignoreMetrics.Has(container.NetworkUsageMetrics)
+	hasFilesystem := !handler.ignoreMetrics.Has(container.DiskUsageMetrics)
+	return common.GetSpec(handler.cgroupPaths, handler.machineInfoFactory, hasNetwork, hasFilesystem)
 }
 
 func (handler *rktContainerHandler) getFsStats(stats *info.ContainerStats) error {
@@ -356,11 +323,5 @@ func (handler *rktContainerHandler) StopWatchingSubcontainers() error {
 }
 
 func (handler *rktContainerHandler) Exists() bool {
-	// If any cgroup exists, the container is still alive.
-	for _, cgroupPath := range handler.cgroupPaths {
-		if utils.FileExists(cgroupPath) {
-			return true
-		}
-	}
-	return false
+	return common.CgroupExists(handler.cgroupPaths)
 }
