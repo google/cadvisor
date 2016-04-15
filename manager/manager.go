@@ -112,10 +112,10 @@ type Manager interface {
 	CloseEventChannel(watch_id int)
 
 	// Get status information about docker.
-	DockerInfo() (DockerStatus, error)
+	DockerInfo() (docker.DockerStatus, error)
 
 	// Get details about interesting docker images.
-	DockerImages() ([]DockerImage, error)
+	DockerImages() ([]docker.DockerImage, error)
 
 	// Returns debugging information. Map of lines per category.
 	DebugInfo() map[string][]string
@@ -134,7 +134,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	}
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
-	dockerInfo, err := dockerInfo()
+	dockerStatus, err := docker.Status()
 	if err != nil {
 		glog.Warningf("Unable to connect to Docker: %v", err)
 	}
@@ -146,8 +146,8 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	context := fs.Context{
 		Docker: fs.DockerContext{
 			Root:         docker.RootDir(),
-			Driver:       dockerInfo.Driver,
-			DriverStatus: dockerInfo.DriverStatus,
+			Driver:       dockerStatus.Driver,
+			DriverStatus: dockerStatus.DriverStatus,
 		},
 		RktPath: rktPath,
 	}
@@ -240,9 +240,6 @@ func (self *manager) Start() error {
 	if err != nil {
 		glog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
-
-	self.DockerInfo()
-	self.DockerImages()
 
 	if *enableLoadReader {
 		// Create cpu load reader.
@@ -1127,79 +1124,12 @@ func parseEventsStoragePolicy() events.StoragePolicy {
 	return policy
 }
 
-type DockerStatus struct {
-	Version       string            `json:"version"`
-	KernelVersion string            `json:"kernel_version"`
-	OS            string            `json:"os"`
-	Hostname      string            `json:"hostname"`
-	RootDir       string            `json:"root_dir"`
-	Driver        string            `json:"driver"`
-	DriverStatus  map[string]string `json:"driver_status"`
-	ExecDriver    string            `json:"exec_driver"`
-	NumImages     int               `json:"num_images"`
-	NumContainers int               `json:"num_containers"`
+func (m *manager) DockerImages() ([]docker.DockerImage, error) {
+	return docker.Images()
 }
 
-type DockerImage struct {
-	ID          string   `json:"id"`
-	RepoTags    []string `json:"repo_tags"` // repository name and tags.
-	Created     int64    `json:"created"`   // unix time since creation.
-	VirtualSize int64    `json:"virtual_size"`
-	Size        int64    `json:"size"`
-}
-
-func (m *manager) DockerImages() ([]DockerImage, error) {
-	images, err := docker.DockerImages()
-	if err != nil {
-		return nil, err
-	}
-	out := []DockerImage{}
-	const unknownTag = "<none>:<none>"
-	for _, image := range images {
-		if len(image.RepoTags) == 1 && image.RepoTags[0] == unknownTag {
-			// images with repo or tags are uninteresting.
-			continue
-		}
-		di := DockerImage{
-			ID:          image.ID,
-			RepoTags:    image.RepoTags,
-			Created:     image.Created,
-			VirtualSize: image.VirtualSize,
-			Size:        image.Size,
-		}
-		out = append(out, di)
-	}
-	return out, nil
-}
-
-func (m *manager) DockerInfo() (DockerStatus, error) {
-	return dockerInfo()
-}
-
-func dockerInfo() (DockerStatus, error) {
-	dockerInfo, err := docker.DockerInfo()
-	if err != nil {
-		return DockerStatus{}, err
-	}
-	versionInfo, err := getVersionInfo()
-	if err != nil {
-		return DockerStatus{}, err
-	}
-	out := DockerStatus{}
-	out.Version = versionInfo.DockerVersion
-	out.KernelVersion = dockerInfo.KernelVersion
-	out.OS = dockerInfo.OperatingSystem
-	out.Hostname = dockerInfo.Name
-	out.RootDir = dockerInfo.DockerRootDir
-	out.Driver = dockerInfo.Driver
-	out.ExecDriver = dockerInfo.ExecutionDriver
-	out.NumImages = dockerInfo.Images
-	out.NumContainers = dockerInfo.Containers
-	out.DriverStatus = make(map[string]string, len(dockerInfo.DriverStatus))
-	for _, v := range dockerInfo.DriverStatus {
-		out.DriverStatus[v[0]] = v[1]
-	}
-	return out, nil
+func (m *manager) DockerInfo() (docker.DockerStatus, error) {
+	return docker.Status()
 }
 
 func (m *manager) DebugInfo() map[string][]string {
@@ -1241,7 +1171,7 @@ func getVersionInfo() (*info.VersionInfo, error) {
 
 	kernel_version := machine.KernelVersion()
 	container_os := machine.ContainerOsVersion()
-	docker_version := machine.DockerVersion()
+	docker_version := docker.VersionString()
 
 	return &info.VersionInfo{
 		KernelVersion:      kernel_version,

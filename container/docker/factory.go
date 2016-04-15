@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"path"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/google/cadvisor/container"
@@ -163,24 +162,6 @@ var (
 	version_regexp_string = `(\d+)\.(\d+)\.(\d+)`
 	version_re            = regexp.MustCompile(version_regexp_string)
 )
-
-// TODO: switch to a semantic versioning library.
-func parseDockerVersion(full_version_string string) ([]int, error) {
-	matches := version_re.FindAllStringSubmatch(full_version_string, -1)
-	if len(matches) != 1 {
-		return nil, fmt.Errorf("version string \"%v\" doesn't match expected regular expression: \"%v\"", full_version_string, version_regexp_string)
-	}
-	version_string_array := matches[0][1:]
-	version_array := make([]int, 3)
-	for index, version_string := range version_string_array {
-		version, err := strconv.Atoi(version_string)
-		if err != nil {
-			return nil, fmt.Errorf("error while parsing \"%v\" in \"%v\"", version_string, full_version_string)
-		}
-		version_array[index] = version
-	}
-	return version_array, nil
-}
 
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet) error {

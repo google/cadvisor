@@ -22,7 +22,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/cloudinfo"
@@ -30,7 +29,6 @@ import (
 	"github.com/google/cadvisor/utils/sysinfo"
 
 	"github.com/golang/glog"
-	"golang.org/x/net/context"
 )
 
 var machineIdFilePath = flag.String("machine_id_file", "/etc/machine-id,/var/lib/dbus/machine-id", "Comma-separated list of files to check for machine-id. Use the first one that exists.")
@@ -134,18 +132,6 @@ func ContainerOsVersion() string {
 		}
 	}
 	return container_os
-}
-
-func DockerVersion() string {
-	docker_version := "Unknown"
-	client, err := docker.Client()
-	if err == nil {
-		version, err := client.ServerVersion(context.Background())
-		if err == nil {
-			docker_version = version.Version
-		}
-	}
-	return docker_version
 }
 
 func KernelVersion() string {

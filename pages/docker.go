@@ -31,7 +31,7 @@ import (
 
 const DockerPage = "/docker/"
 
-func toStatusKV(status manager.DockerStatus) ([]keyVal, []keyVal) {
+func toStatusKV(status docker.DockerStatus) ([]keyVal, []keyVal) {
 	ds := []keyVal{
 		{Key: "Driver", Value: status.Driver},
 	}
