@@ -31,11 +31,11 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	zfs "github.com/mistifyio/go-zfs"
 )
 
 type RealFsInfo struct {
 	partitionCache PartitionCache
+	fsStatsCache   FsStatsCache
 }
 
 type Context struct {
@@ -53,6 +53,7 @@ type DockerContext struct {
 func NewFsInfo(context Context) (FsInfo, error) {
 	fsInfo := &RealFsInfo{
 		partitionCache: NewPartitionCache(context),
+		fsStatsCache:   NewFsStatsCache(),
 	}
 
 	partitions := make([]partition, 0)
@@ -64,6 +65,13 @@ func NewFsInfo(context Context) (FsInfo, error) {
 	glog.Infof("Filesystem partitions: %+v", partitions)
 
 	return fsInfo, nil
+}
+
+func (self *RealFsInfo) RefreshCache() {
+	err := self.partitionCache.Refresh()
+	if err != nil {
+		glog.Warningf("Failed to refresh partition cache: %s")
+	}
 }
 
 func (self *RealFsInfo) GetDeviceForLabel(label string) (string, error) {
@@ -89,7 +97,7 @@ func (self *RealFsInfo) GetMountpointForDevice(dev string) (string, error) {
 	return p.mountpoint, nil
 }
 
-func (self *RealFsInfo) getFilteredFsInfo(filter func(device string, partition partition) bool, withIoStats bool) ([]Fs, error) {
+func (self *RealFsInfo) getFilteredFsInfo(filter func(_ string, _ partition) bool, withIoStats bool) ([]Fs, error) {
 	filesystemsOut := make([]Fs, 0)
 
 	err := self.partitionCache.ApplyOverPartitions(func(device string, partition partition) error {
@@ -98,24 +106,14 @@ func (self *RealFsInfo) getFilteredFsInfo(filter func(device string, partition p
 		}
 
 		var (
-			err error
 			fs  Fs
+			err error
 		)
 
-		switch partition.fsType {
-		case DeviceMapper.String():
-			fs.Capacity, fs.Free, fs.Available, err = getDMStats(device, partition.blockSize)
-			fs.Type = DeviceMapper
-		case ZFS.String():
-			fs.Capacity, fs.Free, fs.Available, err = getZfstats(device)
-			fs.Type = ZFS
-		default:
-			fs.Capacity, fs.Free, fs.Available, fs.Inodes, fs.InodesFree, err = getVfsStats(partition.mountpoint)
-			fs.Type = VFS
-		}
+		fs.Type, fs.Capacity, fs.Free, fs.Available, fs.Inodes, fs.InodesFree, err = self.fsStatsCache.FsStats(device, partition)
 
 		if err != nil {
-			// Only log, don't throw an error
+			// Only log, don't return an error, move on to the next FS
 			glog.Errorf("Stat fs for %q failed. Error: %v", device, err)
 			return nil
 		}
@@ -134,6 +132,7 @@ func (self *RealFsInfo) getFilteredFsInfo(filter func(device string, partition p
 		return nil, err
 	}
 
+	// TODO: Use a cache here as well?
 	if withIoStats {
 		diskStatsMap, err := getDiskStatsMap("/proc/diskstats")
 		if err != nil {
@@ -288,54 +287,4 @@ func (self *RealFsInfo) GetDirUsage(dir string, timeout time.Duration) (uint64, 
 		return 0, fmt.Errorf("cannot parse 'du' output %s - %s", stdout, err)
 	}
 	return usageInKb * 1024, nil
-}
-
-func (self *RealFsInfo) RefreshCache() {
-	err := self.partitionCache.Refresh()
-	if err != nil {
-		glog.Warningf("Failed to refresh partition cache: %s")
-	}
-}
-
-func getVfsStats(path string) (total uint64, free uint64, avail uint64, inodes uint64, inodesFree uint64, err error) {
-	var s syscall.Statfs_t
-	if err = syscall.Statfs(path, &s); err != nil {
-		return 0, 0, 0, 0, 0, err
-	}
-	total = uint64(s.Frsize) * s.Blocks
-	free = uint64(s.Frsize) * s.Bfree
-	avail = uint64(s.Frsize) * s.Bavail
-	inodes = uint64(s.Files)
-	inodesFree = uint64(s.Ffree)
-	return total, free, avail, inodes, inodesFree, nil
-}
-
-func getDMStats(poolName string, dataBlkSize uint) (uint64, uint64, uint64, error) {
-	out, err := exec.Command("dmsetup", "status", poolName).Output()
-	if err != nil {
-		return 0, 0, 0, err
-	}
-
-	used, total, err := parseDMStatus(string(out))
-	if err != nil {
-		return 0, 0, 0, err
-	}
-
-	used *= 512 * uint64(dataBlkSize)
-	total *= 512 * uint64(dataBlkSize)
-	free := total - used
-
-	return total, free, free, nil
-}
-
-// getZfstats returns ZFS mount stats using zfsutils
-func getZfstats(poolName string) (uint64, uint64, uint64, error) {
-	dataset, err := zfs.GetDataset(poolName)
-	if err != nil {
-		return 0, 0, 0, err
-	}
-
-	total := dataset.Used + dataset.Avail + dataset.Usedbydataset
-
-	return total, dataset.Avail, dataset.Avail, nil
 }

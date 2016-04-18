@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
-	"math/rand"
 	"os/exec"
 	"path"
 	"regexp"
@@ -35,6 +34,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/summary"
+	"github.com/google/cadvisor/utils"
 	"github.com/google/cadvisor/utils/cpuload"
 
 	units "github.com/docker/go-units"
@@ -77,17 +77,6 @@ type containerData struct {
 
 	// Runs custom metric collectors.
 	collectorManager collector.CollectorManager
-}
-
-// jitter returns a time.Duration between duration and duration + maxFactor * duration,
-// to allow clients to avoid converging on periodic behavior.  If maxFactor is 0.0, a
-// suggested default value will be chosen.
-func jitter(duration time.Duration, maxFactor float64) time.Duration {
-	if maxFactor <= 0.0 {
-		maxFactor = 1.0
-	}
-	wait := duration + time.Duration(rand.Float64()*maxFactor*float64(duration))
-	return wait
 }
 
 func (c *containerData) Start() error {
@@ -368,7 +357,7 @@ func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Tim
 		}
 	}
 
-	return lastHousekeeping.Add(jitter(self.housekeepingInterval, 1.0))
+	return lastHousekeeping.Add(utils.Jitter(self.housekeepingInterval, 1.0))
 }
 
 // TODO(vmarmol): Implement stats collecting as a custom collector.

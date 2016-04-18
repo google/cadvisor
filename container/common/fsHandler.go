@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/fs"
+	"github.com/google/cadvisor/utils"
 
 	"github.com/golang/glog"
 )
@@ -260,9 +261,8 @@ func (fh *realFsHandler) trackUsage() {
 	for {
 		select {
 		case <-fh.stopChan:
-			// TODO: Does this work without sending anything in?
 			return
-		case <-time.After(fh.period):
+		case <-time.After(utils.Jitter(fh.period, 0.25)):
 			start := time.Now()
 			if err := fh.update(); err != nil {
 				glog.Errorf("failed to collect filesystem stats - %v", err)

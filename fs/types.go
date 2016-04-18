@@ -105,3 +105,8 @@ type PartitionCache interface {
 	DeviceNameForLabel(label string) (string, error)
 	ApplyOverLabels(f func(label string, device string) error) error
 }
+
+type FsStatsCache interface {
+	Clear()
+	FsStats(dev string, part partition) (FsType, uint64, uint64, uint64, uint64, uint64, error)
+}
