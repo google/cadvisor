@@ -29,6 +29,12 @@ type APIImages struct {
 	Labels      map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 }
 
+// RootFS represents the underlying layers used by an image
+type RootFS struct {
+	Type   string   `json:"Type,omitempty" yaml:"Type,omitempty"`
+	Layers []string `json:"Layers,omitempty" yaml:"Layers,omitempty"`
+}
+
 // Image is the type representing a docker image and its various properties
 type Image struct {
 	ID              string    `json:"Id" yaml:"Id"`
@@ -45,6 +51,7 @@ type Image struct {
 	Size            int64     `json:"Size,omitempty" yaml:"Size,omitempty"`
 	VirtualSize     int64     `json:"VirtualSize,omitempty" yaml:"VirtualSize,omitempty"`
 	RepoDigests     []string  `json:"RepoDigests,omitempty" yaml:"RepoDigests,omitempty"`
+	RootFS          *RootFS   `json:"RootFS,omitempty" yaml:"RootFS,omitempty"`
 }
 
 // ImagePre012 serves the same purpose as the Image type except that it is for
@@ -585,10 +592,10 @@ type APIImageSearch struct {
 // See https://goo.gl/AYjyrF for more details.
 func (c *Client) SearchImages(term string) ([]APIImageSearch, error) {
 	resp, err := c.do("GET", "/images/search?term="+term, doOptions{})
-	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	var searchResult []APIImageSearch
 	if err := json.NewDecoder(resp.Body).Decode(&searchResult); err != nil {
 		return nil, err

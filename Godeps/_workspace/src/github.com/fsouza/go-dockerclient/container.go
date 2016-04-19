@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/fsouza/go-dockerclient/external/github.com/docker/go-units"
 )
 
 // ErrContainerAlreadyExists is the error returned by CreateContainer when the
@@ -40,6 +42,17 @@ type APIPort struct {
 	IP          string `json:"IP,omitempty" yaml:"IP,omitempty"`
 }
 
+// APIMount represents a mount point for a container.
+type APIMount struct {
+	Name        string `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Source      string `json:"Source,omitempty" yaml:"Source,omitempty"`
+	Destination string `json:"Destination,omitempty" yaml:"Destination,omitempty"`
+	Driver      string `json:"Driver,omitempty" yaml:"Driver,omitempty"`
+	Mode        string `json:"Mode,omitempty" yaml:"Mode,omitempty"`
+	RW          bool   `json:"RW,omitempty" yaml:"RW,omitempty"`
+	Propogation string `json:"Propogation,omitempty" yaml:"Propogation,omitempty"`
+}
+
 // APIContainers represents each container in the list returned by
 // ListContainers.
 type APIContainers struct {
@@ -47,6 +60,7 @@ type APIContainers struct {
 	Image      string            `json:"Image,omitempty" yaml:"Image,omitempty"`
 	Command    string            `json:"Command,omitempty" yaml:"Command,omitempty"`
 	Created    int64             `json:"Created,omitempty" yaml:"Created,omitempty"`
+	State      string            `json:"State,omitempty" yaml:"State,omitempty"`
 	Status     string            `json:"Status,omitempty" yaml:"Status,omitempty"`
 	Ports      []APIPort         `json:"Ports,omitempty" yaml:"Ports,omitempty"`
 	SizeRw     int64             `json:"SizeRw,omitempty" yaml:"SizeRw,omitempty"`
@@ -54,6 +68,7 @@ type APIContainers struct {
 	Names      []string          `json:"Names,omitempty" yaml:"Names,omitempty"`
 	Labels     map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 	Networks   NetworkList       `json:"NetworkSettings,omitempty" yaml:"NetworkSettings,omitempty"`
+	Mounts     []APIMount        `json:"Mounts,omitempty" yaml:"Mounts,omitempty"`
 }
 
 // NetworkList encapsulates a map of networks, as returned by the Docker API in
@@ -99,26 +114,73 @@ func (p Port) Proto() string {
 
 // State represents the state of a container.
 type State struct {
-	Running    bool      `json:"Running,omitempty" yaml:"Running,omitempty"`
-	Paused     bool      `json:"Paused,omitempty" yaml:"Paused,omitempty"`
-	Restarting bool      `json:"Restarting,omitempty" yaml:"Restarting,omitempty"`
-	OOMKilled  bool      `json:"OOMKilled,omitempty" yaml:"OOMKilled,omitempty"`
-	Pid        int       `json:"Pid,omitempty" yaml:"Pid,omitempty"`
-	ExitCode   int       `json:"ExitCode,omitempty" yaml:"ExitCode,omitempty"`
-	Error      string    `json:"Error,omitempty" yaml:"Error,omitempty"`
-	StartedAt  time.Time `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
-	FinishedAt time.Time `json:"FinishedAt,omitempty" yaml:"FinishedAt,omitempty"`
+	Status            string    `json:"Status,omitempty" yaml:"Status,omitempty"`
+	Running           bool      `json:"Running,omitempty" yaml:"Running,omitempty"`
+	Paused            bool      `json:"Paused,omitempty" yaml:"Paused,omitempty"`
+	Restarting        bool      `json:"Restarting,omitempty" yaml:"Restarting,omitempty"`
+	OOMKilled         bool      `json:"OOMKilled,omitempty" yaml:"OOMKilled,omitempty"`
+	RemovalInProgress bool      `json:"RemovalInProgress,omitempty" yaml:"RemovalInProgress,omitempty"`
+	Dead              bool      `json:"Dead,omitempty" yaml:"Dead,omitempty"`
+	Pid               int       `json:"Pid,omitempty" yaml:"Pid,omitempty"`
+	ExitCode          int       `json:"ExitCode,omitempty" yaml:"ExitCode,omitempty"`
+	Error             string    `json:"Error,omitempty" yaml:"Error,omitempty"`
+	StartedAt         time.Time `json:"StartedAt,omitempty" yaml:"StartedAt,omitempty"`
+	FinishedAt        time.Time `json:"FinishedAt,omitempty" yaml:"FinishedAt,omitempty"`
 }
 
-// String returns the string representation of a state.
+// String returns a human-readable description of the state
 func (s *State) String() string {
+	if s.Running {
+		if s.Paused {
+			return fmt.Sprintf("Up %s (Paused)", units.HumanDuration(time.Now().UTC().Sub(s.StartedAt)))
+		}
+		if s.Restarting {
+			return fmt.Sprintf("Restarting (%d) %s ago", s.ExitCode, units.HumanDuration(time.Now().UTC().Sub(s.FinishedAt)))
+		}
+
+		return fmt.Sprintf("Up %s", units.HumanDuration(time.Now().UTC().Sub(s.StartedAt)))
+	}
+
+	if s.RemovalInProgress {
+		return "Removal In Progress"
+	}
+
+	if s.Dead {
+		return "Dead"
+	}
+
+	if s.StartedAt.IsZero() {
+		return "Created"
+	}
+
+	if s.FinishedAt.IsZero() {
+		return ""
+	}
+
+	return fmt.Sprintf("Exited (%d) %s ago", s.ExitCode, units.HumanDuration(time.Now().UTC().Sub(s.FinishedAt)))
+}
+
+// StateString returns a single string to describe state
+func (s *State) StateString() string {
 	if s.Running {
 		if s.Paused {
 			return "paused"
 		}
-		return fmt.Sprintf("Up %s", time.Now().UTC().Sub(s.StartedAt))
+		if s.Restarting {
+			return "restarting"
+		}
+		return "running"
 	}
-	return fmt.Sprintf("Exit %d", s.ExitCode)
+
+	if s.Dead {
+		return "dead"
+	}
+
+	if s.StartedAt.IsZero() {
+		return "created"
+	}
+
+	return "exited"
 }
 
 // PortBinding represents the host/container port mapping as returned in the
@@ -213,6 +275,7 @@ type Config struct {
 	MemorySwap        int64               `json:"MemorySwap,omitempty" yaml:"MemorySwap,omitempty"`
 	MemoryReservation int64               `json:"MemoryReservation,omitempty" yaml:"MemoryReservation,omitempty"`
 	KernelMemory      int64               `json:"KernelMemory,omitempty" yaml:"KernelMemory,omitempty"`
+	PidsLimit         int64               `json:"PidsLimit,omitempty" yaml:"PidsLimit,omitempty"`
 	CPUShares         int64               `json:"CpuShares,omitempty" yaml:"CpuShares,omitempty"`
 	CPUSet            string              `json:"Cpuset,omitempty" yaml:"Cpuset,omitempty"`
 	AttachStdin       bool                `json:"AttachStdin,omitempty" yaml:"AttachStdin,omitempty"`
@@ -279,6 +342,12 @@ type SwarmNode struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 }
 
+// GraphDriver contains information about the GraphDriver used by the container
+type GraphDriver struct {
+	Name string            `json:"Name,omitempty" yaml:"Name,omitempty"`
+	Data map[string]string `json:"Data,omitempty" yaml:"Data,omitempty"`
+}
+
 // Container is the type encompasing everything about a container - its config,
 // hostconfig, etc.
 type Container struct {
@@ -306,10 +375,11 @@ type Container struct {
 	Driver         string  `json:"Driver,omitempty" yaml:"Driver,omitempty"`
 	Mounts         []Mount `json:"Mounts,omitempty" yaml:"Mounts,omitempty"`
 
-	Volumes    map[string]string `json:"Volumes,omitempty" yaml:"Volumes,omitempty"`
-	VolumesRW  map[string]bool   `json:"VolumesRW,omitempty" yaml:"VolumesRW,omitempty"`
-	HostConfig *HostConfig       `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
-	ExecIDs    []string          `json:"ExecIDs,omitempty" yaml:"ExecIDs,omitempty"`
+	Volumes     map[string]string `json:"Volumes,omitempty" yaml:"Volumes,omitempty"`
+	VolumesRW   map[string]bool   `json:"VolumesRW,omitempty" yaml:"VolumesRW,omitempty"`
+	HostConfig  *HostConfig       `json:"HostConfig,omitempty" yaml:"HostConfig,omitempty"`
+	ExecIDs     []string          `json:"ExecIDs,omitempty" yaml:"ExecIDs,omitempty"`
+	GraphDriver *GraphDriver      `json:"GraphDriver,omitempty" yaml:"GraphDriver,omitempty"`
 
 	RestartCount int `json:"RestartCount,omitempty" yaml:"RestartCount,omitempty"`
 
@@ -320,16 +390,17 @@ type Container struct {
 //
 // See https://goo.gl/Y6fXUy for more details.
 type UpdateContainerOptions struct {
-	BlkioWeight       int    `json:"BlkioWeight"`
-	CPUShares         int    `json:"CpuShares"`
-	CPUPeriod         int    `json:"CpuPeriod"`
-	CPUQuota          int    `json:"CpuQuota"`
-	CpusetCpus        string `json:"CpusetCpus"`
-	CpusetMems        string `json:"CpusetMems"`
-	Memory            int    `json:"Memory"`
-	MemorySwap        int    `json:"MemorySwap"`
-	MemoryReservation int    `json:"MemoryReservation"`
-	KernelMemory      int    `json:"KernelMemory"`
+	BlkioWeight       int           `json:"BlkioWeight"`
+	CPUShares         int           `json:"CpuShares"`
+	CPUPeriod         int           `json:"CpuPeriod"`
+	CPUQuota          int           `json:"CpuQuota"`
+	CpusetCpus        string        `json:"CpusetCpus"`
+	CpusetMems        string        `json:"CpusetMems"`
+	Memory            int           `json:"Memory"`
+	MemorySwap        int           `json:"MemorySwap"`
+	MemoryReservation int           `json:"MemoryReservation"`
+	KernelMemory      int           `json:"KernelMemory"`
+	RestartPolicy     RestartPolicy `json:"RestartPolicy,omitempty"`
 }
 
 // UpdateContainer updates the container at ID with the options
@@ -541,6 +612,7 @@ type HostConfig struct {
 	DNSSearch            []string               `json:"DnsSearch,omitempty" yaml:"DnsSearch,omitempty"`
 	ExtraHosts           []string               `json:"ExtraHosts,omitempty" yaml:"ExtraHosts,omitempty"`
 	VolumesFrom          []string               `json:"VolumesFrom,omitempty" yaml:"VolumesFrom,omitempty"`
+	UsernsMode           string                 `json:"UsernsMode,omitempty" yaml:"UsernsMode,omitempty"`
 	NetworkMode          string                 `json:"NetworkMode,omitempty" yaml:"NetworkMode,omitempty"`
 	IpcMode              string                 `json:"IpcMode,omitempty" yaml:"IpcMode,omitempty"`
 	PidMode              string                 `json:"PidMode,omitempty" yaml:"PidMode,omitempty"`
@@ -697,7 +769,10 @@ func (c *Client) TopContainer(id string, psArgs string) (TopResult, error) {
 //
 // See https://goo.gl/GNmLHb for more details.
 type Stats struct {
-	Read        time.Time               `json:"read,omitempty" yaml:"read,omitempty"`
+	Read      time.Time `json:"read,omitempty" yaml:"read,omitempty"`
+	PidsStats struct {
+		Current uint64 `json:"current,omitempty" yaml:"current,omitempty"`
+	} `json:"pids_stats,omitempty" yaml:"pids_stats,omitempty"`
 	Network     NetworkStats            `json:"network,omitempty" yaml:"network,omitempty"`
 	Networks    map[string]NetworkStats `json:"networks,omitempty" yaml:"networks,omitempty"`
 	MemoryStats struct {
