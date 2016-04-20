@@ -49,8 +49,8 @@ const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 
 // GetClockSpeed returns the CPU clock speed, given a []byte formatted as the /proc/cpuinfo file.
 func GetClockSpeed(procInfo []byte) (uint64, error) {
-	// s390/s390x and aarch64 changes
-	if true == isSystemZ() || true == isAArch64() {
+	// s390/s390x, aarch64 and arm32 changes
+	if isSystemZ() || isAArch64() || isArm32() {
 		return 0, nil
 	}
 
@@ -280,13 +280,20 @@ func getMachineArch() (string, error) {
 	return arch, nil
 }
 
+// arm32 chanes
+func isArm32() bool {
+	arch, err := getMachineArch()
+	if err == nil {
+		return strings.Contains(arch, "arm")
+	}
+	return false
+}
+
 // aarch64 changes
 func isAArch64() bool {
 	arch, err := getMachineArch()
 	if err == nil {
-		if true == strings.Contains(arch, "aarch64") {
-			return true
-		}
+		return strings.Contains(arch, "aarch64")
 	}
 	return false
 }
@@ -295,9 +302,7 @@ func isAArch64() bool {
 func isSystemZ() bool {
 	arch, err := getMachineArch()
 	if err == nil {
-		if true == strings.Contains(arch, "390") {
-			return true
-		}
+		return strings.Contains(arch, "390")
 	}
 	return false
 }
