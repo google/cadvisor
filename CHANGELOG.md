@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.23.0 (2016-04-21)
+- Docker v1.11 support
+- Preliminary rkt support
+- Bug: Fix file descriptor leak
+
 ### 0.22.0 (2016-02-25)
 - Disk usage calculation bug fixes
 - Systemd integration bug fixes
