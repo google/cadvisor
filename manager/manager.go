@@ -31,6 +31,7 @@ import (
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/container/rkt"
+	"github.com/google/cadvisor/container/systemd"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -226,6 +227,11 @@ func (self *manager) Start() error {
 	err = rkt.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
 		glog.Errorf("Registration of the rkt container factory failed: %v", err)
+	}
+
+	err = systemd.Register(self, self.fsInfo, self.ignoreMetrics)
+	if err != nil {
+		glog.Errorf("Registration of the systemd container factory failed: %v", err)
 	}
 
 	err = raw.Register(self, self.fsInfo, self.ignoreMetrics)
