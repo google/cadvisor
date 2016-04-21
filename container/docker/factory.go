@@ -24,9 +24,11 @@ import (
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
+	"github.com/google/cadvisor/devicemapper"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager/watcher"
+	dockerutil "github.com/google/cadvisor/utils/docker"
 
 	docker "github.com/docker/engine-api/client"
 	"github.com/golang/glog"
@@ -68,7 +70,6 @@ func RootDir() string {
 type storageDriver string
 
 const (
-	// TODO: Add support for devicemapper storage usage.
 	devicemapperStorageDriver storageDriver = "devicemapper"
 	aufsStorageDriver         storageDriver = "aufs"
 	overlayStorageDriver      storageDriver = "overlay"
@@ -92,6 +93,8 @@ type dockerFactory struct {
 	dockerVersion []int
 
 	ignoreMetrics container.MetricSet
+
+	thinPoolWatcher *devicemapper.ThinPoolWatcher
 }
 
 func (self *dockerFactory) String() string {
@@ -118,6 +121,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		metadataEnvs,
 		self.dockerVersion,
 		self.ignoreMetrics,
+		self.thinPoolWatcher,
 	)
 	return
 }
@@ -187,7 +191,30 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
 
-	glog.Infof("Registering Docker factory")
+	var (
+		dockerStorageDriver                               = storageDriver(dockerInfo.Driver)
+		thinPoolWatcher     *devicemapper.ThinPoolWatcher = nil
+	)
+
+	if dockerStorageDriver == devicemapperStorageDriver {
+		// If the storage drive is devicemapper, create and start a
+		// ThinPoolWatcher to monitor the size of container CoW layers with
+		// thin_ls.
+		dockerThinPoolName, err := dockerutil.DockerThinPoolName(*dockerInfo)
+		if err != nil {
+			return fmt.Errorf("couldn't find device mapper thin pool name: %v", err)
+		}
+
+		dockerMetadataDevice, err := dockerutil.DockerMetadataDevice(*dockerInfo)
+		if err != nil {
+			return fmt.Errorf("couldn't determine devicemapper metadata device")
+		}
+
+		thinPoolWatcher = devicemapper.NewThinPoolWatcher(dockerThinPoolName, dockerMetadataDevice)
+		go thinPoolWatcher.Start()
+	}
+
+	glog.Infof("registering Docker factory")
 	f := &dockerFactory{
 		cgroupSubsystems:   cgroupSubsystems,
 		client:             client,
@@ -197,6 +224,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		storageDriver:      storageDriver(dockerInfo.Driver),
 		storageDir:         RootDir(),
 		ignoreMetrics:      ignoreMetrics,
+		thinPoolWatcher:    thinPoolWatcher,
 	}
 
 	container.RegisterContainerHandlerFactory(f, []watcher.ContainerWatchSource{watcher.Raw})
