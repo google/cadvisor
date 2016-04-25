@@ -38,6 +38,8 @@ cAdvisor supports exporting stats to [InfluxDB](https://influxdb.com/). See the 
 
 cAdvisor also exposes container stats as [Prometheus](http://prometheus.io) metrics. See the [documentation](docs/prometheus.md) for more information.
 
+cAdvisor also supports exporting stats to [ElasticSearch](https://www.elastic.co/). See the [documentation](docs/elasticsearch.md) for more information.
+
 [Heapster](https://github.com/kubernetes/heapster) enables cluster wide monitoring of containers using cAdvisor.
 
 ## Web UI
