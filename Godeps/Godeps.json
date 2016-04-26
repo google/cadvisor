@@ -11,6 +11,11 @@
 			"Rev": "'75cd24fc2f2c2a2088577d12123ddee5f54e0675'"
 		},
 		{
+			"ImportPath": "github.com/Microsoft/go-winio",
+			"Comment": "v0.3.2",
+			"Rev": "862b6557927a5c5c81e411c12aa6de7e566cbb7a"
+		},
+		{
 			"ImportPath": "github.com/SeanDolphin/bqschema",
 			"Rev": "f92a08f515e1bf718e995076a37c2f534b1deb08"
 		},
@@ -113,6 +118,16 @@
 			"Rev": "02438c55fbd406cadd6dfc4292f05336d1f86cbe"
 		},
 		{
+			"ImportPath": "github.com/docker/distribution/digest",
+			"Comment": "v2.4.0-rc.1-30-gc6f63e2",
+			"Rev": "c6f63e298ebb1dd0a2ce5ada0c0d39e248132634"
+		},
+		{
+			"ImportPath": "github.com/docker/distribution/reference",
+			"Comment": "v2.4.0-rc.1-30-gc6f63e2",
+			"Rev": "c6f63e298ebb1dd0a2ce5ada0c0d39e248132634"
+		},
+		{
 			"ImportPath": "github.com/docker/docker/pkg/longpath",
 			"Comment": "v1.9.1",
 			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
@@ -138,6 +153,86 @@
 			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
 		},
 		{
+			"ImportPath": "github.com/docker/engine-api/client",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/client/transport",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/client/transport/cancellable",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/blkiodev",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/container",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/filters",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/network",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/reference",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/registry",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/strslice",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/time",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/engine-api/types/versions",
+			"Comment": "v0.3.1-48-g87b3df2",
+			"Rev": "87b3df23dcba0ce02bfe0474e29a08a97f7814e6"
+		},
+		{
+			"ImportPath": "github.com/docker/go-connections/nat",
+			"Comment": "v0.2.0-2-gf549a93",
+			"Rev": "f549a9393d05688dff0992ef3efd8bbe6c628aeb"
+		},
+		{
+			"ImportPath": "github.com/docker/go-connections/sockets",
+			"Comment": "v0.2.0-2-gf549a93",
+			"Rev": "f549a9393d05688dff0992ef3efd8bbe6c628aeb"
+		},
+		{
+			"ImportPath": "github.com/docker/go-connections/tlsconfig",
+			"Comment": "v0.2.0-2-gf549a93",
+			"Rev": "f549a9393d05688dff0992ef3efd8bbe6c628aeb"
+		},
+		{
 			"ImportPath": "github.com/docker/go-units",
 			"Comment": "v0.1.0-21-g0bbddae",
 			"Rev": "0bbddae09c5a5419a8c6dcdd7ff90da3d450393b"
@@ -151,78 +246,6 @@
 			"ImportPath": "github.com/eapache/queue",
 			"Comment": "v1.0.2",
 			"Rev": "ded5959c0d4e360646dc9e9908cff48666781367"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/Sirupsen/logrus",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/opts",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/archive",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/fileutils",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/homedir",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/idtools",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/ioutils",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/longpath",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/pools",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/promise",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/stdcopy",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/docker/pkg/system",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/docker/go-units",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/hashicorp/go-cleanhttp",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/github.com/opencontainers/runc/libcontainer/user",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/golang.org/x/net/context",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
-		},
-		{
-			"ImportPath": "github.com/fsouza/go-dockerclient/external/golang.org/x/sys/unix",
-			"Rev": "ff3d4ee4753705a048db1855113026395c26a79a"
 		},
 		{
 			"ImportPath": "github.com/garyburd/redigo/internal",
@@ -447,6 +470,10 @@
 		},
 		{
 			"ImportPath": "golang.org/x/net/internal/timeseries",
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
+		},
+		{
+			"ImportPath": "golang.org/x/net/proxy",
 			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
 		},
 		{

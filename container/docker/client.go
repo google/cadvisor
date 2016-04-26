@@ -20,7 +20,7 @@ package docker
 import (
 	"sync"
 
-	dclient "github.com/fsouza/go-dockerclient"
+	dclient "github.com/docker/engine-api/client"
 )
 
 var (
@@ -31,7 +31,7 @@ var (
 
 func Client() (*dclient.Client, error) {
 	once.Do(func() {
-		dockerClient, dockerClientErr = dclient.NewClient(*ArgDockerEndpoint)
+		dockerClient, dockerClientErr = dclient.NewClient(*ArgDockerEndpoint, "", nil, nil)
 	})
 	return dockerClient, dockerClientErr
 }
