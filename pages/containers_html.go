@@ -32,6 +32,7 @@ const containersHtmlTemplate = `
     <script type="text/javascript" src="{{.Root}}static/google-jsapi.js"></script>
 
     <script type="text/javascript" src="{{.Root}}static/containers.js"></script>
+    <script type="text/javascript" src="{{.Root}}static/gcharts.js"></script>
   </head>
   <body>
     <div class="container theme-showcase" >

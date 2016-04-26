@@ -1,20 +1,3 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package static
-
-const gchartsJs = `
 (function() {
 var aa=encodeURIComponent,ba=window,ca=Object,da=Infinity,ea=document,fa=isNaN,h=Math,ga=Array,ha=Number,ia=NaN,m=Error,ja=Boolean,ka=parseInt,la=parseFloat,na=isFinite,oa=decodeURIComponent;function pa(a,b){return a.width=b}function qa(a,b){return a.data=b}function ra(a,b){return a.ceil=b}function sa(a,b){return a.floor=b}function ta(a,b){return a.format=b}function ua(a,b){return a.remove=b}function va(a,b){return a.clear=b}function wa(a,b){return a.getColumnIndex=b}
 function xa(a,b){return a.stroke=b}function ya(a,b){return a.getTime=b}function za(a,b){return a.fill=b}function Aa(a,b){return a.toString=b}function Ba(a,b){return a.position=b}function Ca(a,b){return a.toJSON=b}function Da(a,b){return a.next=b}function Ea(a,b){return a.constructor=b}function Fa(a,b){return a.fontSize=b}function Ga(a,b){return a.message=b}function Ia(a,b){return a.clone=b}function Ka(a,b){return a.start=b}function La(a,b){return a.init=b}function Ma(a,b){return a.bottom=b}
@@ -1392,4 +1375,4 @@ xx(oX[K],oX[K][hA]);Cw(oX[K],oX[K][qy]);oX[K].setAction=oX[K].dj;oX[K].getAction
 
 google.load('visualization','1',{packages: ['corechart', 'gauge', 'default', 'format', 'ui', 'table']});
 google.loader.loaded({"module":"visualization","version":"1.0","components":["ui","corechart","default","gauge","format"]});
-google.loader.eval.visualization = function() {eval(arguments[0]);};if (google.loader.eval.scripts && google.loader.eval.scripts['visualization']) {(function() {var scripts = google.loader.eval.scripts['visualization'];for (var i = 0; i < scripts.length; i++) {google.loader.eval.visualization(scripts[i]);}})();google.loader.eval.scripts['visualization'] = null;}})();`
+google.loader.eval.visualization = function() {eval(arguments[0]);};if (google.loader.eval.scripts && google.loader.eval.scripts['visualization']) {(function() {var scripts = google.loader.eval.scripts['visualization'];for (var i = 0; i < scripts.length; i++) {google.loader.eval.visualization(scripts[i]);}})();google.loader.eval.scripts['visualization'] = null;}})();
