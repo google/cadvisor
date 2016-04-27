@@ -15,11 +15,87 @@
 package utils
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+const (
+	Iters = 10000
+	Limit = 100
+)
+
+var datas = dataItems(Iters)
+
+func BenchmarkAddSizeLimit(b *testing.B) {
+	benchmarkAdd(b, Iters*10, Limit, false)
+}
+
+func BenchmarkAddAgeLimit(b *testing.B) {
+	benchmarkAdd(b, Limit, -1, false)
+}
+
+func BenchmarkAddRandom(b *testing.B) {
+	benchmarkAdd(b, Limit, Limit, true)
+}
+
+func BenchmarkAddRandomUnlimited(b *testing.B) {
+	benchmarkAdd(b, Iters, -1, true)
+}
+
+func benchmarkAdd(b *testing.B, age time.Duration, maxItems int, random bool) {
+	b.StopTimer()
+	ts := NewTimedStore(age, maxItems)
+	t := time.Now()
+	var timer func() time.Duration
+	if random {
+		rand.Seed(1234)
+		timer = func() time.Duration { return time.Duration(rand.Intn(Limit) - Limit/2) }
+	} else {
+		timer = func() time.Duration { return 1 }
+	}
+	b.StartTimer()
+	for iter := 0; iter < b.N; iter++ {
+		for i := 0; i < Iters; i++ {
+			t = t.Add(timer())
+			ts.Add(t, datas[i])
+		}
+	}
+}
+
+type data struct {
+	s string
+}
+
+func dataItems(count int) []data {
+
+	datas := make([]data, count)
+	for i := 0; i < count; i++ {
+		datas[i] = data{"foo bar"}
+	}
+	return datas
+}
+
+func TestRingAppend(t *testing.T) {
+	ring := newTimedStoreRingBuffer(5, true)
+	assert := assert.New(t)
+	assert.Equal(0, ring.Len())
+	// To full
+	for i := 0; i < 5; i++ {
+		ring.Append(timedStoreData{data: i})
+		assert.Equal(i+1, ring.Len())
+		assert.Equal(i, ring.Get(i).data)
+	}
+	// Full ring append
+	for i := 0; i < 5; i++ {
+		ring.Append(timedStoreData{data: i})
+		assert.Equal(5, ring.Len())
+		assert.Equal(i, ring.Get(4).data)
+	}
+}
 
 func createTime(id int) time.Time {
 	var zero time.Time
@@ -38,7 +114,7 @@ func expectAllElements(t *testing.T, sb *TimedStore, expected []int) {
 	for i := 0; i < size; i++ {
 		els[i] = sb.Get(size - i - 1)
 	}
-	expectElements(t, []interface{}(els), expected)
+	expectElements(t, els, expected)
 }
 
 func expectElements(t *testing.T, actual []interface{}, expected []int) {
@@ -218,4 +294,51 @@ func TestLimitedSize(t *testing.T) {
 	}
 	expectSize(t, sb, 5)
 	expectAllElements(t, sb, []int{6, 7, 8, 9, 10})
+}
+
+func verifyOrder(t *testing.T, ts *TimedStore, expectedSize int) {
+	require.Equal(t, expectedSize, ts.Size())
+	if expectedSize == 1 {
+		return
+	}
+	for i := 1; i < expectedSize; i++ {
+		first := ts.buffer.Get(i - 1)
+		second := ts.buffer.Get(i)
+		require.True(t, !first.timestamp.After(second.timestamp),
+			"Elements %d (%v) and %d (%v) out of order", i, second.timestamp, i-1, first.timestamp)
+	}
+}
+
+const Forever time.Duration = 1 << 30
+
+func TestAddRandom(t *testing.T) {
+	ts := NewTimedStore(Forever, Limit)
+	start := time.Date(2000, 1, 1, 0, 0, 1, 0, time.UTC)
+	rand.Seed(1234)
+
+	// Fill buffer
+	for i := 0; i < Limit; i++ {
+		timestamp := start.Add(time.Duration(rand.Intn(Limit*2) - Limit))
+		ts.Add(timestamp, datas[i])
+		verifyOrder(t, ts, i+1)
+	}
+
+	// Full buffer
+	for i := 0; i < Iters; i++ {
+		timestamp := start.Add(time.Duration(rand.Intn(Limit*2) - Limit))
+		ts.Add(timestamp, datas[i])
+		verifyOrder(t, ts, Limit)
+	}
+}
+
+func TestRandomUnlimited(t *testing.T) {
+	ts := NewTimedStore(Forever, -1)
+	start := time.Date(2000, 1, 1, 0, 0, 1, 0, time.UTC)
+	rand.Seed(1234)
+
+	for i := 0; i < Iters; i++ {
+		timestamp := start.Add(time.Duration(rand.Intn(Limit*2) - Limit))
+		ts.Add(timestamp, datas[i])
+		verifyOrder(t, ts, i+1)
+	}
 }
