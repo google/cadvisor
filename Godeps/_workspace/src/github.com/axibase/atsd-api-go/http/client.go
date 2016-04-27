@@ -17,14 +17,15 @@ package http
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/golang/glog"
 	"net/url"
 	"strconv"
+
+	"github.com/golang/glog"
 )
 
 const (
@@ -42,13 +43,11 @@ const (
 	metricsPath = "/api/v1/metrics"
 	commandPath = "/api/v1/command"
 
-	sql = "/sql"
+	sql = "/api/sql"
 )
 
 type Client struct {
-	url      *url.URL
-	username string
-	password string
+	url *url.URL
 
 	Series       *seriesApi
 	Properties   *propertiesApi
@@ -63,8 +62,8 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func New(mUrl url.URL, username, password string) *Client {
-	var client = Client{url: &mUrl, username: username, password: password}
+func New(mUrl url.URL, insecureSkipVerify bool) *Client {
+	var client = Client{url: &mUrl}
 	client.Series = &seriesApi{&client}
 	client.Properties = &propertiesApi{&client}
 	client.Entities = &entitiesApi{&client}
@@ -72,7 +71,9 @@ func New(mUrl url.URL, username, password string) *Client {
 	client.Messages = &messagesApi{&client}
 	client.Metric = &metricApi{&client}
 	client.SQL = &sqlApi{&client}
-	client.httpClient = &http.Client{}
+	client.httpClient = &http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: insecureSkipVerify},
+	}}
 	return &client
 }
 
@@ -85,7 +86,6 @@ func (self *Client) request(reqType, apiUrl string, reqJson []byte) (string, err
 	if err != nil {
 		panic(err)
 	}
-	req.SetBasicAuth(self.username, self.password)
 	res, err := self.httpClient.Do(req)
 	if err != nil {
 		return "", err
@@ -181,9 +181,8 @@ func (self *entitiesApi) Create(entity *Entity) error {
 	if err != nil {
 		panic(err)
 	}
-	mUrl := url.URL{}
-	mUrl.Path = entitiesPath + "/" + entity.Name()
-	_, err = self.client.request("PUT", mUrl.String(), jsonRequest)
+	path := entitiesPath + "/" + url.QueryEscape(entity.Name())
+	_, err = self.client.request("PUT", path, jsonRequest)
 	if err != nil {
 		return err
 	}
@@ -195,9 +194,8 @@ func (self *entitiesApi) Update(entity *Entity) error {
 	if err != nil {
 		panic(err)
 	}
-	mUrl := url.URL{}
-	mUrl.Path = entitiesPath + "/" + entity.Name()
-	_, err = self.client.request("PATCH", mUrl.String(), jsonRequest)
+	path := entitiesPath + "/" + url.QueryEscape(entity.Name())
+	_, err = self.client.request("PATCH", path, jsonRequest)
 	if err != nil {
 		return err
 	}
@@ -217,14 +215,13 @@ func (self *entitiesApi) List(expression string, tags []string, limit uint64) ([
 		}
 	}
 
-	mUrl := url.URL{}
-	mUrl.Path = entitiesPath
+	path := entitiesPath
 	q := url.Values{}
 	q.Set("tags", tagsParams)
 	q.Set("expression", expression)
 	q.Set("limit", strconv.FormatUint(limit, 10))
-	mUrl.RawQuery = q.Encode()
-	jsonData, err := self.client.request("GET", mUrl.String(), []byte{})
+	path += "?" + q.Encode()
+	jsonData, err := self.client.request("GET", path, []byte{})
 	if err != nil {
 		return nil, err
 	}
@@ -247,9 +244,8 @@ func (self *metricApi) CreateOrReplace(metric *Metric) error {
 	if err != nil {
 		panic(err)
 	}
-	mUrl := url.URL{}
-	mUrl.Path = metricsPath + "/" + metric.Name()
-	_, err = self.client.request("PUT", mUrl.String(), jsonRequest)
+	path := metricsPath + "/" + url.QueryEscape(metric.Name())
+	_, err = self.client.request("PUT", path, jsonRequest)
 	if err != nil {
 		return err
 	}
@@ -305,14 +301,13 @@ func (self *entityGroupsApi) EntitiesList(group, expression string, tags []strin
 			}
 		}
 	}
-	mUrl := url.URL{}
-	mUrl.Path = entitiesGroupPath + "/" + group + "/entities"
+	path := entitiesGroupPath + "/" + url.QueryEscape(group) + "/entities"
 	q := url.Values{}
 	q.Add("tags", tagsParams)
 	q.Add("expression", expression)
 	q.Add("limit", strconv.FormatUint(limit, 10))
-	mUrl.RawQuery = q.Encode()
-	jsonData, err := self.client.request("GET", mUrl.String(), []byte{})
+	path += "?" + q.Encode()
+	jsonData, err := self.client.request("GET", path, []byte{})
 	if err != nil {
 		return nil, err
 	}
@@ -339,14 +334,13 @@ func (self *entityGroupsApi) List(expression string, tags []string, limit uint64
 		}
 	}
 
-	mUrl := url.URL{}
-	mUrl.Path = entitiesGroupPath
+	path := entitiesGroupPath
 	q := url.Values{}
 	q.Set("tags", tagsParams)
 	q.Set("expression", expression)
 	q.Set("limit", strconv.FormatUint(limit, 10))
-	mUrl.RawQuery = q.Encode()
-	jsonData, err := self.client.request("GET", mUrl.String(), []byte{})
+	path += "?" + q.Encode()
+	jsonData, err := self.client.request("GET", path, []byte{})
 	if err != nil {
 		return nil, err
 	}
@@ -365,13 +359,11 @@ type sqlApi struct {
 }
 
 func (self *sqlApi) Query(query string) (*Table, error) {
-	mUrl := url.URL{}
-	mUrl.Path = sql
-
+	path := sql
 	params := url.Values{}
 	params.Set("q", query)
-	mUrl.RawQuery = params.Encode()
-	jsonData, err := self.client.request("GET", mUrl.String(), []byte{})
+	path += "?" + params.Encode()
+	jsonData, err := self.client.request("GET", path, []byte{})
 	if err != nil {
 		return nil, err
 	}

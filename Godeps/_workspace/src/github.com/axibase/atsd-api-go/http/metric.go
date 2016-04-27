@@ -17,9 +17,10 @@ package http
 
 import (
 	"encoding/json"
-	"github.com/axibase/atsd-api-go/net"
 	"strings"
 	"time"
+
+	"github.com/axibase/atsd-api-go/net"
 )
 
 type Days uint

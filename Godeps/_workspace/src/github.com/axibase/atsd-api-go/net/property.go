@@ -75,6 +75,7 @@ func (self *PropertyCommand) Tags() map[string]string {
 func (self *PropertyCommand) Timestamp() *Millis {
 	return self.timestamp
 }
+
 func (self *PropertyCommand) String() string {
 	str := bytes.NewBufferString("")
 	fmt.Fprintf(str, "property e:%v t:%v", self.entity, self.propType)
@@ -87,6 +88,6 @@ func (self *PropertyCommand) String() string {
 	for key, val := range self.tags {
 		fmt.Fprintf(str, " v:%v=\"%v\"", key, val)
 	}
-
+	fmt.Fprint(str, "\n")
 	return str.String()
 }

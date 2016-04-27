@@ -17,14 +17,10 @@ docker run \
   -p 8081:8081 \
   -p 8443:8443 \
   -p 8082:8082/udp \
-  -e ATSD_USER_NAME=${ATSD_USER_NAME} \
-  -e ATSD_USER_PASSWORD=${ATSD_USER_PASSWORD} \
   -h atsd \
   --name=atsd \
   axibase/atsd
 ```
-
-${ATSD_USER_PASSWORD} - minimum password length is 6 characters.
 
 Launch cAdvisor container with ATSD storage driver:
 
@@ -40,18 +36,13 @@ docker run \
   --link atsd:atsd \
   google/cadvisor:latest \
   --storage_driver=atsd \
-  --storage_driver_user=${ATSD_USER_NAME} \
-  --storage_driver_password=${ATSD_USER_PASSWORD} \
-  --storage_driver_atsd_url=http://atsd:8088 \
-  --storage_driver_atsd_write_host=atsd:8081 \
-  --storage_driver_atsd_write_protocol=tcp \
-  --storage_driver_atsd_docker_host="`hostname`" \
-  --storage_driver_atsd_property_interval=15s \
-  --housekeeping_interval=15s \
-  --storage_driver_buffer_duration=15s
+  --storage_driver_atsd_protocol=tcp \
+  --storage_driver_host=atsd \
+  --storage_driver_buffer_duration=15s \
+  --housekeeping_interval=15s 
 ```
 
-Alternatively, you can specify these parameters in a toml configuration file:
+In case you're using http(s) protocol when writing data into ATSD, make sure that you create a collector account with restricted permissions as described [here](https://github.com/axibase/axibase-collector-docs/blob/master/collector-account.md).
 
 ```
 docker run \
@@ -59,83 +50,34 @@ docker run \
   --volume=/var/run:/var/run:rw \
   --volume=/sys:/sys:ro \
   --volume=/var/lib/docker/:/var/lib/docker:ro \
-  --volume=${HOME}:/root:ro \
   --publish=8080:8080 \
   --detach=true \
   --name=cadvisor \
   --link atsd:atsd \
   google/cadvisor:latest \
   --storage_driver=atsd \
-  --storage_driver_user=${ATSD_USER_NAME} \
-  --storage_driver_password=${ATSD_USER_PASSWORD} \
-  --storage_driver_atsd_config_path="/root/cadvisor.toml"
-```
-
-```toml
-url = "http://atsd:8088"        #ATSD server http/https endpoint
-write_host     =  "atsd:8081"   #ATSD server TCP/UDP destination, formatted as host:port
-write_protocol =  "tcp"         #transfer protocol. Possible settings: http, https, udp, tcp
-
-connection_limit = 1            #ATSD storage driver TCP connection count
-memstore_limit   = 1000000      #maximum number of series commands stored in buffer until flush
-
-
-#Specify optional deduplication settings for a metric group.
-
-#[deduplication.groupName] - Metric group to which the setting applies. Supported metric groups in cAdvisor: cpu, memory, io, network, task, filesystem
-#interval - Maximum delay between the current and previously sent samples. If exceeded, the current sample is sent to ATSD regardless of the specified threshold.
-#threshold - Absolute or percentage difference between the current and previously sent sample values. If the absolute difference is within the threshold and elapsed time is within Interval, the value is discarded.
-
-
-#[deduplication]
-#    [deduplication.cpu]
-#    interval = "15s"
-#    threshold = "3"
-#
-#    [deduplication.io]
-#    interval = "15s"
-#    threshold = "1%"
-#
-#    [deduplication.memory]
-#    interval = "15s"
-#    threshold = "1%"
-#
-#    [deduplication.network]
-#    interval = "15s"
-#    threshold = "1%"
-#
-#    [deduplication.task]
-#    interval = "15s"
-#    threshold = "1%"
-#
-#    [deduplication.filesystem]
-#    interval = "15s"
-#    threshold = "1%"
-
-[cadvisor]
-store_major_numbers  = false          #store statistics for devices with all available major numbers
-store_user_cgroups   = false          #store statistics for "user" cgroups (for example: docker-host/user.*)
-property_interval    = "1m"           #container property update interval. Should be >= housekeeping_interval
-sampling_interval    = "1s"           #interval at which series data is sampled. By default set to housekeeping_interval. Should be >= housekeeping_interval.
-docker_host          = "docker-01"    #hostname of the machine where docker daemon is running. By default set to 'docker-host'. Needs to be set manually because cadvisor container doesn't know hostname of the docker machine.
+  --storage_driver_atsd_protocol=http \
+  --storage_driver_host=atsd:8088 \
+  --storage_driver_user=${ATSD_COLLECTOR_ACCOUNT_NAME} \
+  --storage_driver_password=${ATSD_COLLECTOR_ACCOUNT_PASSWORD} \
+  --storage_driver_buffer_duration=15s \
+  --housekeeping_interval=15s 
 ```
 
 #### More Options:
 
-flag                                     | default value              | description
------------------------------------------|----------------------------|------------
-storage_driver_buffer_duration           |1m                          | time for which data is accumulating in a buffer before send
-storage_driver_atsd_url                  |""                          | atsd http/https endpoint
-storage_driver_atsd_write_host           |""                          | tcp/udp destination host:port
-storage_driver_atsd_write_protocol       |"http/https"                | write protocol. Possible settings: http/https, udp, tcp
-storage_driver_atsd_store_major_numbers  |false                       | include statistics for devices with all available major numbers
-storage_driver_atsd_property_interval    |1m                          | container property update interval. Should be >= housekeeping_interval
-storage_driver_atsd_sampling_interval    |housekeeping_interval value | series sampling interval. Should be >= housekeeping_interval
-storage_driver_atsd_docker_host          |"docker-host"               | hostname of the docker machine (entity prefix)
-storage_driver_atsd_store_user_cgroups   |false                       | include statistics for "user" cgroups 
-storage_driver_atsd_buffer_limit         |1000000                     | max series commands to store in buffer until flush
-storage_driver_atsd_connection_limit     |1                           | tcp connection count
-storage_driver_atsd_config_path          |""                          | path to ATSD storage driver config file
+Flag                                     | Default Value                           | Description
+-----------------------------------------|-----------------------------------------|------------
+storage_driver_atsd_protocol             |"tcp"                                    | Transfer protocol. Supported protocols: http, https, udp, tcp
+storage_driver_atsd_skip_verify          |false                                    | Controls whether a client verifies the server's certificate chain and host name
+storage_driver_atsd_store_major_numbers  |false                                    | Include statistics for devices with all available major numbers
+storage_driver_atsd_property_interval    |1m                                       | Container property (host, id, namespace) update interval. Should be >= housekeeping_interval
+storage_driver_atsd_sampling_interval    |housekeeping_interval value              | Series sampling interval. Should be >= housekeeping_interval
+storage_driver_atsd_docker_host          |content of "/rootfs/etc/hostname" or ""  | Hostname of the docker host, used as entity prefix
+storage_driver_atsd_store_user_cgroups   |false                                    | Include statistics for "user" cgroups (for example: docker-host/user.*)
+storage_driver_buffer_duration           |1m                                       | Time for which data is accumulated in a buffer before being sent into ATSD
+storage_driver_atsd_buffer_limit         |1000000                                  | Maximum network command count stored in buffer before being sent into ATSD
+storage_driver_atsd_sender_thread_limit  |4                                        | Maximum thread (goroutine) count sending data to ATSD server via tcp/udp
 
 You can view the collected metrics under the Entity and Metrics tabs in ATSD.
 *Note that disk metrics are only collected from containers that have attached volumes.*

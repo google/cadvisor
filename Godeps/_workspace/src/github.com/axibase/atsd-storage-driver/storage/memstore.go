@@ -16,9 +16,15 @@
 package storage
 
 import (
-	"github.com/axibase/atsd-api-go/net"
+	"fmt"
 	"sort"
 	"sync"
+
+	"github.com/axibase/atsd-api-go/net"
+)
+
+const (
+	minMemoryLimit = uint(10000)
 )
 
 type MemStore struct {
@@ -35,17 +41,20 @@ type MemStore struct {
 	Limit uint
 }
 
-func NewMemStore(limit uint) *MemStore {
+func NewMemStore(limit uint) (*MemStore, error) {
+	if limit < minMemoryLimit {
+		return nil, fmt.Errorf("Memstore limit should be >= 10000. Current limit = %v", limit)
+	}
 	ms := &MemStore{
 		seriesCommandMap: &map[string]*Chunk{},
 		Limit:            limit,
 	}
-	return ms
+	return ms, nil
 }
 func (self *MemStore) AppendSeriesCommands(commands []*net.SeriesCommand) {
 	self.Lock()
 	defer self.Unlock()
-	if uint(self.Size()) < self.Limit {
+	if uint(self.unsafeSize()) < self.Limit {
 		for i := 0; i < len(commands); i++ {
 			key := self.getKey(commands[i])
 			if _, ok := (*self.seriesCommandMap)[key]; !ok {
@@ -58,21 +67,21 @@ func (self *MemStore) AppendSeriesCommands(commands []*net.SeriesCommand) {
 func (self *MemStore) AppendPropertyCommands(propertyCommands []*net.PropertyCommand) {
 	self.Lock()
 	defer self.Unlock()
-	if self.Size() < self.Limit {
+	if self.unsafeSize() < self.Limit {
 		self.properties = append(self.properties, propertyCommands...)
 	}
 }
 func (self *MemStore) AppendEntityTagCommands(entityUpdateCommands []*net.EntityTagCommand) {
 	self.Lock()
 	defer self.Unlock()
-	if self.Size() < self.Limit {
+	if self.unsafeSize() < self.Limit {
 		self.entityTagCommands = append(self.entityTagCommands, entityUpdateCommands...)
 	}
 }
 func (self *MemStore) AppendMessageCommands(messageCommands []*net.MessageCommand) {
 	self.Lock()
 	defer self.Unlock()
-	if self.Size() < self.Limit {
+	if self.unsafeSize() < self.Limit {
 		self.messages = append(self.messages, messageCommands...)
 	}
 
@@ -104,7 +113,11 @@ func (self *MemStore) ReleaseEntityTagCommands() []*net.EntityTagCommand {
 	return entityTagCommands
 }
 func (self *MemStore) SeriesCommandCount() uint {
-
+	self.Lock()
+	defer self.Unlock()
+	return self.unsafeSeriesCommandCount()
+}
+func (self *MemStore) unsafeSeriesCommandCount() uint {
 	commandCount := uint(0)
 
 	for _, val := range *(self.seriesCommandMap) {
@@ -113,19 +126,41 @@ func (self *MemStore) SeriesCommandCount() uint {
 	return commandCount
 }
 func (self *MemStore) PropertiesCount() uint {
+	self.Lock()
+	defer self.Unlock()
 
+	return self.unsafePropertiesCount()
+}
+func (self *MemStore) unsafePropertiesCount() uint {
 	return uint(len(self.properties))
 }
-func (self *MemStore) MessagesCount() uint {
 
+func (self *MemStore) MessagesCount() uint {
+	self.Lock()
+	defer self.Unlock()
+
+	return self.unsafeMessagesCount()
+}
+func (self *MemStore) unsafeMessagesCount() uint {
 	return uint(len(self.messages))
 }
-func (self *MemStore) EntitiesCount() uint {
 
+func (self *MemStore) EntitiesCount() uint {
+	self.Lock()
+	defer self.Unlock()
+
+	return self.unsafeEntitiesCount()
+}
+
+func (self *MemStore) unsafeEntitiesCount() uint {
 	return uint(len(self.entityTagCommands))
 }
+
 func (self *MemStore) Size() uint {
 	return self.EntitiesCount() + self.PropertiesCount() + self.SeriesCommandCount() + self.MessagesCount()
+}
+func (self *MemStore) unsafeSize() uint {
+	return self.unsafeEntitiesCount() + self.unsafePropertiesCount() + self.unsafeSeriesCommandCount() + self.unsafeMessagesCount()
 }
 
 func (self *MemStore) getKey(sc *net.SeriesCommand) string {

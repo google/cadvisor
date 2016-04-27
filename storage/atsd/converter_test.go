@@ -39,9 +39,7 @@ func TestRefToPropertyAndEntityTags(t *testing.T) {
 			},
 			props: []*atsdNet.PropertyCommand{
 				atsdNet.NewPropertyCommand("cadvisor", machineName+"/", containerHostTag, "true").
-					SetTimestamp(timestamp).
-					SetTag(containerIdTag, machineName).
-					SetTag(containerNamespaceTag, "default"),
+					SetTimestamp(timestamp),
 			},
 			entityTagCommands: []*atsdNet.EntityTagCommand{
 				atsdNet.NewEntityTagCommand(machineName+"/", containerHostTag, "true"),
@@ -52,9 +50,11 @@ func TestRefToPropertyAndEntityTags(t *testing.T) {
 				Name: "/docker/",
 			},
 			props: []*atsdNet.PropertyCommand{
-				atsdNet.NewPropertyCommand("cadvisor", machineName+"/docker/", containerIdTag, "/").
-					SetTimestamp(timestamp).
-					SetTag(containerNamespaceTag, "docker"),
+				atsdNet.NewPropertyCommand("cadvisor", machineName+"/docker/", containerNamespaceTag, "docker").
+					SetTimestamp(timestamp),
+			},
+			entityTagCommands: []*atsdNet.EntityTagCommand{
+				atsdNet.NewEntityTagCommand(machineName+"/docker/", containerNamespaceTag, "docker"),
 			},
 		},
 		{
@@ -68,11 +68,11 @@ func TestRefToPropertyAndEntityTags(t *testing.T) {
 				atsdNet.NewPropertyCommand("cadvisor", machineName+"/docker/safvjmaw3o4", containerIdTag, "safvjmaw3o4").
 					SetTimestamp(timestamp).
 					SetTag(containerNamespaceTag, "docker").
-					SetTag(containerAliasPropertyTag, "my_container"),
+					SetTag(containerAliasTag, "my_container"),
 			},
 			entityTagCommands: []*atsdNet.EntityTagCommand{
 				atsdNet.NewEntityTagCommand(machineName+"/docker/safvjmaw3o4", containerIdTag, "safvjmaw3o4").
-					SetTag(containerAliasEntityTag, "my_container").
+					SetTag(containerAliasTag, "my_container").
 					SetTag(containerNamespaceTag, "docker"),
 			},
 		},
@@ -81,18 +81,25 @@ func TestRefToPropertyAndEntityTags(t *testing.T) {
 				Name: "/lxc/",
 			},
 			props: []*atsdNet.PropertyCommand{
-				atsdNet.NewPropertyCommand("cadvisor", machineName+"/lxc/", containerIdTag, "/").
-					SetTimestamp(timestamp).
-					SetTag(containerNamespaceTag, "lxc"),
+				atsdNet.NewPropertyCommand("cadvisor", machineName+"/lxc/", containerNamespaceTag, "lxc").
+					SetTimestamp(timestamp),
+			},
+			entityTagCommands: []*atsdNet.EntityTagCommand{
+				atsdNet.NewEntityTagCommand(machineName+"/lxc/", containerNamespaceTag, "lxc"),
 			},
 		},
 		{
 			ref: &info.ContainerReference{
 				Name: "/lxc/araicmzs12",
+				Id:   "araicmzs12",
 			},
 			props: []*atsdNet.PropertyCommand{
 				atsdNet.NewPropertyCommand("cadvisor", machineName+"/lxc/araicmzs12", containerIdTag, "araicmzs12").
 					SetTimestamp(timestamp).
+					SetTag(containerNamespaceTag, "lxc"),
+			},
+			entityTagCommands: []*atsdNet.EntityTagCommand{
+				atsdNet.NewEntityTagCommand(machineName+"/lxc/araicmzs12", containerIdTag, "araicmzs12").
 					SetTag(containerNamespaceTag, "lxc"),
 			},
 		},

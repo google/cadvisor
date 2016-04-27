@@ -89,3 +89,14 @@ func (self *Entity) UnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
+
+func (self *Entity) MarshalJSON() ([]byte, error) {
+	m := map[string]interface{}{
+		"tags": self.tags,
+	}
+	if self.enabled != nil {
+		m["enabled"] = *self.enabled
+	}
+
+	return json.Marshal(m)
+}

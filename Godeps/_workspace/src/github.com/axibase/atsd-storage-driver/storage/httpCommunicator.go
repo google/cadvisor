@@ -16,10 +16,13 @@
 package storage
 
 import (
+	"sync/atomic"
+	"time"
+
+	"github.com/golang/glog"
+
 	"github.com/axibase/atsd-api-go/http"
 	"github.com/axibase/atsd-api-go/net"
-	"github.com/golang/glog"
-	"time"
 )
 
 type HttpCommunicator struct {
@@ -54,57 +57,29 @@ func NewHttpCommunicator(client *http.Client) *HttpCommunicator {
 				for _, entity := range entities {
 					err := hc.client.Entities.Update(entity)
 					if err != nil {
-						err = hc.client.Entities.Create(entity)
-						if err != nil {
-							waitDuration := expBackoff.Duration()
-							glog.Error("Could not send entity update: ", err, "waiting for ", waitDuration)
-							time.Sleep(waitDuration)
-							hc.counters.entityTag.dropped++
-							continue
-						}
+						tryWhileNotComplete(func() error { return hc.client.Entities.Create(entity) }, "entity update", expBackoff)
 					}
-					hc.counters.entityTag.sent++
+					atomic.AddUint64(&hc.counters.entityTag.sent, 1)
 				}
 
 			case propertyCommands := <-hc.propertyCommands:
 				if len(propertyCommands) > 0 {
 					properties := propertyCommandsToProperties(propertyCommands)
-					err := hc.client.Properties.Insert(properties)
-					if err != nil {
-						waitDuration := expBackoff.Duration()
-						glog.Error("Could not send property: ", err, "waiting for ", waitDuration)
-						time.Sleep(waitDuration)
-						hc.counters.prop.dropped += uint64(len(properties))
-						continue
-					}
-					hc.counters.prop.sent += uint64(len(properties))
+					tryWhileNotComplete(func() error { return hc.client.Properties.Insert(properties) }, "properties insert", expBackoff)
+					atomic.AddUint64(&hc.counters.prop.sent, uint64(len(properties)))
 				}
 			case messageCommands := <-hc.messageCommands:
 				if len(messageCommands) > 0 {
 					messages := messageCommandsToProperties(messageCommands)
-					err := hc.client.Messages.Insert(messages)
-					if err != nil {
-						waitDuration := expBackoff.Duration()
-						glog.Error("Could not send message: ", err, "waiting for ", waitDuration)
-						time.Sleep(waitDuration)
-						hc.counters.messages.dropped += uint64(len(messages))
-						continue
-					}
-					hc.counters.messages.sent += uint64(len(messages))
+					tryWhileNotComplete(func() error { return hc.client.Messages.Insert(messages) }, "messages insert", expBackoff)
+					atomic.AddUint64(&hc.counters.messages.sent, uint64(len(messages)))
 				}
 
 			case seriesChunk := <-hc.seriesCommandsChunkChan:
 				series := seriesCommandsChunkToSeries(seriesChunk)
 				if len(series) > 0 {
-					err := hc.client.Series.Insert(series)
-					if err != nil {
-						waitDuration := expBackoff.Duration()
-						glog.Error("Could not send series: ", err, "waiting for ", waitDuration)
-						time.Sleep(waitDuration)
-						hc.counters.series.dropped += uint64(len(series))
-						continue
-					}
-					hc.counters.series.sent += uint64(len(series))
+					tryWhileNotComplete(func() error { return hc.client.Series.Insert(series) }, "series insert", expBackoff)
+					atomic.AddUint64(&hc.counters.series.sent, uint64(len(series)))
 				}
 			}
 			expBackoff.Reset()
@@ -112,6 +87,23 @@ func NewHttpCommunicator(client *http.Client) *HttpCommunicator {
 	}()
 
 	return hc
+}
+
+func tryWhileNotComplete(task func() error, taskName string, expBackoff *ExpBackoff) {
+	firstTime := true
+	hasErrors := false
+	for firstTime || hasErrors {
+		firstTime = false
+		err := task()
+		hasErrors = err != nil
+		if hasErrors {
+			waitDuration := expBackoff.Duration()
+			glog.Error("Could not perform ", taskName, ": ", err, "waiting for ", waitDuration)
+			time.Sleep(waitDuration)
+		} else {
+			expBackoff.Reset()
+		}
+	}
 }
 
 func (self *HttpCommunicator) QueuedSendData(seriesCommandsChunk []*Chunk, entityTagCommands []*net.EntityTagCommand, propertyCommands []*net.PropertyCommand, messageCommands []*net.MessageCommand) {
@@ -137,79 +129,87 @@ func (self *HttpCommunicator) PriorSendData(seriesCommands []*net.SeriesCommand,
 			}
 		}
 	}
-	properties := propertyCommandsToProperties(propertyCommands)
-	err := self.client.Properties.Insert(properties)
-	if err != nil {
-		glog.Error("Could not prior send property: ", err)
+	if len(propertyCommands) > 0 {
+		properties := propertyCommandsToProperties(propertyCommands)
+		err := self.client.Properties.Insert(properties)
+		if err != nil {
+			glog.Error("Could not prior send property: ", err)
+		}
 	}
-	series := seriesCommandsToSeries(seriesCommands)
-	err = self.client.Series.Insert(series)
-	if err != nil {
-		glog.Error("Could not prior send series: ", err)
+
+	if len(seriesCommands) > 0 {
+		series := seriesCommandsToSeries(seriesCommands)
+		err := self.client.Series.Insert(series)
+		if err != nil {
+			glog.Error("Could not prior send series: ", err)
+		}
 	}
-	messages := messageCommandsToProperties(messageCommands)
-	err = self.client.Messages.Insert(messages)
-	if err != nil {
-		glog.Error("Could not prior send message: ", err)
+
+	if len(messageCommands) > 0 {
+		messages := messageCommandsToProperties(messageCommands)
+		err := self.client.Messages.Insert(messages)
+		if err != nil {
+			glog.Error("Could not prior send message: ", err)
+		}
 	}
 }
 func (self *HttpCommunicator) SelfMetricValues() []*metricValue {
 	return []*metricValue{
-		&metricValue{
+		{
 			name: "series-commands.sent",
 			tags: map[string]string{
 				"transport": self.client.Url().Scheme,
 			},
-			value: net.Int64(self.counters.series.sent),
+			value: net.Int64(atomic.LoadUint64(&self.counters.series.sent)),
 		},
-		&metricValue{
+		{
 			name: "series-commands.dropped",
 			tags: map[string]string{
 				"transport": self.client.Url().Scheme,
 			},
-			value: net.Int64(self.counters.series.dropped),
+			value: net.Int64(atomic.LoadUint64(&self.counters.series.dropped)),
 		},
-		&metricValue{
+		{
 			name: "message-commands.sent",
 			tags: map[string]string{
 				"transport": self.client.Url().Scheme,
 			},
-			value: net.Int64(self.counters.messages.sent),
+			value: net.Int64(atomic.LoadUint64(&self.counters.messages.sent)),
 		},
-		&metricValue{
+		{
 			name: "message-commands.dropped",
 			tags: map[string]string{
 				"transport": self.client.Url().Scheme,
 			},
-			value: net.Int64(self.counters.messages.dropped),
+			value: net.Int64(atomic.LoadUint64(&self.counters.messages.dropped)),
 		},
-		&metricValue{
+		{
 			name: "property-commands.sent",
 			tags: map[string]string{
 				"transport": self.client.Url().Scheme,
 			},
-			value: net.Int64(self.counters.prop.sent),
+			value: net.Int64(atomic.LoadUint64(&self.counters.prop.sent)),
 		},
-		&metricValue{
+		{
 			name: "property-commands.dropped",
 			tags: map[string]string{
 				"transport": self.client.Url().Scheme,
 			},
-			value: net.Int64(self.counters.prop.dropped),
+			value: net.Int64(atomic.LoadUint64(&self.counters.prop.dropped)),
 		},
-		&metricValue{
+		{
 			name: "entitytag-commands.sent",
 			tags: map[string]string{
 				"transport": self.client.Url().Scheme,
 			},
-			value: net.Int64(self.counters.entityTag.sent),
+			value: net.Int64(atomic.LoadUint64(&self.counters.entityTag.sent)),
 		},
-		&metricValue{
+		{
 			name: "entitytag-commands.dropped",
 			tags: map[string]string{
 				"transport": self.client.Url().Scheme,
 			},
-			value: net.Int64(self.counters.entityTag.dropped),
+			value: net.Int64(atomic.LoadUint64(&self.counters.entityTag.dropped)),
 		},
 	}
 }

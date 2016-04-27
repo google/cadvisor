@@ -109,16 +109,11 @@ const (
 const (
 	propertyType = "cadvisor"
 
-	containerIdTag            = "container_id"
-	containerAliasPropertyTag = "container_alias"
-	containerAliasEntityTag   = "alias"
-	containerAliasTagPrefix   = "container_alias."
-	containerNamespaceTag     = "container_namespace"
-	containerHostTag          = "container_host"
-)
-
-const (
-	containerLabelTagPrefix = "container_label."
+	containerIdTag          = "container_id"
+	containerAliasTag       = "alias"
+	containerAliasTagPrefix = "alias."
+	containerNamespaceTag   = "container_namespace"
+	containerHostTag        = "container_host"
 )
 
 // Tags
@@ -127,7 +122,6 @@ const (
 	fsType        = "type"
 	minor         = "minor"
 	major         = "major"
-	disk          = "disk"
 	cpu           = "cpu"
 	interfaceName = "name"
 )
@@ -281,94 +275,68 @@ func setSeriesTimestamp(seriesCommands []*atsdNet.SeriesCommand, timestamp time.
 	}
 }
 
+func extractTagsFromRef(machineName string, ref info.ContainerReference) map[string]string {
+	tags := map[string]string{}
+
+	if ref.Namespace == "" {
+		if strings.HasPrefix(ref.Name, "/user") {
+			tags[containerNamespaceTag] = "user"
+		} else if strings.HasPrefix(ref.Name, "/docker") {
+			tags[containerNamespaceTag] = "docker"
+		} else if strings.HasPrefix(ref.Name, "/lxc") {
+			tags[containerNamespaceTag] = "lxc"
+		} else if ref.Name == "/" {
+			tags[containerHostTag] = "true"
+		}
+	} else {
+		tags[containerNamespaceTag] = ref.Namespace
+	}
+
+	if ref.Id != "" {
+		tags[containerIdTag] = ref.Id
+	}
+
+	count := 0
+	for i := range ref.Aliases {
+		if ref.Aliases[i] != ref.Id {
+			if count == 0 {
+				tags[containerAliasTag] = ref.Aliases[i]
+			} else {
+				tags[containerAliasTagPrefix+strconv.FormatInt(int64(count), 10)] = ref.Aliases[i]
+			}
+			count++
+		}
+	}
+
+	for key, val := range ref.Labels {
+		tags[key] = val
+	}
+
+	return tags
+}
+
 func RefToPropertyCommands(machineName string, ref info.ContainerReference, timestamp time.Time) []*atsdNet.PropertyCommand {
 	entity := machineName + ref.Name
 
 	var propertyCommand *atsdNet.PropertyCommand
 
-	aliases := make([]string, len(ref.Aliases))
-	copy(aliases, ref.Aliases)
-
-	if ref.Namespace == "" {
-		if strings.HasPrefix(ref.Name, "/user") {
-			propertyCommand = atsdNet.NewPropertyCommand(propertyType, entity, containerNamespaceTag, "user")
-			newAlias := strings.Replace(ref.Name, "/user", "", 1)
-			if newAlias = strings.Replace(newAlias, "/", "", 1); newAlias != "" {
-				aliases = append(aliases, newAlias)
-			}
-		} else if strings.HasPrefix(ref.Name, "/docker") {
-			propertyCommand = atsdNet.NewPropertyCommand(propertyType, entity, containerNamespaceTag, "docker")
-			newAlias := strings.Replace(ref.Name, "/docker", "", 1)
-			if newAlias = strings.Replace(newAlias, "/", "", 1); newAlias != "" {
-				aliases = append(aliases, newAlias)
-			} else {
-				aliases = append(aliases, "/")
-			}
-		} else if strings.HasPrefix(ref.Name, "/lxc") {
-			propertyCommand = atsdNet.NewPropertyCommand(propertyType, entity, containerNamespaceTag, "lxc")
-			newAlias := strings.Replace(ref.Name, "/lxc", "", 1)
-			if newAlias = strings.Replace(newAlias, "/", "", 1); newAlias != "" {
-				aliases = append(aliases, newAlias)
-			} else {
-				aliases = append(aliases, "/")
-			}
-		} else if ref.Name == "/" {
-			propertyCommand = atsdNet.NewPropertyCommand(propertyType, entity, containerHostTag, "true")
-			aliases = append(aliases, machineName)
-			propertyCommand.SetTag(containerNamespaceTag, "default")
+	tags := extractTagsFromRef(machineName, ref)
+	for name, val := range tags {
+		if propertyCommand == nil {
+			propertyCommand = atsdNet.NewPropertyCommand(propertyType, entity, name, val)
 		} else {
-			aliases = append(aliases, ref.Name)
-			propertyCommand = atsdNet.NewPropertyCommand(propertyType, entity, containerNamespaceTag, "default")
+			propertyCommand.SetTag(name, val)
 		}
+	}
+	if propertyCommand != nil {
+		propertyCommand.SetTimestamp(atsdNet.Millis(timestamp.UnixNano() / time.Millisecond.Nanoseconds()))
+		return []*atsdNet.PropertyCommand{propertyCommand}
 	} else {
-		propertyCommand = atsdNet.NewPropertyCommand(propertyType, entity, containerNamespaceTag, ref.Namespace)
+		return []*atsdNet.PropertyCommand{}
 	}
-	if len(aliases) > 0 {
-		count := 0
-		for i := range aliases {
-			if "/"+ref.Namespace+"/"+aliases[i] == ref.Name || len(aliases) == 1 {
-				propertyCommand.SetTag(containerIdTag, aliases[i])
-			} else {
-				if count == 0 {
-					propertyCommand.SetTag(containerAliasPropertyTag, aliases[i])
-				} else {
-					propertyCommand.SetTag(containerAliasTagPrefix+strconv.FormatInt(int64(count), 10), aliases[i])
-				}
-				count++
-			}
-		}
-	}
-
-	for key, val := range ref.Labels {
-		propertyCommand.SetTag(containerLabelTagPrefix+key, val)
-	}
-	propertyCommand.SetTimestamp(atsdNet.Millis(timestamp.UnixNano() / time.Millisecond.Nanoseconds()))
-	return []*atsdNet.PropertyCommand{propertyCommand}
 }
 func RefToEntityCommands(machineName string, ref info.ContainerReference) []*atsdNet.EntityTagCommand {
-	tags := map[string]string{}
-	if ref.Id != "" {
-		tags[containerIdTag] = ref.Id
-	}
-
-	if ref.Name == "/" {
-		tags[containerHostTag] = "true"
-	}
-
-	if ref.Namespace != "" {
-		tags[containerNamespaceTag] = ref.Namespace
-	}
-	for _, a := range ref.Aliases {
-		// is container alias
-		if a != ref.Id {
-			tags[containerAliasEntityTag] = a
-			break
-		}
-	}
-	for labelName, labelValue := range ref.Labels {
-		tags[containerLabelTagPrefix+labelName] = labelValue
-	}
-
+	tags := extractTagsFromRef(machineName, ref)
 	var entity *atsdNet.EntityTagCommand
 	for key, val := range tags {
 		if entity == nil {

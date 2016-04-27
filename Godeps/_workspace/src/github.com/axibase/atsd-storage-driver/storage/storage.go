@@ -17,10 +17,10 @@ package storage
 
 import (
 	"container/list"
-	"github.com/axibase/atsd-api-go/http"
-	"github.com/axibase/atsd-api-go/net"
 	"sync"
 	"time"
+
+	"github.com/axibase/atsd-api-go/net"
 )
 
 type metricValue struct {
@@ -49,8 +49,6 @@ type Storage struct {
 	memstore          *MemStore
 	dataCompacter     *DataCompacter
 	writeCommunicator IWriteCommunicator
-
-	atsdHttpClient *http.Client
 
 	isUpdating             bool
 	updateInterval         time.Duration
@@ -97,22 +95,18 @@ func (self *Storage) selfMetricSendTask() {
 
 }
 
-func (self *Storage) SendSeriesCommands(group string, seriesCommands []*net.SeriesCommand) {
+func (self *Storage) QueuedSendSeriesCommands(group string, seriesCommands []*net.SeriesCommand) {
 	filteredSeriesCommands := self.dataCompacter.Filter(group, seriesCommands)
 	self.memstore.AppendSeriesCommands(filteredSeriesCommands)
 }
-func (self *Storage) SendPropertyCommands(propertyCommands []*net.PropertyCommand) {
+func (self *Storage) QueuedSendPropertyCommands(propertyCommands []*net.PropertyCommand) {
 	self.memstore.AppendPropertyCommands(propertyCommands)
 }
-func (self *Storage) SendEntityTagCommands(entityTagCommands []*net.EntityTagCommand) {
+func (self *Storage) QueuedSendEntityTagCommands(entityTagCommands []*net.EntityTagCommand) {
 	self.memstore.AppendEntityTagCommands(entityTagCommands)
 }
-func (self *Storage) SendMessageCommands(messageCommands []*net.MessageCommand) {
+func (self *Storage) QueuedSendMessageCommands(messageCommands []*net.MessageCommand) {
 	self.memstore.AppendMessageCommands(messageCommands)
-}
-
-func (self *Storage) RegisterMetric(metric *http.Metric) error {
-	return self.atsdHttpClient.Metric.CreateOrReplace(metric)
 }
 
 func (self *Storage) StartPeriodicSending() {

@@ -50,18 +50,6 @@
 			"Rev": "c0ef4539dfab4d21c8ef20ba2924f9fc6f186d35"
 		},
 		{
-			"ImportPath": "github.com/axibase/atsd-api-go/http",
-			"Rev": "b1f6603f85a066d621fafc6b4daa804083e3cb68"
-		},
-		{
-			"ImportPath": "github.com/axibase/atsd-api-go/net",
-			"Rev": "b1f6603f85a066d621fafc6b4daa804083e3cb68"
-		},
-		{
-			"ImportPath": "github.com/axibase/atsd-storage-driver/storage",
-			"Rev": "d7a9d6e93c4ebe6dd9fe350ee21b3bf15fb04df1"
-		},
-		{
 			"ImportPath": "github.com/aws/aws-sdk-go/aws",
 			"Comment": "v1.6.10",
 			"Rev": "63ce630574a5ec05ecd8e8de5cea16332a5a684d"
@@ -170,6 +158,18 @@
 			"ImportPath": "github.com/aws/aws-sdk-go/service/sts",
 			"Comment": "v1.6.10",
 			"Rev": "63ce630574a5ec05ecd8e8de5cea16332a5a684d"
+		},
+		{
+			"ImportPath": "github.com/axibase/atsd-api-go/http",
+			"Rev": "e992755e90ce968342dbde7f508945204fec64bc"
+		},
+		{
+			"ImportPath": "github.com/axibase/atsd-api-go/net",
+			"Rev": "e992755e90ce968342dbde7f508945204fec64bc"
+		},
+		{
+			"ImportPath": "github.com/axibase/atsd-storage-driver/storage",
+			"Rev": "adb84ea3dc36a41167d831abeb99ad4288136c27"
 		},
 		{
 			"ImportPath": "github.com/beorn7/perks/quantile",

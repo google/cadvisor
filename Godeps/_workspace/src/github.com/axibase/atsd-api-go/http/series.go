@@ -18,9 +18,10 @@ package http
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/axibase/atsd-api-go/net"
 	"strings"
 	"time"
+
+	"github.com/axibase/atsd-api-go/net"
 )
 
 type Sample struct {
@@ -69,7 +70,7 @@ type Series struct {
 	Warning string            `json:"warning,omitempty"`
 	Data    []*Sample         `json:"data"`
 
-	Type         SeriesType    `json:"type"`
+	Type         SeriesType    `json:"type,omitempty"`
 	ForecastName string        `json:"forecastName,omitempty"`
 	RequestId    string        `json:"requestId,omitempty"`
 	Meta         *ForecastMeta `json:"meta,omitempty"`

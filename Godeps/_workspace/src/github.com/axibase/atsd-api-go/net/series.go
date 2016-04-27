@@ -166,6 +166,7 @@ func (self *SeriesCommand) SetTag(tag, value string) *SeriesCommand {
 	self.tags[strings.ToLower(tag)] = value
 	return self
 }
+
 func (self *SeriesCommand) String() string {
 
 	msg := bytes.NewBufferString("")
@@ -179,5 +180,6 @@ func (self *SeriesCommand) String() string {
 	for key, val := range self.metricValues {
 		fmt.Fprintf(msg, " m:%v=%v", key, val)
 	}
+	fmt.Fprint(msg, "\n")
 	return msg.String()
 }

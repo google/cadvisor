@@ -86,5 +86,6 @@ func (self *MessageCommand) String() string {
 	for key, val := range self.tags {
 		fmt.Fprintf(msg, " t:%v=\"%v\"", key, val)
 	}
+	fmt.Fprint(msg, "\n")
 	return msg.String()
 }

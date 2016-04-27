@@ -17,8 +17,9 @@ package http
 
 import (
 	"encoding/json"
-	"github.com/axibase/atsd-api-go/net"
 	"strings"
+
+	"github.com/axibase/atsd-api-go/net"
 )
 
 type Property struct {

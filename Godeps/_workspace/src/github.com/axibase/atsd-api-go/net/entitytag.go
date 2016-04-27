@@ -45,11 +45,13 @@ func (self *EntityTagCommand) SetTag(name, value string) *EntityTagCommand {
 	self.tags[strings.ToLower(name)] = value
 	return self
 }
+
 func (self *EntityTagCommand) String() string {
 	result := bytes.NewBufferString("entity-tag")
 	fmt.Fprintf(result, " e:%v", self.entity)
 	for name, value := range self.tags {
 		fmt.Fprintf(result, " t:%v=\"%v\"", name, value)
 	}
+	fmt.Fprint(result, "\n")
 	return result.String()
 }
