@@ -47,12 +47,6 @@ var dockerCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
 
 var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys that needs to be collected for docker containers")
 
-// TODO(vmarmol): Export run dir too for newer Dockers.
-// Directory holding Docker container state information.
-func DockerStateDir() string {
-	return libcontainer.DockerStateDir(*dockerRootDir)
-}
-
 const (
 	dockerRootDirKey = "Root Dir"
 )
