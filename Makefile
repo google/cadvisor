@@ -13,15 +13,33 @@
 
 GO := godep go
 pkgs  = $(shell $(GO) list ./...)
+SOURCEDIR = $(shell pwd)
+SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
+DOCKER = $(shell command -v docker 2> /dev/null)
+build-image = cadvisor-build-image
+DOCKERMAKE = $(DOCKER) run --rm -i -v $(SOURCEDIR):/go/src/github.com/google/cadvisor $(build-image) make
 
 all: format build test
 
-test:
+all-docker: format build-docker test-docker
+
+build-image: build/Dockerfile
+	@$(DOCKER) build -t $(build-image) build/
+	@touch $@
+
+test-docker: $(SOURCES) build-image
+	@echo ">> running tests using docker"
+	@$(DOCKERMAKE) test
+
+test: $(SOURCES)
 	@echo ">> running tests"
 	@$(GO) test -tags test -short -race $(pkgs)
 
 test-integration: build test
 	@./build/integration.sh
+
+test-integration-docker: 
+	@$(DOCKERMAKE) test-integration
 
 format:
 	@echo ">> formatting code"
@@ -31,10 +49,14 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
-build:
+build-docker: $(SOURCES) build-image 
+	@echo ">> building binaries using docker"
+	@$(DOCKERMAKE) build
+
+build: $(SOURCES)
 	@echo ">> building binaries"
-	@./build/assets.sh
-	@./build/build.sh
+	@./build/assets.sh && ./build/build.sh
+	@touch $@
 
 release: build
 	@./build/release.sh
