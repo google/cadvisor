@@ -25,10 +25,6 @@ host=$( hostname -f )
 build_date=$( date +%Y%m%d-%H:%M:%S )
 go_version=$( go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/' )
 
-if [ "$(go env GOOS)" = "windows" ]; then
-  ext=".exe"
-fi
-
 # go 1.4 requires ldflags format to be "-X key value", not "-X key=value"
 ldseparator="="
 if [ "${go_version:0:3}" = "1.4" ]; then
@@ -44,6 +40,6 @@ ldflags="
   -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
 
 echo " >   cadvisor"
-godep go build -ldflags "${ldflags}" -o cadvisor${ext} ${repo_path}
+GOBIN=. godep go install -ldflags "${ldflags}" ${repo_path}
 
 exit 0
