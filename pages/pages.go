@@ -66,8 +66,9 @@ type pageData struct {
 }
 
 func init() {
+	containersHtmlTemplate, _ := Asset("pages/assets/html/containers.html")
 	pageTemplate = template.New("containersTemplate").Funcs(funcMap)
-	_, err := pageTemplate.Parse(containersHtmlTemplate)
+	_, err := pageTemplate.Parse(string(containersHtmlTemplate))
 	if err != nil {
 		glog.Fatalf("Failed to parse template: %s", err)
 	}
