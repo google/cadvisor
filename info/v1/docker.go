@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Types used for docker containers.
-package docker
+package v1
 
 type DockerStatus struct {
 	Version       string            `json:"version"`

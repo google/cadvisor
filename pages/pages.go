@@ -21,7 +21,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/google/cadvisor/container/docker"
 	httpmux "github.com/google/cadvisor/http/mux"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
@@ -63,7 +62,7 @@ type pageData struct {
 	Root                   string
 	DockerStatus           []keyVal
 	DockerDriverStatus     []keyVal
-	DockerImages           []docker.DockerImage
+	DockerImages           []info.DockerImage
 }
 
 func init() {

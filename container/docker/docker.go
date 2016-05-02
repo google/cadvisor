@@ -20,23 +20,24 @@ import (
 	"strconv"
 	"strings"
 
+	dockertypes "github.com/docker/engine-api/types"
 	"golang.org/x/net/context"
 
-	dockertypes "github.com/docker/engine-api/types"
+	"github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/machine"
 )
 
-func Status() (DockerStatus, error) {
+func Status() (v1.DockerStatus, error) {
 	client, err := Client()
 	if err != nil {
-		return DockerStatus{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
+		return v1.DockerStatus{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
 	dockerInfo, err := client.Info(context.Background())
 	if err != nil {
-		return DockerStatus{}, err
+		return v1.DockerStatus{}, err
 	}
 
-	out := DockerStatus{}
+	out := v1.DockerStatus{}
 	out.Version = VersionString()
 	out.KernelVersion = machine.KernelVersion()
 	out.OS = dockerInfo.OperatingSystem
@@ -53,7 +54,7 @@ func Status() (DockerStatus, error) {
 	return out, nil
 }
 
-func Images() ([]DockerImage, error) {
+func Images() ([]v1.DockerImage, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
@@ -63,14 +64,14 @@ func Images() ([]DockerImage, error) {
 		return nil, err
 	}
 
-	out := []DockerImage{}
+	out := []v1.DockerImage{}
 	const unknownTag = "<none>:<none>"
 	for _, image := range images {
 		if len(image.RepoTags) == 1 && image.RepoTags[0] == unknownTag {
 			// images with repo or tags are uninteresting.
 			continue
 		}
-		di := DockerImage{
+		di := v1.DockerImage{
 			ID:          image.ID,
 			RepoTags:    image.RepoTags,
 			Created:     image.Created,
