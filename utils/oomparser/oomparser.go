@@ -205,13 +205,17 @@ func getSystemFile() (string, error) {
 // initializes an OomParser object and calls getSystemFile to set the systemFile
 // attribute.  Returns and OomParser object and an error
 func New() (*OomParser, error) {
+	parser, err := trySystemd()
+	if err == nil {
+		return parser, nil
+	}
 	systemFile, err := getSystemFile()
 	if err != nil {
-		return trySystemd()
+		return nil, err
 	}
 	file, err := os.Open(systemFile)
 	if err != nil {
-		return trySystemd()
+		return nil, err
 	}
 	return &OomParser{
 		ioreader: bufio.NewReader(file),
