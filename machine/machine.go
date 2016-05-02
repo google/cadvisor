@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// The machine package contains functions that extract machine-level specs.
 package machine
 
 import (
@@ -32,8 +33,6 @@ import (
 
 	"github.com/golang/glog"
 )
-
-// The utils/machine package contains functions that extract machine-level specs.
 
 var (
 	cpuRegExp  = regexp.MustCompile(`^processor\s*:\s*([0-9]+)$`)

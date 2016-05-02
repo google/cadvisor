@@ -29,7 +29,6 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 
 	docker "github.com/docker/engine-api/client"
-	dockertypes "github.com/docker/engine-api/types"
 	dockercontainer "github.com/docker/engine-api/types/container"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
@@ -348,64 +347,4 @@ func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
 
 func (self *dockerContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
-}
-
-func DockerInfo() (dockertypes.Info, error) {
-	client, err := Client()
-	if err != nil {
-		return dockertypes.Info{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
-	}
-	return client.Info(context.Background())
-}
-
-func DockerImages() ([]dockertypes.Image, error) {
-	client, err := Client()
-	if err != nil {
-		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
-	}
-	return client.ImageList(context.Background(), dockertypes.ImageListOptions{All: false})
-}
-
-// Checks whether the dockerInfo reflects a valid docker setup, and returns it if it does, or an
-// error otherwise.
-func ValidateInfo() (*dockertypes.Info, error) {
-	client, err := Client()
-	if err != nil {
-		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
-	}
-
-	dockerInfo, err := client.Info(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
-	}
-
-	// Fall back to version API if ServerVersion is not set in info.
-	if dockerInfo.ServerVersion == "" {
-		version, err := client.ServerVersion(context.Background())
-		if err != nil {
-			return nil, fmt.Errorf("unable to get docker version: %v", err)
-		}
-		dockerInfo.ServerVersion = version.Version
-	}
-	version, err := parseDockerVersion(dockerInfo.ServerVersion)
-	if err != nil {
-		return nil, err
-	}
-
-	if version[0] < 1 {
-		return nil, fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as %q", []int{1, 0, 0}, version, dockerInfo.ServerVersion)
-	}
-
-	// Check that the libcontainer execdriver is used if the version is < 1.11
-	// (execution drivers are no longer supported as of 1.11).
-	if version[0] <= 1 && version[1] <= 10 &&
-		!strings.HasPrefix(dockerInfo.ExecutionDriver, "native") {
-		return nil, fmt.Errorf("docker found, but not using native exec driver")
-	}
-
-	if dockerInfo.Driver == "" {
-		return nil, fmt.Errorf("failed to find docker storage driver")
-	}
-
-	return &dockerInfo, nil
 }

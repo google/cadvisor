@@ -62,7 +62,7 @@ type pageData struct {
 	Root                   string
 	DockerStatus           []keyVal
 	DockerDriverStatus     []keyVal
-	DockerImages           []manager.DockerImage
+	DockerImages           []info.DockerImage
 }
 
 func init() {
