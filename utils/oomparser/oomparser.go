@@ -144,17 +144,18 @@ func (self *OomParser) StreamOoms(outStream chan *OomInstance) {
 			oomCurrentInstance := &OomInstance{
 				ContainerName: "/",
 			}
-			finished := false
-			for !finished {
+			for line := range lineChannel {
 				err := getContainerName(line, oomCurrentInstance)
 				if err != nil {
 					glog.Errorf("%v", err)
 				}
-				finished, err = getProcessNamePid(line, oomCurrentInstance)
+				finished, err := getProcessNamePid(line, oomCurrentInstance)
 				if err != nil {
 					glog.Errorf("%v", err)
 				}
-				line = <-lineChannel
+				if finished {
+					break
+				}
 			}
 			outStream <- oomCurrentInstance
 		}
