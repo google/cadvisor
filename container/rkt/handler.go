@@ -18,7 +18,6 @@ package rkt
 import (
 	"fmt"
 	"os"
-	"path"
 	"time"
 
 	rktapi "github.com/coreos/rkt/api/v1alpha"
@@ -260,48 +259,7 @@ func (handler *rktContainerHandler) GetContainerLabels() map[string]string {
 }
 
 func (handler *rktContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	containers := make(map[string]struct{})
-
-	// Rkt containers do not have subcontainers, only the "Pod" does.
-	if handler.isPod == false {
-		var ret []info.ContainerReference
-		return ret, nil
-	}
-
-	// Turn the system.slice cgroups  into the Pod's subcontainers
-	for _, cgroupPath := range handler.cgroupPaths {
-		err := common.ListDirectories(path.Join(cgroupPath, "system.slice"), path.Join(handler.name, "system.slice"), listType == container.ListRecursive, containers)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Create the container references. for the Pod's subcontainers
-	ret := make([]info.ContainerReference, 0, len(handler.apiPod.Apps))
-	for cont := range containers {
-		aliases := make([]string, 1)
-		parsed, err := parseName(cont)
-		if err != nil {
-			return nil, fmt.Errorf("this should be impossible!, unable to parse rkt subcontainer name = %s", cont)
-		}
-		aliases = append(aliases, parsed.Pod+":"+parsed.Container)
-
-		labels := make(map[string]string)
-		if annotations, ok := findAnnotations(handler.apiPod.Apps, parsed.Container); !ok {
-			glog.Warningf("couldn't find application in Pod matching %v", parsed.Container)
-		} else {
-			labels = createLabels(annotations)
-		}
-
-		ret = append(ret, info.ContainerReference{
-			Name:      cont,
-			Aliases:   aliases,
-			Namespace: RktNamespace,
-			Labels:    labels,
-		})
-	}
-
-	return ret, nil
+	return common.ListContainers(handler.name, handler.cgroupPaths, listType)
 }
 
 func (handler *rktContainerHandler) ListThreads(listType container.ListType) ([]int, error) {

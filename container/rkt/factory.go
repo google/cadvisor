@@ -63,7 +63,7 @@ func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 
 	if strings.HasPrefix(name, "/machine.slice/machine-rkt\\x2d") {
 		accept, err := verifyName(name)
-		return true, accept, err
+		return accept, accept, err
 	}
 	return false, false, fmt.Errorf("%s not handled by rkt handler", name)
 }

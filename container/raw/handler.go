@@ -269,23 +269,7 @@ func (self *rawContainerHandler) GetContainerLabels() map[string]string {
 }
 
 func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	containers := make(map[string]struct{})
-	for _, cgroupPath := range self.cgroupPaths {
-		err := common.ListDirectories(cgroupPath, self.name, listType == container.ListRecursive, containers)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Make into container references.
-	ret := make([]info.ContainerReference, 0, len(containers))
-	for cont := range containers {
-		ret = append(ret, info.ContainerReference{
-			Name: cont,
-		})
-	}
-
-	return ret, nil
+	return common.ListContainers(self.name, self.cgroupPaths, listType)
 }
 
 func (self *rawContainerHandler) ListThreads(listType container.ListType) ([]int, error) {
