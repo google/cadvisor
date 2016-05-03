@@ -40,6 +40,6 @@ ldflags="
   -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
 
 echo " >   cadvisor"
-GOBIN=. godep go install -ldflags "${ldflags}" ${repo_path}
+GOBIN=$PWD godep go install -ldflags "${ldflags}" ${repo_path}
 
 exit 0
