@@ -72,11 +72,15 @@ type metricSetValue struct {
 }
 
 func (ml *metricSetValue) String() string {
-	return fmt.Sprint(*ml)
+	var values []string
+	for metric, _ := range ml.MetricSet {
+		values = append(values, string(metric))
+	}
+	return strings.Join(values, ",")
 }
 
 func (ml *metricSetValue) Set(value string) error {
-	ignoreMetrics = metricSetValue{}
+	ml.MetricSet = container.MetricSet{}
 	if value == "" {
 		return nil
 	}
@@ -91,7 +95,7 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of metrics to be disabled. Options are `disk`, `network`, `tcp`. Note: tcp is disabled by default due to high CPU usage.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp'. Note: tcp is disabled by default due to high CPU usage.")
 }
 
 func main() {
