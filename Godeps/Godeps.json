@@ -1,6 +1,7 @@
 {
 	"ImportPath": "github.com/google/cadvisor",
 	"GoVersion": "go1.5.3",
+	"GodepVersion": "v60",
 	"Packages": [
 		"./..."
 	],
@@ -101,6 +102,10 @@
 		{
 			"ImportPath": "github.com/beorn7/perks/quantile",
 			"Rev": "b965b613227fddccbfffe13eae360ed3fa822f8d"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-semver/semver",
+			"Rev": "d043ae190b3202550d026daf009359bb5d761672"
 		},
 		{
 			"ImportPath": "github.com/coreos/go-systemd/dbus",
