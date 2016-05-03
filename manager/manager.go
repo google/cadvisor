@@ -1003,7 +1003,7 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 					err = self.destroyContainer(event.Name)
 				}
 				if err != nil {
-					glog.Warningf("Failed to process watch event: %v", err)
+					glog.Warningf("Failed to process watch event %+v: %v", event, err)
 				}
 			case <-quit:
 				// Stop processing events if asked to quit.
