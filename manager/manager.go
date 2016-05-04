@@ -37,6 +37,8 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/machine"
+	"github.com/google/cadvisor/manager/watcher"
+	rawwatcher "github.com/google/cadvisor/manager/watcher/raw"
 	"github.com/google/cadvisor/utils/cpuload"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
@@ -163,6 +165,9 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		inHostNamespace = true
 	}
 
+	// Register for new subcontainers.
+	eventsChannel := make(chan watcher.ContainerEvent, 16)
+
 	newManager := &manager{
 		containers:               make(map[namespacedContainerName]*containerData),
 		quitChannels:             make([]chan error, 0, 2),
@@ -174,6 +179,8 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		maxHousekeepingInterval:  maxHousekeepingInterval,
 		allowDynamicHousekeeping: allowDynamicHousekeeping,
 		ignoreMetrics:            ignoreMetricsSet,
+		containerWatchers:        []watcher.ContainerWatcher{},
+		eventsChannel:            eventsChannel,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -217,6 +224,8 @@ type manager struct {
 	maxHousekeepingInterval  time.Duration
 	allowDynamicHousekeeping bool
 	ignoreMetrics            container.MetricSet
+	containerWatchers        []watcher.ContainerWatcher
+	eventsChannel            chan watcher.ContainerEvent
 }
 
 // Start the container manager.
@@ -240,6 +249,12 @@ func (self *manager) Start() error {
 	if err != nil {
 		glog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
+
+	rawWatcher, err := rawwatcher.NewRawContainerWatcher()
+	if err != nil {
+		return err
+	}
+	self.containerWatchers = append(self.containerWatchers, rawWatcher)
 
 	if *enableLoadReader {
 		// Create cpu load reader.
@@ -269,7 +284,7 @@ func (self *manager) Start() error {
 	}
 
 	// Create root and then recover all containers.
-	err = self.createContainer("/")
+	err = self.createContainer("/", watcher.Raw)
 	if err != nil {
 		return err
 	}
@@ -769,10 +784,14 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 }
 
 // Create a container.
-func (m *manager) createContainer(containerName string) error {
+func (m *manager) createContainer(containerName string, watchSource watcher.ContainerWatchSource) error {
 	m.containersLock.Lock()
 	defer m.containersLock.Unlock()
 
+	return m.createContainerLocked(containerName, watchSource)
+}
+
+func (m *manager) createContainerLocked(containerName string, watchSource watcher.ContainerWatchSource) error {
 	namespacedName := namespacedContainerName{
 		Name: containerName,
 	}
@@ -782,7 +801,7 @@ func (m *manager) createContainer(containerName string) error {
 		return nil
 	}
 
-	handler, accept, err := container.NewContainerHandler(containerName, m.inHostNamespace)
+	handler, accept, err := container.NewContainerHandler(containerName, watchSource, m.inHostNamespace)
 	if err != nil {
 		return err
 	}
@@ -849,6 +868,10 @@ func (m *manager) destroyContainer(containerName string) error {
 	m.containersLock.Lock()
 	defer m.containersLock.Unlock()
 
+	return m.destroyContainerLocked(containerName)
+}
+
+func (m *manager) destroyContainerLocked(containerName string) error {
 	namespacedName := namespacedContainerName{
 		Name: containerName,
 	}
@@ -946,7 +969,7 @@ func (m *manager) detectSubcontainers(containerName string) error {
 
 	// Add the new containers.
 	for _, cont := range added {
-		err = m.createContainer(cont.Name)
+		err = m.createContainer(cont.Name, watcher.Raw)
 		if err != nil {
 			glog.Errorf("Failed to create existing container: %s: %s", cont.Name, err)
 		}
@@ -965,28 +988,15 @@ func (m *manager) detectSubcontainers(containerName string) error {
 
 // Watches for new containers started in the system. Runs forever unless there is a setup error.
 func (self *manager) watchForNewContainers(quit chan error) error {
-	var root *containerData
-	var ok bool
-	func() {
-		self.containersLock.RLock()
-		defer self.containersLock.RUnlock()
-		root, ok = self.containers[namespacedContainerName{
-			Name: "/",
-		}]
-	}()
-	if !ok {
-		return fmt.Errorf("root container does not exist when watching for new containers")
-	}
-
-	// Register for new subcontainers.
-	eventsChannel := make(chan container.SubcontainerEvent, 16)
-	err := root.handler.WatchSubcontainers(eventsChannel)
-	if err != nil {
-		return err
+	for _, watcher := range self.containerWatchers {
+		err := watcher.Start(self.eventsChannel)
+		if err != nil {
+			return err
+		}
 	}
 
 	// There is a race between starting the watch and new container creation so we do a detection before we read new containers.
-	err = self.detectSubcontainers("/")
+	err := self.detectSubcontainers("/")
 	if err != nil {
 		return err
 	}
@@ -995,21 +1005,32 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 	go func() {
 		for {
 			select {
-			case event := <-eventsChannel:
+			case event := <-self.eventsChannel:
 				switch {
-				case event.EventType == container.SubcontainerAdd:
-					err = self.createContainer(event.Name)
-				case event.EventType == container.SubcontainerDelete:
+				case event.EventType == watcher.ContainerAdd:
+					err = self.createContainer(event.Name, event.WatchSource)
+				case event.EventType == watcher.ContainerDelete:
 					err = self.destroyContainer(event.Name)
 				}
 				if err != nil {
 					glog.Warningf("Failed to process watch event %+v: %v", event, err)
 				}
 			case <-quit:
+				errors := []string{}
+
 				// Stop processing events if asked to quit.
-				err := root.handler.StopWatchingSubcontainers()
-				quit <- err
-				if err == nil {
+				for _, watcher := range self.containerWatchers {
+					err := watcher.Stop()
+					if err != nil {
+						errors = append(errors, err.Error())
+					}
+				}
+
+				if len(errors) > 0 {
+					err_str := strings.Join(errors, ", ")
+					quit <- fmt.Errorf("Error quiting watchers: %v", err_str)
+				} else {
+					quit <- nil
 					glog.Infof("Exiting thread watching subcontainers")
 					return
 				}

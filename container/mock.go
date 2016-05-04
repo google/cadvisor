@@ -77,16 +77,6 @@ func (self *MockContainerHandler) ListProcesses(listType ListType) ([]int, error
 	return args.Get(0).([]int), args.Error(1)
 }
 
-func (self *MockContainerHandler) WatchSubcontainers(events chan SubcontainerEvent) error {
-	args := self.Called(events)
-	return args.Error(0)
-}
-
-func (self *MockContainerHandler) StopWatchingSubcontainers() error {
-	args := self.Called()
-	return args.Error(0)
-}
-
 func (self *MockContainerHandler) Exists() bool {
 	args := self.Called()
 	return args.Get(0).(bool)
@@ -100,6 +90,11 @@ func (self *MockContainerHandler) GetCgroupPath(path string) (string, error) {
 func (self *MockContainerHandler) GetContainerLabels() map[string]string {
 	args := self.Called()
 	return args.Get(0).(map[string]string)
+}
+
+func (self *MockContainerHandler) String() string {
+	args := self.Called()
+	return args.Get(0).(string)
 }
 
 type FactoryForMockContainerHandler struct {

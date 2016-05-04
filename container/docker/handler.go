@@ -331,15 +331,6 @@ func (self *dockerContainerHandler) ListProcesses(listType container.ListType) (
 	return containerlibcontainer.GetProcesses(self.cgroupManager)
 }
 
-func (self *dockerContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {
-	return fmt.Errorf("watch is unimplemented in the Docker container driver")
-}
-
-func (self *dockerContainerHandler) StopWatchingSubcontainers() error {
-	// No-op for Docker driver.
-	return nil
-}
-
 func (self *dockerContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
