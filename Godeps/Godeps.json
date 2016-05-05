@@ -103,6 +103,11 @@
 			"Rev": "b965b613227fddccbfffe13eae360ed3fa822f8d"
 		},
 		{
+			"ImportPath": "github.com/blang/semver",
+			"Comment": "v3.1.0",
+			"Rev": "aea32c919a18e5ef4537bbd283ff29594b1b0165"
+		},
+		{
 			"ImportPath": "github.com/coreos/go-systemd/dbus",
 			"Comment": "v4",
 			"Rev": "b4a58d95188dd092ae20072bac14cece0e67c388"
