@@ -231,6 +231,33 @@
 	  </div>
 	</div>
 	{{end}}
+        {{if .SubcontainersAvailable}}
+	<div class="panel panel-primary">
+          <div class="panel-heading">
+            <h3 class="panel-title">Subcontainers</h3>
+          </div>
+          <div class="panel-body">
+            <h4>Top CPU Usage:
+              <input id="cpu-per-subcontainer-display-count"
+                     class="subcontainer-display-input"
+                     value=10>
+            </h4>
+            <div id="cpu-per-subcontainer-usage-chart">
+            </div>
+          </div>
+          <div class="panel-body">
+            <h4>Top Memory Usage:
+              <input id="memory-per-subcontainer-display-count"
+                     class="subcontainer-display-input"
+                     value=10>
+            </h4>
+            <span class="subcontroller-display-block">
+            <span>
+            <div id="memory-per-subcontainer-usage-chart">
+            </div>
+          </div>
+        </div>
+        {{end}}
       </div>
       {{end}}
     </div>
