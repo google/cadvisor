@@ -1,7 +1,6 @@
 {
 	"ImportPath": "github.com/google/cadvisor",
 	"GoVersion": "go1.5",
-	"GodepVersion": "v62",
 	"Packages": [
 		"./..."
 	],
@@ -120,8 +119,8 @@
 		},
 		{
 			"ImportPath": "github.com/coreos/rkt/api/v1alpha",
-			"Comment": "v1.4.0-3-g02438c5",
-			"Rev": "02438c55fbd406cadd6dfc4292f05336d1f86cbe"
+			"Comment": "v1.5.1-28-g448f442",
+			"Rev": "448f44279126adf45052485d2be5ca730c3d1aa1"
 		},
 		{
 			"ImportPath": "github.com/docker/distribution/digest",

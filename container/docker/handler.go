@@ -334,3 +334,7 @@ func (self *dockerContainerHandler) ListProcesses(listType container.ListType) (
 func (self *dockerContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
+
+func (self *dockerContainerHandler) String() string {
+	return "docker"
+}

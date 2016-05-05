@@ -59,4 +59,7 @@ type ContainerHandler interface {
 	// Start starts any necessary background goroutines - must be cleaned up in Cleanup().
 	// It is expected that most implementations will be a no-op.
 	Start()
+
+	//Name of handler
+	String() string
 }

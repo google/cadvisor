@@ -22,12 +22,14 @@ type ContainerEventType int
 const (
 	ContainerAdd ContainerEventType = iota
 	ContainerDelete
+	ContainerOverride
 )
 
 type ContainerWatchSource int
 
 const (
 	Raw ContainerWatchSource = iota
+	Rkt
 )
 
 // ContainerEvent represents a

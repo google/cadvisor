@@ -100,16 +100,16 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 	if err != nil {
 		return nil, err
 	} else {
-		var annotations []*rktapi.KeyValue
-		if parsed.Container == "" {
+		annotations := resp.Pod.Annotations
+		if parsed.Container != "" {
+			if contAnnotations, ok := findAnnotations(resp.Pod.Apps, parsed.Container); !ok {
+				glog.Warningf("couldn't find application in Pod matching %v", parsed.Container)
+			} else {
+				annotations = append(annotations, contAnnotations...)
+			}
+		} else {
 			pid = int(resp.Pod.Pid)
 			apiPod = resp.Pod
-			annotations = resp.Pod.Annotations
-		} else {
-			var ok bool
-			if annotations, ok = findAnnotations(resp.Pod.Apps, parsed.Container); !ok {
-				glog.Warningf("couldn't find application in Pod matching %v", parsed.Container)
-			}
 		}
 		labels = createLabels(annotations)
 	}
@@ -195,7 +195,12 @@ func (handler *rktContainerHandler) Cleanup() {
 func (handler *rktContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasNetwork := handler.hasNetwork && !handler.ignoreMetrics.Has(container.NetworkUsageMetrics)
 	hasFilesystem := !handler.ignoreMetrics.Has(container.DiskUsageMetrics)
-	return common.GetSpec(handler.cgroupPaths, handler.machineInfoFactory, hasNetwork, hasFilesystem)
+
+	spec, err := common.GetSpec(handler.cgroupPaths, handler.machineInfoFactory, hasNetwork, hasFilesystem)
+
+	spec.Labels = handler.labels
+
+	return spec, err
 }
 
 func (handler *rktContainerHandler) getFsStats(stats *info.ContainerStats) error {
@@ -268,4 +273,8 @@ func (handler *rktContainerHandler) ListProcesses(listType container.ListType) (
 
 func (handler *rktContainerHandler) Exists() bool {
 	return common.CgroupExists(handler.cgroupPaths)
+}
+
+func (handler *rktContainerHandler) String() string {
+	return "rkt"
 }

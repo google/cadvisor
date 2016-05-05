@@ -20,7 +20,9 @@ import (
 	"path"
 	"strings"
 
+	rktapi "github.com/coreos/rkt/api/v1alpha"
 	"github.com/golang/glog"
+	"golang.org/x/net/context"
 )
 
 type parsedName struct {
@@ -28,9 +30,46 @@ type parsedName struct {
 	Container string
 }
 
-func verifyName(name string) (bool, error) {
-	_, err := parseName(name)
-	return err == nil, err
+func verifyPod(name string) (bool, bool, error) {
+	pod, err := cgroupToPod(name)
+
+	if err != nil || pod == nil {
+		return false, false, err
+	}
+
+	splits := strings.Split(name, "/")
+
+	//anything handler can handle is also accepted
+	//accept cgroups that are sub the pod cgroup, except "system.slice"
+	accept := splits[len(splits)-1] != "system.slice"
+
+	return accept, accept, nil
+}
+
+func cgroupToPod(name string) (*rktapi.Pod, error) {
+	rktClient, err := Client()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get rkt api service: %v", err)
+	}
+
+	resp, err := rktClient.ListPods(context.Background(), &rktapi.ListPodsRequest{
+		Filters: []*rktapi.PodFilter{
+			{
+				States:        []rktapi.PodState{rktapi.PodState_POD_STATE_RUNNING},
+				PodSubCgroups: []string{name},
+			},
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Pods) != 1 {
+		return nil, fmt.Errorf("returned none or more than one running pod for cgroup %v", name)
+	}
+
+	return resp.Pods[0], nil
 }
 
 /* Parse cgroup name into a pod/container name struct
@@ -41,24 +80,28 @@ func verifyName(name string) (bool, error) {
 */
 //TODO{sjpotter}: this currently only recognizes machined started pods, which actually doesn't help with k8s which uses them as systemd services, need a solution for both
 func parseName(name string) (*parsedName, error) {
-	splits := strings.Split(name, "/")
-	if len(splits) == 3 || len(splits) == 5 {
-		parsed := &parsedName{}
-
-		if splits[1] == "machine.slice" {
-			replacer := strings.NewReplacer("machine-rkt\\x2d", "", ".scope", "", "\\x2d", "-")
-			parsed.Pod = replacer.Replace(splits[2])
-			if len(splits) == 3 {
-				return parsed, nil
-			}
-			if splits[3] == "system.slice" {
-				parsed.Container = strings.Replace(splits[4], ".service", "", -1)
-				return parsed, nil
-			}
-		}
+	pod, err := cgroupToPod(name)
+	if err != nil {
+		return nil, err
+	}
+	if pod == nil {
+		return nil, fmt.Errorf("parseName: didn't return a pod!")
 	}
 
-	return nil, fmt.Errorf("%s not handled by rkt handler", name)
+	splits := strings.Split(name, "/")
+
+	parsed := &parsedName{}
+	if len(splits) >= 3 {
+		parsed.Pod = pod.Id
+
+		if len(splits) == 5 {
+			parsed.Container = strings.Replace(splits[4], ".service", "", -1)
+		}
+
+		return parsed, nil
+	}
+
+	return nil, fmt.Errorf("%s not handled by rkt handler, shouldn't have reached here", name)
 }
 
 // Gets a Rkt container's overlay upper dir
@@ -80,7 +123,7 @@ func getRootFs(root string, parsed *parsedName) string {
 
 	bytes, err := ioutil.ReadFile(tree)
 	if err != nil {
-		glog.Infof("ReadFile failed, couldn't read %v to get upper dir: %v", tree, err)
+		glog.Warningf("ReadFile failed, couldn't read %v to get upper dir: %v", tree, err)
 		return ""
 	}
 
