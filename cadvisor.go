@@ -110,7 +110,7 @@ func main() {
 
 	memoryStorage, err := NewMemoryStorage()
 	if err != nil {
-		glog.Fatalf("Failed to connect to database: %s", err)
+		glog.Fatalf("Failed to initialize storage driver: %s", err)
 	}
 
 	sysFs, err := sysfs.NewRealSysFs()

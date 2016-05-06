@@ -17,7 +17,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -35,26 +34,18 @@ import (
 )
 
 var (
-	storageDriver   string
+	storageDriver   = flag.String("storage_driver", "", fmt.Sprintf("Storage `driver` to use. Data is always cached shortly in memory, this controls where data is pushed besides the local cache. Empty means none. Options are: <empty>, %s", strings.Join(storage.ListDrivers(), ", ")))
 	storageDuration = flag.Duration("storage_duration", 2*time.Minute, "How long to keep data stored (Default: 2min).")
 )
 
-func init() {
-	// Add storage driver flag.
-	options := storage.ListDrivers()
-	sort.Strings(options)
-	storageDriverUsage := fmt.Sprintf("Storage `driver` to use. Data is always cached shortly in memory, this controls where data is pushed besides the local cache. Empty means none. Options are: <empty>, %s", strings.Join(options, ", "))
-	flag.StringVar(&storageDriver, "storage_driver", "", storageDriverUsage)
-}
-
 // NewMemoryStorage creates a memory storage with an optional backend storage option.
 func NewMemoryStorage() (*memory.InMemoryCache, error) {
-	backendStorage, err := storage.New(storageDriver)
+	backendStorage, err := storage.New(*storageDriver)
 	if err != nil {
 		return nil, err
 	}
-	if storageDriver != "" {
-		glog.Infof("Using backend storage type %q", storageDriver)
+	if *storageDriver != "" {
+		glog.Infof("Using backend storage type %q", *storageDriver)
 	}
 	glog.Infof("Caching stats in memory for %v", *storageDuration)
 	return memory.New(*storageDuration, backendStorage), nil

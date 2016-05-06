@@ -16,6 +16,7 @@ package storage
 
 import (
 	"fmt"
+	"sort"
 
 	info "github.com/google/cadvisor/info/v1"
 )
@@ -53,5 +54,6 @@ func ListDrivers() []string {
 	for name := range registeredPlugins {
 		drivers = append(drivers, name)
 	}
+	sort.Strings(drivers)
 	return drivers
 }
