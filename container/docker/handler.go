@@ -202,6 +202,24 @@ func newDockerContainerHandler(
 		}
 	}
 
+	dockerStatus, err := Status()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get dockerStatus : %v", id, err)
+	}
+
+	fsContext := fs.Context{
+		Docker: fs.DockerContext{
+			Root:         RootDir(),
+			Driver:       dockerStatus.Driver,
+			DriverStatus: dockerStatus.DriverStatus,
+		},
+	}
+
+	handler.fsInfo, err = fs.ContainerFsInfo(fsContext, handler.pid)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get mounted filesystems for container %q: %v", id, err)
+	}
+
 	return handler, nil
 }
 
@@ -249,8 +267,15 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 	if self.ignoreMetrics.Has(container.DiskUsageMetrics) {
 		return nil
 	}
+
+	if self.fsInfo == nil {
+		return nil
+	}
+
 	switch self.storageDriver {
 	case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
+	case devicemapperStorageDriver:
+		return self.getContainerFsStats(stats)
 	default:
 		return nil
 	}
@@ -283,6 +308,36 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 	fsStat.BaseUsage, fsStat.Usage = self.fsHandler.Usage()
 	stats.Filesystem = append(stats.Filesystem, fsStat)
+
+	return nil
+}
+
+func (self *dockerContainerHandler) getContainerFsStats(stats *info.ContainerStats) error {
+	filesystems, err := self.fsInfo.GetGlobalFsInfo()
+	if err != nil {
+		return err
+	}
+	for _, fs := range filesystems {
+		stats.Filesystem = append(stats.Filesystem,
+			info.FsStats{
+				Device:          fs.Device,
+				Limit:           fs.Capacity,
+				Usage:           fs.Capacity - fs.Free,
+				Available:       fs.Available,
+				InodesFree:      fs.InodesFree,
+				ReadsCompleted:  fs.DiskStats.ReadsCompleted,
+				ReadsMerged:     fs.DiskStats.ReadsMerged,
+				SectorsRead:     fs.DiskStats.SectorsRead,
+				ReadTime:        fs.DiskStats.ReadTime,
+				WritesCompleted: fs.DiskStats.WritesCompleted,
+				WritesMerged:    fs.DiskStats.WritesMerged,
+				SectorsWritten:  fs.DiskStats.SectorsWritten,
+				WriteTime:       fs.DiskStats.WriteTime,
+				IoInProgress:    fs.DiskStats.IoInProgress,
+				IoTime:          fs.DiskStats.IoTime,
+				WeightedIoTime:  fs.DiskStats.WeightedIoTime,
+			})
+	}
 
 	return nil
 }
