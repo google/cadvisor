@@ -323,11 +323,6 @@ func (self *dockerContainerHandler) GetCgroupPath(resource string) (string, erro
 	return path, nil
 }
 
-func (self *dockerContainerHandler) ListThreads(listType container.ListType) ([]int, error) {
-	// TODO(vmarmol): Implement.
-	return nil, nil
-}
-
 func (self *dockerContainerHandler) GetContainerLabels() map[string]string {
 	return self.labels
 }
