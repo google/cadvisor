@@ -22,8 +22,8 @@
 		},
 		{
 			"ImportPath": "github.com/Shopify/sarama",
-			"Comment": "v1.7.0",
-			"Rev": "87ec8d76e89cc002ff5673ee7598ae1db2f32424"
+			"Comment": "v1.8.0",
+			"Rev": "4ba9bba6adb6697bcec3841e1ecdfecf5227c3b9"
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
