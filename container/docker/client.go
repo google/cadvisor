@@ -24,13 +24,13 @@ import (
 )
 
 var (
-	dockerClient    *dclient.Client
-	dockerClientErr error
-	once            sync.Once
+	dockerClient     *dclient.Client
+	dockerClientErr  error
+	dockerClientOnce sync.Once
 )
 
 func Client() (*dclient.Client, error) {
-	once.Do(func() {
+	dockerClientOnce.Do(func() {
 		dockerClient, dockerClientErr = dclient.NewClient(*ArgDockerEndpoint, "", nil, nil)
 	})
 	return dockerClient, dockerClientErr

@@ -20,6 +20,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -34,12 +35,7 @@ import (
 var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
 
 // The namespace under which Docker aliases are unique.
-var DockerNamespace = "docker"
-
-// Basepath to all container specific information that libcontainer stores.
-// TODO: Deprecate this flag
-var dockerRootDir = flag.String("docker_root", "/var/lib/docker", "Absolute path to the Docker state root directory (default: /var/lib/docker)")
-var dockerRunDir = flag.String("docker_run", "/var/run/docker", "Absolute path to the Docker run directory (default: /var/run/docker)")
+const DockerNamespace = "docker"
 
 // Regexp that identifies docker cgroups, containers started with
 // --cgroup-parent have another prefix than 'docker'
@@ -47,18 +43,25 @@ var dockerCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
 
 var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys that needs to be collected for docker containers")
 
-// TODO(vmarmol): Export run dir too for newer Dockers.
-// Directory holding Docker container state information.
-func DockerStateDir() string {
-	return libcontainer.DockerStateDir(*dockerRootDir)
-}
+var (
+	// Basepath to all container specific information that libcontainer stores.
+	dockerRootDir string
 
-const (
-	dockerRootDirKey = "Root Dir"
+	dockerRootDirFlag = flag.String("docker_root", "/var/lib/docker", "DEPRECATED: docker root is read from docker info (this is a fallback, default: /var/lib/docker)")
+
+	dockerRootDirOnce sync.Once
 )
 
 func RootDir() string {
-	return *dockerRootDir
+	dockerRootDirOnce.Do(func() {
+		status, err := Status()
+		if err == nil && status.RootDir != "" {
+			dockerRootDir = status.RootDir
+		} else {
+			dockerRootDir = *dockerRootDirFlag
+		}
+	})
+	return dockerRootDir
 }
 
 type storageDriver string
@@ -178,10 +181,6 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 	// Version already validated above, assume no error here.
 	dockerVersion, _ := parseDockerVersion(dockerInfo.ServerVersion)
 
-	storageDir := dockerInfo.DockerRootDir
-	if storageDir == "" {
-		storageDir = *dockerRootDir
-	}
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
@@ -195,7 +194,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		fsInfo:             fsInfo,
 		machineInfoFactory: factory,
 		storageDriver:      storageDriver(dockerInfo.Driver),
-		storageDir:         storageDir,
+		storageDir:         RootDir(),
 		ignoreMetrics:      ignoreMetrics,
 	}
 
