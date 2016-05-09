@@ -58,9 +58,6 @@ type ContainerHandler interface {
 	// Returns the subcontainers of this container.
 	ListContainers(listType ListType) ([]info.ContainerReference, error)
 
-	// Returns the threads inside this container.
-	ListThreads(listType ListType) ([]int, error)
-
 	// Returns the processes inside this container.
 	ListProcesses(listType ListType) ([]int, error)
 

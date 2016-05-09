@@ -272,11 +272,6 @@ func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]
 	return common.ListContainers(self.name, self.cgroupPaths, listType)
 }
 
-func (self *rawContainerHandler) ListThreads(listType container.ListType) ([]int, error) {
-	// TODO(vmarmol): Implement
-	return nil, nil
-}
-
 func (self *rawContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
 	return libcontainer.GetProcesses(self.cgroupManager)
 }

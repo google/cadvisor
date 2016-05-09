@@ -262,11 +262,6 @@ func (handler *rktContainerHandler) ListContainers(listType container.ListType) 
 	return common.ListContainers(handler.name, handler.cgroupPaths, listType)
 }
 
-func (handler *rktContainerHandler) ListThreads(listType container.ListType) ([]int, error) {
-	// TODO(sjpotter): Implement?  Not implemented with docker yet
-	return nil, nil
-}
-
 func (handler *rktContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
 	return libcontainer.GetProcesses(handler.cgroupManager)
 }
