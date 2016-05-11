@@ -145,6 +145,19 @@ function hasResource(stats, resource) {
   return stats.stats.length > 0 && stats.stats[0][resource];
 }
 
+// Checks if all containers in provided list include the specified resource.
+function hasResourceForAll(containerInfos, resource) {
+  if (containerInfos.length === 0) {
+    return false;
+  }
+  for (var i = 0; i < containerInfos.length; i++) {
+    if (!hasResource(containerInfos[i], resource)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Draw a set of gauges. Data is comprised of an array of arrays with two
 // elements:
 // a string label and a numeric value for the gauge.
@@ -189,9 +202,13 @@ function getStats(rootDir, containerName, callback) {
     'num_stats': 60,
     'num_samples': 0
   });
-  $.post(
-      rootDir + 'api/v1.0/containers' + containerName, request,
-      function(data) { callback(data); }, 'json');
+
+  $.when(
+       $.post(rootDir + 'api/v1.0/containers' + containerName, request),
+       $.post(rootDir + 'api/v1.1/subcontainers' + containerName, request))
+      .done(function(containersResp, subcontainersResp) {
+        callback(containersResp[0], subcontainersResp[0]);
+      });
 }
 
 // Draw the graph for CPU usage.
@@ -205,11 +222,11 @@ function drawCpuTotalUsage(elementId, machineInfo, stats) {
   for (var i = 1; i < stats.stats.length; i++) {
     var cur = stats.stats[i];
     var prev = stats.stats[i - 1];
-    var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
+    var intervalNs = getInterval(cur.timestamp, prev.timestamp);
 
     var elements = [];
     elements.push(cur.timestamp);
-    elements.push((cur.cpu.usage.total - prev.cpu.usage.total) / intervalInNs);
+    elements.push((cur.cpu.usage.total - prev.cpu.usage.total) / intervalNs);
     data.push(elements);
   }
   drawLineChart(titles, data, elementId, 'Cores');
@@ -245,14 +262,14 @@ function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
   for (var i = 1; i < stats.stats.length; i++) {
     var cur = stats.stats[i];
     var prev = stats.stats[i - 1];
-    var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
+    var intervalNs = getInterval(cur.timestamp, prev.timestamp);
 
     var elements = [];
     elements.push(cur.timestamp);
     for (var j = 0; j < machineInfo.num_cores; j++) {
       elements.push(
           (cur.cpu.usage.per_cpu_usage[j] - prev.cpu.usage.per_cpu_usage[j]) /
-          intervalInNs);
+          intervalNs);
     }
     data.push(elements);
   }
@@ -270,17 +287,72 @@ function drawCpuUsageBreakdown(elementId, machineInfo, containerInfo) {
   for (var i = 1; i < containerInfo.stats.length; i++) {
     var cur = containerInfo.stats[i];
     var prev = containerInfo.stats[i - 1];
-    var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
+    var intervalNs = getInterval(cur.timestamp, prev.timestamp);
 
     var elements = [];
     elements.push(cur.timestamp);
-    elements.push((cur.cpu.usage.user - prev.cpu.usage.user) / intervalInNs);
+    elements.push((cur.cpu.usage.user - prev.cpu.usage.user) / intervalNs);
     elements.push(
-        (cur.cpu.usage.system - prev.cpu.usage.system) / intervalInNs);
+        (cur.cpu.usage.system - prev.cpu.usage.system) / intervalNs);
     data.push(elements);
   }
   drawLineChart(titles, data, elementId, 'Cores');
 }
+
+// Return chart titles and data from an array of subcontainerInfos, using the
+// passed dataFn to return the individual data points.
+function getSubcontainerChartData(subcontainerInfos, dataFn) {
+  var titles = ['Time'];
+  var data = [];
+  for (var i = 0; i < subcontainerInfos.length; i++) {
+    titles.push(subcontainerInfos[i].name);
+    for (var j = 1; j < subcontainerInfos[i].stats.length; j++) {
+      var cur = subcontainerInfos[i].stats[j];
+      var prev = subcontainerInfos[i].stats[j - 1];
+
+      // Generate a sparse array with timestamp at index zero and data point at
+      // index i+1, to be used as a DataTable row.
+      var elements = [cur.timestamp];
+      subcontainerInfos.forEach(function() {
+        elements.push(null);
+      });
+      elements[i+1] = dataFn(cur, prev);
+      data.push(elements);
+    }
+  }
+  return {
+    titles: titles,
+    data: data,
+  }
+}
+
+// Draw the graph for per-subcontainer CPU usage.
+function drawCpuPerSubcontainerUsage(elementId, subcontainerInfos) {
+  if (!hasResourceForAll(subcontainerInfos, 'cpu')) {
+    return;
+  }
+
+  var chartData = getSubcontainerChartData(subcontainerInfos,
+      function(cur, prev) {
+    var intervalNs = getInterval(cur.timestamp, prev.timestamp);
+    return (cur.cpu.usage.total - prev.cpu.usage.total) / intervalNs;
+  });
+  drawLineChart(chartData.titles, chartData.data, elementId, 'Cores');
+}
+
+// Draw the graph for per-subcontainer memory usage.
+function drawMemoryPerSubcontainerUsage(elementId, subcontainerInfos) {
+  if (!hasResourceForAll(subcontainerInfos, 'memory')) {
+    return;
+  }
+
+  var chartData = getSubcontainerChartData(subcontainerInfos,
+      function(cur, prev) {
+    return cur.memory.usage / oneMegabyte;
+  });
+  drawLineChart(chartData.titles, chartData.data, elementId, 'Megabytes');
+}
+
 
 // Draw the gauges for overall resource usage.
 function drawOverallUsage(elementId, machineInfo, containerInfo) {
@@ -291,11 +363,11 @@ function drawOverallUsage(elementId, machineInfo, containerInfo) {
   if (containerInfo.spec.has_cpu && containerInfo.stats.length >= 2) {
     var prev = containerInfo.stats[containerInfo.stats.length - 2];
     var rawUsage = cur.cpu.usage.total - prev.cpu.usage.total;
-    var intervalInNs = getInterval(cur.timestamp, prev.timestamp);
+    var intervalNs = getInterval(cur.timestamp, prev.timestamp);
 
     // Convert to millicores and take the percentage
     cpuUsage =
-        Math.round(((rawUsage / intervalInNs) / machineInfo.num_cores) * 100);
+        Math.round(((rawUsage / intervalNs) / machineInfo.num_cores) * 100);
     if (cpuUsage > 100) {
       cpuUsage = 100;
     }
@@ -634,7 +706,7 @@ function stepExecute(steps) {
 }
 
 // Draw all the charts on the page.
-function drawCharts(machineInfo, containerInfo) {
+function drawCharts(machineInfo, containerInfo, subcontainers) {
   var steps = [];
 
   if (containerInfo.spec.has_cpu || containerInfo.spec.has_memory) {
@@ -696,7 +768,109 @@ function drawCharts(machineInfo, containerInfo) {
     });
   }
 
+  // Subcontainers.
+  var subcontainerInfos = filterSubcontainers(containerInfo, subcontainers);
+  if (subcontainerInfos.length > 0) {
+    if (hasResourceForAll(subcontainerInfos, 'cpu')) {
+      steps.push(function() {
+        var displayCount = $('#cpu-per-subcontainer-display-count').val();
+        drawCpuPerSubcontainerUsage(
+            'cpu-per-subcontainer-usage-chart',
+            sliceByCpu(subcontainerInfos, displayCount));
+      });
+    }
+
+    if (hasResourceForAll(subcontainerInfos, 'memory')) {
+      steps.push(function() {
+        var displayCount = $('#memory-per-subcontainer-display-count').val();
+        drawMemoryPerSubcontainerUsage(
+            'memory-per-subcontainer-usage-chart',
+            sliceByMemory(subcontainerInfos, displayCount));
+      });
+    }
+  }
+
   stepExecute(steps);
+}
+
+// Return an slice of subcontainers sorted by CPU, with at most 'count' entries.
+function sliceByCpu(subcontainerInfos, count) {
+  subcontainerInfos.sort(function(a, b) {
+    if (a.averages.cpu > b.averages.cpu) {
+      return -1;
+    } else if (a.averages.cpu < b.averages.cpu) {
+      return 1;
+    } else {
+      return compareByName(a, b);
+    }
+  });
+  return subcontainerInfos.slice(0, Math.min(subcontainerInfos.length, count))
+      .sort(compareByName);
+}
+
+// Return an slice of subcontainers sorted by memory, with at most 'count'
+// entries.
+function sliceByMemory(subcontainerInfos, count) {
+  subcontainerInfos.sort(function(a, b) {
+    if (a.averages.memory > b.averages.memory) {
+      return -1;
+    } else if (a.averages.memory < b.averages.memory) {
+      return 1;
+    } else {
+      return compareByName(a, b);
+    }
+  });
+  return subcontainerInfos.slice(0, Math.min(subcontainerInfos.length, count))
+      .sort(compareByName);
+}
+
+// Return sort comparitor based on subcontroller name.
+function compareByName(subA, subB) {
+  if (subA.name > subB.name) {
+    return 1;
+  } else if (subA.name < subB.name) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
+// Return a map of the averages of the subcontainer stats.
+function getSubcontainerAverages(subcontainer) {
+  var cpuSum = 0;
+  var memorySum = 0;
+  subcontainer.stats.forEach(function(stat) {
+    cpuSum += stat.cpu.usage.total;
+    memorySum += stat.memory.usage / oneMegabyte;
+  });
+  return {
+    cpu: cpuSum / subcontainer.stats.length,
+    memory: memorySum / subcontainer.stats.length,
+  }
+}
+
+// Return a list of immediate subcontainers, including metric averages.
+function filterSubcontainers(containerInfo, subcontainers) {
+  if (!containerInfo.subcontainers ||
+      containerInfo.subcontainers.length === 0 ||
+      !subcontainers) {
+    return [];
+  }
+
+  var subcontainerNames = {};
+  containerInfo.subcontainers.forEach(function(subcontainer) {
+    subcontainerNames[subcontainer.name] = subcontainer.name;
+  });
+
+  var subcontainerInfos = [];
+  subcontainers.forEach(function(subcontainer) {
+    if (subcontainerNames[subcontainer.name] !== undefined) {
+      subcontainer.averages = getSubcontainerAverages(subcontainer);
+      subcontainerInfos.push(subcontainer);
+    }
+  });
+
+  return subcontainerInfos;
 }
 
 function setNetwork(interfaceName) {
@@ -742,7 +916,7 @@ function refreshStats() {
   var machineInfo = window.cadvisor.machineInfo;
   getStats(
       window.cadvisor.rootDir, window.cadvisor.containerName,
-      function(containerInfo) {
+      function(containerInfo, subcontainers) {
         if (window.cadvisor.firstRun) {
           window.cadvisor.firstRun = false;
 
@@ -757,7 +931,7 @@ function refreshStats() {
             startCustomMetrics('custom-metrics-chart', containerInfo);
           }
         }
-        drawCharts(machineInfo, containerInfo);
+        drawCharts(machineInfo, containerInfo, subcontainers);
       });
 }
 

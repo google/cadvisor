@@ -33,6 +33,10 @@
     margin-top: 3px;
     margin-bottom: 3px;
 }
+.subcontainer-display-input {
+    margin-left: 4px;
+    width: 40px;
+}
 #logo {
     height: 200px;
     margin-top: 20px;

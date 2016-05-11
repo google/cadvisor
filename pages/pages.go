@@ -59,6 +59,7 @@ type pageData struct {
 	NetworkAvailable       bool
 	FsAvailable            bool
 	CustomMetricsAvailable bool
+	SubcontainersAvailable bool
 	Root                   string
 	DockerStatus           []keyVal
 	DockerDriverStatus     []keyVal
