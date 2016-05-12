@@ -28,6 +28,7 @@ import (
 	"github.com/golang/glog"
 )
 
+var dockerOnly = flag.Bool("docker_only", false, "Only report docker containers in addition to root stats (deprecated)")
 var runtimeOnly = flag.Bool("runtime_only", false, "Only report supported runtime containers in addition to root stats")
 
 type rawFactory struct {
@@ -61,7 +62,7 @@ func (self *rawFactory) NewContainerHandler(name string, inHostNamespace bool) (
 
 // The raw factory can handle any container. If --docker_only is set to false, non-docker containers are ignored.
 func (self *rawFactory) CanHandleAndAccept(name string) (bool, bool, error) {
-	accept := name == "/" || !*runtimeOnly
+	accept := name == "/" || (!*dockerOnly && !*runtimeOnly)
 	return true, accept, nil
 }
 
