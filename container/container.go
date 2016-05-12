@@ -27,23 +27,6 @@ const (
 	ListRecursive
 )
 
-// SubcontainerEventType indicates an addition or deletion event.
-type SubcontainerEventType int
-
-const (
-	SubcontainerAdd SubcontainerEventType = iota
-	SubcontainerDelete
-)
-
-// SubcontainerEvent represents a
-type SubcontainerEvent struct {
-	// The type of event that occurred.
-	EventType SubcontainerEventType
-
-	// The full container name of the container where the event occurred.
-	Name string
-}
-
 // Interface for container operation handlers.
 type ContainerHandler interface {
 	// Returns the ContainerReference
@@ -60,12 +43,6 @@ type ContainerHandler interface {
 
 	// Returns the processes inside this container.
 	ListProcesses(listType ListType) ([]int, error)
-
-	// Registers a channel to listen for events affecting subcontainers (recursively).
-	WatchSubcontainers(events chan SubcontainerEvent) error
-
-	// Stops watching for subcontainer changes.
-	StopWatchingSubcontainers() error
 
 	// Returns absolute cgroup path for the requested resource.
 	GetCgroupPath(resource string) (string, error)

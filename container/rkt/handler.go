@@ -266,15 +266,6 @@ func (handler *rktContainerHandler) ListProcesses(listType container.ListType) (
 	return libcontainer.GetProcesses(handler.cgroupManager)
 }
 
-func (handler *rktContainerHandler) WatchSubcontainers(events chan container.SubcontainerEvent) error {
-	return fmt.Errorf("watch is unimplemented in the Rkt container driver")
-}
-
-func (handler *rktContainerHandler) StopWatchingSubcontainers() error {
-	// No-op for Rkt driver.
-	return nil
-}
-
 func (handler *rktContainerHandler) Exists() bool {
 	return common.CgroupExists(handler.cgroupPaths)
 }

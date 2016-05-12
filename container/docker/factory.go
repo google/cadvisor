@@ -26,6 +26,7 @@ import (
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/manager/watcher"
 
 	docker "github.com/docker/engine-api/client"
 	"github.com/golang/glog"
@@ -198,6 +199,6 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		ignoreMetrics:      ignoreMetrics,
 	}
 
-	container.RegisterContainerHandlerFactory(f)
+	container.RegisterContainerHandlerFactory(f, []watcher.ContainerWatchSource{watcher.Raw})
 	return nil
 }
