@@ -1,5 +1,16 @@
 # Changelog
 
+### 0.23.1 (2016-05-11)
+- Add multi-container charts to the UI
+- Add TLS options for Kafka storage driver
+- Switch to official Docker client
+- Systemd:
+  - Ignore .mount cgroups on systemd
+  - Better OOM monitoring
+- Bug: Fix broken -disable_metrics flag
+- Bug: Fix openstack identified as AWS
+- Bug: Fix EventStore when limit is 0
+
 ### 0.23.0 (2016-04-21)
 - Docker v1.11 support
 - Preliminary rkt support
