@@ -782,11 +782,11 @@ func (m *manager) createContainer(containerName string) error {
 		return nil
 	}
 
-	handler, accept, err := container.NewContainerHandler(containerName, m.inHostNamespace)
+	handler, err := container.NewContainerHandler(containerName, m.inHostNamespace)
 	if err != nil {
 		return err
 	}
-	if !accept {
+	if handler == nil {
 		// ignoring this container.
 		glog.V(4).Infof("ignoring container %q", containerName)
 		return nil

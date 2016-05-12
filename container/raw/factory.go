@@ -51,15 +51,30 @@ func (self *rawFactory) String() string {
 }
 
 func (self *rawFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+	handle, accept, err := self.canHandleAndAccept(name)
+	if handle != true {
+		return nil, nil
+	}
+	if accept != true {
+		ignore := container.NewIgnoreHandler(name)
+		return ignore, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
 	}
-	return newRawContainerHandler(name, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, self.watcher, rootFs, self.ignoreMetrics)
+
+	handler, err := newRawContainerHandler(name, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, self.watcher, rootFs, self.ignoreMetrics)
+
+	return handler, err
 }
 
 // The raw factory can handle any container. If --docker_only is set to false, non-docker containers are ignored.
-func (self *rawFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+func (self *rawFactory) canHandleAndAccept(name string) (bool, bool, error) {
 	accept := name == "/" || !*dockerOnly
 	return true, accept, nil
 }

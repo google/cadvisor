@@ -25,9 +25,6 @@ type ContainerHandlerFactory interface {
 	// Create a new ContainerHandler using this factory. CanHandleAndAccept() must have returned true.
 	NewContainerHandler(name string, inHostNamespace bool) (c ContainerHandler, err error)
 
-	// Returns whether this factory can handle and accept the specified container.
-	CanHandleAndAccept(name string) (handle bool, accept bool, err error)
-
 	// Name of the factory.
 	String() string
 
@@ -89,30 +86,27 @@ func HasFactories() bool {
 }
 
 // Create a new ContainerHandler for the specified container.
-func NewContainerHandler(name string, inHostNamespace bool) (ContainerHandler, bool, error) {
+func NewContainerHandler(name string, inHostNamespace bool) (ContainerHandler, error) {
 	factoriesLock.RLock()
 	defer factoriesLock.RUnlock()
 
 	// Create the ContainerHandler with the first factory that supports it.
 	for _, factory := range factories {
-		canHandle, canAccept, err := factory.CanHandleAndAccept(name)
+		handler, err := factory.NewContainerHandler(name, inHostNamespace)
 		if err != nil {
 			glog.V(4).Infof("Error trying to work out if we can handle %s: %v", name, err)
-		}
-		if canHandle {
-			if !canAccept {
+		} else if handler != nil {
+			if _, ok := handler.(*ignoreHandler); ok {
 				glog.V(3).Infof("Factory %q can handle container %q, but ignoring.", factory, name)
-				return nil, false, nil
+				return nil, nil
 			}
-			glog.V(3).Infof("Using factory %q for container %q", factory, name)
-			handle, err := factory.NewContainerHandler(name, inHostNamespace)
-			return handle, canAccept, err
-		} else {
-			glog.V(4).Infof("Factory %q was unable to handle container %q", factory, name)
+			return handler, err
 		}
+
+		glog.V(4).Infof("Factory %q was unable to handle container %q", factory, name)
 	}
 
-	return nil, false, fmt.Errorf("no known factory can handle creation of container")
+	return nil, fmt.Errorf("no known factory can handle creation of container")
 }
 
 // Clear the known factories.
