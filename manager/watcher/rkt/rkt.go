@@ -54,7 +54,7 @@ func (self *rktContainerWatcher) Stop() error {
 
 func (self *rktContainerWatcher) detectRktContainers(events chan watcher.ContainerEvent) {
 	glog.Infof("starting detectRktContainers thread")
-	ticker := time.Tick(30 * time.Second)
+	ticker := time.Tick(10 * time.Second)
 	curpods := make(map[string]*rktapi.Pod)
 
 	for {
