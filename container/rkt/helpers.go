@@ -77,8 +77,10 @@ func cgroupToPod(name string) (*rktapi.Pod, error) {
 /* Parse cgroup name into a pod/container name struct
    Example cgroup fs name
 
-   pod - /sys/fs/cgroup/cpu/machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/
-   container under pod - /sys/fs/cgroup/cpu/machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/system.slice/alpine-sh.service
+   pod - /machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/
+    or   /system.slice/k8s-..../
+   container under pod - /machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/system.slice/alpine-sh.service
+    or  /system.slice/k8s-..../system.slice/pause.service
 */
 func parseName(name string) (*parsedName, error) {
 	pod, err := cgroupToPod(name)
