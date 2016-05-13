@@ -32,7 +32,7 @@ type rktContainerWatcher struct {
 	stopWatcher chan error
 }
 
-func NewRawContainerWatcher() (watcher.ContainerWatcher, error) {
+func NewRktContainerWatcher() (watcher.ContainerWatcher, error) {
 	watcher := &rktContainerWatcher{
 		stopWatcher: make(chan error),
 	}

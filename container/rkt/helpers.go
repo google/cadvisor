@@ -37,8 +37,9 @@ func verifyPod(name string) (bool, error) {
 		return false, err
 	}
 
-	// anything handler can handle is also accepted
-	// accept cgroups that are sub the pod cgroup, except "system.slice"
+	// Anything handler can handle is also accepted.
+	// Accept cgroups that are sub the pod cgroup, except "system.slice"
+	//   - "system.slice" doesn't contain any processes itself
 	accept := !strings.HasSuffix(name, "/system.slice")
 
 	return accept, nil

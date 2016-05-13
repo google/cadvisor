@@ -240,7 +240,7 @@ func (self *manager) Start() error {
 	if err != nil {
 		glog.Errorf("Registration of the rkt container factory failed: %v", err)
 	} else {
-		watcher, err := rktwatcher.NewRawContainerWatcher()
+		watcher, err := rktwatcher.NewRktContainerWatcher()
 		if err != nil {
 			return err
 		}
@@ -791,10 +791,10 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 }
 
 // Enables overwriting an existing containerData/Handler object for a given containerName.
-// can't use createContainer as it just returns if a given containerName has a handler already
-// Ex: rkt handler will want to take priority over the raw handler, but the raw handler might be created first
+// Can't use createContainer as it just returns if a given containerName has a handler already.
+// Ex: rkt handler will want to take priority over the raw handler, but the raw handler might be created first.
 
-// Only allow raw handler to be overriden
+// Only allow raw handler to be overridden
 func (m *manager) overrideContainer(containerName string, watchSource watcher.ContainerWatchSource) error {
 	m.containersLock.Lock()
 	defer m.containersLock.Unlock()
