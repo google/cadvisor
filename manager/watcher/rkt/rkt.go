@@ -142,7 +142,7 @@ func listRunningPods() ([]*rktapi.Pod, error) {
 }
 
 func podToCgroup(pod *rktapi.Pod) []string {
-	cgroups := make([]string, 0, 1+len(pod.Apps))
+	cgroups := make([]string, 1+len(pod.Apps), 1+len(pod.Apps))
 
 	baseCgroup := pod.Cgroup
 	cgroups[0] = baseCgroup
