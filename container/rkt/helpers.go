@@ -83,7 +83,7 @@ func cgroupToPod(name string) (*rktapi.Pod, error) {
 func parseName(name string) (*parsedName, error) {
 	pod, err := cgroupToPod(name)
 	if err != nil {
-		return nil, fmt.Errorf("parseName: couldn't convert %v to a rkt pod: %v", err)
+		return nil, fmt.Errorf("parseName: couldn't convert %v to a rkt pod: %v", name, err)
 	}
 	if pod == nil {
 		return nil, fmt.Errorf("parseName: didn't return a pod!")
