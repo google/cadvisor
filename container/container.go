@@ -60,6 +60,6 @@ type ContainerHandler interface {
 	// It is expected that most implementations will be a no-op.
 	Start()
 
-	//Name of handler
-	String() string
+	// Name of handler
+	Type() string
 }

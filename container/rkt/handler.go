@@ -99,20 +99,19 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 	})
 	if err != nil {
 		return nil, err
-	} else {
-		annotations := resp.Pod.Annotations
-		if parsed.Container != "" {
-			if contAnnotations, ok := findAnnotations(resp.Pod.Apps, parsed.Container); !ok {
-				glog.Warningf("couldn't find application in Pod matching %v", parsed.Container)
-			} else {
-				annotations = append(annotations, contAnnotations...)
-			}
-		} else {
-			pid = int(resp.Pod.Pid)
-			apiPod = resp.Pod
-		}
-		labels = createLabels(annotations)
 	}
+	annotations := resp.Pod.Annotations
+	if parsed.Container != "" {
+		if contAnnotations, ok := findAnnotations(resp.Pod.Apps, parsed.Container); !ok {
+			glog.Warningf("couldn't find app %v in pod", parsed.Container)
+		} else {
+			annotations = append(annotations, contAnnotations...)
+		}
+	} else {
+		pid = int(resp.Pod.Pid)
+		apiPod = resp.Pod
+	}
+	labels = createLabels(annotations)
 
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
@@ -275,6 +274,6 @@ func (handler *rktContainerHandler) Exists() bool {
 	return common.CgroupExists(handler.cgroupPaths)
 }
 
-func (handler *rktContainerHandler) String() string {
+func (handler *rktContainerHandler) Type() string {
 	return "rkt"
 }

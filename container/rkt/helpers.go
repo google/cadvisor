@@ -30,20 +30,18 @@ type parsedName struct {
 	Container string
 }
 
-func verifyPod(name string) (bool, bool, error) {
+func verifyPod(name string) (bool, error) {
 	pod, err := cgroupToPod(name)
 
 	if err != nil || pod == nil {
-		return false, false, err
+		return false, err
 	}
 
-	splits := strings.Split(name, "/")
+	// anything handler can handle is also accepted
+	// accept cgroups that are sub the pod cgroup, except "system.slice"
+	accept := !strings.HasSuffix(name, "/system.slice")
 
-	//anything handler can handle is also accepted
-	//accept cgroups that are sub the pod cgroup, except "system.slice"
-	accept := splits[len(splits)-1] != "system.slice"
-
-	return accept, accept, nil
+	return accept, nil
 }
 
 func cgroupToPod(name string) (*rktapi.Pod, error) {
@@ -62,11 +60,15 @@ func cgroupToPod(name string) (*rktapi.Pod, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list pods: %v", err)
+	}
+
+	if len(resp.Pods) == 0 {
+		return nil, nil
 	}
 
 	if len(resp.Pods) != 1 {
-		return nil, fmt.Errorf("returned none or more than one running pod for cgroup %v", name)
+		return nil, fmt.Errorf("returned %d (expected 1) pods for cgroup %v", len(resp.Pods), name)
 	}
 
 	return resp.Pods[0], nil
@@ -78,11 +80,10 @@ func cgroupToPod(name string) (*rktapi.Pod, error) {
    pod - /sys/fs/cgroup/cpu/machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/
    container under pod - /sys/fs/cgroup/cpu/machine.slice/machine-rkt\\x2df556b64a\\x2d17a7\\x2d47d7\\x2d93ec\\x2def2275c3d67e.scope/system.slice/alpine-sh.service
 */
-//TODO{sjpotter}: this currently only recognizes machined started pods, which actually doesn't help with k8s which uses them as systemd services, need a solution for both
 func parseName(name string) (*parsedName, error) {
 	pod, err := cgroupToPod(name)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("parseName: couldn't convert %v to a rkt pod: %v", err)
 	}
 	if pod == nil {
 		return nil, fmt.Errorf("parseName: didn't return a pod!")
@@ -123,7 +124,7 @@ func getRootFs(root string, parsed *parsedName) string {
 
 	bytes, err := ioutil.ReadFile(tree)
 	if err != nil {
-		glog.Warningf("ReadFile failed, couldn't read %v to get upper dir: %v", tree, err)
+		glog.Errorf("ReadFile failed, couldn't read %v to get upper dir: %v", tree, err)
 		return ""
 	}
 

@@ -268,6 +268,6 @@ func (self *rawContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
 
-func (self *rawContainerHandler) String() string {
+func (self *rawContainerHandler) Type() string {
 	return "raw"
 }

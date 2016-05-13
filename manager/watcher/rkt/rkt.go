@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package container defines types for sub-container events and also
-// defines an interface for container operation handlers.
+// Package rkt implements the watcher interface for rkt
 package rkt
 
 import (
@@ -23,10 +22,9 @@ import (
 	"github.com/google/cadvisor/container/rkt"
 	"github.com/google/cadvisor/manager/watcher"
 
+	rktapi "github.com/coreos/rkt/api/v1alpha"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
-
-	rktapi "github.com/coreos/rkt/api/v1alpha"
 )
 
 type rktContainerWatcher struct {
@@ -61,37 +59,8 @@ func (self *rktContainerWatcher) detectRktContainers(events chan watcher.Contain
 
 	for {
 		select {
-		case _ = <-ticker:
-			glog.Infof("rkt ticker")
-			pods, err := ListRunningPods()
-			if err != nil {
-				continue
-			}
-
-			newpods := make(map[string]*rktapi.Pod)
-			for _, pod := range pods {
-				newpods[pod.Id] = pod
-				//if pods become mutable, have to handle this better
-				if _, ok := curpods[pod.Id]; !ok {
-					//should create all cgroups not including system.slice
-					//i.e. /system.slice/rkt-test.service/ and /system.slice/rkt-test.service/system.slice/pause.service
-					for _, cgroup := range PodToCgroup(pod) {
-						glog.Infof("cgroup to upate = %v", cgroup)
-						self.sendUpdateEvent(cgroup, events)
-					}
-				}
-			}
-
-			for id, pod := range curpods {
-				if _, ok := newpods[id]; !ok {
-					for _, cgroup := range PodToCgroup(pod) {
-						glog.Infof("cgroup to delete = %v", cgroup)
-						self.sendDestroyEvent(cgroup, events)
-					}
-				}
-			}
-
-			curpods = newpods
+		case <-ticker:
+			curpods = self.syncRunningPods(events, curpods)
 
 		case <-self.stopWatcher:
 			self.stopWatcher <- nil
@@ -99,6 +68,38 @@ func (self *rktContainerWatcher) detectRktContainers(events chan watcher.Contain
 			return
 		}
 	}
+}
+
+func (self *rktContainerWatcher) syncRunningPods(events chan watcher.ContainerEvent, curpods map[string]*rktapi.Pod) map[string]*rktapi.Pod {
+	pods, err := listRunningPods()
+	if err != nil {
+		glog.Errorf("detectRktContainers: listRunningPods failed: %v", err)
+		return curpods
+	}
+
+	newpods := make(map[string]*rktapi.Pod)
+	for _, pod := range pods {
+		newpods[pod.Id] = pod
+		// if pods become mutable, have to handle this better
+		if _, ok := curpods[pod.Id]; !ok {
+			// should create all cgroups not including system.slice
+			// i.e. /system.slice/rkt-test.service and /system.slice/rkt-test.service/system.slice/pause.service
+			for _, cgroup := range podToCgroup(pod) {
+				self.sendUpdateEvent(cgroup, events)
+			}
+		}
+	}
+
+	for id, pod := range curpods {
+		if _, ok := newpods[id]; !ok {
+			for _, cgroup := range podToCgroup(pod) {
+				glog.Infof("cgroup to delete = %v", cgroup)
+				self.sendDestroyEvent(cgroup, events)
+			}
+		}
+	}
+
+	return newpods
 }
 
 func (self *rktContainerWatcher) sendUpdateEvent(cgroup string, events chan watcher.ContainerEvent) {
@@ -117,7 +118,7 @@ func (self *rktContainerWatcher) sendDestroyEvent(cgroup string, events chan wat
 	}
 }
 
-func ListRunningPods() ([]*rktapi.Pod, error) {
+func listRunningPods() ([]*rktapi.Pod, error) {
 	client, err := rkt.Client()
 	if err != nil {
 		return nil, err
@@ -140,14 +141,14 @@ func ListRunningPods() ([]*rktapi.Pod, error) {
 	return resp.Pods, nil
 }
 
-func PodToCgroup(pod *rktapi.Pod) []string {
+func podToCgroup(pod *rktapi.Pod) []string {
 	cgroups := make([]string, 0, 1+len(pod.Apps))
 
 	baseCgroup := pod.Cgroup
-	cgroups = append(cgroups, baseCgroup)
+	cgroups[0] = baseCgroup
 
-	for _, app := range pod.Apps {
-		cgroups = append(cgroups, filepath.Join(baseCgroup, "system.slice", app.Name+".service"))
+	for i, app := range pod.Apps {
+		cgroups[i+1] = filepath.Join(baseCgroup, "system.slice", app.Name+".service")
 	}
 
 	return cgroups

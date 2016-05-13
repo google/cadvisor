@@ -58,7 +58,9 @@ func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (
 }
 
 func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
-	return verifyPod(name)
+	accept, err := verifyPod(name)
+
+	return accept, accept, err
 }
 
 func (self *rktFactory) DebugInfo() map[string][]string {

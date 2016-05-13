@@ -92,7 +92,7 @@ func (self *MockContainerHandler) GetContainerLabels() map[string]string {
 	return args.Get(0).(map[string]string)
 }
 
-func (self *MockContainerHandler) String() string {
+func (self *MockContainerHandler) Type() string {
 	args := self.Called()
 	return args.Get(0).(string)
 }

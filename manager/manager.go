@@ -806,13 +806,13 @@ func (m *manager) overrideContainer(containerName string, watchSource watcher.Co
 	if _, ok := m.containers[namespacedName]; ok {
 		containerData := m.containers[namespacedName]
 
-		if containerData.handler.String() != "raw" {
+		if containerData.handler.Type() != "raw" {
 			return nil
 		}
 
 		err := m.destroyContainerLocked(containerName)
 		if err != nil {
-			return err
+			return fmt.Errorf("overrideContainer: failed to destroy containerData/handler for %v: %v", containerName, err)
 		}
 	}
 
