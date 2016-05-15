@@ -335,6 +335,6 @@ func (self *dockerContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
 
-func (self *dockerContainerHandler) Type() string {
-	return "docker"
+func (self *dockerContainerHandler) Type() container.ContainerType {
+	return container.ContainerTypeDocker
 }

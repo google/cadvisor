@@ -274,6 +274,6 @@ func (handler *rktContainerHandler) Exists() bool {
 	return common.CgroupExists(handler.cgroupPaths)
 }
 
-func (handler *rktContainerHandler) Type() string {
-	return "rkt"
+func (handler *rktContainerHandler) Type() container.ContainerType {
+	return container.ContainerTypeRkt
 }

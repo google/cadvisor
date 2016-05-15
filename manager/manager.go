@@ -806,7 +806,7 @@ func (m *manager) overrideContainer(containerName string, watchSource watcher.Co
 	if _, ok := m.containers[namespacedName]; ok {
 		containerData := m.containers[namespacedName]
 
-		if containerData.handler.Type() != "raw" {
+		if containerData.handler.Type() != container.ContainerTypeRaw {
 			return nil
 		}
 

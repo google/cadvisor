@@ -27,6 +27,15 @@ const (
 	ListRecursive
 )
 
+type ContainerType int
+
+const (
+	ContainerTypeRaw ContainerType = iota
+	ContainerTypeDocker
+	ContainerTypeRkt
+	ContainerTypeSystemd
+)
+
 // Interface for container operation handlers.
 type ContainerHandler interface {
 	// Returns the ContainerReference
@@ -61,5 +70,5 @@ type ContainerHandler interface {
 	Start()
 
 	// Name of handler
-	Type() string
+	Type() ContainerType
 }
