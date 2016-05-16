@@ -94,7 +94,7 @@ func parseName(name string) (*parsedName, error) {
 
 	splits := strings.Split(name, "/")
 
-	parsed := &parsedName{}a
+	parsed := &parsedName{}
 
 	if len(splits) == 3 || len(splits) == 5 {
 		parsed.Pod = pod.Id
