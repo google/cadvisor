@@ -22,7 +22,6 @@ type ContainerEventType int
 const (
 	ContainerAdd ContainerEventType = iota
 	ContainerDelete
-	ContainerOverride
 )
 
 type ContainerWatchSource int

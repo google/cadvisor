@@ -104,7 +104,7 @@ func (self *rktContainerWatcher) syncRunningPods(events chan watcher.ContainerEv
 
 func (self *rktContainerWatcher) sendUpdateEvent(cgroup string, events chan watcher.ContainerEvent) {
 	events <- watcher.ContainerEvent{
-		EventType:   watcher.ContainerOverride,
+		EventType:   watcher.ContainerAdd,
 		Name:        cgroup,
 		WatchSource: watcher.Rkt,
 	}

@@ -1044,11 +1044,14 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 			case event := <-self.eventsChannel:
 				switch {
 				case event.EventType == watcher.ContainerAdd:
-					err = self.createContainer(event.Name, event.WatchSource)
+					switch event.WatchSource {
+					case watcher.Rkt:
+						err = self.overrideContainer(event.Name, event.WatchSource)
+					default:
+						err = self.createContainer(event.Name, event.WatchSource)
+					}
 				case event.EventType == watcher.ContainerDelete:
 					err = self.destroyContainer(event.Name)
-				case event.EventType == watcher.ContainerOverride:
-					err = self.overrideContainer(event.Name, event.WatchSource)
 				}
 				if err != nil {
 					glog.Warningf("Failed to process watch event %+v: %v", event, err)
