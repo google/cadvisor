@@ -89,13 +89,14 @@ func parseName(name string) (*parsedName, error) {
 		return nil, fmt.Errorf("parseName: couldn't convert %v to a rkt pod: %v", name, err)
 	}
 	if pod == nil {
-		return nil, fmt.Errorf("parseName: didn't return a pod!")
+		return nil, fmt.Errorf("parseName: didn't return a pod for %v", name)
 	}
 
 	splits := strings.Split(name, "/")
 
-	parsed := &parsedName{}
-	if len(splits) >= 3 {
+	parsed := &parsedName{}a
+
+	if len(splits) == 3 || len(splits) == 5 {
 		parsed.Pod = pod.Id
 
 		if len(splits) == 5 {
@@ -105,7 +106,7 @@ func parseName(name string) (*parsedName, error) {
 		return parsed, nil
 	}
 
-	return nil, fmt.Errorf("%s not handled by rkt handler, shouldn't have reached here", name)
+	return nil, fmt.Errorf("%s not handled by rkt handler", name)
 }
 
 // Gets a Rkt container's overlay upper dir
