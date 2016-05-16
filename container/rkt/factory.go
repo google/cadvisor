@@ -94,6 +94,6 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, igno
 		ignoreMetrics:      ignoreMetrics,
 		rktPath:            rktPath,
 	}
-	container.RegisterContainerHandlerFactory(factory, []watcher.ContainerWatchSource{watcher.Raw, watcher.Rkt})
+	container.RegisterContainerHandlerFactory(factory, []watcher.ContainerWatchSource{watcher.Rkt})
 	return nil
 }

@@ -101,13 +101,13 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 		return nil, err
 	}
 	annotations := resp.Pod.Annotations
-	if parsed.Container != "" {
+	if parsed.Container != "" { // As not empty string, an App container
 		if contAnnotations, ok := findAnnotations(resp.Pod.Apps, parsed.Container); !ok {
 			glog.Warningf("couldn't find app %v in pod", parsed.Container)
 		} else {
 			annotations = append(annotations, contAnnotations...)
 		}
-	} else {
+	} else { // The Pod container
 		pid = int(resp.Pod.Pid)
 		apiPod = resp.Pod
 	}
