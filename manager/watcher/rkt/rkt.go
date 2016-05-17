@@ -48,8 +48,8 @@ func (self *rktContainerWatcher) Start(events chan watcher.ContainerEvent) error
 
 func (self *rktContainerWatcher) Stop() error {
 	// Rendezvous with the watcher thread.
-	self.stopWatcher <- nil
-	return <-self.stopWatcher
+	close(self.stopWatcher)
+	return nil
 }
 
 func (self *rktContainerWatcher) detectRktContainers(events chan watcher.ContainerEvent) {
@@ -60,24 +60,23 @@ func (self *rktContainerWatcher) detectRktContainers(events chan watcher.Contain
 	for {
 		select {
 		case <-ticker:
-			curpods = self.syncRunningPods(events, curpods)
+			pods, err := listRunningPods()
+			if err != nil {
+				glog.Errorf("detectRktContainers: listRunningPods failed: %v", err)
+				continue
+			}
+			curpods = self.syncRunningPods(pods, events, curpods)
 
 		case <-self.stopWatcher:
-			self.stopWatcher <- nil
 			glog.Infof("Exiting rktContainer Thread")
 			return
 		}
 	}
 }
 
-func (self *rktContainerWatcher) syncRunningPods(events chan watcher.ContainerEvent, curpods map[string]*rktapi.Pod) map[string]*rktapi.Pod {
-	pods, err := listRunningPods()
-	if err != nil {
-		glog.Errorf("detectRktContainers: listRunningPods failed: %v", err)
-		return curpods
-	}
-
+func (self *rktContainerWatcher) syncRunningPods(pods []*rktapi.Pod, events chan watcher.ContainerEvent, curpods map[string]*rktapi.Pod) map[string]*rktapi.Pod {
 	newpods := make(map[string]*rktapi.Pod)
+
 	for _, pod := range pods {
 		newpods[pod.Id] = pod
 		// if pods become mutable, have to handle this better
