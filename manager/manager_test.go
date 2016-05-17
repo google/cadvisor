@@ -17,6 +17,7 @@
 package manager
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -28,7 +29,10 @@ import (
 	"github.com/google/cadvisor/container/docker"
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
+	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TODO(vmarmol): Refactor these tests.
@@ -149,6 +153,88 @@ func TestGetContainerInfo(t *testing.T) {
 		}
 	}
 
+}
+
+func TestGetContainerInfoV2(t *testing.T) {
+	containers := []string{
+		"/",
+		"/c1",
+		"/c2",
+	}
+
+	options := v2.RequestOptions{
+		IdType:    v2.TypeName,
+		Count:     1,
+		Recursive: true,
+	}
+	query := &info.ContainerInfoRequest{
+		NumStats: 2,
+	}
+
+	m, _, handlerMap := expectManagerWithContainers(containers, query, t)
+
+	infos, err := m.GetContainerInfoV2("/", options)
+	require.NoError(t, err, "Error calling GetContainerInfoV2")
+
+	for container, handler := range handlerMap {
+		handler.AssertExpectations(t)
+		info, ok := infos[container]
+		assert.True(t, ok, "Missing info for container %q", container)
+		assert.NotEqual(t, v2.ContainerSpec{}, info.Spec, "Empty spec for container %q", container)
+		assert.NotEmpty(t, info.Stats, "Missing stats for container %q", container)
+	}
+}
+
+func TestGetContainerInfoV2Failure(t *testing.T) {
+	successful := "/"
+	statless := "/c1"
+	failing := "/c2"
+	containers := []string{
+		successful, statless, failing,
+	}
+
+	options := v2.RequestOptions{
+		IdType:    v2.TypeName,
+		Count:     1,
+		Recursive: true,
+	}
+	query := &info.ContainerInfoRequest{
+		NumStats: 2,
+	}
+
+	m, _, handlerMap := expectManagerWithContainers(containers, query, t)
+
+	// Remove /c1 stats
+	require.NoError(t, m.memoryCache.RemoveContainer(statless))
+
+	// Make GetSpec fail on /c2
+	mockErr := fmt.Errorf("intentional GetSpec failure")
+	failingHandler := container.NewMockContainerHandler(failing)
+	failingHandler.On("GetSpec").Return(info.ContainerSpec{}, mockErr)
+	failingHandler.On("Exists").Return(true)
+	*handlerMap[failing] = *failingHandler
+	m.containers[namespacedContainerName{Name: failing}].lastUpdatedTime = time.Time{} // Force GetSpec.
+
+	infos, err := m.GetContainerInfoV2("/", options)
+	assert.Error(t, err, "Expected error calling GetContainerInfoV2")
+
+	// Successful containers still successful.
+	info, ok := infos[successful]
+	assert.True(t, ok, "Missing info for container %q", successful)
+	assert.NotEqual(t, v2.ContainerSpec{}, info.Spec, "Empty spec for container %q", successful)
+	assert.NotEmpty(t, info.Stats, "Missing stats for container %q", successful)
+
+	// "/c1" present with spec.
+	info, ok = infos[statless]
+	assert.True(t, ok, "Missing info for container %q", statless)
+	assert.NotEqual(t, v2.ContainerSpec{}, info.Spec, "Empty spec for container %q", statless)
+	assert.Empty(t, info.Stats, "Missing stats for container %q", successful)
+
+	// "/c2" should be present but empty.
+	info, ok = infos[failing]
+	assert.True(t, ok, "Missing info for failed container")
+	assert.Equal(t, v2.ContainerInfo{}, info, "Empty spec for failed container")
+	assert.Empty(t, info.Stats, "Missing stats for failed container")
 }
 
 func TestSubcontainersInfo(t *testing.T) {

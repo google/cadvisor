@@ -70,6 +70,8 @@ type Manager interface {
 	GetContainerInfo(containerName string, query *info.ContainerInfoRequest) (*info.ContainerInfo, error)
 
 	// Get V2 information about a container.
+	// Recursive (subcontainer) requests are best-effort, and may return a partial result alongside an
+	// error in the partial failure case.
 	GetContainerInfoV2(containerName string, options v2.RequestOptions) (map[string]v2.ContainerInfo, error)
 
 	// Get information about all subcontainers of the specified container (includes self).
@@ -394,15 +396,16 @@ func (self *manager) GetDerivedStats(containerName string, options v2.RequestOpt
 	if err != nil {
 		return nil, err
 	}
+	var errs partialFailure
 	stats := make(map[string]v2.DerivedStats)
 	for name, cont := range conts {
 		d, err := cont.DerivedStats()
 		if err != nil {
-			return nil, err
+			errs.append(name, "DerivedStats", err)
 		}
 		stats[name] = d
 	}
-	return stats, nil
+	return stats, errs
 }
 
 func (self *manager) GetContainerSpec(containerName string, options v2.RequestOptions) (map[string]v2.ContainerSpec, error) {
@@ -410,16 +413,17 @@ func (self *manager) GetContainerSpec(containerName string, options v2.RequestOp
 	if err != nil {
 		return nil, err
 	}
+	var errs partialFailure
 	specs := make(map[string]v2.ContainerSpec)
 	for name, cont := range conts {
 		cinfo, err := cont.GetInfo()
 		if err != nil {
-			return nil, err
+			errs.append(name, "GetInfo", err)
 		}
 		spec := self.getV2Spec(cinfo)
 		specs[name] = spec
 	}
-	return specs, nil
+	return specs, errs
 }
 
 // Get V2 container spec from v1 container info.
@@ -455,26 +459,32 @@ func (self *manager) GetContainerInfoV2(containerName string, options v2.Request
 		return nil, err
 	}
 
+	var errs partialFailure
+	var nilTime time.Time // Ignored.
+
 	infos := make(map[string]v2.ContainerInfo, len(containers))
 	for name, container := range containers {
+		result := v2.ContainerInfo{}
 		cinfo, err := container.GetInfo()
 		if err != nil {
-			return nil, err
+			errs.append(name, "GetInfo", err)
+			infos[name] = result
+			continue
 		}
+		result.Spec = self.getV2Spec(cinfo)
 
-		var nilTime time.Time // Ignored.
 		stats, err := self.memoryCache.RecentStats(name, nilTime, nilTime, options.Count)
 		if err != nil {
-			return nil, err
+			errs.append(name, "RecentStats", err)
+			infos[name] = result
+			continue
 		}
 
-		infos[name] = v2.ContainerInfo{
-			Spec:  self.getV2Spec(cinfo),
-			Stats: v2.ContainerStatsFromV1(&cinfo.Spec, stats),
-		}
+		result.Stats = v2.ContainerStatsFromV1(&cinfo.Spec, stats)
+		infos[name] = result
 	}
 
-	return infos, nil
+	return infos, errs
 }
 
 func (self *manager) containerDataToContainerInfo(cont *containerData, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
@@ -615,6 +625,7 @@ func (self *manager) GetRequestedContainersInfo(containerName string, options v2
 	if err != nil {
 		return nil, err
 	}
+	var errs partialFailure
 	containersMap := make(map[string]*info.ContainerInfo)
 	query := info.ContainerInfoRequest{
 		NumStats: options.Count,
@@ -622,12 +633,11 @@ func (self *manager) GetRequestedContainersInfo(containerName string, options v2
 	for name, data := range containers {
 		info, err := self.containerDataToContainerInfo(data, &query)
 		if err != nil {
-			// Skip containers with errors, we try to degrade gracefully.
-			continue
+			errs.append(name, "containerDataToContainerInfo", err)
 		}
 		containersMap[name] = info
 	}
-	return containersMap, nil
+	return containersMap, errs
 }
 
 func (self *manager) getRequestedContainers(containerName string, options v2.RequestOptions) (map[string]*containerData, error) {
@@ -1058,19 +1068,18 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 					glog.Warningf("Failed to process watch event %+v: %v", event, err)
 				}
 			case <-quit:
-				errors := []string{}
+				var errs partialFailure
 
 				// Stop processing events if asked to quit.
-				for _, watcher := range self.containerWatchers {
+				for i, watcher := range self.containerWatchers {
 					err := watcher.Stop()
 					if err != nil {
-						errors = append(errors, err.Error())
+						errs.append(fmt.Sprintf("watcher %d", i), "Stop", err)
 					}
 				}
 
-				if len(errors) > 0 {
-					err_str := strings.Join(errors, ", ")
-					quit <- fmt.Errorf("Error quiting watchers: %v", err_str)
+				if len(errs) > 0 {
+					quit <- errs
 				} else {
 					quit <- nil
 					glog.Infof("Exiting thread watching subcontainers")
@@ -1243,4 +1252,15 @@ func getVersionInfo() (*info.VersionInfo, error) {
 		CadvisorVersion:    version.Info["version"],
 		CadvisorRevision:   version.Info["revision"],
 	}, nil
+}
+
+// Helper for accumulating partial failures.
+type partialFailure []string
+
+func (f *partialFailure) append(id, operation string, err error) {
+	*f = append(*f, fmt.Sprintf("[%q: %s: %s]", id, operation, err))
+}
+
+func (f partialFailure) Error() string {
+	return fmt.Sprintf("partial failures: %s", strings.Join(f, ", "))
 }
