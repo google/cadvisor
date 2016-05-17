@@ -48,7 +48,7 @@ func (self *rktContainerWatcher) Start(events chan watcher.ContainerEvent) error
 
 func (self *rktContainerWatcher) Stop() error {
 	// Rendezvous with the watcher thread.
-	close(self.stopWatcher)
+	self.stopWatcher <- nil
 	return nil
 }
 
