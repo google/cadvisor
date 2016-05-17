@@ -267,3 +267,7 @@ func (self *rawContainerHandler) ListProcesses(listType container.ListType) ([]i
 func (self *rawContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
+
+func (self *rawContainerHandler) Type() container.ContainerType {
+	return container.ContainerTypeRaw
+}

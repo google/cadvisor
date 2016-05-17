@@ -39,6 +39,7 @@ import (
 	"github.com/google/cadvisor/machine"
 	"github.com/google/cadvisor/manager/watcher"
 	rawwatcher "github.com/google/cadvisor/manager/watcher/raw"
+	rktwatcher "github.com/google/cadvisor/manager/watcher/rkt"
 	"github.com/google/cadvisor/utils/cpuload"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
@@ -238,6 +239,12 @@ func (self *manager) Start() error {
 	err = rkt.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
 		glog.Errorf("Registration of the rkt container factory failed: %v", err)
+	} else {
+		watcher, err := rktwatcher.NewRktContainerWatcher()
+		if err != nil {
+			return err
+		}
+		self.containerWatchers = append(self.containerWatchers, watcher)
 	}
 
 	err = systemd.Register(self, self.fsInfo, self.ignoreMetrics)
@@ -783,6 +790,35 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 	return nil
 }
 
+// Enables overwriting an existing containerData/Handler object for a given containerName.
+// Can't use createContainer as it just returns if a given containerName has a handler already.
+// Ex: rkt handler will want to take priority over the raw handler, but the raw handler might be created first.
+
+// Only allow raw handler to be overridden
+func (m *manager) overrideContainer(containerName string, watchSource watcher.ContainerWatchSource) error {
+	m.containersLock.Lock()
+	defer m.containersLock.Unlock()
+
+	namespacedName := namespacedContainerName{
+		Name: containerName,
+	}
+
+	if _, ok := m.containers[namespacedName]; ok {
+		containerData := m.containers[namespacedName]
+
+		if containerData.handler.Type() != container.ContainerTypeRaw {
+			return nil
+		}
+
+		err := m.destroyContainerLocked(containerName)
+		if err != nil {
+			return fmt.Errorf("overrideContainer: failed to destroy containerData/handler for %v: %v", containerName, err)
+		}
+	}
+
+	return m.createContainerLocked(containerName, watchSource)
+}
+
 // Create a container.
 func (m *manager) createContainer(containerName string, watchSource watcher.ContainerWatchSource) error {
 	m.containersLock.Lock()
@@ -1008,7 +1044,13 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 			case event := <-self.eventsChannel:
 				switch {
 				case event.EventType == watcher.ContainerAdd:
-					err = self.createContainer(event.Name, event.WatchSource)
+					switch event.WatchSource {
+					// the Rkt and Raw watchers can race, and if Raw wins, we want Rkt to override and create a new handler for Rkt containers
+					case watcher.Rkt:
+						err = self.overrideContainer(event.Name, event.WatchSource)
+					default:
+						err = self.createContainer(event.Name, event.WatchSource)
+					}
 				case event.EventType == watcher.ContainerDelete:
 					err = self.destroyContainer(event.Name)
 				}

@@ -30,7 +30,7 @@ import (
 const (
 	defaultRktAPIServiceAddr = "localhost:15441"
 	timeout                  = 2 * time.Second
-	minimumRktBinVersion     = "1.5.0"
+	minimumRktBinVersion     = "1.6.0"
 )
 
 var (
