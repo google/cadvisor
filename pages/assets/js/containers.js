@@ -110,7 +110,6 @@ function drawLineChart(seriesTitles, data, elementId, unit) {
   var opts = {
     curveType: 'function',
     height: 300,
-    legend: {position: 'none'},
     focusTarget: 'category',
     vAxis: {
       title: unit,
@@ -119,7 +118,8 @@ function drawLineChart(seriesTitles, data, elementId, unit) {
       }
     },
     legend: {
-      position: 'bottom'
+      position: 'top',
+      maxLines: 10
     }
   };
   // If the whole data series has the same value, try to center it in the chart.
