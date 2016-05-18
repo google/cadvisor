@@ -27,20 +27,14 @@ import (
 	"golang.org/x/exp/inotify"
 )
 
-const (
-	readerStateOpening = 1 << iota
-	readerStateOpened
-	readerStateError
-)
-
 type Tail struct {
-	reader      *bufio.Reader
-	readerState int
-	readerLock  sync.Mutex
-	filename    string
-	file        *os.File
-	stop        chan bool
-	watcher     *inotify.Watcher
+	reader     *bufio.Reader
+	readerErr  error
+	readerLock sync.RWMutex
+	filename   string
+	file       *os.File
+	stop       chan bool
+	watcher    *inotify.Watcher
 }
 
 const retryOpenInterval = time.Second
@@ -57,20 +51,16 @@ func NewTail(filename string) (*Tail, error) {
 	if err != nil {
 		return nil, fmt.Errorf("inotify init failed on %s: %v", t.filename, err)
 	}
-	t.readerState = readerStateOpening
 	go t.watchLoop()
 	return t, nil
 }
 
 // Read implements the io.Reader interface for Tail
 func (t *Tail) Read(p []byte) (int, error) {
-	t.readerLock.Lock()
-	defer t.readerLock.Unlock()
-	if t.reader == nil {
-		if t.readerState == readerStateOpening {
-			return 0, nil
-		}
-		return 0, fmt.Errorf("can't open log file %s", t.filename)
+	t.readerLock.RLock()
+	defer t.readerLock.RUnlock()
+	if t.reader == nil || t.readerErr != nil {
+		return 0, t.readerErr
 	}
 	return t.reader.Read(p)
 }
@@ -100,27 +90,30 @@ func (t *Tail) fileChanged() error {
 	}
 }
 
-func (t *Tail) attemptOpen() (err error) {
+func (t *Tail) attemptOpen() error {
 	t.readerLock.Lock()
 	defer t.readerLock.Unlock()
+	t.reader = nil
+	t.readerErr = nil
 	for attempt := 1; attempt <= maxOpenAttempts; attempt++ {
 		glog.V(4).Infof("Opening %s (attempt %d of %d)", t.filename, attempt, maxOpenAttempts)
+		var err error
 		t.file, err = os.Open(t.filename)
 		if err == nil {
 			// TODO: not interested in old events?
 			//t.file.Seek(0, os.SEEK_END)
 			t.reader = bufio.NewReader(t.file)
-			t.readerState = readerStateOpened
 			return nil
 		}
 		select {
 		case <-time.After(retryOpenInterval):
 		case <-t.stop:
-			t.readerState = readerStateError
+			t.readerErr = io.EOF
 			return fmt.Errorf("watch was cancelled")
 		}
 	}
-	t.readerState = readerStateError
+	err := fmt.Errorf("can't open log file %s", t.filename)
+	t.readerErr = err
 	return err
 }
 
@@ -150,8 +143,5 @@ func (t *Tail) watchFile() error {
 		return err
 	}
 	glog.V(4).Infof("Log file %s moved/deleted", t.filename)
-	t.readerLock.Lock()
-	defer t.readerLock.Unlock()
-	t.readerState = readerStateOpening
 	return nil
 }
