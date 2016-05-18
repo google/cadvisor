@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.23.2 (2016-05-18)
+- Final release for Kubernetes 1.3
+- Handle kernel log rotation
+- More rkt support: poll rkt service for new containers
+- Better handling of partial failures when fetching subcontainers
+- Devicemapper thin_ls support (requires Device Mapper kernel module and supporting utilities)
+
 ### 0.23.1 (2016-05-11)
 - Add multi-container charts to the UI
 - Add TLS options for Kafka storage driver
