@@ -193,7 +193,15 @@ type testDmsetup struct {
 	err  error
 }
 
-func (t *testDmsetup) table(poolName string) ([]byte, error) {
+func (*testDmsetup) Message(deviceName string, sector int, message string) ([]byte, error) {
+	return nil, nil
+}
+
+func (*testDmsetup) Status(deviceName string) ([]byte, error) {
+	return nil, nil
+}
+
+func (t *testDmsetup) Table(poolName string) ([]byte, error) {
 	return t.data, t.err
 }
 
