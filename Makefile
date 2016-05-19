@@ -20,7 +20,7 @@ test:
 	@echo ">> running tests"
 	@$(GO) test -tags test -short -race $(pkgs)
 
-test-integration: build test
+test-integration:
 	@./build/integration.sh
 
 format:
@@ -43,4 +43,4 @@ release:
 docker:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
 
-.PHONY: all build docker format release test vet
+.PHONY: all build docker format release test test-integration vet
