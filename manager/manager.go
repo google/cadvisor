@@ -382,7 +382,7 @@ func (self *manager) GetDerivedStats(containerName string, options v2.RequestOpt
 		}
 		stats[name] = d
 	}
-	return stats, errs
+	return stats, errs.OrNil()
 }
 
 func (self *manager) GetContainerSpec(containerName string, options v2.RequestOptions) (map[string]v2.ContainerSpec, error) {
@@ -400,7 +400,7 @@ func (self *manager) GetContainerSpec(containerName string, options v2.RequestOp
 		spec := self.getV2Spec(cinfo)
 		specs[name] = spec
 	}
-	return specs, errs
+	return specs, errs.OrNil()
 }
 
 // Get V2 container spec from v1 container info.
@@ -461,7 +461,7 @@ func (self *manager) GetContainerInfoV2(containerName string, options v2.Request
 		infos[name] = result
 	}
 
-	return infos, errs
+	return infos, errs.OrNil()
 }
 
 func (self *manager) containerDataToContainerInfo(cont *containerData, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
@@ -614,7 +614,7 @@ func (self *manager) GetRequestedContainersInfo(containerName string, options v2
 		}
 		containersMap[name] = info
 	}
-	return containersMap, errs
+	return containersMap, errs.OrNil()
 }
 
 func (self *manager) getRequestedContainers(containerName string, options v2.RequestOptions) (map[string]*containerData, error) {
@@ -1240,4 +1240,11 @@ func (f *partialFailure) append(id, operation string, err error) {
 
 func (f partialFailure) Error() string {
 	return fmt.Sprintf("partial failures: %s", strings.Join(f, ", "))
+}
+
+func (f partialFailure) OrNil() error {
+	if len(f) == 0 {
+		return nil
+	}
+	return f
 }
