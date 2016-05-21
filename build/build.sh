@@ -51,7 +51,8 @@ ldflags="
   -X ${repo_path}/version.Branch${ldseparator}${branch}
   -X ${repo_path}/version.BuildUser${ldseparator}${build_user}
   -X ${repo_path}/version.BuildDate${ldseparator}${build_date}
-  -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
+  -X ${repo_path}/version.GoVersion${ldseparator}${go_version}
+  -extldflags \"-static\""
 
 echo " >   cadvisor"
 

@@ -204,7 +204,7 @@ func Run() error {
 
 	// Build cAdvisor.
 	glog.Infof("Building cAdvisor...")
-	err := RunCommand("godep", "go", "build", "github.com/google/cadvisor")
+	err := RunCommand("godep", "go", "build", "--ldflags", "-extldflags '-static'", "github.com/google/cadvisor")
 	if err != nil {
 		return err
 	}
