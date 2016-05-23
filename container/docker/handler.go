@@ -217,7 +217,14 @@ func newDockerContainerHandler(
 
 	// Add the name and bare ID as aliases of the container.
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"), id)
-	handler.labels = ctnr.Config.Labels
+
+	//handler.labels = ctnr.Config.Labels
+	// Prexix the label Names with "label_"
+	myLabels := make(map[string]string, len(ctnr.Config.Labels))
+        for key,value := range(ctnr.Config.Labels) {
+                myLabels["label_"+key] = value
+        }
+
 	handler.image = ctnr.Config.Image
 	handler.networkMode = ctnr.HostConfig.NetworkMode
 	handler.deviceID = ctnr.GraphDriver.Data["DeviceId"]
