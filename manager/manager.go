@@ -651,7 +651,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 	case v2.TypeDocker:
 		if options.Recursive == false {
 			containerName = strings.TrimPrefix(containerName, "/")
-			cont, err := self.getNamespacedContainer(containerName, docker.DockerNamespace)
+			cont, err := self.getNamespacedContainer(docker.DockerNamespace, containerName)
 			if err != nil {
 				return containersMap, err
 			}
