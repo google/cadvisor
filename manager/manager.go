@@ -535,7 +535,6 @@ func (self *manager) getAllNamespacedContainers(namespace string) map[string]*co
 
 	// Get containers in the Docker namespace.
 	for name, cont := range self.containers {
-		glog.Infof("%q = %q", cont.info.Name, name.Namespace)
 		if name.Namespace == namespace {
 			containers[cont.info.Name] = cont
 		}
@@ -561,23 +560,23 @@ func (self *manager) AllDockerContainers(query *info.ContainerInfoRequest) (map[
 	return self.AllNamespacedContainers(docker.DockerNamespace, query)
 }
 
-func (self *manager) getNamespacedContainer(containerName string, namespace string) (*containerData, error) {
+func (self *manager) getNamespacedContainer(namespace string, containerName string) (*containerData, error) {
 	self.containersLock.RLock()
 	defer self.containersLock.RUnlock()
 
-	// Check for the container in the Docker container namespace.
+	// Check for the container in the specified container namespace.
 	cont, ok := self.containers[namespacedContainerName{
 		Namespace: namespace,
 		Name:      containerName,
 	}]
 	if !ok {
-		return nil, fmt.Errorf("unable to find Docker container %q", containerName)
+		return nil, fmt.Errorf("unable to find container %q in namespace %q", containerName, namespace)
 	}
 	return cont, nil
 }
 
 func (self *manager) NamespacedContainer(namespace string, containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
-	container, err := self.getNamespacedContainer(containerName, namespace)
+	container, err := self.getNamespacedContainer(namespace, containerName)
 	if err != nil {
 		return info.ContainerInfo{}, err
 	}

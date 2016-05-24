@@ -134,7 +134,7 @@ func (self *Client) NamespacedContainer(namespace string, containerName string, 
 		return
 	}
 	if len(ret) != 1 {
-		err = fmt.Errorf("expected to only receive 1 Docker container: %+v", ret)
+		err = fmt.Errorf("expected to only receive 1 container: %+v", ret)
 		return
 	}
 	for _, cont := range ret {

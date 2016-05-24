@@ -74,7 +74,7 @@ type rktContainerHandler struct {
 }
 
 func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPath string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
-	aliases := make([]string, 1)
+	var aliases []string
 	isPod := false
 
 	apiPod := &rktapi.Pod{}
@@ -84,12 +84,12 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 		return nil, fmt.Errorf("this should be impossible!, new handler failing, but factory allowed, name = %s", name)
 	}
 
-	//rktnetes uses containerID: rkt://fff40827-b994-4e3a-8f88-6427c2c8a5ac:nginx
+	// prefix with / to make work better with api ala /fff40827-b994-4e3a-8f88-6427c2c8a5ac:nginx
 	if parsed.Container == "" {
 		isPod = true
-		aliases = append(aliases, "rkt://"+parsed.Pod)
+		aliases = append(aliases, "/"+parsed.Pod)
 	} else {
-		aliases = append(aliases, "rkt://"+parsed.Pod+":"+parsed.Container)
+		aliases = append(aliases, "/"+parsed.Pod+":"+parsed.Container)
 	}
 
 	pid := os.Getpid()
