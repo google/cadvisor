@@ -144,7 +144,7 @@ type RktActions interface {
 	// Run the specified command in a busybox container and return its ID
 	RunBusyBox(cmd ...string) string
 
-	Version() []string
+	//	Version() []string
 }
 
 type CadvisorActions interface {
@@ -205,7 +205,7 @@ func (self *realFramework) Docker() DockerActions {
 	return self.dockerActions
 }
 
-func (self *realFramework Rkt() RktActions {
+func (self *realFramework) Rkt() RktActions {
 	return self.rktActions
 }
 
@@ -246,7 +246,7 @@ func (self *realFramework) ClientV2() *v2.Client {
 
 func (self rktActions) RuntPause() string {
 	return self.Run(RunArgs{
-		Image: "kubernetes/pause"
+		Image: "kubernetes/pause",
 	})
 }
 
@@ -261,7 +261,8 @@ func (self rktActions) Prepare(args RunArgs, cmd ...string) string {
 	rktCommand = append(rktCommand, args.Args...)
 	rktCommand = append(rktCommand, args.Image)
 	if len(cmd) != 0 {
-		rktCommand = append(rktCommand, "--", cmd...)
+		rktCommand = append(rktCommand, "--")
+		rktCommand = append(rktCommand, cmd...)
 	}
 	output, _ := self.fm.Shell().Run("sudo", rktCommand...)
 
@@ -272,7 +273,7 @@ func (self rktActions) Prepare(args RunArgs, cmd ...string) string {
 
 func (self rktActions) RunPrepared(uuid string) {
 	rktCommand := []string{"systemd-run", "rkt", "run-prepared", uuid}
-	_, _ := self.fm.Shell().Run("sudo", rktCommand...)
+	self.fm.Shell().Run("sudo", rktCommand...)
 }
 
 func (self rktActions) Remove(uuid string) func() {
@@ -284,12 +285,25 @@ func (self rktActions) Remove(uuid string) func() {
 }
 
 func (self rktActions) Run(args RunArgs, cmd ...string) string {
-	containerId := self.Prepare(args, cmd)
+	containerId := self.Prepare(args, cmd...)
 	self.RunPrepared(containerId)
 
 	self.fm.cleanups = append(self.fm.cleanups, self.Remove(containerId))
 
 	return containerId
+}
+
+func (self rktActions) RunPause() string {
+	return self.Run(RunArgs{
+		Image: "kubernetes/pause",
+	})
+}
+
+// Run the specified command in a Docker busybox container.
+func (self rktActions) RunBusybox(cmd ...string) string {
+	return self.Run(RunArgs{
+		Image: "busybox",
+	}, cmd...)
 }
 
 func (self dockerActions) RunPause() string {

@@ -94,7 +94,7 @@ func TestDockerContainerByName(t *testing.T) {
 	defer fm.Cleanup()
 
 	containerName := fmt.Sprintf("test-docker-container-by-name-%d", os.Getpid())
-	fm.Docker().Run(framework.DockerRunArgs{
+	fm.Docker().Run(framework.RunArgs{
 		Image: "kubernetes/pause",
 		Args:  []string{"--name", containerName},
 	})
@@ -154,7 +154,7 @@ func TestBasicDockerContainer(t *testing.T) {
 	defer fm.Cleanup()
 
 	containerName := fmt.Sprintf("test-basic-docker-container-%d", os.Getpid())
-	containerId := fm.Docker().Run(framework.DockerRunArgs{
+	containerId := fm.Docker().Run(framework.RunArgs{
 		Image: "kubernetes/pause",
 		Args: []string{
 			"--name", containerName,
@@ -197,7 +197,7 @@ func TestDockerContainerSpec(t *testing.T) {
 	if getDockerMinorVersion(fm) >= 10 {
 		cpusetArg = "--cpuset-cpus"
 	}
-	containerId := fm.Docker().Run(framework.DockerRunArgs{
+	containerId := fm.Docker().Run(framework.RunArgs{
 		Image: image,
 		Args: []string{
 			"--cpu-shares", strconv.FormatUint(cpuShares, 10),
