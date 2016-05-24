@@ -28,20 +28,21 @@ import (
 )
 
 const (
-	containersApi    = "containers"
-	subcontainersApi = "subcontainers"
-	machineApi       = "machine"
-	machineStatsApi  = "machinestats"
-	dockerApi        = "docker"
-	summaryApi       = "summary"
-	statsApi         = "stats"
-	specApi          = "spec"
-	eventsApi        = "events"
-	storageApi       = "storage"
-	attributesApi    = "attributes"
-	versionApi       = "version"
-	psApi            = "ps"
-	customMetricsApi = "appmetrics"
+	containersApi          = "containers"
+	subcontainersApi       = "subcontainers"
+	machineApi             = "machine"
+	machineStatsApi        = "machinestats"
+	dockerApi              = "docker"
+	summaryApi             = "summary"
+	statsApi               = "stats"
+	specApi                = "spec"
+	eventsApi              = "events"
+	storageApi             = "storage"
+	attributesApi          = "attributes"
+	versionApi             = "version"
+	psApi                  = "ps"
+	customMetricsApi       = "appmetrics"
+	namespacedContainerApi = "namespacedcontainers"
 )
 
 // Interface for a cAdvisor API version
@@ -62,10 +63,11 @@ func getApiVersions() []ApiVersion {
 	v1_1 := newVersion1_1(v1_0)
 	v1_2 := newVersion1_2(v1_1)
 	v1_3 := newVersion1_3(v1_2)
+	v1_4 := newVersion1_4(v1_3)
 	v2_0 := newVersion2_0()
 	v2_1 := newVersion2_1(v2_0)
 
-	return []ApiVersion{v1_0, v1_1, v1_2, v1_3, v2_0, v2_1}
+	return []ApiVersion{v1_0, v1_1, v1_2, v1_3, v1_4, v2_0, v2_1}
 
 }
 
@@ -293,6 +295,71 @@ func handleEventRequest(request []string, m manager.Manager, w http.ResponseWrit
 	}
 	return streamResults(eventChannel, w, r, m)
 
+}
+
+// API v1.4
+
+type version1_4 struct {
+	baseVersion *version1_3
+}
+
+// v1.4 builds on v1.3.
+func newVersion1_4(v *version1_3) *version1_4 {
+	return &version1_4{
+		baseVersion: v,
+	}
+}
+
+func (self *version1_4) Version() string {
+	return "v1.4"
+}
+
+func (self *version1_4) SupportedRequestTypes() []string {
+	return append(self.baseVersion.SupportedRequestTypes(), eventsApi)
+}
+
+func (self *version1_4) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+	switch requestType {
+	case namespacedContainerApi:
+		glog.V(4).Infof("Api - NamespacedContainers(%v)", request)
+
+		// Get the query request.
+		query, err := getContainerInfoRequest(r.Body)
+		if err != nil {
+			return err
+		}
+
+		var containers map[string]info.ContainerInfo
+		switch {
+		case len(request) == 1:
+			// Get all namespaced containers.
+			containers, err = m.AllNamespacedContainers(request[0], query)
+			if err != nil {
+				return fmt.Errorf("failed to get all Docker containers with error: %v", err)
+			}
+		case len(request) > 1:
+			// Get one namespaced container.
+			var cont info.ContainerInfo
+			cont, err = m.NamespacedContainer(request[0], getContainerName(request[1:]), query)
+			if err != nil {
+				return fmt.Errorf("failed to get Docker container %q with error: %v", request[0], err)
+			}
+			containers = map[string]info.ContainerInfo{
+				cont.Name: cont,
+			}
+		default:
+			return fmt.Errorf("unknown request for Docker container %v", request)
+		}
+
+		// Only output the containers as JSON.
+		err = writeResult(containers, w)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
+	}
 }
 
 // API v2.0

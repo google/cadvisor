@@ -76,13 +76,13 @@ type Manager interface {
 	SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error)
 
 	// Get all containers within a given namespace
-	AllContainers(namespace string, query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error)
+	AllNamespacedContainers(namespace string, query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error)
 
 	// Gets all the Docker containers. Return is a map from full container name to ContainerInfo.
 	AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error)
 
 	// Returns information about a container in a given namespace
-	ContainerInfo(containerName string, namespace string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
+	NamespacedContainer(containerName string, namespace string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
 
 	// Gets information about a specific Docker container. The specified name is within the Docker namespace.
 	DockerContainer(dockerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
@@ -542,7 +542,7 @@ func (self *manager) getAllNamespacedContainers(namespace string) map[string]*co
 	return containers
 }
 
-func (self *manager) AllContainers(namespace string, query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
+func (self *manager) AllNamespacedContainers(namespace string, query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
 	containers := self.getAllNamespacedContainers(namespace)
 
 	output := make(map[string]info.ContainerInfo, len(containers))
@@ -557,7 +557,7 @@ func (self *manager) AllContainers(namespace string, query *info.ContainerInfoRe
 }
 
 func (self *manager) AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
-	return self.AllContainers(docker.DockerNamespace, query)
+	return self.AllNamespacedContainers(docker.DockerNamespace, query)
 }
 
 func (self *manager) getNamespacedContainer(containerName string, namespace string) (*containerData, error) {
@@ -575,7 +575,7 @@ func (self *manager) getNamespacedContainer(containerName string, namespace stri
 	return cont, nil
 }
 
-func (self *manager) ContainerInfo(containerName string, namespace string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
+func (self *manager) NamespacedContainer(namespace string, containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
 	container, err := self.getNamespacedContainer(containerName, namespace)
 	if err != nil {
 		return info.ContainerInfo{}, err
@@ -589,7 +589,7 @@ func (self *manager) ContainerInfo(containerName string, namespace string, query
 }
 
 func (self *manager) DockerContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
-	return self.ContainerInfo(containerName, docker.DockerNamespace, query)
+	return self.NamespacedContainer(docker.DockerNamespace, containerName, query)
 
 }
 
