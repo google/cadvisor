@@ -535,6 +535,7 @@ func (self *manager) getAllNamespacedContainers(namespace string) map[string]*co
 
 	// Get containers in the Docker namespace.
 	for name, cont := range self.containers {
+		glog.Infof("%q = %q", cont.info.Name, name.Namespace)
 		if name.Namespace == namespace {
 			containers[cont.info.Name] = cont
 		}

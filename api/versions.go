@@ -315,13 +315,13 @@ func (self *version1_4) Version() string {
 }
 
 func (self *version1_4) SupportedRequestTypes() []string {
-	return append(self.baseVersion.SupportedRequestTypes(), eventsApi)
+	return append(self.baseVersion.SupportedRequestTypes(), namespacedContainerApi)
 }
 
 func (self *version1_4) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
 	case namespacedContainerApi:
-		glog.V(4).Infof("Api - NamespacedContainers(%v)", request)
+		glog.Infof("Api - NamespacedContainers(%v)", request)
 
 		// Get the query request.
 		query, err := getContainerInfoRequest(r.Body)

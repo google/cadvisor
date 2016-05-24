@@ -45,7 +45,7 @@ func NewClient(url string) (*Client, error) {
 	}
 
 	return &Client{
-		baseUrl: fmt.Sprintf("%sapi/v1.3/", url),
+		baseUrl: fmt.Sprintf("%sapi/v1.4/", url),
 	}, nil
 }
 
