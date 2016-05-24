@@ -125,11 +125,43 @@ func (self *Client) DockerContainer(name string, query *v1.ContainerInfoRequest)
 	return
 }
 
+// Returns the JSON container information for the specified
+// Namespace, container and request.
+func (self *Client) NamespacedContainer(namespace string, containerName string, query *v1.ContainerInfoRequest) (cinfo v1.ContainerInfo, err error) {
+	u := self.namespacedInfoUrl(namespace, containerName)
+	ret := make(map[string]v1.ContainerInfo)
+	if err = self.httpGetJsonData(&ret, query, u, fmt.Sprintf("Namespaced (%q) container (%q) info", namespace, containerName)); err != nil {
+		return
+	}
+	if len(ret) != 1 {
+		err = fmt.Errorf("expected to only receive 1 Docker container: %+v", ret)
+		return
+	}
+	for _, cont := range ret {
+		cinfo = cont
+	}
+	return
+}
+
 // Returns the JSON container information for all Docker containers.
 func (self *Client) AllDockerContainers(query *v1.ContainerInfoRequest) (cinfo []v1.ContainerInfo, err error) {
 	u := self.dockerInfoUrl("/")
 	ret := make(map[string]v1.ContainerInfo)
 	if err = self.httpGetJsonData(&ret, query, u, "all Docker containers info"); err != nil {
+		return
+	}
+	cinfo = make([]v1.ContainerInfo, 0, len(ret))
+	for _, cont := range ret {
+		cinfo = append(cinfo, cont)
+	}
+	return
+}
+
+// Returns the JSON container information for all containers in a namespace
+func (self *Client) AllNamespacedContainers(namespace string, query *v1.ContainerInfoRequest) (cinfo []v1.ContainerInfo, err error) {
+	u := self.namespacedInfoUrl(namespace, "/")
+	ret := make(map[string]v1.ContainerInfo)
+	if err = self.httpGetJsonData(&ret, query, u, fmt.Sprintf("all namespaced (%q) containers info", namespace)); err != nil {
 		return
 	}
 	cinfo = make([]v1.ContainerInfo, 0, len(ret))
@@ -153,6 +185,10 @@ func (self *Client) subcontainersInfoUrl(name string) string {
 
 func (self *Client) dockerInfoUrl(name string) string {
 	return self.baseUrl + path.Join("docker", name)
+}
+
+func (self *Client) namespacedInfoUrl(namespace string, containerName string) string {
+	return self.baseUrl + path.Join("namespacedcontainers", namespace, containerName)
 }
 
 func (self *Client) eventsInfoUrl(name string) string {
