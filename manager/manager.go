@@ -662,9 +662,27 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 			}
 			containersMap = self.getAllNamespacedContainers(docker.DockerNamespace)
 		}
+	case v2.TypeRkt:
+		if containerName == "/" {
+			containersMap = self.getAllNamespacedContainers(rkt.RktNamespace)
+		} else {
+			containerName = strings.TrimPrefix(containerName, "/")
+			cont, err := self.getNamespacedContainer(rkt.RktNamespace, containerName)
+
+			if err != nil {
+				return containersMap, err
+			}
+			// If we are asking for a container of the pod, won't be recursive
+			if options.Recursive == false || strings.ContainsRune(containerName, ':') {
+				containersMap[cont.info.Name] = cont
+			} else {
+				containersMap = self.getSubcontainers(cont.info.Name)
+			}
+		}
 	default:
 		return containersMap, fmt.Errorf("invalid request type %q", options.IdType)
 	}
+
 	return containersMap, nil
 }
 
