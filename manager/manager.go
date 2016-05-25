@@ -40,7 +40,6 @@ import (
 	"github.com/google/cadvisor/manager/watcher"
 	rawwatcher "github.com/google/cadvisor/manager/watcher/raw"
 	rktwatcher "github.com/google/cadvisor/manager/watcher/rkt"
-	"github.com/google/cadvisor/utils/cpuload"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
@@ -51,7 +50,6 @@ import (
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
 var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log the usage of the cAdvisor container")
-var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
 var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h", "Max length of time for which to store events (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is a duration. Default is applied to all non-specified event types")
 var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
 var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
@@ -221,7 +219,6 @@ type manager struct {
 	quitChannels             []chan error
 	cadvisorContainer        string
 	inHostNamespace          bool
-	loadReader               cpuload.CpuLoadReader
 	eventHandler             events.EventManager
 	startupTime              time.Time
 	maxHousekeepingInterval  time.Duration
@@ -264,22 +261,6 @@ func (self *manager) Start() error {
 		return err
 	}
 	self.containerWatchers = append(self.containerWatchers, rawWatcher)
-
-	if *enableLoadReader {
-		// Create cpu load reader.
-		cpuLoadReader, err := cpuload.New()
-		if err != nil {
-			// TODO(rjnagal): Promote to warning once we support cpu load inside namespaces.
-			glog.Infof("Could not initialize cpu load reader: %s", err)
-		} else {
-			err = cpuLoadReader.Start()
-			if err != nil {
-				glog.Warningf("Could not start cpu load stat collector: %s", err)
-			} else {
-				self.loadReader = cpuLoadReader
-			}
-		}
-	}
 
 	// Watch for OOMs.
 	err = self.watchForNewOoms()
@@ -333,10 +314,6 @@ func (self *manager) Stop() error {
 		}
 	}
 	self.quitChannels = make([]chan error, 0, 2)
-	if self.loadReader != nil {
-		self.loadReader.Stop()
-		self.loadReader = nil
-	}
 	return nil
 }
 
@@ -405,7 +382,7 @@ func (self *manager) GetDerivedStats(containerName string, options v2.RequestOpt
 		}
 		stats[name] = d
 	}
-	return stats, errs
+	return stats, errs.OrNil()
 }
 
 func (self *manager) GetContainerSpec(containerName string, options v2.RequestOptions) (map[string]v2.ContainerSpec, error) {
@@ -423,7 +400,7 @@ func (self *manager) GetContainerSpec(containerName string, options v2.RequestOp
 		spec := self.getV2Spec(cinfo)
 		specs[name] = spec
 	}
-	return specs, errs
+	return specs, errs.OrNil()
 }
 
 // Get V2 container spec from v1 container info.
@@ -484,7 +461,7 @@ func (self *manager) GetContainerInfoV2(containerName string, options v2.Request
 		infos[name] = result
 	}
 
-	return infos, errs
+	return infos, errs.OrNil()
 }
 
 func (self *manager) containerDataToContainerInfo(cont *containerData, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
@@ -637,7 +614,7 @@ func (self *manager) GetRequestedContainersInfo(containerName string, options v2
 		}
 		containersMap[name] = info
 	}
-	return containersMap, errs
+	return containersMap, errs.OrNil()
 }
 
 func (self *manager) getRequestedContainers(containerName string, options v2.RequestOptions) (map[string]*containerData, error) {
@@ -862,7 +839,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 	}
 
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
-	cont, err := newContainerData(containerName, m.memoryCache, handler, m.loadReader, logUsage, collectorManager, m.maxHousekeepingInterval, m.allowDynamicHousekeeping)
+	cont, err := newContainerData(containerName, m.memoryCache, handler, logUsage, collectorManager, m.maxHousekeepingInterval, m.allowDynamicHousekeeping)
 	if err != nil {
 		return err
 	}
@@ -1263,4 +1240,11 @@ func (f *partialFailure) append(id, operation string, err error) {
 
 func (f partialFailure) Error() string {
 	return fmt.Sprintf("partial failures: %s", strings.Join(f, ", "))
+}
+
+func (f partialFailure) OrNil() error {
+	if len(f) == 0 {
+		return nil
+	}
+	return f
 }

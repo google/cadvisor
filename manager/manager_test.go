@@ -32,7 +32,6 @@ import (
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // TODO(vmarmol): Refactor these tests.
@@ -57,7 +56,7 @@ func createManagerAndAddContainers(
 			spec,
 			nil,
 		).Once()
-		cont, err := newContainerData(name, memoryCache, mockHandler, nil, false, &collector.GenericCollectorManager{}, 60*time.Second, true)
+		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -174,7 +173,9 @@ func TestGetContainerInfoV2(t *testing.T) {
 	m, _, handlerMap := expectManagerWithContainers(containers, query, t)
 
 	infos, err := m.GetContainerInfoV2("/", options)
-	require.NoError(t, err, "Error calling GetContainerInfoV2")
+	if err != nil {
+		t.Fatalf("GetContainerInfoV2 failed: %v", err)
+	}
 
 	for container, handler := range handlerMap {
 		handler.AssertExpectations(t)
@@ -205,7 +206,10 @@ func TestGetContainerInfoV2Failure(t *testing.T) {
 	m, _, handlerMap := expectManagerWithContainers(containers, query, t)
 
 	// Remove /c1 stats
-	require.NoError(t, m.memoryCache.RemoveContainer(statless))
+	err := m.memoryCache.RemoveContainer(statless)
+	if err != nil {
+		t.Fatalf("RemoveContainer failed: %v", err)
+	}
 
 	// Make GetSpec fail on /c2
 	mockErr := fmt.Errorf("intentional GetSpec failure")
@@ -216,7 +220,9 @@ func TestGetContainerInfoV2Failure(t *testing.T) {
 	m.containers[namespacedContainerName{Name: failing}].lastUpdatedTime = time.Time{} // Force GetSpec.
 
 	infos, err := m.GetContainerInfoV2("/", options)
-	assert.Error(t, err, "Expected error calling GetContainerInfoV2")
+	if err == nil {
+		t.Error("Expected error calling GetContainerInfoV2")
+	}
 
 	// Successful containers still successful.
 	info, ok := infos[successful]

@@ -42,7 +42,7 @@ func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, 
 		nil,
 	)
 	memoryCache := memory.New(60, nil)
-	ret, err := newContainerData(containerName, memoryCache, mockHandler, nil, false, &collector.GenericCollectorManager{}, 60*time.Second, true)
+	ret, err := newContainerData(containerName, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true)
 	if err != nil {
 		t.Fatal(err)
 	}
