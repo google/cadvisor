@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/cadvisor/container/docker"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/integration/framework"
@@ -28,40 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-// Sanity check the container by:
-// - Checking that the specified alias is a valid one for this container.
-// - Verifying that stats are not empty.
-func sanityCheck(alias string, containerInfo info.ContainerInfo, t *testing.T) {
-	assert.Contains(t, containerInfo.Aliases, alias, "Alias %q should be in list of aliases %v", alias, containerInfo.Aliases)
-	assert.NotEmpty(t, containerInfo.Stats, "Expected container to have stats")
-}
-
-// Sanity check the container by:
-// - Checking that the specified alias is a valid one for this container.
-// - Verifying that stats are not empty.
-func sanityCheckV2(alias string, info v2.ContainerInfo, t *testing.T) {
-	assert.Contains(t, info.Spec.Aliases, alias, "Alias %q should be in list of aliases %v", alias, info.Spec.Aliases)
-	assert.NotEmpty(t, info.Stats, "Expected container to have stats")
-}
-
-// Waits up to 5s for a container with the specified alias to appear.
-func waitForContainer(alias string, fm framework.Framework) {
-	err := framework.RetryForDuration(func() error {
-		ret, err := fm.Cadvisor().Client().DockerContainer(alias, &info.ContainerInfoRequest{
-			NumStats: 1,
-		})
-		if err != nil {
-			return err
-		}
-		if len(ret.Stats) != 1 {
-			return fmt.Errorf("no stats returned for container %q", alias)
-		}
-
-		return nil
-	}, 5*time.Second)
-	require.NoError(fm.T(), err, "Timed out waiting for container %q to be available in cAdvisor: %v", alias, err)
-}
 
 func getDockerMinorVersion(fm framework.Framework) int {
 	val, err := strconv.Atoi(fm.Docker().Version()[1])
@@ -77,12 +44,12 @@ func TestDockerContainerById(t *testing.T) {
 	containerId := fm.Docker().RunPause()
 
 	// Wait for the container to show up.
-	waitForContainer(containerId, fm)
+	waitForContainer(docker.DockerNamespace, containerId, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
 	require.NoError(t, err)
 
 	sanityCheck(containerId, containerInfo, t)
@@ -100,12 +67,12 @@ func TestDockerContainerByName(t *testing.T) {
 	})
 
 	// Wait for the container to show up.
-	waitForContainer(containerName, fm)
+	waitForContainer(docker.DockerNamespace, containerName, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerName, request)
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerName, request)
 	require.NoError(t, err)
 
 	sanityCheck(containerName, containerInfo, t)
@@ -132,13 +99,13 @@ func TestGetAllDockerContainers(t *testing.T) {
 	// Wait for the containers to show up.
 	containerId1 := fm.Docker().RunPause()
 	containerId2 := fm.Docker().RunPause()
-	waitForContainer(containerId1, fm)
-	waitForContainer(containerId2, fm)
+	waitForContainer(docker.DockerNamespace, containerId1, fm)
+	waitForContainer(docker.DockerNamespace, containerId2, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containersInfo, err := fm.Cadvisor().Client().AllDockerContainers(request)
+	containersInfo, err := fm.Cadvisor().Client().AllNamespacedContainers(docker.DockerNamespace, request)
 	require.NoError(t, err)
 
 	if len(containersInfo) < 2 {
@@ -162,12 +129,12 @@ func TestBasicDockerContainer(t *testing.T) {
 	})
 
 	// Wait for the container to show up.
-	waitForContainer(containerId, fm)
+	waitForContainer(docker.DockerNamespace, containerId, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
 	require.NoError(t, err)
 
 	// Check that the contianer is known by both its name and ID.
@@ -209,12 +176,12 @@ func TestDockerContainerSpec(t *testing.T) {
 	})
 
 	// Wait for the container to show up.
-	waitForContainer(containerId, fm)
+	waitForContainer(docker.DockerNamespace, containerId, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
 	require.NoError(t, err)
 	sanityCheck(containerId, containerInfo, t)
 
@@ -240,12 +207,12 @@ func TestDockerContainerCpuStats(t *testing.T) {
 
 	// Wait for the container to show up.
 	containerId := fm.Docker().RunBusybox("ping", "www.google.com")
-	waitForContainer(containerId, fm)
+	waitForContainer(docker.DockerNamespace, containerId, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,12 +229,12 @@ func TestDockerContainerMemoryStats(t *testing.T) {
 
 	// Wait for the container to show up.
 	containerId := fm.Docker().RunBusybox("ping", "www.google.com")
-	waitForContainer(containerId, fm)
+	waitForContainer(docker.DockerNamespace, containerId, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
 	require.NoError(t, err)
 	sanityCheck(containerId, containerInfo, t)
 
@@ -282,13 +249,13 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 
 	// Wait for the container to show up.
 	containerId := fm.Docker().RunBusybox("watch", "-n1", "wget", "http://www.google.com/")
-	waitForContainer(containerId, fm)
+	waitForContainer(docker.DockerNamespace, containerId, fm)
 
 	time.Sleep(10 * time.Second)
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
 	require.NoError(t, err)
 	sanityCheck(containerId, containerInfo, t)
 
@@ -326,7 +293,7 @@ func TestDockerFilesystemStats(t *testing.T) {
 		dockerCmd = fmt.Sprintf("'%s'", dockerCmd)
 	}
 	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", dockerCmd)
-	waitForContainer(containerId, fm)
+	waitForContainer(docker.DockerNamespace, containerId, fm)
 	request := &v2.RequestOptions{
 		IdType: v2.TypeDocker,
 		Count:  1,
