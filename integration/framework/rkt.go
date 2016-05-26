@@ -14,7 +14,11 @@
 
 package framework
 
-import "strings"
+import (
+	"math/rand"
+	"strings"
+	"time"
+)
 
 type RktActions interface {
 	// Run the no-op pause container and return its ID.
@@ -32,13 +36,13 @@ type rktActions struct {
 
 func (self rktActions) RunPause() string {
 	return self.Run(RunArgs{
-		Image: "kubernetes/pause",
+		Image: "docker://kubernetes/pause",
 	})
 }
 
 func (self rktActions) RunBusyBox(cmd ...string) string {
 	return self.Run(RunArgs{
-		Image: "busybox",
+		Image: "docker://busybox",
 	}, cmd...)
 }
 
@@ -57,24 +61,39 @@ func (self rktActions) Prepare(args RunArgs, cmd ...string) string {
 	return elements[len(elements)-1]
 }
 
-func (self rktActions) RunPrepared(uuid string) {
-	rktCommand := []string{"systemd-run", "rkt", "run-prepared", uuid}
+func (self rktActions) RunPrepared(uuid string, randUnit string) {
+	rktCommand := []string{"systemd-run", "--unit=cadvisor-" + randUnit, "rkt", "run-prepared", uuid}
 	self.fm.Shell().Run("sudo", rktCommand...)
 }
 
-func (self rktActions) Remove(uuid string) func() {
+func (self rktActions) Remove(uuid string, randUnit string) func() {
+	systemdCmd := []string{"systemctl", "stop", "cadvisor-" + randUnit}
 	rktCommand := []string{"rkt", "rm", uuid}
 
 	return func() {
+		self.fm.Shell().Run("sudo", systemdCmd...)
 		self.fm.Shell().Run("sudo", rktCommand...)
 	}
 }
 
 func (self rktActions) Run(args RunArgs, cmd ...string) string {
-	containerId := self.Prepare(args, cmd...)
-	self.RunPrepared(containerId)
+	randUnit := RandomString(6)
 
-	self.fm.cleanups = append(self.fm.cleanups, self.Remove(containerId))
+	containerId := self.Prepare(args, cmd...)
+
+	self.RunPrepared(containerId, randUnit)
+
+	self.fm.cleanups = append(self.fm.cleanups, self.Remove(containerId, randUnit))
 
 	return containerId
+}
+
+func RandomString(strlen int) string {
+	rand.Seed(time.Now().UTC().UnixNano())
+	const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+	result := make([]byte, strlen)
+	for i := 0; i < strlen; i++ {
+		result[i] = chars[rand.Intn(len(chars))]
+	}
+	return string(result)
 }
