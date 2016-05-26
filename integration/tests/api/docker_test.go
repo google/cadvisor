@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/cadvisor/container/docker"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/integration/framework"
 
+	"github.com/google/cadvisor/container/docker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -49,7 +49,7 @@ func TestDockerContainerById(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
 	require.NoError(t, err)
 
 	sanityCheck(containerId, containerInfo, t)
@@ -72,7 +72,7 @@ func TestDockerContainerByName(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerName, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerName, request)
 	require.NoError(t, err)
 
 	sanityCheck(containerName, containerInfo, t)
@@ -105,7 +105,7 @@ func TestGetAllDockerContainers(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containersInfo, err := fm.Cadvisor().Client().AllNamespacedContainers(docker.DockerNamespace, request)
+	containersInfo, err := fm.Cadvisor().Client().AllDockerContainers(request)
 	require.NoError(t, err)
 
 	if len(containersInfo) < 2 {
@@ -134,7 +134,7 @@ func TestBasicDockerContainer(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
 	require.NoError(t, err)
 
 	// Check that the contianer is known by both its name and ID.
@@ -181,7 +181,7 @@ func TestDockerContainerSpec(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
 	require.NoError(t, err)
 	sanityCheck(containerId, containerInfo, t)
 
@@ -212,7 +212,7 @@ func TestDockerContainerCpuStats(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +234,7 @@ func TestDockerContainerMemoryStats(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
 	require.NoError(t, err)
 	sanityCheck(containerId, containerInfo, t)
 
@@ -255,7 +255,7 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(docker.DockerNamespace, containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
 	require.NoError(t, err)
 	sanityCheck(containerId, containerInfo, t)
 

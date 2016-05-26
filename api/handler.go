@@ -248,3 +248,7 @@ func getEventRequest(r *http.Request) (*events.Request, bool, error) {
 func getContainerName(request []string) string {
 	return path.Join("/", strings.Join(request, "/"))
 }
+
+func getNamespacedContainerName(request []string) string {
+	return strings.Join(request, "/")
+}

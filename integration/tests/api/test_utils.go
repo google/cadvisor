@@ -15,14 +15,14 @@
 package api
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
+
+	"fmt"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/integration/framework"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

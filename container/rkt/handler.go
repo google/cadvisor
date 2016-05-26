@@ -84,12 +84,11 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 		return nil, fmt.Errorf("this should be impossible!, new handler failing, but factory allowed, name = %s", name)
 	}
 
-	// prefix with / to make work better with api ala /fff40827-b994-4e3a-8f88-6427c2c8a5ac:nginx
 	if parsed.Container == "" {
 		isPod = true
-		aliases = append(aliases, "/"+parsed.Pod)
+		aliases = append(aliases, parsed.Pod)
 	} else {
-		aliases = append(aliases, "/"+parsed.Pod+":"+parsed.Container)
+		aliases = append(aliases, parsed.Pod+":"+parsed.Container)
 	}
 
 	pid := os.Getpid()

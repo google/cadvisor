@@ -340,7 +340,7 @@ func (self *version1_4) HandleRequest(requestType string, request []string, m ma
 		case len(request) > 1:
 			// Get one namespaced container.
 			var cont info.ContainerInfo
-			container := getContainerName(request[1:])
+			container := getNamespacedContainerName(request[1:])
 			cont, err = m.NamespacedContainer(request[0], container, query)
 			if err != nil {
 				return fmt.Errorf("failed to get container %q in namespace %q with error: %v", container, request[0], err)

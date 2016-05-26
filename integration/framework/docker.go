@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2014 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ type DockerActions interface {
 	// Run the specified command in a Docker busybox container and return its ID.
 	RunBusybox(cmd ...string) string
 
-	// Runs a Docker container in the background. Uses the specified RunArgs and command.
+	// Runs a Docker container in the background. Uses the specified DockerRunArgs and command.
 	// Returns the ID of the new container.
 	//
 	// e.g.:
-	// Run(RunArgs{Image: "busybox"}, "ping", "www.google.com")
+	// Run(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 	//   -> docker run busybox ping www.google.com
 	Run(args RunArgs, cmd ...string) string
 	RunStress(args RunArgs, cmd ...string) string
@@ -55,10 +55,10 @@ func (self dockerActions) RunBusybox(cmd ...string) string {
 
 // TODO(vmarmol): Use the Docker remote API.
 // TODO(vmarmol): Refactor a set of "RunCommand" actions.
-// Runs a Docker container in the background. Uses the specified RunArgs and command.
+// Runs a Docker container in the background. Uses the specified DockerRunArgs and command.
 //
 // e.g.:
-// RunDockerContainer(RunArgs{Image: "busybox"}, "ping", "www.google.com")
+// RunDockerContainer(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 //   -> docker run busybox ping www.google.com
 func (self dockerActions) Run(args RunArgs, cmd ...string) string {
 	dockerCommand := append(append([]string{"docker", "run", "-d"}, args.Args...), args.Image)

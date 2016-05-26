@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2014 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,11 +46,11 @@ type Framework interface {
 	// Returns the Docker actions for the test framework.
 	Docker() DockerActions
 
-	// Returns the shell actions for the test framework.
-	Shell() ShellActions
-
 	// Returns the Rkt actions for the test framework.
 	Rkt() RktActions
+
+	// Returns the shell actions for the test framework.
+	Shell() ShellActions
 
 	// Returns the cAdvisor actions for the test framework.
 	Cadvisor() CadvisorActions
@@ -100,16 +100,6 @@ const (
 	DeviceMapper string = "devicemapper"
 	Unknown      string = ""
 )
-
-type RunArgs struct {
-	// Image to use.
-	Image string
-
-	// Arguments to the CLI.
-	Args []string
-
-	InnerArgs []string
-}
 
 type ShellActions interface {
 	// Runs a specified command and arguments. Returns the stdout and stderr.
@@ -204,6 +194,16 @@ func (self *realFramework) ClientV2() *v2.Client {
 		self.cadvisorClientV2 = cadvisorClientV2
 	}
 	return self.cadvisorClientV2
+}
+
+type RunArgs struct {
+	// Image to use.
+	Image string
+
+	// Arguments to the Docker CLI.
+	Args []string
+
+	InnerArgs []string
 }
 
 func (self shellActions) wrapSsh(command string, args ...string) *exec.Cmd {
