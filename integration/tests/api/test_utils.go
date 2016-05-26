@@ -82,8 +82,12 @@ func sanityCheckV2(alias string, info v2.ContainerInfo, t *testing.T) {
 	assert.NotEmpty(t, info.Stats, "Expected container to have stats")
 }
 
-// Waits up to 5s for a container with the specified alias to appear.
 func waitForContainer(namespace string, alias string, fm framework.Framework) {
+	waitForContainerWithTimeout(namespace, alias, 5*time.Second, fm)
+}
+
+// Waits up to 5s for a container with the specified alias to appear.
+func waitForContainerWithTimeout(namespace string, alias string, timeout time.Duration, fm framework.Framework) {
 	err := framework.RetryForDuration(func() error {
 		ret, err := fm.Cadvisor().Client().NamespacedContainer(namespace, alias, &info.ContainerInfoRequest{
 			NumStats: 1,
@@ -96,6 +100,19 @@ func waitForContainer(namespace string, alias string, fm framework.Framework) {
 		}
 
 		return nil
-	}, 5*time.Second)
+	}, timeout)
 	require.NoError(fm.T(), err, "Timed out waiting for container %q to be available in cAdvisor: %v", alias, err)
+}
+
+// Find the first container with the specified alias in containers.
+func findContainer(alias string, containers []info.ContainerInfo, t *testing.T) info.ContainerInfo {
+	for _, cont := range containers {
+		for _, a := range cont.Aliases {
+			if alias == a {
+				return cont
+			}
+		}
+	}
+	t.Fatalf("Failed to find container %q in %+v", alias, containers)
+	return info.ContainerInfo{}
 }

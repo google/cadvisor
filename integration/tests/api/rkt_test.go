@@ -28,6 +28,11 @@ import (
 
 	//        "github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"time"
+)
+
+const (
+	rktTimeout = 15 * time.Second
 )
 
 // A Rkt container by id
@@ -38,7 +43,7 @@ func TestRktContainerById(t *testing.T) {
 	containerId := fm.Rkt().RunPause()
 
 	// Wait for the container to show up.
-	waitForContainer(rkt.RktNamespace, containerId, fm)
+	waitForContainerWithTimeout(rkt.RktNamespace, containerId, rktTimeout, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
@@ -47,4 +52,29 @@ func TestRktContainerById(t *testing.T) {
 	require.NoError(t, err)
 
 	sanityCheck(containerId, containerInfo, t)
+}
+
+// All Rkt containers
+func TestGetAllRktContainers(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	containerId1 := fm.Rkt().RunPause()
+	containerId2 := fm.Rkt().RunPause()
+
+	// Wait for the containers to show up.
+	waitForContainerWithTimeout(rkt.RktNamespace, containerId1, rktTimeout, fm)
+	waitForContainerWithTimeout(rkt.RktNamespace, containerId2, rktTimeout, fm)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+	containersInfo, err := fm.Cadvisor().Client().AllNamespacedContainers(rkt.RktNamespace, request)
+	require.NoError(t, err)
+
+	if len(containersInfo) < 2 {
+		t.Fatalf("At least 2 Docker containers should exist, received %d: %+v", len(containersInfo), containersInfo)
+	}
+	sanityCheck(containerId1, findContainer(containerId1, containersInfo, t), t)
+	sanityCheck(containerId2, findContainer(containerId2, containersInfo, t), t)
 }

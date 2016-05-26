@@ -50,9 +50,14 @@ func (self rktActions) Prepare(args RunArgs, cmd ...string) string {
 	rktCommand := []string{"rkt", "prepare"}
 	rktCommand = append(rktCommand, args.Args...)
 	rktCommand = append(rktCommand, args.Image)
-	if len(cmd) != 0 {
+	if len(cmd) != 0 || len(args.InnerArgs) != 0 {
 		rktCommand = append(rktCommand, "--")
-		rktCommand = append(rktCommand, cmd...)
+		if len(args.InnerArgs) != 0 {
+			rktCommand = append(rktCommand, args.InnerArgs...)
+		}
+		if len(cmd) != 0 {
+			rktCommand = append(rktCommand, cmd...)
+		}
 	}
 	output, _ := self.fm.Shell().Run("sudo", rktCommand...)
 

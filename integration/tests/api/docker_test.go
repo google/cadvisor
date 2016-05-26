@@ -78,19 +78,6 @@ func TestDockerContainerByName(t *testing.T) {
 	sanityCheck(containerName, containerInfo, t)
 }
 
-// Find the first container with the specified alias in containers.
-func findContainer(alias string, containers []info.ContainerInfo, t *testing.T) info.ContainerInfo {
-	for _, cont := range containers {
-		for _, a := range cont.Aliases {
-			if alias == a {
-				return cont
-			}
-		}
-	}
-	t.Fatalf("Failed to find container %q in %+v", alias, containers)
-	return info.ContainerInfo{}
-}
-
 // All Docker containers through /docker
 func TestGetAllDockerContainers(t *testing.T) {
 	fm := framework.New(t)
