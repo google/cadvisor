@@ -15,6 +15,7 @@
 package framework
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -25,7 +26,9 @@ type RktActions interface {
 	RunPause() string
 
 	// Run the specified command in a busybox container and return its ID
-	RunBusyBox(cmd ...string) string
+	RunBusybox(cmd ...string) string
+
+	Run(args RunArgs, cmd ...string) string
 
 	//	Version() []string
 }
@@ -40,18 +43,17 @@ func (self rktActions) RunPause() string {
 	})
 }
 
-func (self rktActions) RunBusyBox(cmd ...string) string {
+func (self rktActions) RunBusybox(cmd ...string) string {
 	return self.Run(RunArgs{
 		Image: "docker://busybox",
 	}, cmd...)
 }
 
 func (self rktActions) Prepare(args RunArgs, cmd ...string) string {
-	rktCommand := []string{"rkt", "prepare"}
+	rktCommand := []string{"rkt", "prepare", "--insecure-options=image"}
 	rktCommand = append(rktCommand, args.Args...)
 	rktCommand = append(rktCommand, args.Image)
 	if len(cmd) != 0 || len(args.InnerArgs) != 0 {
-		rktCommand = append(rktCommand, "--")
 		if len(args.InnerArgs) != 0 {
 			rktCommand = append(rktCommand, args.InnerArgs...)
 		}
@@ -59,6 +61,8 @@ func (self rktActions) Prepare(args RunArgs, cmd ...string) string {
 			rktCommand = append(rktCommand, cmd...)
 		}
 	}
+
+	fmt.Printf("rktComamand = %v\n", rktCommand)
 	output, _ := self.fm.Shell().Run("sudo", rktCommand...)
 
 	elements := strings.Fields(output)
