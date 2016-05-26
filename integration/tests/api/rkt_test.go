@@ -32,6 +32,11 @@ const (
 
 // A Rkt container by id
 func TestRktContainerById(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
@@ -51,6 +56,11 @@ func TestRktContainerById(t *testing.T) {
 
 // All Rkt containers
 func TestGetAllRktContainers(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
@@ -76,6 +86,11 @@ func TestGetAllRktContainers(t *testing.T) {
 
 // Check expected properties of a Rkt pod container.
 func TestBasicRktPod(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
@@ -99,6 +114,11 @@ func TestBasicRktPod(t *testing.T) {
 
 // A Rkt container by id
 func TestRktContainerByContainerId(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
@@ -120,6 +140,11 @@ func TestRktContainerByContainerId(t *testing.T) {
 
 // Check expected properties of a Rkt app container.
 func TestBasicRktContainer(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
@@ -144,6 +169,11 @@ func TestBasicRktContainer(t *testing.T) {
 
 // Check the CPU ContainerStats.
 func TestRktContainerCpuStats(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
@@ -171,6 +201,11 @@ func TestRktContainerCpuStats(t *testing.T) {
 
 // Check the memory ContainerStats.
 func TestRktContainerMemoryStats(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
@@ -196,6 +231,11 @@ func TestRktContainerMemoryStats(t *testing.T) {
 
 // Check the network ContainerStats.
 func TestRktPodNetworkStats(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
@@ -224,4 +264,10 @@ func TestRktPodNetworkStats(t *testing.T) {
 	assert.NotEqual(0, stat.Network.RxPackets, "Network rx packets should not be zero")
 	assert.NotEqual(stat.Network.RxBytes, stat.Network.TxBytes, "Network tx and rx bytes should not be equal")
 	assert.NotEqual(stat.Network.RxPackets, stat.Network.TxPackets, "Network tx and rx packets should not be equal")
+}
+
+func testRkt() bool {
+	_, err := rkt.Client()
+
+	return err == nil
 }
