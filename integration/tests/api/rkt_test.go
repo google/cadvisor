@@ -22,6 +22,8 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/integration/framework"
 
+	"fmt"
+	"github.com/google/cadvisor/info/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -264,6 +266,86 @@ func TestRktPodNetworkStats(t *testing.T) {
 	assert.NotEqual(0, stat.Network.RxPackets, "Network rx packets should not be zero")
 	assert.NotEqual(stat.Network.RxBytes, stat.Network.TxBytes, "Network tx and rx bytes should not be equal")
 	assert.NotEqual(stat.Network.RxPackets, stat.Network.TxPackets, "Network tx and rx packets should not be equal")
+}
+
+func TestRktFilesystemStats(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	const (
+		ddUsage       = uint64(1 << 3) // 1 KB
+		sleepDuration = 10 * time.Second
+	)
+	// Wait for the container to show up.
+	// FIXME: Tests should be bundled and run on the remote host instead of being run over ssh.
+	// Escaping bash over ssh is ugly.
+	// Once github issue 1130 is fixed, this logic can be removed.
+	rktCmd := fmt.Sprintf("dd if=/dev/zero of=/file count=2 bs=%d & ping 216.58.194.164", ddUsage)
+	if fm.Hostname().Host != "localhost" {
+		rktCmd = fmt.Sprintf("'%s'", rktCmd)
+	}
+	args := framework.RunArgs{
+		Image:     "docker://busybox",
+		InnerArgs: []string{"--exec=/bin/sh", "--", "-c", rktCmd},
+	}
+	containerId := fm.Rkt().Run(args)
+	waitForContainerWithTimeout(rkt.RktNamespace, containerId, rktTimeout, fm)
+	request := &v2.RequestOptions{
+		IdType: v2.TypeRkt,
+		Count:  1,
+	}
+	needsBaseUsageCheck := true
+	pass := false
+
+	// We need to wait for the `dd` operation to complete.
+	for i := 0; i < 10; i++ {
+		containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerId, request)
+		if err != nil {
+			t.Logf("%v stats unavailable - %v", time.Now().String(), err)
+			t.Logf("retrying after %s...", sleepDuration.String())
+			time.Sleep(sleepDuration)
+
+			continue
+		}
+		require.Equal(t, len(containerInfo), 1)
+		var info v2.ContainerInfo
+		// There is only one container in containerInfo. Since it is a map with unknown key,
+		// use the value blindly.
+		for _, cInfo := range containerInfo {
+			info = cInfo
+		}
+		sanityCheckV2(containerId, info, t)
+
+		require.NotNil(t, info.Stats[0], "got info: %+v", info)
+		require.NotNil(t, info.Stats[0].Filesystem, "got info: %+v", info)
+		require.NotNil(t, info.Stats[0].Filesystem.TotalUsageBytes, "got info: %+v", info.Stats[0].Filesystem)
+		if *info.Stats[0].Filesystem.TotalUsageBytes >= ddUsage {
+			if !needsBaseUsageCheck {
+				pass = true
+				break
+			}
+			require.NotNil(t, info.Stats[0].Filesystem.BaseUsageBytes)
+			if *info.Stats[0].Filesystem.BaseUsageBytes >= ddUsage {
+				pass = true
+				break
+			}
+		}
+		t.Logf("expected total usage %d bytes to be greater than %d bytes", *info.Stats[0].Filesystem.TotalUsageBytes, ddUsage)
+		if needsBaseUsageCheck {
+			t.Logf("expected base %d bytes to be greater than %d bytes", *info.Stats[0].Filesystem.BaseUsageBytes, ddUsage)
+		}
+		t.Logf("retrying after %s...", sleepDuration.String())
+		time.Sleep(sleepDuration)
+	}
+
+	if !pass {
+		t.Fail()
+	}
 }
 
 func testRkt() bool {

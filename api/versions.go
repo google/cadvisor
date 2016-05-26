@@ -590,6 +590,7 @@ func getRequestOptions(r *http.Request) (v2.RequestOptions, error) {
 	supportedTypes := map[string]bool{
 		v2.TypeName:   true,
 		v2.TypeDocker: true,
+		v2.TypeRkt:    true,
 	}
 	// fill in the defaults.
 	opt := v2.RequestOptions{
