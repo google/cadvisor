@@ -30,6 +30,11 @@ import (
 
 const (
 	rktTimeout = 15 * time.Second
+	googleIp   = "216.58.194.164"
+)
+
+var (
+	pingGoogle = []string{"ping", googleIp}
 )
 
 // A Rkt container by id
@@ -179,12 +184,7 @@ func TestRktContainerCpuStats(t *testing.T) {
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
-	// Wait for the container to show up.
-	args := framework.RunArgs{
-		Image:     "docker://busybox",
-		InnerArgs: []string{"--exec=ping", "--", "216.58.194.164"},
-	}
-	containerId := fm.Rkt().Run(args)
+	containerId := fm.Rkt().RunBusybox(pingGoogle...)
 	containerId = containerId + ":busybox"
 	waitForContainerWithTimeout(rkt.RktNamespace, containerId, rktTimeout, fm)
 
@@ -211,12 +211,7 @@ func TestRktContainerMemoryStats(t *testing.T) {
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
-	// Wait for the container to show up.
-	args := framework.RunArgs{
-		Image:     "docker://busybox",
-		InnerArgs: []string{"--exec=ping", "--", "216.58.194.164"},
-	}
-	containerId := fm.Rkt().Run(args)
+	containerId := fm.Rkt().RunBusybox(pingGoogle...)
 	containerId = containerId + ":busybox"
 	waitForContainerWithTimeout(rkt.RktNamespace, containerId, rktTimeout, fm)
 
@@ -241,12 +236,7 @@ func TestRktPodNetworkStats(t *testing.T) {
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
-	// Wait for the container to show up.
-	args := framework.RunArgs{
-		Image:     "docker://busybox",
-		InnerArgs: []string{"--exec=watch", "--", "-n1", "wget", "http://216.58.194.164/"},
-	}
-	containerId := fm.Rkt().Run(args)
+	containerId := fm.Rkt().RunBusybox([]string{"watch", "-n1", "wget", "http://" + googleIp}...)
 	waitForContainerWithTimeout(rkt.RktNamespace, containerId, rktTimeout, fm)
 
 	time.Sleep(10 * time.Second)
@@ -289,11 +279,8 @@ func TestRktFilesystemStats(t *testing.T) {
 	if fm.Hostname().Host != "localhost" {
 		rktCmd = fmt.Sprintf("'%s'", rktCmd)
 	}
-	args := framework.RunArgs{
-		Image:     "docker://busybox",
-		InnerArgs: []string{"--exec=/bin/sh", "--", "-c", rktCmd},
-	}
-	containerId := fm.Rkt().Run(args)
+
+	containerId := fm.Rkt().RunBusybox([]string{"/bin/sh", "-c", rktCmd}...)
 	waitForContainerWithTimeout(rkt.RktNamespace, containerId, rktTimeout, fm)
 	request := &v2.RequestOptions{
 		IdType: v2.TypeRkt,
@@ -346,6 +333,68 @@ func TestRktFilesystemStats(t *testing.T) {
 	if !pass {
 		t.Fail()
 	}
+}
+
+// Check the ContainerSpec.
+func TestRktContainerSpec(t *testing.T) {
+	if !testRkt() {
+		t.SkipNow()
+		return
+	}
+
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	var (
+		cpuShares   = uint64(2048)
+		cpuMask     = "0"
+		memoryLimit = uint64(1 << 30) // 1GB
+		/*		image       = "kubernetes/pause"
+				env         = map[string]string{"test_var": "FOO"}
+				labels      = map[string]string{"bar": "baz"} */
+	)
+
+	containerId := fm.Rkt().RunPause()
+	containerId = containerId + ":pause"
+
+	/*	fm.Docker().Run(framework.RunArgs{
+		Image: image,
+		Args: []string{
+			"--cpu-shares", strconv.FormatUint(cpuShares, 10),
+			cpusetArg, cpuMask,
+			"--memory", strconv.FormatUint(memoryLimit, 10),
+			"--env", "TEST_VAR=FOO",
+			"--label", "bar=baz",
+		},
+	}) */
+
+	// Wait for the container to show up.
+	waitForContainerWithTimeout(rkt.RktNamespace, containerId, rktTimeout, fm)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(rkt.RktNamespace, containerId, request)
+	require.NoError(t, err)
+	sanityCheck(containerId, containerInfo, t)
+
+	assert := assert.New(t)
+
+	fmt.Printf("cpu shares/limit = %v\n", containerInfo.Spec.Cpu.Limit)
+	fmt.Printf("cpu mask = %v\n", containerInfo.Spec.Cpu.Mask)
+	fmt.Printf("memory limit = %v\n", containerInfo.Spec.Memory.Limit)
+
+	assert.True(containerInfo.Spec.HasCpu, "CPU should be isolated")
+	assert.Equal(cpuShares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
+	assert.Equal(cpuMask, containerInfo.Spec.Cpu.Mask, "Cpu mask should be %q, but is %q", cpuMask, containerInfo.Spec.Cpu.Mask)
+	assert.True(containerInfo.Spec.HasMemory, "Memory should be isolated")
+	assert.Equal(memoryLimit, containerInfo.Spec.Memory.Limit, "Container should have memory limit of %d, has %d", memoryLimit, containerInfo.Spec.Memory.Limit)
+	assert.True(containerInfo.Spec.HasNetwork, "Network should be isolated")
+	assert.True(containerInfo.Spec.HasDiskIo, "Blkio should be isolated")
+
+	/*	assert.Equal(image, containerInfo.Spec.Image, "Spec should include container image")
+		assert.Equal(env, containerInfo.Spec.Envs, "Spec should include environment variables")
+		assert.Equal(labels, containerInfo.Spec.Labels, "Spec should include labels") */
 }
 
 func testRkt() bool {

@@ -15,7 +15,6 @@
 package framework
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -28,9 +27,29 @@ type RktActions interface {
 	// Run the specified command in a busybox container and return its ID
 	RunBusybox(cmd ...string) string
 
-	Run(args RunArgs, cmd ...string) string
+	Run(args RktRunArgs) string
 
 	//	Version() []string
+}
+
+type RktImage struct {
+	Image   string
+	RktArgs []string
+	Cmd     string
+	CmdArgs []string
+}
+
+type RktRunArgs struct {
+	// Arguments to systemd run
+	SystemddArgs []string
+
+	// Generic arguments to rkt cli
+	RuntimeArgs []string
+
+	// Arguments to rkt run that should impact entire pod
+	GlobalPodArgs []string
+
+	Images []RktImage
 }
 
 type rktActions struct {
@@ -38,31 +57,44 @@ type rktActions struct {
 }
 
 func (self rktActions) RunPause() string {
-	return self.Run(RunArgs{
-		Image: "docker://kubernetes/pause",
+	return self.Run(RktRunArgs{
+		Images: []RktImage{
+			{
+				Image: "docker://kubernetes/pause",
+			},
+		},
 	})
 }
 
 func (self rktActions) RunBusybox(cmd ...string) string {
-	return self.Run(RunArgs{
-		Image: "docker://busybox",
-	}, cmd...)
+	image := RktImage{Image: "docker://busybox"}
+	if len(cmd) > 0 {
+		image.Cmd = cmd[0]
+	}
+
+	if len(cmd) > 1 {
+		image.CmdArgs = cmd[1:]
+	}
+
+	return self.Run(RktRunArgs{
+		Images: []RktImage{image},
+	})
 }
 
-func (self rktActions) Prepare(args RunArgs, cmd ...string) string {
+func (self rktActions) Prepare(args RktRunArgs) string {
 	rktCommand := []string{"rkt", "prepare", "--insecure-options=image"}
-	rktCommand = append(rktCommand, args.Args...)
-	rktCommand = append(rktCommand, args.Image)
-	if len(cmd) != 0 || len(args.InnerArgs) != 0 {
-		if len(args.InnerArgs) != 0 {
-			rktCommand = append(rktCommand, args.InnerArgs...)
+	rktCommand = append(rktCommand, args.RuntimeArgs...)
+	for _, image := range args.Images {
+		rktCommand = append(rktCommand, image.Image)
+		if image.Cmd != "" {
+			rktCommand = append(rktCommand, "--exec="+image.Cmd)
 		}
-		if len(cmd) != 0 {
-			rktCommand = append(rktCommand, cmd...)
+		if len(image.CmdArgs) != 0 {
+			rktCommand = append(rktCommand, "--")
+			rktCommand = append(rktCommand, image.CmdArgs...)
 		}
 	}
 
-	fmt.Printf("rktComamand = %v\n", rktCommand)
 	output, _ := self.fm.Shell().Run("sudo", rktCommand...)
 
 	elements := strings.Fields(output)
@@ -70,8 +102,10 @@ func (self rktActions) Prepare(args RunArgs, cmd ...string) string {
 	return elements[len(elements)-1]
 }
 
-func (self rktActions) RunPrepared(uuid string, randUnit string) {
-	rktCommand := []string{"systemd-run", "--unit=cadvisor-" + randUnit, "rkt", "run-prepared", uuid}
+func (self rktActions) RunPrepared(uuid string, randUnit string, systemdArgs []string) {
+	rktCommand := []string{"systemd-run", "--unit=cadvisor-" + randUnit}
+	rktCommand = append(rktCommand, systemdArgs...)
+	rktCommand = append(rktCommand, []string{"rkt", "run-prepared", uuid}...)
 	self.fm.Shell().Run("sudo", rktCommand...)
 }
 
@@ -85,12 +119,12 @@ func (self rktActions) Remove(uuid string, randUnit string) func() {
 	}
 }
 
-func (self rktActions) Run(args RunArgs, cmd ...string) string {
+func (self rktActions) Run(args RktRunArgs) string {
 	randUnit := RandomString(6)
 
-	containerId := self.Prepare(args, cmd...)
+	containerId := self.Prepare(args)
 
-	self.RunPrepared(containerId, randUnit)
+	self.RunPrepared(containerId, randUnit, args.SystemddArgs)
 
 	self.fm.cleanups = append(self.fm.cleanups, self.Remove(containerId, randUnit))
 

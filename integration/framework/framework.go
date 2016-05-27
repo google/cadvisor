@@ -196,16 +196,6 @@ func (self *realFramework) ClientV2() *v2.Client {
 	return self.cadvisorClientV2
 }
 
-type RunArgs struct {
-	// Image to use.
-	Image string
-
-	// Arguments to the Docker CLI.
-	Args []string
-
-	InnerArgs []string
-}
-
 func (self shellActions) wrapSsh(command string, args ...string) *exec.Cmd {
 	cmd := []string{self.fm.Hostname().Host, "--", "sh", "-c", "\"", command}
 	cmd = append(cmd, args...)

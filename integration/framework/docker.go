@@ -29,11 +29,21 @@ type DockerActions interface {
 	// e.g.:
 	// Run(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 	//   -> docker run busybox ping www.google.com
-	Run(args RunArgs, cmd ...string) string
-	RunStress(args RunArgs, cmd ...string) string
+	Run(args DockerRunArgs, cmd ...string) string
+	RunStress(args DockerRunArgs, cmd ...string) string
 
 	Version() []string
 	StorageDriver() string
+}
+
+type DockerRunArgs struct {
+	// Image to use.
+	Image string
+
+	// Arguments to the Docker CLI.
+	Args []string
+
+	InnerArgs []string
 }
 
 type dockerActions struct {
@@ -41,14 +51,14 @@ type dockerActions struct {
 }
 
 func (self dockerActions) RunPause() string {
-	return self.Run(RunArgs{
+	return self.Run(DockerRunArgs{
 		Image: "kubernetes/pause",
 	})
 }
 
 // Run the specified command in a Docker busybox container.
 func (self dockerActions) RunBusybox(cmd ...string) string {
-	return self.Run(RunArgs{
+	return self.Run(DockerRunArgs{
 		Image: "busybox",
 	}, cmd...)
 }
@@ -60,7 +70,7 @@ func (self dockerActions) RunBusybox(cmd ...string) string {
 // e.g.:
 // RunDockerContainer(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 //   -> docker run busybox ping www.google.com
-func (self dockerActions) Run(args RunArgs, cmd ...string) string {
+func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 	dockerCommand := append(append([]string{"docker", "run", "-d"}, args.Args...), args.Image)
 	dockerCommand = append(dockerCommand, cmd...)
 	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
@@ -112,7 +122,7 @@ func (self dockerActions) StorageDriver() string {
 	return Unknown
 }
 
-func (self dockerActions) RunStress(args RunArgs, cmd ...string) string {
+func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
 	dockerCommand := append(append(append(append([]string{"docker", "run", "-m=4M", "-d", "-t", "-i"}, args.Args...), args.Image), args.InnerArgs...), cmd...)
 
 	output, _ := self.fm.Shell().RunStress("sudo", dockerCommand...)
