@@ -335,7 +335,7 @@ func (self *version1_4) HandleRequest(requestType string, request []string, m ma
 			// Get all namespaced containers.
 			containers, err = m.AllNamespacedContainers(request[0], query)
 			if err != nil {
-				return fmt.Errorf("failed to get all Docker containers with error: %v", err)
+				return fmt.Errorf("failed to get all Namespaced (%q) containers with error: %v", request[0], err)
 			}
 		case len(request) > 1:
 			// Get one namespaced container.

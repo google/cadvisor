@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0ca
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,6 +15,7 @@
 package api
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -26,6 +27,8 @@ import (
 	"github.com/google/cadvisor/info/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"reflect"
+	"strings"
 )
 
 const (
@@ -36,6 +39,12 @@ const (
 var (
 	pingGoogle = []string{"ping", googleIp}
 )
+
+func testRkt() bool {
+	_, err := rkt.Client()
+
+	return err == nil
+}
 
 // A Rkt container by id
 func TestRktContainerById(t *testing.T) {
@@ -349,13 +358,22 @@ func TestRktContainerSpec(t *testing.T) {
 		cpuShares   = uint64(2048)
 		cpuMask     = "0"
 		memoryLimit = uint64(1 << 30) // 1GB
-		/*		image       = "kubernetes/pause"
-				env         = map[string]string{"test_var": "FOO"}
-				labels      = map[string]string{"bar": "baz"} */
+		image_name  = "registry-1.docker.io/kubernetes/pause:latest"
+		//labels      = map[string]string{"bar": "baz"}
 	)
 
-	containerId := fm.Rkt().RunPause()
-	containerId = containerId + ":pause"
+	image := framework.RktImage{
+		Image:   "docker://" + image_name,
+		RktArgs: []string{"--memory=1G"},
+	}
+
+	arg := framework.RktRunArgs{
+		SystemddArgs: []string{"--property=CPUShares=" + strconv.FormatUint(cpuShares, 10), "--property=MemoryLimit=" + strconv.FormatUint(memoryLimit, 10)},
+		Images:       []framework.RktImage{image},
+	}
+
+	containerId := fm.Rkt().Run(arg)
+	containerId = containerId
 
 	/*	fm.Docker().Run(framework.RunArgs{
 		Image: image,
@@ -374,31 +392,117 @@ func TestRktContainerSpec(t *testing.T) {
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(rkt.RktNamespace, containerId, request)
+	podInfo, err := fm.Cadvisor().Client().NamespacedContainer(rkt.RktNamespace, containerId, request)
 	require.NoError(t, err)
-	sanityCheck(containerId, containerInfo, t)
+	sanityCheck(containerId, podInfo, t)
+	containerInfo, err := fm.Cadvisor().Client().NamespacedContainer(rkt.RktNamespace, containerId+":pause", request)
+	require.NoError(t, err)
+	sanityCheck(containerId+":pause", containerInfo, t)
 
-	assert := assert.New(t)
+	//assert := assert.New(t)
 
-	fmt.Printf("cpu shares/limit = %v\n", containerInfo.Spec.Cpu.Limit)
-	fmt.Printf("cpu mask = %v\n", containerInfo.Spec.Cpu.Mask)
-	fmt.Printf("memory limit = %v\n", containerInfo.Spec.Memory.Limit)
+	assert.True(t, containerInfo.Spec.HasCpu, "CPU should be isolated")
+	// TODO(sjpotter): Figure out how to convey CPU limits appropriately
+	assert.Equal(t, cpuShares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
+	assert.Equal(t, cpuMask, containerInfo.Spec.Cpu.Mask, "Cpu mask should be %q, but is %q", cpuMask, containerInfo.Spec.Cpu.Mask)
 
-	assert.True(containerInfo.Spec.HasCpu, "CPU should be isolated")
-	assert.Equal(cpuShares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
-	assert.Equal(cpuMask, containerInfo.Spec.Cpu.Mask, "Cpu mask should be %q, but is %q", cpuMask, containerInfo.Spec.Cpu.Mask)
-	assert.True(containerInfo.Spec.HasMemory, "Memory should be isolated")
-	assert.Equal(memoryLimit, containerInfo.Spec.Memory.Limit, "Container should have memory limit of %d, has %d", memoryLimit, containerInfo.Spec.Memory.Limit)
-	assert.True(containerInfo.Spec.HasNetwork, "Network should be isolated")
-	assert.True(containerInfo.Spec.HasDiskIo, "Blkio should be isolated")
+	assert.True(t, containerInfo.Spec.HasMemory, "Memory should be isolated")
+	// TODO(sjpotter): Figure out how to convey memory limits appropriately
+	assert.Equal(t, memoryLimit, containerInfo.Spec.Memory.Limit, "Container should have memory limit of %d, has %d", memoryLimit, containerInfo.Spec.Memory.Limit)
 
-	/*	assert.Equal(image, containerInfo.Spec.Image, "Spec should include container image")
-		assert.Equal(env, containerInfo.Spec.Envs, "Spec should include environment variables")
-		assert.Equal(labels, containerInfo.Spec.Labels, "Spec should include labels") */
+	assert.True(t, podInfo.Spec.HasNetwork, "Network should be isolated")
+	assert.False(t, containerInfo.Spec.HasNetwork, "Container Network shouldn't be isolated (shared with pod)")
+
+	assert.True(t, containerInfo.Spec.HasDiskIo, "Blkio should be isolated")
+
+	fmt.Printf("labels type = %v\n", reflect.TypeOf(containerInfo.Spec.Labels).String())
+	fmt.Printf("len of labels = %v\n", len(containerInfo.Spec.Labels))
+	ok, length := getLen(containerInfo.Spec.Labels)
+	if ok {
+		fmt.Printf("reflect worked fine: length = %v\n", length)
+	} else {
+		fmt.Printf("reflect failed\n")
+	}
+
+	ok, found := includeElement(containerInfo.Spec.Labels, "appc.io/docker/imageid")
+	if !ok {
+		fmt.Printf("failed\n")
+	} else {
+		fmt.Printf("Succeeded\n")
+	}
+	if !found {
+		fmt.Printf("not found\n")
+	} else {
+		fmt.Printf("found\n")
+	}
+
+	assert.Equal(t, image_name, containerInfo.Spec.Image, "Spec should include container image")
+	assert.Contains(t, containerInfo.Spec.Labels, "bar", "Spec should include labels")
+	assert.Contains(t, containerInfo.Spec.Labels, "appc.io/docker/imageid", "Spec should include dockerimageid labels")
+
+	// TODO(sjpotter) Figure out how to convey environment appropriately
+	// assert.Equal(env, containerInfo.Spec.Envs, "Spec should include environment variables")
 }
 
-func testRkt() bool {
-	_, err := rkt.Client()
+// getLen try to get length of object.
+// return (false, 0) if impossible.
+func getLen(x interface{}) (ok bool, length int) {
+	v := reflect.ValueOf(x)
+	defer func() {
+		if e := recover(); e != nil {
+			ok = false
+		}
+	}()
+	return true, v.Len()
+}
 
-	return err == nil
+func includeElement(list interface{}, element interface{}) (ok, found bool) {
+	listValue := reflect.ValueOf(list)
+	elementValue := reflect.ValueOf(element)
+	defer func() {
+		if e := recover(); e != nil {
+			fmt.Printf("exception thrown = %v\n", e)
+			ok = false
+			found = false
+		}
+	}()
+
+	if reflect.TypeOf(list).Kind() == reflect.String {
+		fmt.Printf("Type is string\n")
+		return true, strings.Contains(listValue.String(), elementValue.String())
+	}
+
+	if reflect.TypeOf(list).Kind() == reflect.Map {
+		fmt.Printf("type is map\n")
+		mapKeys := listValue.MapKeys()
+		fmt.Printf("mapKeys = %q\n", mapKeys)
+		fmt.Printf("len(mapKeys) = %v\n", len(mapKeys))
+		for i := 0; i < len(mapKeys); i++ {
+			fmt.Printf("Does %v = %v: ", mapKeys[i].Interface(), element)
+			if ObjectsAreEqual(mapKeys[i].Interface(), element) {
+				fmt.Printf(" yes\n")
+				return true, true
+			}
+			fmt.Printf(" no\n")
+		}
+		return true, false
+	}
+
+	for i := 0; i < listValue.Len(); i++ {
+		fmt.Printf("type is array\n")
+		if ObjectsAreEqual(listValue.Index(i).Interface(), element) {
+			return true, true
+		}
+	}
+	return true, false
+}
+
+func ObjectsAreEqual(expected, actual interface{}) bool {
+
+	if expected == nil || actual == nil {
+		return expected == actual
+	}
+
+	return reflect.DeepEqual(expected, actual)
+
 }

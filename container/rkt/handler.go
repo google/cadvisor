@@ -70,6 +70,8 @@ type rktContainerHandler struct {
 
 	ignoreMetrics container.MetricSet
 
+	image string
+
 	apiPod *rktapi.Pod
 }
 
@@ -100,7 +102,10 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 		return nil, err
 	}
 	annotations := resp.Pod.Annotations
+	image := ""
 	if parsed.Container != "" { // As not empty string, an App container
+		image = findImage(resp.Pod.Apps, parsed.Container)
+
 		if contAnnotations, ok := findAnnotations(resp.Pod.Apps, parsed.Container); !ok {
 			glog.Warningf("couldn't find app %v in pod", parsed.Container)
 		} else {
@@ -145,6 +150,7 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 		labels:             labels,
 		rootfsStorageDir:   rootfsStorageDir,
 		ignoreMetrics:      ignoreMetrics,
+		image:              image,
 		apiPod:             apiPod,
 	}
 
@@ -153,6 +159,16 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 	}
 
 	return handler, nil
+}
+
+func findImage(apps []*rktapi.App, container string) string {
+	for _, app := range apps {
+		if app.Name == container {
+			return app.Image.Name + ":" + app.Image.Version
+		}
+	}
+
+	return ""
 }
 
 func findAnnotations(apps []*rktapi.App, container string) ([]*rktapi.KeyValue, bool) {
@@ -197,6 +213,7 @@ func (handler *rktContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec, err := common.GetSpec(handler.cgroupPaths, handler.machineInfoFactory, hasNetwork, hasFilesystem)
 
 	spec.Labels = handler.labels
+	spec.Image = handler.image
 
 	return spec, err
 }
