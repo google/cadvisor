@@ -61,7 +61,7 @@ func TestPrometheus(t *testing.T) {
 	assert.Equal(go_gc_duration[1].FloatValue, 0.000499764)
 
 	goRoutines := metrics["go_goroutines"]
-	assert.Equal(goRoutines[0].FloatValue, 16)
+	assert.Equal(goRoutines[0].FloatValue, float64(16))
 }
 
 func TestPrometheusMetricCountLimit(t *testing.T) {
@@ -124,7 +124,7 @@ func TestPrometheusFiltersMetrics(t *testing.T) {
 	assert.Len(metrics, 1)
 
 	goRoutines := metrics["go_goroutines"]
-	assert.Equal(goRoutines[0].FloatValue, 16)
+	assert.Equal(goRoutines[0].FloatValue, float64(16))
 }
 
 func TestPrometheusFiltersMetricsCountLimit(t *testing.T) {
