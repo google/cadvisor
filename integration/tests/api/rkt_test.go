@@ -355,11 +355,11 @@ func TestRktContainerSpec(t *testing.T) {
 	defer fm.Cleanup()
 
 	var (
-		cpuShares   = uint64(2048)
+		cpuShares = uint64(2048)
 		//cpuMask     = "0"
 		memoryLimit = uint64(1 << 30) // 1GB
 		image_name  = "registry-1.docker.io/kubernetes/pause:latest"
-		label_key    = "appc.io/docker/imageid"
+		label_key   = "appc.io/docker/imageid"
 	)
 
 	image := framework.RktImage{
