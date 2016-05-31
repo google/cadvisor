@@ -529,7 +529,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		}
 
 		for k, v := range container.Spec.Labels {
-			baseLabels = append(baseLabels, sanitizeLabelName(k))
+			baseLabels = append(baseLabels, "label_"+sanitizeLabelName(k))
 			baseLabelValues = append(baseLabelValues, v)
 		}
 		for k, v := range container.Spec.Envs {
