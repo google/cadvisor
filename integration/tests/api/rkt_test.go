@@ -373,7 +373,6 @@ func TestRktContainerSpec(t *testing.T) {
 	}
 
 	containerId := fm.Rkt().Run(arg)
-	containerId = containerId
 
 	/*	fm.Docker().Run(framework.RunArgs{
 		Image: image,
