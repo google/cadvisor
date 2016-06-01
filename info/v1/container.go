@@ -338,6 +338,10 @@ type MemoryStats struct {
 	// Units: Bytes.
 	RSS uint64 `json:"rss"`
 
+	// The amount of swap currently used by the processes in this cgroup
+	// Units: Bytes.
+	Swap uint64 `json:"swap"`
+
 	// The amount of working set memory, this includes recently accessed memory,
 	// dirty memory, and kernel memory. Working set is <= "usage".
 	// Units: Bytes.

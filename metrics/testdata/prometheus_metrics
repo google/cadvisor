@@ -92,6 +92,9 @@ container_memory_failures_total{container_env_foo_env="prod",container_label_foo
 # HELP container_memory_rss Size of RSS in bytes.
 # TYPE container_memory_rss gauge
 container_memory_rss{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 15
+# HELP container_memory_swap Container swap usage in bytes.
+# TYPE container_memory_swap gauge
+container_memory_swap{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8192
 # HELP container_memory_usage_bytes Current memory usage in bytes.
 # TYPE container_memory_usage_bytes gauge
 container_memory_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8
