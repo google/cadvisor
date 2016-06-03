@@ -170,15 +170,15 @@ func (self *SeriesCommand) SetTag(tag, value string) *SeriesCommand {
 func (self *SeriesCommand) String() string {
 
 	msg := bytes.NewBufferString("")
-	fmt.Fprintf(msg, "series e:%v", self.entity)
+	fmt.Fprintf(msg, "series e:\"%v\"", escapeField(self.entity))
 	if self.timestamp != nil {
 		fmt.Fprintf(msg, " ms:%v", *self.timestamp)
 	}
 	for key, val := range self.tags {
-		fmt.Fprintf(msg, " t:%v=\"%v\"", key, val)
+		fmt.Fprintf(msg, " t:\"%v\"=\"%v\"", escapeField(key), escapeField(val))
 	}
 	for key, val := range self.metricValues {
-		fmt.Fprintf(msg, " m:%v=%v", key, val)
+		fmt.Fprintf(msg, " m:\"%v\"=%v", escapeField(key), val)
 	}
 	fmt.Fprint(msg, "\n")
 	return msg.String()

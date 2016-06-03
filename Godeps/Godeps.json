@@ -30,11 +30,6 @@
 			"ImportPath": "github.com/SeanDolphin/bqschema",
 			"Rev": "f92a08f515e1bf718e995076a37c2f534b1deb08"
 		},
-	  	{
-			"ImportPath": "github.com/BurntSushi/toml",
-			"Comment": "v0.1.0-21-g056c9bc",
-			"Rev": "056c9bc7be7190eaa7715723883caffa5f8fa3e4"
-	  	},
 		{
 			"ImportPath": "github.com/Shopify/sarama",
 			"Comment": "v1.8.0",
@@ -161,11 +156,11 @@
 		},
 		{
 			"ImportPath": "github.com/axibase/atsd-api-go/http",
-			"Rev": "e992755e90ce968342dbde7f508945204fec64bc"
+			"Rev": "f3a2043a234a99fdc0ba067a0c91497b5448e626"
 		},
 		{
 			"ImportPath": "github.com/axibase/atsd-api-go/net",
-			"Rev": "e992755e90ce968342dbde7f508945204fec64bc"
+			"Rev": "f3a2043a234a99fdc0ba067a0c91497b5448e626"
 		},
 		{
 			"ImportPath": "github.com/axibase/atsd-storage-driver/storage",

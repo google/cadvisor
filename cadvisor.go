@@ -40,7 +40,6 @@ var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
 var argPort = flag.Int("port", 8080, "port to listen")
 var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
 
-var argDbDriver = flag.String("storage_driver", "", "storage driver to use. Data is always cached shortly in memory, this controls where data is pushed besides the local cache. Empty means none. Options are: <empty> (default), atsd, bigquery, influxdb, and kafka")
 var versionFlag = flag.Bool("version", false, "print cAdvisor version and exit")
 
 var httpAuthFile = flag.String("http_auth_file", "", "HTTP auth file for the web UI")

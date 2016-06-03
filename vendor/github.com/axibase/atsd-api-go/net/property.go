@@ -30,7 +30,7 @@ type PropertyCommand struct {
 }
 
 func NewPropertyCommand(propType, entity, tagKey, tagVal string) *PropertyCommand {
-	return &PropertyCommand{propType: propType, entity: entity, key: map[string]string{}, tags: map[string]string{strings.ToLower(tagKey): tagVal}}
+	return &PropertyCommand{propType: propType, entity: entity, key: map[string]string{}, tags: map[string]string{tagKey: tagVal}}
 }
 func (self *PropertyCommand) SetKey(key map[string]string) *PropertyCommand {
 	self.key = key
@@ -78,15 +78,15 @@ func (self *PropertyCommand) Timestamp() *Millis {
 
 func (self *PropertyCommand) String() string {
 	str := bytes.NewBufferString("")
-	fmt.Fprintf(str, "property e:%v t:%v", self.entity, self.propType)
+	fmt.Fprintf(str, "property e:\"%v\" t:\"%v\"", escapeField(self.entity), escapeField(self.propType))
 	if self.timestamp != nil {
 		fmt.Fprintf(str, " ms:%v", *self.timestamp)
 	}
 	for key, val := range self.key {
-		fmt.Fprintf(str, " k:%v=\"%v\"", key, val)
+		fmt.Fprintf(str, " k:\"%v\"=\"%v\"", escapeField(key), escapeField(val))
 	}
 	for key, val := range self.tags {
-		fmt.Fprintf(str, " v:%v=\"%v\"", key, val)
+		fmt.Fprintf(str, " v:\"%v\"=\"%v\"", escapeField(key), escapeField(val))
 	}
 	fmt.Fprint(str, "\n")
 	return str.String()

@@ -15,43 +15,28 @@
 
 package net
 
-import (
-	"bytes"
-	"fmt"
-	"strings"
-)
+const entityTagType = "$entity_tags"
 
 type EntityTagCommand struct {
-	entity string
-	tags   map[string]string
+	property *PropertyCommand
 }
 
 func NewEntityTagCommand(entity, tagName, tagValue string) *EntityTagCommand {
-	return &EntityTagCommand{entity: entity, tags: map[string]string{tagName: tagValue}}
+	return &EntityTagCommand{property: NewPropertyCommand(entityTagType, entity, tagName, tagValue)}
 }
 
 func (self *EntityTagCommand) Entity() string {
-	return self.entity
+	return self.property.Entity()
 }
 func (self *EntityTagCommand) Tags() map[string]string {
-	copy := map[string]string{}
-	for k, v := range self.tags {
-		copy[k] = v
-	}
-	return copy
+	return self.property.tags
 }
 
 func (self *EntityTagCommand) SetTag(name, value string) *EntityTagCommand {
-	self.tags[strings.ToLower(name)] = value
+	self.property.SetTag(name, value)
 	return self
 }
 
 func (self *EntityTagCommand) String() string {
-	result := bytes.NewBufferString("entity-tag")
-	fmt.Fprintf(result, " e:%v", self.entity)
-	for name, value := range self.tags {
-		fmt.Fprintf(result, " t:%v=\"%v\"", name, value)
-	}
-	fmt.Fprint(result, "\n")
-	return result.String()
+	return self.property.String()
 }

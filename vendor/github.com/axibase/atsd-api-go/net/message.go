@@ -78,13 +78,13 @@ func (self *MessageCommand) SetTimestamp(timestamp Millis) *MessageCommand {
 
 func (self *MessageCommand) String() string {
 	msg := bytes.NewBufferString("message")
-	fmt.Fprintf(msg, " e:%v", self.entity)
-	fmt.Fprintf(msg, " m:\"%v\"", self.message)
+	fmt.Fprintf(msg, " e:\"%v\"", escapeField(self.entity))
+	fmt.Fprintf(msg, " m:\"%v\"", escapeField(self.message))
 	if self.timestamp != nil {
 		fmt.Fprintf(msg, " ms:%v", *self.timestamp)
 	}
 	for key, val := range self.tags {
-		fmt.Fprintf(msg, " t:%v=\"%v\"", key, val)
+		fmt.Fprintf(msg, " t:\"%v\"=\"%v\"", escapeField(key), escapeField(val))
 	}
 	fmt.Fprint(msg, "\n")
 	return msg.String()
