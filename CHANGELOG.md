@@ -1,7 +1,11 @@
 # Changelog
 
+### 0.23.3 (2016-06-08)
+- Cherry-pick release:
+  - Cap the maximum consecutive du commands
+  - Fix a panic when a prometheus endpoint ends with a newline
+
 ### 0.23.2 (2016-05-18)
-- Final release for Kubernetes 1.3
 - Handle kernel log rotation
 - More rkt support: poll rkt service for new containers
 - Better handling of partial failures when fetching subcontainers
