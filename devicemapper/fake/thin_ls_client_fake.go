@@ -18,6 +18,7 @@ type FakeThinLsClient struct {
 	err    error
 }
 
+// NewFakeThinLsClient returns a new fake ThinLsClient.
 func NewFakeThinLsClient(result map[string]uint64, err error) *FakeThinLsClient {
 	return &FakeThinLsClient{result, err}
 }
