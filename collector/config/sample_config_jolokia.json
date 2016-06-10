@@ -1,0 +1,33 @@
+{
+  "endpoint" : "https://123.456.789.1011:8778/jolokia/",
+  "polling_frequency" : "10s",
+  "metrics_config" : [
+    {
+      "name": "JVMHeap",
+      "mbean": "java.lang:type=Memory",
+      "attribute": "HeapMemoryUsage",
+      "path": "used",
+      "metric_type": "gauge",
+      "units": "bytes",
+      "data_type": "int"
+    },
+    {
+      "name": "GCDuration",
+      "mbean": "java.lang:name=PS MarkSweep,type=GarbageCollector",
+      "attribute": "LastGcInfo",
+      "path": "duration",
+      "metric_type": "gauge",
+      "units": "ms",
+      "data_type": "float"
+    },
+    {
+      "name": "nonExistantMBean",
+      "mbean": "i_don't_exist",
+      "attribute": "nope",
+      "path": "nope",
+      "metric_type": "gauge",
+      "units": "mb",
+      "data_type": "int"
+    }
+  ]
+}

@@ -32,6 +32,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	"github.com/opencontainers/runc/libcontainer/configs"
+	"io/ioutil"
 )
 
 type rktContainerHandler struct {
@@ -248,6 +249,15 @@ func (handler *rktContainerHandler) GetStats() (*info.ContainerStats, error) {
 	}
 
 	return stats, nil
+}
+
+func (self *rktContainerHandler) GetContainerIPAddress() string {
+	return ""
+}
+
+func (self *rktContainerHandler) ReadFile(filepath string) ([]byte, error) {
+	data, err := ioutil.ReadFile(filepath)
+	return data, err
 }
 
 func (handler *rktContainerHandler) GetCgroupPath(resource string) (string, error) {

@@ -17,6 +17,7 @@ package raw
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
@@ -254,6 +255,15 @@ func (self *rawContainerHandler) GetCgroupPath(resource string) (string, error) 
 
 func (self *rawContainerHandler) GetContainerLabels() map[string]string {
 	return map[string]string{}
+}
+
+func (self *rawContainerHandler) GetContainerIPAddress() string {
+	return ""
+}
+
+func (self *rawContainerHandler) ReadFile(filepath string) ([]byte, error) {
+	data, err := ioutil.ReadFile(filepath)
+	return data, err
 }
 
 func (self *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {

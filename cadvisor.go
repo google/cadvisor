@@ -32,6 +32,7 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
+	"crypto/tls"
 	"github.com/golang/glog"
 )
 
@@ -118,7 +119,7 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet)
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, tls.Config{})
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}

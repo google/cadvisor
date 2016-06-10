@@ -16,6 +16,7 @@
 package manager
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"os"
@@ -125,7 +126,7 @@ type Manager interface {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, ignoreMetricsSet container.MetricSet) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, ignoreMetricsSet container.MetricSet, tlsConfig tls.Config) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -182,6 +183,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		ignoreMetrics:            ignoreMetricsSet,
 		containerWatchers:        []watcher.ContainerWatcher{},
 		eventsChannel:            eventsChannel,
+		tlsConfig:                tlsConfig,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -226,6 +228,7 @@ type manager struct {
 	ignoreMetrics            container.MetricSet
 	containerWatchers        []watcher.ContainerWatcher
 	eventsChannel            chan watcher.ContainerEvent
+	tlsConfig                tls.Config
 }
 
 // Start the container manager.
@@ -753,12 +756,23 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 		if strings.HasPrefix(k, "prometheus") || strings.HasPrefix(k, "Prometheus") {
 			newCollector, err := collector.NewPrometheusCollector(k, configFile, *applicationMetricsCountLimit)
 			if err != nil {
-				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
+				glog.Infof("failed to create Prometheus collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
 			}
 			err = cont.collectorManager.RegisterCollector(newCollector)
 			if err != nil {
-				glog.Infof("failed to register collector for container %q, config %q: %v", cont.info.Name, k, err)
+				glog.Infof("failed to register Prometheus collector for container %q, config %q: %v", cont.info.Name, k, err)
+				return err
+			}
+		} else if strings.HasPrefix(k, "jolokia") || strings.HasPrefix(k, "Jolokia") {
+			newCollector, err := collector.NewJolokiaCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.tlsConfig)
+			if err != nil {
+				glog.Infof("failed to create Jolokia collector for container %q, config %q: %v", cont.info.Name, k, err)
+				return err
+			}
+			err = cont.collectorManager.RegisterCollector(newCollector)
+			if err != nil {
+				glog.Infof("failed to register Jolokia collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
 			}
 		} else {

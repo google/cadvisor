@@ -1,0 +1,18 @@
+{
+  "endpoint" : {
+    "protocol" : "https",
+    "path" : "/jolokia",
+    "port" : 8778
+  },
+  "polling_frequency" : "10s",
+  "metrics_config" : [
+    {"name": "JVMHeap",
+      "mbean": "java.lang:type=Memory",
+      "attribute": "HeapMemoryUsage",
+      "path": "used",
+      "metric_type": "gauge",
+      "units": "bytes",
+      "data_type": "int"
+    }
+  ]
+}

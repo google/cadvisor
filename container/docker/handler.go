@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -93,6 +94,9 @@ type dockerContainerHandler struct {
 
 	// Filesystem handler.
 	fsHandler common.FsHandler
+
+	// The IP address of the container
+	ipAddress string
 
 	ignoreMetrics container.MetricSet
 
@@ -410,6 +414,21 @@ func (self *dockerContainerHandler) GetCgroupPath(resource string) (string, erro
 
 func (self *dockerContainerHandler) GetContainerLabels() map[string]string {
 	return self.labels
+}
+
+func (self *dockerContainerHandler) GetContainerIPAddress() string {
+	return self.ipAddress
+}
+
+func (self *dockerContainerHandler) ReadFile(filepath string) ([]byte, error) {
+	pid := self.pid
+	filePath := path.Join(self.rootFs, "/proc", strconv.Itoa(pid), "/root", filepath)
+	glog.V(3).Infof("Trying path %q", filePath)
+	data, err := ioutil.ReadFile(filePath)
+	if err == nil {
+		return data, err
+	}
+	return nil, fmt.Errorf("file %q does not exist.", filepath)
 }
 
 func (self *dockerContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {

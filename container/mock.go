@@ -97,6 +97,14 @@ func (self *MockContainerHandler) Type() ContainerType {
 	return args.Get(0).(ContainerType)
 }
 
+func (self *MockContainerHandler) GetContainerIPAddress() string {
+	return "123.456.789.1011"
+}
+
+func (self *MockContainerHandler) ReadFile(path string) ([]byte, error) {
+	return nil, nil
+}
+
 type FactoryForMockContainerHandler struct {
 	Name                        string
 	PrepareContainerHandlerFunc func(name string, handler *MockContainerHandler)

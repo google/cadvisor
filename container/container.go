@@ -59,6 +59,12 @@ type ContainerHandler interface {
 	// Returns container labels, if available.
 	GetContainerLabels() map[string]string
 
+	// Returns the container's ip address, if available
+	GetContainerIPAddress() string
+
+	// Reads a file from within the container
+	ReadFile(path string) ([]byte, error)
+
 	// Returns whether the container still exists.
 	Exists() bool
 
