@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.23.4 (2016-06-16)
+- Cherry-pick release:
+  - Check for thin_is binary in path for devicemapper when using ThinPoolWatcher
+  - Fix uint64 overflow issue for CPU stats
+
 ### 0.23.3 (2016-06-08)
 - Cherry-pick release:
   - Cap the maximum consecutive du commands
