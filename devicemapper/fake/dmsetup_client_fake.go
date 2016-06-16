@@ -23,6 +23,7 @@ type DmsetupCommand struct {
 	Err    error
 }
 
+// NewFakeDmsetupClient returns a new fake DmsetupClient.
 func NewFakeDmsetupClient(t *testing.T, commands ...DmsetupCommand) *FakeDmsetupClient {
 	if len(commands) == 0 {
 		commands = make([]DmsetupCommand, 0)
@@ -30,7 +31,8 @@ func NewFakeDmsetupClient(t *testing.T, commands ...DmsetupCommand) *FakeDmsetup
 	return &FakeDmsetupClient{t: t, commands: commands}
 }
 
-// FakeDmsetupClient is a thread-unsafe fake implementation of the DmsetupClient interface
+// FakeDmsetupClient is a thread-unsafe fake implementation of the
+// DmsetupClient interface
 type FakeDmsetupClient struct {
 	t        *testing.T
 	commands []DmsetupCommand
