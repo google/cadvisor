@@ -352,7 +352,7 @@ func TestInstCpuStats(t *testing.T) {
 		},
 	}
 	for _, c := range tests {
-		got, err := instCpuStats(c.last, c.cur)
+		got, err := InstCpuStats(c.last, c.cur)
 		if err != nil {
 			if c.want == nil {
 				continue
