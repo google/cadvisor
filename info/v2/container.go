@@ -25,6 +25,7 @@ import (
 const (
 	TypeName   = "name"
 	TypeDocker = "docker"
+	TypeRkt    = "rkt"
 )
 
 type CpuSpec struct {

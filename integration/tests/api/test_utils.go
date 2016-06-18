@@ -20,7 +20,11 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 
+	"fmt"
+	"github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/integration/framework"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Checks that expected and actual are within delta of each other.
@@ -60,4 +64,55 @@ func checkMemoryStats(t *testing.T, stat info.MemoryStats) {
 		t.Errorf("Memory working set (%d) should be at most equal to memory usage (%d)", stat.WorkingSet, stat.Usage)
 	}
 	// TODO(vmarmol): Add checks for ContainerData and HierarchicalData
+}
+
+// Sanity check the container by:
+// - Checking that the specified alias is a valid one for this container.
+// - Verifying that stats are not empty.
+func sanityCheck(alias string, containerInfo info.ContainerInfo, t *testing.T) {
+	assert.Contains(t, containerInfo.Aliases, alias, "Alias %q should be in list of aliases %v", alias, containerInfo.Aliases)
+	assert.NotEmpty(t, containerInfo.Stats, "Expected container to have stats")
+}
+
+// Sanity check the container by:
+// - Checking that the specified alias is a valid one for this container.
+// - Verifying that stats are not empty.
+func sanityCheckV2(alias string, info v2.ContainerInfo, t *testing.T) {
+	assert.Contains(t, info.Spec.Aliases, alias, "Alias %q should be in list of aliases %v", alias, info.Spec.Aliases)
+	assert.NotEmpty(t, info.Stats, "Expected container to have stats")
+}
+
+func waitForContainer(namespace string, alias string, fm framework.Framework) {
+	waitForContainerWithTimeout(namespace, alias, 5*time.Second, fm)
+}
+
+// Waits up to 5s for a container with the specified alias to appear.
+func waitForContainerWithTimeout(namespace string, alias string, timeout time.Duration, fm framework.Framework) {
+	err := framework.RetryForDuration(func() error {
+		ret, err := fm.Cadvisor().Client().NamespacedContainer(namespace, alias, &info.ContainerInfoRequest{
+			NumStats: 1,
+		})
+		if err != nil {
+			return err
+		}
+		if len(ret.Stats) != 1 {
+			return fmt.Errorf("no stats returned for container %q", alias)
+		}
+
+		return nil
+	}, timeout)
+	require.NoError(fm.T(), err, "Timed out waiting for container %q to be available in cAdvisor: %v", alias, err)
+}
+
+// Find the first container with the specified alias in containers.
+func findContainer(alias string, containers []info.ContainerInfo, t *testing.T) info.ContainerInfo {
+	for _, cont := range containers {
+		for _, a := range cont.Aliases {
+			if alias == a {
+				return cont
+			}
+		}
+	}
+	t.Fatalf("Failed to find container %q in %+v", alias, containers)
+	return info.ContainerInfo{}
 }

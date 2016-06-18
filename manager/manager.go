@@ -75,8 +75,14 @@ type Manager interface {
 	// Get information about all subcontainers of the specified container (includes self).
 	SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error)
 
+	// Get all containers within a given namespace
+	AllNamespacedContainers(namespace string, query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error)
+
 	// Gets all the Docker containers. Return is a map from full container name to ContainerInfo.
 	AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error)
+
+	// Returns information about a container in a given namespace
+	NamespacedContainer(containerName string, namespace string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
 
 	// Gets information about a specific Docker container. The specified name is within the Docker namespace.
 	DockerContainer(dockerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
@@ -522,22 +528,22 @@ func (self *manager) SubcontainersInfo(containerName string, query *info.Contain
 	return self.containerDataSliceToContainerInfoSlice(containers, query)
 }
 
-func (self *manager) getAllDockerContainers() map[string]*containerData {
+func (self *manager) getAllNamespacedContainers(namespace string) map[string]*containerData {
 	self.containersLock.RLock()
 	defer self.containersLock.RUnlock()
 	containers := make(map[string]*containerData, len(self.containers))
 
 	// Get containers in the Docker namespace.
 	for name, cont := range self.containers {
-		if name.Namespace == docker.DockerNamespace {
+		if name.Namespace == namespace {
 			containers[cont.info.Name] = cont
 		}
 	}
 	return containers
 }
 
-func (self *manager) AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
-	containers := self.getAllDockerContainers()
+func (self *manager) AllNamespacedContainers(namespace string, query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
+	containers := self.getAllNamespacedContainers(namespace)
 
 	output := make(map[string]info.ContainerInfo, len(containers))
 	for name, cont := range containers {
@@ -550,23 +556,27 @@ func (self *manager) AllDockerContainers(query *info.ContainerInfoRequest) (map[
 	return output, nil
 }
 
-func (self *manager) getDockerContainer(containerName string) (*containerData, error) {
+func (self *manager) AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
+	return self.AllNamespacedContainers(docker.DockerNamespace, query)
+}
+
+func (self *manager) getNamespacedContainer(namespace string, containerName string) (*containerData, error) {
 	self.containersLock.RLock()
 	defer self.containersLock.RUnlock()
 
-	// Check for the container in the Docker container namespace.
+	// Check for the container in the specified container namespace.
 	cont, ok := self.containers[namespacedContainerName{
-		Namespace: docker.DockerNamespace,
+		Namespace: namespace,
 		Name:      containerName,
 	}]
 	if !ok {
-		return nil, fmt.Errorf("unable to find Docker container %q", containerName)
+		return nil, fmt.Errorf("unable to find container %q in namespace %q", containerName, namespace)
 	}
 	return cont, nil
 }
 
-func (self *manager) DockerContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
-	container, err := self.getDockerContainer(containerName)
+func (self *manager) NamespacedContainer(namespace string, containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
+	container, err := self.getNamespacedContainer(namespace, containerName)
 	if err != nil {
 		return info.ContainerInfo{}, err
 	}
@@ -576,6 +586,11 @@ func (self *manager) DockerContainer(containerName string, query *info.Container
 		return info.ContainerInfo{}, err
 	}
 	return *inf, nil
+}
+
+func (self *manager) DockerContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
+	return self.NamespacedContainer(docker.DockerNamespace, containerName, query)
+
 }
 
 func (self *manager) containerDataSliceToContainerInfoSlice(containers []*containerData, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
@@ -636,7 +651,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 	case v2.TypeDocker:
 		if options.Recursive == false {
 			containerName = strings.TrimPrefix(containerName, "/")
-			cont, err := self.getDockerContainer(containerName)
+			cont, err := self.getNamespacedContainer(docker.DockerNamespace, containerName)
 			if err != nil {
 				return containersMap, err
 			}
@@ -645,11 +660,29 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 			if containerName != "/" {
 				return containersMap, fmt.Errorf("invalid request for docker container %q with subcontainers", containerName)
 			}
-			containersMap = self.getAllDockerContainers()
+			containersMap = self.getAllNamespacedContainers(docker.DockerNamespace)
+		}
+	case v2.TypeRkt:
+		if containerName == "/" {
+			containersMap = self.getAllNamespacedContainers(rkt.RktNamespace)
+		} else {
+			containerName = strings.TrimPrefix(containerName, "/")
+			cont, err := self.getNamespacedContainer(rkt.RktNamespace, containerName)
+
+			if err != nil {
+				return containersMap, err
+			}
+			// If we are asking for a container of the pod, won't be recursive
+			if options.Recursive == false || strings.ContainsRune(containerName, ':') {
+				containersMap[cont.info.Name] = cont
+			} else {
+				containersMap = self.getSubcontainers(cont.info.Name)
+			}
 		}
 	default:
 		return containersMap, fmt.Errorf("invalid request type %q", options.IdType)
 	}
+
 	return containersMap, nil
 }
 
