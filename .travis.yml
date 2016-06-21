@@ -1,12 +1,11 @@
 language: go
 sudo: false
 go:
- - 1.5.3
+ - 1.6.2
 install:
  - true
 before_script:
  - go get golang.org/x/tools/cmd/vet
- - go get github.com/kr/godep
 script:
  - export PATH=$PATH:$HOME/gopath/bin
  - ./build/presubmit.sh
