@@ -37,7 +37,7 @@ import (
 )
 
 // must be able to ssh into hosts without password
-// godep go run ./integration/runner/runner.go --logtostderr --v 2 --ssh-config <.ssh/config file> <list of hosts>
+// go run ./integration/runner/runner.go --logtostderr --v 2 --ssh-config <.ssh/config file> <list of hosts>
 
 const (
 	cadvisorBinary = "cadvisor"
@@ -161,7 +161,7 @@ func PushAndRunTests(host, testDir string) error {
 		}
 		// Run the command
 
-		err = RunCommand("godep", "go", "test", "--timeout", testTimeout.String(), "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr, "--ssh-options", *sshOptions)
+		err = RunCommand("go", "test", "--timeout", testTimeout.String(), "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr, "--ssh-options", *sshOptions)
 		if err == nil {
 			// On success, break out of retry loop
 			break
@@ -204,7 +204,7 @@ func Run() error {
 
 	// Build cAdvisor.
 	glog.Infof("Building cAdvisor...")
-	err := RunCommand("godep", "go", "build", "github.com/google/cadvisor")
+	err := RunCommand("go", "build", "github.com/google/cadvisor")
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@
 set -e
 set -x
 
-godep go build github.com/google/cadvisor/integration/runner
+go build github.com/google/cadvisor/integration/runner
 
 # Host Notes
 # e2e-cadvisor-ubuntu-trusty-docker110
