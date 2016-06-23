@@ -46,6 +46,18 @@ func TestRefresh(t *testing.T) {
 			expectedError: true,
 		},
 		{
+			name: "no existing reservation - ok with minimum # of fields",
+			dmsetupCommands: []fake.DmsetupCommand{
+				{"status", "0 75497472 thin-pool 65 327/524288 14092/589824 -", nil}, // status check
+				{"message", "", nil},                                                 // make reservation
+				{"message", "", nil},                                                 // release reservation
+			},
+			thinLsOutput:  usage,
+			expectedError: false,
+			deviceId:      "2",
+			expectedUsage: 23456,
+		},
+		{
 			name: "no existing reservation - ok",
 			dmsetupCommands: []fake.DmsetupCommand{
 				{"status", "0 75497472 thin-pool 65 327/524288 14092/589824 - rw no_discard_passdown error_if_no_space - ", nil}, // status check
@@ -181,11 +193,6 @@ func TestCheckReservation(t *testing.T) {
 			name:           "no reservation 2",
 			statusResult:   "0 75 thin-pool 65 327/12345 14092/589824 - rw no_discard_passdown queue_if_no_space - ",
 			expectedResult: false,
-		},
-		{
-			name:         "malformed input",
-			statusResult: "0 12345 14092/45678 36 rw discard_passdown error_if_no_space needs_check ",
-			expectedErr:  fmt.Errorf("not gonna work"),
 		},
 	}
 
