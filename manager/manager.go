@@ -687,6 +687,7 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 			Usage:      fs.Usage,
 			Available:  fs.Available,
 			Labels:     labels,
+			InodesFree: fs.InodesFree,
 		}
 		fsInfo = append(fsInfo, fi)
 	}
