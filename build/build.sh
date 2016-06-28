@@ -20,7 +20,7 @@ RELEASE=${RELEASE:-false} # Whether to build for an official release.
 
 repo_path="github.com/google/cadvisor"
 
-version=$( git describe --tags --abbrev=14 HEAD | sed -E 's/-([0-9]+)-g([0-9a-f]+)/.\1+\2/' )
+version=$( git describe --tags --dirty --abbrev=14 | sed -E 's/-([0-9]+)-g/.\1+/' )
 revision=$( git rev-parse --short HEAD 2> /dev/null || echo 'unknown' )
 branch=$( git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown' )
 build_user="${USER}@${HOSTNAME}"
