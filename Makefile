@@ -36,10 +36,11 @@ build:
 	@./build/assets.sh
 	@./build/build.sh
 
-release: build
-	@./build/release.sh
+release:
+	@echo ">> building release binaries"
+	@RELEASE=true ./build/build.sh
 
 docker:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
 
-.PHONY: all format build test vet docker
+.PHONY: all build docker format release test vet

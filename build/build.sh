@@ -20,7 +20,7 @@ RELEASE=${RELEASE:-false} # Whether to build for an official release.
 
 repo_path="github.com/google/cadvisor"
 
-version=$( cat version/VERSION )
+version=$( git describe --tags --abbrev=14 HEAD | sed -E 's/-([0-9]+)-g([0-9a-f]+)/.\1+\2/' )
 revision=$( git rev-parse --short HEAD 2> /dev/null || echo 'unknown' )
 branch=$( git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown' )
 build_user="${USER}@${HOSTNAME}"
@@ -30,6 +30,14 @@ go_version=$( go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/' )
 GO_CMD="install"
 
 if [ "$RELEASE" == "true" ]; then
+  # Only allow releases of tagged versions.
+  TAGGED='^v[0-9]+\.[0-9]+\.[0-9]+$'
+  if [[ ! "$version" =~ $TAGGED ]]; then
+    echo "Only tagged versions are allowed for releases" >&2
+    echo "Found: $version" >&2
+    exit 1
+  fi
+
   # Don't include hostname with release builds
   build_user="$(git config --get user.email)"
   build_date=$( date +%Y%m%d ) # Release date is only to day-granularity
