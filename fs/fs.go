@@ -112,7 +112,6 @@ func NewFsInfo(context Context) (FsInfo, error) {
 		"zfs":   true,
 	}
 	for _, mount := range mounts {
-		var Fstype string
 		if !strings.HasPrefix(mount.Fstype, "ext") && !supportedFsType[mount.Fstype] {
 			continue
 		}
@@ -120,11 +119,8 @@ func NewFsInfo(context Context) (FsInfo, error) {
 		if _, ok := fsInfo.partitions[mount.Source]; ok {
 			continue
 		}
-		if mount.Fstype == "zfs" {
-			Fstype = mount.Fstype
-		}
 		fsInfo.partitions[mount.Source] = partition{
-			fsType:     Fstype,
+			fsType:     mount.Fstype,
 			mountpoint: mount.Mountpoint,
 			major:      uint(mount.Major),
 			minor:      uint(mount.Minor),
