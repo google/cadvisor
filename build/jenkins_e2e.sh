@@ -19,6 +19,9 @@ set -x
 
 BUILDER=${BUILDER:-false} # Whether this is running a PR builder job.
 
+export GO_FLAGS="-race"
+export GORACE="halt_on_error=1"
+
 go get -u github.com/tools/godep
 ./build/presubmit.sh
 godep go build -tags test github.com/google/cadvisor/integration/runner
