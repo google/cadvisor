@@ -17,6 +17,7 @@
 set -e
 
 RELEASE=${RELEASE:-false} # Whether to build for an official release.
+GO_FLAGS=${GO_FLAGS:-}    # Extra go flags to use in the build.
 
 repo_path="github.com/google/cadvisor"
 
@@ -61,12 +62,12 @@ ldflags="
   -X ${repo_path}/version.BuildDate${ldseparator}${build_date}
   -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
 
-echo " >   cadvisor"
+echo ">> building cadvisor"
 
 if [ "$RELEASE" == "true" ]; then
   echo "Building release candidate with -ldflags $ldflags"
 fi
 
-GOBIN=$PWD godep go "$GO_CMD" -ldflags "${ldflags}" "${repo_path}"
+GOBIN=$PWD godep go "$GO_CMD" ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
 
 exit 0
