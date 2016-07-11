@@ -13,6 +13,7 @@
 
 GO := go
 pkgs  = $(shell $(GO) list ./... | grep -v vendor)
+canary = google/cadvisor:canary
 
 all: presubmit build test
 
@@ -49,4 +50,9 @@ presubmit: vet
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
 
-.PHONY: all build docker format release test test-integration vet presubmit
+canary: all
+	@docker build -t $canary -f deploy/Dockerfile .
+	@docker push $canary
+
+.PHONY: all build docker format release test test-integration vet canary presubmit
+
