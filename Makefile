@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 
 GO := go
-pkgs  = $(shell $(GO) list ./...)
+pkgs  = $(shell $(GO) list ./... | grep -v vendor)
 
 all: format build test
 
