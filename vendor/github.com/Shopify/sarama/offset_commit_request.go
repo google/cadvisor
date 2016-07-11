@@ -5,6 +5,11 @@ package sarama
 // The timestamp is only used if message version 1 is used, which requires kafka 0.8.2.
 const ReceiveTime int64 = -1
 
+// GroupGenerationUndefined is a special value for the group generation field of
+// Offset Commit Requests that should be used when a consumer group does not rely
+// on Kafka for partition management.
+const GroupGenerationUndefined = -1
+
 type offsetCommitRequestBlock struct {
 	offset    int64
 	timestamp int64

@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/google/cadvisor",
-	"GoVersion": "go1.5",
+	"GoVersion": "go1.6",
 	"GodepVersion": "v74",
 	"Packages": [
 		"./..."

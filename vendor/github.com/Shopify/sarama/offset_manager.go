@@ -476,8 +476,9 @@ func (bom *brokerOffsetManager) flushToBroker() {
 
 func (bom *brokerOffsetManager) constructRequest() *OffsetCommitRequest {
 	r := &OffsetCommitRequest{
-		Version:       1,
-		ConsumerGroup: bom.parent.group,
+		Version:                 1,
+		ConsumerGroup:           bom.parent.group,
+		ConsumerGroupGeneration: GroupGenerationUndefined,
 	}
 
 	for s := range bom.subscriptions {

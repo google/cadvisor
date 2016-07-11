@@ -581,7 +581,8 @@ func (bp *brokerProducer) run() {
 		select {
 		case msg := <-bp.input:
 			if msg == nil {
-				goto shutdown
+				bp.shutdown()
+				return
 			}
 
 			if msg.flags&syn == syn {
@@ -637,8 +638,9 @@ func (bp *brokerProducer) run() {
 			output = nil
 		}
 	}
+}
 
-shutdown:
+func (bp *brokerProducer) shutdown() {
 	for !bp.buffer.empty() {
 		select {
 		case response := <-bp.responses:
@@ -725,7 +727,7 @@ func (bp *brokerProducer) handleSuccess(sent *produceSet, response *ProduceRespo
 			}
 			bp.parent.returnSuccesses(msgs)
 		// Retriable errors
-		case ErrUnknownTopicOrPartition, ErrNotLeaderForPartition, ErrLeaderNotAvailable,
+		case ErrInvalidMessage, ErrUnknownTopicOrPartition, ErrLeaderNotAvailable, ErrNotLeaderForPartition,
 			ErrRequestTimedOut, ErrNotEnoughReplicas, ErrNotEnoughReplicasAfterAppend:
 			Logger.Printf("producer/broker/%d state change to [retrying] on %s/%d because %v\n",
 				bp.broker.ID(), topic, partition, block.Err)

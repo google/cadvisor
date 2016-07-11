@@ -9,6 +9,18 @@ type JoinGroupResponse struct {
 	Members       map[string][]byte
 }
 
+func (r *JoinGroupResponse) GetMembers() (map[string]ConsumerGroupMemberMetadata, error) {
+	members := make(map[string]ConsumerGroupMemberMetadata, len(r.Members))
+	for id, bin := range r.Members {
+		meta := new(ConsumerGroupMemberMetadata)
+		if err := decode(bin, meta); err != nil {
+			return nil, err
+		}
+		members[id] = *meta
+	}
+	return members, nil
+}
+
 func (r *JoinGroupResponse) encode(pe packetEncoder) error {
 	pe.putInt16(int16(r.Err))
 	pe.putInt32(r.GenerationId)
