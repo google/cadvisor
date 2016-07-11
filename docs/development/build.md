@@ -14,24 +14,18 @@ After setting up Go, you should be able to `go get` cAdvisor as expected (we use
 $ go get -d github.com/google/cadvisor
 ```
 
-We use `godep` so you will need to get that as well:
-
-```
-$ go get github.com/tools/godep
-```
-
 ## Building from Source
 
 At this point you can build cAdvisor from the source folder:
 
 ```
-$GOPATH/src/github.com/google/cadvisor $ godep go build .
+$GOPATH/src/github.com/google/cadvisor $ make
 ```
 
 or run only unit tests:
 
 ```
-$GOPATH/src/github.com/google/cadvisor $ godep go test ./... -test.short
+$GOPATH/src/github.com/google/cadvisor $ make test
 ```
 
 For integration tests, see the [integration testing](integration_testing.md) page.
@@ -50,6 +44,6 @@ If you modify files in the /assets folder, you will need to rebuild the assets:
 
 ```
 $GOPATH/src/github.com/google/cadvisor $ ./build/assets.sh
-$GOPATH/src/github.com/google/cadvisor $ godep go build .
+$GOPATH/src/github.com/google/cadvisor $ make
 ```
 

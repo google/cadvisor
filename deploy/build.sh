@@ -17,6 +17,6 @@
 set -e
 set -x
 
-godep go build -a github.com/google/cadvisor
+make
 
 docker build -t google/cadvisor:beta .

@@ -17,36 +17,39 @@
 set -e
 set -x
 
-godep go build github.com/google/cadvisor/integration/runner
+BUILDER=${BUILDER:-false} # Whether this is running a PR builder job.
 
-# Host Notes
-# e2e-cadvisor-ubuntu-trusty-docker110
-# - ubuntu 14.04
-# - docker 1.10
-# e2e-cadvisor-container-vm-v20160127-docker18
-# - docker 1.8.3
-# e2e-cadvisor-container-vm-v20151215-docker18
-# - docker 1.8.3
-# e2e-cadvisor-ubuntu-trusty-docker19
-# - ubunty 14.04
-# - docker 1.9.1
-# e2e-cadvisor-coreos-beta-docker19
-# - docker 1.9.1
-# e2e-cadvisor-rhel-7-docker19
-# - red hat 7
-# - docker 1.9.1
-# e2e-cadvisor-centos-v7
-# - docker 1.9.1
+export GO_FLAGS="-race"
+export GORACE="halt_on_error=1"
+
+make
+go build -tags test github.com/google/cadvisor/integration/runner
 
 # Nodes that are currently stable. When tests fail on a specific node, and the failure is not remedied within a week, that node will be removed from this list.
-golden_nodes="e2e-cadvisor-ubuntu-trusty-docker19 e2e-cadvisor-coreos-beta-docker19 e2e-cadvisor-container-vm-v20151215-docker18 e2e-cadvisor-container-vm-v20160127-docker18 e2e-cadvisor-rhel-7-docker19
-"
+golden_nodes=(
+  e2e-cadvisor-ubuntu-trusty
+  e2e-cadvisor-container-vm-v20151215
+  e2e-cadvisor-container-vm-v20160127
+  e2e-cadvisor-rhel-7
+)
+
+# TODO: Add test on GCI
+
+# TODO: Add test for kubernetes default image
+# e2e-cadvisor-container-vm-v20160321
+
+# TODO: Temporarily disabled for #1344
+# e2e-cadvisor-coreos-beta
+
 # TODO: enable when docker 1.10  is working
 # e2e-cadvisor-ubuntu-trusty-docker110
 
-# Always fails with "Network tx and rx bytes should not be equal"
-failing_nodes="e2e-cadvisor-centos-v7"
+# TODO: Always fails with "Network tx and rx bytes should not be equal"
+# e2e-cadvisor-centos-v7
 
 max_retries=8
 
-./runner --logtostderr --test-retry-count=$max_retries --test-retry-whitelist=integration/runner/retrywhitelist.txt $golden_nodes
+./runner --logtostderr --test-retry-count=$max_retries \
+  --test-retry-whitelist=integration/runner/retrywhitelist.txt \
+  --ssh-options "-i /var/lib/jenkins/gce_keys/google_compute_engine -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o CheckHostIP=no -o StrictHostKeyChecking=no" \
+  ${golden_nodes[*]}
