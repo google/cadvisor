@@ -14,7 +14,7 @@
 GO := go
 pkgs  = $(shell $(GO) list ./... | grep -v vendor)
 
-all: format vet build test
+all: presubmit build test
 
 test:
 	@echo ">> running tests"
@@ -42,4 +42,11 @@ release: build
 docker:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
 
-.PHONY: all format build test vet docker
+presubmit: vet
+	@echo ">> checking go formatting"
+	@./build/check_gofmt.sh .
+	@echo ">> checking file boilerplate"
+	@./build/check_boilerplate.sh
+
+.PHONY: all build docker format release test test-integration vet presubmit
+
