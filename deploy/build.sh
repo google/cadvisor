@@ -17,6 +17,6 @@
 set -e
 set -x
 
-make
+make build
 
 docker build -t google/cadvisor:beta .
