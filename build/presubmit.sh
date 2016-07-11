@@ -19,6 +19,4 @@ set -x
 
 ./build/check_gofmt.sh .
 ./build/check_boilerplate.sh
-go vet github.com/google/cadvisor/...
-go test -v -race -test.short github.com/google/cadvisor/...
-go build github.com/google/cadvisor
+make
