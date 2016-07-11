@@ -21,8 +21,6 @@ type Config struct {
 		ReadTimeout  time.Duration // How long to wait for a response.
 		WriteTimeout time.Duration // How long to wait for a transmit.
 
-		// NOTE: these config values have no compatibility guarantees; they may
-		// change when Kafka releases its official TLS support in version 0.9.
 		TLS struct {
 			// Whether or not to use TLS when connecting to the broker
 			// (defaults to false).

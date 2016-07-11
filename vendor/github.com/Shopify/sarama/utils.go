@@ -1,6 +1,10 @@
 package sarama
 
-import "sort"
+import (
+	"bufio"
+	"net"
+	"sort"
+)
 
 type none struct{}
 
@@ -86,4 +90,22 @@ func (b ByteEncoder) Encode() ([]byte, error) {
 
 func (b ByteEncoder) Length() int {
 	return len(b)
+}
+
+// bufConn wraps a net.Conn with a buffer for reads to reduce the number of
+// reads that trigger syscalls.
+type bufConn struct {
+	net.Conn
+	buf *bufio.Reader
+}
+
+func newBufConn(conn net.Conn) *bufConn {
+	return &bufConn{
+		Conn: conn,
+		buf:  bufio.NewReader(conn),
+	}
+}
+
+func (bc *bufConn) Read(b []byte) (n int, err error) {
+	return bc.buf.Read(b)
 }

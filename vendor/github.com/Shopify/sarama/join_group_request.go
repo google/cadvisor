@@ -92,3 +92,13 @@ func (r *JoinGroupRequest) AddGroupProtocol(name string, metadata []byte) {
 
 	r.GroupProtocols[name] = metadata
 }
+
+func (r *JoinGroupRequest) AddGroupProtocolMetadata(name string, metadata *ConsumerGroupMemberMetadata) error {
+	bin, err := encode(metadata)
+	if err != nil {
+		return err
+	}
+
+	r.AddGroupProtocol(name, bin)
+	return nil
+}
