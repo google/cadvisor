@@ -31,7 +31,7 @@ import (
 func TestPrometheus(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
@@ -130,7 +130,7 @@ func TestPrometheusEndpointConfig(t *testing.T) {
 func TestPrometheusShortResponse(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
@@ -153,7 +153,7 @@ func TestPrometheusShortResponse(t *testing.T) {
 func TestPrometheusMetricCountLimit(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 10, containerHandler, http.DefaultClient)
@@ -182,7 +182,7 @@ func TestPrometheusMetricCountLimit(t *testing.T) {
 func TestPrometheusFiltersMetrics(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus_filtered.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
@@ -221,7 +221,7 @@ go_goroutines 16
 func TestPrometheusFiltersMetricsCountLimit(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus_filtered.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	_, err = NewPrometheusCollector("Prometheus", configFile, 1, containerHandler, http.DefaultClient)

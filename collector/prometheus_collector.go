@@ -32,13 +32,13 @@ import (
 )
 
 type PrometheusCollector struct {
-	//name of the collector
+	// name of the collector
 	name string
 
-	//rate at which metrics are collected
+	// rate at which metrics are collected
 	pollingFrequency time.Duration
 
-	//holds information extracted from the config file for a collector
+	// holds information extracted from the config file for a collector
 	configFile Prometheus
 
 	// the metrics to gather (uses a map as a set)
@@ -52,7 +52,7 @@ type PrometheusCollector struct {
 	httpClient *http.Client
 }
 
-//Returns a new collector using the information extracted from the configfile
+// Returns a new collector using the information extracted from the configfile
 func NewPrometheusCollector(collectorName string, configFile []byte, metricCountLimit int, containerHandler container.ContainerHandler, httpClient *http.Client) (*PrometheusCollector, error) {
 	var configInJSON Prometheus
 	err := json.Unmarshal(configFile, &configInJSON)
@@ -87,7 +87,7 @@ func NewPrometheusCollector(collectorName string, configFile []byte, metricCount
 		return nil, fmt.Errorf("Too many metrics defined: %d limit %d", len(configInJSON.MetricsConfig), metricCountLimit)
 	}
 
-	//TODO : Add checks for validity of config file (eg : Accurate JSON fields)
+	// TODO : Add checks for validity of config file (eg : Accurate JSON fields)
 	return &PrometheusCollector{
 		name:             collectorName,
 		pollingFrequency: minPollingFrequency,
@@ -98,7 +98,7 @@ func NewPrometheusCollector(collectorName string, configFile []byte, metricCount
 	}, nil
 }
 
-//Returns name of the collector
+// Returns name of the collector
 func (collector *PrometheusCollector) Name() string {
 	return collector.name
 }
@@ -201,7 +201,7 @@ func prometheusLabelSetToCadvisorLabel(promLabels model.Metric) string {
 	return string(b.Bytes())
 }
 
-//Returns collected metrics and the next collection time of the collector
+// Returns collected metrics and the next collection time of the collector
 func (collector *PrometheusCollector) Collect(metrics map[string][]v1.MetricVal) (time.Time, map[string][]v1.MetricVal, error) {
 	currentTime := time.Now()
 	nextCollectionTime := currentTime.Add(time.Duration(collector.pollingFrequency))

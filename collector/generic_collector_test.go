@@ -39,7 +39,7 @@ func TestEmptyConfig(t *testing.T) {
         }
         `
 
-	//Create a temporary config file 'temp.json' with invalid json format
+	// Create a temporary config file 'temp.json' with invalid json format
 	assert.NoError(ioutil.WriteFile("temp.json", []byte(emptyConfig), 0777))
 
 	configFile, err := ioutil.ReadFile("temp.json")
@@ -55,7 +55,7 @@ func TestEmptyConfig(t *testing.T) {
 func TestConfigWithErrors(t *testing.T) {
 	assert := assert.New(t)
 
-	//Syntax error: Missed '"' after activeConnections
+	// Syntax error: Missed '"' after activeConnections
 	invalid := `
 	{
 		"endpoint" : "http://localhost:8000/nginx_status",
@@ -71,7 +71,7 @@ func TestConfigWithErrors(t *testing.T) {
 	}
 	`
 
-	//Create a temporary config file 'temp.json' with invalid json format
+	// Create a temporary config file 'temp.json' with invalid json format
 	assert.NoError(ioutil.WriteFile("temp.json", []byte(invalid), 0777))
 	configFile, err := ioutil.ReadFile("temp.json")
 	assert.NoError(err)
@@ -86,7 +86,7 @@ func TestConfigWithErrors(t *testing.T) {
 func TestConfigWithRegexErrors(t *testing.T) {
 	assert := assert.New(t)
 
-	//Error: Missed operand for '+' in activeConnections regex
+	// Error: Missed operand for '+' in activeConnections regex
 	invalid := `
         {
                 "endpoint" : "host:port/nginx_status",
@@ -109,7 +109,7 @@ func TestConfigWithRegexErrors(t *testing.T) {
         }
         `
 
-	//Create a temporary config file 'temp.json'
+	// Create a temporary config file 'temp.json'
 	assert.NoError(ioutil.WriteFile("temp.json", []byte(invalid), 0777))
 
 	configFile, err := ioutil.ReadFile("temp.json")
@@ -125,7 +125,7 @@ func TestConfigWithRegexErrors(t *testing.T) {
 func TestConfig(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create an nginx collector using the config file 'sample_config.json'
+	// Create an nginx collector using the config file 'sample_config.json'
 	configFile, err := ioutil.ReadFile("config/sample_config.json")
 	assert.NoError(err)
 
@@ -157,7 +157,7 @@ func TestEndpointConfig(t *testing.T) {
 func TestMetricCollection(t *testing.T) {
 	assert := assert.New(t)
 
-	//Collect nginx metrics from a fake nginx endpoint
+	// Collect nginx metrics from a fake nginx endpoint
 	configFile, err := ioutil.ReadFile("config/sample_config.json")
 	assert.NoError(err)
 
@@ -193,7 +193,7 @@ func TestMetricCollection(t *testing.T) {
 func TestMetricCollectionLimit(t *testing.T) {
 	assert := assert.New(t)
 
-	//Collect nginx metrics from a fake nginx endpoint
+	// Collect nginx metrics from a fake nginx endpoint
 	configFile, err := ioutil.ReadFile("config/sample_config.json")
 	assert.NoError(err)
 
