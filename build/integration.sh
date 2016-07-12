@@ -57,4 +57,4 @@ while [ "$(curl -Gs http://localhost:8080/healthz)" != "ok" ]; do
 done
 
 echo ">> running integration tests against local cAdvisor"
-godep go test github.com/google/cadvisor/integration/tests/... --vmodule=*=2
+go test github.com/google/cadvisor/integration/tests/... --vmodule=*=2

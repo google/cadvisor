@@ -22,9 +22,8 @@ BUILDER=${BUILDER:-false} # Whether this is running a PR builder job.
 export GO_FLAGS="-race"
 export GORACE="halt_on_error=1"
 
-go get -u github.com/tools/godep
-./build/presubmit.sh
-godep go build -tags test github.com/google/cadvisor/integration/runner
+make
+go build -tags test github.com/google/cadvisor/integration/runner
 
 # Nodes that are currently stable. When tests fail on a specific node, and the failure is not remedied within a week, that node will be removed from this list.
 golden_nodes=(
