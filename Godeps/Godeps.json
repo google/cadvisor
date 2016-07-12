@@ -100,6 +100,46 @@
 			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
 		},
 		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol",
+			"Comment": "v1.1.3",
+			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/query",
+			"Comment": "v1.1.3",
+			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/query/queryutil",
+			"Comment": "v1.1.3",
+			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/rest",
+			"Comment": "v1.1.3",
+			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/protocol/xml/xmlutil",
+			"Comment": "v1.1.3",
+			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/private/signer/v4",
+			"Comment": "v1.1.3",
+			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/sqs",
+			"Comment": "v1.1.3",
+			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
+		},
+		{
+			"ImportPath": "github.com/aws/aws-sdk-go/service/sqs/sqsiface",
+			"Comment": "v1.1.3",
+			"Rev": "72440a9c5a884936f1c679591fcf04e31a9b772a"
+		},
+		{
 			"ImportPath": "github.com/beorn7/perks/quantile",
 			"Rev": "b965b613227fddccbfffe13eae360ed3fa822f8d"
 		},
