@@ -4,6 +4,7 @@ cAdvisor supports exporting stats to various storage driver plugins. To enable a
 
 ## Storage drivers
 
+- [Amazon SQS](https://aws.amazon.com/sqs/). See the [documentation](amazonsqs.md) for usage and examples.
 - [BigQuery](https://cloud.google.com/bigquery/). See the [documentation](../../storage/bigquery/README.md) for usage.
 - [ElasticSearch](https://www.elastic.co/). See the [documentation](elasticsearch.md) for usage and examples.
 - [InfluxDB](https://influxdb.com/). See the [documentation](influxdb.md) for usage and examples.
