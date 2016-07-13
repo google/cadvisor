@@ -96,6 +96,11 @@ func (self *MockContainerHandler) Type() container.ContainerType {
 	return args.Get(0).(container.ContainerType)
 }
 
+func (self *MockContainerHandler) GetContainerIPAddress() string {
+	args := self.Called()
+	return args.Get(0).(string)
+}
+
 type FactoryForMockContainerHandler struct {
 	Name                        string
 	PrepareContainerHandlerFunc func(name string, handler *MockContainerHandler)
