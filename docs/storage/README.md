@@ -11,4 +11,5 @@ cAdvisor supports exporting stats to various storage driver plugins. To enable a
 - [Prometheus](https://prometheus.io). See the [documentation](prometheus.md) for usage and examples.
 - [Redis](http://redis.io/)
 - [StatsD](https://github.com/etsy/statsd)
+- [Splunk](https://splunk.com). See the [documentation](splunk.md) for usage and examples.
 - `stdout` - write stats to standard output.
