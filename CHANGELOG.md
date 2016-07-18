@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.23.7 (2016-08-18)
+- Cherry-pick release:
+  - Modify working set memory stats calculation
+  - Fix builds by providing a functional version of the build/jenkins_e2e.sh script
+
 ### 0.23.4 (2016-06-16)
 - Cherry-pick release:
   - Check for thin_is binary in path for devicemapper when using ThinPoolWatcher
