@@ -58,6 +58,6 @@ if [ "$RELEASE" == "true" ]; then
   echo "Building release candidate with -ldflags $ldflags"
 fi
 
-GOBIN=$PWD godep go "$GO_CMD" -ldflags "${ldflags}" "${repo_path}"
+GOBIN=$PWD go "$GO_CMD" ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
 
 exit 0
