@@ -135,28 +135,23 @@
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/longpath",
-			"Comment": "v1.9.1",
-			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
+			"Comment": "v1.11.2",
+			"Rev": "b9f10c951893f9a00865890a5232e85d770c1087"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/mount",
-			"Comment": "v1.9.1",
-			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
+			"Comment": "v1.11.2",
+			"Rev": "b9f10c951893f9a00865890a5232e85d770c1087"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/symlink",
-			"Comment": "v1.9.1",
-			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
+			"Comment": "v1.11.2",
+			"Rev": "b9f10c951893f9a00865890a5232e85d770c1087"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/system",
-			"Comment": "v1.9.1",
-			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
-		},
-		{
-			"ImportPath": "github.com/docker/docker/pkg/units",
-			"Comment": "v1.9.1",
-			"Rev": "a34a1d598c6096ed8b5ce5219e77d68e5cd85462"
+			"Comment": "v1.11.2",
+			"Rev": "b9f10c951893f9a00865890a5232e85d770c1087"
 		},
 		{
 			"ImportPath": "github.com/docker/engine-api/client",
