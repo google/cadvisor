@@ -109,7 +109,7 @@ func NewClientStream(ctx context.Context, desc *StreamDesc, cc *ClientConn, meth
 	callHdr := &transport.CallHdr{
 		Host:   cc.authority,
 		Method: method,
-		Flush:  desc.ServerStreams && desc.ClientStreams,
+		Flush:  desc.ServerStreams&&desc.ClientStreams,
 	}
 	if cc.dopts.cp != nil {
 		callHdr.SendCompress = cc.dopts.cp.Type()

@@ -327,78 +327,83 @@
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/apparmor",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/cgroups",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/cgroups/fs",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/cgroups/systemd",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/configs",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/configs/validate",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/criurpc",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
+		},
+		{
+			"ImportPath": "github.com/opencontainers/runc/libcontainer/keys",
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/label",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/seccomp",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/selinux",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/stacktrace",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/system",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/user",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/utils",
-			"Comment": "v0.0.7",
-			"Rev": "7ca2aa4873aea7cb4265b1726acb24b90d8726c6"
+			"Comment": "v1.0.0-rc1-71-g4dedd09",
+			"Rev": "4dedd0939638fc27a609de1cb37e0666b3cf2079"
 		},
 		{
 			"ImportPath": "github.com/pborman/uuid",
