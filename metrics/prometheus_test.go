@@ -60,7 +60,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 				HasCpu: true,
 				Cpu: info.CpuSpec{
 					Limit:  1000,
-					Period: 10,
+					Period: 100000,
 					Quota:  10000,
 				},
 				CreationTime: time.Unix(1257894000, 0),
@@ -79,6 +79,11 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							PerCpu: []uint64{2, 3, 4, 5},
 							User:   6,
 							System: 7,
+						},
+						CFS: info.CpuCFS{
+							Periods:          723,
+							ThrottledPeriods: 18,
+							ThrottledTime:    1724314000,
 						},
 					},
 					Memory: info.MemoryStats{

@@ -63,6 +63,7 @@ type containerMetric struct {
 	help        string
 	valueType   prometheus.ValueType
 	extraLabels []string
+	condition   func(s info.ContainerSpec) bool
 	getValues   func(s *info.ContainerStats) metricValues
 }
 
@@ -126,6 +127,30 @@ func NewPrometheusCollector(infoProvider infoProvider, f ContainerNameToLabelsFu
 						})
 					}
 					return values
+				},
+			}, {
+				name:      "container_cpu_cfs_periods_total",
+				help:      "Number of elapsed enforcement period intervals.",
+				valueType: prometheus.CounterValue,
+				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Cpu.CFS.Periods)}}
+				},
+			}, {
+				name:      "container_cpu_cfs_throttled_periods_total",
+				help:      "Number of throttled period intervals.",
+				valueType: prometheus.CounterValue,
+				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Cpu.CFS.ThrottledPeriods)}}
+				},
+			}, {
+				name:      "container_cpu_cfs_throttled_seconds_total",
+				help:      "Total time duration the container has been throttled.",
+				valueType: prometheus.CounterValue,
+				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Cpu.CFS.ThrottledTime) / float64(time.Second)}}
 				},
 			}, {
 				name:      "container_memory_cache",
@@ -568,6 +593,9 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		// Now for the actual metrics
 		stats := container.Stats[0]
 		for _, cm := range c.containerMetrics {
+			if cm.condition != nil && !cm.condition(container.Spec) {
+				continue
+			}
 			desc := cm.desc(baseLabels)
 			for _, metricValue := range cm.getValues(stats) {
 				ch <- prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append(baseLabelValues, metricValue.labels...)...)
