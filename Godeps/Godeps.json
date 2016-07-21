@@ -110,13 +110,18 @@
 		},
 		{
 			"ImportPath": "github.com/coreos/go-systemd/dbus",
-			"Comment": "v4",
-			"Rev": "b4a58d95188dd092ae20072bac14cece0e67c388"
+			"Comment": "v8-2-g4484981",
+			"Rev": "4484981625c1a6a2ecb40a390fcb6a9bcfee76e3"
 		},
 		{
 			"ImportPath": "github.com/coreos/go-systemd/util",
-			"Comment": "v4",
-			"Rev": "b4a58d95188dd092ae20072bac14cece0e67c388"
+			"Comment": "v8-2-g4484981",
+			"Rev": "4484981625c1a6a2ecb40a390fcb6a9bcfee76e3"
+		},
+		{
+			"ImportPath": "github.com/coreos/pkg/dlopen",
+			"Comment": "v2",
+			"Rev": "7f080b6c11ac2d2347c3cd7521e810207ea1a041"
 		},
 		{
 			"ImportPath": "github.com/coreos/rkt/api/v1alpha",
