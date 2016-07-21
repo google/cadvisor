@@ -46,6 +46,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"net/http"
 )
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
@@ -125,7 +126,7 @@ type Manager interface {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, ignoreMetricsSet container.MetricSet) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, ignoreMetricsSet container.MetricSet, collectorHttpClient *http.Client) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -182,6 +183,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		ignoreMetrics:            ignoreMetricsSet,
 		containerWatchers:        []watcher.ContainerWatcher{},
 		eventsChannel:            eventsChannel,
+		collectorHttpClient:      collectorHttpClient,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -226,6 +228,7 @@ type manager struct {
 	ignoreMetrics            container.MetricSet
 	containerWatchers        []watcher.ContainerWatcher
 	eventsChannel            chan watcher.ContainerEvent
+	collectorHttpClient      *http.Client
 }
 
 // Start the container manager.
@@ -752,7 +755,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 		glog.V(3).Infof("Got config from %q: %q", v, configFile)
 
 		if strings.HasPrefix(k, "prometheus") || strings.HasPrefix(k, "Prometheus") {
-			newCollector, err := collector.NewPrometheusCollector(k, configFile, *applicationMetricsCountLimit, cont.handler)
+			newCollector, err := collector.NewPrometheusCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
 			if err != nil {
 				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
@@ -763,7 +766,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 				return err
 			}
 		} else {
-			newCollector, err := collector.NewCollector(k, configFile, *applicationMetricsCountLimit, cont.handler)
+			newCollector, err := collector.NewCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
 			if err != nil {
 				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
