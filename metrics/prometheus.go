@@ -493,6 +493,7 @@ func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 // Collect fetches the stats from all containers and delivers them as
 // Prometheus metrics. It implements prometheus.PrometheusCollector.
 func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
+	c.errors.Set(0)
 	c.collectMachineInfo(ch)
 	c.collectVersionInfo(ch)
 	c.collectContainersInfo(ch)

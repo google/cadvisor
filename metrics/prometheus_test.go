@@ -15,6 +15,7 @@
 package metrics
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -181,10 +182,13 @@ func TestPrometheusCollector(t *testing.T) {
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 
+	testPrometheusCollector(t, c, "testdata/prometheus_metrics")
+}
+
+func testPrometheusCollector(t *testing.T, c *PrometheusCollector, metricsFile string) {
 	rw := httptest.NewRecorder()
 	prometheus.Handler().ServeHTTP(rw, &http.Request{})
 
-	metricsFile := "testdata/prometheus_metrics"
 	wantMetrics, err := ioutil.ReadFile(metricsFile)
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", metricsFile)
@@ -205,4 +209,52 @@ func TestPrometheusCollector(t *testing.T) {
 			t.Fatalf("want %s, got %s", want, gotLines[i])
 		}
 	}
+}
+
+type erroringSubcontainersInfoProvider struct {
+	successfulProvider testSubcontainersInfoProvider
+	shouldFail         bool
+}
+
+func (p *erroringSubcontainersInfoProvider) GetVersionInfo() (*info.VersionInfo, error) {
+	if p.shouldFail {
+		return nil, errors.New("Oops 1")
+	}
+	return p.successfulProvider.GetVersionInfo()
+}
+
+func (p *erroringSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
+	if p.shouldFail {
+		return nil, errors.New("Oops 2")
+	}
+	return p.successfulProvider.GetMachineInfo()
+}
+
+func (p *erroringSubcontainersInfoProvider) SubcontainersInfo(
+	a string, r *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
+	if p.shouldFail {
+		return []*info.ContainerInfo{}, errors.New("Oops 3")
+	}
+	return p.successfulProvider.SubcontainersInfo(a, r)
+}
+
+func TestPrometheusCollector_scrapeFailure(t *testing.T) {
+	provider := &erroringSubcontainersInfoProvider{
+		successfulProvider: testSubcontainersInfoProvider{},
+		shouldFail:         true,
+	}
+
+	c := NewPrometheusCollector(provider, func(name string) map[string]string {
+		return map[string]string{
+			"zone.name": "hello",
+		}
+	})
+	prometheus.MustRegister(c)
+	defer prometheus.Unregister(c)
+
+	testPrometheusCollector(t, c, "testdata/prometheus_metrics_failure")
+
+	provider.shouldFail = false
+
+	testPrometheusCollector(t, c, "testdata/prometheus_metrics")
 }
