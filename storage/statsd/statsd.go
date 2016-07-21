@@ -72,7 +72,7 @@ func (self *statsdStorage) containerStatsToValues(
 	// Cpu usage
 	series[colCpuUsageSystem] = stats.Cpu.Usage.System
 	series[colCpuUsageUser] = stats.Cpu.Usage.User
-	series[colLoadAverage] = stats.Cpu.Usage.LoadAverage
+	series[colLoadAverage] = stats.Cpu.LoadAverage
 
 	// Memory Usage
 	series[colMemoryUsage] = stats.Memory.Usage
