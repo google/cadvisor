@@ -46,7 +46,7 @@ func TestEmptyConfig(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
-	_, err = NewCollector("tempCollector", configFile, 100, containerHandler)
+	_, err = NewCollector("tempCollector", configFile, 100, containerHandler, http.DefaultClient)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -77,7 +77,7 @@ func TestConfigWithErrors(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
-	_, err = NewCollector("tempCollector", configFile, 100, containerHandler)
+	_, err = NewCollector("tempCollector", configFile, 100, containerHandler, http.DefaultClient)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -116,7 +116,7 @@ func TestConfigWithRegexErrors(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
-	_, err = NewCollector("tempCollector", configFile, 100, containerHandler)
+	_, err = NewCollector("tempCollector", configFile, 100, containerHandler, http.DefaultClient)
 	assert.Error(err)
 
 	assert.NoError(os.Remove("temp.json"))
@@ -130,7 +130,7 @@ func TestConfig(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
-	collector, err := NewCollector("nginx", configFile, 100, containerHandler)
+	collector, err := NewCollector("nginx", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 	assert.Equal(collector.name, "nginx")
 	assert.Equal(collector.configFile.Endpoint.URL, "http://localhost:8000/nginx_status")
@@ -147,7 +147,7 @@ func TestEndpointConfig(t *testing.T) {
 		"111.111.111.111",
 	)
 
-	collector, err := NewCollector("nginx", configFile, 100, containerHandler)
+	collector, err := NewCollector("nginx", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 	assert.Equal(collector.name, "nginx")
 	assert.Equal(collector.configFile.Endpoint.URL, "https://111.111.111.111:8000/nginx_status")
@@ -162,7 +162,7 @@ func TestMetricCollection(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
-	fakeCollector, err := NewCollector("nginx", configFile, 100, containerHandler)
+	fakeCollector, err := NewCollector("nginx", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -198,6 +198,6 @@ func TestMetricCollectionLimit(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
-	_, err = NewCollector("nginx", configFile, 1, containerHandler)
+	_, err = NewCollector("nginx", configFile, 1, containerHandler, http.DefaultClient)
 	assert.Error(err)
 }

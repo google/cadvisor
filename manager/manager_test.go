@@ -33,6 +33,7 @@ import (
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 )
 
 // TODO(vmarmol): Refactor these tests.
@@ -298,7 +299,7 @@ func TestDockerContainersInfo(t *testing.T) {
 }
 
 func TestNewNilManager(t *testing.T) {
-	_, err := New(nil, nil, 60*time.Second, true, container.MetricSet{})
+	_, err := New(nil, nil, 60*time.Second, true, container.MetricSet{}, http.DefaultClient)
 	if err == nil {
 		t.Fatalf("Expected nil manager to return error")
 	}
