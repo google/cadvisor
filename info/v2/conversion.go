@@ -24,7 +24,8 @@ import (
 
 func machineFsStatsFromV1(fsStats []v1.FsStats) []MachineFsStats {
 	var result []MachineFsStats
-	for _, stat := range fsStats {
+	for i := range fsStats {
+		stat := fsStats[i]
 		readDuration := time.Millisecond * time.Duration(stat.ReadTime)
 		writeDuration := time.Millisecond * time.Duration(stat.WriteTime)
 		ioDuration := time.Millisecond * time.Duration(stat.IoTime)
