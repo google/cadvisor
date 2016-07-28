@@ -34,7 +34,7 @@ const (
 	// CPU system
 	colCpuUsageSystem string = "cpu_usage_system"
 	// CPU user
-	colCpuUsageUser   string = "cpu_usage_user"
+	colCpuUsageUser string = "cpu_usage_user"
 	// CPU average load
 	colLoadAverage string = "load_average"
 	// Memory Usage
@@ -72,7 +72,7 @@ func (self *statsdStorage) containerStatsToValues(
 	// Cpu usage
 	series[colCpuUsageSystem] = stats.Cpu.Usage.System
 	series[colCpuUsageUser] = stats.Cpu.Usage.User
-	series[colLoadAverage] = stats.Cpu.LoadAverage
+	series[colLoadAverage] = uint64(stats.Cpu.LoadAverage)
 
 	// Memory Usage
 	series[colMemoryUsage] = stats.Memory.Usage
