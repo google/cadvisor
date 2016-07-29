@@ -44,9 +44,10 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
+	"net/http"
+
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	"net/http"
 )
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
@@ -671,7 +672,8 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 		}
 	}
 	fsInfo := []v2.FsInfo{}
-	for _, fs := range stats[0].Filesystem {
+	for i := range stats[0].Filesystem {
+		fs := stats[0].Filesystem[i]
 		if len(label) != 0 && fs.Device != dev {
 			continue
 		}
@@ -683,6 +685,7 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		fi := v2.FsInfo{
 			Device:     fs.Device,
 			Mountpoint: mountpoint,
@@ -690,7 +693,9 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 			Usage:      fs.Usage,
 			Available:  fs.Available,
 			Labels:     labels,
-			InodesFree: fs.InodesFree,
+		}
+		if fs.HasInodes {
+			fi.InodesFree = &fs.InodesFree
 		}
 		fsInfo = append(fsInfo, fi)
 	}
