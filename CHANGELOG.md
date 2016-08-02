@@ -1,5 +1,25 @@
 # Changelog
 
+### 0.23.8 (2016-08-02)
+
+- Cherry-pick release:
+  - Prefix Docker labels & env vars in Prometheus metrics to prevent conflicts
+
+### 0.23.7 (2016-07-18)
+
+- Cherry-pick release:
+  - Modify working set memory stats calculation
+
+### 0.23.6 (2016-06-23)
+
+- Cherry-pick release:
+  - Updating inotify to fix memory leak v0.23 cherrypick
+
+### 0.23.5 (2016-06-22)
+
+- Cherry-pick release:
+  - support LVM based device mapper storage drivers
+
 ### 0.23.4 (2016-06-16)
 - Cherry-pick release:
   - Check for thin_is binary in path for devicemapper when using ThinPoolWatcher
