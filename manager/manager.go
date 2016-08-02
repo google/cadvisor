@@ -695,6 +695,7 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 			Labels:     labels,
 		}
 		if fs.HasInodes {
+			fi.Inodes = &fs.Inodes
 			fi.InodesFree = &fs.InodesFree
 		}
 		fsInfo = append(fsInfo, fi)

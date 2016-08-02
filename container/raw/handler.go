@@ -166,9 +166,11 @@ func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 }
 
 func fsToFsStats(fs *fs.Fs) info.FsStats {
+	inodes := uint64(0)
 	inodesFree := uint64(0)
 	hasInodes := fs.InodesFree != nil
 	if hasInodes {
+		inodes = *fs.Inodes
 		inodesFree = *fs.InodesFree
 	}
 	return info.FsStats{
@@ -177,6 +179,7 @@ func fsToFsStats(fs *fs.Fs) info.FsStats {
 		Limit:           fs.Capacity,
 		Usage:           fs.Capacity - fs.Free,
 		HasInodes:       hasInodes,
+		Inodes:          inodes,
 		InodesFree:      inodesFree,
 		Available:       fs.Available,
 		ReadsCompleted:  fs.DiskStats.ReadsCompleted,
