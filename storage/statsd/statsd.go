@@ -31,6 +31,12 @@ type statsdStorage struct {
 
 const (
 	colCpuCumulativeUsage string = "cpu_cumulative_usage"
+	// CPU system
+	colCpuUsageSystem string = "cpu_usage_system"
+	// CPU user
+	colCpuUsageUser string = "cpu_usage_user"
+	// CPU average load
+	colCpuLoadAverage string = "cpu_load_average"
 	// Memory Usage
 	colMemoryUsage string = "memory_usage"
 	// Working set size
@@ -62,6 +68,11 @@ func (self *statsdStorage) containerStatsToValues(
 
 	// Cumulative Cpu Usage
 	series[colCpuCumulativeUsage] = stats.Cpu.Usage.Total
+
+	// Cpu usage
+	series[colCpuUsageSystem] = stats.Cpu.Usage.System
+	series[colCpuUsageUser] = stats.Cpu.Usage.User
+	series[colCpuLoadAverage] = uint64(stats.Cpu.LoadAverage)
 
 	// Memory Usage
 	series[colMemoryUsage] = stats.Memory.Usage
