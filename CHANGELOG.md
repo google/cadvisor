@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.23.9 (2016-08-09)
+
+- Cherry-pick release:
+  - Ensure minimum kernel version for thin_ls
+
 ### 0.23.8 (2016-08-02)
 
 - Cherry-pick release:
