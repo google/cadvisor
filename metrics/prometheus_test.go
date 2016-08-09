@@ -99,6 +99,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						},
 						Cache: 14,
 						RSS:   15,
+						Swap:  8192,
 					},
 					Network: info.NetworkStats{
 						InterfaceStats: info.InterfaceStats{
