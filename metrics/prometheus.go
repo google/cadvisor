@@ -17,6 +17,7 @@ package metrics
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -535,6 +536,16 @@ func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
 const (
 	containerLabelPrefix = "container_label_"
 	containerEnvPrefix   = "container_env_"
+	// kubernetesInternalLabelPrefix is the common prefix of all labels set by
+	// Kubernetes in order to store internal information on docker containers.
+	// See https://github.com/kubernetes/kubernetes/blob/7523669/pkg/kubelet/dockertools/labels.go.
+	kubernetesInternalLabelPrefix = "io.kubernetes."
+)
+
+var (
+	// kubernetesInternalLabelWhitelist defines a regular expression such
+	// Kubernetes labels need to match in order to be attached to metrics.
+	kubernetesInternalLabelWhitelist = regexp.MustCompile(`^io\.kubernetes\.(container\.name|pod\.(name|namespace))$`)
 )
 
 func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
@@ -567,6 +578,10 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		}
 
 		for k, v := range container.Spec.Labels {
+			if strings.HasPrefix(k, kubernetesInternalLabelPrefix) &&
+				!kubernetesInternalLabelWhitelist.MatchString(k) {
+				continue
+			}
 			baseLabels = append(baseLabels, sanitizeLabelName(containerLabelPrefix+k))
 			baseLabelValues = append(baseLabelValues, v)
 		}

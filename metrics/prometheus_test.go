@@ -65,7 +65,15 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 				},
 				CreationTime: time.Unix(1257894000, 0),
 				Labels: map[string]string{
-					"foo.label": "bar",
+					"foo.label":                                      "bar",
+					"io.kubernetes.container.hash":                   "e2b4295e",
+					"io.kubernetes.container.name":                   "POD",
+					"io.kubernetes.container.restartCount":           "0",
+					"io.kubernetes.container.terminationMessagePath": "",
+					"io.kubernetes.pod.name":                         "foo-bar-1985164696-y8y0d",
+					"io.kubernetes.pod.namespace":                    "qux",
+					"io.kubernetes.pod.terminationGracePeriod":       "30",
+					"io.kubernetes.pod.uid":                          "6a291e48-47c4-11e6-84a4-c81f66bdf8bd",
 				},
 				Envs: map[string]string{
 					"foo+env": "prod",
