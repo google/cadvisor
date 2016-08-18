@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package logstash
+package json
 
 import (
 	"encoding/json"
@@ -25,13 +25,13 @@ import (
 )
 
 func init() {
-	storage.RegisterStorageDriver("logstash", new)
+	storage.RegisterStorageDriver("json", new)
 }
 
-type logstashStorage struct {
-	logstashType string
-	machineName  string
-	connection   net.Conn
+type jsonStorage struct {
+	infoField   string
+	machineName string
+	connection  net.Conn
 }
 
 func new() (storage.StorageDriver, error) {
@@ -43,23 +43,26 @@ func new() (storage.StorageDriver, error) {
 	return newStorage(
 		hostname,
 		*storage.ArgDbHost,
-		*argLogstashType,
+		*argInfoField,
+		*argProtocol,
 	)
 }
 
 type DetailSpec struct {
-	LogstashType   string               `json:"type,omitempty"`
+	InfoField      string               `json:"info,omitempty"`
 	MachineName    string               `json:"machine_name,omitempty"`
 	ContainerName  string               `json:"container_name,omitempty"`
 	ContainerStats *info.ContainerStats `json:"stats,omitempty"`
 }
 
 var (
-	// lets users set the type for the stats sent to logstash
-	argLogstashType = flag.String("storage_driver_logstash_type", "cadvisor", "Logstash type name")
+	// network protocol: either udp or tcp
+	argProtocol = flag.String("storage_driver_json_protocol", "udp", "Json storage driver protocol")
+	// useful if a user wants to pass any extra information in the json, such as an identifying string
+	argInfoField = flag.String("storage_driver_json_info_field", "", "Optional additional info")
 )
 
-func (self *logstashStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (self *jsonStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
@@ -68,7 +71,7 @@ func (self *logstashStorage) AddStats(ref info.ContainerReference, stats *info.C
 		containerName = ref.Aliases[0]
 	}
 	// convert stats into json object
-	output, err := json.Marshal(DetailSpec{self.logstashType, self.machineName, containerName, stats})
+	output, err := json.Marshal(DetailSpec{self.infoField, self.machineName, containerName, stats})
 	if err != nil {
 		return err
 	}
@@ -77,20 +80,20 @@ func (self *logstashStorage) AddStats(ref info.ContainerReference, stats *info.C
 	return err
 }
 
-func (driver *logstashStorage) Close() error {
+func (driver *jsonStorage) Close() error {
 	return nil
 }
 
-func newStorage(machineName string, logstashHost string, logstashType string) (*logstashStorage, error) {
-	// create udp connection to logstash host
-	connection, err := net.Dial("udp", logstashHost)
+func newStorage(machineName string, storageHost string, infoField string, protocol string) (*jsonStorage, error) {
+	// create udp connection to host
+	connection, err := net.Dial(protocol, storageHost)
 	if err != nil {
 		return nil, err
 	}
-	logstashStorage := &logstashStorage{
-		machineName:  machineName,
-		logstashType: logstashType,
-		connection:   connection,
+	jsonStorage := &jsonStorage{
+		machineName: machineName,
+		infoField:   infoField,
+		connection:  connection,
 	}
-	return logstashStorage, nil
+	return jsonStorage, nil
 }
