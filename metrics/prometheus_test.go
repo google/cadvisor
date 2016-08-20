@@ -180,10 +180,10 @@ var (
 )
 
 func TestPrometheusCollector(t *testing.T) {
-	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(name string) map[string]string {
-		return map[string]string{
-			"zone.name": "hello",
-		}
+	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
+		s := DefaultContainerLabels(container)
+		s["zone.name"] = "hello"
+		return s
 	})
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
@@ -212,7 +212,7 @@ func testPrometheusCollector(t *testing.T, c *PrometheusCollector, metricsFile s
 			continue
 		}
 		if want != gotLines[i] {
-			t.Fatalf("want %s, got %s", want, gotLines[i])
+			t.Fatalf("unexpected metric line\nwant: %s\nhave: %s", want, gotLines[i])
 		}
 	}
 }
@@ -250,10 +250,10 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		shouldFail:         true,
 	}
 
-	c := NewPrometheusCollector(provider, func(name string) map[string]string {
-		return map[string]string{
-			"zone.name": "hello",
-		}
+	c := NewPrometheusCollector(provider, func(container *info.ContainerInfo) map[string]string {
+		s := DefaultContainerLabels(container)
+		s["zone.name"] = "hello"
+		return s
 	})
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
