@@ -97,7 +97,7 @@
 - Enabled CPU load tracking (experimental).
 
 ## 0.11.0 (2015-03-27)
-- Export all stats as [Prometheus](http://prometheus.io/) metrics.
+- Export all stats as [Prometheus](https://prometheus.io/) metrics.
 - Initial support for [events](docs/api.md): creation, deletion, and OOM.
 - Adding machine UUID information.
 - Beta release of the cAdvisor [2.0 API](docs/api_v2.md).
