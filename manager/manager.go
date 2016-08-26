@@ -760,26 +760,37 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 		}
 		glog.V(3).Infof("Got config from %q: %q", v, configFile)
 
-		if strings.HasPrefix(k, "prometheus") || strings.HasPrefix(k, "Prometheus") {
+		if strings.HasPrefix(strings.ToLower(k), "prometheus") {
 			newCollector, err := collector.NewPrometheusCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
 			if err != nil {
-				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
+				glog.Infof("failed to create Prometheus collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
 			}
 			err = cont.collectorManager.RegisterCollector(newCollector)
 			if err != nil {
-				glog.Infof("failed to register collector for container %q, config %q: %v", cont.info.Name, k, err)
+				glog.Infof("failed to register Prometheus collector for container %q, config %q: %v", cont.info.Name, k, err)
+				return err
+			}
+		} else if strings.HasPrefix(strings.ToLower(k), "jolokia") {
+			newCollector, err := collector.NewJolokiaCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
+			if err != nil {
+				glog.Infof("failed to create Jolokia collector for container %q, config %q: %v", cont.info.Name, k, err)
+				return err
+			}
+			err = cont.collectorManager.RegisterCollector(newCollector)
+			if err != nil {
+				glog.Infof("failed to register Jolokia collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
 			}
 		} else {
 			newCollector, err := collector.NewCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
 			if err != nil {
-				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
+				glog.Infof("failed to create generic collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
 			}
 			err = cont.collectorManager.RegisterCollector(newCollector)
 			if err != nil {
-				glog.Infof("failed to register collector for container %q, config %q: %v", cont.info.Name, k, err)
+				glog.Infof("failed to register generic collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
 			}
 		}

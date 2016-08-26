@@ -59,7 +59,7 @@ func NewPrometheusCollector(collectorName string, configFile []byte, metricCount
 
 	configInJSON.Endpoint.configure(containerHandler)
 
-	minPollingFrequency := configInJSON.PollingFrequency
+	minPollingFrequency := configInJSON.PollingFrequency.Duration
 
 	// Minimum supported frequency is 1s
 	minSupportedFrequency := 1 * time.Second

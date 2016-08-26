@@ -21,6 +21,28 @@ An application metric configuration tells cAdvisor where to look for application
 * Polling Frequency
 * Regexps (Regular expressions to specify which metrics to collect and how to parse them)
 
+### Endpoint configuration
+The endpoint can be specified in two ways.
+
+If you know the full URL before hand, you can directly specify it as a string:
+```
+"endpoint" : "http://myHost.example.com:8000/metrics"
+```
+
+When dealing with containers you may not know the ip address of the container before hand, and in this case we cannot directly enter the URL.
+
+For these situations, you can specify the `protocol`, `port` and `path` values and cAdvisor can generate the full URL for you.
+```
+"endpoint" : {
+  "protocol" : "http",
+  "port" : 8000,
+  "path" : "/metrics"
+}
+```  
+From this information, cAdvisor will generate a url of type `http://${container_ip_address}:8000/metrics` where the `${container_ip_address}` is the ip address of the container.
+
+### Sample Generic Metric Configuration
+
 Here is an example of a very generic metric collector that assumes no structured information:
 
 ```
@@ -32,7 +54,7 @@ Here is an example of a very generic metric collector that assumes no structured
       "metric_type" : "gauge",
       "units" : "number of active connections",
       "data_type" : "int",
-      "polling_frequency" : 10,
+      "polling_frequency" : "10s",
       "regex" : "Active connections: ([0-9]+)"
     },
     {
@@ -40,14 +62,19 @@ Here is an example of a very generic metric collector that assumes no structured
       "metric_type" : "gauge",
       "units" : "number of reading connections",
       "data_type" : "int",
-      "polling_frequency" : 10,
+      "polling_frequency" : "10s",
       "regex" : "Reading: ([0-9]+) .*"
     }
   ]
 } 
 ```
+This endpoint exposes metrics in a non structured manner and the cAdvisor collector uses regular expressions to determine where the metrics are to be collected.
 
-For structured metrics export, eg. Prometheus, the config can shrink down to just the endpoint, as other information can be gleaned from the structure. Here is a sample prometheus config that collects all metrics from an endpoint.
+#### Sample Prometheus Configuration
+
+Endpoint which expose metrics in a Prometheus format do so in a more structured format and cAdvisor can gather information about the metrics directly from the endpoint.
+
+Here is a sample prometheus config that collects all metrics from an endpoint:
 
 ```
 {
@@ -55,7 +82,9 @@ For structured metrics export, eg. Prometheus, the config can shrink down to jus
 }
 ```
 
-Another sample config that collects only selected metrics:
+If you only want to collect a subset of metrics from an endpoint, you can specify which metrics to collect via the `metrics_config` parameter.
+
+This sample config only collects only the `scheduler_binding_latency`, `scheduler_e2e_scheduling_latency` and `scheduling_algorithm_latency` metrics from the endpoint:
 
 ```
 {
@@ -67,12 +96,40 @@ Another sample config that collects only selected metrics:
   ]
 }
 ```
+#### Sample Jolokia Configuration
+
+For Java applications, Jolokia can be used to expose metrics stored in mbeans.
+
+The following configuration will gather the currently used heap memory by the Java application:
+
+```
+{
+  "endpoint" : {
+    "protocol" : "https",
+    "path" : "/jolokia",
+    "port" : 8778
+  },
+  "polling_frequency" : "10s",
+  "metrics_config" : [
+    { "name": "JVMHeap",
+      "mbean": {
+        "name" : "java.lang:type=Memory",
+        "attribute": "HeapMemoryUsage",
+        "path": "used"
+      },
+      "metric_type": "gauge",
+      "units": "bytes",
+      "data_type": "int"
+    }
+  ]
+}
+```
 
 ## Passing the configuration to cAdvisor
 
 cAdvisor can discover any configurations for a container using Docker container labels. Any label starting with ```io.cadvisor.metric``` is parsed as a cadvisor application-metric label.
 cAdvisor uses the value as an indicator of where the configuration can be found.  Labels of the form ```io.cadvisor.metric.prometheus-xyz``` indicate that the configuration points to a
-Prometheus metrics endpoint.
+Prometheus metrics endpoint. Labels of the form ```io.cadvisor.metric.jolokia-xyz``` indicate that the configuration points to a Jolokia endpoint.
 
 The configuration file can either be part of the container image or can be added on at runtime with a volume. This makes sure that there is no connection between the host where the container is running and the application metrics configuration. A container is self-contained for its metric information.
 

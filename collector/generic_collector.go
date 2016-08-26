@@ -75,9 +75,9 @@ func NewCollector(collectorName string, configFile []byte, metricCountLimit int,
 
 	for ind, metricConfig := range configInJSON.MetricsConfig {
 		// Find the minimum specified polling frequency in metric config.
-		if metricConfig.PollingFrequency != 0 {
-			if minPollFrequency == 0 || metricConfig.PollingFrequency < minPollFrequency {
-				minPollFrequency = metricConfig.PollingFrequency
+		if metricConfig.PollingFrequency.Duration != 0 {
+			if minPollFrequency == 0 || metricConfig.PollingFrequency.Duration < minPollFrequency {
+				minPollFrequency = metricConfig.PollingFrequency.Duration
 			}
 		}
 
@@ -114,7 +114,7 @@ func (collector *GenericCollector) Name() string {
 	return collector.name
 }
 
-func (collector *GenericCollector) configToSpec(config MetricConfig) v1.MetricSpec {
+func (collector *GenericCollector) configToSpec(config GenericMetricConfig) v1.MetricSpec {
 	return v1.MetricSpec{
 		Name:   config.Name,
 		Type:   config.MetricType,

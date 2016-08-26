@@ -14,13 +14,22 @@
 
 package collector
 
-import "github.com/google/cadvisor/container"
+import (
+	"fmt"
+	"github.com/google/cadvisor/container"
+)
 
-func (endpointConfig *EndpointConfig) configure(containerHandler container.ContainerHandler) {
+func (endpointConfig *EndpointConfig) configure(containerHandler container.ContainerHandler) error {
 	//If the exact URL was not specified, generate it based on the ip address of the container.
 	endpoint := endpointConfig
 	if endpoint.URL == "" {
+
+		if endpoint.URLConfig.Protocol == "" || endpoint.URLConfig.Port.String() == "" {
+			return fmt.Errorf("The endpoint URL was not specified but either the protocol [%v] or port [%v] was not specified.", endpoint.URLConfig.Protocol, endpoint.URLConfig.Port)
+		}
+
 		ipAddress := containerHandler.GetContainerIPAddress()
 		endpointConfig.URL = endpoint.URLConfig.Protocol + "://" + ipAddress + ":" + endpoint.URLConfig.Port.String() + endpoint.URLConfig.Path
 	}
+	return nil
 }

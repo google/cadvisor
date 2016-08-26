@@ -1,0 +1,15 @@
+{
+  "polling_frequency" : 11000000000,
+  "metrics_config" : [
+    {"name": "JVMHeap",
+      "mbean": {
+        "name": "java.lang:type=Memory",
+        "attribute": "HeapMemoryUsage",
+        "path": "used"
+      },
+      "metric_type": "gauge",
+      "units": "bytes",
+      "data_type": "int"
+    }
+  ]
+}
