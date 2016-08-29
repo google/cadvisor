@@ -130,6 +130,8 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Filesystem: []info.FsStats{
 						{
 							Device:          "sda1",
+							InodesFree:      524288,
+							Inodes:          2097152,
 							Limit:           22,
 							Usage:           23,
 							ReadsCompleted:  24,
@@ -146,6 +148,8 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						},
 						{
 							Device:          "sda2",
+							InodesFree:      262144,
+							Inodes:          2097152,
 							Limit:           37,
 							Usage:           38,
 							ReadsCompleted:  39,

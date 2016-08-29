@@ -22,6 +22,14 @@ container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_f
 # HELP container_cpu_user_seconds_total Cumulative user cpu time consumed in seconds.
 # TYPE container_cpu_user_seconds_total counter
 container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 6e-09
+# HELP container_fs_inodes_free Number of available Inodes
+# TYPE container_fs_inodes_free gauge
+container_fs_inodes_free{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 524288
+container_fs_inodes_free{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 262144
+# HELP container_fs_inodes_total Number of Inodes
+# TYPE container_fs_inodes_total gauge
+container_fs_inodes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2.097152e+06
+container_fs_inodes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2.097152e+06
 # HELP container_fs_io_current Number of I/Os currently in progress
 # TYPE container_fs_io_current gauge
 container_fs_io_current{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 42
