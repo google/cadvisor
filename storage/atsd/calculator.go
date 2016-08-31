@@ -16,6 +16,7 @@ package atsd
 
 import (
 	"strconv"
+	"sync"
 	"time"
 
 	atsdNet "github.com/axibase/atsd-api-go/net"
@@ -35,10 +36,12 @@ const (
 )
 
 var oldStats = map[string]*info.ContainerStats{}
+var m = &sync.Mutex{}
 
 // derived stats which cannot be calculated within atsd for now
 func CalculateDerivedSeriesCpuCommands(entity string, curStats *info.ContainerStats) []*atsdNet.SeriesCommand {
 	commands := []*atsdNet.SeriesCommand{}
+	m.Lock()
 	if prevStats, ok := oldStats[entity]; ok {
 		if prevStats.Timestamp.Before(curStats.Timestamp) {
 			time := uint64(curStats.Timestamp.UnixNano() / time.Millisecond.Nanoseconds())
@@ -87,5 +90,6 @@ func CalculateDerivedSeriesCpuCommands(entity string, curStats *info.ContainerSt
 	} else {
 		oldStats[entity] = curStats
 	}
+	m.Unlock()
 	return commands
 }
