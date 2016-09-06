@@ -20,7 +20,10 @@
     white-space: pre-wrap;
 }
 .isolation-title {
-	color:#FFFFFF;
+    color:#FFFFFF;
+}
+.page-header h1 {
+    word-wrap: break-word;
 }
 .table-row {
     font-family: "courier", "monospace";
