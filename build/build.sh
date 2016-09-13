@@ -32,7 +32,7 @@ GO_CMD="install"
 
 if [ "$RELEASE" == "true" ]; then
   # Only allow releases of tagged versions.
-  TAGGED='^v[0-9]+\.[0-9]+\.[0-9]+$'
+  TAGGED='^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)[0-9]*)?$'
   if [[ ! "$version" =~ $TAGGED ]]; then
     echo "Only tagged versions are allowed for releases" >&2
     echo "Found: $version" >&2
