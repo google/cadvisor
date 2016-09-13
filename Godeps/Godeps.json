@@ -12,6 +12,16 @@
 			"Rev": "'75cd24fc2f2c2a2088577d12123ddee5f54e0675'"
 		},
 		{
+			"ImportPath": "cloud.google.com/go/compute/metadata",
+			"Comment": "v0.1.0-115-g3b1ae45",
+			"Rev": "3b1ae45394a234c385be014e9a488f2bb6eef821"
+		},
+		{
+			"ImportPath": "cloud.google.com/go/internal",
+			"Comment": "v0.1.0-115-g3b1ae45",
+			"Rev": "3b1ae45394a234c385be014e9a488f2bb6eef821"
+		},
+		{
 			"ImportPath": "github.com/Microsoft/go-winio",
 			"Comment": "v0.3.2",
 			"Rev": "862b6557927a5c5c81e411c12aa6de7e566cbb7a"
@@ -472,6 +482,10 @@
 			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
 		},
 		{
+			"ImportPath": "golang.org/x/net/context/ctxhttp",
+			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
+		},
+		{
 			"ImportPath": "golang.org/x/net/http2",
 			"Rev": "5627bad10b821d907ac4dc81fb3535ec7dd81c2b"
 		},
@@ -518,14 +532,6 @@
 		{
 			"ImportPath": "google.golang.org/api/googleapi/internal/uritemplates",
 			"Rev": "0c2979aeaa5b573e60d3ddffe5ce8dca8df309bd"
-		},
-		{
-			"ImportPath": "google.golang.org/cloud/compute/metadata",
-			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
-		},
-		{
-			"ImportPath": "google.golang.org/cloud/internal",
-			"Rev": "542bfb014d8e28df6e27be847dfdc40c510dab1a"
 		},
 		{
 			"ImportPath": "google.golang.org/grpc",
