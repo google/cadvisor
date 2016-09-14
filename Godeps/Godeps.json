@@ -470,6 +470,11 @@
 			"Rev": "08fd2e12372a66e68e30523c7642e0cbc3e4fbde"
 		},
 		{
+			"ImportPath": "github.com/prometheus/client_golang/prometheus/promhttp",
+			"Comment": "v0.8.0-62-g08fd2e1",
+			"Rev": "08fd2e12372a66e68e30523c7642e0cbc3e4fbde"
+		},
+		{
 			"ImportPath": "github.com/prometheus/client_model/go",
 			"Comment": "model-0.0.2-14-g6f38060",
 			"Rev": "6f3806018612930941127f2a7c6c453ba2c527d2"
