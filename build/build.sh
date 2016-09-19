@@ -34,13 +34,17 @@ if [ "$RELEASE" == "true" ]; then
   # Only allow releases of tagged versions.
   TAGGED='^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)[0-9]*)?$'
   if [[ ! "$version" =~ $TAGGED ]]; then
-    echo "Only tagged versions are allowed for releases" >&2
+    echo "Error: Only tagged versions are allowed for releases" >&2
     echo "Found: $version" >&2
     exit 1
   fi
 
   # Don't include hostname with release builds
-  build_user="$(git config --get user.email)"
+  if ! build_user="$(git config --get user.email)"; then
+    echo "Error: git user not set, use:"
+    echo "git config user.email <email>"
+    exit 1
+  fi
   build_date=$( date +%Y%m%d ) # Release date is only to day-granularity
 
   # Don't use cached build objects for releases.
