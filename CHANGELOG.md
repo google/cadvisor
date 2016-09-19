@@ -1,5 +1,18 @@
 # Changelog
 
+### 0.24.0 (2016-09-19)
+
+- Added host-level inode stats (total & available)
+- Improved robustness to partial failures
+- Metrics collector improvements
+  - Added ability to directly use endpoints from the container itself
+  - Allow SSL endpoint access
+  - Ability to provide a certificate which is exposed to custom endpoints
+- Lots of bug fixes, including:
+  - Devicemapper thin_ls fixes
+  - Prometheus metrics fixes
+  - Fixes for missing stats (memory reservation, FS usage, etc.)
+
 ### 0.23.9 (2016-08-09)
 
 - Cherry-pick release:
