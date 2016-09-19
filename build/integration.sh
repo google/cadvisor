@@ -24,6 +24,7 @@ set -e
 GO_FLAGS="-race" ./build/build.sh
 
 TEST_PID=$$
+sudo printf "" # Refresh sudo credentials if necessary.
 function start {
   set +e  # We want to handle errors if cAdvisor crashes.
   echo ">> starting cAdvisor locally"
