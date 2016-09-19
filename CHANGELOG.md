@@ -1,7 +1,54 @@
 # Changelog
 
+### 0.24.0 (2016-09-19)
+
+- Added host-level inode stats (total & available)
+- Improved robustness to partial failures
+- Metrics collector improvements
+  - Added ability to directly use endpoints from the container itself
+  - Allow SSL endpoint access
+  - Ability to provide a certificate which is exposed to custom endpoints
+- Lots of bug fixes, including:
+  - Devicemapper thin_ls fixes
+  - Prometheus metrics fixes
+  - Fixes for missing stats (memory reservation, FS usage, etc.)
+
+### 0.23.9 (2016-08-09)
+
+- Cherry-pick release:
+  - Ensure minimum kernel version for thin_ls
+
+### 0.23.8 (2016-08-02)
+
+- Cherry-pick release:
+  - Prefix Docker labels & env vars in Prometheus metrics to prevent conflicts
+
+### 0.23.7 (2016-07-18)
+
+- Cherry-pick release:
+  - Modify working set memory stats calculation
+
+### 0.23.6 (2016-06-23)
+
+- Cherry-pick release:
+  - Updating inotify to fix memory leak v0.23 cherrypick
+
+### 0.23.5 (2016-06-22)
+
+- Cherry-pick release:
+  - support LVM based device mapper storage drivers
+
+### 0.23.4 (2016-06-16)
+- Cherry-pick release:
+  - Check for thin_is binary in path for devicemapper when using ThinPoolWatcher
+  - Fix uint64 overflow issue for CPU stats
+
+### 0.23.3 (2016-06-08)
+- Cherry-pick release:
+  - Cap the maximum consecutive du commands
+  - Fix a panic when a prometheus endpoint ends with a newline
+
 ### 0.23.2 (2016-05-18)
-- Final release for Kubernetes 1.3
 - Handle kernel log rotation
 - More rkt support: poll rkt service for new containers
 - Better handling of partial failures when fetching subcontainers
