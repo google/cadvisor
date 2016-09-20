@@ -8,7 +8,7 @@ cAdvisor supports exporting stats to various storage driver plugins. To enable a
 - [ElasticSearch](https://www.elastic.co/). See the [documentation](elasticsearch.md) for usage and examples.
 - [InfluxDB](https://influxdb.com/). See the [documentation](influxdb.md) for usage and examples.
 - [Kafka](http://kafka.apache.org/). See the [documentation](kafka.md) for usage.
-- [Prometheus](http://prometheus.io). See the [documentation](prometheus.md) for usage and examples.
+- [Prometheus](https://prometheus.io). See the [documentation](prometheus.md) for usage and examples.
 - [Redis](http://redis.io/)
 - [StatsD](https://github.com/etsy/statsd)
 - `stdout` - write stats to standard output.

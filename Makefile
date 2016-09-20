@@ -31,10 +31,13 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
-build:
+build: assets
 	@echo ">> building binaries"
-	@./build/assets.sh
 	@./build/build.sh
+
+assets:
+	@echo ">> building assets"
+	@./build/assets.sh
 
 release:
 	@echo ">> building release binaries"
