@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"net/http"
+
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
@@ -33,7 +35,6 @@ import (
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 	"github.com/stretchr/testify/assert"
-	"net/http"
 )
 
 // TODO(vmarmol): Refactor these tests.

@@ -17,12 +17,13 @@ package collector
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"math"
+	"io"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
+
+	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/info/v1"
@@ -100,60 +101,61 @@ func (collector *PrometheusCollector) Name() string {
 	return collector.name
 }
 
-func getMetricData(line string) string {
-	fields := strings.Fields(line)
-	data := fields[3]
-	if len(fields) > 4 {
-		for i := range fields {
-			if i > 3 {
-				data = data + "_" + fields[i]
-			}
-		}
-	}
-	return strings.TrimSpace(data)
-}
-
 func (collector *PrometheusCollector) GetSpec() []v1.MetricSpec {
-	specs := []v1.MetricSpec{}
 
 	response, err := collector.httpClient.Get(collector.configFile.Endpoint.URL)
 	if err != nil {
-		return specs
+		return nil
 	}
 	defer response.Body.Close()
 
-	pageContent, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return specs
+	if response.StatusCode != http.StatusOK {
+		return nil
 	}
 
-	lines := strings.Split(string(pageContent), "\n")
-	lineCount := len(lines)
-	for i, line := range lines {
-		if strings.HasPrefix(line, "# HELP") {
-			if i+2 >= lineCount {
-				break
-			}
+	dec := expfmt.NewDecoder(response.Body, expfmt.ResponseFormat(response.Header))
 
-			stopIndex := strings.IndexAny(lines[i+2], "{ ")
-			if stopIndex == -1 {
-				continue
-			}
+	var specs []v1.MetricSpec
 
-			name := strings.TrimSpace(lines[i+2][0:stopIndex])
-			if _, ok := collector.metricsSet[name]; collector.metricsSet != nil && !ok {
-				continue
-			}
-			spec := v1.MetricSpec{
-				Name:   name,
-				Type:   v1.MetricType(getMetricData(lines[i+1])),
-				Format: "float",
-				Units:  getMetricData(lines[i]),
-			}
-			specs = append(specs, spec)
+	for {
+		d := dto.MetricFamily{}
+		if err = dec.Decode(&d); err != nil {
+			break
 		}
+		name := d.GetName()
+		if len(name) == 0 {
+			continue
+		}
+		if _, ok := collector.metricsSet[name]; collector.metricsSet != nil && !ok {
+			continue
+		}
+		spec := v1.MetricSpec{
+			Name:   name,
+			Type:   metricType(d.GetType()),
+			Format: v1.FloatType,
+		}
+		specs = append(specs, spec)
 	}
+
+	if err != nil && err != io.EOF {
+		return nil
+	}
+
 	return specs
+}
+
+// metricType converts Prometheus metric type to cadvisor metric type.
+// If there is no mapping then just return the name of the Prometheus metric type.
+func metricType(t dto.MetricType) v1.MetricType {
+	switch t {
+	case dto.MetricType_COUNTER:
+		return v1.MetricCumulative
+	case dto.MetricType_GAUGE:
+		return v1.MetricGauge
+	default:
+		return v1.MetricType(t.String())
+	}
+
 }
 
 //Returns collected metrics and the next collection time of the collector
@@ -168,59 +170,54 @@ func (collector *PrometheusCollector) Collect(metrics map[string][]v1.MetricVal)
 	}
 	defer response.Body.Close()
 
-	pageContent, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nextCollectionTime, nil, err
+	if response.StatusCode != http.StatusOK {
+		return nextCollectionTime, nil, fmt.Errorf("server returned HTTP status %s", response.Status)
 	}
 
-	var errorSlice []error
-	lines := strings.Split(string(pageContent), "\n")
+	sdec := expfmt.SampleDecoder{
+		Dec: expfmt.NewDecoder(response.Body, expfmt.ResponseFormat(response.Header)),
+		Opts: &expfmt.DecodeOptions{
+			Timestamp: model.TimeFromUnixNano(currentTime.UnixNano()),
+		},
+	}
 
-	newMetrics := make(map[string][]v1.MetricVal)
-
-	for _, line := range lines {
-		if line == "" {
+	var (
+		decSamples = make(model.Vector, 0, 50)
+		newMetrics = make(map[string][]v1.MetricVal)
+	)
+	for {
+		if err = sdec.Decode(&decSamples); err != nil {
 			break
 		}
-		if !strings.HasPrefix(line, "# HELP") && !strings.HasPrefix(line, "# TYPE") {
-			var metLabel string
-			startLabelIndex := strings.Index(line, "{")
-			spaceIndex := strings.Index(line, " ")
-			if startLabelIndex == -1 {
-				startLabelIndex = spaceIndex
-			}
 
-			metName := strings.TrimSpace(line[0:startLabelIndex])
+		for _, sample := range decSamples {
+			metName := string(sample.Metric[model.MetricNameLabel])
+			if len(metName) == 0 {
+				continue
+			}
 			if _, ok := collector.metricsSet[metName]; collector.metricsSet != nil && !ok {
 				continue
 			}
 
-			if startLabelIndex+1 <= spaceIndex-1 {
-				metLabel = strings.TrimSpace(line[(startLabelIndex + 1):(spaceIndex - 1)])
-			}
-
-			metVal, err := strconv.ParseFloat(line[spaceIndex+1:], 64)
-			if err != nil {
-				errorSlice = append(errorSlice, err)
-			}
-			if math.IsNaN(metVal) {
-				metVal = 0
-			}
-
 			metric := v1.MetricVal{
-				Label:      metLabel,
-				FloatValue: metVal,
-				Timestamp:  currentTime,
+				FloatValue: float64(sample.Value),
+				Timestamp:  sample.Timestamp.Time(),
 			}
 			newMetrics[metName] = append(newMetrics[metName], metric)
 			if len(newMetrics) > collector.metricCountLimit {
 				return nextCollectionTime, nil, fmt.Errorf("too many metrics to collect")
 			}
 		}
+		decSamples = decSamples[:0]
 	}
+
+	if err != nil && err != io.EOF {
+		return nextCollectionTime, nil, err
+	}
+
 	for key, val := range newMetrics {
 		metrics[key] = append(metrics[key], val...)
 	}
 
-	return nextCollectionTime, metrics, compileErrors(errorSlice)
+	return nextCollectionTime, metrics, nil
 }
