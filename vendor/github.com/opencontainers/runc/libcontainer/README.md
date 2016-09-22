@@ -77,7 +77,7 @@ config := &configs.Config{
 		Parent: "system",
 		Resources: &configs.Resources{
 			MemorySwappiness: nil,
-			AllowAllDevices:  false,
+			AllowAllDevices:  nil,
 			AllowedDevices:   configs.DefaultAllowedDevices,
 		},
 	},
