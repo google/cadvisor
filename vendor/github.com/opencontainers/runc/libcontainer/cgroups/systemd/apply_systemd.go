@@ -388,6 +388,8 @@ func getSubsystemPath(c *configs.Cgroup, subsystem string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// if pid 1 is systemd 226 or later, it will be in init.scope, not the root
+	initPath = strings.TrimSuffix(filepath.Clean(initPath), "init.scope")
 
 	slice := "system.slice"
 	if c.Parent != "" {
@@ -455,6 +457,11 @@ func (m *Manager) GetStats() (*cgroups.Stats, error) {
 }
 
 func (m *Manager) Set(container *configs.Config) error {
+	// If Paths are set, then we are just joining cgroups paths
+	// and there is no need to set any values.
+	if m.Cgroups.Paths != nil {
+		return nil
+	}
 	for _, sys := range subsystems {
 		// Get the subsystem path, but don't error out for not found cgroups.
 		path, err := getSubsystemPath(container.Cgroups, sys.Name())
@@ -485,5 +492,8 @@ func setKernelMemory(c *configs.Cgroup) error {
 		return err
 	}
 
-	return os.MkdirAll(path, 0755)
+	if err := os.MkdirAll(path, 0755); err != nil {
+		return err
+	}
+	return fs.EnableKernelMemoryAccounting(path)
 }

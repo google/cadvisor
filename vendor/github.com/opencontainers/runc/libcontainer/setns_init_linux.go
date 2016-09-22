@@ -26,7 +26,7 @@ func (l *linuxSetnsInit) getSessionRingName() string {
 func (l *linuxSetnsInit) Init() error {
 	if !l.config.Config.NoNewKeyring {
 		// do not inherit the parent's session keyring
-		if _, err := keyctl.JoinSessionKeyring(l.getSessionRingName()); err != nil {
+		if _, err := keys.JoinSessionKeyring(l.getSessionRingName()); err != nil {
 			return err
 		}
 	}
