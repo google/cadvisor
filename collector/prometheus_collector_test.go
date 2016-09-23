@@ -55,6 +55,9 @@ go_goroutines 16
 # HELP metric_with_spaces_in_label A metric with spaces in a label.
 # TYPE metric_with_spaces_in_label gauge
 metric_with_spaces_in_label{name="Network Agent"} 72
+# HELP metric_with_multiple_labels A metric with multiple labels.
+# TYPE metric_with_multiple_labels gauge
+metric_with_multiple_labels{label1="One", label2="Two", label3="Three"} 81
 `
 		fmt.Fprintln(w, text)
 	}))
@@ -65,7 +68,7 @@ metric_with_spaces_in_label{name="Network Agent"} 72
 
 	var spec []v1.MetricSpec
 	require.NotPanics(t, func() { spec = collector.GetSpec() })
-	assert.Len(spec, 3)
+	assert.Len(spec, 4)
 	specNames := make(map[string]struct{}, 3)
 	for _, s := range spec {
 		specNames[s.Name] = struct{}{}
@@ -74,6 +77,7 @@ metric_with_spaces_in_label{name="Network Agent"} 72
 		"go_gc_duration_seconds":      {},
 		"go_goroutines":               {},
 		"metric_with_spaces_in_label": {},
+		"metric_with_multiple_labels": {},
 	}
 	assert.Equal(expectedSpecNames, specNames)
 
@@ -84,13 +88,27 @@ metric_with_spaces_in_label{name="Network Agent"} 72
 
 	go_gc_duration := metrics["go_gc_duration_seconds"]
 	assert.Equal(5.8348000000000004e-05, go_gc_duration[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds\xffquantile=0", go_gc_duration[0].Label)
 	assert.Equal(0.000499764, go_gc_duration[1].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds\xffquantile=1", go_gc_duration[1].Label)
+	go_gc_duration_sum := metrics["go_gc_duration_seconds_sum"]
+	assert.Equal(1.7560473e+07, go_gc_duration_sum[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds_sum", go_gc_duration_sum[0].Label)
+	go_gc_duration_count := metrics["go_gc_duration_seconds_count"]
+	assert.Equal(2693, go_gc_duration_count[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds_count", go_gc_duration_count[0].Label)
 
 	goRoutines := metrics["go_goroutines"]
 	assert.Equal(16, goRoutines[0].FloatValue)
+	assert.Equal("__name__=go_goroutines", goRoutines[0].Label)
 
 	metricWithSpaces := metrics["metric_with_spaces_in_label"]
 	assert.Equal(72, metricWithSpaces[0].FloatValue)
+	assert.Equal("__name__=metric_with_spaces_in_label\xffname=Network Agent", metricWithSpaces[0].Label)
+
+	metricWithMultipleLabels := metrics["metric_with_multiple_labels"]
+	assert.Equal(81, metricWithMultipleLabels[0].FloatValue)
+	assert.Equal("__name__=metric_with_multiple_labels\xfflabel1=One\xfflabel2=Two\xfflabel3=Three", metricWithMultipleLabels[0].Label)
 }
 
 func TestPrometheusEndpointConfig(t *testing.T) {

@@ -15,13 +15,15 @@
 package collector
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"time"
 
-	dto "github.com/prometheus/client_model/go"
+	rawmodel "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 	"github.com/prometheus/common/model"
 
@@ -118,7 +120,7 @@ func (collector *PrometheusCollector) GetSpec() []v1.MetricSpec {
 	var specs []v1.MetricSpec
 
 	for {
-		d := dto.MetricFamily{}
+		d := rawmodel.MetricFamily{}
 		if err = dec.Decode(&d); err != nil {
 			break
 		}
@@ -126,9 +128,11 @@ func (collector *PrometheusCollector) GetSpec() []v1.MetricSpec {
 		if len(name) == 0 {
 			continue
 		}
+		// If metrics to collect is specified, skip any metrics not in the list to collect.
 		if _, ok := collector.metricsSet[name]; collector.metricsSet != nil && !ok {
 			continue
 		}
+
 		spec := v1.MetricSpec{
 			Name:   name,
 			Type:   metricType(d.GetType()),
@@ -146,16 +150,55 @@ func (collector *PrometheusCollector) GetSpec() []v1.MetricSpec {
 
 // metricType converts Prometheus metric type to cadvisor metric type.
 // If there is no mapping then just return the name of the Prometheus metric type.
-func metricType(t dto.MetricType) v1.MetricType {
+func metricType(t rawmodel.MetricType) v1.MetricType {
 	switch t {
-	case dto.MetricType_COUNTER:
+	case rawmodel.MetricType_COUNTER:
 		return v1.MetricCumulative
-	case dto.MetricType_GAUGE:
+	case rawmodel.MetricType_GAUGE:
 		return v1.MetricGauge
 	default:
 		return v1.MetricType(t.String())
 	}
+}
 
+type prometheusLabels []*rawmodel.LabelPair
+
+func labelSetToLabelPairs(labels model.Metric) prometheusLabels {
+	var promLabels prometheusLabels
+	for k, v := range labels {
+		name := string(k)
+		value := string(v)
+		promLabels = append(promLabels, &rawmodel.LabelPair{Name: &name, Value: &value})
+	}
+	return promLabels
+}
+
+func (s prometheusLabels) Len() int      { return len(s) }
+func (s prometheusLabels) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+
+// ByName implements sort.Interface by providing Less and using the Len and
+// Swap methods of the embedded PrometheusLabels value.
+type byName struct{ prometheusLabels }
+
+func (s byName) Less(i, j int) bool {
+	return s.prometheusLabels[i].GetName() < s.prometheusLabels[j].GetName()
+}
+
+func prometheusLabelSetToCadvisorLabel(promLabels model.Metric) string {
+	labels := labelSetToLabelPairs(promLabels)
+	sort.Sort(byName{labels})
+	var b bytes.Buffer
+
+	for i, l := range labels {
+		if i > 0 {
+			b.WriteString("\xff")
+		}
+		b.WriteString(l.GetName())
+		b.WriteString("=")
+		b.WriteString(l.GetValue())
+	}
+
+	return string(b.Bytes())
 }
 
 //Returns collected metrics and the next collection time of the collector
@@ -182,6 +225,8 @@ func (collector *PrometheusCollector) Collect(metrics map[string][]v1.MetricVal)
 	}
 
 	var (
+		// 50 is chosen as a reasonable guesstimate at a number of metrics we can
+		// expect from virtually any endpoint to try to save allocations.
 		decSamples = make(model.Vector, 0, 50)
 		newMetrics = make(map[string][]v1.MetricVal)
 	)
@@ -195,13 +240,18 @@ func (collector *PrometheusCollector) Collect(metrics map[string][]v1.MetricVal)
 			if len(metName) == 0 {
 				continue
 			}
+			// If metrics to collect is specified, skip any metrics not in the list to collect.
 			if _, ok := collector.metricsSet[metName]; collector.metricsSet != nil && !ok {
 				continue
 			}
+			// TODO Handle multiple labels nicer. Prometheus metrics can have multiple
+			// labels, cadvisor only accepts a single string for the metric label.
+			label := prometheusLabelSetToCadvisorLabel(sample.Metric)
 
 			metric := v1.MetricVal{
 				FloatValue: float64(sample.Value),
 				Timestamp:  sample.Timestamp.Time(),
+				Label:      label,
 			}
 			newMetrics[metName] = append(newMetrics[metName], metric)
 			if len(newMetrics) > collector.metricCountLimit {
