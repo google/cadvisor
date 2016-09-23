@@ -45,7 +45,7 @@ var (
 	DefaultSocket = "/var/run/cadvisor-storage.sock"
 
 	// Signals to listen on to shut down the server.
-	TerminationSignals = []os.Signal{syscall.SIGINT, syscall.SIGKILL, syscall.SIGHUP}
+	TerminationSignals = []os.Signal{syscall.SIGINT, syscall.SIGHUP}
 
 	// Whether to silence log messages.
 	DisableLogging = false
@@ -90,7 +90,7 @@ func Start(socket string, driver storage.StorageDriver) (io.Closer, error) {
 // WaitForTermination blocks until a termination signal is received.
 func WaitForTermination() {
 	stop := make(chan os.Signal)
-	signal.Notify(stop, syscall.SIGINT, syscall.SIGKILL, syscall.SIGHUP)
+	signal.Notify(stop, TerminationSignals...)
 	<-stop
 }
 
