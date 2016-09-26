@@ -49,12 +49,12 @@ func (l *linuxStandardInit) Init() error {
 		ringname, keepperms, newperms := l.getSessionRingParams()
 
 		// do not inherit the parent's session keyring
-		sessKeyId, err := keyctl.JoinSessionKeyring(ringname)
+		sessKeyId, err := keys.JoinSessionKeyring(ringname)
 		if err != nil {
 			return err
 		}
 		// make session keyring searcheable
-		if err := keyctl.ModKeyringPerm(sessKeyId, keepperms, newperms); err != nil {
+		if err := keys.ModKeyringPerm(sessKeyId, keepperms, newperms); err != nil {
 			return err
 		}
 	}
