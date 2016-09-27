@@ -20,6 +20,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -125,10 +126,12 @@ func newStorage() (storage.StorageDriver, error) {
 		return nil, err
 	}
 	storageDriver := &Storage{
-		cadvisorParams:          cadvisorConfig,
-		innerStorage:            innerStorage,
-		lastTimeSentPropertyMap: make(map[string]time.Time),
-		lastTimeSentSeriesMap:   make(map[string]time.Time),
+		cadvisorParams:             cadvisorConfig,
+		innerStorage:               innerStorage,
+		lastTimeSentPropertyMap:    make(map[string]time.Time),
+		lastTimePropertyMapMutex:   &sync.Mutex{},
+		lastTimeSentSeriesMap:      make(map[string]time.Time),
+		lastTimeSentSeriesMapMutex: &sync.Mutex{},
 	}
 
 	time.AfterFunc(startDelay, func() {
@@ -144,8 +147,10 @@ type Storage struct {
 
 	innerStorage *atsdStorageDriver.Storage
 
-	lastTimeSentPropertyMap map[string]time.Time
-	lastTimeSentSeriesMap   map[string]time.Time
+	lastTimeSentPropertyMap    map[string]time.Time
+	lastTimePropertyMapMutex   *sync.Mutex
+	lastTimeSentSeriesMap      map[string]time.Time
+	lastTimeSentSeriesMapMutex *sync.Mutex
 }
 
 func (self *Storage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
@@ -166,7 +171,9 @@ func (self *Storage) AddStats(ref info.ContainerReference, stats *info.Container
 			self.innerStorage.QueuedSendSeriesCommands(taskGroup, taskSeriesCommands)
 			self.innerStorage.QueuedSendSeriesCommands(networkGroup, networkSeriesCommands)
 			self.innerStorage.QueuedSendSeriesCommands(filesytemGroup, fileSystemSeriesCommands)
+			self.lastTimeSentSeriesMapMutex.Lock()
 			self.lastTimeSentSeriesMap[ref.Name] = stats.Timestamp
+			self.lastTimeSentSeriesMapMutex.Unlock()
 		}
 
 		if self.needToSendProperties(ref.Name, stats.Timestamp) {
@@ -175,7 +182,9 @@ func (self *Storage) AddStats(ref info.ContainerReference, stats *info.Container
 			entities := RefToEntityCommands(self.DockerHost, ref)
 			self.innerStorage.QueuedSendEntityTagCommands(entities)
 
+			self.lastTimePropertyMapMutex.Lock()
 			self.lastTimeSentPropertyMap[ref.Name] = stats.Timestamp
+			self.lastTimePropertyMapMutex.Unlock()
 		}
 	}
 	return nil
@@ -188,11 +197,15 @@ func (self *Storage) Close() error {
 }
 
 func (self *Storage) needToSendProperties(containerRefName string, timestamp time.Time) bool {
+	self.lastTimePropertyMapMutex.Lock()
 	lastTime, ok := self.lastTimeSentPropertyMap[containerRefName]
+	self.lastTimePropertyMapMutex.Unlock()
 	return !(ok && timestamp.Sub(lastTime) < time.Duration(self.PropertyInterval))
 }
 func (self *Storage) needToSendSeries(containerRefName string, timestamp time.Time) bool {
+	self.lastTimeSentSeriesMapMutex.Lock()
 	lastTime, ok := self.lastTimeSentSeriesMap[containerRefName]
+	self.lastTimeSentSeriesMapMutex.Unlock()
 	return !(ok && timestamp.Sub(lastTime) < time.Duration(self.SamplingInterval)-timestampPeriodError)
 }
 
