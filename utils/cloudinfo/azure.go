@@ -15,9 +15,10 @@
 package cloudinfo
 
 import (
-	info "github.com/google/cadvisor/info/v1"
 	"io/ioutil"
 	"strings"
+
+	info "github.com/google/cadvisor/info/v1"
 )
 
 const (

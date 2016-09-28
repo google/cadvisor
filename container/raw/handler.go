@@ -18,6 +18,7 @@ package raw
 import (
 	"fmt"
 
+	"github.com/google/cadvisor/config"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -62,7 +63,7 @@ func isRootCgroup(name string) bool {
 func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
-	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
+	cHints, err := common.GetContainerHintsFromFile(config.Global.ContainerHintsFile)
 	if err != nil {
 		return nil, err
 	}

@@ -16,12 +16,12 @@ package machine
 
 import (
 	"bytes"
-	"flag"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"syscall"
 
+	"github.com/google/cadvisor/config"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/cloudinfo"
@@ -30,9 +30,6 @@ import (
 
 	"github.com/golang/glog"
 )
-
-var machineIdFilePath = flag.String("machine_id_file", "/etc/machine-id,/var/lib/dbus/machine-id", "Comma-separated list of files to check for machine-id. Use the first one that exists.")
-var bootIdFilePath = flag.String("boot_id_file", "/proc/sys/kernel/random/boot_id", "Comma-separated list of files to check for boot-id. Use the first one that exists.")
 
 func getInfoFromFiles(filePaths string) string {
 	if len(filePaths) == 0 {
@@ -102,9 +99,9 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		DiskMap:        diskMap,
 		NetworkDevices: netDevices,
 		Topology:       topology,
-		MachineID:      getInfoFromFiles(filepath.Join(rootFs, *machineIdFilePath)),
+		MachineID:      getInfoFromFiles(filepath.Join(rootFs, config.Global.MachineIDFilePath)),
 		SystemUUID:     systemUUID,
-		BootID:         getInfoFromFiles(filepath.Join(rootFs, *bootIdFilePath)),
+		BootID:         getInfoFromFiles(filepath.Join(rootFs, config.Global.BootIDFilePath)),
 		CloudProvider:  cloudProvider,
 		InstanceType:   instanceType,
 		InstanceID:     instanceID,

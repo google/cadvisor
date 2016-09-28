@@ -25,6 +25,7 @@ import (
 
 	"github.com/blang/semver"
 	dockertypes "github.com/docker/engine-api/types"
+	"github.com/google/cadvisor/config"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/devicemapper"
@@ -39,16 +40,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
-
 // The namespace under which Docker aliases are unique.
 const DockerNamespace = "docker"
 
 // Regexp that identifies docker cgroups, containers started with
 // --cgroup-parent have another prefix than 'docker'
 var dockerCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
-
-var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys that needs to be collected for docker containers")
 
 var (
 	// Basepath to all container specific information that libcontainer stores.
@@ -65,7 +62,7 @@ func RootDir() string {
 		if err == nil && status.RootDir != "" {
 			dockerRootDir = status.RootDir
 		} else {
-			dockerRootDir = *dockerRootDirFlag
+			dockerRootDir = config.Global.Docker.RootDir
 		}
 	})
 	return dockerRootDir
@@ -111,7 +108,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		return
 	}
 
-	metadataEnvs := strings.Split(*dockerEnvWhitelist, ",")
+	metadataEnvs := strings.Split(config.Global.Docker.EnvWhitelist, ",")
 
 	handler, err = newDockerContainerHandler(
 		client,

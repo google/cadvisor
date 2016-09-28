@@ -18,9 +18,9 @@ import (
 	"flag"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/google/cadvisor/cache/memory"
+	"github.com/google/cadvisor/config"
 	"github.com/google/cadvisor/storage"
 	_ "github.com/google/cadvisor/storage/bigquery"
 	_ "github.com/google/cadvisor/storage/elasticsearch"
@@ -34,8 +34,7 @@ import (
 )
 
 var (
-	storageDriver   = flag.String("storage_driver", "", fmt.Sprintf("Storage `driver` to use. Data is always cached shortly in memory, this controls where data is pushed besides the local cache. Empty means none. Options are: <empty>, %s", strings.Join(storage.ListDrivers(), ", ")))
-	storageDuration = flag.Duration("storage_duration", 2*time.Minute, "How long to keep data stored (Default: 2min).")
+	storageDriver = flag.String("storage_driver", "", fmt.Sprintf("Storage `driver` to use. Data is always cached shortly in memory, this controls where data is pushed besides the local cache. Empty means none. Options are: <empty>, %s", strings.Join(storage.ListDrivers(), ", ")))
 )
 
 // NewMemoryStorage creates a memory storage with an optional backend storage option.
@@ -47,6 +46,6 @@ func NewMemoryStorage() (*memory.InMemoryCache, error) {
 	if *storageDriver != "" {
 		glog.Infof("Using backend storage type %q", *storageDriver)
 	}
-	glog.Infof("Caching stats in memory for %v", *storageDuration)
-	return memory.New(*storageDuration, backendStorage), nil
+	glog.Infof("Caching stats in memory for %v", config.Global.CacheDuration)
+	return memory.New(config.Global.CacheDuration, backendStorage), nil
 }

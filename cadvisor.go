@@ -24,8 +24,8 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
-	"time"
 
+	"github.com/google/cadvisor/config"
 	"github.com/google/cadvisor/container"
 	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
@@ -33,29 +33,11 @@ import (
 	"github.com/google/cadvisor/version"
 
 	"crypto/tls"
+
 	"github.com/golang/glog"
 )
 
-var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
-var argPort = flag.Int("port", 8080, "port to listen")
-var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
-
 var versionFlag = flag.Bool("version", false, "print cAdvisor version and exit")
-
-var httpAuthFile = flag.String("http_auth_file", "", "HTTP auth file for the web UI")
-var httpAuthRealm = flag.String("http_auth_realm", "localhost", "HTTP auth realm for the web UI")
-var httpDigestFile = flag.String("http_digest_file", "", "HTTP digest file for the web UI")
-var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest file for the web UI")
-
-var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
-
-var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
-var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
-
-var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web interface host:port/debug/pprof/")
-
-var collectorCert = flag.String("collector_cert", "", "Collector's certificate, exposed to endpoints for certificate based authentication.")
-var collectorKey = flag.String("collector_key", "", "Key for the collector's certificate")
 
 var (
 	// Metrics to be ignored.
@@ -103,6 +85,7 @@ func init() {
 
 func main() {
 	defer glog.Flush()
+	config.AddFlags()
 	flag.Parse()
 
 	if *versionFlag {
@@ -122,16 +105,16 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
+	collectorHttpClient := createCollectorHttpClient(config.Global.CollectorCert, config.Global.CollectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient)
+	containerManager, err := manager.New(memoryStorage, sysFs, config.Global.MaxHousekeepingInterval, config.Global.AllowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
 
 	mux := http.NewServeMux()
 
-	if *enableProfiling {
+	if config.Global.EnableProfiling {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
 		mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
@@ -139,12 +122,12 @@ func main() {
 	}
 
 	// Register all HTTP handlers.
-	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
+	err = cadvisorhttp.RegisterHandlers(mux, containerManager, config.Global.HTTPAuthFile, config.Global.HTTPAuthRealm, config.Global.HTTPDigestFile, config.Global.HTTPDigestRealm)
 	if err != nil {
 		glog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
 
-	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, nil)
+	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, config.Global.PrometheusEndpoint, nil)
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {
@@ -154,9 +137,9 @@ func main() {
 	// Install signal handler.
 	installSignalHandler(containerManager)
 
-	glog.Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
+	glog.Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], config.Global.CadvisorPort)
 
-	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
+	addr := fmt.Sprintf("%s:%d", config.Global.CadvisorIP, config.Global.CadvisorPort)
 	glog.Fatal(http.ListenAndServe(addr, mux))
 }
 
@@ -164,10 +147,10 @@ func setMaxProcs() {
 	// TODO(vmarmol): Consider limiting if we have a CPU mask in effect.
 	// Allow as many threads as we have cores unless the user specified a value.
 	var numProcs int
-	if *maxProcs < 1 {
+	if config.Global.MaxProcs < 1 {
 		numProcs = runtime.NumCPU()
 	} else {
-		numProcs = *maxProcs
+		numProcs = config.Global.MaxProcs
 	}
 	runtime.GOMAXPROCS(numProcs)
 

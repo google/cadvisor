@@ -21,6 +21,7 @@ import (
 	"sync"
 
 	dclient "github.com/docker/engine-api/client"
+	"github.com/google/cadvisor/config"
 )
 
 var (
@@ -31,7 +32,7 @@ var (
 
 func Client() (*dclient.Client, error) {
 	dockerClientOnce.Do(func() {
-		dockerClient, dockerClientErr = dclient.NewClient(*ArgDockerEndpoint, "", nil, nil)
+		dockerClient, dockerClientErr = dclient.NewClient(config.Global.Docker.Endpoint, "", nil, nil)
 	})
 	return dockerClient, dockerClientErr
 }

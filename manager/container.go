@@ -15,7 +15,6 @@
 package manager
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -31,6 +30,7 @@ import (
 
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
+	"github.com/google/cadvisor/config"
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
@@ -40,10 +40,6 @@ import (
 	units "github.com/docker/go-units"
 	"github.com/golang/glog"
 )
-
-// Housekeeping interval.
-var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
-var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 
 var cgroupPathRegExp = regexp.MustCompile(`devices[^:]*:(.*?)[,;$]`)
 
@@ -319,7 +315,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 	cont := &containerData{
 		handler:                  handler,
 		memoryCache:              memoryCache,
-		housekeepingInterval:     *HousekeepingInterval,
+		housekeepingInterval:     config.Global.HousekeepingInterval,
 		maxHousekeepingInterval:  maxHousekeepingInterval,
 		allowDynamicHousekeeping: allowDynamicHousekeeping,
 		logUsage:                 logUsage,
@@ -331,7 +327,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 
 	cont.loadDecay = math.Exp(float64(-cont.housekeepingInterval.Seconds() / 10))
 
-	if *enableLoadReader {
+	if config.Global.EnableLoadReader {
 		// Create cpu load reader.
 		loadReader, err := cpuload.New()
 		if err != nil {
@@ -372,9 +368,9 @@ func (self *containerData) nextHousekeeping(lastHousekeeping time.Time) time.Tim
 				if self.housekeepingInterval > self.maxHousekeepingInterval {
 					self.housekeepingInterval = self.maxHousekeepingInterval
 				}
-			} else if self.housekeepingInterval != *HousekeepingInterval {
+			} else if self.housekeepingInterval != config.Global.HousekeepingInterval {
 				// Lower interval back to the baseline.
-				self.housekeepingInterval = *HousekeepingInterval
+				self.housekeepingInterval = config.Global.HousekeepingInterval
 			}
 		}
 	}
@@ -399,8 +395,8 @@ func (c *containerData) housekeeping() {
 
 	// Long housekeeping is either 100ms or half of the housekeeping interval.
 	longHousekeeping := 100 * time.Millisecond
-	if *HousekeepingInterval/2 < longHousekeeping {
-		longHousekeeping = *HousekeepingInterval / 2
+	if config.Global.HousekeepingInterval/2 < longHousekeeping {
+		longHousekeeping = config.Global.HousekeepingInterval / 2
 	}
 
 	// Housekeep every second.

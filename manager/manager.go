@@ -16,7 +16,6 @@
 package manager
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -27,6 +26,7 @@ import (
 
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
+	"github.com/google/cadvisor/config"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
@@ -49,12 +49,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 )
-
-var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
-var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log the usage of the cAdvisor container")
-var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h", "Max length of time for which to store events (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is a duration. Default is applied to all non-specified event types")
-var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
-var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
 
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
@@ -324,11 +318,11 @@ func (self *manager) Stop() error {
 func (self *manager) globalHousekeeping(quit chan error) {
 	// Long housekeeping is either 100ms or half of the housekeeping interval.
 	longHousekeeping := 100 * time.Millisecond
-	if *globalHousekeepingInterval/2 < longHousekeeping {
-		longHousekeeping = *globalHousekeepingInterval / 2
+	if config.Global.GlobalHousekeepingInterval/2 < longHousekeeping {
+		longHousekeeping = config.Global.GlobalHousekeepingInterval / 2
 	}
 
-	ticker := time.Tick(*globalHousekeepingInterval)
+	ticker := time.Tick(config.Global.GlobalHousekeepingInterval)
 	for {
 		select {
 		case t := <-ticker:
@@ -761,7 +755,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 		glog.V(3).Infof("Got config from %q: %q", v, configFile)
 
 		if strings.HasPrefix(k, "prometheus") || strings.HasPrefix(k, "Prometheus") {
-			newCollector, err := collector.NewPrometheusCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
+			newCollector, err := collector.NewPrometheusCollector(k, configFile, config.Global.ApplicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
 			if err != nil {
 				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
@@ -772,7 +766,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 				return err
 			}
 		} else {
-			newCollector, err := collector.NewCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
+			newCollector, err := collector.NewCollector(k, configFile, config.Global.ApplicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
 			if err != nil {
 				glog.Infof("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
 				return err
@@ -848,7 +842,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		return err
 	}
 
-	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
+	logUsage := config.Global.LogCadvisorUsage && containerName == m.cadvisorContainer
 	cont, err := newContainerData(containerName, m.memoryCache, handler, logUsage, collectorManager, m.maxHousekeepingInterval, m.allowDynamicHousekeeping)
 	if err != nil {
 		return err
@@ -1141,7 +1135,7 @@ func parseEventsStoragePolicy() events.StoragePolicy {
 	policy := events.DefaultStoragePolicy()
 
 	// Parse max age.
-	parts := strings.Split(*eventStorageAgeLimit, ",")
+	parts := strings.Split(config.Global.EventStorageAgeLimit, ",")
 	for _, part := range parts {
 		items := strings.Split(part, "=")
 		if len(items) != 2 {
@@ -1161,7 +1155,7 @@ func parseEventsStoragePolicy() events.StoragePolicy {
 	}
 
 	// Parse max number.
-	parts = strings.Split(*eventStorageEventLimit, ",")
+	parts = strings.Split(config.Global.EventStorageEventLimit, ",")
 	for _, part := range parts {
 		items := strings.Split(part, "=")
 		if len(items) != 2 {
