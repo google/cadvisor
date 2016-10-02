@@ -386,6 +386,10 @@ type NetworkStats struct {
 	Tcp TcpStat `json:"tcp"`
 	// TCP6 connection stats (Established, Listen...)
 	Tcp6 TcpStat `json:"tcp6"`
+	// UDP connection stats
+	Udp UdpStat `json:"udp"`
+	// UDP6 connection stats
+	Udp6 UdpStat `json:"udp6"`
 }
 
 type TcpStat struct {
@@ -411,6 +415,20 @@ type TcpStat struct {
 	Listen uint64
 	// Count of TCP connections in state "Closing"
 	Closing uint64
+}
+
+type UdpStat struct {
+	// Count of UDP sockets in state "Listen"
+	Listen uint64
+
+	// Count of UDP packets dropped by the IP stack
+	Dropped uint64
+
+	// Count of packets Queued for Receieve
+	RxQueued uint64
+
+	// Count of packets Queued for Transmit
+	TxQueued uint64
 }
 
 type FsStats struct {
