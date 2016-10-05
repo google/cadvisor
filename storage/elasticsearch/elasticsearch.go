@@ -40,10 +40,12 @@ type elasticStorage struct {
 }
 
 type detailSpec struct {
-	Timestamp      int64                `json:"timestamp"`
-	MachineName    string               `json:"machine_name,omitempty"`
-	ContainerName  string               `json:"container_Name,omitempty"`
-	ContainerStats *info.ContainerStats `json:"container_stats,omitempty"`
+	Timestamp       int64                `json:"timestamp"`
+	MachineName     string               `json:"machine_name,omitempty"`
+	ContainerName   string               `json:"container_Name,omitempty"`
+	ContainerID     string               `json:"container_Id,omitempty"`
+	ContainerStats  *info.ContainerStats `json:"container_stats,omitempty"`
+	ContainerLabels map[string]string    `json:"container_labels,omitempty"`
 }
 
 var (
@@ -51,6 +53,7 @@ var (
 	argIndexName     = flag.String("storage_driver_es_index", "cadvisor", "ElasticSearch index name")
 	argTypeName      = flag.String("storage_driver_es_type", "stats", "ElasticSearch type name")
 	argEnableSniffer = flag.Bool("storage_driver_es_enable_sniffer", false, "ElasticSearch uses a sniffing process to find all nodes of your cluster by default, automatically")
+	argEnableLabels  = flag.Bool("storage_driver_es_labels", false, "Enable Docker Labels collecting. Only compatible with ES >= 5.0")
 )
 
 func new() (storage.StorageDriver, error) {
@@ -76,11 +79,18 @@ func (self *elasticStorage) containerStatsAndDefaultValues(
 	} else {
 		containerName = ref.Name
 	}
+
+	var containerLabels map[string]string
+	if *argEnableLabels {
+		containerLabels = ref.Labels
+	}
+
 	detail := &detailSpec{
-		Timestamp:      timestamp,
-		MachineName:    self.machineName,
-		ContainerName:  containerName,
-		ContainerStats: stats,
+		Timestamp:       timestamp,
+		MachineName:     self.machineName,
+		ContainerName:   containerName,
+		ContainerLabels: containerLabels,
+		ContainerStats:  stats,
 	}
 	return detail
 }
