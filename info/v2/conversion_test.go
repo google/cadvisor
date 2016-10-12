@@ -185,6 +185,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 		Filesystem: &FilesystemStats{
 			TotalUsageBytes: &v1Stats.Filesystem[0].Usage,
 			BaseUsageBytes:  &v1Stats.Filesystem[0].BaseUsage,
+			InodeUsage:      &v1Stats.Filesystem[0].Inodes,
 		},
 	}
 

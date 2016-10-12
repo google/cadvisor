@@ -24,6 +24,7 @@ import (
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetDiskStatsMap(t *testing.T) {
@@ -85,7 +86,7 @@ func TestFileNotExist(t *testing.T) {
 	}
 }
 
-func TestDirUsage(t *testing.T) {
+func TestDirDiskUsage(t *testing.T) {
 	as := assert.New(t)
 	fsInfo, err := NewFsInfo(Context{})
 	as.NoError(err)
@@ -100,9 +101,61 @@ func TestDirUsage(t *testing.T) {
 	fi, err := f.Stat()
 	as.NoError(err)
 	expectedSize := uint64(fi.Size())
-	size, err := fsInfo.GetDirUsage(dir, time.Minute)
+	size, err := fsInfo.GetDirDiskUsage(dir, time.Minute)
 	as.NoError(err)
 	as.True(expectedSize <= size, "expected dir size to be at-least %d; got size: %d", expectedSize, size)
+}
+
+// Make sure that the timeout is actually being triggered (found this bug in PR#1489)
+func TestDirDiskUsageTimeout(t *testing.T) {
+	as := assert.New(t)
+	fsInfo, err := NewFsInfo(Context{})
+	as.NoError(err)
+	dir, err := ioutil.TempDir(os.TempDir(), "")
+	as.NoError(err)
+	defer os.RemoveAll(dir)
+	dataSize := 1024 * 10000 //10000 KB. It is large to make sure it triggers the timeout
+	b := make([]byte, dataSize)
+	f, err := ioutil.TempFile(dir, "")
+	as.NoError(err)
+	as.NoError(ioutil.WriteFile(f.Name(), b, 0700))
+	_, err = fsInfo.GetDirDiskUsage(dir, time.Nanosecond)
+	as.Error(err)
+}
+
+func TestDirInodeUsage(t *testing.T) {
+	as := assert.New(t)
+	fsInfo, err := NewFsInfo(Context{})
+	as.NoError(err)
+	dir, err := ioutil.TempDir(os.TempDir(), "")
+	as.NoError(err)
+	defer os.RemoveAll(dir)
+	numFiles := 1000
+	for i := 0; i < numFiles; i++ {
+		_, err := ioutil.TempFile(dir, "")
+		require.NoError(t, err)
+	}
+	inodes, err := fsInfo.GetDirInodeUsage(dir, time.Minute)
+	as.NoError(err)
+	// We sould get numFiles+1 inodes, since we get 1 inode for each file, plus 1 for the directory
+	as.True(uint64(numFiles+1) == inodes, "expected inodes in dir to be %d; got inodes: %d", numFiles+1, inodes)
+}
+
+//make sure that the timeout is actually being triggered
+func TestDirInodeUsageTimeout(t *testing.T) {
+	as := assert.New(t)
+	fsInfo, err := NewFsInfo(Context{})
+	as.NoError(err)
+	dir, err := ioutil.TempDir(os.TempDir(), "")
+	as.NoError(err)
+	defer os.RemoveAll(dir)
+	numFiles := 100000 //make sure we actually trigger the timeout
+	for i := 0; i < numFiles; i++ {
+		_, err := ioutil.TempFile(dir, "")
+		require.NoError(t, err)
+	}
+	_, err = fsInfo.GetDirInodeUsage(dir, time.Nanosecond)
+	as.Error(err)
 }
 
 var dmStatusTests = []struct {
