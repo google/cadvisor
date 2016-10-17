@@ -511,6 +511,9 @@ type ContainerStats struct {
 	// Task load stats
 	TaskStats LoadStats `json:"task_stats,omitempty"`
 
+	// Volume stats
+	VolumeIo  []VolumeIOStats `json:"volumeio,omitempty"`
+
 	//Custom metrics from all collectors
 	CustomMetrics map[string][]MetricVal `json:"custom_metrics,omitempty"`
 }
@@ -604,4 +607,20 @@ type OomKillEventData struct {
 
 	// The name of the killed process
 	ProcessName string `json:"process_name"`
+}
+
+type VolumeIoStats struct {
+	VolName      string `json:"name,omitempty"`
+	AvgRdsPerSec uint64 `json:"avg_rds_per_sec,omitempty"`
+	AvgWrsPerSec uint64 `json:"avg_wrs_per_sec,omitempty"`
+	AvgInProgRds uint64 `json:"avg_inprog_rds,omitempty"`
+	AvgInProgWrs uint64 `json:"avg_inprog_wrs,omitempty"`
+	AvgRdLat     uint64 `json:"avg_rd_latency,omitempty"`
+	AvgWrLat     uint64 `json:"avg_wr_latency,omitempty"`
+	AvgRdReqSz   uint64 `json:"avg_rd_req_sz,omitempty"`
+	AvgWrReqSz   uint64 `json:"avg_Wr_req_sz,omitempty"`
+	RdLatency    uint64 `json:"rd_latency,omitempty"`
+	WrLatency    uint64 `json:"wr_latency,omitempty"`
+	RdRate       uint64 `json:"rd_rate,omitempty"`
+	WrRate       uint64 `json:"wr_rate,omitempty"`
 }

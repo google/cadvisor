@@ -123,6 +123,9 @@ type DeprecatedContainerStats struct {
 	// Task load statistics
 	HasLoad bool         `json:"has_load"`
 	Load    v1.LoadStats `json:"load_stats,omitempty"`
+	// Volume stats
+	HasVolumeIo bool     `json:"has_custom_metrics"`
+	VolumeIo  []v1.VolumeIOStats `json:"volumeio,omitempty"`
 	// Custom Metrics
 	HasCustomMetrics bool                      `json:"has_custom_metrics"`
 	CustomMetrics    map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
@@ -146,6 +149,8 @@ type ContainerStats struct {
 	Filesystem *FilesystemStats `json:"filesystem,omitempty"`
 	// Task load statistics
 	Load *v1.LoadStats `json:"load_stats,omitempty"`
+	// Volume stats
+	VolumeIo  []v1.VolumeIOStats `json:"volumeio,omitempty"`
 	// Custom Metrics
 	CustomMetrics map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
 }

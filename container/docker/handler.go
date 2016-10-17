@@ -32,11 +32,13 @@ import (
 
 	docker "github.com/docker/engine-api/client"
 	dockercontainer "github.com/docker/engine-api/types/container"
+	mount "github.com/docker/engine-api/types/mount"
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	libcontainerconfigs "github.com/opencontainers/runc/libcontainer/configs"
 	"golang.org/x/net/context"
+	"github.com/google/cadvisor/container/docker/drivers"
 )
 
 const (
@@ -45,6 +47,12 @@ const (
 	// Path to the directory where docker stores log files if the json logging driver is enabled.
 	pathToContainersDir = "containers"
 )
+
+type volumeDriver interface {
+	GetStats(name string) (info.VolumeIoStats, error)
+}
+
+var volumeDrivers map[string]volumeDriver{}
 
 type dockerContainerHandler struct {
 	client             *docker.Client
@@ -101,6 +109,9 @@ type dockerContainerHandler struct {
 
 	// thin pool watcher
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
+
+        // map of volumes to their drivers for the container
+        volumes []MountPoint
 }
 
 var _ container.ContainerHandler = &dockerContainerHandler{}
@@ -259,6 +270,22 @@ func newDockerContainerHandler(
 		}
 	}
 
+	// Look for persistent volumes mounted for the container and init the driver
+	// for that.
+        handler.volumes = make(map[string][]string)
+	for _, mount := range ctnr.Mounts {
+		if mount.Type && mount.Type == mount.TypeVolume {
+			if  mount.Name && mount.Driver {
+				handler.volumes = append(handler.volumes, mount)
+				// Init the volume driver if not already done
+				if !volumeDrivers[mount.Driver] {
+					switch mount.Driver {
+						case "vmdk": volumeDrivers[mount.Driver] = newVmdkDriver()
+					}
+				}
+			}
+		}
+	} 
 	return handler, nil
 }
 
@@ -414,6 +441,16 @@ func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 		return stats, err
 	}
 
+	// Collect stats for volumes mounted for this container.
+	for driver := range self.volumes {
+		for volume := range self.volumes {
+			vstats, err := volumeDrivers[volume.driver].getStats(self.client,
+									     volume.Name)
+			if !err {
+				stats.VolumeIo = append(stats.VolumeIo, vstats)
+			}
+		}
+	}
 	return stats, nil
 }
 
