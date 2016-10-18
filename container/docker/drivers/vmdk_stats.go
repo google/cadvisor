@@ -13,35 +13,33 @@
 // limitations under the License.
 
 // Handler for VMDK Docker volume driver.
-package docker
+package drivers
 
 import (
-	"path"
-	"strings"
 	info "github.com/google/cadvisor/info/v1"
 	docker "github.com/docker/engine-api/client"
 	"golang.org/x/net/context"
 )
 
-IO_STATS = 'iostats'
+const io_stats="iostats"
 
 type VmdkDriver struct {
 }
 
-func newVmdkDriver() *VmdkDriver {
-	return &VmdkDrier{}
+func NewVmdkDriver() *VmdkDriver {
+	return &VmdkDriver{}
 }
 
-func (driver *VmdkDriver) GetStats(client docker.Client, name string) (VolumeIoStats, error) {
+func (driver *VmdkDriver) GetStats(client *docker.Client, name string) (info.VolumeIoStats, error) {
 	volume, err := client.VolumeInspect(context.Background(), name)	
 
-	if !err && volume.Status[IO_STATS] {
-		return ConvertToVolumeIoStats(volume.Status), Nil
+	if err == nil && volume.Status[io_stats] != nil {
+		return ConvertToVolumeIoStats(volume.Status), nil
 	} else {
-		return Nil, err
+		return info.VolumeIoStats{}, err
 	}
 }
 
-func ConvertToVolumeIoStats(status map[string]interface{}) VolumeIoStats {
-
+func ConvertToVolumeIoStats(status map[string]interface{}) info.VolumeIoStats {
+	return info.VolumeIoStats{}
 }

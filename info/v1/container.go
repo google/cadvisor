@@ -512,7 +512,7 @@ type ContainerStats struct {
 	TaskStats LoadStats `json:"task_stats,omitempty"`
 
 	// Volume stats
-	VolumeIo  []VolumeIOStats `json:"volumeio,omitempty"`
+	VolumeIo  []VolumeIoStats `json:"volumeio,omitempty"`
 
 	//Custom metrics from all collectors
 	CustomMetrics map[string][]MetricVal `json:"custom_metrics,omitempty"`

@@ -32,13 +32,13 @@ import (
 
 	docker "github.com/docker/engine-api/client"
 	dockercontainer "github.com/docker/engine-api/types/container"
-	mount "github.com/docker/engine-api/types/mount"
+	dockertypes "github.com/docker/engine-api/types"
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	libcontainerconfigs "github.com/opencontainers/runc/libcontainer/configs"
 	"golang.org/x/net/context"
-	"github.com/google/cadvisor/container/docker/drivers"
+        drivers "github.com/google/cadvisor/container/docker/drivers"
 )
 
 const (
@@ -48,11 +48,11 @@ const (
 	pathToContainersDir = "containers"
 )
 
-type volumeDriver interface {
-	GetStats(name string) (info.VolumeIoStats, error)
+type VolumeDriver interface {
+	GetStats(*docker.Client, string) (info.VolumeIoStats, error)
 }
 
-var volumeDrivers map[string]volumeDriver{}
+var volumeDrivers=map[string]VolumeDriver{}
 
 type dockerContainerHandler struct {
 	client             *docker.Client
@@ -111,7 +111,7 @@ type dockerContainerHandler struct {
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
 
         // map of volumes to their drivers for the container
-        volumes []MountPoint
+        volumes []dockertypes.MountPoint
 }
 
 var _ container.ContainerHandler = &dockerContainerHandler{}
@@ -272,16 +272,13 @@ func newDockerContainerHandler(
 
 	// Look for persistent volumes mounted for the container and init the driver
 	// for that.
-        handler.volumes = make(map[string][]string)
 	for _, mount := range ctnr.Mounts {
-		if mount.Type && mount.Type == mount.TypeVolume {
-			if  mount.Name && mount.Driver {
-				handler.volumes = append(handler.volumes, mount)
-				// Init the volume driver if not already done
-				if !volumeDrivers[mount.Driver] {
-					switch mount.Driver {
-						case "vmdk": volumeDrivers[mount.Driver] = newVmdkDriver()
-					}
+		if  mount.Name != "" && mount.Driver != "" {
+			handler.volumes = append(handler.volumes, mount)
+			// Init the volume driver if not already done
+			if volumeDrivers[mount.Driver] == nil {
+				switch mount.Driver {
+					case "vmdk": volumeDrivers[mount.Driver] = drivers.NewVmdkDriver()
 				}
 			}
 		}
@@ -445,13 +442,11 @@ func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 	}
 
 	// Collect stats for volumes mounted for this container.
-	for driver := range self.volumes {
-		for volume := range self.volumes {
-			vstats, err := volumeDrivers[volume.driver].getStats(self.client,
-									     volume.Name)
-			if !err {
-				stats.VolumeIo = append(stats.VolumeIo, vstats)
-			}
+	for _, volume := range self.volumes {
+			vstats, err := volumeDrivers[volume.Driver].GetStats(self.client,
+								     volume.Name)
+		if err == nil {
+			stats.VolumeIo = append(stats.VolumeIo, vstats)
 		}
 	}
 	return stats, nil
