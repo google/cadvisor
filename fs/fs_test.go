@@ -88,7 +88,7 @@ func TestFileNotExist(t *testing.T) {
 
 func TestDirDiskUsage(t *testing.T) {
 	as := assert.New(t)
-	fsInfo, err := NewFsInfo(Context{})
+	fsInfo, err := NewFsInfo(Context{RootPath: DefaultRootPath})
 	as.NoError(err)
 	dir, err := ioutil.TempDir(os.TempDir(), "")
 	as.NoError(err)
@@ -108,7 +108,7 @@ func TestDirDiskUsage(t *testing.T) {
 
 func TestDirInodeUsage(t *testing.T) {
 	as := assert.New(t)
-	fsInfo, err := NewFsInfo(Context{})
+	fsInfo, err := NewFsInfo(Context{RootPath: DefaultRootPath})
 	as.NoError(err)
 	dir, err := ioutil.TempDir(os.TempDir(), "")
 	as.NoError(err)
@@ -199,7 +199,7 @@ func TestAddSystemRootLabel(t *testing.T) {
 			labels:     map[string]string{},
 			partitions: map[string]partition{},
 		}
-		fsInfo.addSystemRootLabel(tt.mounts)
+		fsInfo.addSystemRootLabel(DefaultRootPath, tt.mounts)
 
 		if source, ok := fsInfo.labels[LabelSystemRoot]; !ok || source != tt.expected {
 			t.Errorf("case %d: expected mount source '%s', got '%s'", i, tt.expected, source)
