@@ -30,7 +30,6 @@ import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/docker"
 	containertest "github.com/google/cadvisor/container/testing"
-	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
 	"github.com/google/cadvisor/info/v2"
@@ -301,7 +300,7 @@ func TestDockerContainersInfo(t *testing.T) {
 }
 
 func TestNewNilManager(t *testing.T) {
-	_, err := New(nil, nil, 60*time.Second, true, container.MetricSet{}, http.DefaultClient, fs.DefaultRootPath)
+	_, err := New(nil, nil, 60*time.Second, true, container.MetricSet{}, http.DefaultClient)
 	if err == nil {
 		t.Fatalf("Expected nil manager to return error")
 	}
