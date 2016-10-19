@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/fs"
 	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/utils/sysfs"
@@ -124,7 +125,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient)
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient, fs.DefaultRootPath)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}

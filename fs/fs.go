@@ -43,6 +43,7 @@ const (
 	LabelSystemRoot   = "root"
 	LabelDockerImages = "docker-images"
 	LabelRktImages    = "rkt-images"
+	DefaultRootPath   = "/"
 )
 
 // The maximum number of `du` and `find` tasks that can be running at once.
@@ -87,6 +88,8 @@ type Context struct {
 	// docker root directory.
 	Docker  DockerContext
 	RktPath string
+	// The "rootFs" filesystem is the filesystem that contains the RootPath
+	RootPath string
 }
 
 type DockerContext struct {
@@ -115,7 +118,15 @@ func NewFsInfo(context Context) (FsInfo, error) {
 	fsInfo.addDockerImagesLabel(context, mounts)
 
 	glog.Infof("Filesystem partitions: %+v", fsInfo.partitions)
-	fsInfo.addSystemRootLabel(mounts)
+	rootDevice, err := fsInfo.GetDirFsDevice(context.RootPath)
+	if err != nil {
+		return nil, fmt.Errorf("error trying to get filesystem Device for rootPath %v: err: %v", context.RootPath, err)
+	}
+	rootMountpoint, err := fsInfo.GetMountpointForDevice(rootDevice.Device)
+	if err != nil {
+		return nil, fmt.Errorf("error trying to get MountPoint for Root Device: %v, err: %v", rootDevice, err)
+	}
+	fsInfo.addSystemRootLabel(rootMountpoint, mounts)
 	return fsInfo, nil
 }
 
@@ -187,10 +198,10 @@ func (self *RealFsInfo) getDockerDeviceMapperInfo(context DockerContext) (string
 	}, nil
 }
 
-// addSystemRootLabel attempts to determine which device contains the mount for /.
-func (self *RealFsInfo) addSystemRootLabel(mounts []*mount.Info) {
+// addSystemRootLabel attempts to determine which device contains the mount for rootMountpoint.
+func (self *RealFsInfo) addSystemRootLabel(rootMountpoint string, mounts []*mount.Info) {
 	for _, m := range mounts {
-		if m.Mountpoint == "/" {
+		if m.Mountpoint == rootMountpoint {
 			self.partitions[m.Source] = partition{
 				fsType:     m.Fstype,
 				mountpoint: m.Mountpoint,
