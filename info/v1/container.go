@@ -62,6 +62,7 @@ type ContainerSpec struct {
 
 	// HasDiskIo when true, indicates that DiskIo stats will be available.
 	HasDiskIo bool `json:"has_diskio"`
+	HasVolumeIo bool `json:"has_volumeio"`
 
 	HasCustomMetrics bool         `json:"has_custom_metrics"`
 	CustomMetrics    []MetricSpec `json:"custom_metrics,omitempty"`
@@ -611,18 +612,6 @@ type OomKillEventData struct {
 
 // Volume IO stats
 type VolumeIoStats struct {
-	Name         string `json:"name,omitempty"`
-	IoStats      map[string]interface{}
+	Volume         string `json:"volume,omitempty"`
+	Stats          map[string]interface{} `json:"stats,omitempty"`
 }
-//AvgRdsPerSec uint64 `json:"avg_rds_per_sec,omitempty"`
-//AvgWrsPerSec uint64 `json:"avg_wrs_per_sec,omitempty"`
-//AvgInProgRds uint64 `json:"avg_inprog_rds,omitempty"`
-//AvgInProgWrs uint64 `json:"avg_inprog_wrs,omitempty"`
-//AvgRdLat     uint64 `json:"avg_rd_latency,omitempty"`
-//AvgWrLat     uint64 `json:"avg_wr_latency,omitempty"`
-//AvgRdReqSz   uint64 `json:"avg_rd_req_sz,omitempty"`
-//AvgWrReqSz   uint64 `json:"avg_Wr_req_sz,omitempty"`
-//RdLatency    uint64 `json:"rd_latency,omitempty"`
-//WrLatency    uint64 `json:"wr_latency,omitempty"`
-//RdRate       uint64 `json:"rd_rate,omitempty"`
-//WrRate       uint64 `json:"wr_rate,omitempty"`

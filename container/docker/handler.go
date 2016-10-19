@@ -362,7 +362,8 @@ func (self *dockerContainerHandler) needNet() bool {
 
 func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := !self.ignoreMetrics.Has(container.DiskUsageMetrics)
-	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem)
+        hasVolumeIo := len(self.volumes) > 0
+	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem, hasVolumeIo)
 
 	spec.Labels = self.labels
 	spec.Envs = self.envs
@@ -443,10 +444,11 @@ func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 
 	// Collect stats for volumes mounted for this container.
 	for _, volume := range self.volumes {
-			vstats, err := volumeDrivers[volume.Driver].GetStats(self.client,
-								     volume.Name)
-		if err == nil {
-			stats.VolumeIo = append(stats.VolumeIo, vstats)
+		if volumeDrivers[volume.Driver] != nil {
+			vstats, err := volumeDrivers[volume.Driver].GetStats(self.client, volume.Name)
+			if err == nil {
+				stats.VolumeIo = append(stats.VolumeIo, vstats)
+			}
 		}
 	}
 	return stats, nil

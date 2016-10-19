@@ -194,7 +194,7 @@ func (handler *rktContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasNetwork := handler.hasNetwork && !handler.ignoreMetrics.Has(container.NetworkUsageMetrics)
 	hasFilesystem := !handler.ignoreMetrics.Has(container.DiskUsageMetrics)
 
-	spec, err := common.GetSpec(handler.cgroupPaths, handler.machineInfoFactory, hasNetwork, hasFilesystem)
+	spec, err := common.GetSpec(handler.cgroupPaths, handler.machineInfoFactory, hasNetwork, hasFilesystem, false)
 
 	spec.Labels = handler.labels
 

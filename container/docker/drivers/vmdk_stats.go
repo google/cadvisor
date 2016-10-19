@@ -23,6 +23,7 @@ import (
 
 const io_stats="iostats"
 
+// Empty for now.
 type VmdkVolumeStats struct {
 }
 
@@ -35,13 +36,7 @@ func (stats *VmdkVolumeStats) GetStats(client *docker.Client, name string) (info
 	volume, err := client.VolumeInspect(context.Background(), name)
 
 	if err == nil && volume.Status[io_stats] != nil {
-                io := info.VolumeIoStats{}
-		for k, v := range volume.Status[io_stats].(map[string]interface{}) {
-			io.IoStats[k] = v
-		}
-		io.Name = name
-
-		return io, nil
+		return info.VolumeIoStats{Volume: name, Stats:volume.Status[io_stats].(map[string]interface{})}, nil
 	} else {
 		return info.VolumeIoStats{}, err
 	}

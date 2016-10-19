@@ -45,7 +45,7 @@ func DebugInfo(watches map[string][]string) map[string][]string {
 	return out
 }
 
-func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoFactory, hasNetwork, hasFilesystem bool) (info.ContainerSpec, error) {
+func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoFactory, hasNetwork, hasFilesystem bool, hasVolumeIo bool) (info.ContainerSpec, error) {
 	var spec info.ContainerSpec
 
 	// Assume unified hierarchy containers.
@@ -116,6 +116,7 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 
 	spec.HasNetwork = hasNetwork
 	spec.HasFilesystem = hasFilesystem
+	spec.HasVolumeIo = hasVolumeIo
 
 	if blkioRoot, ok := cgroupPaths["blkio"]; ok && utils.FileExists(blkioRoot) {
 		spec.HasDiskIo = true
