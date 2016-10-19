@@ -609,18 +609,20 @@ type OomKillEventData struct {
 	ProcessName string `json:"process_name"`
 }
 
+// Volume IO stats
 type VolumeIoStats struct {
-	VolName      string `json:"name,omitempty"`
-	AvgRdsPerSec uint64 `json:"avg_rds_per_sec,omitempty"`
-	AvgWrsPerSec uint64 `json:"avg_wrs_per_sec,omitempty"`
-	AvgInProgRds uint64 `json:"avg_inprog_rds,omitempty"`
-	AvgInProgWrs uint64 `json:"avg_inprog_wrs,omitempty"`
-	AvgRdLat     uint64 `json:"avg_rd_latency,omitempty"`
-	AvgWrLat     uint64 `json:"avg_wr_latency,omitempty"`
-	AvgRdReqSz   uint64 `json:"avg_rd_req_sz,omitempty"`
-	AvgWrReqSz   uint64 `json:"avg_Wr_req_sz,omitempty"`
-	RdLatency    uint64 `json:"rd_latency,omitempty"`
-	WrLatency    uint64 `json:"wr_latency,omitempty"`
-	RdRate       uint64 `json:"rd_rate,omitempty"`
-	WrRate       uint64 `json:"wr_rate,omitempty"`
+	Name         string `json:"name,omitempty"`
+	IoStats      map[string]interface{}
 }
+//AvgRdsPerSec uint64 `json:"avg_rds_per_sec,omitempty"`
+//AvgWrsPerSec uint64 `json:"avg_wrs_per_sec,omitempty"`
+//AvgInProgRds uint64 `json:"avg_inprog_rds,omitempty"`
+//AvgInProgWrs uint64 `json:"avg_inprog_wrs,omitempty"`
+//AvgRdLat     uint64 `json:"avg_rd_latency,omitempty"`
+//AvgWrLat     uint64 `json:"avg_wr_latency,omitempty"`
+//AvgRdReqSz   uint64 `json:"avg_rd_req_sz,omitempty"`
+//AvgWrReqSz   uint64 `json:"avg_Wr_req_sz,omitempty"`
+//RdLatency    uint64 `json:"rd_latency,omitempty"`
+//WrLatency    uint64 `json:"wr_latency,omitempty"`
+//RdRate       uint64 `json:"rd_rate,omitempty"`
+//WrRate       uint64 `json:"wr_rate,omitempty"`

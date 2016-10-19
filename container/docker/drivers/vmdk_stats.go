@@ -23,23 +23,26 @@ import (
 
 const io_stats="iostats"
 
-type VmdkDriver struct {
+type VmdkVolumeStats struct {
 }
 
-func NewVmdkDriver() *VmdkDriver {
-	return &VmdkDriver{}
+func NewVmdkDriver() *VmdkVolumeStats {
+	return &VmdkVolumeStats{}
 }
 
-func (driver *VmdkDriver) GetStats(client *docker.Client, name string) (info.VolumeIoStats, error) {
-	volume, err := client.VolumeInspect(context.Background(), name)	
+// Stats returned for a VMDK volume.
+func (stats *VmdkVolumeStats) GetStats(client *docker.Client, name string) (info.VolumeIoStats, error) {
+	volume, err := client.VolumeInspect(context.Background(), name)
 
 	if err == nil && volume.Status[io_stats] != nil {
-		return ConvertToVolumeIoStats(volume.Status), nil
+                io := info.VolumeIoStats{}
+		for k, v := range volume.Status[io_stats].(map[string]interface{}) {
+			io.IoStats[k] = v
+		}
+		io.Name = name
+
+		return io, nil
 	} else {
 		return info.VolumeIoStats{}, err
 	}
-}
-
-func ConvertToVolumeIoStats(status map[string]interface{}) info.VolumeIoStats {
-	return info.VolumeIoStats{}
 }
