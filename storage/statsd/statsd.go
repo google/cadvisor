@@ -104,7 +104,7 @@ func (self *statsdStorage) containerFsStatsToValues(
 	}
 }
 
-//Push the data into redis
+// Push the data into redis
 func (self *statsdStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil

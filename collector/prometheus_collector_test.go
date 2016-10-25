@@ -31,26 +31,34 @@ import (
 func TestPrometheus(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
-	assert.Equal(collector.name, "Prometheus")
-	assert.Equal(collector.configFile.Endpoint.URL, "http://localhost:8080/metrics")
+	assert.Equal("Prometheus", collector.name)
+	assert.Equal("http://localhost:8080/metrics", collector.configFile.Endpoint.URL)
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		text := "# HELP go_gc_duration_seconds A summary of the GC invocation durations.\n"
-		text += "# TYPE go_gc_duration_seconds summary\n"
-		text += "go_gc_duration_seconds{quantile=\"0\"} 5.8348000000000004e-05\n"
-		text += "go_gc_duration_seconds{quantile=\"1\"} 0.000499764\n"
-		text += "# HELP go_goroutines Number of goroutines that currently exist.\n"
-		text += "# TYPE go_goroutines gauge\n"
-		text += "go_goroutines 16\n"
-		text += "# HELP empty_metric A metric without any values\n"
-		text += "# TYPE empty_metric counter\n"
-		text += "\n"
+		text := `# HELP go_gc_duration_seconds A summary of the GC invocation durations.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 5.8348000000000004e-05
+go_gc_duration_seconds{quantile="1"} 0.000499764
+go_gc_duration_seconds_sum 1.7560473e+07
+go_gc_duration_seconds_count 2693
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 16
+# HELP empty_metric A metric without any values
+# TYPE empty_metric counter
+# HELP metric_with_spaces_in_label A metric with spaces in a label.
+# TYPE metric_with_spaces_in_label gauge
+metric_with_spaces_in_label{name="Network Agent"} 72
+# HELP metric_with_multiple_labels A metric with multiple labels.
+# TYPE metric_with_multiple_labels gauge
+metric_with_multiple_labels{label1="One", label2="Two", label3="Three"} 81
+`
 		fmt.Fprintln(w, text)
 	}))
 
@@ -60,9 +68,18 @@ func TestPrometheus(t *testing.T) {
 
 	var spec []v1.MetricSpec
 	require.NotPanics(t, func() { spec = collector.GetSpec() })
-	assert.Len(spec, 2)
-	assert.Equal(spec[0].Name, "go_gc_duration_seconds")
-	assert.Equal(spec[1].Name, "go_goroutines")
+	assert.Len(spec, 4)
+	specNames := make(map[string]struct{}, 3)
+	for _, s := range spec {
+		specNames[s.Name] = struct{}{}
+	}
+	expectedSpecNames := map[string]struct{}{
+		"go_gc_duration_seconds":      {},
+		"go_goroutines":               {},
+		"metric_with_spaces_in_label": {},
+		"metric_with_multiple_labels": {},
+	}
+	assert.Equal(expectedSpecNames, specNames)
 
 	metrics := map[string][]v1.MetricVal{}
 	_, metrics, errMetric := collector.Collect(metrics)
@@ -70,11 +87,28 @@ func TestPrometheus(t *testing.T) {
 	assert.NoError(errMetric)
 
 	go_gc_duration := metrics["go_gc_duration_seconds"]
-	assert.Equal(go_gc_duration[0].FloatValue, 5.8348000000000004e-05)
-	assert.Equal(go_gc_duration[1].FloatValue, 0.000499764)
+	assert.Equal(5.8348000000000004e-05, go_gc_duration[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds\xffquantile=0", go_gc_duration[0].Label)
+	assert.Equal(0.000499764, go_gc_duration[1].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds\xffquantile=1", go_gc_duration[1].Label)
+	go_gc_duration_sum := metrics["go_gc_duration_seconds_sum"]
+	assert.Equal(1.7560473e+07, go_gc_duration_sum[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds_sum", go_gc_duration_sum[0].Label)
+	go_gc_duration_count := metrics["go_gc_duration_seconds_count"]
+	assert.Equal(2693, go_gc_duration_count[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds_count", go_gc_duration_count[0].Label)
 
 	goRoutines := metrics["go_goroutines"]
-	assert.Equal(goRoutines[0].FloatValue, 16)
+	assert.Equal(16, goRoutines[0].FloatValue)
+	assert.Equal("__name__=go_goroutines", goRoutines[0].Label)
+
+	metricWithSpaces := metrics["metric_with_spaces_in_label"]
+	assert.Equal(72, metricWithSpaces[0].FloatValue)
+	assert.Equal("__name__=metric_with_spaces_in_label\xffname=Network Agent", metricWithSpaces[0].Label)
+
+	metricWithMultipleLabels := metrics["metric_with_multiple_labels"]
+	assert.Equal(81, metricWithMultipleLabels[0].FloatValue)
+	assert.Equal("__name__=metric_with_multiple_labels\xfflabel1=One\xfflabel2=Two\xfflabel3=Three", metricWithMultipleLabels[0].Label)
 }
 
 func TestPrometheusEndpointConfig(t *testing.T) {
@@ -96,7 +130,7 @@ func TestPrometheusEndpointConfig(t *testing.T) {
 func TestPrometheusShortResponse(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
@@ -119,7 +153,7 @@ func TestPrometheusShortResponse(t *testing.T) {
 func TestPrometheusMetricCountLimit(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 10, containerHandler, http.DefaultClient)
@@ -148,7 +182,7 @@ func TestPrometheusMetricCountLimit(t *testing.T) {
 func TestPrometheusFiltersMetrics(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus_filtered.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
@@ -158,13 +192,16 @@ func TestPrometheusFiltersMetrics(t *testing.T) {
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		text := "# HELP go_gc_duration_seconds A summary of the GC invocation durations.\n"
-		text += "# TYPE go_gc_duration_seconds summary\n"
-		text += "go_gc_duration_seconds{quantile=\"0\"} 5.8348000000000004e-05\n"
-		text += "go_gc_duration_seconds{quantile=\"1\"} 0.000499764\n"
-		text += "# HELP go_goroutines Number of goroutines that currently exist.\n"
-		text += "# TYPE go_goroutines gauge\n"
-		text += "go_goroutines 16"
+		text := `# HELP go_gc_duration_seconds A summary of the GC invocation durations.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 5.8348000000000004e-05
+go_gc_duration_seconds{quantile="1"} 0.000499764
+go_gc_duration_seconds_sum 1.7560473e+07
+go_gc_duration_seconds_count 2693
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 16
+`
 		fmt.Fprintln(w, text)
 	}))
 
@@ -184,7 +221,7 @@ func TestPrometheusFiltersMetrics(t *testing.T) {
 func TestPrometheusFiltersMetricsCountLimit(t *testing.T) {
 	assert := assert.New(t)
 
-	//Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
+	// Create a prometheus collector using the config file 'sample_config_prometheus_filtered.json'
 	configFile, err := ioutil.ReadFile("config/sample_config_prometheus_filtered.json")
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
 	_, err = NewPrometheusCollector("Prometheus", configFile, 1, containerHandler, http.DefaultClient)

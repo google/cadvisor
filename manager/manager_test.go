@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"net/http"
+
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
@@ -33,7 +35,6 @@ import (
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 	"github.com/stretchr/testify/assert"
-	"net/http"
 )
 
 // TODO(vmarmol): Refactor these tests.
@@ -114,7 +115,7 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 			h.On("GetSpec").Return(
 				spec,
 				nil,
-			)
+			).Once()
 			handlerMap[h.Name] = h
 		},
 		t,
@@ -215,10 +216,9 @@ func TestGetContainerInfoV2Failure(t *testing.T) {
 
 	// Make GetSpec fail on /c2
 	mockErr := fmt.Errorf("intentional GetSpec failure")
-	failingHandler := containertest.NewMockContainerHandler(failing)
-	failingHandler.On("GetSpec").Return(info.ContainerSpec{}, mockErr)
-	failingHandler.On("Exists").Return(true)
-	*handlerMap[failing] = *failingHandler
+	handlerMap[failing].GetSpec() // Use up default GetSpec call, and replace below
+	handlerMap[failing].On("GetSpec").Return(info.ContainerSpec{}, mockErr)
+	handlerMap[failing].On("Exists").Return(true)
 	m.containers[namespacedContainerName{Name: failing}].lastUpdatedTime = time.Time{} // Force GetSpec.
 
 	infos, err := m.GetContainerInfoV2("/", options)

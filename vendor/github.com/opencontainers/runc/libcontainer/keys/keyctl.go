@@ -1,6 +1,6 @@
 // +build linux
 
-package keyctl
+package keys
 
 import (
 	"fmt"
