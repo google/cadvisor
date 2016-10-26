@@ -48,7 +48,7 @@ docker:
 
 presubmit: vet
 	@echo ">> checking go formatting"
-	@./build/check_gofmt.sh .
+	@./build/check_gofmt.sh
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
 
