@@ -26,12 +26,11 @@ import (
 	"runtime"
 	"syscall"
 
+	"github.com/golang/glog"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysinfo"
-
-	"github.com/golang/glog"
 )
 
 var (
@@ -41,6 +40,8 @@ var (
 	// Power systems have a different format so cater for both
 	cpuClockSpeedMHz     = regexp.MustCompile(`(?:cpu MHz|clock)\s*:\s*([0-9]+\.[0-9]+)(?:MHz)?`)
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
+	numaMemorySizeRegexp = regexp.MustCompile(`Node ([0-9]+) MemTotal:\s*([0-9]+) kB`)
+	numaMemoryFreeRegexp = regexp.MustCompile(`Node ([0-9]+) MemFree:\s*([0-9]+) kB`)
 	swapCapacityRegexp   = regexp.MustCompile(`SwapTotal:\s*([0-9]+) kB`)
 )
 
@@ -212,6 +213,59 @@ func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 		}
 	}
 	return nodes, numCores, nil
+}
+
+func GetNumaCpuDetails(input []byte) (int, []string, error) {
+	var pos int
+	var cores []string
+	var numCores int
+	cpuBitMask := strings.Split(string(input), ",")
+	l := len(cpuBitMask)
+	if l == 0 {
+		return -1, nil, fmt.Errorf("Something wrong, no cpu detected")
+	}
+	for i := range cpuBitMask {
+		hex := strings.Replace(cpuBitMask[l-i-1], "\n", "", -1)
+		mask, err := strconv.ParseInt(hex, 16, 0)
+		if err != nil {
+			return -1, nil, fmt.Errorf("Something went wrong in format conversion: %v", err)
+		}
+		for mask > 0 {
+			if (mask & 1) != 0 {
+				numCores++
+				cores = append(cores, strconv.Itoa(pos))
+			}
+			mask >>= 1
+			pos++
+		}
+	}
+	return numCores, cores, nil
+}
+
+func GetNumaMemoryStats(meminfo []byte) (uint64, uint64, error) {
+	var err_msg error
+	for {
+		matches := numaMemorySizeRegexp.FindSubmatch(meminfo)
+		if len(matches) != 3 {
+			err_msg = fmt.Errorf("could not detect memory size from numa node: %q", string(meminfo))
+			break
+		}
+		size, err := strconv.ParseFloat(string(matches[2]), 64)
+		if err != nil {
+			err_msg = err
+		}
+		matches = numaMemoryFreeRegexp.FindSubmatch(meminfo)
+		if len(matches) != 3 {
+			err_msg = fmt.Errorf("could not detect free memory from numa node: %q", string(meminfo))
+			break
+		}
+		free, err := strconv.ParseFloat(string(matches[2]), 64)
+		if err != nil {
+			err_msg = err
+		}
+		return uint64(size), uint64(free), nil
+	}
+	return 0, 0, err_msg
 }
 
 func extractValue(s string, r *regexp.Regexp) (bool, int, error) {

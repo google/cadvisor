@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"flag"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -59,6 +60,42 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	if err != nil {
 		return nil, err
 	}
+	f, err := os.Open("/sys/devices/system/node")
+	if err != nil {
+		glog.Errorf("Failed to open NUMA Nodes: %v", err)
+	}
+
+	nodes, err := f.Readdirnames(0)
+	if err != nil {
+		glog.Errorf("Failed to read NUMA nodes: %v", err)
+	}
+
+	numaTopology := make(map[string]*info.NumaNode)
+	var numNumaNodes int
+	for _, v := range nodes {
+		found := strings.HasPrefix(v, "node")
+		if found {
+			numaTopology[v] = nil
+			meminfo, err := ioutil.ReadFile("/sys/devices/system/node/" + v + "/meminfo")
+			size, free, err := GetNumaMemoryStats(meminfo)
+			if err != nil {
+				glog.Errorf("Failed to parse memory node details for the NUMA node, %v: %v", v, err)
+			}
+			cpumap, err := ioutil.ReadFile("/sys/devices/system/node/" + v + "/cpumap")
+			numCores, cores, err := GetNumaCpuDetails(cpumap)
+			if err != nil {
+				glog.Errorf("Failed to cpu details for the NUMA node, %v: %v", v, err)
+			}
+			newNumaNode := info.NumaNode{
+				MemorySize: size,
+				MemoryFree: free,
+				NumCores:   numCores,
+				Cores:      cores,
+			}
+			numaTopology[v] = &newNumaNode
+			numNumaNodes++
+		}
+	}
 
 	memoryCapacity, err := GetMachineMemoryCapacity()
 	if err != nil {
@@ -97,11 +134,13 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 
 	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
+		NumNumaNodes:   numNumaNodes,
 		CpuFrequency:   clockSpeed,
 		MemoryCapacity: memoryCapacity,
 		DiskMap:        diskMap,
 		NetworkDevices: netDevices,
 		Topology:       topology,
+		NumaTopology:   numaTopology,
 		MachineID:      getInfoFromFiles(filepath.Join(rootFs, *machineIdFilePath)),
 		SystemUUID:     systemUUID,
 		BootID:         getInfoFromFiles(filepath.Join(rootFs, *bootIdFilePath)),

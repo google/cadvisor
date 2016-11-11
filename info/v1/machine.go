@@ -31,6 +31,20 @@ type FsInfo struct {
 	HasInodes bool `json:"has_inodes"`
 }
 
+type NumaNode struct {
+	// Per-numa-node free memory
+	MemoryFree uint64 `json:"numa_memory_free"`
+
+	// Per-numa-node total memory size
+	MemorySize uint64 `json:"numa_memory_size"`
+
+	// Number of cores on the NUMA node
+	NumCores int `json:"numa_num_cores"`
+
+	// list of all the core-ids that NUMA node owns
+	Cores []string `json:"cores"`
+}
+
 type Node struct {
 	Id int `json:"node_id"`
 	// Per-node memory
@@ -148,6 +162,9 @@ type MachineInfo struct {
 	// The number of cores in this machine.
 	NumCores int `json:"num_cores"`
 
+	// The number of NUMA nodes in this machine.
+	NumNumaNodes int `json:"num_numa_nodes"`
+
 	// Maximum clock speed for the cores, in KHz.
 	CpuFrequency uint64 `json:"cpu_frequency_khz"`
 
@@ -175,6 +192,10 @@ type MachineInfo struct {
 	// Machine Topology
 	// Describes cpu/memory layout and hierarchy.
 	Topology []Node `json:"topology"`
+
+	// NUMA Topology
+	// Describes cpu/memory layout and hierarchy for each NUMA node.
+	NumaTopology map[string]*NumaNode `json:"numa_topology"`
 
 	// Cloud provider the machine belongs to.
 	CloudProvider CloudProvider `json:"cloud_provider"`
