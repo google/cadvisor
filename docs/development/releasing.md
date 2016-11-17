@@ -47,28 +47,11 @@ Command: `make release`
 - Try to build it from the release branch, since we include that in the binary version
 - Verify the ldflags output, in particular check the Version, BuildUser, and GoVersion are expected
 
-Once the build is complete, record the sh1 and md5 hashes:
+Once the build is complete, check the VERSION and note the sha1 and md5 hashes.
 
-```
-$ sha1sum cadvisor
-$ md5sum cadvisor
-```
+## 4. Push the Docker images
 
-Update the github release by uploading the release binary, and filling in the hashes.
-
-## 4. Build & push the Docker images
-
-```
-$ VERSION=v0.23.1  # Example
-$ docker build -t google/cadvisor:$VERSION -f deploy/Dockerfile .
-...
-Successfully built a811aa33809f
-$ docker tag google/cadvisor:$VERSION \
-  gcr.io/google_containers/cadvisor:$VERSION
-```
-
-### 4.a Push to Docker Hub
-
+Docker Hub:
 ```
 $ docker login
 Username: ****
@@ -77,7 +60,7 @@ $ docker push google/cadvisor:$VERSION
 $ docker logout # Good practice with shared account
 ```
 
-### 4.b Push to Google Container Registry
+Google Container Registry:
 
 ```
 $ gcloud auth login <account>
@@ -100,6 +83,7 @@ Go to https://github.com/google/cadvisor/releases and click "Draft a new release
 - Body should start with release notes (from CHANGELOG.md)
 - Next is the Docker image: `google/cadvisor:$VERSION`
 - Next are the binary hashes (from step 3)
+- Upload the binary build in step 3
 - If this is an alpha or beta release, mark the release as a "pre-release"
 - Click publish when done
 
