@@ -39,7 +39,7 @@ func ThinLsBinaryPresent() (string, error) {
 		err        error
 	)
 
-	for _, path := range []string{"/bin", "/usr/sbin/", "/usr/bin"} {
+	for _, path := range []string{"/bin", "/sbin/", "/usr/sbin/", "/usr/bin"} {
 		// try paths for non-containerized operation
 		// note: thin_ls is most likely a symlink to pdata_tools
 		thinLsPath = filepath.Join(path, "thin_ls")
