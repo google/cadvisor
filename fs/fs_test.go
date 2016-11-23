@@ -24,6 +24,7 @@ import (
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetDiskStatsMap(t *testing.T) {
@@ -85,7 +86,7 @@ func TestFileNotExist(t *testing.T) {
 	}
 }
 
-func TestDirUsage(t *testing.T) {
+func TestDirDiskUsage(t *testing.T) {
 	as := assert.New(t)
 	fsInfo, err := NewFsInfo(Context{})
 	as.NoError(err)
@@ -100,9 +101,27 @@ func TestDirUsage(t *testing.T) {
 	fi, err := f.Stat()
 	as.NoError(err)
 	expectedSize := uint64(fi.Size())
-	size, err := fsInfo.GetDirUsage(dir, time.Minute)
+	size, err := fsInfo.GetDirDiskUsage(dir, time.Minute)
 	as.NoError(err)
 	as.True(expectedSize <= size, "expected dir size to be at-least %d; got size: %d", expectedSize, size)
+}
+
+func TestDirInodeUsage(t *testing.T) {
+	as := assert.New(t)
+	fsInfo, err := NewFsInfo(Context{})
+	as.NoError(err)
+	dir, err := ioutil.TempDir(os.TempDir(), "")
+	as.NoError(err)
+	defer os.RemoveAll(dir)
+	numFiles := 1000
+	for i := 0; i < numFiles; i++ {
+		_, err := ioutil.TempFile(dir, "")
+		require.NoError(t, err)
+	}
+	inodes, err := fsInfo.GetDirInodeUsage(dir, time.Minute)
+	as.NoError(err)
+	// We sould get numFiles+1 inodes, since we get 1 inode for each file, plus 1 for the directory
+	as.True(uint64(numFiles+1) == inodes, "expected inodes in dir to be %d; got inodes: %d", numFiles+1, inodes)
 }
 
 var dmStatusTests = []struct {

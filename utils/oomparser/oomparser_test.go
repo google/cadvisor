@@ -18,10 +18,11 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const startLine = "Jan 21 22:01:49 localhost kernel: [62278.816267] ruby invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0"
@@ -32,7 +33,7 @@ const systemLogFile = "systemOomExampleLog.txt"
 
 func createExpectedContainerOomInstance(t *testing.T) *OomInstance {
 	const longForm = "Jan _2 15:04:05 2006"
-	deathTime, err := time.ParseInLocation(longForm, "Jan  5 15:19:27 2015", time.Local)
+	deathTime, err := time.ParseInLocation(longForm, fmt.Sprintf("Jan  5 15:19:27 %d", time.Now().Year()), time.Local)
 	if err != nil {
 		t.Fatalf("could not parse expected time when creating expected container oom instance. Had error %v", err)
 		return nil
@@ -42,13 +43,13 @@ func createExpectedContainerOomInstance(t *testing.T) *OomInstance {
 		ProcessName:         "memorymonster",
 		TimeOfDeath:         deathTime,
 		ContainerName:       "/mem2",
-		VictimContainerName: "/mem3",
+		VictimContainerName: "/mem2",
 	}
 }
 
 func createExpectedSystemOomInstance(t *testing.T) *OomInstance {
 	const longForm = "Jan _2 15:04:05 2006"
-	deathTime, err := time.ParseInLocation(longForm, "Jan 28 19:58:45 2015", time.Local)
+	deathTime, err := time.ParseInLocation(longForm, fmt.Sprintf("Jan 28 19:58:45 %d", time.Now().Year()), time.Local)
 	if err != nil {
 		t.Fatalf("could not parse expected time when creating expected system oom instance. Had error %v", err)
 		return nil
@@ -58,7 +59,7 @@ func createExpectedSystemOomInstance(t *testing.T) *OomInstance {
 		ProcessName:         "badsysprogram",
 		TimeOfDeath:         deathTime,
 		ContainerName:       "/",
-		VictimContainerName: "/",
+		VictimContainerName: "",
 	}
 }
 
@@ -148,10 +149,7 @@ func helpTestStreamOoms(oomCheckInstance *OomInstance, sysFile string, t *testin
 
 	select {
 	case oomInstance := <-outStream:
-		if reflect.DeepEqual(*oomCheckInstance, *oomInstance) {
-			t.Errorf("wrong instance returned. Expected %v and got %v",
-				oomCheckInstance, oomInstance)
-		}
+		assert.Equal(t, oomCheckInstance, oomInstance)
 	case <-timeout:
 		t.Error(
 			"timeout happened before oomInstance was found in test file")
