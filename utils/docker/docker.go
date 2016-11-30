@@ -23,11 +23,12 @@ import (
 )
 
 const (
-	DockerInfoDriver         = "Driver"
-	DockerInfoDriverStatus   = "DriverStatus"
-	DriverStatusPoolName     = "Pool Name"
-	DriverStatusDataLoopFile = "Data loop file"
-	DriverStatusMetadataFile = "Metadata file"
+	DockerInfoDriver          = "Driver"
+	DockerInfoDriverStatus    = "DriverStatus"
+	DriverStatusPoolName      = "Pool Name"
+	DriverStatusDataLoopFile  = "Data loop file"
+	DriverStatusMetadataFile  = "Metadata file"
+	DriverStatusParentDataset = "Parent Dataset"
 )
 
 func DriverStatusValue(status [][2]string, target string) string {
