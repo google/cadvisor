@@ -33,6 +33,7 @@ import (
 	"github.com/google/cadvisor/machine"
 	"github.com/google/cadvisor/manager/watcher"
 	dockerutil "github.com/google/cadvisor/utils/docker"
+	"github.com/google/cadvisor/zfs"
 
 	docker "github.com/docker/engine-api/client"
 	"github.com/golang/glog"
@@ -105,6 +106,8 @@ type dockerFactory struct {
 	ignoreMetrics container.MetricSet
 
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
+
+	zfsWatcher *zfs.ZfsWatcher
 }
 
 func (self *dockerFactory) String() string {
@@ -132,6 +135,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.dockerVersion,
 		self.ignoreMetrics,
 		self.thinPoolWatcher,
+		self.zfsWatcher,
 	)
 	return
 }
@@ -216,6 +220,21 @@ func startThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolW
 
 	go thinPoolWatcher.Start()
 	return thinPoolWatcher, nil
+}
+
+func startZfsWatcher(dockerInfo *dockertypes.Info) (*zfs.ZfsWatcher, error) {
+	filesystem, err := dockerutil.DockerZfsFilesystem(*dockerInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	zfsWatcher, err := zfs.NewZfsWatcher(filesystem)
+	if err != nil {
+		return nil, err
+	}
+
+	go zfsWatcher.Start()
+	return zfsWatcher, nil
 }
 
 func ensureThinLsKernelVersion(kernelVersion string) error {
@@ -306,6 +325,14 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		}
 	}
 
+	var zfsWatcher *zfs.ZfsWatcher
+	if storageDriver(dockerInfo.Driver) == zfsStorageDriver {
+		zfsWatcher, err = startZfsWatcher(dockerInfo)
+		if err != nil {
+			glog.Errorf("zfs filesystem stats will not be reported: %v", err)
+		}
+	}
+
 	glog.Infof("Registering Docker factory")
 	f := &dockerFactory{
 		cgroupSubsystems:   cgroupSubsystems,
@@ -317,6 +344,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		storageDir:         RootDir(),
 		ignoreMetrics:      ignoreMetrics,
 		thinPoolWatcher:    thinPoolWatcher,
+		zfsWatcher:         zfsWatcher,
 	}
 
 	container.RegisterContainerHandlerFactory(f, []watcher.ContainerWatchSource{watcher.Raw})
