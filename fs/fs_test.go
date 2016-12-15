@@ -24,6 +24,7 @@ import (
 
 	"github.com/docker/docker/pkg/mount"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetDiskStatsMap(t *testing.T) {
@@ -85,7 +86,7 @@ func TestFileNotExist(t *testing.T) {
 	}
 }
 
-func TestDirUsage(t *testing.T) {
+func TestDirDiskUsage(t *testing.T) {
 	as := assert.New(t)
 	fsInfo, err := NewFsInfo(Context{})
 	as.NoError(err)
@@ -100,9 +101,27 @@ func TestDirUsage(t *testing.T) {
 	fi, err := f.Stat()
 	as.NoError(err)
 	expectedSize := uint64(fi.Size())
-	size, err := fsInfo.GetDirUsage(dir, time.Minute)
+	size, err := fsInfo.GetDirDiskUsage(dir, time.Minute)
 	as.NoError(err)
 	as.True(expectedSize <= size, "expected dir size to be at-least %d; got size: %d", expectedSize, size)
+}
+
+func TestDirInodeUsage(t *testing.T) {
+	as := assert.New(t)
+	fsInfo, err := NewFsInfo(Context{})
+	as.NoError(err)
+	dir, err := ioutil.TempDir(os.TempDir(), "")
+	as.NoError(err)
+	defer os.RemoveAll(dir)
+	numFiles := 1000
+	for i := 0; i < numFiles; i++ {
+		_, err := ioutil.TempFile(dir, "")
+		require.NoError(t, err)
+	}
+	inodes, err := fsInfo.GetDirInodeUsage(dir, time.Minute)
+	as.NoError(err)
+	// We sould get numFiles+1 inodes, since we get 1 inode for each file, plus 1 for the directory
+	as.True(uint64(numFiles+1) == inodes, "expected inodes in dir to be %d; got inodes: %d", numFiles+1, inodes)
 }
 
 var dmStatusTests = []struct {
@@ -429,6 +448,70 @@ func TestAddDockerImagesLabel(t *testing.T) {
 		}
 		if e, a := *tt.expectedPartition, fsInfo.partitions[tt.expectedDockerDevice]; !reflect.DeepEqual(e, a) {
 			t.Errorf("%s: docker partition: expected %#v, got %#v", tt.name, e, a)
+		}
+	}
+}
+
+func TestProcessMounts(t *testing.T) {
+	tests := []struct {
+		name             string
+		mounts           []*mount.Info
+		excludedPrefixes []string
+		expected         map[string]partition
+	}{
+		{
+			name: "unsupported fs types",
+			mounts: []*mount.Info{
+				{Fstype: "overlay"},
+				{Fstype: "somethingelse"},
+			},
+			expected: map[string]partition{},
+		},
+		{
+			name: "avoid bind mounts",
+			mounts: []*mount.Info{
+				{Root: "/", Mountpoint: "/", Source: "/dev/sda1", Fstype: "xfs", Major: 253, Minor: 0},
+				{Root: "/foo", Mountpoint: "/bar", Source: "/dev/sda1", Fstype: "xfs", Major: 253, Minor: 0},
+			},
+			expected: map[string]partition{
+				"/dev/sda1": {fsType: "xfs", mountpoint: "/", major: 253, minor: 0},
+			},
+		},
+		{
+			name: "exclude prefixes",
+			mounts: []*mount.Info{
+				{Root: "/", Mountpoint: "/someother", Source: "/dev/sda1", Fstype: "xfs", Major: 253, Minor: 2},
+				{Root: "/", Mountpoint: "/", Source: "/dev/sda2", Fstype: "xfs", Major: 253, Minor: 0},
+				{Root: "/", Mountpoint: "/excludeme", Source: "/dev/sda3", Fstype: "xfs", Major: 253, Minor: 1},
+			},
+			excludedPrefixes: []string{"/exclude", "/some"},
+			expected: map[string]partition{
+				"/dev/sda2": {fsType: "xfs", mountpoint: "/", major: 253, minor: 0},
+			},
+		},
+		{
+			name: "supported fs types",
+			mounts: []*mount.Info{
+				{Root: "/", Mountpoint: "/a", Source: "/dev/sda", Fstype: "ext3", Major: 253, Minor: 0},
+				{Root: "/", Mountpoint: "/b", Source: "/dev/sdb", Fstype: "ext4", Major: 253, Minor: 1},
+				{Root: "/", Mountpoint: "/c", Source: "/dev/sdc", Fstype: "btrfs", Major: 253, Minor: 2},
+				{Root: "/", Mountpoint: "/d", Source: "/dev/sdd", Fstype: "xfs", Major: 253, Minor: 3},
+				{Root: "/", Mountpoint: "/e", Source: "/dev/sde", Fstype: "zfs", Major: 253, Minor: 4},
+			},
+			expected: map[string]partition{
+				"/dev/sda": {fsType: "ext3", mountpoint: "/a", major: 253, minor: 0},
+				"/dev/sdb": {fsType: "ext4", mountpoint: "/b", major: 253, minor: 1},
+				"/dev/sdc": {fsType: "btrfs", mountpoint: "/c", major: 253, minor: 2},
+				"/dev/sdd": {fsType: "xfs", mountpoint: "/d", major: 253, minor: 3},
+				"/dev/sde": {fsType: "zfs", mountpoint: "/e", major: 253, minor: 4},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		actual := processMounts(test.mounts, test.excludedPrefixes)
+		if !reflect.DeepEqual(test.expected, actual) {
+			t.Errorf("%s: expected %#v, got %#v", test.name, test.expected, actual)
 		}
 	}
 }

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-GO_FILES=$(find . -not -wholename "*Godeps*" -name "*.go")
+GO_FILES=$(find . -not -wholename "*Godeps*" -not -wholename "*vendor*" -name "*.go")
 
 for FILE in ${GO_FILES}; do
 	ERRS=`grep 'fmt.Errorf("[A-Z]' ${FILE}`

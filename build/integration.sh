@@ -18,17 +18,39 @@ if [[ -n "${JENKINS_HOME}" ]]; then
     exec ./build/jenkins_e2e.sh
 fi
 
-sudo -v || exit 1
+set -e
 
-echo ">> starting cAdvisor locally"
-sudo ./cadvisor --docker_env_metadata_whitelist=TEST_VAR &
+# Build the test binary.
+GO_FLAGS="-race" ./build/build.sh
 
-readonly TIMEOUT=120 # Timeout to wait for cAdvisor, in seconds.
+TEST_PID=$$
+sudo printf "" # Refresh sudo credentials if necessary.
+function start {
+  set +e  # We want to handle errors if cAdvisor crashes.
+  echo ">> starting cAdvisor locally"
+  GORACE="halt_on_error=1" sudo -E ./cadvisor --docker_env_metadata_whitelist=TEST_VAR
+  if [ $? != 0 ]; then
+    echo "!! cAdvisor exited unexpectedly with Exit $?"
+    kill $TEST_PID # cAdvisor crashed: abort testing.
+  fi
+}
+start &
+RUNNER_PID=$!
+
+function cleanup {
+  if pgrep cadvisor > /dev/null; then
+    echo ">> stopping cAdvisor"
+    sudo pkill -SIGINT cadvisor
+    wait $RUNNER_PID
+  fi
+}
+trap cleanup EXIT
+
+readonly TIMEOUT=30 # Timeout to wait for cAdvisor, in seconds.
 START=$(date +%s)
 while [ "$(curl -Gs http://localhost:8080/healthz)" != "ok" ]; do
   if (( $(date +%s) - $START > $TIMEOUT )); then
     echo "Timed out waiting for cAdvisor to start"
-    sudo pkill -9 cadvisor
     exit 1
   fi
   echo "Waiting for cAdvisor to start ..."
@@ -36,12 +58,4 @@ while [ "$(curl -Gs http://localhost:8080/healthz)" != "ok" ]; do
 done
 
 echo ">> running integration tests against local cAdvisor"
-godep go test github.com/google/cadvisor/integration/tests/... --vmodule=*=2
-STATUS=$?
-if [ $STATUS -ne 0 ]; then
-    echo "Integration tests failed"
-fi
-echo ">> stopping cAdvisor"
-sudo pkill -9 cadvisor
-
-exit $STATUS
+go test github.com/google/cadvisor/integration/tests/... --vmodule=*=2

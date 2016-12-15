@@ -64,7 +64,7 @@ func (self *redisStorage) defaultReadyToFlush() bool {
 	return time.Since(self.lastWrite) >= self.bufferDuration
 }
 
-//We must add some default params (for example: MachineName,ContainerName...)because containerStats do not include them
+// We must add some default params (for example: MachineName,ContainerName...)because containerStats do not include them
 func (self *redisStorage) containerStatsAndDefaultValues(ref info.ContainerReference, stats *info.ContainerStats) *detailSpec {
 	timestamp := stats.Timestamp.UnixNano() / 1E3
 	var containerName string
@@ -82,7 +82,7 @@ func (self *redisStorage) containerStatsAndDefaultValues(ref info.ContainerRefer
 	return detail
 }
 
-//Push the data into redis
+// Push the data into redis
 func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
@@ -94,7 +94,7 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 		defer self.lock.Unlock()
 		// Add some default params based on containerStats
 		detail := self.containerStatsAndDefaultValues(ref, stats)
-		//To json
+		// To json
 		b, _ := json.Marshal(detail)
 		if self.readyToFlush() {
 			seriesToFlush = b
@@ -102,7 +102,7 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 		}
 	}()
 	if len(seriesToFlush) > 0 {
-		//We use redis's "LPUSH" to push the data to the redis
+		// We use redis's "LPUSH" to push the data to the redis
 		self.conn.Send("LPUSH", self.redisKey, seriesToFlush)
 	}
 	return nil

@@ -32,6 +32,7 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
+	"crypto/tls"
 	"github.com/golang/glog"
 )
 
@@ -52,6 +53,9 @@ var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time
 var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
 
 var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web interface host:port/debug/pprof/")
+
+var collectorCert = flag.String("collector_cert", "", "Collector's certificate, exposed to endpoints for certificate based authentication.")
+var collectorKey = flag.String("collector_key", "", "Key for the collector's certificate")
 
 var (
 	// Metrics to be ignored.
@@ -118,7 +122,9 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet)
+	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
+
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
@@ -185,4 +191,30 @@ func installSignalHandler(containerManager manager.Manager) {
 		glog.Infof("Exiting given signal: %v", sig)
 		os.Exit(0)
 	}()
+}
+
+func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
+	//Enable accessing insecure endpoints. We should be able to access metrics from any endpoint
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	if collectorCert != "" {
+		if collectorKey == "" {
+			glog.Fatal("The collector_key value must be specified if the collector_cert value is set.")
+		}
+		cert, err := tls.LoadX509KeyPair(collectorCert, collectorKey)
+		if err != nil {
+			glog.Fatalf("Failed to use the collector certificate and key: %s", err)
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+		tlsConfig.BuildNameToCertificate()
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+
+	return http.Client{Transport: transport}
 }

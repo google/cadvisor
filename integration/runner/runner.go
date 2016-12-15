@@ -37,7 +37,7 @@ import (
 )
 
 // must be able to ssh into hosts without password
-// godep go run ./integration/runner/runner.go --logtostderr --v 2 --ssh-config <.ssh/config file> <list of hosts>
+// go run ./integration/runner/runner.go --logtostderr --v 2 --ssh-config <.ssh/config file> <list of hosts>
 
 const (
 	cadvisorBinary = "cadvisor"
@@ -88,7 +88,7 @@ func RunSshCommand(cmd string, args ...string) error {
 	return RunCommand(cmd, args...)
 }
 
-func PushAndRunTests(host, testDir string) error {
+func PushAndRunTests(host, testDir string) (result error) {
 	// Push binary.
 	glog.Infof("Pushing cAdvisor binary to %q...", host)
 
@@ -113,7 +113,7 @@ func PushAndRunTests(host, testDir string) error {
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error)
 	go func() {
-		err = RunSshCommand("ssh", host, "--", fmt.Sprintf("sudo %s --port %s --logtostderr --docker_env_metadata_whitelist=TEST_VAR  &> %s/log.txt", path.Join(testDir, cadvisorBinary), portStr, testDir))
+		err = RunSshCommand("ssh", host, "--", fmt.Sprintf("sudo GORACE='halt_on_error=1' %s --port %s --logtostderr --docker_env_metadata_whitelist=TEST_VAR  &> %s/log.txt", path.Join(testDir, cadvisorBinary), portStr, testDir))
 		if err != nil {
 			errChan <- fmt.Errorf("error running cAdvisor: %v", err)
 		}
@@ -122,6 +122,30 @@ func PushAndRunTests(host, testDir string) error {
 		err = RunSshCommand("ssh", host, "--", "sudo", "pkill", cadvisorBinary)
 		if err != nil {
 			glog.Errorf("Failed to cleanup: %v", err)
+		}
+	}()
+	defer func() {
+		if result != nil {
+			// Copy logs from the host
+			err := RunSshCommand("scp", fmt.Sprintf("%s:%s/log.txt", host, testDir), "./")
+			if err != nil {
+				result = fmt.Errorf("error fetching logs: %v for %v", err, result)
+				return
+			}
+			defer os.Remove("./log.txt")
+			logs, err := ioutil.ReadFile("./log.txt")
+			if err != nil {
+				result = fmt.Errorf("error reading local log file: %v for %v", err, result)
+				return
+			}
+			glog.Errorf("----------------------\nLogs from Host: %q\n%v\n", host, string(logs))
+
+			// Get attributes for debugging purposes.
+			attributes, err := getAttributes(host, portStr)
+			if err != nil {
+				glog.Errorf("Failed to read host attributes: %v", err)
+			}
+			result = fmt.Errorf("error on host %s: %v\n%+v", host, result, attributes)
 		}
 	}()
 
@@ -146,11 +170,6 @@ func PushAndRunTests(host, testDir string) error {
 		return fmt.Errorf("timed out waiting for cAdvisor to come up at host %q", host)
 	}
 
-	// Get attributes for debugging purposes.
-	attributes, err := getAttributes(host, portStr)
-	if err != nil {
-		return fmt.Errorf("%v - %q", err, host)
-	}
 	// Run the tests in a retry loop.
 	glog.Infof("Running integration tests targeting %q...", host)
 	for i := 0; i <= *testRetryCount; i++ {
@@ -161,7 +180,7 @@ func PushAndRunTests(host, testDir string) error {
 		}
 		// Run the command
 
-		err = RunCommand("godep", "go", "test", "--timeout", testTimeout.String(), "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr, "--ssh-options", *sshOptions)
+		err = RunCommand("go", "test", "--timeout", testTimeout.String(), "github.com/google/cadvisor/integration/tests/...", "--host", host, "--port", portStr, "--ssh-options", *sshOptions)
 		if err == nil {
 			// On success, break out of retry loop
 			break
@@ -172,21 +191,6 @@ func PushAndRunTests(host, testDir string) error {
 			glog.Warningf("Skipping retry for tests on host %s because error is not whitelisted", host)
 			break
 		}
-	}
-	if err != nil {
-		// Copy logs from the host
-		// Declare new error or it will get shadowed by logs, err := <>  and we won't be able to unset it from nil
-		err2 := RunSshCommand("scp", fmt.Sprintf("%s:%s/log.txt", host, testDir), "./")
-		if err2 != nil {
-			return fmt.Errorf("error fetching logs: %v for %v", err2, err)
-		}
-		defer os.Remove("./log.txt")
-		logs, err2 := ioutil.ReadFile("./log.txt")
-		if err2 != nil {
-			return fmt.Errorf("error reading local log file: %v for %v", err2, err)
-		}
-		glog.Errorf("----------------------\nLogs from Host: %q\n%v\n", host, string(logs))
-		err = fmt.Errorf("error on host %s: %v\n%+v", host, err, attributes)
 	}
 	return err
 }
@@ -204,7 +208,7 @@ func Run() error {
 
 	// Build cAdvisor.
 	glog.Infof("Building cAdvisor...")
-	err := RunCommand("godep", "go", "build", "github.com/google/cadvisor")
+	err := RunCommand("build/build.sh")
 	if err != nil {
 		return err
 	}
