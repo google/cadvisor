@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.24.1 (2016-10-10)
+
+- Fix issue with running cAdvisor in a container on some distributions.
+
 ### 0.24.0 (2016-09-19)
 
 - Added host-level inode stats (total & available)
