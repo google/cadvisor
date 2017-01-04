@@ -44,7 +44,7 @@ assets:
 
 release:
 	@echo ">> building release binaries"
-	@RELEASE=true ./build/build.sh
+	@./build/release.sh
 
 docker:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .

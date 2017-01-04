@@ -119,6 +119,8 @@ func ContainerStatsFromV1(spec *v1.ContainerSpec, stats []*v1.ContainerStats) []
 		if spec.HasNetwork {
 			// TODO: Handle TcpStats
 			stat.Network = &NetworkStats{
+				Tcp:        TcpStat(val.Network.Tcp),
+				Tcp6:       TcpStat(val.Network.Tcp6),
 				Interfaces: val.Network.Interfaces,
 			}
 		}
