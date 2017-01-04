@@ -45,6 +45,16 @@ const (
 
 // NewTail starts opens the given file and watches it for deletion/rotation
 func NewTail(filename string) (*Tail, error) {
+	t, err := newTail(filename)
+	if err != nil {
+		return nil, err
+	}
+	go t.watchLoop()
+	return t, nil
+}
+
+// newTail creates a Tail object.
+func newTail(filename string) (*Tail, error) {
 	t := &Tail{
 		filename: filename,
 	}
@@ -54,7 +64,9 @@ func NewTail(filename string) (*Tail, error) {
 	if err != nil {
 		return nil, fmt.Errorf("inotify init failed on %s: %v", t.filename, err)
 	}
-	go t.watchLoop()
+	// Initialize readerErr as io.EOF, so that the reader can work properly
+	// during initialization.
+	t.readerErr = io.EOF
 	return t, nil
 }
 
@@ -62,23 +74,23 @@ func NewTail(filename string) (*Tail, error) {
 func (t *Tail) Read(p []byte) (int, error) {
 	t.readerLock.RLock()
 	defer t.readerLock.RUnlock()
-	if t.reader == nil || t.readerErr != nil {
+	if t.readerErr != nil {
 		return 0, t.readerErr
 	}
 	return t.reader.Read(p)
 }
 
-var _ io.Reader = &Tail{}
+var _ io.ReadCloser = &Tail{}
 
 // Close stops watching and closes the file
-func (t *Tail) Close() {
+func (t *Tail) Close() error {
 	close(t.stop)
+	return nil
 }
 
 func (t *Tail) attemptOpen() error {
 	t.readerLock.Lock()
 	defer t.readerLock.Unlock()
-	t.reader = nil
 	t.readerErr = nil
 	attempt := 0
 	for interval := defaultRetryInterval; ; interval *= 2 {
