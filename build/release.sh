@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright 2015 Google Inc. All rights reserved.
 #
@@ -14,10 +14,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version=$( cat version/VERSION )
-branch=$( git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown' )
+set -e
 
-rm -rf release && mkdir release
-cp cadvisor release/cadvisor
-go get -u github.com/progrium/gh-release
-gh-release create google/cadvisor ${version} ${branch} ${version}
+VERSION=$( git describe --tags --dirty --abbrev=14 | sed -E 's/-([0-9]+)-g/.\1+/' )
+# Only allow releases of tagged versions.
+TAGGED='^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)[0-9]*)?$'
+if [[ ! "$VERSION" =~ $TAGGED ]]; then
+  echo "Error: Only tagged versions are allowed for releases" >&2
+  echo "Found: $VERSION" >&2
+  exit 1
+fi
+
+# Don't include hostname with release builds
+if ! git_user="$(git config --get user.email)"; then
+  echo "Error: git user not set, use:"
+  echo "git config user.email <email>"
+  exit 1
+fi
+
+# Build the release.
+export BUILD_USER="$git_user"
+export BUILD_DATE=$( date +%Y%m%d ) # Release date is only to day-granularity
+export GO_CMD="build" # Don't use cached build objects for releases.
+export VERBOSE=true
+build/build.sh
+
+# Build the docker image
+echo ">> building cadvisor docker image"
+docker_tag="google/cadvisor:$VERSION"
+gcr_tag="gcr.io/google_containers/cadvisor:$VERSION"
+docker build -t $docker_tag -t $gcr_tag -f deploy/Dockerfile .
+
+echo
+echo "Release info:"
+echo "VERSION=$VERSION"
+sha1sum --tag cadvisor
+md5sum --tag cadvisor
+echo "docker image: $docker_tag"
+echo "gcr.io image: $gcr_tag"
+
+exit 0

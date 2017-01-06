@@ -90,7 +90,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	username := "root"
 	password := "root"
 	hostname := "localhost:8086"
-	//percentilesDuration := 10 * time.Minute
+	// percentilesDuration := 10 * time.Minute
 
 	config := influxdb.Config{
 		URL:      url.URL{Scheme: "http", Host: hostname},
@@ -108,7 +108,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	}
 
 	// Delete all data by the end of the call.
-	//defer client.Query(influxdb.Query{Command: fmt.Sprintf("drop database \"%v\"", database)})
+	// defer client.Query(influxdb.Query{Command: fmt.Sprintf("drop database \"%v\"", database)})
 
 	driver, err := newStorage(machineName,
 		table,

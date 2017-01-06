@@ -1,3 +1,6 @@
 cadvisor
 /release
 .vscode
+
+# Go test binaries
+*.test

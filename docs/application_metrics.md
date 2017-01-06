@@ -81,7 +81,7 @@ So a sample configuration for redis would look like:
 Dockerfile (or runtime):
 ```
  FROM redis
- ADD ADD redis_config.json /var/cadvisor/redis_config.json
+ ADD redis_config.json /var/cadvisor/redis_config.json
  LABEL io.cadvisor.metric.redis="/var/cadvisor/redis_config.json"
 ```
 

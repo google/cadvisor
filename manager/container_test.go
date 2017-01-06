@@ -25,6 +25,7 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
+	containertest "github.com/google/cadvisor/container/testing"
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
 
@@ -35,14 +36,14 @@ import (
 const containerName = "/container"
 
 // Create a containerData instance for a test.
-func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *container.MockContainerHandler, *memory.InMemoryCache) {
-	mockHandler := container.NewMockContainerHandler(containerName)
+func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *containertest.MockContainerHandler, *memory.InMemoryCache) {
+	mockHandler := containertest.NewMockContainerHandler(containerName)
 	mockHandler.On("GetSpec").Return(
 		spec,
 		nil,
 	)
 	memoryCache := memory.New(60, nil)
-	ret, err := newContainerData(containerName, memoryCache, mockHandler, nil, false, &collector.GenericCollectorManager{}, 60*time.Second, true)
+	ret, err := newContainerData(containerName, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +51,7 @@ func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, 
 }
 
 // Create a containerData instance for a test and add a default GetSpec mock.
-func newTestContainerData(t *testing.T) (*containerData, *container.MockContainerHandler, *memory.InMemoryCache) {
+func newTestContainerData(t *testing.T) (*containerData, *containertest.MockContainerHandler, *memory.InMemoryCache) {
 	spec := itest.GenerateRandomContainerSpec(4)
 	ret, mockHandler, memoryCache := setupContainerData(t, spec)
 	return ret, mockHandler, memoryCache

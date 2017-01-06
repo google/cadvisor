@@ -16,18 +16,19 @@
 
 set -e
 
+GO_FLAGS=${GO_FLAGS:-}    # Extra go flags to use in the build.
+GO_CMD=${GO_CMD:-"install"}
+BUILD_USER=${BUILD_USER:-"${USER}@${HOSTNAME}"}
+BUILD_DATE=${BUILD_DATE:-$( date +%Y%m%d-%H:%M:%S )}
+VERBOSE=${VERBOSE:-}
+
 repo_path="github.com/google/cadvisor"
 
-version=$( cat version/VERSION )
+version=$( git describe --tags --dirty --abbrev=14 | sed -E 's/-([0-9]+)-g/.\1+/' )
 revision=$( git rev-parse --short HEAD 2> /dev/null || echo 'unknown' )
 branch=$( git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown' )
-host=$( hostname -f )
-build_date=$( date +%Y%m%d-%H:%M:%S )
 go_version=$( go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/' )
 
-if [ "$(go env GOOS)" = "windows" ]; then
-  ext=".exe"
-fi
 
 # go 1.4 requires ldflags format to be "-X key value", not "-X key=value"
 ldseparator="="
@@ -36,14 +37,20 @@ if [ "${go_version:0:3}" = "1.4" ]; then
 fi
 
 ldflags="
+  -extldflags '-static'
   -X ${repo_path}/version.Version${ldseparator}${version}
   -X ${repo_path}/version.Revision${ldseparator}${revision}
   -X ${repo_path}/version.Branch${ldseparator}${branch}
-  -X ${repo_path}/version.BuildUser${ldseparator}${USER}@${host}
-  -X ${repo_path}/version.BuildDate${ldseparator}${build_date}
+  -X ${repo_path}/version.BuildUser${ldseparator}${BUILD_USER}
+  -X ${repo_path}/version.BuildDate${ldseparator}${BUILD_DATE}
   -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
 
-echo " >   cadvisor"
-godep go build -ldflags "${ldflags}" -o cadvisor${ext} ${repo_path}
+echo ">> building cadvisor"
+
+if [ -n "$VERBOSE" ]; then
+  echo "Building with -ldflags $ldflags"
+fi
+
+GOBIN=$PWD go "$GO_CMD" ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
 
 exit 0

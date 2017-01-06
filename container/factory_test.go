@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package container
+package container_test
 
 import (
 	"testing"
+
+	"github.com/google/cadvisor/container"
+	containertest "github.com/google/cadvisor/container/testing"
+	"github.com/google/cadvisor/manager/watcher"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -39,17 +43,17 @@ func (self *mockContainerHandlerFactory) CanHandleAndAccept(name string) (bool, 
 	return self.CanHandleValue, self.CanAcceptValue, nil
 }
 
-func (self *mockContainerHandlerFactory) NewContainerHandler(name string, isHostNamespace bool) (ContainerHandler, error) {
+func (self *mockContainerHandlerFactory) NewContainerHandler(name string, isHostNamespace bool) (container.ContainerHandler, error) {
 	args := self.Called(name)
-	return args.Get(0).(ContainerHandler), args.Error(1)
+	return args.Get(0).(container.ContainerHandler), args.Error(1)
 }
 
 const testContainerName = "/test"
 
-var mockFactory FactoryForMockContainerHandler
+var mockFactory containertest.FactoryForMockContainerHandler
 
 func TestNewContainerHandler_FirstMatches(t *testing.T) {
-	ClearContainerHandlerFactories()
+	container.ClearContainerHandlerFactories()
 
 	// Register one allways yes factory.
 	allwaysYes := &mockContainerHandlerFactory{
@@ -57,7 +61,7 @@ func TestNewContainerHandler_FirstMatches(t *testing.T) {
 		CanHandleValue: true,
 		CanAcceptValue: true,
 	}
-	RegisterContainerHandlerFactory(allwaysYes)
+	container.RegisterContainerHandlerFactory(allwaysYes, []watcher.ContainerWatchSource{watcher.Raw})
 
 	// The yes factory should be asked to create the ContainerHandler.
 	mockContainer, err := mockFactory.NewContainerHandler(testContainerName, true)
@@ -66,7 +70,7 @@ func TestNewContainerHandler_FirstMatches(t *testing.T) {
 	}
 	allwaysYes.On("NewContainerHandler", testContainerName).Return(mockContainer, nil)
 
-	cont, _, err := NewContainerHandler(testContainerName, true)
+	cont, _, err := container.NewContainerHandler(testContainerName, watcher.Raw, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -76,7 +80,7 @@ func TestNewContainerHandler_FirstMatches(t *testing.T) {
 }
 
 func TestNewContainerHandler_SecondMatches(t *testing.T) {
-	ClearContainerHandlerFactories()
+	container.ClearContainerHandlerFactories()
 
 	// Register one allways no and one always yes factory.
 	allwaysNo := &mockContainerHandlerFactory{
@@ -84,13 +88,13 @@ func TestNewContainerHandler_SecondMatches(t *testing.T) {
 		CanHandleValue: false,
 		CanAcceptValue: true,
 	}
-	RegisterContainerHandlerFactory(allwaysNo)
+	container.RegisterContainerHandlerFactory(allwaysNo, []watcher.ContainerWatchSource{watcher.Raw})
 	allwaysYes := &mockContainerHandlerFactory{
 		Name:           "yes",
 		CanHandleValue: true,
 		CanAcceptValue: true,
 	}
-	RegisterContainerHandlerFactory(allwaysYes)
+	container.RegisterContainerHandlerFactory(allwaysYes, []watcher.ContainerWatchSource{watcher.Raw})
 
 	// The yes factory should be asked to create the ContainerHandler.
 	mockContainer, err := mockFactory.NewContainerHandler(testContainerName, true)
@@ -99,7 +103,7 @@ func TestNewContainerHandler_SecondMatches(t *testing.T) {
 	}
 	allwaysYes.On("NewContainerHandler", testContainerName).Return(mockContainer, nil)
 
-	cont, _, err := NewContainerHandler(testContainerName, true)
+	cont, _, err := container.NewContainerHandler(testContainerName, watcher.Raw, true)
 	if err != nil {
 		t.Error(err)
 	}
@@ -109,7 +113,7 @@ func TestNewContainerHandler_SecondMatches(t *testing.T) {
 }
 
 func TestNewContainerHandler_NoneMatch(t *testing.T) {
-	ClearContainerHandlerFactories()
+	container.ClearContainerHandlerFactories()
 
 	// Register two allways no factories.
 	allwaysNo1 := &mockContainerHandlerFactory{
@@ -117,22 +121,22 @@ func TestNewContainerHandler_NoneMatch(t *testing.T) {
 		CanHandleValue: false,
 		CanAcceptValue: true,
 	}
-	RegisterContainerHandlerFactory(allwaysNo1)
+	container.RegisterContainerHandlerFactory(allwaysNo1, []watcher.ContainerWatchSource{watcher.Raw})
 	allwaysNo2 := &mockContainerHandlerFactory{
 		Name:           "no",
 		CanHandleValue: false,
 		CanAcceptValue: true,
 	}
-	RegisterContainerHandlerFactory(allwaysNo2)
+	container.RegisterContainerHandlerFactory(allwaysNo2, []watcher.ContainerWatchSource{watcher.Raw})
 
-	_, _, err := NewContainerHandler(testContainerName, true)
+	_, _, err := container.NewContainerHandler(testContainerName, watcher.Raw, true)
 	if err == nil {
 		t.Error("Expected NewContainerHandler to fail")
 	}
 }
 
 func TestNewContainerHandler_Accept(t *testing.T) {
-	ClearContainerHandlerFactories()
+	container.ClearContainerHandlerFactories()
 
 	// Register handler that can handle the container, but can't accept it.
 	cannotHandle := &mockContainerHandlerFactory{
@@ -140,15 +144,15 @@ func TestNewContainerHandler_Accept(t *testing.T) {
 		CanHandleValue: false,
 		CanAcceptValue: true,
 	}
-	RegisterContainerHandlerFactory(cannotHandle)
+	container.RegisterContainerHandlerFactory(cannotHandle, []watcher.ContainerWatchSource{watcher.Raw})
 	cannotAccept := &mockContainerHandlerFactory{
 		Name:           "no",
 		CanHandleValue: true,
 		CanAcceptValue: false,
 	}
-	RegisterContainerHandlerFactory(cannotAccept)
+	container.RegisterContainerHandlerFactory(cannotAccept, []watcher.ContainerWatchSource{watcher.Raw})
 
-	_, accept, err := NewContainerHandler(testContainerName, true)
+	_, accept, err := container.NewContainerHandler(testContainerName, watcher.Raw, true)
 	if err != nil {
 		t.Error("Expected NewContainerHandler to succeed")
 	}

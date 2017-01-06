@@ -14,14 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Check usage.
-if [ $# -ne 1 ]; then
-  echo "USAGE: check_gofmt <source directory>"
-  exit 1
-fi
-
 # Check formatting on non Godep'd code.
-GOFMT_PATHS=$(find . -not -wholename "*.git*" -not -wholename "*Godeps*" -not -name "." -type d)
+GOFMT_PATHS=$(find . -not -wholename "*.git*" -not -wholename "*Godeps*" -not -wholename "*vendor*" -not -name "." -type d)
 
 # Find any files with gofmt problems
 BAD_FILES=$(gofmt -s -l $GOFMT_PATHS)

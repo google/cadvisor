@@ -185,6 +185,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 		Filesystem: &FilesystemStats{
 			TotalUsageBytes: &v1Stats.Filesystem[0].Usage,
 			BaseUsageBytes:  &v1Stats.Filesystem[0].BaseUsage,
+			InodeUsage:      &v1Stats.Filesystem[0].Inodes,
 		},
 	}
 
@@ -352,7 +353,7 @@ func TestInstCpuStats(t *testing.T) {
 		},
 	}
 	for _, c := range tests {
-		got, err := instCpuStats(c.last, c.cur)
+		got, err := InstCpuStats(c.last, c.cur)
 		if err != nil {
 			if c.want == nil {
 				continue

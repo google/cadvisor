@@ -32,6 +32,7 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
+	"crypto/tls"
 	"github.com/golang/glog"
 )
 
@@ -39,7 +40,6 @@ var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
 var argPort = flag.Int("port", 8080, "port to listen")
 var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
 
-var argDbDriver = flag.String("storage_driver", "", "storage driver to use. Data is always cached shortly in memory, this controls where data is pushed besides the local cache. Empty means none. Options are: <empty> (default), bigquery, influxdb, and kafka")
 var versionFlag = flag.Bool("version", false, "print cAdvisor version and exit")
 
 var httpAuthFile = flag.String("http_auth_file", "", "HTTP auth file for the web UI")
@@ -53,6 +53,9 @@ var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time
 var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
 
 var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web interface host:port/debug/pprof/")
+
+var collectorCert = flag.String("collector_cert", "", "Collector's certificate, exposed to endpoints for certificate based authentication.")
+var collectorKey = flag.String("collector_key", "", "Key for the collector's certificate")
 
 var (
 	// Metrics to be ignored.
@@ -72,10 +75,18 @@ type metricSetValue struct {
 }
 
 func (ml *metricSetValue) String() string {
-	return fmt.Sprint(*ml)
+	var values []string
+	for metric, _ := range ml.MetricSet {
+		values = append(values, string(metric))
+	}
+	return strings.Join(values, ",")
 }
 
 func (ml *metricSetValue) Set(value string) error {
+	ml.MetricSet = container.MetricSet{}
+	if value == "" {
+		return nil
+	}
 	for _, metric := range strings.Split(value, ",") {
 		if ignoreWhitelist.Has(container.MetricKind(metric)) {
 			(*ml).Add(container.MetricKind(metric))
@@ -87,7 +98,7 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of metrics to be disabled. Options are `disk`, `network`, `tcp`. Note: tcp is disabled by default due to high CPU usage.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp'. Note: tcp is disabled by default due to high CPU usage.")
 }
 
 func main() {
@@ -101,9 +112,9 @@ func main() {
 
 	setMaxProcs()
 
-	memoryStorage, err := NewMemoryStorage(*argDbDriver)
+	memoryStorage, err := NewMemoryStorage()
 	if err != nil {
-		glog.Fatalf("Failed to connect to database: %s", err)
+		glog.Fatalf("Failed to initialize storage driver: %s", err)
 	}
 
 	sysFs, err := sysfs.NewRealSysFs()
@@ -111,7 +122,9 @@ func main() {
 		glog.Fatalf("Failed to create a system interface: %s", err)
 	}
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet)
+	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
+
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient)
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
@@ -178,4 +191,30 @@ func installSignalHandler(containerManager manager.Manager) {
 		glog.Infof("Exiting given signal: %v", sig)
 		os.Exit(0)
 	}()
+}
+
+func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
+	//Enable accessing insecure endpoints. We should be able to access metrics from any endpoint
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	if collectorCert != "" {
+		if collectorKey == "" {
+			glog.Fatal("The collector_key value must be specified if the collector_cert value is set.")
+		}
+		cert, err := tls.LoadX509KeyPair(collectorCert, collectorKey)
+		if err != nil {
+			glog.Fatalf("Failed to use the collector certificate and key: %s", err)
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+		tlsConfig.BuildNameToCertificate()
+	}
+
+	transport := &http.Transport{
+		TLSClientConfig: tlsConfig,
+	}
+
+	return http.Client{Transport: transport}
 }

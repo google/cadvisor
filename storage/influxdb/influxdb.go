@@ -162,6 +162,7 @@ func (self *influxdbStorage) tagPoints(ref info.ContainerReference, stats *info.
 	for i := 0; i < len(points); i++ {
 		// merge with existing tags if any
 		addTagsToPoint(points[i], commonTags)
+		addTagsToPoint(points[i], ref.Labels)
 		points[i].Time = stats.Timestamp
 	}
 }
