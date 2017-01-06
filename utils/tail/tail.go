@@ -93,6 +93,7 @@ func (t *Tail) attemptOpen() error {
 	defer t.readerLock.Unlock()
 	t.readerErr = nil
 	attempt := 0
+	var lastErr error
 	for interval := defaultRetryInterval; ; interval *= 2 {
 		attempt++
 		glog.V(4).Infof("Opening %s (attempt %d)", t.filename, attempt)
@@ -104,6 +105,9 @@ func (t *Tail) attemptOpen() error {
 			t.reader = bufio.NewReader(t.file)
 			return nil
 		}
+		lastErr = err
+		glog.V(4).Infof("open log file %s error: %v", t.filename, err)
+
 		if interval >= maxRetryInterval {
 			break
 		}
@@ -114,7 +118,7 @@ func (t *Tail) attemptOpen() error {
 			return fmt.Errorf("watch was cancelled")
 		}
 	}
-	err := fmt.Errorf("can't open log file %s", t.filename)
+	err := fmt.Errorf("can't open log file %s: %v", t.filename, lastErr)
 	t.readerErr = err
 	return err
 }
