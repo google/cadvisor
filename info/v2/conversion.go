@@ -96,7 +96,7 @@ func MachineStatsFromV1(cont *v1.ContainerInfo) []MachineStats {
 	return stats
 }
 
-func ContainerStatsFromV1(spec *v1.ContainerSpec, stats []*v1.ContainerStats) []*ContainerStats {
+func ContainerStatsFromV1(containerName string, spec *v1.ContainerSpec, stats []*v1.ContainerStats) []*ContainerStats {
 	newStats := make([]*ContainerStats, 0, len(stats))
 	var last *v1.ContainerStats
 	for _, val := range stats {
@@ -131,9 +131,9 @@ func ContainerStatsFromV1(spec *v1.ContainerSpec, stats []*v1.ContainerStats) []
 					BaseUsageBytes:  &val.Filesystem[0].BaseUsage,
 					InodeUsage:      &val.Filesystem[0].Inodes,
 				}
-			} else if len(val.Filesystem) > 1 {
+			} else if len(val.Filesystem) > 1 && containerName != "/" {
 				// Cannot handle multiple devices per container.
-				glog.V(2).Infof("failed to handle multiple devices for container. Skipping Filesystem stats")
+				glog.V(2).Infof("failed to handle multiple devices for container %s. Skipping Filesystem stats", containerName)
 			}
 		}
 		if spec.HasDiskIo {
