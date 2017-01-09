@@ -189,7 +189,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 		},
 	}
 
-	v2Stats := ContainerStatsFromV1(&v1Spec, []*v1.ContainerStats{&v1Stats})
+	v2Stats := ContainerStatsFromV1("test", &v1Spec, []*v1.ContainerStats{&v1Stats})
 	actualV2Stats := *v2Stats[0]
 
 	if !reflect.DeepEqual(expectedV2Stats, actualV2Stats) {
