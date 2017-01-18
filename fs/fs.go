@@ -474,15 +474,32 @@ func (self *RealFsInfo) GetDirInodeUsage(dir string, timeout time.Duration) (uin
 		return 0, fmt.Errorf("invalid directory")
 	}
 
+	rootInfo, err := os.Stat(dir)
+	if err != nil {
+		return 0, fmt.Errorf("could not stat %q to get inode usage: %v", dir, err)
+	}
+	rootStat, ok := rootInfo.Sys().(*syscall.Stat_t)
+	if !ok {
+		return fmt.Errorf("unsuported fileinfo for getting inode usage of %q", dir)
+	}
+	rootDevId := rootStat.Dev
+
 	inodes := map[uint64]struct{}{}
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if info.Mode() & os.ModeDevice {
+			return nil
+		}
 		if err != nil {
 			return fmt.Errorf("unable to count inodes for part of dir %s: %s", dir, err)
 		}
 		s, ok := info.Sys().(*syscall.Stat_t)
 		if !ok {
 			return fmt.Errorf("unsupported fileinfo; could not convert to stat_t")
+		}
+		if s.Dev != rootDevId {
+			// don't descend into directories on other devices
+			return filepath.SkipDir
 		}
 		inodes[s.Ino] = struct{}{}
 		return nil
