@@ -457,11 +457,16 @@ func (self *version2_0) HandleRequest(requestType string, request []string, m ma
 
 type version2_1 struct {
 	baseVersion *version2_0
+
+	// loggedContainers is a map that holds which containers a multiple-
+	// devices message has been issued for.
+	loggedContainers map[string]bool
 }
 
 func newVersion2_1(v *version2_0) *version2_1 {
 	return &version2_1{
-		baseVersion: v,
+		baseVersion:      v,
+		loggedContainers: map[string]bool{},
 	}
 }
 
@@ -507,10 +512,15 @@ func (self *version2_1) HandleRequest(requestType string, request []string, m ma
 				// Root cgroup stats should be exposed as machine stats
 				continue
 			}
+
+			firstCall := self.loggedContainers[name]
+
 			contStats[name] = v2.ContainerInfo{
 				Spec:  v2.ContainerSpecFromV1(&cont.Spec, cont.Aliases, cont.Namespace),
-				Stats: v2.ContainerStatsFromV1(name, &cont.Spec, cont.Stats),
+				Stats: v2.ContainerStatsFromV1(name, &cont.Spec, cont.Stats, firstCall),
 			}
+
+			self.loggedContainers[name] = true
 		}
 		return writeResult(contStats, w)
 	default:
