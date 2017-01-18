@@ -470,6 +470,14 @@ func (self *RealFsInfo) GetDirDiskUsage(dir string, timeout time.Duration) (uint
 }
 
 func (self *RealFsInfo) GetDirInodeUsage(dir string, timeout time.Duration) (uint64, error) {
+	return GetDirInodeUsage(dir, timeout)
+}
+
+// GetDirInodeUsage determines the inodes used by a given directory. It avoids
+// traversing devices.
+// If the directory does not exist or it is unable to access a file for some
+// reason, it will return an error.
+func GetDirInodeUsage(dir string, timeout time.Duration) (uint64, error) {
 	if dir == "" {
 		return 0, fmt.Errorf("invalid directory")
 	}
@@ -480,16 +488,13 @@ func (self *RealFsInfo) GetDirInodeUsage(dir string, timeout time.Duration) (uin
 	}
 	rootStat, ok := rootInfo.Sys().(*syscall.Stat_t)
 	if !ok {
-		return fmt.Errorf("unsuported fileinfo for getting inode usage of %q", dir)
+		return 0, fmt.Errorf("unsuported fileinfo for getting inode usage of %q", dir)
 	}
 	rootDevId := rootStat.Dev
 
 	inodes := map[uint64]struct{}{}
 
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if info.Mode() & os.ModeDevice {
-			return nil
-		}
+	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("unable to count inodes for part of dir %s: %s", dir, err)
 		}
