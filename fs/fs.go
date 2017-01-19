@@ -495,6 +495,10 @@ func GetDirInodeUsage(dir string, timeout time.Duration) (uint64, error) {
 	inodes := map[uint64]struct{}{}
 
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if os.IsNotExist(err) {
+			// expected if files appear/vanish
+			return nil
+		}
 		if err != nil {
 			return fmt.Errorf("unable to count inodes for part of dir %s: %s", dir, err)
 		}
