@@ -1,6 +1,6 @@
 ## How to contribute
 
-Open an issue or a pull request, its that easy!
+Open an issue or a pull request, its that easy (except when it is hard)!
 
 ## Contributor License Agreements
 
