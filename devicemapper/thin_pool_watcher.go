@@ -22,6 +22,8 @@ import (
 	"github.com/golang/glog"
 )
 
+const minimumPeriod time.Duration = time.Minute
+
 // ThinPoolWatcher maintains a cache of device name -> usage stats for a
 // devicemapper thin-pool using thin_ls.
 type ThinPoolWatcher struct {
@@ -47,7 +49,7 @@ func NewThinPoolWatcher(poolName, metadataDevice string) (*ThinPoolWatcher, erro
 		metadataDevice: metadataDevice,
 		lock:           &sync.RWMutex{},
 		cache:          make(map[string]uint64),
-		period:         15 * time.Second,
+		period:         minimumPeriod,
 		stopChan:       make(chan struct{}),
 		dmsetup:        NewDmsetupClient(),
 		thinLsClient:   thinLsClient,
@@ -75,6 +77,12 @@ func (w *ThinPoolWatcher) Start() {
 			// print latency for refresh
 			duration := time.Since(start)
 			glog.V(5).Infof("thin_ls(%d) took %s", start.Unix(), duration)
+			// we want thin_ls to run for no longer than 10% of the refresh interval
+			if duration*10 < minimumPeriod {
+				w.period = minimumPeriod
+			} else {
+				w.period = duration * 10
+			}
 		}
 	}
 }
