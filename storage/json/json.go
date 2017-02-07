@@ -1,4 +1,4 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2017 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	"os"
 
 	info "github.com/google/cadvisor/info/v1"
-	storage "github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/storage"
 )
 
 func init() {
@@ -29,7 +29,7 @@ func init() {
 }
 
 type jsonStorage struct {
-	infoField   string
+	description string
 	machineName string
 	connection  net.Conn
 }
@@ -43,23 +43,23 @@ func new() (storage.StorageDriver, error) {
 	return newStorage(
 		hostname,
 		*storage.ArgDbHost,
-		*argInfoField,
+		*argDescription,
 		*argProtocol,
 	)
 }
 
 type DetailSpec struct {
-	InfoField      string               `json:"info,omitempty"`
+	Description    string               `json:"description,omitempty"`
 	MachineName    string               `json:"machine_name,omitempty"`
 	ContainerName  string               `json:"container_name,omitempty"`
-	ContainerStats *info.ContainerStats `json:"stats,omitempty"`
+	ContainerStats *info.ContainerStats `json:"container_stats,omitempty"`
 }
 
 var (
 	// network protocol: either udp or tcp
 	argProtocol = flag.String("storage_driver_json_protocol", "udp", "Json storage driver protocol")
 	// useful if a user wants to pass any extra information in the json, such as an identifying string
-	argInfoField = flag.String("storage_driver_json_info_field", "", "Optional additional info")
+	argDescription = flag.String("storage_driver_json_description", "", "Optional description for this connection")
 )
 
 func (self *jsonStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
@@ -71,7 +71,7 @@ func (self *jsonStorage) AddStats(ref info.ContainerReference, stats *info.Conta
 		containerName = ref.Aliases[0]
 	}
 	// convert stats into json object
-	output, err := json.Marshal(DetailSpec{self.infoField, self.machineName, containerName, stats})
+	output, err := json.Marshal(DetailSpec{self.description, self.machineName, containerName, stats})
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (driver *jsonStorage) Close() error {
 	return driver.connection.Close()
 }
 
-func newStorage(machineName string, storageHost string, infoField string, protocol string) (*jsonStorage, error) {
+func newStorage(machineName string, storageHost string, description string, protocol string) (*jsonStorage, error) {
 	// create tcp/udp connection to host
 	connection, err := net.Dial(protocol, storageHost)
 	if err != nil {
@@ -92,7 +92,7 @@ func newStorage(machineName string, storageHost string, infoField string, protoc
 	}
 	jsonStorage := &jsonStorage{
 		machineName: machineName,
-		infoField:   infoField,
+		description: description,
 		connection:  connection,
 	}
 	return jsonStorage, nil

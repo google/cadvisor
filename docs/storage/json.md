@@ -1,4 +1,4 @@
-# Exporting cAdvisor Stats to LogStash
+# Exporting cAdvisor Stats to JSON via TCP/UDP (LogStash, etc.)
 
 cAdvisor supports exporting stats as JSON over UDP or TCP. This can be used to send to a variety of services including Logstash. To use the JSON storage driver, you need to provide the additional flags to cAdvisor:
 
