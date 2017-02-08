@@ -254,7 +254,7 @@ func newDockerContainerHandler(
 		for _, envVar := range ctnr.Config.Env {
 			if envVar != "" {
 				splits := strings.SplitN(envVar, "=", 2)
-				if splits[0] == exposedEnv {
+				if len(splits) == 2 && splits[0] == exposedEnv {
 					handler.envs[strings.ToLower(exposedEnv)] = splits[1]
 				}
 			}
