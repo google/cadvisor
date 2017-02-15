@@ -21,6 +21,8 @@ Specify what InfluxDB instance to push data to:
  -storage_driver_password
  # Use secure connection with database. False by default
  -storage_driver_secure
+ # Duration before Cadvisor push data to InfluxDB. Default is '1m'
+ -storage_driver_buffer_duration
 ```
 
 # Examples
