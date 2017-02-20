@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -50,7 +51,15 @@ type detailSpecV5 struct {
 }
 
 var (
-	argElasticHost5 = flag.String("storage_driver_es5_host", "http://localhost:9200", "ElasticSearch host:port")
+	argBasicAuth        = flag.String("storage_driver_es_basic_auth", "", "ElasticSearch basic auth: user:password")
+	argSnifferTimeout   = flag.Int("storage_driver_es_sniffer_timeout", 2, "The time before Elastic times out on sniffing nodes in seconds")
+	argSnifferTimeoutSt = flag.Int("storage_driver_es_sniffer_timeout_startup", 5, "The sniffing timeout used while creating a new client")
+	argSnifferInterval  = flag.Int("storage_driver_es_sniffer_interval", 15*60, "The interval between two sniffer processes")
+
+	argEnableHealthCheck    = flag.Bool("storage_driver_es_enable_health_check", true, "Enable health check")
+	argHealthCheckTimeout   = flag.Int("storage_driver_es_health_check_timeout", 1, "The timeout for health checks")
+	argHealthCheckTimeoutSt = flag.Int("storage_driver_es_health_check_timeout_startup", 5, "The health check timeout used while creating a new client")
+	argHealthCheckInterval  = flag.Int("storage_driver_es_health_check_interval", 60, "The interval between two health checks")
 )
 
 func newV5() (storage.StorageDriver, error) {
@@ -58,12 +67,12 @@ func newV5() (storage.StorageDriver, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return newStorageV5(
 		hostname,
 		*argIndexName,
 		*argTypeName,
 		*argElasticHost,
-		*argEnableSniffer,
 	)
 }
 
@@ -120,15 +129,10 @@ func newStorageV5(
 	indexName,
 	typeName,
 	elasticHost string,
-	enableSniffer bool,
 ) (storage.StorageDriver, error) {
 	ctx := context.Background()
-	client, err := elastic.NewClient(
-		elastic.SetHealthcheck(true),
-		elastic.SetSniff(enableSniffer),
-		elastic.SetHealthcheckInterval(30*time.Second),
-		elastic.SetURL(elasticHost),
-	)
+
+	client, err := createClient(&ctx)
 	if err != nil {
 		// Handle error
 		return nil, fmt.Errorf("failed to create the elasticsearch client - %s", err)
@@ -151,4 +155,28 @@ func newStorageV5(
 		ctx:         ctx,
 	}
 	return ret, nil
+}
+
+func createClient(ctx *context.Context) (*elastic.Client, error) {
+	options := make([]elastic.ClientOptionFunc, 0, 20)
+
+	options = append(options, elastic.SetHealthcheck(*argEnableHealthCheck))
+	options = append(options, elastic.SetHealthcheckTimeout(time.Duration(*argHealthCheckTimeout)*time.Second))
+	options = append(options, elastic.SetHealthcheckTimeoutStartup(time.Duration(*argHealthCheckTimeoutSt)*time.Second))
+	options = append(options, elastic.SetHealthcheckInterval(time.Duration(*argHealthCheckInterval)*time.Second))
+
+	options = append(options, elastic.SetSniff(*argEnableSniffer))
+	options = append(options, elastic.SetSnifferTimeout(time.Duration(*argSnifferTimeout)*time.Second))
+	options = append(options, elastic.SetSnifferTimeoutStartup(time.Duration(*argSnifferTimeoutSt)*time.Second))
+	options = append(options, elastic.SetURL(*argElasticHost))
+
+	options = append(options, elastic.SetSnifferInterval(time.Duration(*argSnifferInterval)*time.Second))
+
+	basicAuth := *argBasicAuth
+	pos := strings.Index(basicAuth, ":")
+	if -1 < pos {
+		options = append(options, elastic.SetBasicAuth(basicAuth[0:pos], basicAuth[(pos+1):]))
+	}
+
+	return elastic.NewClient(options...)
 }
