@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -34,13 +35,18 @@ func init() {
 	storage.RegisterStorageDriver("elasticsearch.v5", newV5)
 }
 
+type indexInfo struct {
+	tpl  string
+	args []string
+}
+
 type elasticStorageV5 struct {
 	client      *elastic.Client
 	machineName string
-	indexName   string
 	typeName    string
 	lock        sync.Mutex
 	ctx         context.Context
+	index       *indexInfo
 }
 
 type detailSpecV5 struct {
@@ -102,11 +108,19 @@ func (self *elasticStorageV5) AddStats(ref info.ContainerReference, stats *info.
 		// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
 		self.lock.Lock()
 		defer self.lock.Unlock()
+
+		// get current index name
+		indexName := self.index.genIndexName()
+		if 1 > len(indexName) {
+			fmt.Printf("failed generate index name")
+			return
+		}
+
 		// Add some default params based on ContainerStats
 		detail := self.containerStatsAndDefaultValues(ref, stats)
 		// Index a cadvisor (using JSON serialization)
 		_, err := self.client.Index().
-			Index(self.indexName).
+			Index(indexName).
 			Type(self.typeName).
 			BodyJson(detail).
 			Do(self.ctx)
@@ -147,10 +161,16 @@ func newStorageV5(
 	}
 	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
+	// parse index info
+	index := parseIndexInfo(indexName)
+	if nil == index {
+		return nil, fmt.Errorf("failed to construct index from %s", indexName)
+	}
+
 	ret := &elasticStorageV5{
 		client:      client,
 		machineName: machineName,
-		indexName:   indexName,
+		index:       index,
 		typeName:    typeName,
 		ctx:         ctx,
 	}
@@ -179,4 +199,46 @@ func createClient(ctx *context.Context) (*elastic.Client, error) {
 	}
 
 	return elastic.NewClient(options...)
+}
+
+// Index name support golang time format.
+// **index-{2006.01.02}** will be translated to **index-2007.01.11** on day 2007.01.11.
+func parseIndexInfo(index string) *indexInfo {
+	tplMarkRegx, err := regexp.Compile("(\\{[^}]+\\})")
+	if nil != err {
+		return nil
+	}
+
+	matchSlices := tplMarkRegx.FindAllStringSubmatch(index, -1)
+	if nil == matchSlices {
+		return &indexInfo{tpl: index, args: nil}
+	}
+
+	indexTmp := &indexInfo{
+		tpl:  tplMarkRegx.ReplaceAllString(index, "%s"),
+		args: make([]string, 0),
+	}
+	for i := 0; i < len(matchSlices); i++ {
+		ele := matchSlices[i]
+		if 1 > len(ele) {
+			continue
+		}
+		indexTmp.args = append(indexTmp.args, ele[0][1:len(ele[0])-1])
+	}
+
+	return indexTmp
+}
+
+func (self *indexInfo) genIndexName() string {
+	if 0 == len(self.args) {
+		return self.tpl
+	}
+
+	fmtVal := make([]interface{}, 0)
+	ts := time.Now()
+	for i := 0; i < len(self.args); i++ {
+		fmtVal = append(fmtVal, ts.Format(self.args[i]))
+	}
+
+	return fmt.Sprintf(self.tpl, fmtVal...)
 }
