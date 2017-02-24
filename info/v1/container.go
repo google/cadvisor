@@ -417,7 +417,7 @@ type FsStats struct {
 	// The block device name associated with the filesystem.
 	Device string `json:"device,omitempty"`
 
-	// Type of the filesytem.
+	// Type of the filesystem.
 	Type string `json:"type"`
 
 	// Number of bytes that can be consumed by the container on this filesystem.
