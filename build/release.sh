@@ -48,8 +48,7 @@ docker build -t $docker_tag -t $gcr_tag -f deploy/Dockerfile .
 echo
 echo "Release info:"
 echo "VERSION=$VERSION"
-sha1sum --tag cadvisor
-md5sum --tag cadvisor
+sha256sum --tag cadvisor
 echo "docker image: $docker_tag"
 echo "gcr.io image: $gcr_tag"
 
