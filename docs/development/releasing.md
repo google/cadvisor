@@ -47,7 +47,7 @@ Command: `make release`
 - Try to build it from the release branch, since we include that in the binary version
 - Verify the ldflags output, in particular check the Version, BuildUser, and GoVersion are expected
 
-Once the build is complete, check the VERSION and note the sha1 and md5 hashes.
+Once the build is complete, check the VERSION and note the sha256 hash.
 
 ## 4. Push the Docker images
 
