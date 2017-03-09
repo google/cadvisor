@@ -139,6 +139,9 @@ func ContainerStatsFromV1(containerName string, spec *v1.ContainerSpec, stats []
 		if spec.HasDiskIo {
 			stat.DiskIo = &val.DiskIo
 		}
+		if spec.HasVolumeIo {
+			stat.VolumeIo = val.VolumeIo
+		}
 		if spec.HasCustomMetrics {
 			stat.CustomMetrics = val.CustomMetrics
 		}
@@ -159,6 +162,7 @@ func DeprecatedStatsFromV1(cont *v1.ContainerInfo) []DeprecatedContainerStats {
 			HasNetwork:       cont.Spec.HasNetwork,
 			HasFilesystem:    cont.Spec.HasFilesystem,
 			HasDiskIo:        cont.Spec.HasDiskIo,
+			HasVolumeIo:      cont.Spec.HasVolumeIo,
 			HasCustomMetrics: cont.Spec.HasCustomMetrics,
 		}
 		if stat.HasCpu {
@@ -182,6 +186,9 @@ func DeprecatedStatsFromV1(cont *v1.ContainerInfo) []DeprecatedContainerStats {
 		}
 		if stat.HasDiskIo {
 			stat.DiskIo = val.DiskIo
+		}
+		if stat.HasVolumeIo {
+			stat.VolumeIo = val.VolumeIo
 		}
 		if stat.HasCustomMetrics {
 			stat.CustomMetrics = val.CustomMetrics
@@ -256,6 +263,7 @@ func ContainerSpecFromV1(specV1 *v1.ContainerSpec, aliases []string, namespace s
 		HasFilesystem:    specV1.HasFilesystem,
 		HasNetwork:       specV1.HasNetwork,
 		HasDiskIo:        specV1.HasDiskIo,
+		HasVolumeIo:      specV1.HasVolumeIo,
 		HasCustomMetrics: specV1.HasCustomMetrics,
 		Image:            specV1.Image,
 		Labels:           specV1.Labels,

@@ -32,11 +32,13 @@ import (
 
 	docker "github.com/docker/engine-api/client"
 	dockercontainer "github.com/docker/engine-api/types/container"
+	dockertypes "github.com/docker/engine-api/types"
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	libcontainerconfigs "github.com/opencontainers/runc/libcontainer/configs"
 	"golang.org/x/net/context"
+        drivers "github.com/google/cadvisor/container/docker/drivers"
 )
 
 const (
@@ -45,6 +47,12 @@ const (
 	// Path to the directory where docker stores log files if the json logging driver is enabled.
 	pathToContainersDir = "containers"
 )
+
+type VolumeDriver interface {
+	GetStats(*docker.Client, string) (info.VolumeIoStats, error)
+}
+
+var volumeDrivers=map[string]VolumeDriver{}
 
 type dockerContainerHandler struct {
 	client             *docker.Client
@@ -101,6 +109,9 @@ type dockerContainerHandler struct {
 
 	// thin pool watcher
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
+
+        // map of volumes to their drivers for the container
+        volumes []dockertypes.MountPoint
 }
 
 var _ container.ContainerHandler = &dockerContainerHandler{}
@@ -261,6 +272,19 @@ func newDockerContainerHandler(
 		}
 	}
 
+	// Look for persistent volumes mounted for the container and init the driver
+	// for that.
+	for _, mount := range ctnr.Mounts {
+		if  mount.Name != "" && mount.Driver != "" {
+			handler.volumes = append(handler.volumes, mount)
+			// Init the volume driver if not already done
+			if volumeDrivers[mount.Driver] == nil {
+				switch mount.Driver {
+					case "vmdk": volumeDrivers[mount.Driver] = drivers.NewVmdkDriver()
+				}
+			}
+		}
+	} 
 	return handler, nil
 }
 
@@ -340,7 +364,8 @@ func (self *dockerContainerHandler) needNet() bool {
 
 func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := !self.ignoreMetrics.Has(container.DiskUsageMetrics)
-	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem)
+        hasVolumeIo := len(self.volumes) > 0
+	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem, hasVolumeIo)
 
 	spec.Labels = self.labels
 	spec.Envs = self.envs
@@ -419,6 +444,15 @@ func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 		return stats, err
 	}
 
+	// Collect stats for volumes mounted for this container.
+	for _, volume := range self.volumes {
+		if volumeDrivers[volume.Driver] != nil {
+			vstats, err := volumeDrivers[volume.Driver].GetStats(self.client, volume.Name)
+			if err == nil {
+				stats.VolumeIo = append(stats.VolumeIo, vstats)
+			}
+		}
+	}
 	return stats, nil
 }
 

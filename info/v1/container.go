@@ -62,6 +62,7 @@ type ContainerSpec struct {
 
 	// HasDiskIo when true, indicates that DiskIo stats will be available.
 	HasDiskIo bool `json:"has_diskio"`
+	HasVolumeIo bool `json:"has_volumeio"`
 
 	HasCustomMetrics bool         `json:"has_custom_metrics"`
 	CustomMetrics    []MetricSpec `json:"custom_metrics,omitempty"`
@@ -511,7 +512,10 @@ type ContainerStats struct {
 	// Task load stats
 	TaskStats LoadStats `json:"task_stats,omitempty"`
 
-	// Custom metrics from all collectors
+	// Volume stats
+	VolumeIo  []VolumeIoStats `json:"volumeio,omitempty"`
+
+	//Custom metrics from all collectors
 	CustomMetrics map[string][]MetricVal `json:"custom_metrics,omitempty"`
 }
 
@@ -604,4 +608,10 @@ type OomKillEventData struct {
 
 	// The name of the killed process
 	ProcessName string `json:"process_name"`
+}
+
+// Volume IO stats
+type VolumeIoStats struct {
+	Volume         string `json:"volume,omitempty"`
+	Stats          map[string]interface{} `json:"stats,omitempty"`
 }

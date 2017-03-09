@@ -130,7 +130,7 @@ func (self *rawContainerHandler) Cleanup() {}
 func (self *rawContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	const hasNetwork = false
 	hasFilesystem := isRootCgroup(self.name) || len(self.externalMounts) > 0
-	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, hasNetwork, hasFilesystem)
+	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, hasNetwork, hasFilesystem, false)
 	if err != nil {
 		return spec, err
 	}

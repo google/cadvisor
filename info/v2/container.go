@@ -94,6 +94,7 @@ type ContainerSpec struct {
 	HasNetwork    bool `json:"has_network"`
 	HasFilesystem bool `json:"has_filesystem"`
 	HasDiskIo     bool `json:"has_diskio"`
+	HasVolumeIo   bool `json:"has_volumeio"`
 
 	// Image name used for this container.
 	Image string `json:"image,omitempty"`
@@ -123,6 +124,9 @@ type DeprecatedContainerStats struct {
 	// Task load statistics
 	HasLoad bool         `json:"has_load"`
 	Load    v1.LoadStats `json:"load_stats,omitempty"`
+	// Volume stats
+	HasVolumeIo bool     `json:"has_volumeio"`
+	VolumeIo  []v1.VolumeIoStats `json:"volumeio,omitempty"`
 	// Custom Metrics
 	HasCustomMetrics bool                      `json:"has_custom_metrics"`
 	CustomMetrics    map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
@@ -146,6 +150,8 @@ type ContainerStats struct {
 	Filesystem *FilesystemStats `json:"filesystem,omitempty"`
 	// Task load statistics
 	Load *v1.LoadStats `json:"load_stats,omitempty"`
+	// Volume stats
+	VolumeIo  []v1.VolumeIoStats `json:"volumeio,omitempty"`
 	// Custom Metrics
 	CustomMetrics map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
 }
