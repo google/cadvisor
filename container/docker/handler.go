@@ -33,6 +33,7 @@ import (
 	docker "github.com/docker/engine-api/client"
 	dockercontainer "github.com/docker/engine-api/types/container"
 	"github.com/golang/glog"
+	zfs "github.com/mistifyio/go-zfs"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	libcontainerconfigs "github.com/opencontainers/runc/libcontainer/configs"
@@ -185,6 +186,12 @@ func newDockerContainerHandler(
 		}
 
 		poolName = status.DriverStatus[dockerutil.DriverStatusPoolName]
+	case zfsStorageDriver:
+		status, err := Status()
+		if err != nil {
+			return nil, fmt.Errorf("unable to determine docker status: %v", err)
+		}
+		poolName = path.Join(status.DriverStatus[dockerutil.DriverStatusParentDataset], rwLayerID)
 	}
 
 	// TODO: extract object mother method
@@ -359,12 +366,19 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 		// Device has to be the pool name to correlate with the device name as
 		// set in the machine info filesystems.
 		device = self.poolName
-	case aufsStorageDriver, overlayStorageDriver, zfsStorageDriver:
+	case aufsStorageDriver, overlayStorageDriver:
 		deviceInfo, err := self.fsInfo.GetDirFsDevice(self.rootfsStorageDir)
 		if err != nil {
 			return fmt.Errorf("unable to determine device info for dir: %v: %v", self.rootfsStorageDir, err)
 		}
 		device = deviceInfo.Device
+	case zfsStorageDriver:
+		fsStat, err := self.getZFSFsStats()
+		if err != nil {
+			return fmt.Errorf("unable to determine filesystem stats for zfs: %v: %v", self.poolName, err)
+		}
+		stats.Filesystem = append(stats.Filesystem, fsStat)
+		return nil
 	default:
 		return nil
 	}
@@ -453,4 +467,20 @@ func (self *dockerContainerHandler) Exists() bool {
 
 func (self *dockerContainerHandler) Type() container.ContainerType {
 	return container.ContainerTypeDocker
+}
+
+func (self *dockerContainerHandler) getZFSFsStats() (info.FsStats, error) {
+	d, err := zfs.GetDataset(self.poolName)
+	if err != nil {
+		return info.FsStats{}, err
+	}
+	f := info.FsStats{
+		Device:    self.poolName,
+		Type:      "zfs",
+		Limit:     d.Avail,
+		Usage:     d.Referenced,
+		BaseUsage: d.Logicalused,
+	}
+
+	return f, nil
 }
