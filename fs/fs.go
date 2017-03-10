@@ -492,7 +492,11 @@ func GetDirInodeUsage(dir string, timeout time.Duration) (uint64, error) {
 	}
 	rootDevId := rootStat.Dev
 
-	inodes := map[uint64]struct{}{}
+	// inodes tracks the inodes that can't have duplicate hardlinks (nlink = 1);
+	// this allows us to save space in the inode map below
+	var inodes uint64
+	// dedupedInode stores inodes that could be duplicates (nlink > 1)
+	dedupedInodes := map[uint64]struct{}{}
 
 	err = filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if os.IsNotExist(err) {
@@ -510,11 +514,16 @@ func GetDirInodeUsage(dir string, timeout time.Duration) (uint64, error) {
 			// don't descend into directories on other devices
 			return filepath.SkipDir
 		}
-		inodes[s.Ino] = struct{}{}
+		if s.Nlink > 1 {
+			// Dedupe things that could be hardlinks
+			dedupedInodes[s.Ino] = struct{}{}
+		} else {
+			inodes++
+		}
 		return nil
 	})
 
-	return uint64(len(inodes)), err
+	return inodes + uint64(len(dedupedInodes)), err
 }
 
 func getVfsStats(path string) (total uint64, free uint64, avail uint64, inodes uint64, inodesFree uint64, err error) {
