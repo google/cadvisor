@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.24.2 (2017-03-14)
+
+- Fix issue with disappearing container stats by ignoring .mount cgroups.
+
 ### 0.24.1 (2016-10-10)
 
 - Fix issue with running cAdvisor in a container on some distributions.
