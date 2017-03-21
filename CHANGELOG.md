@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.25.0 (2017-03-09)
+- Disable thin_ls due to excessive iops
+- Ignore .mount cgroups, fixing dissappearing stats
+- Fix wc goroutine leak
+- Update aws-sdk-go dependency to 1.6.10
+- Update to go 1.7 for releases
+
 ### 0.24.1 (2016-10-10)
 
 - Fix issue with running cAdvisor in a container on some distributions.

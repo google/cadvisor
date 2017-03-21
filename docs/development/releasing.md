@@ -47,7 +47,7 @@ Command: `make release`
 - Try to build it from the release branch, since we include that in the binary version
 - Verify the ldflags output, in particular check the Version, BuildUser, and GoVersion are expected
 
-Once the build is complete, check the VERSION and note the sha1 and md5 hashes.
+Once the build is complete, check the VERSION and note the sha256 hash.
 
 ## 4. Push the Docker images
 
@@ -93,9 +93,9 @@ Once you are satisfied with the release quality (consider waiting a week for bug
 
 1. Edit the github release a final time, and uncheck the "Pre-release" checkbox
 2. Tag the docker & gcr.io releases with the latest version
-   ```
-   $ docker pull google/cadvisor:$VERSION
-   $ docker tag -f google/cadvisor:$VERSION google/cadvisor:latest
-   $ docker tag -f google/cadvisor:$VERSION gcr.io/google_containers/cadvisor:latest
-   ```
+```
+$ docker pull google/cadvisor:$VERSION
+$ docker tag -f google/cadvisor:$VERSION google/cadvisor:latest
+$ docker tag -f google/cadvisor:$VERSION gcr.io/google_containers/cadvisor:latest
+```
 3. Repeat steps 4.a and 4.b to push the image tagged with latest
