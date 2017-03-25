@@ -49,8 +49,7 @@ func (self *Client) Send(namespace, containerName, key string, value uint64) err
 	formatted := fmt.Sprintf("%s.%s.%s:%d|g", namespace, containerName, key, value)
 	_, err := fmt.Fprintf(self.conn, formatted)
 	if err != nil {
-		glog.V(3).Infof("failed to send data %q: %v", formatted, err)
-		return err
+		return fmt.Errorf("failed to send data %q: %v", formatted, err)
 	}
 	return nil
 }
