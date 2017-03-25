@@ -117,10 +117,7 @@ func main() {
 		glog.Fatalf("Failed to initialize storage driver: %s", err)
 	}
 
-	sysFs, err := sysfs.NewRealSysFs()
-	if err != nil {
-		glog.Fatalf("Failed to create a system interface: %s", err)
-	}
+	sysFs := sysfs.NewRealSysFs()
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
