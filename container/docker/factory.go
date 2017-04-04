@@ -103,6 +103,8 @@ type dockerFactory struct {
 
 	dockerVersion []int
 
+	dockerAPIVersion []int
+
 	ignoreMetrics container.MetricSet
 
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
@@ -185,8 +187,10 @@ func (self *dockerFactory) DebugInfo() map[string][]string {
 }
 
 var (
-	version_regexp_string = `(\d+)\.(\d+)\.(\d+)`
-	version_re            = regexp.MustCompile(version_regexp_string)
+	version_regexp_string    = `(\d+)\.(\d+)\.(\d+)`
+	version_re               = regexp.MustCompile(version_regexp_string)
+	apiversion_regexp_string = `(\d+)\.(\d+)`
+	apiversion_re            = regexp.MustCompile(apiversion_regexp_string)
 )
 
 func startThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolWatcher, error) {
@@ -310,7 +314,9 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 	}
 
 	// Version already validated above, assume no error here.
-	dockerVersion, _ := parseDockerVersion(dockerInfo.ServerVersion)
+	dockerVersion, _ := parseVersion(dockerInfo.ServerVersion, version_re, 3)
+
+	dockerAPIVersion, _ := APIVersion()
 
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
@@ -338,6 +344,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		cgroupSubsystems:   cgroupSubsystems,
 		client:             client,
 		dockerVersion:      dockerVersion,
+		dockerAPIVersion:   dockerAPIVersion,
 		fsInfo:             fsInfo,
 		machineInfoFactory: factory,
 		storageDriver:      storageDriver(dockerInfo.Driver),
