@@ -190,8 +190,8 @@ func newDockerContainerHandler(
 	switch storageDriver {
 	case aufsStorageDriver:
 		rootfsStorageDir = path.Join(storageDir, string(aufsStorageDriver), aufsRWLayer, rwLayerID)
-	case overlayStorageDriver:
-		rootfsStorageDir = path.Join(storageDir, string(overlayStorageDriver), rwLayerID)
+	case overlayStorageDriver, overlay2StorageDriver:
+		rootfsStorageDir = path.Join(storageDir, string(storageDriver), rwLayerID)
 	case zfsStorageDriver:
 		status, err := Status()
 		if err != nil {
@@ -399,7 +399,7 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 		// Device has to be the pool name to correlate with the device name as
 		// set in the machine info filesystems.
 		device = self.poolName
-	case aufsStorageDriver, overlayStorageDriver:
+	case aufsStorageDriver, overlayStorageDriver, overlay2StorageDriver:
 		deviceInfo, err := self.fsInfo.GetDirFsDevice(self.rootfsStorageDir)
 		if err != nil {
 			return fmt.Errorf("unable to determine device info for dir: %v: %v", self.rootfsStorageDir, err)

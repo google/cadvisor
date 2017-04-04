@@ -91,6 +91,7 @@ func New(t *testing.T) Framework {
 const (
 	Aufs         string = "aufs"
 	Overlay      string = "overlay"
+	Overlay2     string = "overlay2"
 	DeviceMapper string = "devicemapper"
 	Unknown      string = ""
 )
@@ -276,12 +277,8 @@ func (self dockerActions) StorageDriver() string {
 			idx := strings.LastIndex(line, ": ") + 2
 			driver := line[idx:]
 			switch driver {
-			case Aufs:
-				return Aufs
-			case Overlay:
-				return Overlay
-			case DeviceMapper:
-				return DeviceMapper
+			case Aufs, Overlay, Overlay2, DeviceMapper:
+				return driver
 			default:
 				return Unknown
 			}
