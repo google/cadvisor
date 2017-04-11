@@ -259,6 +259,7 @@ func ContainerSpecFromV1(specV1 *v1.ContainerSpec, aliases []string, namespace s
 		HasCustomMetrics: specV1.HasCustomMetrics,
 		Image:            specV1.Image,
 		Labels:           specV1.Labels,
+		Envs:             specV1.Envs,
 	}
 	if specV1.HasCpu {
 		specV2.Cpu.Limit = specV1.Cpu.Limit
