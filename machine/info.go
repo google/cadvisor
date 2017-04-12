@@ -31,8 +31,14 @@ import (
 	"github.com/golang/glog"
 )
 
+const (
+	defaultIntegerValue = -1
+)
+
 var machineIdFilePath = flag.String("machine_id_file", "/etc/machine-id,/var/lib/dbus/machine-id", "Comma-separated list of files to check for machine-id. Use the first one that exists.")
 var bootIdFilePath = flag.String("boot_id_file", "/proc/sys/kernel/random/boot_id", "Comma-separated list of files to check for boot-id. Use the first one that exists.")
+var cpuCapacityOverride = flag.Int("cpu_capacity_override", defaultIntegerValue, "Customized cpu capacity value in cores")
+var memoryCapacityOverride = flag.Int64("memory_capacity_override", defaultIntegerValue, "Customized memory capacity value in bytes")
 
 func getInfoFromFiles(filePaths string) string {
 	if len(filePaths) == 0 {
@@ -65,6 +71,12 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		return nil, err
 	}
 
+	if *memoryCapacityOverride > 0 {
+		glog.Infof("Customize memory capacity from %d to %d", memoryCapacity,
+			*memoryCapacityOverride)
+		memoryCapacity = uint64(*memoryCapacityOverride)
+	}
+
 	filesystems, err := fsInfo.GetGlobalFsInfo()
 	if err != nil {
 		glog.Errorf("Failed to get global filesystem information: %v", err)
@@ -83,6 +95,11 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	topology, numCores, err := GetTopology(sysFs, string(cpuinfo))
 	if err != nil {
 		glog.Errorf("Failed to get topology information: %v", err)
+	}
+
+	if *cpuCapacityOverride > 0 {
+		glog.Infof("Customize cpu capacity from %d to %d", numCores, *cpuCapacityOverride)
+		numCores = *cpuCapacityOverride
 	}
 
 	systemUUID, err := sysinfo.GetSystemUUID(sysFs)
