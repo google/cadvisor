@@ -31,21 +31,35 @@ import (
 	"github.com/google/cadvisor/info/v1"
 
 	"github.com/golang/glog"
+	"time"
 )
 
 // Client represents the base URL for a cAdvisor client.
 type Client struct {
-	baseUrl string
+	baseUrl    string
+	httpClient *http.Client
 }
 
 // NewClient returns a new v1.3 client with the specified base URL.
 func NewClient(url string) (*Client, error) {
+	return newClient(url, http.DefaultClient)
+}
+
+// NewClientWithTimeout returns a new v1.3 client with the specified base URL and http client timeout.
+func NewClientWithTimeout(url string, timeout time.Duration) (*Client, error) {
+	return newClient(url, &http.Client{
+		Timeout: timeout,
+	})
+}
+
+func newClient(url string, client *http.Client) (*Client, error) {
 	if !strings.HasSuffix(url, "/") {
 		url += "/"
 	}
 
 	return &Client{
-		baseUrl: fmt.Sprintf("%sapi/v1.3/", url),
+		baseUrl:    fmt.Sprintf("%sapi/v1.3/", url),
+		httpClient: client,
 	}, nil
 }
 
@@ -168,9 +182,9 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 		if marshalErr != nil {
 			return fmt.Errorf("unable to marshal data: %v", marshalErr)
 		}
-		resp, err = http.Post(url, "application/json", bytes.NewBuffer(data))
+		resp, err = self.httpClient.Post(url, "application/json", bytes.NewBuffer(data))
 	} else {
-		resp, err = http.Get(url)
+		resp, err = self.httpClient.Get(url)
 	}
 	if err != nil {
 		return fmt.Errorf("unable to get %q from %q: %v", infoName, url, err)
@@ -199,7 +213,7 @@ func (self *Client) getEventStreamingData(url string, einfo chan *v1.Event) erro
 	if err != nil {
 		return err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := self.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
