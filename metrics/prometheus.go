@@ -130,10 +130,12 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc) *PrometheusCo
 				getValues: func(s *info.ContainerStats) metricValues {
 					values := make(metricValues, 0, len(s.Cpu.Usage.PerCpu))
 					for i, value := range s.Cpu.Usage.PerCpu {
-						values = append(values, metricValue{
-							value:  float64(value) / float64(time.Second),
-							labels: []string{fmt.Sprintf("cpu%02d", i)},
-						})
+						if value > 0 {
+							values = append(values, metricValue{
+								value:  float64(value) / float64(time.Second),
+								labels: []string{fmt.Sprintf("cpu%02d", i)},
+							})
+						}
 					}
 					return values
 				},
