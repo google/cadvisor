@@ -7,7 +7,7 @@ This document describes a set of runtime flags available in cAdvisor.
 cAdvisor stores the latest historical data in memory. How long of a history it stores can be configured with the `--storage_duration` flag.
 
 ```
---storage_duration: How long to store data.
+--storage_duration=2m0s: How long to store data.
 ```
 
 ## Housekeeping
