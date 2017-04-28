@@ -390,6 +390,15 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 }
 
 func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
+	mi, err := self.machineInfoFactory.GetMachineInfo()
+	if err != nil {
+		return err
+	}
+
+	if !self.ignoreMetrics.Has(container.DiskIOMetrics) {
+		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
+	}
+
 	if self.ignoreMetrics.Has(container.DiskUsageMetrics) {
 		return nil
 	}
@@ -409,11 +418,6 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 		device = self.zfsParent
 	default:
 		return nil
-	}
-
-	mi, err := self.machineInfoFactory.GetMachineInfo()
-	if err != nil {
-		return err
 	}
 
 	var (

@@ -307,9 +307,10 @@ type CpuStats struct {
 }
 
 type PerDiskStats struct {
-	Major uint64            `json:"major"`
-	Minor uint64            `json:"minor"`
-	Stats map[string]uint64 `json:"stats"`
+	Device string            `json:"-"`
+	Major  uint64            `json:"major"`
+	Minor  uint64            `json:"minor"`
+	Stats  map[string]uint64 `json:"stats"`
 }
 
 type DiskIoStats struct {
