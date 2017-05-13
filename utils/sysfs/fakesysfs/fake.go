@@ -35,7 +35,7 @@ func (self *FileInfo) Size() int64 {
 }
 
 func (self *FileInfo) Mode() os.FileMode {
-	return 0
+	return os.ModeSymlink
 }
 
 func (self *FileInfo) ModTime() time.Time {

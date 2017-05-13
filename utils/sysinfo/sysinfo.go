@@ -16,6 +16,7 @@ package sysinfo
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -87,6 +88,10 @@ func GetNetworkDevices(sysfs sysfs.SysFs) ([]info.NetInfo, error) {
 	}
 	netDevices := []info.NetInfo{}
 	for _, dev := range devs {
+		// Only consider directories and symlinks.
+		if dev.Mode()&(os.ModeSymlink|os.ModeDir) == 0 {
+			continue
+		}
 		name := dev.Name()
 		// Ignore docker, loopback, and veth devices.
 		ignoredDevices := []string{"lo", "veth", "docker"}
