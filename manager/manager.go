@@ -902,6 +902,10 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		return err
 	}
 
+	if collectorConfigs != nil {
+		contSpec.HasCustomMetrics = true
+	}
+
 	contRef, err := cont.handler.ContainerReference()
 	if err != nil {
 		return err
