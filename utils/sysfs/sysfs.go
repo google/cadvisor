@@ -154,10 +154,9 @@ func (self *realSysFs) GetNetworkStatValue(dev string, stat string) (uint64, err
 	if err != nil {
 		return 0, fmt.Errorf("failed to read stat from %q for device %q", statPath, dev)
 	}
-	var s uint64
-	n, err := fmt.Sscanf(string(out), "%d", &s)
-	if err != nil || n != 1 {
-		return 0, fmt.Errorf("could not parse value from %q for file %s", string(out), statPath)
+	s, err := strconv.ParseUint(string(out), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("could not parse value from %q for file %q: %v", string(out), statPath, err)
 	}
 	return s, nil
 }
@@ -211,9 +210,8 @@ func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 	if err != nil {
 		return CacheInfo{}, err
 	}
-	var level int
-	n, err = fmt.Sscanf(string(out), "%d", &level)
-	if err != nil || n != 1 {
+	level, err := strconv.ParseInt(string(out), 10, 32)
+	if err != nil {
 		return CacheInfo{}, err
 	}
 
@@ -228,7 +226,7 @@ func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 	}
 	return CacheInfo{
 		Size:  size,
-		Level: level,
+		Level: int(level),
 		Type:  cacheType,
 		Cpus:  cpuCount,
 	}, nil
