@@ -18,6 +18,10 @@ sudo docker run \
 
 cAdvisor is now running (in the background) on `http://localhost:8080/`. The setup includes directories with Docker state cAdvisor needs to observe.
 
+**Note**: If docker daemon is running with [user namespace enabled](https://docs.docker.com/engine/reference/commandline/dockerd/#starting-the-daemon-with-user-namespaces-enabled),
+You need to add `--userns=host` option in order for cAdvisor to monitor Docker containers,
+otherwise cAdvisor can not connect to docker daemon.
+
 ## Latest Canary
 
 The latest cAdvisor canary release is continuously built from HEAD and available
@@ -78,7 +82,3 @@ cAdvisor is now running (in the foreground) on `http://localhost:8080/`.
 ## Runtime Options
 
 cAdvisor has a series of flags that can be used to configure its runtime behavior. More details can be found in runtime [options](runtime_options.md).
-
-## I need help!
-
-We aim to have cAdvisor run everywhere! If you run into issues getting it running, feel free to file an issue. We are very responsive in supporting our users and update our documentation with new setups.
