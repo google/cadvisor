@@ -146,6 +146,7 @@ func newDockerContainerHandler(
 	metadataEnvs []string,
 	dockerVersion []int,
 	ignoreMetrics container.MetricSet,
+	thinPoolName string,
 	thinPoolWatcher *devicemapper.ThinPoolWatcher,
 	zfsWatcher *zfs.ZfsWatcher,
 ) (container.ContainerHandler, error) {
@@ -180,10 +181,10 @@ func newDockerContainerHandler(
 		return nil, err
 	}
 
-	// Determine the rootfs storage dir OR the pool name to determine the device
+	// Determine the rootfs storage dir OR the pool name to determine the device.
+	// For devicemapper, we only need the thin pool name, and that is passed in to this call
 	var (
 		rootfsStorageDir string
-		poolName         string
 		zfsFilesystem    string
 		zfsParent        string
 	)
@@ -199,13 +200,6 @@ func newDockerContainerHandler(
 		}
 		zfsParent = status.DriverStatus[dockerutil.DriverStatusParentDataset]
 		zfsFilesystem = path.Join(zfsParent, rwLayerID)
-	case devicemapperStorageDriver:
-		status, err := Status()
-		if err != nil {
-			return nil, fmt.Errorf("unable to determine docker status: %v", err)
-		}
-
-		poolName = status.DriverStatus[dockerutil.DriverStatusPoolName]
 	}
 
 	// TODO: extract object mother method
@@ -219,7 +213,7 @@ func newDockerContainerHandler(
 		storageDriver:      storageDriver,
 		fsInfo:             fsInfo,
 		rootFs:             rootFs,
-		poolName:           poolName,
+		poolName:           thinPoolName,
 		zfsFilesystem:      zfsFilesystem,
 		rootfsStorageDir:   rootfsStorageDir,
 		envs:               make(map[string]string),

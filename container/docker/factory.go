@@ -107,6 +107,7 @@ type dockerFactory struct {
 
 	ignoreMetrics container.MetricSet
 
+	thinPoolName    string
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
 
 	zfsWatcher *zfs.ZfsWatcher
@@ -136,6 +137,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		metadataEnvs,
 		self.dockerVersion,
 		self.ignoreMetrics,
+		self.thinPoolName,
 		self.thinPoolWatcher,
 		self.zfsWatcher,
 	)
@@ -323,12 +325,18 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
 
-	var thinPoolWatcher *devicemapper.ThinPoolWatcher
+	var (
+		thinPoolWatcher *devicemapper.ThinPoolWatcher
+		thinPoolName    string
+	)
 	if storageDriver(dockerInfo.Driver) == devicemapperStorageDriver {
 		thinPoolWatcher, err = startThinPoolWatcher(dockerInfo)
 		if err != nil {
 			glog.Errorf("devicemapper filesystem stats will not be reported: %v", err)
 		}
+
+		status := StatusFromDockerInfo(*dockerInfo)
+		thinPoolName = status.DriverStatus[dockerutil.DriverStatusPoolName]
 	}
 
 	var zfsWatcher *zfs.ZfsWatcher
@@ -350,6 +358,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		storageDriver:      storageDriver(dockerInfo.Driver),
 		storageDir:         RootDir(),
 		ignoreMetrics:      ignoreMetrics,
+		thinPoolName:       thinPoolName,
 		thinPoolWatcher:    thinPoolWatcher,
 		zfsWatcher:         zfsWatcher,
 	}
