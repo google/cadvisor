@@ -455,11 +455,15 @@ func (self *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) {
 }
 
 func (self *RealFsInfo) GetDirDiskUsage(dir string, timeout time.Duration) (uint64, error) {
+	claimToken()
+	defer releaseToken()
+	return GetDirDiskUsage(dir, timeout)
+}
+
+func GetDirDiskUsage(dir string, timeout time.Duration) (uint64, error) {
 	if dir == "" {
 		return 0, fmt.Errorf("invalid directory")
 	}
-	claimToken()
-	defer releaseToken()
 	cmd := exec.Command("nice", "-n", "19", "du", "-s", dir)
 	stdoutp, err := cmd.StdoutPipe()
 	if err != nil {
@@ -496,13 +500,17 @@ func (self *RealFsInfo) GetDirDiskUsage(dir string, timeout time.Duration) (uint
 }
 
 func (self *RealFsInfo) GetDirInodeUsage(dir string, timeout time.Duration) (uint64, error) {
+	claimToken()
+	defer releaseToken()
+	return GetDirInodeUsage(dir, timeout)
+}
+
+func GetDirInodeUsage(dir string, timeout time.Duration) (uint64, error) {
 	if dir == "" {
 		return 0, fmt.Errorf("invalid directory")
 	}
 	var counter byteCounter
 	var stderr bytes.Buffer
-	claimToken()
-	defer releaseToken()
 	findCmd := exec.Command("find", dir, "-xdev", "-printf", ".")
 	findCmd.Stdout, findCmd.Stderr = &counter, &stderr
 	if err := findCmd.Start(); err != nil {
