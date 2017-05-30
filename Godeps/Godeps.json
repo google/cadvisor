@@ -1,7 +1,7 @@
 {
 	"ImportPath": "github.com/google/cadvisor",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v74",
+	"GodepVersion": "v79",
 	"Packages": [
 		"./..."
 	],
@@ -466,25 +466,30 @@
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
-			"Comment": "0.7.0-52-ge51041b",
-			"Rev": "e51041b3fa41cece0dca035740ba6411905be473"
+			"Comment": "v0.8.0-62-g08fd2e1",
+			"Rev": "08fd2e12372a66e68e30523c7642e0cbc3e4fbde"
+		},
+		{
+			"ImportPath": "github.com/prometheus/client_golang/prometheus/promhttp",
+			"Comment": "v0.8.0-62-g08fd2e1",
+			"Rev": "08fd2e12372a66e68e30523c7642e0cbc3e4fbde"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_model/go",
-			"Comment": "model-0.0.2-12-gfa8ad6f",
-			"Rev": "fa8ad6fec33561be4280a8f0514318c79d7f6cb6"
+			"Comment": "model-0.0.2-14-g6f38060",
+			"Rev": "6f3806018612930941127f2a7c6c453ba2c527d2"
 		},
 		{
 			"ImportPath": "github.com/prometheus/common/expfmt",
-			"Rev": "1cc3e4c3b28fd42633a8c389c98cfbadf42621b1"
+			"Rev": "49fee292b27bfff7f354ee0f64e1bc4850462edf"
 		},
 		{
 			"ImportPath": "github.com/prometheus/common/model",
-			"Rev": "1cc3e4c3b28fd42633a8c389c98cfbadf42621b1"
+			"Rev": "49fee292b27bfff7f354ee0f64e1bc4850462edf"
 		},
 		{
 			"ImportPath": "github.com/prometheus/procfs",
-			"Rev": "6c34ef819e19b4e16f410100ace4aa006f0e3bf8"
+			"Rev": "1e2146578273cef808354faa16a1922e0b5d6b2f"
 		},
 		{
 			"ImportPath": "github.com/seccomp/libseccomp-golang",
@@ -619,6 +624,14 @@
 			"ImportPath": "gopkg.in/olivere/elastic.v2/uritemplates",
 			"Comment": "v2.0.12",
 			"Rev": "3cfe88295d20b6299bd935131fc0fd17316405ad"
+		},
+		{
+			"ImportPath": "github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg",
+			"Rev": "49fee292b27bfff7f354ee0f64e1bc4850462edf"
+		},
+		{
+			"ImportPath": "github.com/prometheus/procfs/xfs",
+			"Rev": "1e2146578273cef808354faa16a1922e0b5d6b2f"
 		}
 	]
 }
