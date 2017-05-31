@@ -1,5 +1,13 @@
 # Changelog
 
+### 0.26.0 (2017-05-31)
+- Fix disk partition discovery for brtfs
+- Add ZFS support
+- Add UDP metrics (collection disabled by default)
+- Improve diskio prometheus metrics
+- Update Prometheus godeps to v0.8
+- Add overlay2 storage driver support
+
 ### 0.25.0 (2017-03-09)
 - Disable thin_ls due to excessive iops
 - Ignore .mount cgroups, fixing dissappearing stats
