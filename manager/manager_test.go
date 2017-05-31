@@ -280,7 +280,8 @@ func TestSubcontainersInfo(t *testing.T) {
 
 func TestDockerContainersInfo(t *testing.T) {
 	containers := []string{
-		"/docker/c1",
+		"/docker/c1a",
+		"/docker/c2a",
 	}
 
 	query := &info.ContainerInfoRequest{
@@ -289,12 +290,26 @@ func TestDockerContainersInfo(t *testing.T) {
 
 	m, _, _ := expectManagerWithContainers(containers, query, t)
 
-	result, err := m.DockerContainer("c1", query)
+	result, err := m.DockerContainer("c1a", query)
 	if err != nil {
 		t.Fatalf("expected to succeed: %s", err)
 	}
 	if result.Name != containers[0] {
 		t.Errorf("Unexpected container %q in result. Expected container %q", result.Name, containers[0])
+	}
+
+	result, err = m.DockerContainer("c2", query)
+	if err != nil {
+		t.Fatalf("expected to succeed: %s", err)
+	}
+	if result.Name != containers[1] {
+		t.Errorf("Unexpected container %q in result. Expected container %q", result.Name, containers[1])
+	}
+
+	result, err = m.DockerContainer("c", query)
+	expectedError := "unable to find container. Container \"c\" is not unique"
+	if err == nil {
+		t.Errorf("expected error %q but received %q", expectedError, err)
 	}
 }
 

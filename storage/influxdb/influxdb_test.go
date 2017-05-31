@@ -90,6 +90,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	username := "root"
 	password := "root"
 	hostname := "localhost:8086"
+	retentionPolicy := "cadvisor_test_rp"
 	// percentilesDuration := 10 * time.Minute
 
 	config := influxdb.Config{
@@ -103,7 +104,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	}
 
 	// Re-create the database first.
-	if err := prepareDatabase(client, database); err != nil {
+	if err := prepareDatabase(client, database, retentionPolicy); err != nil {
 		t.Fatal(err)
 	}
 
@@ -113,6 +114,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	driver, err := newStorage(machineName,
 		table,
 		database,
+		retentionPolicy,
 		username,
 		password,
 		hostname,
@@ -133,6 +135,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	driverForAnotherMachine, err := newStorage("machineB",
 		table,
 		database,
+		retentionPolicy,
 		username,
 		password,
 		hostname,
@@ -150,7 +153,7 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 	f(testDriver, t)
 }
 
-func prepareDatabase(client *influxdb.Client, database string) error {
+func prepareDatabase(client *influxdb.Client, database string, retentionPolicy string) error {
 	dropDbQuery := influxdb.Query{
 		Command: fmt.Sprintf("drop database \"%v\"", database),
 	}
@@ -161,7 +164,7 @@ func prepareDatabase(client *influxdb.Client, database string) error {
 	// Depending on the InfluxDB configuration it may be created automatically with the database or not.
 	// TODO create ret. policy only if not present
 	createPolicyQuery := influxdb.Query{
-		Command: fmt.Sprintf("create retention policy \"default\" on \"%v\" duration 1h replication 1 default", database),
+		Command: fmt.Sprintf("create retention policy \"%v\" on \"%v\" duration 1h replication 1 default", retentionPolicy, database),
 	}
 	_, err := client.Query(dropDbQuery)
 	if err != nil {
@@ -181,6 +184,7 @@ func TestContainerFileSystemStatsToPoints(t *testing.T) {
 	machineName := "testMachine"
 	table := "cadvisor_table"
 	database := "cadvisor_test"
+	retentionPolicy := "cadvisor_test_rp"
 	username := "root"
 	password := "root"
 	influxdbHost := "localhost:8086"
@@ -188,6 +192,7 @@ func TestContainerFileSystemStatsToPoints(t *testing.T) {
 	storage, err := newStorage(machineName,
 		table,
 		database,
+		retentionPolicy,
 		username,
 		password,
 		influxdbHost,
@@ -252,6 +257,7 @@ func createTestStorage() (*influxdbStorage, error) {
 	machineName := "testMachine"
 	table := "cadvisor_table"
 	database := "cadvisor_test"
+	retentionPolicy := "cadvisor_test_rp"
 	username := "root"
 	password := "root"
 	influxdbHost := "localhost:8086"
@@ -259,6 +265,7 @@ func createTestStorage() (*influxdbStorage, error) {
 	storage, err := newStorage(machineName,
 		table,
 		database,
+		retentionPolicy,
 		username,
 		password,
 		influxdbHost,
