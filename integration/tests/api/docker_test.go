@@ -307,12 +307,6 @@ func TestDockerFilesystemStats(t *testing.T) {
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
-	storageDriver := fm.Docker().StorageDriver()
-	if storageDriver == framework.DeviceMapper {
-		// Filesystem stats not supported with devicemapper, yet
-		return
-	}
-
 	const (
 		ddUsage       = uint64(1 << 3) // 1 KB
 		sleepDuration = 10 * time.Second
@@ -332,6 +326,7 @@ func TestDockerFilesystemStats(t *testing.T) {
 		Count:  1,
 	}
 	needsBaseUsageCheck := false
+	storageDriver := fm.Docker().StorageDriver()
 	switch storageDriver {
 	case framework.Aufs, framework.Overlay, framework.Overlay2, framework.DeviceMapper:
 		needsBaseUsageCheck = true
