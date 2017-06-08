@@ -190,6 +190,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc) *PrometheusCo
 					return metricValues{{value: float64(s.Cpu.CFS.ThrottledTime) / float64(time.Second)}}
 				},
 			}, {
+				name:      "container_cpu_load_average_10s",
+				help:      "Value of container cpu load average over the last 10 seconds.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Cpu.LoadAverage)}}
+				},
+			}, {
 				name:      "container_memory_cache",
 				help:      "Number of bytes of page cache memory.",
 				valueType: prometheus.GaugeValue,
@@ -579,6 +586,38 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc) *PrometheusCo
 					return values
 				},
 			}, {
+				name:        "container_network_tcp_usage_total",
+				help:        "tcp connection usage statistic for container",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"tcp_state"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					tcpStatMap := s.Network.Tcp.TcpStatMap()
+					values := make(metricValues, 0, len(tcpStatMap))
+					for tcpState, stateCount := range tcpStatMap {
+						values = append(values, metricValue{
+							value:  float64(stateCount),
+							labels: []string{tcpState},
+						})
+					}
+					return values
+				},
+			}, {
+				name:        "container_network_udp_usage_total",
+				help:        "udp connection usage statistic for container",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"udp_state"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					udpStatMap := s.Network.Udp.UdpStatMap()
+					values := make(metricValues, 0, len(udpStatMap))
+					for udpState, stateCount := range udpStatMap {
+						values = append(values, metricValue{
+							value:  float64(stateCount),
+							labels: []string{udpState},
+						})
+					}
+					return values
+				},
+			}, {
 				name:        "container_tasks_state",
 				help:        "Number of tasks in given state",
 				extraLabels: []string{"state"},
@@ -610,6 +649,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc) *PrometheusCo
 			},
 		},
 	}
+
 	return c
 }
 

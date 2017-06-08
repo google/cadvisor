@@ -418,6 +418,22 @@ type TcpStat struct {
 	Closing uint64
 }
 
+func (t *TcpStat) TcpStatMap() map[string]uint64 {
+	return map[string]uint64{
+		"tcp_established": t.Established,
+		"tcp_synsent":     t.SynSent,
+		"tcp_synrecv":     t.SynRecv,
+		"tcp_finwait1":    t.FinWait1,
+		"tcp_finwait2":    t.FinWait2,
+		"tcp_timewait":    t.TimeWait,
+		"tcp_close":       t.Close,
+		"tcp_closewait":   t.CloseWait,
+		"tcp_lastack":     t.LastAck,
+		"tcp_listen":      t.Listen,
+		"tcp_closing":     t.Closing,
+	}
+}
+
 type UdpStat struct {
 	// Count of UDP sockets in state "Listen"
 	Listen uint64
@@ -430,6 +446,15 @@ type UdpStat struct {
 
 	// Count of packets Queued for Transmit
 	TxQueued uint64
+}
+
+func (u *UdpStat) UdpStatMap() map[string]uint64 {
+	return map[string]uint64{
+		"udp_listen":   u.Listen,
+		"udp_dropped":  u.Dropped,
+		"udp_rxqueued": u.RxQueued,
+		"udp_txqueued": u.TxQueued,
+	}
 }
 
 type FsStats struct {
