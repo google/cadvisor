@@ -262,6 +262,22 @@ type TcpStat struct {
 	Closing     uint64
 }
 
+func (t *TcpStat) TcpStatMap() map[string]uint64 {
+	return map[string]uint64{
+		"tcp_established": t.Established,
+		"tcp_synsent":     t.SynSent,
+		"tcp_synrecv":     t.SynRecv,
+		"tcp_finwait1":    t.FinWait1,
+		"tcp_finwait2":    t.FinWait2,
+		"tcp_timewait":    t.TimeWait,
+		"tcp_close":       t.Close,
+		"tcp_closewait":   t.CloseWait,
+		"tcp_lastack":     t.LastAck,
+		"tcp_listen":      t.Listen,
+		"tcp_closing":     t.Closing,
+	}
+}
+
 type NetworkStats struct {
 	// Network stats by interface.
 	Interfaces []v1.InterfaceStats `json:"interfaces,omitempty"`
