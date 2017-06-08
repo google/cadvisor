@@ -53,7 +53,7 @@ const (
 )
 
 func new() (storage.StorageDriver, error) {
-	return newStorage(*storage.ArgDbHost)
+	return newStorage(*storage.ArgDbName)
 }
 
 func (driver *stdoutStorage) containerStatsToValues(stats *info.ContainerStats) (series map[string]uint64) {
