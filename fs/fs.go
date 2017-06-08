@@ -125,6 +125,7 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 	supportedFsType := map[string]bool{
 		// all ext systems are checked through prefix.
 		"btrfs": true,
+		"tmpfs": true,
 		"xfs":   true,
 		"zfs":   true,
 	}
