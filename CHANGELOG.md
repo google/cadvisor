@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.26.1 (2017-06-21)
+- Fix prometheus metrics.
+
 ### 0.26.0 (2017-05-31)
 - Fix disk partition discovery for brtfs
 - Add ZFS support
