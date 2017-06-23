@@ -19,24 +19,191 @@ import (
 	"time"
 )
 
-type timedStoreDataSlice []timedStoreData
-
-func (t timedStoreDataSlice) Less(i, j int) bool {
-	return t[i].timestamp.Before(t[j].timestamp)
+type timedStoreRingBuffer struct {
+	start   int
+	end     int // Last element index + 1
+	buffer  []timedStoreData
+	limited bool // Whether the buffer should grow or overwrite
+	empty   bool // Necessary to distinguish full & empty
 }
 
-func (t timedStoreDataSlice) Len() int {
-	return len(t)
+func newTimedStoreRingBuffer(cap int, limited bool) timedStoreRingBuffer {
+	return timedStoreRingBuffer{
+		start:   0,
+		end:     0,
+		buffer:  make([]timedStoreData, cap),
+		limited: limited,
+		empty:   true,
+	}
 }
 
-func (t timedStoreDataSlice) Swap(i, j int) {
-	t[i], t[j] = t[j], t[i]
+// Translate index to buffer position.
+func (t *timedStoreRingBuffer) index(i int) int {
+	size := len(t.buffer)
+	offset := i + t.start
+	if offset < size {
+		return offset
+	}
+	return offset - size
+}
+
+// Get the element at position i. Assume buffer is non-empty.
+func (t *timedStoreRingBuffer) Get(i int) timedStoreData {
+	return t.buffer[t.index(i)]
+}
+
+// Get the last element in the buffer. Assume buffer is non-empty.
+func (t *timedStoreRingBuffer) Last() timedStoreData {
+	if t.end > 0 {
+		return t.buffer[t.end-1]
+	}
+	return t.buffer[len(t.buffer)-1]
+}
+
+// timedStoreRingBuffer implements sort.Interface
+func (t *timedStoreRingBuffer) Less(i, j int) bool {
+	return t.Get(i).timestamp.Before(t.Get(j).timestamp)
+}
+
+func (t *timedStoreRingBuffer) Len() int {
+	if t.empty {
+		return 0
+	}
+	length := t.end - t.start
+	if length <= 0 {
+		return length + len(t.buffer)
+	}
+	return length
+}
+
+func (t *timedStoreRingBuffer) Swap(i, j int) {
+	iIndex := t.index(i)
+	jIndex := t.index(j)
+	t.buffer[iIndex], t.buffer[jIndex] = t.buffer[jIndex], t.buffer[iIndex]
+}
+
+func (t *timedStoreRingBuffer) grow() int {
+	// Double capacity.
+	newCap := len(t.buffer) * 2
+	buffer := make([]timedStoreData, newCap)
+	// Copy data
+	if t.start < t.end {
+		copy(buffer, t.buffer[t.start:t.end])
+	} else {
+		// Data wraps around, copy 2 segments.
+		size := copy(buffer, t.buffer[t.start:])
+		copy(buffer[size:], t.buffer[:t.end])
+	}
+	t.end = t.Len()
+	t.start = 0
+	t.buffer = buffer
+	return newCap
+}
+
+func (t *timedStoreRingBuffer) Append(item timedStoreData) {
+	size := len(t.buffer)
+	if t.start == t.end && !t.empty {
+		// Buffer is full.
+		if t.limited {
+			// Buffer is limited, evict oldest data.
+			t.start++
+			if t.start == size {
+				t.start = 0
+			}
+		} else {
+			// Buffer is unlimited, add more room.
+			size = t.grow()
+		}
+	}
+	t.empty = false
+	t.buffer[t.end] = item
+	t.end++
+	if t.end == size {
+		t.end = 0
+	}
+}
+
+func (t *timedStoreRingBuffer) Insert(i int, item timedStoreData) {
+	size := len(t.buffer)
+	if t.start == t.end && !t.empty {
+		// Buffer is full.
+		if t.limited {
+			// Buffer is limited, evict oldest data.
+			t.start++
+			i--
+			if t.start == size {
+				t.start = 0
+			}
+		} else {
+			// Buffer is unlimited, add more room.
+			size = t.grow()
+		}
+	}
+	index := t.index(i)
+	t.empty = false
+	if i <= 0 { // Prepend data.
+		t.start--
+		if t.start < 0 {
+			t.start = size - 1
+		}
+		index = t.start
+	} else if i < size/2 { // Shift lower half
+		index--
+		if index < 0 {
+			index = size - 1
+		}
+		bottom := t.start
+		if t.start > index {
+			copy(t.buffer[t.start-1:], t.buffer[t.start:]) // Shift upper segment.
+		}
+		if t.start > index || t.start == 0 {
+			bottom = 1                     // 0 is wrapped, this is the start of the lower block.
+			t.buffer[size-1] = t.buffer[0] // Wrap bottom
+		}
+		if bottom <= index {
+			copy(t.buffer[bottom-1:index], t.buffer[bottom:index+1]) // Shift lower segment.
+		}
+		t.start--
+		if t.start < 0 {
+			t.start = size - 1
+		}
+	} else { // Shift upper half
+		top := t.end
+		if t.end < index {
+			copy(t.buffer[1:t.end+1], t.buffer[0:t.end]) // Shift lower segment.
+		}
+		if t.end < index || t.end == size {
+			top = size - 1                 // end is wrapped, this is the end of the upper block.
+			t.buffer[0] = t.buffer[size-1] // Wrap top
+		}
+		if top > index {
+			copy(t.buffer[index+1:top+1], t.buffer[index:top]) // Shift upper segment.
+		}
+		t.end++
+		if t.end == size {
+			t.end = 0
+		}
+	}
+	t.buffer[index] = item
+}
+
+func (t *timedStoreRingBuffer) RemoveFirstN(n int) {
+	if n >= t.Len() {
+		t.start = t.end
+		t.empty = true
+		return
+	}
+	t.start += n
+	size := len(t.buffer)
+	if t.start >= size {
+		t.start = t.start - size
+	}
 }
 
 // A time-based buffer for ContainerStats.
 // Holds information for a specific time period and/or a max number of items.
 type TimedStore struct {
-	buffer   timedStoreDataSlice
+	buffer   timedStoreRingBuffer
 	age      time.Duration
 	maxItems int
 }
@@ -49,8 +216,14 @@ type timedStoreData struct {
 // Returns a new thread-compatible TimedStore.
 // A maxItems value of -1 means no limit.
 func NewTimedStore(age time.Duration, maxItems int) *TimedStore {
+	var buffer timedStoreRingBuffer
+	if maxItems < 0 {
+		buffer = newTimedStoreRingBuffer(128, false)
+	} else {
+		buffer = newTimedStoreRingBuffer(maxItems, true)
+	}
 	return &TimedStore{
-		buffer:   make(timedStoreDataSlice, 0),
+		buffer:   buffer,
 		age:      age,
 		maxItems: maxItems,
 	}
@@ -63,32 +236,24 @@ func (self *TimedStore) Add(timestamp time.Time, item interface{}) {
 		data:      item,
 	}
 	// Common case: data is added in order.
-	if len(self.buffer) == 0 || !timestamp.Before(self.buffer[len(self.buffer)-1].timestamp) {
-		self.buffer = append(self.buffer, data)
+	if self.buffer.Len() == 0 || !timestamp.Before(self.buffer.Last().timestamp) {
+		self.buffer.Append(data)
 	} else {
 		// Data is out of order; insert it in the correct position.
-		index := sort.Search(len(self.buffer), func(index int) bool {
-			return self.buffer[index].timestamp.After(timestamp)
+		index := sort.Search(self.buffer.Len(), func(index int) bool {
+			return self.buffer.Get(index).timestamp.After(timestamp)
 		})
-		self.buffer = append(self.buffer, timedStoreData{}) // Make room to shift the elements
-		copy(self.buffer[index+1:], self.buffer[index:])    // Shift the elements over
-		self.buffer[index] = data
+		self.buffer.Insert(index, data)
 	}
 
 	// Remove any elements before eviction time.
 	// TODO(rjnagal): This is assuming that the added entry has timestamp close to now.
 	evictTime := timestamp.Add(-self.age)
-	index := sort.Search(len(self.buffer), func(index int) bool {
-		return self.buffer[index].timestamp.After(evictTime)
+	index := sort.Search(self.buffer.Len(), func(index int) bool {
+		return self.buffer.Get(index).timestamp.After(evictTime)
 	})
-	if index < len(self.buffer) {
-		self.buffer = self.buffer[index:]
-	}
-
-	// Remove any elements if over our max size.
-	if self.maxItems >= 0 && len(self.buffer) > self.maxItems {
-		startIndex := len(self.buffer) - self.maxItems
-		self.buffer = self.buffer[startIndex:]
+	if index < self.buffer.Len() {
+		self.buffer.RemoveFirstN(index)
 	}
 }
 
@@ -96,19 +261,19 @@ func (self *TimedStore) Add(timestamp time.Time, item interface{}) {
 // Results are from first to last. maxResults of -1 means no limit.
 func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []interface{} {
 	// No stats, return empty.
-	if len(self.buffer) == 0 {
+	if self.buffer.Len() == 0 {
 		return []interface{}{}
 	}
 
 	var startIndex int
 	if start.IsZero() {
 		// None specified, start at the beginning.
-		startIndex = len(self.buffer) - 1
+		startIndex = self.buffer.Len() - 1
 	} else {
 		// Start is the index before the elements smaller than it. We do this by
 		// finding the first element smaller than start and taking the index
 		// before that element
-		startIndex = sort.Search(len(self.buffer), func(index int) bool {
+		startIndex = sort.Search(self.buffer.Len(), func(index int) bool {
 			// buffer[index] < start
 			return self.getData(index).timestamp.Before(start)
 		}) - 1
@@ -124,12 +289,12 @@ func (self *TimedStore) InTimeRange(start, end time.Time, maxResults int) []inte
 		endIndex = 0
 	} else {
 		// End is the first index smaller than or equal to it (so, not larger).
-		endIndex = sort.Search(len(self.buffer), func(index int) bool {
+		endIndex = sort.Search(self.buffer.Len(), func(index int) bool {
 			// buffer[index] <= t -> !(buffer[index] > t)
 			return !self.getData(index).timestamp.After(end)
 		})
 		// Check if end is before all the data we have.
-		if endIndex == len(self.buffer) {
+		if endIndex == self.buffer.Len() {
 			return []interface{}{}
 		}
 	}
@@ -156,9 +321,9 @@ func (self *TimedStore) Get(index int) interface{} {
 
 // Gets the data at the specified index. Note that elements are output in LIFO order.
 func (self *TimedStore) getData(index int) timedStoreData {
-	return self.buffer[len(self.buffer)-index-1]
+	return self.buffer.Get(self.buffer.Len() - index - 1)
 }
 
 func (self *TimedStore) Size() int {
-	return len(self.buffer)
+	return self.buffer.Len()
 }
