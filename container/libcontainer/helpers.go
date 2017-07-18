@@ -154,6 +154,50 @@ func networkStatsFromProc(rootFs string, pid int) ([]info.InterfaceStats, error)
 	return ifaceStats, nil
 }
 
+func getThreadByPth(rootFs, pid string) (int, error) {
+	fName := path.Join(rootFs, pid, "/status")
+	info, err := ioutil.ReadFile(fName)
+	if err != nil {
+		return 0, err
+	}
+
+	tmp := strings.Split(string(info), "\n")
+	for _, v := range tmp {
+		if strings.Contains(v, "Threads:") {
+			th := strings.Split(v, "Threads:")
+			if len(th) == 2 {
+				num := strings.Trim(th[1], "\t")
+				return strconv.Atoi(num)
+			}
+		}
+	}
+	return 0, nil
+}
+
+func GetThreads(rootFs string, pid int) (int, error){
+	fName := path.Join(rootFs, "proc", strconv.Itoa(pid), "root/proc")
+	files, err := ioutil.ReadDir(fName)
+	if err != nil {
+		return 0, err
+	}
+	var pidFiles []os.FileInfo
+	for _, f := range files {
+		if _, err := strconv.Atoi(f.Name()); err == nil && f.IsDir() {
+			pidFiles = append(pidFiles, f)
+		}
+	}
+	sum :=  0
+	for _, pidFile := range pidFiles {
+		num, err := getThreadByPth(fName, pidFile.Name())
+		if err != nil {
+			return 0,  err
+		}else{
+			sum += num
+		}
+	}
+	return sum, nil
+}
+
 var (
 	ignoredDevicePrefixes = []string{"lo", "veth", "docker"}
 )
@@ -325,6 +369,8 @@ func udpStatsFromProc(rootFs string, pid int, file string) (info.UdpStat, error)
 
 	return udpStats, nil
 }
+
+
 
 func scanUdpStats(r io.Reader) (info.UdpStat, error) {
 	var stats info.UdpStat
