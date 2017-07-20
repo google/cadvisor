@@ -15,6 +15,7 @@
 package libcontainer
 
 import (
+	"os"
 	"testing"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -59,5 +60,29 @@ func TestScanInterfaceStats(t *testing.T) {
 		if v != stats[i] {
 			t.Errorf("Expected %#v, got %#v", v, stats[i])
 		}
+	}
+}
+
+func TestScanUDPStats(t *testing.T) {
+	udpStatsFile := "testdata/procnetudp"
+	r, err := os.Open(udpStatsFile)
+	if err != nil {
+		t.Errorf("failure opening %s: %v", udpStatsFile, err)
+	}
+
+	stats, err := scanUdpStats(r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var udpstats = info.UdpStat{
+		Listen:   2,
+		Dropped:  4,
+		RxQueued: 10,
+		TxQueued: 11,
+	}
+
+	if stats != udpstats {
+		t.Errorf("Expected %#v, got %#v", udpstats, stats)
 	}
 }
