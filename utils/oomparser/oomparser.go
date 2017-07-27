@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os/exec"
 	"path"
 	"regexp"
 	"strconv"
@@ -27,12 +26,13 @@ import (
 	"github.com/google/cadvisor/utils"
 	"github.com/google/cadvisor/utils/tail"
 
+	"github.com/coreos/go-systemd/sdjournal"
 	"github.com/golang/glog"
 )
 
 var (
 	containerRegexp = regexp.MustCompile(`Task in (.*) killed as a result of limit of (.*)`)
-	lastLineRegexp  = regexp.MustCompile(`(^[A-Z][a-z]{2} .*[0-9]{1,2} [0-9]{1,2}:[0-9]{2}:[0-9]{2}) .* Killed process ([0-9]+) \(([\w]+)\)`)
+	lastLineRegexp  = regexp.MustCompile(`Killed process ([0-9]+) \(([\w]+)\)`)
 	firstLineRegexp = regexp.MustCompile(`invoked oom-killer:`)
 )
 
@@ -75,20 +75,17 @@ func getProcessNamePid(line string, currentOomInstance *OomInstance) (bool, erro
 	if reList == nil {
 		return false, nil
 	}
-	const longForm = "Jan _2 15:04:05 2006"
-	stringYear := strconv.Itoa(time.Now().Year())
-	linetime, err := time.ParseInLocation(longForm, reList[1]+" "+stringYear, time.Local)
-	if err != nil {
-		return false, err
-	}
 
-	currentOomInstance.TimeOfDeath = linetime
-	pid, err := strconv.Atoi(reList[2])
+	// TimeOfDeath is approximate as reading timestamp is not native to kernel
+	// message and different logging methods encode the time in different ways.
+	currentOomInstance.TimeOfDeath = time.Now()
+
+	pid, err := strconv.Atoi(reList[1])
 	if err != nil {
 		return false, err
 	}
 	currentOomInstance.Pid = pid
-	currentOomInstance.ProcessName = reList[3]
+	currentOomInstance.ProcessName = reList[2]
 	return true, nil
 }
 
@@ -165,26 +162,22 @@ func (self *OomParser) StreamOoms(outStream chan *OomInstance) {
 	glog.Infof("exiting analyzeLines. OOM events will not be reported.")
 }
 
-func callJournalctl() (io.ReadCloser, error) {
-	cmd := exec.Command("journalctl", "-k", "-f")
-	readcloser, err := cmd.StdoutPipe()
-	if err != nil {
-		return nil, err
-	}
-	if err := cmd.Start(); err != nil {
-		return nil, err
-	}
-	return readcloser, err
-}
-
-func trySystemd() (*OomParser, error) {
-	readcloser, err := callJournalctl()
+func tryJournal() (*OomParser, error) {
+	r, err := sdjournal.NewJournalReader(sdjournal.JournalReaderConfig{
+		NumFromTail: 1, // 0 is what we want but NewJournalReader ignores on 0
+		Matches: []sdjournal.Match{
+			{
+				Field: sdjournal.SD_JOURNAL_FIELD_TRANSPORT,
+				Value: "kernel",
+			},
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
 	glog.Infof("oomparser using systemd")
 	return &OomParser{
-		ioreader: bufio.NewReader(readcloser),
+		ioreader: bufio.NewReader(r),
 	}, nil
 }
 
@@ -220,7 +213,7 @@ func tryLogFile() (*OomParser, error) {
 
 // initializes an OomParser object. Returns an OomParser object and an error.
 func New() (*OomParser, error) {
-	parser, err := trySystemd()
+	parser, err := tryJournal()
 	if err == nil {
 		return parser, nil
 	}
