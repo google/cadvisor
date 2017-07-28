@@ -134,29 +134,3 @@ func ParseAccept(header string) (accept []Accept) {
 
 	return
 }
-
-// Negotiate the most appropriate content_type given the accept header
-// and a list of alternatives.
-func Negotiate(header string, alternatives []string) (content_type string) {
-	asp := make([][]string, 0, len(alternatives))
-	for _, ctype := range alternatives {
-		asp = append(asp, strings.SplitN(ctype, "/", 2))
-	}
-	for _, clause := range ParseAccept(header) {
-		for i, ctsp := range asp {
-			if clause.Type == ctsp[0] && clause.SubType == ctsp[1] {
-				content_type = alternatives[i]
-				return
-			}
-			if clause.Type == ctsp[0] && clause.SubType == "*" {
-				content_type = alternatives[i]
-				return
-			}
-			if clause.Type == "*" && clause.SubType == "*" {
-				content_type = alternatives[i]
-				return
-			}
-		}
-	}
-	return
-}
