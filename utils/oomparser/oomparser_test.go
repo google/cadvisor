@@ -32,32 +32,18 @@ const containerLogFile = "containerOomExampleLog.txt"
 const systemLogFile = "systemOomExampleLog.txt"
 
 func createExpectedContainerOomInstance(t *testing.T) *OomInstance {
-	const longForm = "Jan _2 15:04:05 2006"
-	deathTime, err := time.ParseInLocation(longForm, fmt.Sprintf("Jan  5 15:19:27 %d", time.Now().Year()), time.Local)
-	if err != nil {
-		t.Fatalf("could not parse expected time when creating expected container oom instance. Had error %v", err)
-		return nil
-	}
 	return &OomInstance{
 		Pid:                 13536,
 		ProcessName:         "memorymonster",
-		TimeOfDeath:         deathTime,
 		ContainerName:       "/mem2",
 		VictimContainerName: "/mem2",
 	}
 }
 
 func createExpectedSystemOomInstance(t *testing.T) *OomInstance {
-	const longForm = "Jan _2 15:04:05 2006"
-	deathTime, err := time.ParseInLocation(longForm, fmt.Sprintf("Jan 28 19:58:45 %d", time.Now().Year()), time.Local)
-	if err != nil {
-		t.Fatalf("could not parse expected time when creating expected system oom instance. Had error %v", err)
-		return nil
-	}
 	return &OomInstance{
 		Pid:                 1532,
 		ProcessName:         "badsysprogram",
-		TimeOfDeath:         deathTime,
 		ContainerName:       "/",
 		VictimContainerName: "",
 	}
@@ -109,9 +95,6 @@ func TestGetProcessNamePid(t *testing.T) {
 	}
 	if currentOomInstance.Pid != 19667 {
 		t.Errorf("getProcessNamePid should have set PID to 19667, not %d", currentOomInstance.Pid)
-	}
-	if !correctTime.Equal(currentOomInstance.TimeOfDeath) {
-		t.Errorf("getProcessNamePid should have set date to %v, not %v", correctTime, currentOomInstance.TimeOfDeath)
 	}
 }
 

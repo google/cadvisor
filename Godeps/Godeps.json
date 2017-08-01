@@ -169,6 +169,11 @@
 			"Rev": "4484981625c1a6a2ecb40a390fcb6a9bcfee76e3"
 		},
 		{
+			"ImportPath": "github.com/coreos/go-systemd/sdjournal",
+			"Comment": "v8-2-g4484981",
+			"Rev": "4484981625c1a6a2ecb40a390fcb6a9bcfee76e3"
+		},
+		{
 			"ImportPath": "github.com/coreos/go-systemd/util",
 			"Comment": "v8-2-g4484981",
 			"Rev": "4484981625c1a6a2ecb40a390fcb6a9bcfee76e3"
