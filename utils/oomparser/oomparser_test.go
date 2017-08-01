@@ -26,7 +26,7 @@ import (
 )
 
 const startLine = "Jan 21 22:01:49 localhost kernel: [62278.816267] ruby invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0"
-const endLine = "Jan 21 22:01:49 localhost kernel: [62279.421192] Killed process 19667 (evilprogram2) total-vm:1460016kB, anon-rss:1414008kB, file-rss:4kB"
+const endLine = "Jan 21 22:01:49 localhost kernel: [62279.421192] Killed process 19667 (evil-program2) total-vm:1460016kB, anon-rss:1414008kB, file-rss:4kB"
 const containerLine = "Jan 26 14:10:07 kateknister0.mtv.corp.google.com kernel: [1814368.465205] Task in /mem2 killed as a result of limit of /mem3"
 const containerLogFile = "containerOomExampleLog.txt"
 const systemLogFile = "systemOomExampleLog.txt"
@@ -104,8 +104,8 @@ func TestGetProcessNamePid(t *testing.T) {
 	if !couldParseLine {
 		t.Errorf("good line fed to getProcessNamePid should return true but returned %v", couldParseLine)
 	}
-	if currentOomInstance.ProcessName != "evilprogram2" {
-		t.Errorf("getProcessNamePid should have set processName to evilprogram2, not %s", currentOomInstance.ProcessName)
+	if currentOomInstance.ProcessName != "evil-program2" {
+		t.Errorf("getProcessNamePid should have set processName to evil-program2, not %s", currentOomInstance.ProcessName)
 	}
 	if currentOomInstance.Pid != 19667 {
 		t.Errorf("getProcessNamePid should have set PID to 19667, not %d", currentOomInstance.Pid)
@@ -123,6 +123,17 @@ func TestCheckIfStartOfMessages(t *testing.T) {
 	couldParseLine = checkIfStartOfOomMessages(startLine)
 	if !couldParseLine {
 		t.Errorf("start line fed to checkIfStartOfMessages should return true but returned %v", couldParseLine)
+	}
+}
+
+func TestLastLineRegex(t *testing.T) {
+	processNames := []string{"foo", "python3.4", "foo-bar", "Plex Media Server", "x86_64-pc-linux-gnu-c++-5.4.0", "[", "()", `"with quotes"`}
+	for _, name := range processNames {
+		line := fmt.Sprintf("Jan 21 22:01:49 localhost kernel: [62279.421192] Killed process 1234 (%s) total-vm:1460016kB, anon-rss:1414008kB, file-rss:4kB", name)
+		oomInfo := &OomInstance{}
+		getProcessNamePid(line, oomInfo)
+		assert.Equal(t, 1234, oomInfo.Pid)
+		assert.Equal(t, name, oomInfo.ProcessName)
 	}
 }
 
