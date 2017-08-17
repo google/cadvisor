@@ -57,7 +57,9 @@ func GetHugePagesInfo() ([]info.HugePagesInfo, error) {
 	var hugePagesInfo []info.HugePagesInfo
 	files, err := ioutil.ReadDir(hugepagesDirectory)
 	if err != nil {
-		return hugePagesInfo, err
+		// treat as non-fatal since kernels and machine can be
+		// configured to disable hugepage support
+		return hugePagesInfo, nil
 	}
 	for _, st := range files {
 		nameArray := strings.Split(st.Name(), "-")
