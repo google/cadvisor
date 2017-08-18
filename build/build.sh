@@ -16,7 +16,7 @@
 
 set -e
 
-GO_FLAGS=${GO_FLAGS:-}    # Extra go flags to use in the build.
+GO_FLAGS=${GO_FLAGS:-"-tags netgo"}    # Extra go flags to use in the build.
 GO_CMD=${GO_CMD:-"install"}
 BUILD_USER=${BUILD_USER:-"${USER}@${HOSTNAME}"}
 BUILD_DATE=${BUILD_DATE:-$( date +%Y%m%d-%H:%M:%S )}

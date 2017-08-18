@@ -15,6 +15,7 @@
 package influxdb
 
 import (
+	"flag"
 	"fmt"
 	"net/url"
 	"os"
@@ -31,6 +32,8 @@ import (
 func init() {
 	storage.RegisterStorageDriver("influxdb", new)
 }
+
+var argDbRetentionPolicy = flag.String("storage_driver_influxdb_retention_policy", "", "retention policy")
 
 type influxdbStorage struct {
 	client          *influxdb.Client
@@ -82,6 +85,7 @@ func new() (storage.StorageDriver, error) {
 		hostname,
 		*storage.ArgDbTable,
 		*storage.ArgDbName,
+		*argDbRetentionPolicy,
 		*storage.ArgDbUsername,
 		*storage.ArgDbPassword,
 		*storage.ArgDbHost,
@@ -243,10 +247,11 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 
 		batchTags := map[string]string{tagMachineName: self.machineName}
 		bp := influxdb.BatchPoints{
-			Points:   points,
-			Database: self.database,
-			Tags:     batchTags,
-			Time:     stats.Timestamp,
+			Points:          points,
+			Database:        self.database,
+			RetentionPolicy: self.retentionPolicy,
+			Tags:            batchTags,
+			Time:            stats.Timestamp,
 		}
 		response, err := self.client.Write(bp)
 		if err != nil || checkResponseForErrors(response) != nil {
@@ -268,6 +273,7 @@ func newStorage(
 	machineName,
 	tablename,
 	database,
+	retentionPolicy,
 	username,
 	password,
 	influxdbHost string,
@@ -294,12 +300,13 @@ func newStorage(
 	}
 
 	ret := &influxdbStorage{
-		client:         client,
-		machineName:    machineName,
-		database:       database,
-		bufferDuration: bufferDuration,
-		lastWrite:      time.Now(),
-		points:         make([]*influxdb.Point, 0),
+		client:          client,
+		machineName:     machineName,
+		database:        database,
+		retentionPolicy: retentionPolicy,
+		bufferDuration:  bufferDuration,
+		lastWrite:       time.Now(),
+		points:          make([]*influxdb.Point, 0),
 	}
 	ret.readyToFlush = ret.defaultReadyToFlush
 	return ret, nil

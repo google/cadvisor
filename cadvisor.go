@@ -33,6 +33,7 @@ import (
 	"github.com/google/cadvisor/version"
 
 	"crypto/tls"
+
 	"github.com/golang/glog"
 )
 
@@ -60,13 +61,17 @@ var collectorKey = flag.String("collector_key", "", "Key for the collector's cer
 var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
-	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{container.NetworkTcpUsageMetrics: struct{}{}}}
+	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
+		container.NetworkTcpUsageMetrics: struct{}{},
+		container.NetworkUdpUsageMetrics: struct{}{},
+	}}
 
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
 		container.DiskUsageMetrics:       struct{}{},
 		container.NetworkUsageMetrics:    struct{}{},
 		container.NetworkTcpUsageMetrics: struct{}{},
+		container.NetworkUdpUsageMetrics: struct{}{},
 	}
 )
 
@@ -98,7 +103,7 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp'. Note: tcp is disabled by default due to high CPU usage.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp', 'udp'. Note: tcp and udp are disabled by default due to high CPU usage.")
 }
 
 func main() {
@@ -117,10 +122,7 @@ func main() {
 		glog.Fatalf("Failed to initialize storage driver: %s", err)
 	}
 
-	sysFs, err := sysfs.NewRealSysFs()
-	if err != nil {
-		glog.Fatalf("Failed to create a system interface: %s", err)
-	}
+	sysFs := sysfs.NewRealSysFs()
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 

@@ -124,6 +124,48 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 	return m, infosMap, handlerMap
 }
 
+// Expect a manager with the specified containers and query. Returns the manager, map of ContainerInfo objects,
+// and map of MockContainerHandler objects.}
+func expectManagerWithContainersV2(containers []string, query *info.ContainerInfoRequest, t *testing.T) (*manager, map[string]*info.ContainerInfo, map[string]*containertest.MockContainerHandler) {
+	infosMap := make(map[string]*info.ContainerInfo, len(containers))
+	handlerMap := make(map[string]*containertest.MockContainerHandler, len(containers))
+
+	for _, container := range containers {
+		infosMap[container] = itest.GenerateRandomContainerInfo(container, 4, query, 1*time.Second)
+	}
+
+	memoryCache := memory.New(time.Duration(query.NumStats)*time.Second, nil)
+	sysfs := &fakesysfs.FakeSysFs{}
+	m := createManagerAndAddContainers(
+		memoryCache,
+		sysfs,
+		containers,
+		func(h *containertest.MockContainerHandler) {
+			cinfo := infosMap[h.Name]
+			ref, err := h.ContainerReference()
+			if err != nil {
+				t.Error(err)
+			}
+			for _, stat := range cinfo.Stats {
+				err = memoryCache.AddStats(ref, stat)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+			spec := cinfo.Spec
+
+			h.On("GetSpec").Return(
+				spec,
+				nil,
+			).Once()
+			handlerMap[h.Name] = h
+		},
+		t,
+	)
+
+	return m, infosMap, handlerMap
+}
+
 func TestGetContainerInfo(t *testing.T) {
 	containers := []string{
 		"/c1",
@@ -173,7 +215,7 @@ func TestGetContainerInfoV2(t *testing.T) {
 		NumStats: 2,
 	}
 
-	m, _, handlerMap := expectManagerWithContainers(containers, query, t)
+	m, _, handlerMap := expectManagerWithContainersV2(containers, query, t)
 
 	infos, err := m.GetContainerInfoV2("/", options)
 	if err != nil {
@@ -280,7 +322,8 @@ func TestSubcontainersInfo(t *testing.T) {
 
 func TestDockerContainersInfo(t *testing.T) {
 	containers := []string{
-		"/docker/c1",
+		"/docker/c1a",
+		"/docker/c2a",
 	}
 
 	query := &info.ContainerInfoRequest{
@@ -289,12 +332,26 @@ func TestDockerContainersInfo(t *testing.T) {
 
 	m, _, _ := expectManagerWithContainers(containers, query, t)
 
-	result, err := m.DockerContainer("c1", query)
+	result, err := m.DockerContainer("c1a", query)
 	if err != nil {
 		t.Fatalf("expected to succeed: %s", err)
 	}
 	if result.Name != containers[0] {
 		t.Errorf("Unexpected container %q in result. Expected container %q", result.Name, containers[0])
+	}
+
+	result, err = m.DockerContainer("c2", query)
+	if err != nil {
+		t.Fatalf("expected to succeed: %s", err)
+	}
+	if result.Name != containers[1] {
+		t.Errorf("Unexpected container %q in result. Expected container %q", result.Name, containers[1])
+	}
+
+	result, err = m.DockerContainer("c", query)
+	expectedError := "unable to find container. Container \"c\" is not unique"
+	if err == nil {
+		t.Errorf("expected error %q but received %q", expectedError, err)
 	}
 }
 

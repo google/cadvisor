@@ -21,6 +21,8 @@ Specify what InfluxDB instance to push data to:
  -storage_driver_password
  # Use secure connection with database. False by default
  -storage_driver_secure
+ # retention policy. Default is '' which corresponds to the default retention policy of the influxdb database
+-storage_driver_influxdb_retention_policy
 ```
 
 # Examples

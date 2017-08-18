@@ -333,7 +333,7 @@ func TestDockerFilesystemStats(t *testing.T) {
 	}
 	needsBaseUsageCheck := false
 	switch storageDriver {
-	case framework.Aufs, framework.Overlay, framework.DeviceMapper:
+	case framework.Aufs, framework.Overlay, framework.Overlay2, framework.DeviceMapper:
 		needsBaseUsageCheck = true
 	}
 	pass := false

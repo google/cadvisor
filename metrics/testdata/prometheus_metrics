@@ -10,6 +10,9 @@ container_cpu_cfs_throttled_periods_total{container_env_foo_env="prod",container
 # HELP container_cpu_cfs_throttled_seconds_total Total time duration the container has been throttled.
 # TYPE container_cpu_cfs_throttled_seconds_total counter
 container_cpu_cfs_throttled_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.724314
+# HELP container_cpu_load_average_10s Value of container cpu load average over the last 10 seconds.
+# TYPE container_cpu_load_average_10s gauge
+container_cpu_load_average_10s{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2
 # HELP container_cpu_system_seconds_total Cumulative system cpu time consumed in seconds.
 # TYPE container_cpu_system_seconds_total counter
 container_cpu_system_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 7e-09
@@ -121,6 +124,19 @@ container_network_receive_packets_dropped_total{container_env_foo_env="prod",con
 # HELP container_network_receive_packets_total Cumulative count of packets received
 # TYPE container_network_receive_packets_total counter
 container_network_receive_packets_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",interface="eth0",name="testcontaineralias",zone_name="hello"} 15
+# HELP container_network_tcp_usage_total tcp connection usage statistic for container
+# TYPE container_network_tcp_usage_total gauge
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="close",zone_name="hello"} 0
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="closewait",zone_name="hello"} 0
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="closing",zone_name="hello"} 0
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="established",zone_name="hello"} 13
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="finwait1",zone_name="hello"} 0
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="finwait2",zone_name="hello"} 0
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="lastack",zone_name="hello"} 0
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="listen",zone_name="hello"} 3
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="synrecv",zone_name="hello"} 0
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="synsent",zone_name="hello"} 0
+container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="timewait",zone_name="hello"} 0
 # HELP container_network_transmit_bytes_total Cumulative count of bytes transmitted
 # TYPE container_network_transmit_bytes_total counter
 container_network_transmit_bytes_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",interface="eth0",name="testcontaineralias",zone_name="hello"} 18
@@ -133,6 +149,12 @@ container_network_transmit_packets_dropped_total{container_env_foo_env="prod",co
 # HELP container_network_transmit_packets_total Cumulative count of packets transmitted
 # TYPE container_network_transmit_packets_total counter
 container_network_transmit_packets_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",interface="eth0",name="testcontaineralias",zone_name="hello"} 19
+# HELP container_network_udp_usage_total udp connection usage statistic for container
+# TYPE container_network_udp_usage_total gauge
+container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="dropped",zone_name="hello"} 0
+container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="listen",zone_name="hello"} 0
+container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="rxqueued",zone_name="hello"} 0
+container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="txqueued",zone_name="hello"} 0
 # HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
 # TYPE container_scrape_error gauge
 container_scrape_error 0
