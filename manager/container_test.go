@@ -174,7 +174,7 @@ func TestGetInfo(t *testing.T) {
 	)
 	mockHandler.Aliases = []string{"a1", "a2"}
 
-	info, err := cd.GetInfo()
+	info, err := cd.GetInfo(true)
 	if err != nil {
 		t.Fatal(err)
 	}

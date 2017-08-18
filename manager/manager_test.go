@@ -124,6 +124,48 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 	return m, infosMap, handlerMap
 }
 
+// Expect a manager with the specified containers and query. Returns the manager, map of ContainerInfo objects,
+// and map of MockContainerHandler objects.}
+func expectManagerWithContainersV2(containers []string, query *info.ContainerInfoRequest, t *testing.T) (*manager, map[string]*info.ContainerInfo, map[string]*containertest.MockContainerHandler) {
+	infosMap := make(map[string]*info.ContainerInfo, len(containers))
+	handlerMap := make(map[string]*containertest.MockContainerHandler, len(containers))
+
+	for _, container := range containers {
+		infosMap[container] = itest.GenerateRandomContainerInfo(container, 4, query, 1*time.Second)
+	}
+
+	memoryCache := memory.New(time.Duration(query.NumStats)*time.Second, nil)
+	sysfs := &fakesysfs.FakeSysFs{}
+	m := createManagerAndAddContainers(
+		memoryCache,
+		sysfs,
+		containers,
+		func(h *containertest.MockContainerHandler) {
+			cinfo := infosMap[h.Name]
+			ref, err := h.ContainerReference()
+			if err != nil {
+				t.Error(err)
+			}
+			for _, stat := range cinfo.Stats {
+				err = memoryCache.AddStats(ref, stat)
+				if err != nil {
+					t.Error(err)
+				}
+			}
+			spec := cinfo.Spec
+
+			h.On("GetSpec").Return(
+				spec,
+				nil,
+			).Once()
+			handlerMap[h.Name] = h
+		},
+		t,
+	)
+
+	return m, infosMap, handlerMap
+}
+
 func TestGetContainerInfo(t *testing.T) {
 	containers := []string{
 		"/c1",
@@ -173,7 +215,7 @@ func TestGetContainerInfoV2(t *testing.T) {
 		NumStats: 2,
 	}
 
-	m, _, handlerMap := expectManagerWithContainers(containers, query, t)
+	m, _, handlerMap := expectManagerWithContainersV2(containers, query, t)
 
 	infos, err := m.GetContainerInfoV2("/", options)
 	if err != nil {

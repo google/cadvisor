@@ -3,7 +3,7 @@ MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@g
 
 ENV GLIBC_VERSION "2.23-r3"
 
-RUN apk --no-cache add ca-certificates wget device-mapper && \
+RUN apk --no-cache add ca-certificates wget device-mapper findutils && \
     apk --no-cache add zfs --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
     apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
     wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://raw.githubusercontent.com/sgerrand/alpine-pkg-glibc/master/sgerrand.rsa.pub && \
