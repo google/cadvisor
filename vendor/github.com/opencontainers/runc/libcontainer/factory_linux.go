@@ -15,6 +15,7 @@ import (
 	"github.com/docker/docker/pkg/mount"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/cgroups/fs"
+	"github.com/opencontainers/runc/libcontainer/cgroups/rootless"
 	"github.com/opencontainers/runc/libcontainer/cgroups/systemd"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/configs/validate"
@@ -34,7 +35,15 @@ var (
 // InitArgs returns an options func to configure a LinuxFactory with the
 // provided init binary path and arguments.
 func InitArgs(args ...string) func(*LinuxFactory) error {
-	return func(l *LinuxFactory) error {
+	return func(l *LinuxFactory) (err error) {
+		if len(args) > 0 {
+			// Resolve relative paths to ensure that its available
+			// after directory changes.
+			if args[0], err = filepath.Abs(args[0]); err != nil {
+				return newGenericError(err, ConfigInvalid)
+			}
+		}
+
 		l.InitArgs = args
 		return nil
 	}
@@ -58,6 +67,20 @@ func SystemdCgroups(l *LinuxFactory) error {
 func Cgroupfs(l *LinuxFactory) error {
 	l.NewCgroupsManager = func(config *configs.Cgroup, paths map[string]string) cgroups.Manager {
 		return &fs.Manager{
+			Cgroups: config,
+			Paths:   paths,
+		}
+	}
+	return nil
+}
+
+// RootlessCgroups is an options func to configure a LinuxFactory to
+// return containers that use the "rootless" cgroup manager, which will
+// fail to do any operations not possible to do with an unprivileged user.
+// It should only be used in conjunction with rootless containers.
+func RootlessCgroups(l *LinuxFactory) error {
+	l.NewCgroupsManager = func(config *configs.Cgroup, paths map[string]string) cgroups.Manager {
+		return &rootless.Manager{
 			Cgroups: config,
 			Paths:   paths,
 		}
@@ -141,11 +164,11 @@ func (l *LinuxFactory) Create(id string, config *configs.Config) (Container, err
 	if err := l.Validator.Validate(config); err != nil {
 		return nil, newGenericError(err, ConfigInvalid)
 	}
-	uid, err := config.HostUID()
+	uid, err := config.HostRootUID()
 	if err != nil {
 		return nil, newGenericError(err, SystemError)
 	}
-	gid, err := config.HostGID()
+	gid, err := config.HostRootGID()
 	if err != nil {
 		return nil, newGenericError(err, SystemError)
 	}
@@ -161,15 +184,8 @@ func (l *LinuxFactory) Create(id string, config *configs.Config) (Container, err
 	if err := os.Chown(containerRoot, uid, gid); err != nil {
 		return nil, newGenericError(err, SystemError)
 	}
-	fifoName := filepath.Join(containerRoot, execFifoFilename)
-	oldMask := syscall.Umask(0000)
-	if err := syscall.Mkfifo(fifoName, 0622); err != nil {
-		syscall.Umask(oldMask)
-		return nil, newGenericError(err, SystemError)
-	}
-	syscall.Umask(oldMask)
-	if err := os.Chown(fifoName, uid, gid); err != nil {
-		return nil, newGenericError(err, SystemError)
+	if config.Rootless {
+		RootlessCgroups(l)
 	}
 	c := &linuxContainer{
 		id:            id,
@@ -197,6 +213,10 @@ func (l *LinuxFactory) Load(id string) (Container, error) {
 		processStartTime: state.InitProcessStartTime,
 		fds:              state.ExternalDescriptors,
 	}
+	// We have to use the RootlessManager.
+	if state.Rootless {
+		RootlessCgroups(l)
+	}
 	c := &linuxContainer{
 		initProcess:          r,
 		initProcessStartTime: state.InitProcessStartTime,
@@ -222,54 +242,71 @@ func (l *LinuxFactory) Type() string {
 // StartInitialization loads a container by opening the pipe fd from the parent to read the configuration and state
 // This is a low level implementation detail of the reexec and should not be consumed externally
 func (l *LinuxFactory) StartInitialization() (err error) {
-	var pipefd, rootfd int
-	for k, v := range map[string]*int{
-		"_LIBCONTAINER_INITPIPE": &pipefd,
-		"_LIBCONTAINER_STATEDIR": &rootfd,
-	} {
-		s := os.Getenv(k)
+	var (
+		pipefd, rootfd int
+		consoleSocket  *os.File
+		envInitPipe    = os.Getenv("_LIBCONTAINER_INITPIPE")
+		envStateDir    = os.Getenv("_LIBCONTAINER_STATEDIR")
+		envConsole     = os.Getenv("_LIBCONTAINER_CONSOLE")
+	)
 
-		i, err := strconv.Atoi(s)
-		if err != nil {
-			return fmt.Errorf("unable to convert %s=%s to int", k, s)
-		}
-		*v = i
+	// Get the INITPIPE.
+	pipefd, err = strconv.Atoi(envInitPipe)
+	if err != nil {
+		return fmt.Errorf("unable to convert _LIBCONTAINER_INITPIPE=%s to int: %s", envInitPipe, err)
 	}
+
 	var (
 		pipe = os.NewFile(uintptr(pipefd), "pipe")
 		it   = initType(os.Getenv("_LIBCONTAINER_INITTYPE"))
 	)
+	defer pipe.Close()
+
+	// Only init processes have STATEDIR.
+	rootfd = -1
+	if it == initStandard {
+		if rootfd, err = strconv.Atoi(envStateDir); err != nil {
+			return fmt.Errorf("unable to convert _LIBCONTAINER_STATEDIR=%s to int: %s", envStateDir, err)
+		}
+	}
+
+	if envConsole != "" {
+		console, err := strconv.Atoi(envConsole)
+		if err != nil {
+			return fmt.Errorf("unable to convert _LIBCONTAINER_CONSOLE=%s to int: %s", envConsole, err)
+		}
+		consoleSocket = os.NewFile(uintptr(console), "console-socket")
+		defer consoleSocket.Close()
+	}
+
 	// clear the current process's environment to clean any libcontainer
 	// specific env vars.
 	os.Clearenv()
 
-	var i initer
 	defer func() {
 		// We have an error during the initialization of the container's init,
 		// send it back to the parent process in the form of an initError.
-		// If container's init successed, syscall.Exec will not return, hence
-		// this defer function will never be called.
-		if _, ok := i.(*linuxStandardInit); ok {
-			//  Synchronisation only necessary for standard init.
-			if werr := utils.WriteJSON(pipe, syncT{procError}); werr != nil {
-				panic(err)
-			}
+		if werr := utils.WriteJSON(pipe, syncT{procError}); werr != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
 		}
 		if werr := utils.WriteJSON(pipe, newSystemError(err)); werr != nil {
-			panic(err)
+			fmt.Fprintln(os.Stderr, err)
+			return
 		}
-		// ensure that this pipe is always closed
-		pipe.Close()
 	}()
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("panic from initialization: %v, %v", e, string(debug.Stack()))
 		}
 	}()
-	i, err = newContainerInit(it, pipe, rootfd)
+
+	i, err := newContainerInit(it, pipe, consoleSocket, rootfd)
 	if err != nil {
 		return err
 	}
+
+	// If Init succeeds, syscall.Exec will not return, hence none of the defers will be called.
 	return i.Init()
 }
 
@@ -277,7 +314,7 @@ func (l *LinuxFactory) loadState(root, id string) (*State, error) {
 	f, err := os.Open(filepath.Join(root, stateFilename))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, newGenericError(fmt.Errorf("container %q does not exists", id), ContainerNotExists)
+			return nil, newGenericError(fmt.Errorf("container %q does not exist", id), ContainerNotExists)
 		}
 		return nil, newGenericError(err, SystemError)
 	}

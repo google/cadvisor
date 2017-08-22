@@ -51,7 +51,6 @@ type setnsProcess struct {
 	fds           []string
 	process       *Process
 	bootstrapData io.Reader
-	rootDir       *os.File
 }
 
 func (p *setnsProcess) startTime() (string, error) {
@@ -70,7 +69,6 @@ func (p *setnsProcess) start() (err error) {
 	defer p.parentPipe.Close()
 	err = p.cmd.Start()
 	p.childPipe.Close()
-	p.rootDir.Close()
 	if err != nil {
 		return newSystemErrorWithCause(err, "starting setns process")
 	}
@@ -82,14 +80,11 @@ func (p *setnsProcess) start() (err error) {
 	if err = p.execSetns(); err != nil {
 		return newSystemErrorWithCause(err, "executing setns process")
 	}
-	if len(p.cgroupPaths) > 0 {
+	// We can't join cgroups if we're in a rootless container.
+	if !p.config.Rootless && len(p.cgroupPaths) > 0 {
 		if err := cgroups.EnterPid(p.cgroupPaths, p.pid()); err != nil {
 			return newSystemErrorWithCausef(err, "adding pid %d to cgroups", p.pid())
 		}
-	}
-	// set oom_score_adj
-	if err := setOomScoreAdj(p.config.Config.OomScoreAdj, p.pid()); err != nil {
-		return newSystemErrorWithCause(err, "setting oom score")
 	}
 	// set rlimits, this has to be done here because we lose permissions
 	// to raise the limits once we enter a user-namespace
@@ -100,14 +95,21 @@ func (p *setnsProcess) start() (err error) {
 		return newSystemErrorWithCause(err, "writing config to pipe")
 	}
 
+	ierr := parseSync(p.parentPipe, func(sync *syncT) error {
+		switch sync.Type {
+		case procReady:
+			// This shouldn't happen.
+			panic("unexpected procReady in setns")
+		case procHooks:
+			// This shouldn't happen.
+			panic("unexpected procHooks in setns")
+		default:
+			return newSystemError(fmt.Errorf("invalid JSON payload from child"))
+		}
+	})
+
 	if err := syscall.Shutdown(int(p.parentPipe.Fd()), syscall.SHUT_WR); err != nil {
 		return newSystemErrorWithCause(err, "calling shutdown on init pipe")
-	}
-	// wait for the child process to fully complete and receive an error message
-	// if one was encoutered
-	var ierr *genericError
-	if err := json.NewDecoder(p.parentPipe).Decode(&ierr); err != nil && err != io.EOF {
-		return newSystemErrorWithCause(err, "decoding init error from pipe")
 	}
 	// Must be done after Shutdown so the child will exit and we can wait for it.
 	if ierr != nil {
@@ -146,7 +148,7 @@ func (p *setnsProcess) execSetns() error {
 }
 
 // terminate sends a SIGKILL to the forked process for the setns routine then waits to
-// avoid the process becomming a zombie.
+// avoid the process becoming a zombie.
 func (p *setnsProcess) terminate() error {
 	if p.cmd.Process == nil {
 		return nil
@@ -239,7 +241,7 @@ func (p *initProcess) start() error {
 		return newSystemErrorWithCause(err, "starting init process command")
 	}
 	if _, err := io.Copy(p.parentPipe, p.bootstrapData); err != nil {
-		return err
+		return newSystemErrorWithCause(err, "copying bootstrap data to pipe")
 	}
 	if err := p.execSetns(); err != nil {
 		return newSystemErrorWithCause(err, "running exec setns process for init")
@@ -252,8 +254,9 @@ func (p *initProcess) start() error {
 		return newSystemErrorWithCausef(err, "getting pipe fds for pid %d", p.pid())
 	}
 	p.setExternalDescriptors(fds)
-	// Do this before syncing with child so that no children
-	// can escape the cgroup
+	// Do this before syncing with child so that no children can escape the
+	// cgroup. We don't need to worry about not doing this and not being root
+	// because we'd be using the rootless cgroup manager in that case.
 	if err := p.manager.Apply(p.pid()); err != nil {
 		return newSystemErrorWithCause(err, "applying cgroup configuration for process")
 	}
@@ -264,35 +267,21 @@ func (p *initProcess) start() error {
 		}
 	}()
 	if err := p.createNetworkInterfaces(); err != nil {
-		return newSystemErrorWithCause(err, "creating nework interfaces")
+		return newSystemErrorWithCause(err, "creating network interfaces")
 	}
 	if err := p.sendConfig(); err != nil {
 		return newSystemErrorWithCause(err, "sending config to init process")
 	}
 	var (
-		procSync   syncT
 		sentRun    bool
 		sentResume bool
-		ierr       *genericError
 	)
 
-	dec := json.NewDecoder(p.parentPipe)
-loop:
-	for {
-		if err := dec.Decode(&procSync); err != nil {
-			if err == io.EOF {
-				break loop
-			}
-			return newSystemErrorWithCause(err, "decoding sync type from init pipe")
-		}
-		switch procSync.Type {
+	ierr := parseSync(p.parentPipe, func(sync *syncT) error {
+		switch sync.Type {
 		case procReady:
 			if err := p.manager.Set(p.config.Config); err != nil {
 				return newSystemErrorWithCause(err, "setting cgroup config for ready process")
-			}
-			// set oom_score_adj
-			if err := setOomScoreAdj(p.config.Config.OomScoreAdj, p.pid()); err != nil {
-				return newSystemErrorWithCause(err, "setting oom score for ready process")
 			}
 			// set rlimits, this has to be done here because we lose permissions
 			// to raise the limits once we enter a user-namespace
@@ -306,7 +295,7 @@ loop:
 						Version: p.container.config.Version,
 						ID:      p.container.id,
 						Pid:     p.pid(),
-						Root:    p.config.Config.Rootfs,
+						Bundle:  utils.SearchLabels(p.config.Config.Labels, "bundle"),
 					}
 					for i, hook := range p.config.Config.Hooks.Prestart {
 						if err := hook.Run(s); err != nil {
@@ -316,18 +305,17 @@ loop:
 				}
 			}
 			// Sync with child.
-			if err := utils.WriteJSON(p.parentPipe, syncT{procRun}); err != nil {
-				return newSystemErrorWithCause(err, "reading syncT run type")
+			if err := writeSync(p.parentPipe, procRun); err != nil {
+				return newSystemErrorWithCause(err, "writing syncT 'run'")
 			}
 			sentRun = true
 		case procHooks:
 			if p.config.Config.Hooks != nil {
 				s := configs.HookState{
-					Version:    p.container.config.Version,
-					ID:         p.container.id,
-					Pid:        p.pid(),
-					Root:       p.config.Config.Rootfs,
-					BundlePath: utils.SearchLabels(p.config.Config.Labels, "bundle"),
+					Version: p.container.config.Version,
+					ID:      p.container.id,
+					Pid:     p.pid(),
+					Bundle:  utils.SearchLabels(p.config.Config.Labels, "bundle"),
 				}
 				for i, hook := range p.config.Config.Hooks.Prestart {
 					if err := hook.Run(s); err != nil {
@@ -336,25 +324,17 @@ loop:
 				}
 			}
 			// Sync with child.
-			if err := utils.WriteJSON(p.parentPipe, syncT{procResume}); err != nil {
-				return newSystemErrorWithCause(err, "reading syncT resume type")
+			if err := writeSync(p.parentPipe, procResume); err != nil {
+				return newSystemErrorWithCause(err, "writing syncT 'resume'")
 			}
 			sentResume = true
-		case procError:
-			// wait for the child process to fully complete and receive an error message
-			// if one was encoutered
-			if err := dec.Decode(&ierr); err != nil && err != io.EOF {
-				return newSystemErrorWithCause(err, "decoding proc error from init")
-			}
-			if ierr != nil {
-				break loop
-			}
-			// Programmer error.
-			panic("No error following JSON procError payload.")
 		default:
 			return newSystemError(fmt.Errorf("invalid JSON payload from child"))
 		}
-	}
+
+		return nil
+	})
+
 	if !sentRun {
 		return newSystemErrorWithCause(ierr, "container init")
 	}
@@ -364,6 +344,7 @@ loop:
 	if err := syscall.Shutdown(int(p.parentPipe.Fd()), syscall.SHUT_WR); err != nil {
 		return newSystemErrorWithCause(err, "shutting down init pipe")
 	}
+
 	// Must be done after Shutdown so the child will exit and we can wait for it.
 	if ierr != nil {
 		p.wait()
@@ -379,7 +360,7 @@ func (p *initProcess) wait() (*os.ProcessState, error) {
 	}
 	// we should kill all processes in cgroup when init is died if we use host PID namespace
 	if p.sharePidns {
-		killCgroupProcesses(p.manager)
+		signalAllProcesses(p.manager, syscall.SIGKILL)
 	}
 	return p.cmd.ProcessState, nil
 }
@@ -440,9 +421,17 @@ func getPipeFds(pid int) ([]string, error) {
 
 	dirPath := filepath.Join("/proc", strconv.Itoa(pid), "/fd")
 	for i := 0; i < 3; i++ {
+		// XXX: This breaks if the path is not a valid symlink (which can
+		//      happen in certain particularly unlucky mount namespace setups).
 		f := filepath.Join(dirPath, strconv.Itoa(i))
 		target, err := os.Readlink(f)
 		if err != nil {
+			// Ignore permission errors, for rootless containers and other
+			// non-dumpable processes. if we can't get the fd for a particular
+			// file, there's not much we can do.
+			if os.IsPermission(err) {
+				continue
+			}
 			return fds, err
 		}
 		fds[i] = target
@@ -450,8 +439,10 @@ func getPipeFds(pid int) ([]string, error) {
 	return fds, nil
 }
 
-// InitializeIO creates pipes for use with the process's STDIO
-// and returns the opposite side for each
+// InitializeIO creates pipes for use with the process's stdio and returns the
+// opposite side for each. Do not use this if you want to have a pseudoterminal
+// set up for you by libcontainer (TODO: fix that too).
+// TODO: This is mostly unnecessary, and should be handled by clients.
 func (p *Process) InitializeIO(rootuid, rootgid int) (i *IO, err error) {
 	var fds []uintptr
 	i = &IO{}
