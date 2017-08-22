@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"unsafe"
 )
 
 const (
@@ -102,7 +103,7 @@ func SearchLabels(labels []string, query string) string {
 }
 
 // Annotations returns the bundle path and user defined annotations from the
-// libcontianer state.  We need to remove the bundle because that is a label
+// libcontainer state.  We need to remove the bundle because that is a label
 // added by libcontainer.
 func Annotations(labels []string) (bundle string, userAnnotations map[string]string) {
 	userAnnotations = make(map[string]string)
@@ -118,4 +119,8 @@ func Annotations(labels []string) (bundle string, userAnnotations map[string]str
 		}
 	}
 	return
+}
+
+func GetIntSize() int {
+	return int(unsafe.Sizeof(1))
 }

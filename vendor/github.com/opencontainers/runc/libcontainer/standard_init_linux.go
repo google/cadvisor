@@ -4,7 +4,6 @@ package libcontainer
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"syscall"
@@ -18,10 +17,11 @@ import (
 )
 
 type linuxStandardInit struct {
-	pipe       io.ReadWriteCloser
-	parentPid  int
-	stateDirFD int
-	config     *initConfig
+	pipe          *os.File
+	consoleSocket *os.File
+	parentPid     int
+	stateDirFD    int
+	config        *initConfig
 }
 
 func (l *linuxStandardInit) getSessionRingParams() (string, uint32, uint32) {
@@ -59,18 +59,6 @@ func (l *linuxStandardInit) Init() error {
 		}
 	}
 
-	var console *linuxConsole
-	if l.config.Console != "" {
-		console = newConsoleFromPath(l.config.Console)
-		if err := console.dupStdio(); err != nil {
-			return err
-		}
-	}
-	if console != nil {
-		if err := system.Setctty(); err != nil {
-			return err
-		}
-	}
 	if err := setupNetwork(l.config); err != nil {
 		return err
 	}
@@ -79,12 +67,33 @@ func (l *linuxStandardInit) Init() error {
 	}
 
 	label.Init()
-	// InitializeMountNamespace() can be executed only for a new mount namespace
+
+	// prepareRootfs() can be executed only for a new mount namespace.
 	if l.config.Config.Namespaces.Contains(configs.NEWNS) {
-		if err := setupRootfs(l.config.Config, console, l.pipe); err != nil {
+		if err := prepareRootfs(l.pipe, l.config.Config); err != nil {
 			return err
 		}
 	}
+
+	// Set up the console. This has to be done *before* we finalize the rootfs,
+	// but *after* we've given the user the chance to set up all of the mounts
+	// they wanted.
+	if l.config.CreateConsole {
+		if err := setupConsole(l.consoleSocket, l.config, true); err != nil {
+			return err
+		}
+		if err := system.Setctty(); err != nil {
+			return err
+		}
+	}
+
+	// Finish the rootfs setup.
+	if l.config.Config.Namespaces.Contains(configs.NEWNS) {
+		if err := finalizeRootfs(l.config.Config); err != nil {
+			return err
+		}
+	}
+
 	if hostname := l.config.Config.Hostname; hostname != "" {
 		if err := syscall.Sethostname([]byte(hostname)); err != nil {
 			return err
@@ -103,12 +112,12 @@ func (l *linuxStandardInit) Init() error {
 		}
 	}
 	for _, path := range l.config.Config.ReadonlyPaths {
-		if err := remountReadonly(path); err != nil {
+		if err := readonlyPath(path); err != nil {
 			return err
 		}
 	}
 	for _, path := range l.config.Config.MaskPaths {
-		if err := maskFile(path); err != nil {
+		if err := maskPath(path); err != nil {
 			return err
 		}
 	}
@@ -143,7 +152,7 @@ func (l *linuxStandardInit) Init() error {
 	if err := pdeath.Restore(); err != nil {
 		return err
 	}
-	// compare the parent from the inital start of the init process and make sure that it did not change.
+	// compare the parent from the initial start of the init process and make sure that it did not change.
 	// if the parent changes that means it died and we were reparented to something else so we should
 	// just kill ourself and not cause problems for someone else.
 	if syscall.Getppid() != l.parentPid {
@@ -171,6 +180,9 @@ func (l *linuxStandardInit) Init() error {
 			return newSystemErrorWithCause(err, "init seccomp")
 		}
 	}
+	// close the statedir fd before exec because the kernel resets dumpable in the wrong order
+	// https://github.com/torvalds/linux/blob/v4.9/fs/exec.c#L1290-L1318
+	syscall.Close(l.stateDirFD)
 	if err := syscall.Exec(name, l.config.Args[0:], os.Environ()); err != nil {
 		return newSystemErrorWithCause(err, "exec user process")
 	}

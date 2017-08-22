@@ -136,7 +136,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	}
 
 	// Detect the container we are running on.
-	selfContainer, err := cgroups.GetThisCgroupDir("cpu")
+	selfContainer, err := cgroups.GetOwnCgroupPath("cpu")
 	if err != nil {
 		return nil, err
 	}
