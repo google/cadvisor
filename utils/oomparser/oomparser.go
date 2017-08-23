@@ -22,6 +22,7 @@ import (
 	"path"
 	"regexp"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/google/cadvisor/utils"
@@ -167,6 +168,9 @@ func (self *OomParser) StreamOoms(outStream chan *OomInstance) {
 
 func callJournalctl() (io.ReadCloser, error) {
 	cmd := exec.Command("journalctl", "-k", "-f")
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGKILL,
+	}
 	readcloser, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
