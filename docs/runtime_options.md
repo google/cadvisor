@@ -46,6 +46,10 @@ From [glog](https://github.com/golang/glog) here are some flags we find useful:
 --docker_env_metadata_whitelist="": a comma-separated list of environment variable keys that needs to be collected for docker containers
 --docker_only=false: Only report docker containers in addition to root stats
 --docker_root="/var/lib/docker": DEPRECATED: docker root is read from docker info (this is a fallback, default: /var/lib/docker) (default "/var/lib/docker")
+--docker-tls: use TLS to connect to docker
+--docker-tls-cert="cert.pem": client certificate for TLS-connection with docker
+--docker-tls-key="key.pem": private key for TLS-connection with docker
+--docker-tls-ca="ca.pem": trusted CA for TLS-connection with docker
 ```
 
 ## Housekeeping
