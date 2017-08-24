@@ -353,7 +353,6 @@ func joinCgroups(c *configs.Cgroup, pid int) error {
 		switch name {
 		case "name=systemd":
 			// let systemd handle this
-			break
 		case "cpuset":
 			path, err := getSubsystemPath(c, name)
 			if err != nil && !cgroups.IsNotFound(err) {
@@ -363,7 +362,6 @@ func joinCgroups(c *configs.Cgroup, pid int) error {
 			if err := s.ApplyDir(path, c, pid); err != nil {
 				return err
 			}
-			break
 		default:
 			_, err := join(c, name, pid)
 			if err != nil {
