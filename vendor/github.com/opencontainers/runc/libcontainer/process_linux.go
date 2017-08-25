@@ -11,12 +11,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"syscall"
+	"syscall" // only for Signal
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/system"
 	"github.com/opencontainers/runc/libcontainer/utils"
+
+	"golang.org/x/sys/unix"
 )
 
 type parentProcess interface {
@@ -33,7 +35,7 @@ type parentProcess interface {
 	wait() (*os.ProcessState, error)
 
 	// startTime returns the process start time.
-	startTime() (string, error)
+	startTime() (uint64, error)
 
 	signal(os.Signal) error
 
@@ -53,8 +55,9 @@ type setnsProcess struct {
 	bootstrapData io.Reader
 }
 
-func (p *setnsProcess) startTime() (string, error) {
-	return system.GetProcessStartTime(p.pid())
+func (p *setnsProcess) startTime() (uint64, error) {
+	stat, err := system.Stat(p.pid())
+	return stat.StartTime, err
 }
 
 func (p *setnsProcess) signal(sig os.Signal) error {
@@ -62,7 +65,7 @@ func (p *setnsProcess) signal(sig os.Signal) error {
 	if !ok {
 		return errors.New("os: unsupported signal type")
 	}
-	return syscall.Kill(p.pid(), s)
+	return unix.Kill(p.pid(), s)
 }
 
 func (p *setnsProcess) start() (err error) {
@@ -108,7 +111,7 @@ func (p *setnsProcess) start() (err error) {
 		}
 	})
 
-	if err := syscall.Shutdown(int(p.parentPipe.Fd()), syscall.SHUT_WR); err != nil {
+	if err := unix.Shutdown(int(p.parentPipe.Fd()), unix.SHUT_WR); err != nil {
 		return newSystemErrorWithCause(err, "calling shutdown on init pipe")
 	}
 	// Must be done after Shutdown so the child will exit and we can wait for it.
@@ -138,6 +141,16 @@ func (p *setnsProcess) execSetns() error {
 		p.cmd.Wait()
 		return newSystemErrorWithCause(err, "reading pid from init pipe")
 	}
+
+	// Clean up the zombie parent process
+	firstChildProcess, err := os.FindProcess(pid.PidFirstChild)
+	if err != nil {
+		return err
+	}
+
+	// Ignore the error in case the child has already been reaped for any reason
+	_, _ = firstChildProcess.Wait()
+
 	process, err := os.FindProcess(pid.Pid)
 	if err != nil {
 		return err
@@ -190,7 +203,6 @@ type initProcess struct {
 	process       *Process
 	bootstrapData io.Reader
 	sharePidns    bool
-	rootDir       *os.File
 }
 
 func (p *initProcess) pid() int {
@@ -221,6 +233,16 @@ func (p *initProcess) execSetns() error {
 		p.cmd.Wait()
 		return err
 	}
+
+	// Clean up the zombie parent process
+	firstChildProcess, err := os.FindProcess(pid.PidFirstChild)
+	if err != nil {
+		return err
+	}
+
+	// Ignore the error in case the child has already been reaped for any reason
+	_, _ = firstChildProcess.Wait()
+
 	process, err := os.FindProcess(pid.Pid)
 	if err != nil {
 		return err
@@ -235,7 +257,6 @@ func (p *initProcess) start() error {
 	err := p.cmd.Start()
 	p.process.ops = p
 	p.childPipe.Close()
-	p.rootDir.Close()
 	if err != nil {
 		p.process.ops = nil
 		return newSystemErrorWithCause(err, "starting init process command")
@@ -280,9 +301,6 @@ func (p *initProcess) start() error {
 	ierr := parseSync(p.parentPipe, func(sync *syncT) error {
 		switch sync.Type {
 		case procReady:
-			if err := p.manager.Set(p.config.Config); err != nil {
-				return newSystemErrorWithCause(err, "setting cgroup config for ready process")
-			}
 			// set rlimits, this has to be done here because we lose permissions
 			// to raise the limits once we enter a user-namespace
 			if err := setupRlimits(p.config.Rlimits, p.pid()); err != nil {
@@ -290,6 +308,11 @@ func (p *initProcess) start() error {
 			}
 			// call prestart hooks
 			if !p.config.Config.Namespaces.Contains(configs.NEWNS) {
+				// Setup cgroup before prestart hook, so that the prestart hook could apply cgroup permissions.
+				if err := p.manager.Set(p.config.Config); err != nil {
+					return newSystemErrorWithCause(err, "setting cgroup config for ready process")
+				}
+
 				if p.config.Config.Hooks != nil {
 					s := configs.HookState{
 						Version: p.container.config.Version,
@@ -310,6 +333,10 @@ func (p *initProcess) start() error {
 			}
 			sentRun = true
 		case procHooks:
+			// Setup cgroup before prestart hook, so that the prestart hook could apply cgroup permissions.
+			if err := p.manager.Set(p.config.Config); err != nil {
+				return newSystemErrorWithCause(err, "setting cgroup config for procHooks process")
+			}
 			if p.config.Config.Hooks != nil {
 				s := configs.HookState{
 					Version: p.container.config.Version,
@@ -341,7 +368,7 @@ func (p *initProcess) start() error {
 	if p.config.Config.Namespaces.Contains(configs.NEWNS) && !sentResume {
 		return newSystemError(fmt.Errorf("could not synchronise after executing prestart hooks with container process"))
 	}
-	if err := syscall.Shutdown(int(p.parentPipe.Fd()), syscall.SHUT_WR); err != nil {
+	if err := unix.Shutdown(int(p.parentPipe.Fd()), unix.SHUT_WR); err != nil {
 		return newSystemErrorWithCause(err, "shutting down init pipe")
 	}
 
@@ -360,7 +387,7 @@ func (p *initProcess) wait() (*os.ProcessState, error) {
 	}
 	// we should kill all processes in cgroup when init is died if we use host PID namespace
 	if p.sharePidns {
-		signalAllProcesses(p.manager, syscall.SIGKILL)
+		signalAllProcesses(p.manager, unix.SIGKILL)
 	}
 	return p.cmd.ProcessState, nil
 }
@@ -376,8 +403,9 @@ func (p *initProcess) terminate() error {
 	return err
 }
 
-func (p *initProcess) startTime() (string, error) {
-	return system.GetProcessStartTime(p.pid())
+func (p *initProcess) startTime() (uint64, error) {
+	stat, err := system.Stat(p.pid())
+	return stat.StartTime, err
 }
 
 func (p *initProcess) sendConfig() error {
@@ -409,7 +437,7 @@ func (p *initProcess) signal(sig os.Signal) error {
 	if !ok {
 		return errors.New("os: unsupported signal type")
 	}
-	return syscall.Kill(p.pid(), s)
+	return unix.Kill(p.pid(), s)
 }
 
 func (p *initProcess) setExternalDescriptors(newFds []string) {
@@ -450,7 +478,7 @@ func (p *Process) InitializeIO(rootuid, rootgid int) (i *IO, err error) {
 	defer func() {
 		if err != nil {
 			for _, fd := range fds {
-				syscall.Close(int(fd))
+				unix.Close(int(fd))
 			}
 		}
 	}()
@@ -475,7 +503,7 @@ func (p *Process) InitializeIO(rootuid, rootgid int) (i *IO, err error) {
 	p.Stderr, i.Stderr = w, r
 	// change ownership of the pipes incase we are in a user namespace
 	for _, fd := range fds {
-		if err := syscall.Fchown(int(fd), rootuid, rootgid); err != nil {
+		if err := unix.Fchown(int(fd), rootuid, rootgid); err != nil {
 			return nil, err
 		}
 	}
