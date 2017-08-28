@@ -263,7 +263,10 @@ func newDockerContainerHandler(
 	}
 
 	if ipAddress == "" {
-		for _, netValue := range ctnr.NetworkSettings.Networks {
+		for networkName, netValue := range ctnr.NetworkSettings.Networks {
+			if networkName == "ingress" {
+                          continue
+                        }
 			ipAddress = netValue.IPAddress
 			break
 		}
