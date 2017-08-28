@@ -54,6 +54,8 @@ const DockerNamespace = "docker"
 var dockerCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
 
 var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys that needs to be collected for docker containers")
+var dockerLabelWhitelist = flag.String("docker_label_metadata_whitelist", "", "a comma-separated list of label keys that needs to be collected for docker containers")
+var dockerNoLabels = flag.Bool("docker_no_labels", false, "whether to retrieve all container labels")
 
 var (
 	// Basepath to all container specific information that libcontainer stores.
@@ -128,6 +130,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		return
 	}
 
+	metadataLabels := strings.Split(*dockerLabelWhitelist, ",")
 	metadataEnvs := strings.Split(*dockerEnvWhitelist, ",")
 
 	handler, err = newDockerContainerHandler(
@@ -145,6 +148,8 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.thinPoolName,
 		self.thinPoolWatcher,
 		self.zfsWatcher,
+		*dockerNoLabels,
+		metadataLabels,
 	)
 	return
 }

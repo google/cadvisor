@@ -84,6 +84,9 @@ type dockerContainerHandler struct {
 	// Time at which this container was created.
 	creationTime time.Time
 
+	// indicates whether labels should be collected
+	noLabels bool
+
 	// Metadata associated with the container.
 	labels map[string]string
 	envs   map[string]string
@@ -153,6 +156,8 @@ func newDockerContainerHandler(
 	thinPoolName string,
 	thinPoolWatcher *devicemapper.ThinPoolWatcher,
 	zfsWatcher *zfs.ZfsWatcher,
+	dockerNoLabels bool,
+	metadataLabels []string,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
@@ -242,7 +247,13 @@ func newDockerContainerHandler(
 
 	// Add the name and bare ID as aliases of the container.
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"), id)
-	handler.labels = ctnr.Config.Labels
+
+	if dockerNoLabels {
+		handler.labels = map[string]string{}
+	} else {
+		handler.labels = ctnr.Config.Labels
+	}
+
 	handler.image = ctnr.Config.Image
 	handler.networkMode = ctnr.HostConfig.NetworkMode
 	handler.deviceID = ctnr.GraphDriver.Data["DeviceId"]
@@ -272,6 +283,15 @@ func newDockerContainerHandler(
 			deviceID:        handler.deviceID,
 			zfsFilesystem:   zfsFilesystem,
 		}
+	}
+
+	// retrieve desired labels
+	for _, exposedLabel := range metadataLabels {
+		labelValue, present := ctnr.Config.Labels[exposedLabel]
+		if !present {
+			continue
+		}
+		handler.labels[exposedLabel] = labelValue
 	}
 
 	// split env vars to get metadata map.
