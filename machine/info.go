@@ -14,6 +14,16 @@
 
 package machine
 
+/*
+#cgo LDFLAGS: -ldl -Wl,--unresolved-symbols=ignore-in-object-files
+#include <dlfcn.h>
+#include <stddef.h>
+#include "nvml.h"
+
+void *nvml = NULL;
+*/
+import "C"
+
 import (
 	"bytes"
 	"flag"
@@ -32,6 +42,27 @@ import (
 
 	"github.com/golang/glog"
 )
+
+func GPUInfoInit() {
+	C.nvml = C.dlopen(C.CString("libnvidia-ml.so.1"), C.RTLD_LAZY|C.RTLD_GLOBAL)
+	if C.nvml == nil {
+		glog.Infof("Couldn't load nvml library")
+		return
+	}
+	if r := C.nvmlInit(); r != C.NVML_SUCCESS {
+		glog.Infof("Couldn't initialize nvml: %v", r)
+		C.nvml = nil
+		return
+	}
+}
+
+func GPUInfoShutdown() {
+	if C.nvml == nil {
+		return
+	}
+	C.nvmlShutdown()
+	C.dlclose(C.nvml)
+}
 
 const hugepagesDirectory = "/sys/kernel/mm/hugepages/"
 
@@ -91,6 +122,54 @@ func GetHugePagesInfo() ([]info.HugePagesInfo, error) {
 	return hugePagesInfo, nil
 }
 
+func getGPUs() []info.GPUInfo {
+	var gpus []info.GPUInfo
+	if C.nvml == nil {
+		glog.Errorf("Failed to initialize nvml library")
+		return gpus
+	}
+	var n C.uint = 0
+	if r := C.nvmlDeviceGetCount(&n); r != C.NVML_SUCCESS {
+		glog.Errorf("Failed to get GPU devices: %v", C.GoString(C.nvmlErrorString(r)))
+		return gpus
+	}
+
+	for i := 0; i < int(n); i++ {
+		var device C.nvmlDevice_t
+		if r := C.nvmlDeviceGetHandleByIndex(C.uint(i), &device); r != C.NVML_SUCCESS {
+			glog.Errorf("Failed to get GPU device %d: %v", i, C.GoString(C.nvmlErrorString(r)))
+			return gpus
+		}
+
+		var name [C.NVML_DEVICE_NAME_BUFFER_SIZE]C.char
+		if r := C.nvmlDeviceGetName(device, &name[0], C.NVML_DEVICE_NAME_BUFFER_SIZE); r != C.NVML_SUCCESS {
+			glog.Errorf("Failed to get GPU device name for GPU %d: %v", i, C.GoString(C.nvmlErrorString(r)))
+			return gpus
+		}
+
+		var minor C.uint
+		if r := C.nvmlDeviceGetMinorNumber(device, &minor); r != C.NVML_SUCCESS {
+			glog.Errorf("Failed to get GPU device minor number for GPU %d: %v", i, C.GoString(C.nvmlErrorString(r)))
+			return gpus
+		}
+
+		var mem C.nvmlMemory_t
+		if r := C.nvmlDeviceGetMemoryInfo(device, &mem); r != C.NVML_SUCCESS {
+			glog.Errorf("Failed to get GPU device minor number for GPU %d: %v", i, C.GoString(C.nvmlErrorString(r)))
+			return gpus
+		}
+
+		gpus = append(gpus, info.GPUInfo{
+			Model:    C.GoString(&name[0]),
+			Path:     fmt.Sprintf("/dev/nvidia%d", minor),
+			MemTotal: uint64(mem.total),
+			MemUsed:  uint64(mem.used),
+		})
+
+	}
+	return gpus
+}
+
 func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.MachineInfo, error) {
 	rootFs := "/"
 	if !inHostNamespace {
@@ -143,6 +222,8 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	instanceType := realCloudInfo.GetInstanceType()
 	instanceID := realCloudInfo.GetInstanceID()
 
+	gpus := getGPUs()
+
 	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
 		CpuFrequency:   clockSpeed,
@@ -157,6 +238,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		CloudProvider:  cloudProvider,
 		InstanceType:   instanceType,
 		InstanceID:     instanceID,
+		GPUs:           gpus,
 	}
 
 	for i := range filesystems {
