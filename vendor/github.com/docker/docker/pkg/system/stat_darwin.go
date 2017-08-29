@@ -1,5 +1,3 @@
-// +build solaris
-
 package system
 
 import (
@@ -13,10 +11,10 @@ func fromStatT(s *syscall.Stat_t) (*StatT, error) {
 		uid:  s.Uid,
 		gid:  s.Gid,
 		rdev: uint64(s.Rdev),
-		mtim: s.Mtim}, nil
+		mtim: s.Mtimespec}, nil
 }
 
-// FromStatT loads a system.StatT from a syscal.Stat_t.
+// FromStatT loads a system.StatT from a syscall.Stat_t.
 func FromStatT(s *syscall.Stat_t) (*StatT, error) {
 	return fromStatT(s)
 }
