@@ -87,6 +87,9 @@ type dockerContainerHandler struct {
 	// indicates whether labels should be collected
 	noLabels bool
 
+	// labels whitelisted for collection
+	whitelistedLabels []string
+
 	// Metadata associated with the container.
 	labels map[string]string
 	envs   map[string]string
@@ -254,6 +257,7 @@ func newDockerContainerHandler(
 		handler.labels = ctnr.Config.Labels
 	}
 
+	handler.whitelistedLabels = metadataLabels
 	handler.image = ctnr.Config.Image
 	handler.networkMode = ctnr.HostConfig.NetworkMode
 	handler.deviceID = ctnr.GraphDriver.Data["DeviceId"]
@@ -402,10 +406,21 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem)
 
 	spec.Labels = self.labels
-	// Only adds restartcount label if it's greater than 0
-	if self.restartCount > 0 {
+
+	// Only adds restartcount label if it's greater than 0 and is
+	// a whitelisted label in case noLabels is set.
+	if self.noLabels {
+		for _, label := range self.whitelistedLabels {
+			if label != "restartCount" {
+				continue
+			}
+
+			spec.Labels["restartcount"] = strconv.Itoa(self.restartCount)
+		}
+	} else {
 		spec.Labels["restartcount"] = strconv.Itoa(self.restartCount)
 	}
+
 	spec.Envs = self.envs
 	spec.Image = self.image
 
