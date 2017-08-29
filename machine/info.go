@@ -15,12 +15,129 @@
 package machine
 
 /*
-#cgo LDFLAGS: -ldl -Wl,--unresolved-symbols=ignore-in-object-files
+#cgo LDFLAGS: -ldl
 #include <dlfcn.h>
 #include <stddef.h>
 #include "nvml.h"
 
 void *nvml = NULL;
+
+const char* (*nvmlErrorStringFunc)(nvmlReturn_t result);
+const char* nvmlErrorString(nvmlReturn_t result)
+{
+	if (nvml == NULL) {
+		return "library nvml not found";
+	}
+	if (nvmlErrorStringFunc == NULL) {
+		return "function nvmlErrorString not found";
+	}
+	return nvmlErrorStringFunc(result);
+}
+
+nvmlReturn_t (*nvmlDeviceGetMemoryInfoFunc)(nvmlDevice_t device, nvmlMemory_t *memory);
+nvmlReturn_t nvmlDeviceGetMemoryInfo(nvmlDevice_t device, nvmlMemory_t *memory)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetMemoryInfoFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetMemoryInfoFunc(device, memory);
+}
+
+nvmlReturn_t (*nvmlDeviceGetMinorNumberFunc)(nvmlDevice_t device, unsigned int *minorNumber);
+nvmlReturn_t nvmlDeviceGetMinorNumber(nvmlDevice_t device, unsigned int *minorNumber)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetMinorNumberFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetMinorNumberFunc(device, minorNumber);
+}
+
+nvmlReturn_t (*nvmlDeviceGetNameFunc)(nvmlDevice_t device, char *name, unsigned int length);
+nvmlReturn_t nvmlDeviceGetName(nvmlDevice_t device, char *name, unsigned int length)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetNameFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetNameFunc(device, name, length);
+}
+
+nvmlReturn_t (*nvmlDeviceGetHandleByIndexFunc)(unsigned int index, nvmlDevice_t *device);
+nvmlReturn_t nvmlDeviceGetHandleByIndex(unsigned int index, nvmlDevice_t *device)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetHandleByIndexFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetHandleByIndexFunc(index, device);
+}
+
+nvmlReturn_t (*nvmlDeviceGetCountFunc)(unsigned int *deviceCount);
+nvmlReturn_t nvmlDeviceGetCount(unsigned int *deviceCount)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetCountFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetCountFunc(deviceCount);
+}
+
+nvmlReturn_t (*nvmlShutdownFunc)(void);
+nvmlReturn_t nvmlShutdown(void)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlShutdownFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	nvmlReturn_t result = nvmlShutdownFunc();
+	dlclose(nvml);
+	nvmlShutdownFunc = NULL;
+	nvml = NULL;
+	return result;
+}
+
+
+nvmlReturn_t (*nvmlInitFunc)(void);
+nvmlReturn_t nvmlInit(void)
+{
+        nvml = dlopen("libnvidia-ml.so.1", RTLD_LAZY);
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+        nvmlInitFunc = dlsym(nvml, "nvmlInit_v2");
+	if (nvmlInitFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	nvmlReturn_t result = nvmlInitFunc();
+	if (result != NVML_SUCCESS) {
+		dlclose(nvml);
+		nvmlInitFunc = NULL;
+		nvml = NULL;
+		return result;
+	}
+        nvmlShutdownFunc = dlsym(nvml, "nvmlShutdown_v2");
+        nvmlDeviceGetCountFunc = dlsym(nvml, "nvmlDeviceGetCount_v2");
+        nvmlDeviceGetHandleByIndexFunc = dlsym(nvml, "nvmlDeviceGetHandleByIndex_v2");
+        nvmlDeviceGetNameFunc = dlsym(nvml, "nvmlDeviceGetName");
+        nvmlDeviceGetMinorNumberFunc = dlsym(nvml, "nvmlDeviceGetMinorNumber");
+        nvmlDeviceGetMemoryInfoFunc = dlsym(nvml, "nvmlDeviceGetMemoryInfo");
+        nvmlErrorStringFunc = dlsym(nvml, "nvmlErrorString");
+	return NVML_SUCCESS;
+}
 */
 import "C"
 
@@ -44,24 +161,13 @@ import (
 )
 
 func GPUInfoInit() {
-	C.nvml = C.dlopen(C.CString("libnvidia-ml.so.1"), C.RTLD_LAZY|C.RTLD_GLOBAL)
-	if C.nvml == nil {
-		glog.Infof("Couldn't load nvml library")
-		return
-	}
 	if r := C.nvmlInit(); r != C.NVML_SUCCESS {
-		glog.Infof("Couldn't initialize nvml: %v", r)
-		C.nvml = nil
-		return
+		glog.Infof("Couldn't initialize nvml library: %v", r)
 	}
 }
 
 func GPUInfoShutdown() {
-	if C.nvml == nil {
-		return
-	}
 	C.nvmlShutdown()
-	C.dlclose(C.nvml)
 }
 
 const hugepagesDirectory = "/sys/kernel/mm/hugepages/"
