@@ -174,14 +174,14 @@
 			"Rev": "14437382a98e5ebeb6cafb57cff445370e3f7d56"
 		},
 		{
-			"ImportPath": "github.com/docker/distribution/digest",
-			"Comment": "v2.4.0-rc.1-30-gc6f63e29",
-			"Rev": "c6f63e298ebb1dd0a2ce5ada0c0d39e248132634"
+			"ImportPath": "github.com/docker/distribution/digestset",
+			"Comment": "v2.6.0-rc.1-209-gedc3ab29",
+			"Rev": "edc3ab29cdff8694dd6feb85cfeb4b5f1b38ed9c"
 		},
 		{
 			"ImportPath": "github.com/docker/distribution/reference",
-			"Comment": "v2.4.0-rc.1-30-gc6f63e29",
-			"Rev": "c6f63e298ebb1dd0a2ce5ada0c0d39e248132634"
+			"Comment": "v2.6.0-rc.1-209-gedc3ab29",
+			"Rev": "edc3ab29cdff8694dd6feb85cfeb4b5f1b38ed9c"
 		},
 		{
 			"ImportPath": "github.com/docker/docker/pkg/longpath",
@@ -378,6 +378,11 @@
 		{
 			"ImportPath": "github.com/mrunalp/fileutils",
 			"Rev": "4ee1cc9a80582a0c75febdd5cfa779ee4361cbca"
+		},
+		{
+			"ImportPath": "github.com/opencontainers/go-digest",
+			"Comment": "v1.0.0-rc0-6-g279bed9",
+			"Rev": "279bed98673dd5bef374d3b6e4b09e2af76183bf"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer",
