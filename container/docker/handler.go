@@ -265,8 +265,8 @@ func newDockerContainerHandler(
 	if ipAddress == "" {
 		for networkName, netValue := range ctnr.NetworkSettings.Networks {
 			if networkName == "ingress" {
-                          continue
-                        }
+				continue
+			}
 			ipAddress = netValue.IPAddress
 			break
 		}
