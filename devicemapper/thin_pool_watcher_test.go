@@ -41,16 +41,16 @@ func TestRefresh(t *testing.T) {
 		{
 			name: "check reservation fails",
 			dmsetupCommands: []fake.DmsetupCommand{
-				{"status", "", fmt.Errorf("not gonna work")},
+				{Name: "status", Result: "", Err: fmt.Errorf("not gonna work")},
 			},
 			expectedError: true,
 		},
 		{
 			name: "no existing reservation - ok with minimum # of fields",
 			dmsetupCommands: []fake.DmsetupCommand{
-				{"status", "0 75497472 thin-pool 65 327/524288 14092/589824 -", nil}, // status check
-				{"message", "", nil},                                                 // make reservation
-				{"message", "", nil},                                                 // release reservation
+				{Name: "status", Result: "0 75497472 thin-pool 65 327/524288 14092/589824 -", Err: nil}, // status check
+				{Name: "message", Result: "", Err: nil},                                                 // make reservation
+				{Name: "message", Result: "", Err: nil},                                                 // release reservation
 			},
 			thinLsOutput:  usage,
 			expectedError: false,
@@ -60,9 +60,9 @@ func TestRefresh(t *testing.T) {
 		{
 			name: "no existing reservation - ok",
 			dmsetupCommands: []fake.DmsetupCommand{
-				{"status", "0 75497472 thin-pool 65 327/524288 14092/589824 - rw no_discard_passdown error_if_no_space - ", nil}, // status check
-				{"message", "", nil}, // make reservation
-				{"message", "", nil}, // release reservation
+				{Name: "status", Result: "0 75497472 thin-pool 65 327/524288 14092/589824 - rw no_discard_passdown error_if_no_space - ", Err: nil}, // status check
+				{Name: "message", Result: "", Err: nil},                                                                                             // make reservation
+				{Name: "message", Result: "", Err: nil},                                                                                             // release reservation
 			},
 			thinLsOutput:  usage,
 			expectedError: false,
@@ -73,13 +73,13 @@ func TestRefresh(t *testing.T) {
 			name: "existing reservation - ok",
 			dmsetupCommands: []fake.DmsetupCommand{
 				// status check
-				{"status", "0 75497472 thin-pool 65 327/524288 14092/589824 39 rw no_discard_passdown error_if_no_space - ", nil},
+				{Name: "status", Result: "0 75497472 thin-pool 65 327/524288 14092/589824 39 rw no_discard_passdown error_if_no_space - ", Err: nil},
 				// release reservation
-				{"message", "", nil},
+				{Name: "message", Result: "", Err: nil},
 				// make reservation
-				{"message", "", nil},
+				{Name: "message", Result: "", Err: nil},
 				// release reservation
-				{"message", "", nil},
+				{Name: "message", Result: "", Err: nil},
 			},
 			thinLsOutput:  usage,
 			expectedError: false,
@@ -90,9 +90,9 @@ func TestRefresh(t *testing.T) {
 			name: "failure releasing existing reservation",
 			dmsetupCommands: []fake.DmsetupCommand{
 				// status check
-				{"status", "0 75497472 thin-pool 65 327/524288 14092/589824 39 rw no_discard_passdown error_if_no_space - ", nil},
+				{Name: "status", Result: "0 75497472 thin-pool 65 327/524288 14092/589824 39 rw no_discard_passdown error_if_no_space - ", Err: nil},
 				// release reservation
-				{"message", "", fmt.Errorf("not gonna work")},
+				{Name: "message", Result: "", Err: fmt.Errorf("not gonna work")},
 			},
 			expectedError: true,
 		},
@@ -100,11 +100,11 @@ func TestRefresh(t *testing.T) {
 			name: "failure making reservation",
 			dmsetupCommands: []fake.DmsetupCommand{
 				// status check
-				{"status", "0 75497472 thin-pool 65 327/524288 14092/589824 39 rw no_discard_passdown error_if_no_space - ", nil},
+				{Name: "status", Result: "0 75497472 thin-pool 65 327/524288 14092/589824 39 rw no_discard_passdown error_if_no_space - ", Err: nil},
 				// release reservation
-				{"message", "", nil},
+				{Name: "message", Result: "", Err: nil},
 				// make reservation
-				{"message", "", fmt.Errorf("not gonna work")},
+				{Name: "message", Result: "", Err: fmt.Errorf("not gonna work")},
 			},
 			expectedError: true,
 		},
@@ -112,13 +112,13 @@ func TestRefresh(t *testing.T) {
 			name: "failure running thin_ls",
 			dmsetupCommands: []fake.DmsetupCommand{
 				// status check
-				{"status", "0 75497472 thin-pool 65 327/524288 14092/589824 39 rw no_discard_passdown error_if_no_space - ", nil},
+				{Name: "status", Result: "0 75497472 thin-pool 65 327/524288 14092/589824 39 rw no_discard_passdown error_if_no_space - ", Err: nil},
 				// release reservation
-				{"message", "", nil},
+				{Name: "message", Result: "", Err: nil},
 				// make reservation
-				{"message", "", nil},
+				{Name: "message", Result: "", Err: nil},
 				// release reservation
-				{"message", "", nil},
+				{Name: "message", Result: "", Err: nil},
 			},
 			thinLsErr:     fmt.Errorf("not gonna work"),
 			expectedError: true,

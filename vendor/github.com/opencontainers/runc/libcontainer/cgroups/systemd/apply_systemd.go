@@ -260,7 +260,7 @@ func (m *Manager) Apply(pid int) error {
 
 	if c.Resources.Memory != 0 {
 		properties = append(properties,
-			newProp("MemoryLimit", c.Resources.Memory))
+			newProp("MemoryLimit", uint64(c.Resources.Memory)))
 	}
 
 	if c.Resources.CpuShares != 0 {
@@ -353,7 +353,6 @@ func joinCgroups(c *configs.Cgroup, pid int) error {
 		switch name {
 		case "name=systemd":
 			// let systemd handle this
-			break
 		case "cpuset":
 			path, err := getSubsystemPath(c, name)
 			if err != nil && !cgroups.IsNotFound(err) {
@@ -363,7 +362,6 @@ func joinCgroups(c *configs.Cgroup, pid int) error {
 			if err := s.ApplyDir(path, c, pid); err != nil {
 				return err
 			}
-			break
 		default:
 			_, err := join(c, name, pid)
 			if err != nil {

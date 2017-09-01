@@ -9,16 +9,18 @@ import (
 	"net"
 	"os"
 	"strings"
-	"syscall"
+	"syscall" // only for Errno
 	"unsafe"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/configs"
 	"github.com/opencontainers/runc/libcontainer/system"
 	"github.com/opencontainers/runc/libcontainer/user"
 	"github.com/opencontainers/runc/libcontainer/utils"
+
+	"github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
 type initType string
@@ -29,7 +31,8 @@ const (
 )
 
 type pid struct {
-	Pid int `json:"pid"`
+	Pid           int `json:"pid"`
+	PidFirstChild int `json:"pid_first"`
 }
 
 // network is an internal struct used to setup container networks.
@@ -65,7 +68,7 @@ type initer interface {
 	Init() error
 }
 
-func newContainerInit(t initType, pipe *os.File, consoleSocket *os.File, stateDirFD int) (initer, error) {
+func newContainerInit(t initType, pipe *os.File, consoleSocket *os.File, fifoFd int) (initer, error) {
 	var config *initConfig
 	if err := json.NewDecoder(pipe).Decode(&config); err != nil {
 		return nil, err
@@ -84,9 +87,9 @@ func newContainerInit(t initType, pipe *os.File, consoleSocket *os.File, stateDi
 		return &linuxStandardInit{
 			pipe:          pipe,
 			consoleSocket: consoleSocket,
-			parentPid:     syscall.Getppid(),
+			parentPid:     unix.Getppid(),
 			config:        config,
-			stateDirFD:    stateDirFD,
+			fifoFd:        fifoFd,
 		}, nil
 	}
 	return nil, fmt.Errorf("unknown init type %q", t)
@@ -146,7 +149,7 @@ func finalizeNamespace(config *initConfig) error {
 		return err
 	}
 	if config.Cwd != "" {
-		if err := syscall.Chdir(config.Cwd); err != nil {
+		if err := unix.Chdir(config.Cwd); err != nil {
 			return fmt.Errorf("chdir to cwd (%q) set in config.json failed: %v", config.Cwd, err)
 		}
 	}
@@ -287,7 +290,7 @@ func setupUser(config *initConfig) error {
 	// set the group).
 	if !config.Rootless {
 		suppGroups := append(execUser.Sgids, addGroups...)
-		if err := syscall.Setgroups(suppGroups); err != nil {
+		if err := unix.Setgroups(suppGroups); err != nil {
 			return err
 		}
 	}
@@ -313,8 +316,8 @@ func setupUser(config *initConfig) error {
 // The ownership needs to match because it is created outside of the container and needs to be
 // localized.
 func fixStdioPermissions(config *initConfig, u *user.ExecUser) error {
-	var null syscall.Stat_t
-	if err := syscall.Stat("/dev/null", &null); err != nil {
+	var null unix.Stat_t
+	if err := unix.Stat("/dev/null", &null); err != nil {
 		return err
 	}
 	for _, fd := range []uintptr{
@@ -322,8 +325,8 @@ func fixStdioPermissions(config *initConfig, u *user.ExecUser) error {
 		os.Stderr.Fd(),
 		os.Stdout.Fd(),
 	} {
-		var s syscall.Stat_t
-		if err := syscall.Fstat(int(fd), &s); err != nil {
+		var s unix.Stat_t
+		if err := unix.Fstat(int(fd), &s); err != nil {
 			return err
 		}
 
@@ -346,7 +349,7 @@ func fixStdioPermissions(config *initConfig, u *user.ExecUser) error {
 		// that users expect to be able to actually use their console. Without
 		// this code, you couldn't effectively run as a non-root user inside a
 		// container and also have a console set up.
-		if err := syscall.Fchown(int(fd), u.Uid, int(s.Gid)); err != nil {
+		if err := unix.Fchown(int(fd), u.Uid, int(s.Gid)); err != nil {
 			return err
 		}
 	}
@@ -401,7 +404,7 @@ func setupRoute(config *configs.Config) error {
 
 func setupRlimits(limits []configs.Rlimit, pid int) error {
 	for _, rlimit := range limits {
-		if err := system.Prlimit(pid, rlimit.Type, syscall.Rlimit{Max: rlimit.Hard, Cur: rlimit.Soft}); err != nil {
+		if err := system.Prlimit(pid, rlimit.Type, unix.Rlimit{Max: rlimit.Hard, Cur: rlimit.Soft}); err != nil {
 			return fmt.Errorf("error setting rlimit type %v: %v", rlimit.Type, err)
 		}
 	}
@@ -424,7 +427,7 @@ type siginfo struct {
 // Its based off blockUntilWaitable in src/os/wait_waitid.go
 func isWaitable(pid int) (bool, error) {
 	si := &siginfo{}
-	_, _, e := syscall.Syscall6(syscall.SYS_WAITID, _P_PID, uintptr(pid), uintptr(unsafe.Pointer(si)), syscall.WEXITED|syscall.WNOWAIT|syscall.WNOHANG, 0, 0)
+	_, _, e := unix.Syscall6(unix.SYS_WAITID, _P_PID, uintptr(pid), uintptr(unsafe.Pointer(si)), unix.WEXITED|unix.WNOWAIT|unix.WNOHANG, 0, 0)
 	if e != 0 {
 		return false, os.NewSyscallError("waitid", e)
 	}
@@ -432,15 +435,15 @@ func isWaitable(pid int) (bool, error) {
 	return si.si_pid != 0, nil
 }
 
-// isNoChildren returns true if err represents a syscall.ECHILD false otherwise
+// isNoChildren returns true if err represents a unix.ECHILD (formerly syscall.ECHILD) false otherwise
 func isNoChildren(err error) bool {
 	switch err := err.(type) {
 	case syscall.Errno:
-		if err == syscall.ECHILD {
+		if err == unix.ECHILD {
 			return true
 		}
 	case *os.SyscallError:
-		if err.Err == syscall.ECHILD {
+		if err.Err == unix.ECHILD {
 			return true
 		}
 	}
@@ -478,7 +481,7 @@ func signalAllProcesses(m cgroups.Manager, s os.Signal) error {
 	}
 
 	for _, p := range procs {
-		if s != syscall.SIGKILL {
+		if s != unix.SIGKILL {
 			if ok, err := isWaitable(p.Pid); err != nil {
 				if !isNoChildren(err) {
 					logrus.Warn("signalAllProcesses: ", p.Pid, err)
