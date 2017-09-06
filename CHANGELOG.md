@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.27.1 (2017-09-06)
+- Add CRI-O support
+
 ### 0.27.0 (2017-09-01)
 - Fix journalctl leak
 - Fix container memory rss
