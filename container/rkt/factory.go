@@ -58,7 +58,7 @@ func (self *rktFactory) NewContainerHandler(name string, inHostNamespace bool) (
 	if !inHostNamespace {
 		rootFs = "/rootfs"
 	}
-	return newRktContainerHandler(name, client, self.rktPath, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, rootFs, self.ignoreMetrics)
+	return newRktContainerHandler(name, client, self.rktPath, self.cgroupSubsystems, self.machineInfoFactory, self.fsInfo, rootFs, self.ignoreMetrics, self.enforceLabelWhitelist, self.labelWhitelist)
 }
 
 func (self *rktFactory) CanHandleAndAccept(name string) (bool, bool, error) {
