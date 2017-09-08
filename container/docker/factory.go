@@ -54,8 +54,6 @@ const DockerNamespace = "docker"
 var dockerCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
 
 var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys that needs to be collected for docker containers")
-var dockerLabelWhitelist = flag.String("docker_label_metadata_whitelist", "", "a comma-separated list of label keys that needs to be collected for docker containers")
-var dockerNoLabels = flag.Bool("docker_no_labels", false, "whether to retrieve all container labels")
 
 var (
 	// Basepath to all container specific information that libcontainer stores.
@@ -112,6 +110,9 @@ type dockerFactory struct {
 
 	dockerAPIVersion []int
 
+	enforceLabelWhitelist bool
+	labelWhitelist        []string
+
 	ignoreMetrics container.MetricSet
 
 	thinPoolName    string
@@ -130,7 +131,6 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		return
 	}
 
-	metadataLabels := strings.Split(*dockerLabelWhitelist, ",")
 	metadataEnvs := strings.Split(*dockerEnvWhitelist, ",")
 
 	handler, err = newDockerContainerHandler(
@@ -148,8 +148,8 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.thinPoolName,
 		self.thinPoolWatcher,
 		self.zfsWatcher,
-		*dockerNoLabels,
-		metadataLabels,
+		self.enforceLabelWhitelist,
+		self.labelWhitelist,
 	)
 	return
 }
@@ -314,7 +314,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet, enforceLabelWhitelist bool, labelsWhiteList []string) error {
 	client, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
@@ -359,18 +359,20 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 
 	glog.Infof("Registering Docker factory")
 	f := &dockerFactory{
-		cgroupSubsystems:   cgroupSubsystems,
-		client:             client,
-		dockerVersion:      dockerVersion,
-		dockerAPIVersion:   dockerAPIVersion,
-		fsInfo:             fsInfo,
-		machineInfoFactory: factory,
-		storageDriver:      storageDriver(dockerInfo.Driver),
-		storageDir:         RootDir(),
-		ignoreMetrics:      ignoreMetrics,
-		thinPoolName:       thinPoolName,
-		thinPoolWatcher:    thinPoolWatcher,
-		zfsWatcher:         zfsWatcher,
+		cgroupSubsystems:      cgroupSubsystems,
+		client:                client,
+		dockerVersion:         dockerVersion,
+		dockerAPIVersion:      dockerAPIVersion,
+		enforceLabelWhitelist: enforceLabelWhitelist,
+		labelWhitelist:        labelsWhiteList,
+		fsInfo:                fsInfo,
+		machineInfoFactory:    factory,
+		storageDriver:         storageDriver(dockerInfo.Driver),
+		storageDir:            RootDir(),
+		ignoreMetrics:         ignoreMetrics,
+		thinPoolName:          thinPoolName,
+		thinPoolWatcher:       thinPoolWatcher,
+		zfsWatcher:            zfsWatcher,
 	}
 
 	container.RegisterContainerHandlerFactory(f, []watcher.ContainerWatchSource{watcher.Raw})

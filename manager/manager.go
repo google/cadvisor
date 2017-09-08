@@ -53,6 +53,8 @@ import (
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")
 var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log the usage of the cAdvisor container")
+var enforceLabelWhitelist = flag.Bool("enforce_label_whitelist", false, "enforces label whitelisting")
+var labelWhitelist = flag.String("label_whitelist", "", "comma-separated list of label keys that needs to be collected for docker containers")
 var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h", "Max length of time for which to store events (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is a duration. Default is applied to all non-specified event types")
 var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
 var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
@@ -255,12 +257,14 @@ type manager struct {
 
 // Start the container manager.
 func (self *manager) Start() error {
-	err := docker.Register(self, self.fsInfo, self.ignoreMetrics)
+	labelsWhiteList := strings.Split(*labelWhitelist, ",")
+
+	err := docker.Register(self, self.fsInfo, self.ignoreMetrics, *enforceLabelWhitelist, labelsWhiteList)
 	if err != nil {
 		glog.Warningf("Docker container factory registration failed: %v.", err)
 	}
 
-	err = rkt.Register(self, self.fsInfo, self.ignoreMetrics)
+	err = rkt.Register(self, self.fsInfo, self.ignoreMetrics, *enforceLabelWhitelist, labelsWhiteList)
 	if err != nil {
 		glog.Warningf("Registration of the rkt container factory failed: %v", err)
 	} else {

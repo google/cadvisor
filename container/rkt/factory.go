@@ -33,6 +33,10 @@ type rktFactory struct {
 
 	cgroupSubsystems *libcontainer.CgroupSubsystems
 
+	enforceLabelWhitelist bool
+
+	labelWhitelist []string
+
 	fsInfo fs.FsInfo
 
 	ignoreMetrics container.MetricSet
@@ -67,7 +71,7 @@ func (self *rktFactory) DebugInfo() map[string][]string {
 	return map[string][]string{}
 }
 
-func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet) error {
+func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet, enforceLabelWhitelist bool, labelsWhiteList []string) error {
 	_, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with Rkt api service: %v", err)
@@ -88,11 +92,13 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, igno
 
 	glog.Infof("Registering Rkt factory")
 	factory := &rktFactory{
-		machineInfoFactory: machineInfoFactory,
-		fsInfo:             fsInfo,
-		cgroupSubsystems:   &cgroupSubsystems,
-		ignoreMetrics:      ignoreMetrics,
-		rktPath:            rktPath,
+		machineInfoFactory:    machineInfoFactory,
+		fsInfo:                fsInfo,
+		enforceLabelWhitelist: enforceLabelWhitelist,
+		labelWhitelist:        labelsWhiteList,
+		cgroupSubsystems:      &cgroupSubsystems,
+		ignoreMetrics:         ignoreMetrics,
+		rktPath:               rktPath,
 	}
 	container.RegisterContainerHandlerFactory(factory, []watcher.ContainerWatchSource{watcher.Rkt})
 	return nil
