@@ -314,7 +314,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet, enforceLabelWhitelist bool, labelsWhiteList []string) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet, enforceLabelWhitelist bool, labelWhiteList []string) error {
 	client, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
@@ -364,7 +364,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		dockerVersion:         dockerVersion,
 		dockerAPIVersion:      dockerAPIVersion,
 		enforceLabelWhitelist: enforceLabelWhitelist,
-		labelWhitelist:        labelsWhiteList,
+		labelWhitelist:        labelWhiteList,
 		fsInfo:                fsInfo,
 		machineInfoFactory:    factory,
 		storageDriver:         storageDriver(dockerInfo.Driver),

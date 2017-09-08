@@ -410,7 +410,7 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec.Labels = self.labels
 
 	// Only adds restartcount label if it's greater than 0 and is
-	// a whitelisted label in case noLabels is set.
+	// a whitelisted label in case enforceWhitelist is set.
 	if self.enforceLabelWhitelist {
 		for _, label := range self.labelWhitelist {
 			if label != "restartCount" {

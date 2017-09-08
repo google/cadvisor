@@ -71,7 +71,7 @@ func (self *rktFactory) DebugInfo() map[string][]string {
 	return map[string][]string{}
 }
 
-func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet, enforceLabelWhitelist bool, labelsWhiteList []string) error {
+func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet, enforceLabelWhitelist bool, labelWhiteList []string) error {
 	_, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with Rkt api service: %v", err)
@@ -95,7 +95,7 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, igno
 		machineInfoFactory:    machineInfoFactory,
 		fsInfo:                fsInfo,
 		enforceLabelWhitelist: enforceLabelWhitelist,
-		labelWhitelist:        labelsWhiteList,
+		labelWhitelist:        labelWhiteList,
 		cgroupSubsystems:      &cgroupSubsystems,
 		ignoreMetrics:         ignoreMetrics,
 		rktPath:               rktPath,
