@@ -85,10 +85,10 @@ type dockerContainerHandler struct {
 	creationTime time.Time
 
 	// indicates whether labels should be collected
-	noLabels bool
+	enforceLabelWhitelist bool
 
 	// labels whitelisted for collection
-	whitelistedLabels []string
+	labelWhitelist []string
 
 	// Metadata associated with the container.
 	labels map[string]string
@@ -159,8 +159,8 @@ func newDockerContainerHandler(
 	thinPoolName string,
 	thinPoolWatcher *devicemapper.ThinPoolWatcher,
 	zfsWatcher *zfs.ZfsWatcher,
-	dockerNoLabels bool,
-	metadataLabels []string,
+	enforceLabelWhitelist bool,
+	labelWhitelist []string,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
@@ -216,23 +216,25 @@ func newDockerContainerHandler(
 
 	// TODO: extract object mother method
 	handler := &dockerContainerHandler{
-		id:                 id,
-		client:             client,
-		name:               name,
-		machineInfoFactory: machineInfoFactory,
-		cgroupPaths:        cgroupPaths,
-		cgroupManager:      cgroupManager,
-		storageDriver:      storageDriver,
-		fsInfo:             fsInfo,
-		rootFs:             rootFs,
-		poolName:           thinPoolName,
-		zfsFilesystem:      zfsFilesystem,
-		rootfsStorageDir:   rootfsStorageDir,
-		envs:               make(map[string]string),
-		ignoreMetrics:      ignoreMetrics,
-		thinPoolWatcher:    thinPoolWatcher,
-		zfsWatcher:         zfsWatcher,
-		zfsParent:          zfsParent,
+		id:                    id,
+		client:                client,
+		name:                  name,
+		machineInfoFactory:    machineInfoFactory,
+		cgroupPaths:           cgroupPaths,
+		cgroupManager:         cgroupManager,
+		storageDriver:         storageDriver,
+		enforceLabelWhitelist: enforceLabelWhitelist,
+		labelWhitelist:        labelWhitelist,
+		fsInfo:                fsInfo,
+		rootFs:                rootFs,
+		poolName:              thinPoolName,
+		zfsFilesystem:         zfsFilesystem,
+		rootfsStorageDir:      rootfsStorageDir,
+		envs:                  make(map[string]string),
+		ignoreMetrics:         ignoreMetrics,
+		thinPoolWatcher:       thinPoolWatcher,
+		zfsWatcher:            zfsWatcher,
+		zfsParent:             zfsParent,
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -251,13 +253,13 @@ func newDockerContainerHandler(
 	// Add the name and bare ID as aliases of the container.
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"), id)
 
-	if dockerNoLabels {
+	if enforceLabelWhitelist {
 		handler.labels = map[string]string{}
 	} else {
 		handler.labels = ctnr.Config.Labels
 	}
 
-	handler.whitelistedLabels = metadataLabels
+	handler.labelWhitelist = labelWhitelist
 	handler.image = ctnr.Config.Image
 	handler.networkMode = ctnr.HostConfig.NetworkMode
 	handler.deviceID = ctnr.GraphDriver.Data["DeviceId"]
@@ -290,7 +292,7 @@ func newDockerContainerHandler(
 	}
 
 	// retrieve desired labels
-	for _, exposedLabel := range metadataLabels {
+	for _, exposedLabel := range labelWhitelist {
 		labelValue, present := ctnr.Config.Labels[exposedLabel]
 		if !present {
 			continue
@@ -409,8 +411,8 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 
 	// Only adds restartcount label if it's greater than 0 and is
 	// a whitelisted label in case noLabels is set.
-	if self.noLabels {
-		for _, label := range self.whitelistedLabels {
+	if self.enforceLabelWhitelist {
+		for _, label := range self.labelWhitelist {
 			if label != "restartCount" {
 				continue
 			}
