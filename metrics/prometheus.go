@@ -794,6 +794,8 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(container.Spec.Memory.Limit), values...)
 			desc = prometheus.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(container.Spec.Memory.SwapLimit), values...)
+			desc = prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil)
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(container.Spec.Memory.Reservation), values...)
 		}
 
 		// Now for the actual metrics

@@ -63,6 +63,11 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Period: 100000,
 					Quota:  10000,
 				},
+				Memory: info.MemorySpec{
+					Limit:       2048,
+					Reservation: 1024,
+					SwapLimit:   4096,
+				},
 				CreationTime: time.Unix(1257894000, 0),
 				Labels: map[string]string{
 					"foo.label": "bar",
