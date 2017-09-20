@@ -226,7 +226,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc) *PrometheusCo
 				},
 			}, {
 				name:      "container_memory_usage_bytes",
-				help:      "Current memory usage in bytes.",
+				help:      "Current memory usage in bytes, including all memory regardless of when it was accessed",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.Usage)}}
