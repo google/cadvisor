@@ -31,7 +31,7 @@ if [[ ! -z "$(git diff --name-only pages)" ]]; then
   exit 1
 fi
 
-# Build & test with go 1.7
+# Build & test with go 1.8
 docker run --rm \
        -w "/go/src/github.com/google/cadvisor" \
        -v "${GOPATH}/src/github.com/google/cadvisor:/go/src/github.com/google/cadvisor" \
