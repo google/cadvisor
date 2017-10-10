@@ -100,6 +100,9 @@ container_memory_failures_total{container_env_foo_env="prod",container_label_foo
 container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="container",type="pgmajfault",zone_name="hello"} 11
 container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",type="pgfault",zone_name="hello"} 12
 container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",type="pgmajfault",zone_name="hello"} 13
+# HELP container_memory_max_usage_bytes Maximum memory usage recorded in bytes
+# TYPE container_memory_max_usage_bytes gauge
+container_memory_max_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8
 # HELP container_memory_rss Size of RSS in bytes.
 # TYPE container_memory_rss gauge
 container_memory_rss{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 15

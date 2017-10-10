@@ -94,6 +94,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					},
 					Memory: info.MemoryStats{
 						Usage:      8,
+						MaxUsage:   8,
 						WorkingSet: 9,
 						ContainerData: info.MemoryStatsMemoryData{
 							Pgfault:    10,
