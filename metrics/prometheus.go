@@ -231,6 +231,14 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc) *PrometheusCo
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.Usage)}}
 				},
+			},
+			{
+				name:      "container_memory_max_usage_bytes",
+				help:      "Maximum memory usage recorded in bytes",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.MaxUsage)}}
+				},
 			}, {
 				name:      "container_memory_working_set_bytes",
 				help:      "Current working set in bytes.",

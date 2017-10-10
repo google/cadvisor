@@ -330,6 +330,10 @@ type MemoryStats struct {
 	// Units: Bytes.
 	Usage uint64 `json:"usage"`
 
+	// Maximum memory usage recorded.
+	// Units: Bytes.
+	MaxUsage uint64 `json:"max_usage"`
+
 	// Number of bytes of page cache memory.
 	// Units: Bytes.
 	Cache uint64 `json:"cache"`

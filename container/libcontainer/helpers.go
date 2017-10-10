@@ -509,6 +509,7 @@ func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
 
 func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Memory.Usage = s.MemoryStats.Usage.Usage
+	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
 	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
 	ret.Memory.Cache = s.MemoryStats.Stats["cache"]
 
