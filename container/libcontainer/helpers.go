@@ -452,6 +452,17 @@ var numCpusFunc = getNumberOnlineCPUs
 func setCpuStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Cpu.Usage.User = s.CpuStats.CpuUsage.UsageInUsermode
 	ret.Cpu.Usage.System = s.CpuStats.CpuUsage.UsageInKernelmode
+	ret.Cpu.Usage.Total = 0
+	ret.Cpu.CFS.Periods = s.CpuStats.ThrottlingData.Periods
+	ret.Cpu.CFS.ThrottledPeriods = s.CpuStats.ThrottlingData.ThrottledPeriods
+	ret.Cpu.CFS.ThrottledTime = s.CpuStats.ThrottlingData.ThrottledTime
+
+	if len(s.CpuStats.CpuUsage.PercpuUsage) == 0 {
+		// libcontainer's 'GetStats' can leave 'PercpuUsage' nil if it skipped the
+		// cpuacct subsystem.
+		return
+	}
+
 	numPossible := uint32(len(s.CpuStats.CpuUsage.PercpuUsage))
 	// Note that as of https://patchwork.kernel.org/patch/8607101/ (kernel v4.7),
 	// the percpu usage information includes extra zero values for all additional
@@ -470,15 +481,11 @@ func setCpuStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	numActual = minUint32(numPossible, numActual)
 	ret.Cpu.Usage.PerCpu = make([]uint64, numActual)
 
-	ret.Cpu.Usage.Total = 0
 	for i := uint32(0); i < numActual; i++ {
 		ret.Cpu.Usage.PerCpu[i] = s.CpuStats.CpuUsage.PercpuUsage[i]
 		ret.Cpu.Usage.Total += s.CpuStats.CpuUsage.PercpuUsage[i]
 	}
 
-	ret.Cpu.CFS.Periods = s.CpuStats.ThrottlingData.Periods
-	ret.Cpu.CFS.ThrottledPeriods = s.CpuStats.ThrottlingData.ThrottledPeriods
-	ret.Cpu.CFS.ThrottledTime = s.CpuStats.ThrottlingData.ThrottledTime
 }
 
 // Copied from
