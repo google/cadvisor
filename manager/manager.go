@@ -148,13 +148,19 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	}
 	glog.Infof("cAdvisor running in container: %q", selfContainer)
 
-	dockerStatus, err := docker.Status()
-	if err != nil {
+	var (
+		dockerStatus info.DockerStatus
+		rktPath      string
+	)
+	if tempDockerStatus, err := docker.Status(); err != nil {
 		glog.Warningf("Unable to connect to Docker: %v", err)
+	} else {
+		dockerStatus = tempDockerStatus
 	}
-	rktPath, err := rkt.RktPath()
-	if err != nil {
+	if tmpRktPath, err := rkt.RktPath(); err != nil {
 		glog.Warningf("unable to connect to Rkt api service: %v", err)
+	} else {
+		rktPath = tmpRktPath
 	}
 
 	crioClient, err := crio.Client()
