@@ -416,8 +416,8 @@
 		},
 		{
 			"ImportPath": "github.com/mistifyio/go-zfs",
-			"Comment": "v2.1.1-5-g1b4ae6f",
-			"Rev": "1b4ae6fb4e77b095934d4430860ff202060169f8"
+			"Comment": "v2.1.1-31-g166dd29",
+			"Rev": "166dd29edf054bff262cdaa5ffcaddb50ced9e31"
 		},
 		{
 			"ImportPath": "github.com/mrunalp/fileutils",
