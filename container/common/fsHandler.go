@@ -92,10 +92,10 @@ func (fh *realFsHandler) update() error {
 	fh.Lock()
 	defer fh.Unlock()
 	fh.lastUpdate = time.Now()
-	if rootDiskErr == nil && fh.rootfs != "" {
+	if rootInodeErr == nil && fh.rootfs != "" {
 		fh.usage.InodeUsage = inodeUsage
 	}
-	if rootInodeErr == nil && fh.rootfs != "" {
+	if rootDiskErr == nil && fh.rootfs != "" {
 		fh.usage.TotalUsageBytes = baseUsage + extraDirUsage
 	}
 	if extraDiskErr == nil && fh.extraDir != "" {
