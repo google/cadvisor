@@ -132,7 +132,7 @@ func (fh *realFsHandler) trackUsage() {
 				// if the long duration is persistent either because of slow
 				// disk or lots of containers.
 				longOp = longOp + time.Second
-				glog.V(2).Infof("du and find on following dirs took %v: %v; will not log again for this container unless duration exceeds %d seconds.", duration, []string{fh.rootfs, fh.extraDir}, longOp)
+				glog.V(2).Infof("du and find on following dirs took %v: %v; will not log again for this container unless duration exceeds %v", duration, []string{fh.rootfs, fh.extraDir}, longOp)
 			}
 		}
 	}
