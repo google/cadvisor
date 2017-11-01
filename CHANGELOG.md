@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.26.2 (2017-11-01)
+- Fix docker container disk metrics with overlay2
+
 ### 0.26.1 (2017-06-21)
 - Fix prometheus metrics.
 
