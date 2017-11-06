@@ -520,6 +520,29 @@ type FsStats struct {
 	WeightedIoTime uint64 `json:"weighted_io_time"`
 }
 
+type AcceleratorStats struct {
+	// Make of the accelerator (nvidia, amd, google etc.)
+	Make string `json:"make"`
+
+	// Model of the accelerator (tesla-p100, tesla-k80 etc.)
+	Model string `json:"model"`
+
+	// ID of the accelerator.
+	ID string `json:"id"`
+
+	// Total accelerator memory.
+	// unit: bytes
+	MemoryTotal uint64 `json:"memory_total"`
+
+	// Total accelerator memory allocated.
+	// unit: bytes
+	MemoryUsed uint64 `json:"memory_used"`
+
+	// Percent of time over the past sample period during which
+	// the accelerator was actively processing.
+	DutyCycle uint64 `json:"duty_cycle"`
+}
+
 type ContainerStats struct {
 	// The time of this stat point.
 	Timestamp time.Time    `json:"timestamp"`
@@ -533,6 +556,9 @@ type ContainerStats struct {
 
 	// Task load stats
 	TaskStats LoadStats `json:"task_stats,omitempty"`
+
+	// Metrics for Accelerators. Each Accelerator corresponds to one element in the array.
+	Accelerators []AcceleratorStats `json:"accelerators,omitempty"`
 
 	// Custom metrics from all collectors
 	CustomMetrics map[string][]MetricVal `json:"custom_metrics,omitempty"`
