@@ -55,6 +55,11 @@ func GetCgroupSubsystems() (CgroupSubsystems, error) {
 	if err != nil {
 		return CgroupSubsystems{}, err
 	}
+
+	return getCgroupSubsystemsHelper(allCgroups)
+}
+
+func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount) (CgroupSubsystems, error) {
 	if len(allCgroups) == 0 {
 		return CgroupSubsystems{}, fmt.Errorf("failed to find cgroup mounts")
 	}
