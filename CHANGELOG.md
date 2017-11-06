@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.28.0 (2017-11-06)
+- Add container nvidia GPU metrics
+- Expose container memory max_usage_in_bytes
+- Add container memory reservation to prometheus
+
 ### 0.27.1 (2017-09-06)
 - Add CRI-O support
 
