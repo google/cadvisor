@@ -76,6 +76,7 @@ func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount) (CgroupSubsystems, er
 			}
 			if _, ok := mountPoints[subsystem]; ok {
 				// duplicate mount for this subsystem; use the first one we saw
+				glog.V(5).Infof("skipping %s, already using mount at %s", mount.Mountpoint, mountPoints[subsystem])
 				continue
 			}
 			if _, ok := recordedMountpoints[mount.Mountpoint]; !ok {
