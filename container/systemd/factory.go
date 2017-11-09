@@ -39,7 +39,7 @@ func (f *systemdFactory) NewContainerHandler(name string, inHostNamespace bool) 
 func (f *systemdFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	// on systemd using devicemapper each mount into the container has an associated cgroup that we ignore.
 	// for details on .mount units: http://man7.org/linux/man-pages/man5/systemd.mount.5.html
-	if strings.HasSuffix(name, ".mount") {
+	if strings.HasSuffix(name, ".mount") || strings.HasSuffix(name, ".swap") {
 		return true, false, nil
 	}
 	return false, false, fmt.Errorf("%s not handled by systemd handler", name)
