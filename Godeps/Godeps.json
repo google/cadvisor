@@ -420,7 +420,7 @@
 		},
 		{
 			"ImportPath": "github.com/mindprince/gonvml",
-			"Rev": "b49be04bdda2d9cd7544bb3a0bce7210ec3448c7"
+			"Rev": "fee913ce8fb235edf54739d259ca0ecc226c7b8a"
 		},
 		{
 			"ImportPath": "github.com/mistifyio/go-zfs",

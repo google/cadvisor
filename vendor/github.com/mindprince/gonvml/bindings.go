@@ -16,7 +16,7 @@ limitations under the License.
 
 package gonvml
 
-// #cgo LDFLAGS: -ldl -Wl,--unresolved-symbols=ignore-in-object-files
+// #cgo LDFLAGS: -ldl
 /*
 #include <stddef.h>
 #include <dlfcn.h>
@@ -27,14 +27,159 @@ package gonvml
 // nvmlHandle is the handle for dynamically loaded libnvidia-ml.so
 void *nvmlHandle;
 
-// Loads the "libnvidia-ml.so.1" shared library and initializes NVML.
+nvmlReturn_t (*nvmlInitFunc)(void);
+
+nvmlReturn_t (*nvmlShutdownFunc)(void);
+
+const char* (*nvmlErrorStringFunc)(nvmlReturn_t result);
+const char* nvmlErrorString(nvmlReturn_t result) {
+  if (nvmlErrorStringFunc == NULL) {
+    return "nvmlErrorString Function Not Found";
+  }
+  return nvmlErrorStringFunc(result);
+}
+
+nvmlReturn_t (*nvmlSystemGetDriverVersionFunc)(char *version, unsigned int length);
+nvmlReturn_t nvmlSystemGetDriverVersion(char *version, unsigned int length) {
+  if (nvmlSystemGetDriverVersionFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlSystemGetDriverVersionFunc(version, length);
+}
+
+nvmlReturn_t (*nvmlDeviceGetCountFunc)(unsigned int *deviceCount);
+nvmlReturn_t nvmlDeviceGetCount(unsigned int *deviceCount) {
+  if (nvmlDeviceGetCountFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlDeviceGetCountFunc(deviceCount);
+}
+
+nvmlReturn_t (*nvmlDeviceGetHandleByIndexFunc)(unsigned int index, nvmlDevice_t *device);
+nvmlReturn_t nvmlDeviceGetHandleByIndex(unsigned int index, nvmlDevice_t *device) {
+  if (nvmlDeviceGetHandleByIndexFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlDeviceGetHandleByIndexFunc(index, device);
+}
+
+nvmlReturn_t (*nvmlDeviceGetMinorNumberFunc)(nvmlDevice_t device, unsigned int *minorNumber);
+nvmlReturn_t nvmlDeviceGetMinorNumber(nvmlDevice_t device, unsigned int *minorNumber) {
+  if (nvmlDeviceGetMinorNumberFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlDeviceGetMinorNumberFunc(device, minorNumber);
+}
+
+nvmlReturn_t (*nvmlDeviceGetUUIDFunc)(nvmlDevice_t device, char *uuid, unsigned int length);
+nvmlReturn_t nvmlDeviceGetUUID(nvmlDevice_t device, char *uuid, unsigned int length) {
+  if (nvmlDeviceGetUUIDFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlDeviceGetUUIDFunc(device, uuid, length);
+}
+
+nvmlReturn_t (*nvmlDeviceGetNameFunc)(nvmlDevice_t device, char *name, unsigned int length);
+nvmlReturn_t nvmlDeviceGetName(nvmlDevice_t device, char *name, unsigned int length) {
+  if (nvmlDeviceGetNameFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlDeviceGetNameFunc(device, name, length);
+}
+
+nvmlReturn_t (*nvmlDeviceGetMemoryInfoFunc)(nvmlDevice_t device, nvmlMemory_t *memory);
+nvmlReturn_t nvmlDeviceGetMemoryInfo(nvmlDevice_t device, nvmlMemory_t *memory) {
+  if (nvmlDeviceGetMemoryInfoFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlDeviceGetMemoryInfoFunc(device, memory);
+}
+
+nvmlReturn_t (*nvmlDeviceGetUtilizationRatesFunc)(nvmlDevice_t device, nvmlUtilization_t *utilization);
+nvmlReturn_t nvmlDeviceGetUtilizationRates(nvmlDevice_t device, nvmlUtilization_t *utilization) {
+  if (nvmlDeviceGetUtilizationRatesFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlDeviceGetUtilizationRatesFunc(device, utilization);
+}
+
+nvmlReturn_t (*nvmlDeviceGetPowerUsageFunc)(nvmlDevice_t device, unsigned int *power);
+nvmlReturn_t nvmlDeviceGetPowerUsage(nvmlDevice_t device, unsigned int *power) {
+  if (nvmlDeviceGetPowerUsageFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  return nvmlDeviceGetPowerUsageFunc(device, power);
+}
+
+nvmlReturn_t (*nvmlDeviceGetSamplesFunc)(nvmlDevice_t device, nvmlSamplingType_t type, unsigned long long lastSeenTimeStamp, nvmlValueType_t *sampleValType, unsigned int *sampleCount, nvmlSample_t *samples);
+
+// Loads the "libnvidia-ml.so.1" shared library.
+// Loads all symbols needed and initializes NVML.
 // Call this before calling any other methods.
 nvmlReturn_t nvmlInit_dl(void) {
-  nvmlHandle = dlopen("libnvidia-ml.so.1", RTLD_LAZY | RTLD_GLOBAL);
+  nvmlHandle = dlopen("libnvidia-ml.so.1", RTLD_LAZY);
   if (nvmlHandle == NULL) {
-    return (NVML_ERROR_LIBRARY_NOT_FOUND);
+    return NVML_ERROR_LIBRARY_NOT_FOUND;
   }
-  return (nvmlInit());
+  nvmlInitFunc = dlsym(nvmlHandle, "nvmlInit_v2");
+  if (nvmlInitFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlShutdownFunc = dlsym(nvmlHandle, "nvmlShutdown");
+  if (nvmlShutdownFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlErrorStringFunc = dlsym(nvmlHandle, "nvmlErrorString");
+  if (nvmlErrorStringFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlSystemGetDriverVersionFunc = dlsym(nvmlHandle, "nvmlSystemGetDriverVersion");
+  if (nvmlSystemGetDriverVersionFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetCountFunc = dlsym(nvmlHandle, "nvmlDeviceGetCount_v2");
+  if (nvmlDeviceGetCountFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetHandleByIndexFunc = dlsym(nvmlHandle, "nvmlDeviceGetHandleByIndex_v2");
+  if (nvmlDeviceGetHandleByIndexFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetMinorNumberFunc = dlsym(nvmlHandle, "nvmlDeviceGetMinorNumber");
+  if (nvmlDeviceGetMinorNumberFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetUUIDFunc = dlsym(nvmlHandle, "nvmlDeviceGetUUID");
+  if (nvmlDeviceGetUUIDFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetNameFunc = dlsym(nvmlHandle, "nvmlDeviceGetName");
+  if (nvmlDeviceGetNameFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetMemoryInfoFunc = dlsym(nvmlHandle, "nvmlDeviceGetMemoryInfo");
+  if (nvmlDeviceGetMemoryInfoFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetUtilizationRatesFunc = dlsym(nvmlHandle, "nvmlDeviceGetUtilizationRates");
+  if (nvmlDeviceGetUtilizationRatesFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetPowerUsageFunc = dlsym(nvmlHandle, "nvmlDeviceGetPowerUsage");
+  if (nvmlDeviceGetPowerUsageFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlDeviceGetSamplesFunc = dlsym(nvmlHandle, "nvmlDeviceGetSamples");
+  if (nvmlDeviceGetSamplesFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlReturn_t result = nvmlInitFunc();
+  if (result != NVML_SUCCESS) {
+    dlclose(nvmlHandle);
+    nvmlHandle = NULL;
+    return result;
+  }
+  return NVML_SUCCESS;
 }
 
 // Shuts down NVML and decrements the reference count on the dynamically loaded
@@ -44,9 +189,12 @@ nvmlReturn_t nvmlShutdown_dl(void) {
   if (nvmlHandle == NULL) {
     return NVML_SUCCESS;
   }
-  nvmlReturn_t r = nvmlShutdown();
+  if (nvmlShutdownFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
+  }
+  nvmlReturn_t r = nvmlShutdownFunc();
   if (r != NVML_SUCCESS) {
-    return (r);
+    return r;
   }
   return (dlclose(nvmlHandle) ? NVML_ERROR_UNKNOWN : NVML_SUCCESS);
 }
@@ -69,7 +217,10 @@ nvmlReturn_t nvmlShutdown_dl(void) {
 //
 nvmlReturn_t nvmlDeviceGetAverageUsage(nvmlDevice_t device, nvmlSamplingType_t type, unsigned long long lastSeenTimeStamp, unsigned int* averageUsage) {
   if (nvmlHandle == NULL) {
-    return (NVML_ERROR_LIBRARY_NOT_FOUND);
+    return NVML_ERROR_LIBRARY_NOT_FOUND;
+  }
+  if (nvmlDeviceGetSamplesFunc == NULL) {
+    return NVML_ERROR_FUNCTION_NOT_FOUND;
   }
 
   // We don't really use this because both the metrics we support
@@ -81,9 +232,9 @@ nvmlReturn_t nvmlDeviceGetAverageUsage(nvmlDevice_t device, nvmlSamplingType_t t
   unsigned int sampleCount;
 
   // Invoking this method with `samples` set to NULL sets the sampleCount.
-  nvmlReturn_t r = nvmlDeviceGetSamples(device, type, lastSeenTimeStamp, &sampleValType, &sampleCount, NULL);
+  nvmlReturn_t r = nvmlDeviceGetSamplesFunc(device, type, lastSeenTimeStamp, &sampleValType, &sampleCount, NULL);
   if (r != NVML_SUCCESS) {
-    return (r);
+    return r;
   }
 
   // Allocate memory to store sampleCount samples.
@@ -91,10 +242,10 @@ nvmlReturn_t nvmlDeviceGetAverageUsage(nvmlDevice_t device, nvmlSamplingType_t t
   // NVML_TOTAL_POWER_SAMPLES and 100 for NVML_GPU_UTILIZATION_SAMPLES
   nvmlSample_t* samples = (nvmlSample_t*) malloc(sampleCount * sizeof(nvmlSample_t));
 
-  r = nvmlDeviceGetSamples(device, type, lastSeenTimeStamp, &sampleValType, &sampleCount, samples);
+  r = nvmlDeviceGetSamplesFunc(device, type, lastSeenTimeStamp, &sampleValType, &sampleCount, samples);
   if (r != NVML_SUCCESS) {
     free(samples);
-    return (r);
+    return r;
   }
 
   int i = 0;
@@ -105,7 +256,7 @@ nvmlReturn_t nvmlDeviceGetAverageUsage(nvmlDevice_t device, nvmlSamplingType_t t
   *averageUsage = sum/sampleCount;
 
   free(samples);
-  return (r);
+  return r;
 }
 */
 import "C"
