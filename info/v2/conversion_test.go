@@ -176,6 +176,14 @@ func TestContainerStatsFromV1(t *testing.T) {
 			Available:  300,
 			InodesFree: 100,
 		}},
+		Accelerators: []v1.AcceleratorStats{{
+			Make:        "nvidia",
+			Model:       "tesla-p100",
+			ID:          "GPU-deadbeef-1234-5678-90ab-feedfacecafe",
+			MemoryTotal: 20304050607,
+			MemoryUsed:  2030405060,
+			DutyCycle:   12,
+		}},
 	}
 	expectedV2Stats := ContainerStats{
 		Timestamp: timestamp,
@@ -190,6 +198,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 			BaseUsageBytes:  &v1Stats.Filesystem[0].BaseUsage,
 			InodeUsage:      &v1Stats.Filesystem[0].Inodes,
 		},
+		Accelerators: v1Stats.Accelerators,
 	}
 
 	v2Stats := ContainerStatsFromV1("test", &v1Spec, []*v1.ContainerStats{&v1Stats})

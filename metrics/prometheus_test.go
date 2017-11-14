@@ -191,6 +191,24 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							WeightedIoTime:  49,
 						},
 					},
+					Accelerators: []info.AcceleratorStats{
+						{
+							Make:        "nvidia",
+							Model:       "tesla-p100",
+							ID:          "GPU-deadbeef-1234-5678-90ab-feedfacecafe",
+							MemoryTotal: 20304050607,
+							MemoryUsed:  2030405060,
+							DutyCycle:   12,
+						},
+						{
+							Make:        "nvidia",
+							Model:       "tesla-k80",
+							ID:          "GPU-deadbeef-0123-4567-89ab-feedfacecafe",
+							MemoryTotal: 10203040506,
+							MemoryUsed:  1020304050,
+							DutyCycle:   6,
+						},
+					},
 					TaskStats: info.LoadStats{
 						NrSleeping:        50,
 						NrRunning:         51,

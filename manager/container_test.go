@@ -29,6 +29,8 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
 
+	"github.com/google/cadvisor/accelerators"
+	"github.com/mindprince/gonvml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -204,4 +206,23 @@ func TestGetInfo(t *testing.T) {
 	if info.Name != mockHandler.Name {
 		t.Errorf("received wrong container name: received %v; should be %v", info.Name, mockHandler.Name)
 	}
+}
+
+func TestUpdateNvidiaStats(t *testing.T) {
+	cd, _, _ := newTestContainerData(t)
+	stats := info.ContainerStats{}
+
+	// When there are no devices, we should not get an error and stats should not change.
+	cd.nvidiaCollector = &accelerators.NvidiaCollector{}
+	err := cd.nvidiaCollector.UpdateStats(&stats)
+	assert.Nil(t, err)
+	assert.Equal(t, info.ContainerStats{}, stats)
+
+	// This is an impossible situation (there are devices but nvml is not initialized).
+	// Here I am testing that the CGo gonvml library doesn't panic when passed bad
+	// input and instead returns an error.
+	cd.nvidiaCollector = &accelerators.NvidiaCollector{Devices: []gonvml.Device{{}, {}}}
+	err = cd.nvidiaCollector.UpdateStats(&stats)
+	assert.NotNil(t, err)
+	assert.Equal(t, info.ContainerStats{}, stats)
 }
