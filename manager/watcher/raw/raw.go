@@ -73,7 +73,7 @@ func (self *rawContainerWatcher) Start(events chan watcher.ContainerEvent) error
 	for _, cgroupPath := range self.cgroupPaths {
 		_, err := self.watchDirectory(cgroupPath, "/")
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to watch cgroup directory: %q %v", cgroupPath, err)
 		}
 	}
 
