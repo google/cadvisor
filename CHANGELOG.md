@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.25.1 (2017-11-14)
+- Add overlay2 support
+
 ### 0.25.0 (2017-03-09)
 - Disable thin_ls due to excessive iops
 - Ignore .mount cgroups, fixing dissappearing stats
