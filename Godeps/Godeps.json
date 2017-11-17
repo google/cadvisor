@@ -349,17 +349,17 @@
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/nat",
-			"Comment": "v0.3.0",
+			"Comment": "v0.2.1-30-g3ede32e",
 			"Rev": "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/sockets",
-			"Comment": "v0.3.0",
+			"Comment": "v0.2.1-30-g3ede32e",
 			"Rev": "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
 		},
 		{
 			"ImportPath": "github.com/docker/go-connections/tlsconfig",
-			"Comment": "v0.3.0",
+			"Comment": "v0.2.1-30-g3ede32e",
 			"Rev": "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
 		},
 		{
@@ -385,11 +385,6 @@
 			"ImportPath": "github.com/euank/go-kmsg-parser/kmsgparser",
 			"Comment": "v2.0.0",
 			"Rev": "5ba4d492e455a77d25dcf0d2c4acc9f2afebef4e"
-		},
-		{
-			"ImportPath": "github.com/fsnotify/fsnotify",
-			"Comment": "v1.4.2-6-g4da3e2c",
-			"Rev": "4da3e2cfbabc9f751898f250b49f2439785783a1"
 		},
 		{
 			"ImportPath": "github.com/garyburd/redigo/internal",
@@ -506,7 +501,7 @@
 		},
 		{
 			"ImportPath": "github.com/opencontainers/go-digest",
-			"Comment": "v1.0.0-rc1",
+			"Comment": "v1.0.0-rc0-6-g279bed9",
 			"Rev": "279bed98673dd5bef374d3b6e4b09e2af76183bf"
 		},
 		{
@@ -693,6 +688,10 @@
 		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",
 			"Rev": "eb71ad9bd329b5ac0fd0148dd99bd62e8be8e035"
+		},
+		{
+			"ImportPath": "golang.org/x/exp/inotify",
+			"Rev": "292a51b8d262487dab23a588950e8052d63d9113"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
