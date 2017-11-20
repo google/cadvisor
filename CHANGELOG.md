@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.28.1 (2017-11-20)
+- Add containerd support
+- Fix fsnotify regression from 0.28.0
+- Add on demand metrics
+
 ### 0.28.0 (2017-11-06)
 - Add container nvidia GPU metrics
 - Expose container memory max_usage_in_bytes
