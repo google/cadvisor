@@ -19,6 +19,7 @@ package manager
 import (
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,30 +34,34 @@ import (
 	"github.com/mindprince/gonvml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"k8s.io/apimachinery/pkg/util/clock"
 )
 
-const containerName = "/container"
+const (
+	containerName        = "/container"
+	testLongHousekeeping = time.Second
+)
 
 // Create a containerData instance for a test.
-func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *containertest.MockContainerHandler, *memory.InMemoryCache) {
+func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *containertest.MockContainerHandler, *memory.InMemoryCache, *clock.FakeClock) {
 	mockHandler := containertest.NewMockContainerHandler(containerName)
 	mockHandler.On("GetSpec").Return(
 		spec,
 		nil,
 	)
 	memoryCache := memory.New(60, nil)
-	ret, err := newContainerData(containerName, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true)
+	fakeClock := clock.NewFakeClock(time.Now())
+	ret, err := newContainerData(containerName, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true, fakeClock)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return ret, mockHandler, memoryCache
+	return ret, mockHandler, memoryCache, fakeClock
 }
 
 // Create a containerData instance for a test and add a default GetSpec mock.
-func newTestContainerData(t *testing.T) (*containerData, *containertest.MockContainerHandler, *memory.InMemoryCache) {
-	spec := itest.GenerateRandomContainerSpec(4)
-	ret, mockHandler, memoryCache := setupContainerData(t, spec)
-	return ret, mockHandler, memoryCache
+func newTestContainerData(t *testing.T) (*containerData, *containertest.MockContainerHandler, *memory.InMemoryCache, *clock.FakeClock) {
+	return setupContainerData(t, itest.GenerateRandomContainerSpec(4))
 }
 
 func TestUpdateSubcontainers(t *testing.T) {
@@ -65,7 +70,7 @@ func TestUpdateSubcontainers(t *testing.T) {
 		{Name: "/container/abcd"},
 		{Name: "/container/something"},
 	}
-	cd, mockHandler, _ := newTestContainerData(t)
+	cd, mockHandler, _, _ := newTestContainerData(t)
 	mockHandler.On("ListContainers", container.ListSelf).Return(
 		subcontainers,
 		nil,
@@ -96,7 +101,7 @@ func TestUpdateSubcontainers(t *testing.T) {
 }
 
 func TestUpdateSubcontainersWithError(t *testing.T) {
-	cd, mockHandler, _ := newTestContainerData(t)
+	cd, mockHandler, _, _ := newTestContainerData(t)
 	mockHandler.On("ListContainers", container.ListSelf).Return(
 		[]info.ContainerReference{},
 		fmt.Errorf("some error"),
@@ -109,7 +114,7 @@ func TestUpdateSubcontainersWithError(t *testing.T) {
 }
 
 func TestUpdateSubcontainersWithErrorOnDeadContainer(t *testing.T) {
-	cd, mockHandler, _ := newTestContainerData(t)
+	cd, mockHandler, _, _ := newTestContainerData(t)
 	mockHandler.On("ListContainers", container.ListSelf).Return(
 		[]info.ContainerReference{},
 		fmt.Errorf("some error"),
@@ -131,7 +136,7 @@ func TestUpdateStats(t *testing.T) {
 	statsList := itest.GenerateRandomStats(1, 4, 1*time.Second)
 	stats := statsList[0]
 
-	cd, mockHandler, memoryCache := newTestContainerData(t)
+	cd, mockHandler, memoryCache, _ := newTestContainerData(t)
 	mockHandler.On("GetStats").Return(
 		stats,
 		nil,
@@ -148,7 +153,7 @@ func TestUpdateStats(t *testing.T) {
 
 func TestUpdateSpec(t *testing.T) {
 	spec := itest.GenerateRandomContainerSpec(4)
-	cd, mockHandler, _ := newTestContainerData(t)
+	cd, mockHandler, _, _ := newTestContainerData(t)
 	mockHandler.On("GetSpec").Return(
 		spec,
 		nil,
@@ -169,7 +174,7 @@ func TestGetInfo(t *testing.T) {
 		{Name: "/container/abcd"},
 		{Name: "/container/something"},
 	}
-	cd, mockHandler, _ := setupContainerData(t, spec)
+	cd, mockHandler, _, _ := setupContainerData(t, spec)
 	mockHandler.On("ListContainers", container.ListSelf).Return(
 		subcontainers,
 		nil,
@@ -209,7 +214,7 @@ func TestGetInfo(t *testing.T) {
 }
 
 func TestUpdateNvidiaStats(t *testing.T) {
-	cd, _, _ := newTestContainerData(t)
+	cd, _, _, _ := newTestContainerData(t)
 	stats := info.ContainerStats{}
 
 	// When there are no devices, we should not get an error and stats should not change.
@@ -225,4 +230,61 @@ func TestUpdateNvidiaStats(t *testing.T) {
 	err = cd.nvidiaCollector.UpdateStats(&stats)
 	assert.NotNil(t, err)
 	assert.Equal(t, info.ContainerStats{}, stats)
+}
+
+func TestOnDemandHousekeeping(t *testing.T) {
+	statsList := itest.GenerateRandomStats(1, 4, 1*time.Second)
+	stats := statsList[0]
+
+	cd, mockHandler, memoryCache, fakeClock := newTestContainerData(t)
+	mockHandler.On("GetStats").Return(stats, nil)
+	defer cd.Stop()
+
+	// 0 seconds should always trigger an update
+	go cd.OnDemandHousekeeping(0 * time.Second)
+	cd.housekeepingTick(fakeClock.NewTimer(time.Minute).C(), testLongHousekeeping)
+
+	fakeClock.Step(2 * time.Second)
+
+	// This should return without requiring a housekeepingTick because stats have been updated recently enough
+	cd.OnDemandHousekeeping(3 * time.Second)
+
+	go cd.OnDemandHousekeeping(1 * time.Second)
+	cd.housekeepingTick(fakeClock.NewTimer(time.Minute).C(), testLongHousekeeping)
+
+	checkNumStats(t, memoryCache, 2)
+	mockHandler.AssertExpectations(t)
+}
+
+func TestConcurrentOnDemandHousekeeping(t *testing.T) {
+	statsList := itest.GenerateRandomStats(1, 4, 1*time.Second)
+	stats := statsList[0]
+
+	cd, mockHandler, memoryCache, fakeClock := newTestContainerData(t)
+	mockHandler.On("GetStats").Return(stats, nil)
+	defer cd.Stop()
+
+	numConcurrentCalls := 5
+	var waitForHousekeeping sync.WaitGroup
+	waitForHousekeeping.Add(numConcurrentCalls)
+	onDemandCache := []chan struct{}{}
+	for i := 0; i < numConcurrentCalls; i++ {
+		go func() {
+			cd.OnDemandHousekeeping(0 * time.Second)
+			waitForHousekeeping.Done()
+		}()
+		// Wait for work to be queued
+		onDemandCache = append(onDemandCache, <-cd.onDemandChan)
+	}
+	// Requeue work:
+	for _, ch := range onDemandCache {
+		cd.onDemandChan <- ch
+	}
+
+	go cd.housekeepingTick(fakeClock.NewTimer(time.Minute).C(), testLongHousekeeping)
+	// Ensure that all queued calls return with only a single call to housekeepingTick
+	waitForHousekeeping.Wait()
+
+	checkNumStats(t, memoryCache, 1)
+	mockHandler.AssertExpectations(t)
 }

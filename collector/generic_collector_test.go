@@ -177,17 +177,17 @@ func TestMetricCollection(t *testing.T) {
 	assert.NoError(errMetric)
 	metricNames := []string{"activeConnections", "reading", "writing", "waiting"}
 	// activeConnections = 3
-	assert.Equal(metrics[metricNames[0]][0].IntValue, 3)
-	assert.Equal(metrics[metricNames[0]][0].FloatValue, 0)
+	assert.Equal(metrics[metricNames[0]][0].IntValue, int64(3))
+	assert.Equal(metrics[metricNames[0]][0].FloatValue, float64(0))
 	// reading = 0
-	assert.Equal(metrics[metricNames[1]][0].IntValue, 0)
-	assert.Equal(metrics[metricNames[1]][0].FloatValue, 0)
+	assert.Equal(metrics[metricNames[1]][0].IntValue, int64(0))
+	assert.Equal(metrics[metricNames[1]][0].FloatValue, float64(0))
 	// writing = 1
-	assert.Equal(metrics[metricNames[2]][0].IntValue, 1)
-	assert.Equal(metrics[metricNames[2]][0].FloatValue, 0)
+	assert.Equal(metrics[metricNames[2]][0].IntValue, int64(1))
+	assert.Equal(metrics[metricNames[2]][0].FloatValue, float64(0))
 	// waiting = 2
-	assert.Equal(metrics[metricNames[3]][0].IntValue, 2)
-	assert.Equal(metrics[metricNames[3]][0].FloatValue, 0)
+	assert.Equal(metrics[metricNames[3]][0].IntValue, int64(2))
+	assert.Equal(metrics[metricNames[3]][0].FloatValue, float64(0))
 }
 
 func TestMetricCollectionLimit(t *testing.T) {
