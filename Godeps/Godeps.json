@@ -877,6 +877,11 @@
 			"ImportPath": "gopkg.in/olivere/elastic.v2/uritemplates",
 			"Comment": "v2.0.12",
 			"Rev": "3cfe88295d20b6299bd935131fc0fd17316405ad"
+		},
+		{
+			"ImportPath": "k8s.io/apimachinery/pkg/util/clock",
+			"Comment": "kubernetes-1.9.0-alpha.1-65-g18a564b",
+			"Rev": "18a564baac720819100827c16fdebcadb05b2d0d"
 		}
 	]
 }
