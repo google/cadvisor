@@ -241,16 +241,6 @@ func TestInstCpuStats(t *testing.T) {
 			},
 			nil,
 		},
-		// Unexpectedly small time delta
-		{
-			&v1.ContainerStats{
-				Timestamp: time.Unix(100, 0),
-			},
-			&v1.ContainerStats{
-				Timestamp: time.Unix(100, 0).Add(30 * time.Millisecond),
-			},
-			nil,
-		},
 		// Different number of cpus
 		{
 			&v1.ContainerStats{
