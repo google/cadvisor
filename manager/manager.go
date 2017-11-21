@@ -44,13 +44,13 @@ import (
 	"github.com/google/cadvisor/manager/watcher"
 	rawwatcher "github.com/google/cadvisor/manager/watcher/raw"
 	rktwatcher "github.com/google/cadvisor/manager/watcher/rkt"
+	"github.com/google/cadvisor/utils/clock"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	"k8s.io/apimachinery/pkg/util/clock"
 )
 
 var globalHousekeepingInterval = flag.Duration("global_housekeeping_interval", 1*time.Minute, "Interval between global housekeepings")

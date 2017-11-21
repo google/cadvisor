@@ -36,12 +36,11 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/summary"
+	"github.com/google/cadvisor/utils/clock"
 	"github.com/google/cadvisor/utils/cpuload"
 
 	units "github.com/docker/go-units"
 	"github.com/golang/glog"
-
-	"k8s.io/apimachinery/pkg/util/clock"
 )
 
 // Housekeeping interval.
