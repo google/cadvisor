@@ -33,9 +33,9 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
 	"github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/utils/clock"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/util/clock"
 )
 
 // TODO(vmarmol): Refactor these tests.
