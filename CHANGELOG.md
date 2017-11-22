@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.26.3 (2017-11-22)
+- Update Jquery and Bootstrap dependencies
+
 ### 0.26.2 (2017-11-01)
 - Fix docker container disk metrics with overlay2
 
