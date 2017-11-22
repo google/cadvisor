@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.28.2 (2017-11-21)
+- Fix GPU init race condition
+
 ### 0.28.1 (2017-11-20)
 - Add containerd support
 - Fix fsnotify regression from 0.28.0
