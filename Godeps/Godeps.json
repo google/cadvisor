@@ -877,6 +877,14 @@
 			"ImportPath": "gopkg.in/olivere/elastic.v2/uritemplates",
 			"Comment": "v2.0.12",
 			"Rev": "3cfe88295d20b6299bd935131fc0fd17316405ad"
+		},
+		{
+			"ImportPath": "k8s.io/utils/clock",
+			"Rev": "aedf551cdb8b0119df3a19c65fde413a13b34997"
+		},
+		{
+			"ImportPath": "k8s.io/utils/clock/testing",
+			"Rev": "aedf551cdb8b0119df3a19c65fde413a13b34997"
 		}
 	]
 }
