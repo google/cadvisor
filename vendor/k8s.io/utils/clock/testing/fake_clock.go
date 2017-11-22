@@ -14,63 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package clock
+package testing
 
 import (
 	"sync"
 	"time"
-)
 
-// Clock allows for injecting fake or real clocks into code that
-// needs to do arbitrary things based on time.
-type Clock interface {
-	Now() time.Time
-	Since(time.Time) time.Duration
-	After(d time.Duration) <-chan time.Time
-	NewTimer(d time.Duration) Timer
-	Sleep(d time.Duration)
-	Tick(d time.Duration) <-chan time.Time
-}
+	"k8s.io/utils/clock"
+)
 
 var (
-	_ = Clock(RealClock{})
-	_ = Clock(&FakeClock{})
-	_ = Clock(&IntervalClock{})
+	_ = clock.Clock(&FakeClock{})
+	_ = clock.Clock(&IntervalClock{})
 )
 
-// RealClock really calls time.Now()
-type RealClock struct{}
-
-// Now returns the current time.
-func (RealClock) Now() time.Time {
-	return time.Now()
-}
-
-// Since returns time since the specified timestamp.
-func (RealClock) Since(ts time.Time) time.Duration {
-	return time.Since(ts)
-}
-
-// Same as time.After(d).
-func (RealClock) After(d time.Duration) <-chan time.Time {
-	return time.After(d)
-}
-
-func (RealClock) NewTimer(d time.Duration) Timer {
-	return &realTimer{
-		timer: time.NewTimer(d),
-	}
-}
-
-func (RealClock) Tick(d time.Duration) <-chan time.Time {
-	return time.Tick(d)
-}
-
-func (RealClock) Sleep(d time.Duration) {
-	time.Sleep(d)
-}
-
-// FakeClock implements Clock, but returns an arbitrary time.
+// FakeClock implements clock.Clock, but returns an arbitrary time.
 type FakeClock struct {
 	lock sync.RWMutex
 	time time.Time
@@ -121,7 +79,7 @@ func (f *FakeClock) After(d time.Duration) <-chan time.Time {
 }
 
 // Fake version of time.NewTimer(d).
-func (f *FakeClock) NewTimer(d time.Duration) Timer {
+func (f *FakeClock) NewTimer(d time.Duration) clock.Timer {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	stopTime := f.time.Add(d)
@@ -211,7 +169,7 @@ func (f *FakeClock) Sleep(d time.Duration) {
 	f.Step(d)
 }
 
-// IntervalClock implements Clock, but each invocation of Now steps the clock forward the specified duration
+// IntervalClock implements clock.Clock, but each invocation of Now steps the clock forward the specified duration
 type IntervalClock struct {
 	Time     time.Time
 	Duration time.Duration
@@ -236,7 +194,7 @@ func (*IntervalClock) After(d time.Duration) <-chan time.Time {
 
 // Unimplemented, will panic.
 // TODO: make interval clock use FakeClock so this can be implemented.
-func (*IntervalClock) NewTimer(d time.Duration) Timer {
+func (*IntervalClock) NewTimer(d time.Duration) clock.Timer {
 	panic("IntervalClock doesn't implement NewTimer")
 }
 
@@ -250,40 +208,9 @@ func (*IntervalClock) Sleep(d time.Duration) {
 	panic("IntervalClock doesn't implement Sleep")
 }
 
-// Timer allows for injecting fake or real timers into code that
-// needs to do arbitrary things based on time.
-type Timer interface {
-	C() <-chan time.Time
-	Stop() bool
-	Reset(d time.Duration) bool
-}
+var _ = clock.Timer(&fakeTimer{})
 
-var (
-	_ = Timer(&realTimer{})
-	_ = Timer(&fakeTimer{})
-)
-
-// realTimer is backed by an actual time.Timer.
-type realTimer struct {
-	timer *time.Timer
-}
-
-// C returns the underlying timer's channel.
-func (r *realTimer) C() <-chan time.Time {
-	return r.timer.C
-}
-
-// Stop calls Stop() on the underlying timer.
-func (r *realTimer) Stop() bool {
-	return r.timer.Stop()
-}
-
-// Reset calls Reset() on the underlying timer.
-func (r *realTimer) Reset(d time.Duration) bool {
-	return r.timer.Reset(d)
-}
-
-// fakeTimer implements Timer based on a FakeClock.
+// fakeTimer implements clock.Timer based on a FakeClock.
 type fakeTimer struct {
 	fakeClock *FakeClock
 	waiter    fakeClockWaiter

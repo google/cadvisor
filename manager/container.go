@@ -40,8 +40,7 @@ import (
 
 	units "github.com/docker/go-units"
 	"github.com/golang/glog"
-
-	"k8s.io/apimachinery/pkg/util/clock"
+	"k8s.io/utils/clock"
 )
 
 // Housekeeping interval.

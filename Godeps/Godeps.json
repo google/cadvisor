@@ -879,9 +879,12 @@
 			"Rev": "3cfe88295d20b6299bd935131fc0fd17316405ad"
 		},
 		{
-			"ImportPath": "k8s.io/apimachinery/pkg/util/clock",
-			"Comment": "kubernetes-1.9.0-alpha.1-65-g18a564b",
-			"Rev": "18a564baac720819100827c16fdebcadb05b2d0d"
+			"ImportPath": "k8s.io/utils/clock",
+			"Rev": "aedf551cdb8b0119df3a19c65fde413a13b34997"
+		},
+		{
+			"ImportPath": "k8s.io/utils/clock/testing",
+			"Rev": "aedf551cdb8b0119df3a19c65fde413a13b34997"
 		}
 	]
 }
