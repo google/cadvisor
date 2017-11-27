@@ -879,6 +879,21 @@
 			"Rev": "3cfe88295d20b6299bd935131fc0fd17316405ad"
 		},
 		{
+			"ImportPath": "gopkg.in/olivere/elastic.v5",
+			"Comment": "v5.0.58",
+			"Rev": "79ff368708b3a2a9da641dc831d95fd0782bf4ef"
+		},
+		{
+			"ImportPath": "gopkg.in/olivere/elastic.v5/config",
+			"Comment": "v5.0.58",
+			"Rev": "79ff368708b3a2a9da641dc831d95fd0782bf4ef"
+		},
+		{
+			"ImportPath": "gopkg.in/olivere/elastic.v5/uritemplates",
+			"Comment": "v5.0.58",
+			"Rev": "79ff368708b3a2a9da641dc831d95fd0782bf4ef"
+		},
+		{
 			"ImportPath": "k8s.io/utils/clock",
 			"Rev": "aedf551cdb8b0119df3a19c65fde413a13b34997"
 		},

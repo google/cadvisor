@@ -24,7 +24,12 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	storage "github.com/google/cadvisor/storage"
 
-	"gopkg.in/olivere/elastic.v2"
+	"context"
+	elasticLegacy "gopkg.in/olivere/elastic.v2"
+	elastic "gopkg.in/olivere/elastic.v5"
+	"reflect"
+	"strconv"
+	"strings"
 )
 
 func init() {
@@ -32,7 +37,7 @@ func init() {
 }
 
 type elasticStorage struct {
-	client      *elastic.Client
+	client      ElasticClient
 	machineName string
 	indexName   string
 	typeName    string
@@ -52,6 +57,65 @@ var (
 	argTypeName      = flag.String("storage_driver_es_type", "stats", "ElasticSearch type name")
 	argEnableSniffer = flag.Bool("storage_driver_es_enable_sniffer", false, "ElasticSearch uses a sniffing process to find all nodes of your cluster by default, automatically")
 )
+
+type ElasticClient interface{}
+
+func findElasticVersion(elasticHost string, enableSniffer bool) (string, error) {
+	client, err := createElasticClient(elasticHost, enableSniffer)
+
+	if err != nil {
+		return "", err
+	}
+
+	pingInfo, code, err := client.Ping(elasticHost).Do(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("failed to ping the elasticsearch - %s", err)
+	}
+
+	fmt.Printf("Elasticsearch returned with code %d and version %s", code, pingInfo.Version.Number)
+
+	return pingInfo.Version.Number, nil
+}
+
+func createElasticClient(elasticHost string, enableSniffer bool) (*elastic.Client, error) {
+	client, err := elastic.NewClient(
+		elastic.SetHealthcheck(true),
+		elastic.SetSniff(enableSniffer),
+		elastic.SetHealthcheckInterval(30*time.Second),
+		elastic.SetURL(elasticHost),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create the elasticsearch client - %s", err)
+	}
+
+	return client, nil
+}
+
+func createLegacyElasticClient(elasticHost string, enableSniffer bool) (*elasticLegacy.Client, error) {
+	client, err := elasticLegacy.NewClient(
+		elasticLegacy.SetHealthcheck(true),
+		elasticLegacy.SetSniff(enableSniffer),
+		elasticLegacy.SetHealthcheckInterval(30*time.Second),
+		elasticLegacy.SetURL(elasticHost),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create the elasticsearch legacy client - %s", err)
+	}
+
+	return client, nil
+}
+
+func createElasticClientByVersion(version string, elasticHost string, enableSniffer bool) (ElasticClient, error) {
+	majorV, _ := strconv.Atoi(strings.Split(version, ".")[0])
+
+	if majorV >= 5 {
+		return createElasticClient(elasticHost, enableSniffer)
+	} else {
+		return createLegacyElasticClient(elasticHost, enableSniffer)
+	}
+}
 
 func new() (storage.StorageDriver, error) {
 	hostname, err := os.Hostname()
@@ -96,11 +160,7 @@ func (self *elasticStorage) AddStats(ref info.ContainerReference, stats *info.Co
 		// Add some default params based on ContainerStats
 		detail := self.containerStatsAndDefaultValues(ref, stats)
 		// Index a cadvisor (using JSON serialization)
-		_, err := self.client.Index().
-			Index(self.indexName).
-			Type(self.typeName).
-			BodyJson(detail).
-			Do()
+		err := self.Send(detail)
 		if err != nil {
 			// Handle error
 			fmt.Printf("failed to write stats to ElasticSearch - %s", err)
@@ -108,6 +168,20 @@ func (self *elasticStorage) AddStats(ref info.ContainerReference, stats *info.Co
 		}
 	}()
 	return nil
+}
+
+func (self *elasticStorage) Send(detail *detailSpec) error {
+	var err error
+	switch client := self.client.(type) {
+	case *elasticLegacy.Client:
+		_, err = client.Index().Index(self.indexName).Type(self.typeName).BodyJson(detail).Do()
+	case *elastic.Client:
+		_, err = client.Index().Index(self.indexName).Type(self.typeName).BodyJson(detail).Do(context.Background())
+	default:
+		err = fmt.Errorf("unknow elastic client of type %s", reflect.TypeOf(client))
+	}
+
+	return err
 }
 
 func (self *elasticStorage) Close() error {
@@ -128,25 +202,15 @@ func newStorage(
 	// Obtain a client and connect to the default Elasticsearch installation
 	// on 127.0.0.1:9200. Of course you can configure your client to connect
 	// to other hosts and configure it in various other ways.
-	client, err := elastic.NewClient(
-		elastic.SetHealthcheck(true),
-		elastic.SetSniff(enableSniffer),
-		elastic.SetHealthcheckInterval(30*time.Second),
-		elastic.SetURL(elasticHost),
-	)
+	version, err := findElasticVersion(elasticHost, enableSniffer)
 	if err != nil {
-		// Handle error
-		return nil, fmt.Errorf("failed to create the elasticsearch client - %s", err)
+		return nil, err
 	}
 
-	// Ping the Elasticsearch server to get e.g. the version number
-	info, code, err := client.Ping().URL(elasticHost).Do()
+	client, err := createElasticClientByVersion(version, elasticHost, enableSniffer)
 	if err != nil {
-		// Handle error
-		return nil, fmt.Errorf("failed to ping the elasticsearch - %s", err)
-
+		return nil, err
 	}
-	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
 
 	ret := &elasticStorage{
 		client:      client,
