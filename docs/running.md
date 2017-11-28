@@ -82,3 +82,26 @@ cAdvisor is now running (in the foreground) on `http://localhost:8080/`.
 ## Runtime Options
 
 cAdvisor has a series of flags that can be used to configure its runtime behavior. More details can be found in runtime [options](runtime_options.md).
+
+## Hardware Accelerator Monitoring
+
+cAdvisor can export some metrics for hardware accelerators attached to containers.
+Currently only Nvidia GPUs are supported. There are no machine level metrics.
+So, metrics won't show up if no container with accelerators attached is running.
+Metrics will only show up if accelerators are explicitly attached to the container, e.g., by passing `--device /dev/nvidia0:/dev/nvidia0` flag to docker.
+If nothing is explicitly attached to the container, metrics will NOT show up. This can happen when you access accelerators from privileged containers.
+
+There are two things that cAdvisor needs to show Nvidia GPU metrics:
+- access to NVML library (`libnvidia-ml.so.1`).
+- access to the GPU devices.
+
+If you are running cAdvisor inside a container, you will need to do the following to give the container access to NVML library:
+```
+-e LD_LIBRARY_PATH=<path-where-nvml-is-present>
+--volume <above-path>:<above-path>
+```
+
+If you are running cAdvisor inside a container, you can do one of the following to give it access to the GPU devices:
+- Run with `--privileged`
+- If you are on docker v17.04.0-ce or above, run with `--device-cgroup-rule 'c 195:* mrw'`
+- Run with `--device /dev/nvidiactl:/dev/nvidiactl /dev/nvidia0:/dev/nvidia0 /dev/nvidia1:/dev/nvidia1 <and-so-on-for-all-nvidia-devices>`
