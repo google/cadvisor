@@ -155,12 +155,12 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		rktPath      string
 	)
 	if tempDockerStatus, err := docker.Status(); err != nil {
-		glog.Warningf("Unable to connect to Docker: %v", err)
+		glog.V(5).Infof("Docker not connected: %v", err)
 	} else {
 		dockerStatus = tempDockerStatus
 	}
 	if tmpRktPath, err := rkt.RktPath(); err != nil {
-		glog.Warningf("unable to connect to Rkt api service: %v", err)
+		glog.V(5).Infof("Rkt not connected: %v", err)
 	} else {
 		rktPath = tmpRktPath
 	}
@@ -171,7 +171,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	}
 	crioInfo, err := crioClient.Info()
 	if err != nil {
-		glog.Warningf("unable to connect to CRI-O api service: %v", err)
+		glog.V(5).Infof("CRI-O not connected: %v", err)
 	}
 
 	context := fs.Context{
@@ -267,12 +267,12 @@ type manager struct {
 func (self *manager) Start() error {
 	err := docker.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
-		glog.Warningf("Docker container factory registration failed: %v.", err)
+		glog.V(5).Infof("Registration of the Docker container factory failed: %v.", err)
 	}
 
 	err = rkt.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
-		glog.Warningf("Registration of the rkt container factory failed: %v", err)
+		glog.V(5).Infof("Registration of the rkt container factory failed: %v", err)
 	} else {
 		watcher, err := rktwatcher.NewRktContainerWatcher()
 		if err != nil {
@@ -283,17 +283,17 @@ func (self *manager) Start() error {
 
 	err = containerd.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
-		glog.Warningf("Registration of the containerd container factory failed: %v", err)
+		glog.V(5).Infof("Registration of the containerd container factory failed: %v", err)
 	}
 
 	err = crio.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
-		glog.Warningf("Registration of the crio container factory failed: %v", err)
+		glog.V(5).Infof("Registration of the crio container factory failed: %v", err)
 	}
 
 	err = systemd.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
-		glog.Warningf("Registration of the systemd container factory failed: %v", err)
+		glog.V(5).Infof("Registration of the systemd container factory failed: %v", err)
 	}
 
 	err = raw.Register(self, self.fsInfo, self.ignoreMetrics)
