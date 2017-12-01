@@ -25,24 +25,40 @@ import (
 
 	"github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/machine"
+	"time"
 )
 
-func Status() (v1.DockerStatus, error) {
+const defaultTimeout = time.Second * 5
+
+func DefaultContext() context.Context {
+	ctx, _ := context.WithTimeout(context.Background(), defaultTimeout)
+	return ctx
+}
+
+func Status(ctx context.Context) (v1.DockerStatus, error) {
 	client, err := Client()
 	if err != nil {
 		return v1.DockerStatus{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	dockerInfo, err := client.Info(context.Background())
+	dockerInfo, err := client.Info(ctx)
 	if err != nil {
 		return v1.DockerStatus{}, err
 	}
-	return StatusFromDockerInfo(dockerInfo), nil
+	return StatusFromDockerInfo(ctx, dockerInfo)
 }
 
-func StatusFromDockerInfo(dockerInfo dockertypes.Info) v1.DockerStatus {
+func StatusFromDockerInfo(ctx context.Context, dockerInfo dockertypes.Info) (v1.DockerStatus, error) {
 	out := v1.DockerStatus{}
-	out.Version = VersionString()
-	out.APIVersion = APIVersionString()
+	ver, err := VersionString(ctx)
+	if err != nil {
+		return out, err
+	}
+	out.Version = ver
+	ver, err = APIVersionString(ctx)
+	if err != nil {
+		return out, err
+	}
+	out.APIVersion = ver
 	out.KernelVersion = machine.KernelVersion()
 	out.OS = dockerInfo.OperatingSystem
 	out.Hostname = dockerInfo.Name
@@ -54,15 +70,15 @@ func StatusFromDockerInfo(dockerInfo dockertypes.Info) v1.DockerStatus {
 	for _, v := range dockerInfo.DriverStatus {
 		out.DriverStatus[v[0]] = v[1]
 	}
-	return out
+	return out, nil
 }
 
-func Images() ([]v1.DockerImage, error) {
+func Images(ctx context.Context) ([]v1.DockerImage, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	images, err := client.ImageList(context.Background(), dockertypes.ImageListOptions{All: false})
+	images, err := client.ImageList(ctx, dockertypes.ImageListOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
@@ -89,20 +105,20 @@ func Images() ([]v1.DockerImage, error) {
 
 // Checks whether the dockerInfo reflects a valid docker setup, and returns it if it does, or an
 // error otherwise.
-func ValidateInfo() (*dockertypes.Info, error) {
+func ValidateInfo(ctx context.Context) (*dockertypes.Info, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
 
-	dockerInfo, err := client.Info(context.Background())
+	dockerInfo, err := client.Info(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
 	}
 
 	// Fall back to version API if ServerVersion is not set in info.
 	if dockerInfo.ServerVersion == "" {
-		version, err := client.ServerVersion(context.Background())
+		version, err := client.ServerVersion(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("unable to get docker version: %v", err)
 		}
@@ -124,36 +140,44 @@ func ValidateInfo() (*dockertypes.Info, error) {
 	return &dockerInfo, nil
 }
 
-func Version() ([]int, error) {
-	return parseVersion(VersionString(), version_re, 3)
+func Version(ctx context.Context) ([]int, error) {
+	ver, err := VersionString(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return parseVersion(ver, version_re, 3)
 }
 
-func APIVersion() ([]int, error) {
-	return parseVersion(APIVersionString(), apiversion_re, 2)
+func APIVersion(ctx context.Context) ([]int, error) {
+	ver, err := APIVersionString(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return parseVersion(ver, apiversion_re, 2)
 }
 
-func VersionString() string {
+func VersionString(ctx context.Context) (string, error) {
 	docker_version := "Unknown"
 	client, err := Client()
 	if err == nil {
-		version, err := client.ServerVersion(context.Background())
+		version, err := client.ServerVersion(ctx)
 		if err == nil {
 			docker_version = version.Version
 		}
 	}
-	return docker_version
+	return docker_version, err
 }
 
-func APIVersionString() string {
+func APIVersionString(ctx context.Context) (string, error) {
 	docker_api_version := "Unknown"
 	client, err := Client()
 	if err == nil {
-		version, err := client.ServerVersion(context.Background())
+		version, err := client.ServerVersion(ctx)
 		if err == nil {
 			docker_api_version = version.APIVersion
 		}
 	}
-	return docker_api_version
+	return docker_api_version, err
 }
 
 func parseVersion(version_string string, regex *regexp.Regexp, length int) ([]int, error) {

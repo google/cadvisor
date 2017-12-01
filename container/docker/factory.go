@@ -72,7 +72,7 @@ var (
 
 func RootDir() string {
 	dockerRootDirOnce.Do(func() {
-		status, err := Status()
+		status, err := Status(DefaultContext())
 		if err == nil && status.RootDir != "" {
 			dockerRootDir = status.RootDir
 		} else {
@@ -315,7 +315,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
 
-	dockerInfo, err := ValidateInfo()
+	dockerInfo, err := ValidateInfo(DefaultContext())
 	if err != nil {
 		return fmt.Errorf("failed to validate Docker info: %v", err)
 	}
@@ -323,7 +323,10 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 	// Version already validated above, assume no error here.
 	dockerVersion, _ := parseVersion(dockerInfo.ServerVersion, version_re, 3)
 
-	dockerAPIVersion, _ := APIVersion()
+	dockerAPIVersion, err := APIVersion(DefaultContext())
+	if err != nil {
+		return fmt.Errorf("failed to retrieve Docker API version: %v", err)
+	}
 
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
@@ -340,7 +343,10 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 			glog.Errorf("devicemapper filesystem stats will not be reported: %v", err)
 		}
 
-		status := StatusFromDockerInfo(*dockerInfo)
+		status, err := StatusFromDockerInfo(DefaultContext(), *dockerInfo)
+		if err != nil {
+			return fmt.Errorf("failed get status from docker info: %v", err)
+		}
 		thinPoolName = status.DriverStatus[dockerutil.DriverStatusPoolName]
 	}
 
