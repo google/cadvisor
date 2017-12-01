@@ -201,7 +201,7 @@ func newDockerContainerHandler(
 	case overlay2StorageDriver:
 		rootfsStorageDir = path.Join(storageDir, string(storageDriver), rwLayerID, overlay2RWLayer)
 	case zfsStorageDriver:
-		status, err := Status()
+		status, err := Status(DefaultContext())
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine docker status: %v", err)
 		}

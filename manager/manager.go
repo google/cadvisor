@@ -154,7 +154,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		dockerStatus info.DockerStatus
 		rktPath      string
 	)
-	if tempDockerStatus, err := docker.Status(); err != nil {
+	if tempDockerStatus, err := docker.Status(docker.DefaultContext()); err != nil {
 		glog.V(5).Infof("Docker not connected: %v", err)
 	} else {
 		dockerStatus = tempDockerStatus
@@ -1280,11 +1280,11 @@ func parseEventsStoragePolicy() events.StoragePolicy {
 }
 
 func (m *manager) DockerImages() ([]info.DockerImage, error) {
-	return docker.Images()
+	return docker.Images(docker.DefaultContext())
 }
 
 func (m *manager) DockerInfo() (info.DockerStatus, error) {
-	return docker.Status()
+	return docker.Status(docker.DefaultContext())
 }
 
 func (m *manager) DebugInfo() map[string][]string {
@@ -1343,8 +1343,14 @@ func getVersionInfo() (*info.VersionInfo, error) {
 
 	kernel_version := machine.KernelVersion()
 	container_os := machine.ContainerOsVersion()
-	docker_version := docker.VersionString()
-	docker_api_version := docker.APIVersionString()
+	docker_version, err := docker.VersionString(docker.DefaultContext())
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve docker version: %v", err)
+	}
+	docker_api_version, err := docker.APIVersionString(docker.DefaultContext())
+	if err != nil {
+		return nil, fmt.Errorf("unable to retrieve docker API version: %v", err)
+	}
 
 	return &info.VersionInfo{
 		KernelVersion:      kernel_version,
