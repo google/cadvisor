@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.28.3 (2017-12-7)
+- Add timeout for docker calls
+- Fix prometheus label consistency
+
 ### 0.28.2 (2017-11-21)
 - Fix GPU init race condition
 
