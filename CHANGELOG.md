@@ -1,5 +1,51 @@
 # Changelog
 
+### 0.28.3 (2017-12-7)
+- Add timeout for docker calls
+- Fix prometheus label consistency
+
+### 0.28.2 (2017-11-21)
+- Fix GPU init race condition
+
+### 0.28.1 (2017-11-20)
+- Add containerd support
+- Fix fsnotify regression from 0.28.0
+- Add on demand metrics
+
+### 0.28.0 (2017-11-06)
+- Add container nvidia GPU metrics
+- Expose container memory max_usage_in_bytes
+- Add container memory reservation to prometheus
+
+### 0.27.1 (2017-09-06)
+- Add CRI-O support
+
+### 0.27.0 (2017-09-01)
+- Fix journalctl leak
+- Fix container memory rss
+- Add hugepages support
+- Fix incorrect CPU usage with 4.7 kernel
+- OOM parser uses kmsg
+- Add tmpfs support
+
+### 0.26.1 (2017-06-21)
+- Fix prometheus metrics.
+
+### 0.26.0 (2017-05-31)
+- Fix disk partition discovery for brtfs
+- Add ZFS support
+- Add UDP metrics (collection disabled by default)
+- Improve diskio prometheus metrics
+- Update Prometheus godeps to v0.8
+- Add overlay2 storage driver support
+
+### 0.25.0 (2017-03-09)
+- Disable thin_ls due to excessive iops
+- Ignore .mount cgroups, fixing dissappearing stats
+- Fix wc goroutine leak
+- Update aws-sdk-go dependency to 1.6.10
+- Update to go 1.7 for releases
+
 ### 0.24.1 (2016-10-10)
 
 - Fix issue with running cAdvisor in a container on some distributions.

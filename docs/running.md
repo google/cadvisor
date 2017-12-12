@@ -18,6 +18,10 @@ sudo docker run \
 
 cAdvisor is now running (in the background) on `http://localhost:8080/`. The setup includes directories with Docker state cAdvisor needs to observe.
 
+**Note**: If docker daemon is running with [user namespace enabled](https://docs.docker.com/engine/reference/commandline/dockerd/#starting-the-daemon-with-user-namespaces-enabled),
+You need to add `--userns=host` option in order for cAdvisor to monitor Docker containers,
+otherwise cAdvisor can not connect to docker daemon.
+
 ## Latest Canary
 
 The latest cAdvisor canary release is continuously built from HEAD and available
@@ -79,6 +83,25 @@ cAdvisor is now running (in the foreground) on `http://localhost:8080/`.
 
 cAdvisor has a series of flags that can be used to configure its runtime behavior. More details can be found in runtime [options](runtime_options.md).
 
-## I need help!
+## Hardware Accelerator Monitoring
 
-We aim to have cAdvisor run everywhere! If you run into issues getting it running, feel free to file an issue. We are very responsive in supporting our users and update our documentation with new setups.
+cAdvisor can export some metrics for hardware accelerators attached to containers.
+Currently only Nvidia GPUs are supported. There are no machine level metrics.
+So, metrics won't show up if no container with accelerators attached is running.
+Metrics will only show up if accelerators are explicitly attached to the container, e.g., by passing `--device /dev/nvidia0:/dev/nvidia0` flag to docker.
+If nothing is explicitly attached to the container, metrics will NOT show up. This can happen when you access accelerators from privileged containers.
+
+There are two things that cAdvisor needs to show Nvidia GPU metrics:
+- access to NVML library (`libnvidia-ml.so.1`).
+- access to the GPU devices.
+
+If you are running cAdvisor inside a container, you will need to do the following to give the container access to NVML library:
+```
+-e LD_LIBRARY_PATH=<path-where-nvml-is-present>
+--volume <above-path>:<above-path>
+```
+
+If you are running cAdvisor inside a container, you can do one of the following to give it access to the GPU devices:
+- Run with `--privileged`
+- If you are on docker v17.04.0-ce or above, run with `--device-cgroup-rule 'c 195:* mrw'`
+- Run with `--device /dev/nvidiactl:/dev/nvidiactl /dev/nvidia0:/dev/nvidia0 /dev/nvidia1:/dev/nvidia1 <and-so-on-for-all-nvidia-devices>`

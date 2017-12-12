@@ -31,11 +31,11 @@ if [[ ! -z "$(git diff --name-only pages)" ]]; then
   exit 1
 fi
 
-# Build & test with go 1.7
+# Build & test with go 1.8
 docker run --rm \
        -w "/go/src/github.com/google/cadvisor" \
        -v "${GOPATH}/src/github.com/google/cadvisor:/go/src/github.com/google/cadvisor" \
-       golang:1.7.1 make all test-runner
+       golang:1.8 make all test-runner
 
 # Nodes that are currently stable. When tests fail on a specific node, and the failure is not remedied within a week, that node will be removed from this list.
 golden_nodes=(

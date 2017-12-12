@@ -16,7 +16,7 @@ You will need to add a *http_auth_file* parameter with a HTTP basic auth file ge
 
 `./cadvisor --http_auth_file test.htpasswd --http_auth_realm localhost`
 
-The [test.htpasswd](../test.htpasswd) file provided has a username and password already added (admin:password1) for testing purposes.
+The [test.htpasswd](../test.htpasswd) file provided has a username and password already added (`admin:password1`) for testing purposes.
 
 ### HTTP Digest authentication
 
@@ -24,6 +24,6 @@ You will need to add a *http_digest_file* parameter with a HTTP digest auth file
 
 `./cadvisor --http_digest_file test.htdigest --http_digest_realm localhost`
 
-The [test.htdigest](../test.htdigest) file provided has a username and password already added (admin:password1) for testing purposes.
+The [test.htdigest](../test.htdigest) file provided has a username and password already added (`admin:password1`) for testing purposes.
 
 **Note** : You can use either type of authentication, in case you decide to use both files in the arguments only HTTP basic auth will be enabled. 

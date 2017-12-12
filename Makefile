@@ -10,6 +10,7 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
+# limitations under the License.
 
 GO := go
 pkgs  = $(shell $(GO) list ./... | grep -v vendor)
@@ -44,7 +45,7 @@ assets:
 
 release:
 	@echo ">> building release binaries"
-	@RELEASE=true ./build/build.sh
+	@./build/release.sh
 
 docker:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .

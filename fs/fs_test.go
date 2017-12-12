@@ -418,6 +418,27 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			},
 			expectedDockerDevice: "/dev/sda1",
 		},
+		{
+			name: "[overlay2] root fs inside container - /var/lib/docker bindmount",
+			mounts: []*mount.Info{
+				{
+					Source:     "overlay",
+					Mountpoint: "/",
+					Fstype:     "overlay",
+				},
+				{
+					Source:     "/dev/sdb1",
+					Mountpoint: "/var/lib/docker",
+					Fstype:     "ext4",
+				},
+				{
+					Source:     "/dev/sdb2",
+					Mountpoint: "/var/lib/docker/overlay2",
+					Fstype:     "ext4",
+				},
+			},
+			expectedDockerDevice: "/dev/sdb2",
+		},
 	}
 
 	for _, tt := range tests {

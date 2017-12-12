@@ -96,7 +96,7 @@ func MachineStatsFromV1(cont *v1.ContainerInfo) []MachineStats {
 	return stats
 }
 
-func ContainerStatsFromV1(spec *v1.ContainerSpec, stats []*v1.ContainerStats) []*ContainerStats {
+func ContainerStatsFromV1(containerName string, spec *v1.ContainerSpec, stats []*v1.ContainerStats) []*ContainerStats {
 	newStats := make([]*ContainerStats, 0, len(stats))
 	var last *v1.ContainerStats
 	for _, val := range stats {
@@ -131,9 +131,9 @@ func ContainerStatsFromV1(spec *v1.ContainerSpec, stats []*v1.ContainerStats) []
 					BaseUsageBytes:  &val.Filesystem[0].BaseUsage,
 					InodeUsage:      &val.Filesystem[0].Inodes,
 				}
-			} else if len(val.Filesystem) > 1 {
+			} else if len(val.Filesystem) > 1 && containerName != "/" {
 				// Cannot handle multiple devices per container.
-				glog.V(2).Infof("failed to handle multiple devices for container. Skipping Filesystem stats")
+				glog.V(4).Infof("failed to handle multiple devices for container %s. Skipping Filesystem stats", containerName)
 			}
 		}
 		if spec.HasDiskIo {
@@ -141,6 +141,9 @@ func ContainerStatsFromV1(spec *v1.ContainerSpec, stats []*v1.ContainerStats) []
 		}
 		if spec.HasCustomMetrics {
 			stat.CustomMetrics = val.CustomMetrics
+		}
+		if len(val.Accelerators) > 0 {
+			stat.Accelerators = val.Accelerators
 		}
 		// TODO(rjnagal): Handle load stats.
 		newStats = append(newStats, stat)
@@ -203,9 +206,6 @@ func InstCpuStats(last, cur *v1.ContainerStats) (*CpuInstStats, error) {
 		return nil, fmt.Errorf("different number of cpus")
 	}
 	timeDelta := cur.Timestamp.Sub(last.Timestamp)
-	if timeDelta <= 100*time.Millisecond {
-		return nil, fmt.Errorf("time delta unexpectedly small")
-	}
 	// Nanoseconds to gain precision and avoid having zero seconds if the
 	// difference between the timestamps is just under a second
 	timeDeltaNs := uint64(timeDelta.Nanoseconds())
@@ -259,6 +259,7 @@ func ContainerSpecFromV1(specV1 *v1.ContainerSpec, aliases []string, namespace s
 		HasCustomMetrics: specV1.HasCustomMetrics,
 		Image:            specV1.Image,
 		Labels:           specV1.Labels,
+		Envs:             specV1.Envs,
 	}
 	if specV1.HasCpu {
 		specV2.Cpu.Limit = specV1.Cpu.Limit

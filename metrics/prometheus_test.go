@@ -63,6 +63,11 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Period: 100000,
 					Quota:  10000,
 				},
+				Memory: info.MemorySpec{
+					Limit:       2048,
+					Reservation: 1024,
+					SwapLimit:   4096,
+				},
 				CreationTime: time.Unix(1257894000, 0),
 				Labels: map[string]string{
 					"foo.label": "bar",
@@ -85,9 +90,11 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							ThrottledPeriods: 18,
 							ThrottledTime:    1724314000,
 						},
+						LoadAverage: 2,
 					},
 					Memory: info.MemoryStats{
 						Usage:      8,
+						MaxUsage:   8,
 						WorkingSet: 9,
 						ContainerData: info.MemoryStatsMemoryData{
 							Pgfault:    10,
@@ -126,6 +133,25 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 								TxDropped: 21,
 							},
 						},
+						Tcp: info.TcpStat{
+							Established: 13,
+							SynSent:     0,
+							SynRecv:     0,
+							FinWait1:    0,
+							FinWait2:    0,
+							TimeWait:    0,
+							Close:       0,
+							CloseWait:   0,
+							LastAck:     0,
+							Listen:      3,
+							Closing:     0,
+						},
+						Udp: info.UdpStat{
+							Listen:   0,
+							Dropped:  0,
+							RxQueued: 0,
+							TxQueued: 0,
+						},
 					},
 					Filesystem: []info.FsStats{
 						{
@@ -163,6 +189,24 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							IoInProgress:    47,
 							IoTime:          48,
 							WeightedIoTime:  49,
+						},
+					},
+					Accelerators: []info.AcceleratorStats{
+						{
+							Make:        "nvidia",
+							Model:       "tesla-p100",
+							ID:          "GPU-deadbeef-1234-5678-90ab-feedfacecafe",
+							MemoryTotal: 20304050607,
+							MemoryUsed:  2030405060,
+							DutyCycle:   12,
+						},
+						{
+							Make:        "nvidia",
+							Model:       "tesla-k80",
+							ID:          "GPU-deadbeef-0123-4567-89ab-feedfacecafe",
+							MemoryTotal: 10203040506,
+							MemoryUsed:  1020304050,
+							DutyCycle:   6,
 						},
 					},
 					TaskStats: info.LoadStats{

@@ -45,8 +45,8 @@ func NewMemoryStorage() (*memory.InMemoryCache, error) {
 		return nil, err
 	}
 	if *storageDriver != "" {
-		glog.Infof("Using backend storage type %q", *storageDriver)
+		glog.V(1).Infof("Using backend storage type %q", *storageDriver)
 	}
-	glog.Infof("Caching stats in memory for %v", *storageDuration)
+	glog.V(1).Infof("Caching stats in memory for %v", *storageDuration)
 	return memory.New(*storageDuration, backendStorage), nil
 }
