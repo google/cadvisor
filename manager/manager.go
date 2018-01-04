@@ -203,8 +203,10 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	newManager := &manager{
 		containers:               make(map[namespacedContainerName]*containerData),
 		quitChannels:             make([]chan error, 0, 2),
+		context:                  context,
 		memoryCache:              memoryCache,
 		fsInfo:                   fsInfo,
+		fsInfoChange:             make(chan bool, 4),
 		cadvisorContainer:        selfContainer,
 		inHostNamespace:          inHostNamespace,
 		startupTime:              time.Now(),
@@ -215,13 +217,16 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		eventsChannel:            eventsChannel,
 		collectorHttpClient:      collectorHttpClient,
 		nvidiaManager:            &accelerators.NvidiaManager{},
+		sysfs:                    sysfs,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
 	if err != nil {
 		return nil, err
 	}
+	newManager.machineInfoLock.Lock()
 	newManager.machineInfo = *machineInfo
+	newManager.machineInfoLock.Unlock()
 	glog.V(1).Infof("Machine: %+v", newManager.machineInfo)
 
 	versionInfo, err := getVersionInfo()
@@ -246,8 +251,11 @@ type namespacedContainerName struct {
 type manager struct {
 	containers               map[namespacedContainerName]*containerData
 	containersLock           sync.RWMutex
+	context                  fs.Context
 	memoryCache              *memory.InMemoryCache
 	fsInfo                   fs.FsInfo
+	fsInfoChange             chan bool
+	machineInfoLock          sync.RWMutex
 	machineInfo              info.MachineInfo
 	quitChannels             []chan error
 	cadvisorContainer        string
@@ -261,6 +269,7 @@ type manager struct {
 	eventsChannel            chan watcher.ContainerEvent
 	collectorHttpClient      *http.Client
 	nvidiaManager            accelerators.AcceleratorManager
+	sysfs                    sysfs.SysFs
 }
 
 // Start the container manager.
@@ -341,12 +350,45 @@ func (self *manager) Start() error {
 	}
 	self.quitChannels = append(self.quitChannels, quitWatcher)
 
+	go fs.CheckFsInfoUpdateForever(self.fsInfo.(*fs.RealFsInfo), self.context, self.fsInfoChange)
+	quitCheck := make(chan error)
+	go self.watchDiskMountChange(quitCheck)
+	self.quitChannels = append(self.quitChannels, quitCheck)
+
 	// Look for new containers in the main housekeeping thread.
 	quitGlobalHousekeeping := make(chan error)
 	self.quitChannels = append(self.quitChannels, quitGlobalHousekeeping)
 	go self.globalHousekeeping(quitGlobalHousekeeping)
 
 	return nil
+}
+
+func (self *manager) watchDiskMountChange(quit chan error) {
+	glog.Infof("start to watch disk mount change")
+	for {
+		select {
+		case <-self.fsInfoChange:
+			glog.Infof("get a disk and mount changed! fsInfo has refresh: %+v", self.fsInfo)
+			// If cAdvisor was started with host's rootfs mounted, assume that its running
+			// in its own namespaces.
+			inHostNamespace := false
+			if _, err := os.Stat("/rootfs/proc"); os.IsNotExist(err) {
+				inHostNamespace = true
+			}
+			machineInfo, err := machine.Info(self.sysfs, self.fsInfo, inHostNamespace)
+			if err != nil {
+				glog.Warningf("get machine info failed. %s, will ignore it.", err.Error())
+				continue
+			}
+			self.machineInfoLock.Lock()
+			self.machineInfo = *machineInfo
+			glog.V(1).Infof("Machine: %+v", self.machineInfo)
+			self.machineInfoLock.Unlock()
+		case <-quit:
+			quit <- nil
+			return
+		}
+	}
 }
 
 func (self *manager) Stop() error {
@@ -390,6 +432,7 @@ func (self *manager) globalHousekeeping(quit chan error) {
 			if duration >= longHousekeeping {
 				glog.V(3).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
 			}
+
 		case <-quit:
 			// Quit if asked to do so.
 			quit <- nil
@@ -794,7 +837,30 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 
 func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
 	// Copy and return the MachineInfo.
-	return &m.machineInfo, nil
+	m.machineInfoLock.RLock()
+	defer m.machineInfoLock.RUnlock()
+	machineInfo := m.machineInfo
+	machineInfo.DiskMap = make(map[string]info.DiskInfo)
+	for k, v := range m.machineInfo.DiskMap {
+		machineInfo.DiskMap[k] = v
+	}
+	machineInfo.Filesystems = make([]info.FsInfo, len(m.machineInfo.Filesystems))
+	for i, v := range m.machineInfo.Filesystems {
+		machineInfo.Filesystems[i] = v
+	}
+	machineInfo.HugePages = make([]info.HugePagesInfo, len(m.machineInfo.HugePages))
+	for i, v := range m.machineInfo.HugePages {
+		machineInfo.HugePages[i] = v
+	}
+	machineInfo.NetworkDevices = make([]info.NetInfo, len(m.machineInfo.NetworkDevices))
+	for i, v := range m.machineInfo.NetworkDevices {
+		machineInfo.NetworkDevices[i] = v
+	}
+	machineInfo.Topology = make([]info.Node, len(m.machineInfo.Topology))
+	for i, v := range m.machineInfo.Topology {
+		machineInfo.Topology[i] = v
+	}
+	return &machineInfo, nil
 }
 
 func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {

@@ -38,6 +38,10 @@ import (
 	"github.com/google/cadvisor/utils"
 	dockerutil "github.com/google/cadvisor/utils/docker"
 	zfs "github.com/mistifyio/go-zfs"
+	unixsyscall "golang.org/x/sys/unix"
+	"reflect"
+	"sync"
+	"unsafe"
 )
 
 const (
@@ -76,6 +80,7 @@ type partition struct {
 }
 
 type RealFsInfo struct {
+	fsLock sync.RWMutex
 	// Map from block device path to partition information.
 	partitions map[string]partition
 	// Map from label to block device path.
@@ -117,16 +122,23 @@ func NewFsInfo(context Context) (FsInfo, error) {
 		return nil, err
 	}
 
-	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
-	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
 	fsInfo := &RealFsInfo{
-		partitions:         processMounts(mounts, excluded),
 		labels:             make(map[string]string, 0),
 		mounts:             make(map[string]*mount.Info, 0),
 		dmsetup:            devicemapper.NewDmsetupClient(),
 		fsUUIDToDeviceName: fsUUIDToDeviceName,
 	}
+	glog.V(1).Infof("Filesystem UUIDs: %+v", fsInfo.fsUUIDToDeviceName)
 
+	setMountAndAddLabel(fsInfo, context, mounts)
+	glog.V(1).Infof("Filesystem partitions: %+v", fsInfo.partitions)
+	return fsInfo, nil
+}
+
+func setMountAndAddLabel(fsInfo *RealFsInfo, context Context, mounts []*mount.Info) {
+	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
+	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
+	fsInfo.partitions = processMounts(mounts, excluded)
 	for _, mount := range mounts {
 		fsInfo.mounts[mount.Mountpoint] = mount
 	}
@@ -137,10 +149,48 @@ func NewFsInfo(context Context) (FsInfo, error) {
 	fsInfo.addDockerImagesLabel(context, mounts)
 	fsInfo.addCrioImagesLabel(context, mounts)
 
-	glog.V(1).Infof("Filesystem UUIDs: %+v", fsInfo.fsUUIDToDeviceName)
-	glog.V(1).Infof("Filesystem partitions: %+v", fsInfo.partitions)
 	fsInfo.addSystemRootLabel(mounts)
-	return fsInfo, nil
+}
+
+func CheckFsInfoUpdateForever(fsInfo *RealFsInfo, context Context, changed chan bool) {
+	for {
+		if pollMountEvent(60000) {
+			mounts, err := mount.GetMounts()
+			if err != nil {
+				glog.Errorf("get mount failed. %s. we consider no change of mount", err.Error())
+				continue
+			}
+
+			newFsUTDMap, err := getFsUUIDToDeviceNameMap()
+			if err != nil {
+				glog.Errorf("get FsUUIDToDeviceNameMap failed. %s. we consider no change of fs", err.Error())
+				continue
+			}
+			fsInfoChange := false
+			if !reflect.DeepEqual(newFsUTDMap, fsInfo.fsUUIDToDeviceName) {
+				fsInfoChange = true
+				fsInfo.fsLock.Lock()
+				fsInfo.fsUUIDToDeviceName = newFsUTDMap
+				fsInfo.fsLock.Unlock()
+			} else {
+				newFs := &RealFsInfo{
+					labels:  make(map[string]string, 0),
+					mounts:  make(map[string]*mount.Info, 0),
+					dmsetup: devicemapper.NewDmsetupClient(),
+				}
+				setMountAndAddLabel(newFs, context, mounts)
+				if !reflect.DeepEqual(newFs.partitions, fsInfo.partitions) {
+					fsInfoChange = true
+				}
+			}
+			if fsInfoChange {
+				fsInfo.fsLock.Lock()
+				setMountAndAddLabel(fsInfo, context, mounts)
+				fsInfo.fsLock.Unlock()
+				changed <- true
+			}
+		}
+	}
 }
 
 // getFsUUIDToDeviceNameMap creates the filesystem uuid to device name map
@@ -360,6 +410,8 @@ func (self *RealFsInfo) updateContainerImagesPath(label string, mounts []*mount.
 }
 
 func (self *RealFsInfo) GetDeviceForLabel(label string) (string, error) {
+	self.fsLock.RLock()
+	defer self.fsLock.RUnlock()
 	dev, ok := self.labels[label]
 	if !ok {
 		return "", fmt.Errorf("non-existent label %q", label)
@@ -369,6 +421,8 @@ func (self *RealFsInfo) GetDeviceForLabel(label string) (string, error) {
 
 func (self *RealFsInfo) GetLabelsForDevice(device string) ([]string, error) {
 	labels := []string{}
+	self.fsLock.RLock()
+	defer self.fsLock.RUnlock()
 	for label, dev := range self.labels {
 		if dev == device {
 			labels = append(labels, label)
@@ -378,6 +432,8 @@ func (self *RealFsInfo) GetLabelsForDevice(device string) ([]string, error) {
 }
 
 func (self *RealFsInfo) GetMountpointForDevice(dev string) (string, error) {
+	self.fsLock.RLock()
+	defer self.fsLock.RUnlock()
 	p, ok := self.partitions[dev]
 	if !ok {
 		return "", fmt.Errorf("no partition info for device %q", dev)
@@ -392,6 +448,8 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 	if err != nil {
 		return nil, err
 	}
+	self.fsLock.RLock()
+	defer self.fsLock.RUnlock()
 	for device, partition := range self.partitions {
 		_, hasMount := mountSet[partition.mountpoint]
 		_, hasDevice := deviceSet[device]
@@ -504,6 +562,8 @@ func minor(devNumber uint64) uint {
 }
 
 func (self *RealFsInfo) GetDeviceInfoByFsUUID(uuid string) (*DeviceInfo, error) {
+	self.fsLock.RLock()
+	defer self.fsLock.RUnlock()
 	deviceName, found := self.fsUUIDToDeviceName[uuid]
 	if !found {
 		return nil, ErrNoSuchDevice
@@ -524,6 +584,8 @@ func (self *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) {
 
 	major := major(buf.Dev)
 	minor := minor(buf.Dev)
+	self.fsLock.RLock()
+	defer self.fsLock.RUnlock()
 	for device, partition := range self.partitions {
 		if partition.major == major && partition.minor == minor {
 			return &DeviceInfo{device, major, minor}, nil
@@ -761,4 +823,25 @@ func getBtrfsMajorMinorIds(mount *mount.Info) (int, int, error) {
 	} else {
 		return 0, 0, fmt.Errorf("%s is not a block device", mount.Source)
 	}
+}
+
+func pollMountEvent(timeoutMS int) bool {
+	f, _ := os.Open("/proc/self/mountinfo")
+	defer f.Close()
+	fdOri := f.Fd()
+	var fd *int32 = (*int32)(unsafe.Pointer(&fdOri))
+	pollFds := make([]unixsyscall.PollFd, 1)
+	pollFds[0] = unixsyscall.PollFd{
+		Fd:      *fd,
+		Events:  unixsyscall.POLLERR | unixsyscall.POLLPRI,
+		Revents: 0,
+	}
+	//set a minute so that this loop will check if it should exit
+	ret, _ := unixsyscall.Poll(pollFds, timeoutMS)
+	if ret >= 0 {
+		if (pollFds[0].Revents & unixsyscall.POLLERR) == 8 {
+			return true
+		}
+	}
+	return false
 }
