@@ -38,6 +38,9 @@ import (
 	"github.com/google/cadvisor/utils"
 	dockerutil "github.com/google/cadvisor/utils/docker"
 	zfs "github.com/mistifyio/go-zfs"
+	"reflect"
+	"unsafe"
+	unixsyscall "golang.org/x/sys/unix"
 )
 
 const (
@@ -117,16 +120,22 @@ func NewFsInfo(context Context) (FsInfo, error) {
 		return nil, err
 	}
 
-	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
-	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
 	fsInfo := &RealFsInfo{
-		partitions:         processMounts(mounts, excluded),
 		labels:             make(map[string]string, 0),
 		mounts:             make(map[string]*mount.Info, 0),
 		dmsetup:            devicemapper.NewDmsetupClient(),
 		fsUUIDToDeviceName: fsUUIDToDeviceName,
 	}
+	glog.V(1).Infof("Filesystem UUIDs: %+v", fsInfo.fsUUIDToDeviceName)
 
+	setMountAndAddLabel(fsInfo, context, mounts)
+	return fsInfo, nil
+}
+
+func setMountAndAddLabel(fsInfo *RealFsInfo, context Context, mounts []*mount.Info) {
+	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
+	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
+	fsInfo.partitions = processMounts(mounts, excluded)
 	for _, mount := range mounts {
 		fsInfo.mounts[mount.Mountpoint] = mount
 	}
@@ -137,10 +146,45 @@ func NewFsInfo(context Context) (FsInfo, error) {
 	fsInfo.addDockerImagesLabel(context, mounts)
 	fsInfo.addCrioImagesLabel(context, mounts)
 
-	glog.V(1).Infof("Filesystem UUIDs: %+v", fsInfo.fsUUIDToDeviceName)
 	glog.V(1).Infof("Filesystem partitions: %+v", fsInfo.partitions)
 	fsInfo.addSystemRootLabel(mounts)
-	return fsInfo, nil
+}
+
+func CheckFsInfoUpdateForever(fsInfo *RealFsInfo, context Context, changed chan bool) {
+	for {
+		if pollMountEvent(60000) {
+			mounts, err := mount.GetMounts()
+			if err != nil {
+				glog.Errorf("get mount failed. %s. we consider no change of mount", err.Error())
+				continue
+			}
+
+			newFsUTDMap, err := getFsUUIDToDeviceNameMap()
+			if err != nil {
+				glog.Errorf("get FsUUIDToDeviceNameMap failed. %s. we consider no change of fs", err.Error())
+				continue
+			}
+			fsInfoChange := false
+			if !reflect.DeepEqual(newFsUTDMap, fsInfo.fsUUIDToDeviceName) {
+				fsInfoChange = true
+				fsInfo.fsUUIDToDeviceName = newFsUTDMap
+			} else {
+				newFs := &RealFsInfo{
+					labels:             make(map[string]string, 0),
+					mounts:             make(map[string]*mount.Info, 0),
+					dmsetup:            devicemapper.NewDmsetupClient(),
+				}
+				setMountAndAddLabel(newFs, context, mounts)
+				if !reflect.DeepEqual(newFs.partitions, fsInfo.partitions) {
+					fsInfoChange = true
+				}
+			}
+			if fsInfoChange {
+				setMountAndAddLabel(fsInfo, context, mounts)
+				changed <- true
+			}
+		}
+	}
 }
 
 // getFsUUIDToDeviceNameMap creates the filesystem uuid to device name map
@@ -761,4 +805,25 @@ func getBtrfsMajorMinorIds(mount *mount.Info) (int, int, error) {
 	} else {
 		return 0, 0, fmt.Errorf("%s is not a block device", mount.Source)
 	}
+}
+
+func pollMountEvent(timeoutMS int) bool {
+	f, _ := os.Open("/proc/self/mountinfo")
+	defer f.Close()
+	fdOri := f.Fd()
+	var fd *int32 = (*int32)(unsafe.Pointer(&fdOri))
+	pollFds := make([]unixsyscall.PollFd, 1)
+	pollFds[0] = unixsyscall.PollFd{
+		Fd:      *fd,
+		Events:  unixsyscall.POLLERR | unixsyscall.POLLPRI,
+		Revents: 0,
+	}
+	//set a minute so that this loop will check if it should exit
+	ret, _ := unixsyscall.Poll(pollFds, timeoutMS)
+	if ret >= 0 {
+		if (pollFds[0].Revents & unixsyscall.POLLERR) == 8 {
+			return true
+		}
+	}
+	return false
 }
