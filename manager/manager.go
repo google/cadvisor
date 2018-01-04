@@ -185,7 +185,8 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 			Root: crioInfo.StorageRoot,
 		},
 	}
-	fsInfo, err := fs.NewFsInfo(context)
+	fsInfoChange := make(chan fs.FsInfo, 4)
+	fsInfo, err := fs.NewFsInfo(context, fsInfoChange)
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +206,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		quitChannels:             make([]chan error, 0, 2),
 		memoryCache:              memoryCache,
 		fsInfo:                   fsInfo,
+		fsInfoChange:             fsInfoChange,
 		cadvisorContainer:        selfContainer,
 		inHostNamespace:          inHostNamespace,
 		startupTime:              time.Now(),
@@ -215,6 +217,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		eventsChannel:            eventsChannel,
 		collectorHttpClient:      collectorHttpClient,
 		nvidiaManager:            &accelerators.NvidiaManager{},
+		sysfs:                    sysfs,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -248,6 +251,7 @@ type manager struct {
 	containersLock           sync.RWMutex
 	memoryCache              *memory.InMemoryCache
 	fsInfo                   fs.FsInfo
+	fsInfoChange             chan fs.FsInfo
 	machineInfo              info.MachineInfo
 	quitChannels             []chan error
 	cadvisorContainer        string
@@ -261,6 +265,7 @@ type manager struct {
 	eventsChannel            chan watcher.ContainerEvent
 	collectorHttpClient      *http.Client
 	nvidiaManager            accelerators.AcceleratorManager
+	sysfs                    sysfs.SysFs
 }
 
 // Start the container manager.
@@ -341,12 +346,44 @@ func (self *manager) Start() error {
 	}
 	self.quitChannels = append(self.quitChannels, quitWatcher)
 
+	quitCheck := make(chan error)
+	go self.watchDiskMountChange(quitCheck)
+	self.quitChannels = append(self.quitChannels, quitCheck)
+
 	// Look for new containers in the main housekeeping thread.
 	quitGlobalHousekeeping := make(chan error)
 	self.quitChannels = append(self.quitChannels, quitGlobalHousekeeping)
 	go self.globalHousekeeping(quitGlobalHousekeeping)
 
 	return nil
+}
+
+func (self *manager) watchDiskMountChange(quit chan error) {
+
+	glog.Infof("start to watch disk mount change")
+	for {
+		select {
+		case newFsInfo := <-self.fsInfoChange:
+			glog.Infof("get a disk and mount change. will refresh fsInfo: %+v", newFsInfo)
+			self.fsInfo = newFsInfo
+			// If cAdvisor was started with host's rootfs mounted, assume that its running
+			// in its own namespaces.
+			inHostNamespace := false
+			if _, err := os.Stat("/rootfs/proc"); os.IsNotExist(err) {
+				inHostNamespace = true
+			}
+			machineInfo, err := machine.Info(self.sysfs, newFsInfo, inHostNamespace)
+			if err != nil {
+				glog.Warningf("get machine info failed. %s, will ignore it.", err.Error())
+				continue
+			}
+			self.machineInfo = *machineInfo
+			glog.V(1).Infof("Machine: %+v", self.machineInfo)
+		case <-quit:
+			quit <- nil
+			return
+		}
+	}
 }
 
 func (self *manager) Stop() error {
@@ -390,6 +427,7 @@ func (self *manager) globalHousekeeping(quit chan error) {
 			if duration >= longHousekeeping {
 				glog.V(3).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
 			}
+
 		case <-quit:
 			// Quit if asked to do so.
 			quit <- nil

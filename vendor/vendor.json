@@ -1,0 +1,373 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "YqWXJ0oi2TB0USxqUj7CRg8SMS4=",
+			"path": "github.com/163yun/mountcap",
+			"revision": "c15658d1d5cb481e6daed9331ff872a2df5f2f6d",
+			"revisionTime": "2017-12-20T11:45:59Z"
+		},
+		{
+			"checksumSHA1": "OuBK/RoaGy7AHs8faCJOuyLr4+s=",
+			"path": "github.com/google/cadvisor/accelerators",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "2ZjUGcHeqfaaE0BmQJzLa1E3lbE=",
+			"path": "github.com/google/cadvisor/api",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "3Ub4rMB8k0X4Sxs5wZTRz1Ca0nE=",
+			"path": "github.com/google/cadvisor/cache/memory",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "GaHl3AfeiTVy3N9bk36jg/KOsYE=",
+			"path": "github.com/google/cadvisor/client",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "EiW6c/sehze+HgF299beEWSBJOE=",
+			"path": "github.com/google/cadvisor/client/v2",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "FgkJXNqCkuJTZDPD5IfnfZ55Mc4=",
+			"path": "github.com/google/cadvisor/collector",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "qPk+2h692CIGhI1+kTMjR7672qk=",
+			"path": "github.com/google/cadvisor/container",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "fDa6VF7CrYk9OmxYSSySDpACKyc=",
+			"path": "github.com/google/cadvisor/container/common",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "i3CbbGdbM+HAUcH+gjLci1QCNpU=",
+			"path": "github.com/google/cadvisor/container/containerd",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "cz00H5lQErGoEoQ8eyHiN97OX+g=",
+			"path": "github.com/google/cadvisor/container/crio",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "Kk1FgQ6MW4kDmPS3cXK5GrqmDUs=",
+			"path": "github.com/google/cadvisor/container/docker",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "FjXsuEjqC/6G7a5F4q+pSGcxvgw=",
+			"path": "github.com/google/cadvisor/container/libcontainer",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "F2J/4wX4SYSu560vWDWMjFxyyVs=",
+			"path": "github.com/google/cadvisor/container/raw",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "Jgy/fqtItqsJMSIALe2TAzs/l8g=",
+			"path": "github.com/google/cadvisor/container/rkt",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "YnK8GcbNuSqyKjAZotUmgmC4O3k=",
+			"path": "github.com/google/cadvisor/container/systemd",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "mYsRxM0pZ2S+lcAsoRnscwSfwxs=",
+			"path": "github.com/google/cadvisor/container/testing",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "BeQdFAfWb3kI0bhWxz6wVA51N+s=",
+			"path": "github.com/google/cadvisor/devicemapper",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "UoWUeDntABnm38zxmtCeU4zp0QI=",
+			"path": "github.com/google/cadvisor/devicemapper/fake",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "susU8epMmAme2luDTMv+c9u+0/E=",
+			"path": "github.com/google/cadvisor/events",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "I/E71H9ItvMnYjK6FZxrGINaLR8=",
+			"path": "github.com/google/cadvisor/fs",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "7Gcgb9E/0Txg2gVm6PRixqkeF0s=",
+			"path": "github.com/google/cadvisor/healthz",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "7rAKJktSJSMaQ5x0up3SVp+r8no=",
+			"path": "github.com/google/cadvisor/http",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "9oPABGp4WDz/Iojok2N+VXw+DqA=",
+			"path": "github.com/google/cadvisor/http/mux",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "ttWvXbgEVFzsH5AWweQJ+RGySNw=",
+			"path": "github.com/google/cadvisor/info/v1",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "RFBkdHp1LfFmlgxfC3hwjcVNfKo=",
+			"path": "github.com/google/cadvisor/info/v1/test",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "I3dMssB5pfRYhEH/5vQHmG7F9Go=",
+			"path": "github.com/google/cadvisor/info/v2",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "D7So5zvsZ6O6gWoP38qgHUftL18=",
+			"path": "github.com/google/cadvisor/integration/framework",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "bDS0M8ZPGNj8szKGoSpnaWuoNC8=",
+			"path": "github.com/google/cadvisor/machine",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "dzEVMDeF48kez3vzLpzHPdrtTlE=",
+			"path": "github.com/google/cadvisor/manager",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "IKL3BzKb+WffQNgb4BWPXUXUbbo=",
+			"path": "github.com/google/cadvisor/manager/watcher",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "UAHFBstTEvwBz563AxfKb1B9OUI=",
+			"path": "github.com/google/cadvisor/manager/watcher/raw",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "voAYjhmhTVzv8g+rK0Qq60hkwl8=",
+			"path": "github.com/google/cadvisor/manager/watcher/rkt",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "YGLLOr7m/Wl3pax/m/164+IJRTQ=",
+			"path": "github.com/google/cadvisor/metrics",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "ynCnpvqurCwxrgqiwUNK0uucahU=",
+			"path": "github.com/google/cadvisor/pages",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "Oe4OSYhBqLM//KUYbzaNgcgkvMk=",
+			"path": "github.com/google/cadvisor/pages/static",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "fpLFanUhBZfrJXSlbEyxzCMX9rY=",
+			"path": "github.com/google/cadvisor/storage",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "JUQxuh+qCU/G8A/rqnSQnIKFAB8=",
+			"path": "github.com/google/cadvisor/storage/bigquery",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "PuKDRcDIe5UzEPAiVdHJ0N287AU=",
+			"path": "github.com/google/cadvisor/storage/bigquery/client",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "lAgNnidm+eoeXp2Y0Va1cjM5PmA=",
+			"path": "github.com/google/cadvisor/storage/elasticsearch",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "eenG5GwwRo+3HmD0HzTgGrcnMyc=",
+			"path": "github.com/google/cadvisor/storage/influxdb",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "mTSEO7CRaFAF1Nb6Uf0aOFoVssI=",
+			"path": "github.com/google/cadvisor/storage/kafka",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "AArITZbv1nRSj5FBm7iepDy1Wc8=",
+			"path": "github.com/google/cadvisor/storage/redis",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "utMhBt7alX4SeKswCQnMTvgH6P8=",
+			"path": "github.com/google/cadvisor/storage/statsd",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "H4G0eh8T01j7nepGWMEeNNXOwiU=",
+			"path": "github.com/google/cadvisor/storage/statsd/client",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "VLZqO26Yr81Fsa9M8KfgpF7PuOo=",
+			"path": "github.com/google/cadvisor/storage/stdout",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "mmPK/VRgw4ICwxAVLJwtEzxW98M=",
+			"path": "github.com/google/cadvisor/storage/test",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "FCKeBpuRNX0ewe9Pl0jrYUOgxR8=",
+			"path": "github.com/google/cadvisor/summary",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "Vt5KiWNKLshpEMwmG1oKltLsGCw=",
+			"path": "github.com/google/cadvisor/utils",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "bHGa35CPeUOLLhiI+biDignJh8Y=",
+			"path": "github.com/google/cadvisor/utils/cloudinfo",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "TBoq4j3zaY63RD0j4cZ6Mir3+8o=",
+			"path": "github.com/google/cadvisor/utils/container",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "38OpxS1NojC0NtBtkVFAe7yZgtI=",
+			"path": "github.com/google/cadvisor/utils/cpuload",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "SAak5r6SNevcyGea4RZz+ZuCrps=",
+			"path": "github.com/google/cadvisor/utils/cpuload/netlink",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "LjMQ/WIs3IG1JDXJ6PmWrZU1y3I=",
+			"path": "github.com/google/cadvisor/utils/docker",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "/PFvnE5QSRnNuh070/KI706bQfA=",
+			"path": "github.com/google/cadvisor/utils/oomparser",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "ijYTEU6tLO24E1pz0MD90qt/DC4=",
+			"path": "github.com/google/cadvisor/utils/sysfs",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "HOV2ezQyBX9OY/YHuvCk0cSM6vc=",
+			"path": "github.com/google/cadvisor/utils/sysfs/fakesysfs",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "3/p4cZcIt9GXtWl+hIKMHO0l+es=",
+			"path": "github.com/google/cadvisor/utils/sysinfo",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "lzCufgp/R3w6imGl+mnCMGMt/iI=",
+			"path": "github.com/google/cadvisor/validate",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "+MUlhegwcolOv6r+7FH0HQMCqlU=",
+			"path": "github.com/google/cadvisor/version",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		},
+		{
+			"checksumSHA1": "G84Ge5kR6gGpk6P3BKPuvCYm+4Q=",
+			"path": "github.com/google/cadvisor/zfs",
+			"revision": "d26cc99e1e876d2935350f7a52810b374f032efc",
+			"revisionTime": "2018-01-04T02:39:42Z"
+		}
+	],
+	"rootPath": "github.com/163yun/cadvisor"
+}

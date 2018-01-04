@@ -37,6 +37,7 @@ import (
 	"github.com/google/cadvisor/devicemapper"
 	dockerutil "github.com/google/cadvisor/utils/docker"
 	zfs "github.com/mistifyio/go-zfs"
+	"github.com/163yun/mountcap"
 )
 
 const (
@@ -105,7 +106,7 @@ type CrioContext struct {
 	Root string
 }
 
-func NewFsInfo(context Context) (FsInfo, error) {
+func NewFsInfo(context Context, changed chan FsInfo) (FsInfo, error) {
 	mounts, err := mount.GetMounts()
 	if err != nil {
 		return nil, err
@@ -116,16 +117,24 @@ func NewFsInfo(context Context) (FsInfo, error) {
 		return nil, err
 	}
 
-	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
-	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
 	fsInfo := &RealFsInfo{
-		partitions:         processMounts(mounts, excluded),
 		labels:             make(map[string]string, 0),
 		mounts:             make(map[string]*mount.Info, 0),
 		dmsetup:            devicemapper.NewDmsetupClient(),
 		fsUUIDToDeviceName: fsUUIDToDeviceName,
 	}
+	glog.V(1).Infof("Filesystem UUIDs: %+v", fsInfo.fsUUIDToDeviceName)
 
+	setMountAndAddLabel(fsInfo, context, mounts)
+	go checkFsInfoUpdateForever(fsInfo, context, changed)
+
+	return fsInfo, nil
+}
+
+func setMountAndAddLabel(fsInfo *RealFsInfo, context Context, mounts []*mount.Info) {
+	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
+	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
+	fsInfo.partitions = processMounts(mounts, excluded)
 	for _, mount := range mounts {
 		fsInfo.mounts[mount.Mountpoint] = mount
 	}
@@ -136,10 +145,44 @@ func NewFsInfo(context Context) (FsInfo, error) {
 	fsInfo.addDockerImagesLabel(context, mounts)
 	fsInfo.addCrioImagesLabel(context, mounts)
 
-	glog.V(1).Infof("Filesystem UUIDs: %+v", fsInfo.fsUUIDToDeviceName)
 	glog.V(1).Infof("Filesystem partitions: %+v", fsInfo.partitions)
 	fsInfo.addSystemRootLabel(mounts)
-	return fsInfo, nil
+}
+
+func checkFsInfoUpdateForever(fsInfo *RealFsInfo, context Context, changed chan FsInfo) {
+	for {
+		if mountcap.PollMountEver() {
+
+			mounts, err := mount.GetMounts()
+			if err != nil {
+				glog.Errorf("get mount failed. %s. we consider no change of mount", err.Error())
+				continue
+			}
+			setMountAndAddLabel(fsInfo, context, mounts)
+
+			fsUUIDToDeviceName, err := getFsUUIDToDeviceNameMap()
+			if err != nil {
+				glog.Errorf("getFsUUIDToDeviceNameMap failed. %s. we consider no change of fs", err.Error())
+				continue
+			}
+			fsChange := false
+			if len(fsUUIDToDeviceName) == len(fsInfo.fsUUIDToDeviceName) {
+				for k,v := range fsInfo.fsUUIDToDeviceName {
+					if fsUUIDToDeviceName[k] != v {
+						fsChange = true
+						break
+					}
+				}
+			} else {
+				fsChange = true
+			}
+			if fsChange {
+				fsInfo.fsUUIDToDeviceName = fsUUIDToDeviceName
+				changed <- fsInfo
+				glog.Infof("debug-huangyang   push to channel done")
+			}
+		}
+	}
 }
 
 // getFsUUIDToDeviceNameMap creates the filesystem uuid to device name map
