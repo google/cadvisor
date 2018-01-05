@@ -122,7 +122,7 @@ func TestMorePossibleCPUs(t *testing.T) {
 		},
 	}
 	var ret info.ContainerStats
-	setCpuStats(s, &ret)
+	setCpuStats(s, &ret, true)
 
 	expected := info.ContainerStats{
 		Cpu: info.CpuStats{
@@ -130,7 +130,7 @@ func TestMorePossibleCPUs(t *testing.T) {
 				PerCpu: perCpuUsage[0:realNumCPUs],
 				User:   s.CpuStats.CpuUsage.UsageInUsermode,
 				System: s.CpuStats.CpuUsage.UsageInKernelmode,
-				Total:  8562955455524 * uint64(realNumCPUs),
+				Total:  33802947350272,
 			},
 		},
 	}
