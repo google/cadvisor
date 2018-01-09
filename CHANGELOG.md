@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.27.4 (2018-01-09)
+- Add timeout to docker API Calls
+- Fix inconsistent Prometheus labels
+
 ### 0.27.3 (2017-11-22)
 - Update Jquery and Bootstrap
 
