@@ -60,11 +60,11 @@ type detailSpec struct {
 	ContainerStats  *info.ContainerStats `json:"container_stats,omitempty"`
 }
 
-func (driver *kafkaStorage) infoToDetailSpec(ref info.ContainerReference, stats *info.ContainerStats) *detailSpec {
+func (driver *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
 	timestamp := time.Now()
-	containerID := ref.Id
-	containerLabels := ref.Labels
-	containerName := container.GetPreferredName(ref)
+	containerID := cInfo.ContainerReference.Id
+	containerLabels := cInfo.Spec.Labels
+	containerName := container.GetPreferredName(cInfo.ContainerReference)
 
 	detail := &detailSpec{
 		Timestamp:       timestamp,
@@ -77,8 +77,8 @@ func (driver *kafkaStorage) infoToDetailSpec(ref info.ContainerReference, stats 
 	return detail
 }
 
-func (driver *kafkaStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
-	detail := driver.infoToDetailSpec(ref, stats)
+func (driver *kafkaStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+	detail := driver.infoToDetailSpec(cInfo, stats)
 	b, err := json.Marshal(detail)
 
 	driver.producer.Input() <- &kafka.ProducerMessage{

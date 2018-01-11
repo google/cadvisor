@@ -89,7 +89,6 @@ func TestHandler(t *testing.T) {
 				Name:      "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 				Aliases:   []string{"40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9", "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"},
 				Namespace: k8sContainerdNamespace,
-				Labels:    map[string]string{"io.cri-containerd.kind": "sandbox"},
 			},
 		},
 	} {

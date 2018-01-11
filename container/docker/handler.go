@@ -369,7 +369,6 @@ func (self *dockerContainerHandler) ContainerReference() (info.ContainerReferenc
 		Name:      self.name,
 		Aliases:   self.aliases,
 		Namespace: DockerNamespace,
-		Labels:    self.labels,
 	}, nil
 }
 

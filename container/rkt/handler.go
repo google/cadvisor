@@ -178,7 +178,6 @@ func (handler *rktContainerHandler) ContainerReference() (info.ContainerReferenc
 		Name:      handler.name,
 		Aliases:   handler.aliases,
 		Namespace: RktNamespace,
-		Labels:    handler.labels,
 	}, nil
 }
 

@@ -102,8 +102,12 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 			if err != nil {
 				t.Error(err)
 			}
+
+			cInfo := info.ContainerInfo{
+				ContainerReference: ref,
+			}
 			for _, stat := range cinfo.Stats {
-				err = memoryCache.AddStats(ref, stat)
+				err = memoryCache.AddStats(&cInfo, stat)
 				if err != nil {
 					t.Error(err)
 				}
@@ -148,8 +152,13 @@ func expectManagerWithContainersV2(containers []string, query *info.ContainerInf
 			if err != nil {
 				t.Error(err)
 			}
+
+			cInfo := info.ContainerInfo{
+				ContainerReference: ref,
+			}
+
 			for _, stat := range cinfo.Stats {
-				err = memoryCache.AddStats(ref, stat)
+				err = memoryCache.AddStats(&cInfo, stat)
 				if err != nil {
 					t.Error(err)
 				}
