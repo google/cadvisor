@@ -40,15 +40,10 @@ docker run --rm \
 # Nodes that are currently stable. When tests fail on a specific node, and the failure is not remedied within a week, that node will be removed from this list.
 golden_nodes=(
   e2e-cadvisor-ubuntu-trusty
-  e2e-cadvisor-container-vm-v20151215
-  e2e-cadvisor-container-vm-v20160127
   e2e-cadvisor-rhel-7
 )
 
 # TODO: Add test on GCI
-
-# TODO: Add test for kubernetes default image
-# e2e-cadvisor-container-vm-v20160321
 
 # TODO: Temporarily disabled for #1344
 # e2e-cadvisor-coreos-beta
