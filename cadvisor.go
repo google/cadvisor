@@ -28,6 +28,7 @@ import (
 
 	"github.com/google/cadvisor/container"
 	cadvisorhttp "github.com/google/cadvisor/http"
+	"github.com/google/cadvisor/machine"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
@@ -81,7 +82,7 @@ type metricSetValue struct {
 
 func (ml *metricSetValue) String() string {
 	var values []string
-	for metric, _ := range ml.MetricSet {
+	for metric := range ml.MetricSet {
 		values = append(values, string(metric))
 	}
 	return strings.Join(values, ",")
@@ -110,6 +111,9 @@ func init() {
 }
 
 func main() {
+	machine.GPUInfoInit()
+	defer machine.GPUInfoShutdown()
+
 	defer glog.Flush()
 	flag.Parse()
 

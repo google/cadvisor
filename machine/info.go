@@ -14,6 +14,133 @@
 
 package machine
 
+/*
+#cgo LDFLAGS: -ldl
+#include <dlfcn.h>
+#include <stddef.h>
+#include "nvml.h"
+
+void *nvml = NULL;
+
+const char* (*nvmlErrorStringFunc)(nvmlReturn_t result);
+const char* nvmlErrorString(nvmlReturn_t result)
+{
+	if (nvml == NULL) {
+		return "library nvml not found";
+	}
+	if (nvmlErrorStringFunc == NULL) {
+		return "function nvmlErrorString not found";
+	}
+	return nvmlErrorStringFunc(result);
+}
+
+nvmlReturn_t (*nvmlDeviceGetMemoryInfoFunc)(nvmlDevice_t device, nvmlMemory_t *memory);
+nvmlReturn_t nvmlDeviceGetMemoryInfo(nvmlDevice_t device, nvmlMemory_t *memory)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetMemoryInfoFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetMemoryInfoFunc(device, memory);
+}
+
+nvmlReturn_t (*nvmlDeviceGetMinorNumberFunc)(nvmlDevice_t device, unsigned int *minorNumber);
+nvmlReturn_t nvmlDeviceGetMinorNumber(nvmlDevice_t device, unsigned int *minorNumber)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetMinorNumberFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetMinorNumberFunc(device, minorNumber);
+}
+
+nvmlReturn_t (*nvmlDeviceGetNameFunc)(nvmlDevice_t device, char *name, unsigned int length);
+nvmlReturn_t nvmlDeviceGetName(nvmlDevice_t device, char *name, unsigned int length)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetNameFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetNameFunc(device, name, length);
+}
+
+nvmlReturn_t (*nvmlDeviceGetHandleByIndexFunc)(unsigned int index, nvmlDevice_t *device);
+nvmlReturn_t nvmlDeviceGetHandleByIndex(unsigned int index, nvmlDevice_t *device)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetHandleByIndexFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetHandleByIndexFunc(index, device);
+}
+
+nvmlReturn_t (*nvmlDeviceGetCountFunc)(unsigned int *deviceCount);
+nvmlReturn_t nvmlDeviceGetCount(unsigned int *deviceCount)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlDeviceGetCountFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	return nvmlDeviceGetCountFunc(deviceCount);
+}
+
+nvmlReturn_t (*nvmlShutdownFunc)(void);
+nvmlReturn_t nvmlShutdown(void)
+{
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+	if (nvmlShutdownFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	nvmlReturn_t result = nvmlShutdownFunc();
+	dlclose(nvml);
+	nvmlShutdownFunc = NULL;
+	nvml = NULL;
+	return result;
+}
+
+
+nvmlReturn_t (*nvmlInitFunc)(void);
+nvmlReturn_t nvmlInit(void)
+{
+        nvml = dlopen("libnvidia-ml.so.1", RTLD_LAZY);
+	if (nvml == NULL) {
+		return NVML_ERROR_LIBRARY_NOT_FOUND;
+	}
+        nvmlInitFunc = dlsym(nvml, "nvmlInit_v2");
+	if (nvmlInitFunc == NULL) {
+		return NVML_ERROR_FUNCTION_NOT_FOUND;
+	}
+	nvmlReturn_t result = nvmlInitFunc();
+	if (result != NVML_SUCCESS) {
+		dlclose(nvml);
+		nvmlInitFunc = NULL;
+		nvml = NULL;
+		return result;
+	}
+        nvmlShutdownFunc = dlsym(nvml, "nvmlShutdown_v2");
+        nvmlDeviceGetCountFunc = dlsym(nvml, "nvmlDeviceGetCount_v2");
+        nvmlDeviceGetHandleByIndexFunc = dlsym(nvml, "nvmlDeviceGetHandleByIndex_v2");
+        nvmlDeviceGetNameFunc = dlsym(nvml, "nvmlDeviceGetName");
+        nvmlDeviceGetMinorNumberFunc = dlsym(nvml, "nvmlDeviceGetMinorNumber");
+        nvmlDeviceGetMemoryInfoFunc = dlsym(nvml, "nvmlDeviceGetMemoryInfo");
+        nvmlErrorStringFunc = dlsym(nvml, "nvmlErrorString");
+	return NVML_SUCCESS;
+}
+*/
+import "C"
+
 import (
 	"bytes"
 	"flag"
@@ -33,6 +160,16 @@ import (
 
 	"golang.org/x/sys/unix"
 )
+
+func GPUInfoInit() {
+	if r := C.nvmlInit(); r != C.NVML_SUCCESS {
+		glog.Infof("Couldn't initialize nvml library: %v", r)
+	}
+}
+
+func GPUInfoShutdown() {
+	C.nvmlShutdown()
+}
 
 const hugepagesDirectory = "/sys/kernel/mm/hugepages/"
 
@@ -92,6 +229,54 @@ func GetHugePagesInfo() ([]info.HugePagesInfo, error) {
 	return hugePagesInfo, nil
 }
 
+func getGPUs() []info.GPUInfo {
+	var gpus []info.GPUInfo
+	if C.nvml == nil {
+		glog.Errorf("Failed to initialize nvml library")
+		return gpus
+	}
+	var n C.uint = 0
+	if r := C.nvmlDeviceGetCount(&n); r != C.NVML_SUCCESS {
+		glog.Errorf("Failed to get GPU devices: %v", C.GoString(C.nvmlErrorString(r)))
+		return gpus
+	}
+
+	for i := 0; i < int(n); i++ {
+		var device C.nvmlDevice_t
+		if r := C.nvmlDeviceGetHandleByIndex(C.uint(i), &device); r != C.NVML_SUCCESS {
+			glog.Errorf("Failed to get GPU device %d: %v", i, C.GoString(C.nvmlErrorString(r)))
+			return gpus
+		}
+
+		var name [C.NVML_DEVICE_NAME_BUFFER_SIZE]C.char
+		if r := C.nvmlDeviceGetName(device, &name[0], C.NVML_DEVICE_NAME_BUFFER_SIZE); r != C.NVML_SUCCESS {
+			glog.Errorf("Failed to get GPU device name for GPU %d: %v", i, C.GoString(C.nvmlErrorString(r)))
+			return gpus
+		}
+
+		var minor C.uint
+		if r := C.nvmlDeviceGetMinorNumber(device, &minor); r != C.NVML_SUCCESS {
+			glog.Errorf("Failed to get GPU device minor number for GPU %d: %v", i, C.GoString(C.nvmlErrorString(r)))
+			return gpus
+		}
+
+		var mem C.nvmlMemory_t
+		if r := C.nvmlDeviceGetMemoryInfo(device, &mem); r != C.NVML_SUCCESS {
+			glog.Errorf("Failed to get GPU device minor number for GPU %d: %v", i, C.GoString(C.nvmlErrorString(r)))
+			return gpus
+		}
+
+		gpus = append(gpus, info.GPUInfo{
+			Model:    C.GoString(&name[0]),
+			Path:     fmt.Sprintf("/dev/nvidia%d", minor),
+			MemTotal: uint64(mem.total),
+			MemUsed:  uint64(mem.used),
+		})
+
+	}
+	return gpus
+}
+
 func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.MachineInfo, error) {
 	rootFs := "/"
 	if !inHostNamespace {
@@ -144,6 +329,8 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	instanceType := realCloudInfo.GetInstanceType()
 	instanceID := realCloudInfo.GetInstanceID()
 
+	gpus := getGPUs()
+
 	machineInfo := &info.MachineInfo{
 		NumCores:       numCores,
 		CpuFrequency:   clockSpeed,
@@ -158,6 +345,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		CloudProvider:  cloudProvider,
 		InstanceType:   instanceType,
 		InstanceID:     instanceID,
+		GPUs:           gpus,
 	}
 
 	for i := range filesystems {

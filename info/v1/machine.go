@@ -156,6 +156,20 @@ const (
 	UnNamedInstance InstanceID = "None"
 )
 
+type GPUInfo struct {
+	// GPU model
+	Model string `json:"model"`
+
+	// Mount path
+	Path string `json:"path"`
+
+	// Total memory size in bytes
+	MemTotal uint64 `json:"mem_total"`
+
+	// Used memory size in bytes
+	MemUsed uint64 `json:"mem_used"`
+}
+
 type MachineInfo struct {
 	// The number of cores in this machine.
 	NumCores int `json:"num_cores"`
@@ -199,6 +213,9 @@ type MachineInfo struct {
 
 	// ID of cloud instance (e.g. instance-1) given to it by the cloud provider.
 	InstanceID InstanceID `json:"instance_id"`
+
+	// GPUs on this machine.
+	GPUs []GPUInfo `json:"gpus"`
 }
 
 type VersionInfo struct {
