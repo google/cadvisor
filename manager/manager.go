@@ -203,8 +203,10 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	newManager := &manager{
 		containers:               make(map[namespacedContainerName]*containerData),
 		quitChannels:             make([]chan error, 0, 2),
+		context:		  context,
 		memoryCache:              memoryCache,
 		fsInfo:                   fsInfo,
+		fsInfoChange:		  make(chan bool, 4),
 		cadvisorContainer:        selfContainer,
 		inHostNamespace:          inHostNamespace,
 		startupTime:              time.Now(),
@@ -215,6 +217,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		eventsChannel:            eventsChannel,
 		collectorHttpClient:      collectorHttpClient,
 		nvidiaManager:            &accelerators.NvidiaManager{},
+		sysfs:			  sysfs,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -246,8 +249,10 @@ type namespacedContainerName struct {
 type manager struct {
 	containers               map[namespacedContainerName]*containerData
 	containersLock           sync.RWMutex
+	context			 fs.Context
 	memoryCache              *memory.InMemoryCache
 	fsInfo                   fs.FsInfo
+	fsInfoChange		 chan bool
 	machineInfo              info.MachineInfo
 	quitChannels             []chan error
 	cadvisorContainer        string
@@ -261,6 +266,7 @@ type manager struct {
 	eventsChannel            chan watcher.ContainerEvent
 	collectorHttpClient      *http.Client
 	nvidiaManager            accelerators.AcceleratorManager
+	sysfs			 sysfs.SysFs
 }
 
 // Start the container manager.
@@ -341,12 +347,43 @@ func (self *manager) Start() error {
 	}
 	self.quitChannels = append(self.quitChannels, quitWatcher)
 
+	go fs.CheckFsInfoUpdateForever(self.fsInfo.(*fs.RealFsInfo), self.context, self.fsInfoChange)
+	quitCheck := make(chan error)
+	go self.watchDiskMountChange(quitCheck)
+	self.quitChannels = append(self.quitChannels, quitCheck)
+
 	// Look for new containers in the main housekeeping thread.
 	quitGlobalHousekeeping := make(chan error)
 	self.quitChannels = append(self.quitChannels, quitGlobalHousekeeping)
 	go self.globalHousekeeping(quitGlobalHousekeeping)
 
 	return nil
+}
+
+func (self *manager) watchDiskMountChange(quit chan error) {
+	glog.Infof("start to watch disk mount change")
+	for {
+		select {
+		case <-self.fsInfoChange:
+			glog.Infof("get a disk and mount changed! fsInfo has refresh: %+v", self.fsInfo)
+		// If cAdvisor was started with host's rootfs mounted, assume that its running
+		// in its own namespaces.
+			inHostNamespace := false
+			if _, err := os.Stat("/rootfs/proc"); os.IsNotExist(err) {
+				inHostNamespace = true
+			}
+			machineInfo, err := machine.Info(self.sysfs, self.fsInfo, inHostNamespace)
+			if err != nil {
+				glog.Warningf("get machine info failed. %s, will ignore it.", err.Error())
+				continue
+			}
+			self.machineInfo = *machineInfo
+			glog.V(1).Infof("Machine: %+v", self.machineInfo)
+		case <-quit:
+			quit <- nil
+			return
+		}
+	}
 }
 
 func (self *manager) Stop() error {
@@ -379,19 +416,20 @@ func (self *manager) globalHousekeeping(quit chan error) {
 		case t := <-ticker:
 			start := time.Now()
 
-			// Check for new containers.
+		// Check for new containers.
 			err := self.detectSubcontainers("/")
 			if err != nil {
 				glog.Errorf("Failed to detect containers: %s", err)
 			}
 
-			// Log if housekeeping took too long.
+		// Log if housekeeping took too long.
 			duration := time.Since(start)
 			if duration >= longHousekeeping {
 				glog.V(3).Infof("Global Housekeeping(%d) took %s", t.Unix(), duration)
 			}
+
 		case <-quit:
-			// Quit if asked to do so.
+		// Quit if asked to do so.
 			quit <- nil
 			glog.Infof("Exiting global housekeeping thread")
 			return
@@ -1153,7 +1191,7 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 			case <-quit:
 				var errs partialFailure
 
-				// Stop processing events if asked to quit.
+			// Stop processing events if asked to quit.
 				for i, watcher := range self.containerWatchers {
 					err := watcher.Stop()
 					if err != nil {
