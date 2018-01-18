@@ -37,8 +37,9 @@ import (
 	"github.com/google/cadvisor/devicemapper"
 	dockerutil "github.com/google/cadvisor/utils/docker"
 	zfs "github.com/mistifyio/go-zfs"
-	"github.com/163yun/mountcap"
 	"reflect"
+	"unsafe"
+	unixsyscall "golang.org/x/sys/unix"
 )
 
 const (
@@ -107,7 +108,7 @@ type CrioContext struct {
 	Root string
 }
 
-func NewFsInfo(context Context, changed chan FsInfo) (FsInfo, error) {
+func NewFsInfo(context Context) (FsInfo, error) {
 	mounts, err := mount.GetMounts()
 	if err != nil {
 		return nil, err
@@ -127,19 +128,13 @@ func NewFsInfo(context Context, changed chan FsInfo) (FsInfo, error) {
 	glog.V(1).Infof("Filesystem UUIDs: %+v", fsInfo.fsUUIDToDeviceName)
 
 	setMountAndAddLabel(fsInfo, context, mounts)
-	go checkFsInfoUpdateForever(fsInfo, context, changed)
-
 	return fsInfo, nil
 }
 
 func setMountAndAddLabel(fsInfo *RealFsInfo, context Context, mounts []*mount.Info) {
 	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
 	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
-	partitions := processMounts(mounts, excluded)
-	if reflect.DeepEqual(partitions, fsInfo.partitions) {
-		return
-	}
-	fsInfo.partitions = partitions
+	fsInfo.partitions = processMounts(mounts, excluded)
 	for _, mount := range mounts {
 		fsInfo.mounts[mount.Mountpoint] = mount
 	}
@@ -154,36 +149,38 @@ func setMountAndAddLabel(fsInfo *RealFsInfo, context Context, mounts []*mount.In
 	fsInfo.addSystemRootLabel(mounts)
 }
 
-func checkFsInfoUpdateForever(fsInfo *RealFsInfo, context Context, changed chan FsInfo) {
+func CheckFsInfoUpdateForever(fsInfo *RealFsInfo, context Context, changed chan bool) {
 	for {
-		if mountcap.PollMountEver() {
+		if pollMountEvent(60000) {
 			mounts, err := mount.GetMounts()
 			if err != nil {
 				glog.Errorf("get mount failed. %s. we consider no change of mount", err.Error())
 				continue
 			}
-			setMountAndAddLabel(fsInfo, context, mounts)
 
-			fsUUIDToDeviceName, err := getFsUUIDToDeviceNameMap()
+			newFsUTDMap, err := getFsUUIDToDeviceNameMap()
 			if err != nil {
-				glog.Errorf("getFsUUIDToDeviceNameMap failed. %s. we consider no change of fs", err.Error())
+				glog.Errorf("get FsUUIDToDeviceNameMap failed. %s. we consider no change of fs", err.Error())
 				continue
 			}
-			fsChange := false
-			if len(fsUUIDToDeviceName) == len(fsInfo.fsUUIDToDeviceName) {
-				for k,v := range fsInfo.fsUUIDToDeviceName {
-					if fsUUIDToDeviceName[k] != v {
-						fsChange = true
-						break
-					}
-				}
+			fsInfoChange := false
+			if !reflect.DeepEqual(newFsUTDMap, fsInfo.fsUUIDToDeviceName) {
+				fsInfoChange = true
+				fsInfo.fsUUIDToDeviceName = newFsUTDMap
 			} else {
-				fsChange = true
+				newFs := &RealFsInfo{
+					labels:             make(map[string]string, 0),
+					mounts:             make(map[string]*mount.Info, 0),
+					dmsetup:            devicemapper.NewDmsetupClient(),
+				}
+				setMountAndAddLabel(newFs, context, mounts)
+				if !reflect.DeepEqual(newFs.partitions, fsInfo.partitions) {
+					fsInfoChange = true
+				}
 			}
-			if fsChange {
-				fsInfo.fsUUIDToDeviceName = fsUUIDToDeviceName
-				changed <- fsInfo
-				glog.Infof("debug-huangyang   push to channel done")
+			if fsInfoChange {
+				setMountAndAddLabel(fsInfo, context, mounts)
+				changed <- true
 			}
 		}
 	}
@@ -803,4 +800,25 @@ func getBtrfsMajorMinorIds(mount *mount.Info) (int, int, error) {
 	} else {
 		return 0, 0, fmt.Errorf("%s is not a block device", mount.Source)
 	}
+}
+
+func pollMountEvent(timeoutMS int) bool {
+	f, _ := os.Open("/proc/self/mountinfo")
+	defer f.Close()
+	fdOri := f.Fd()
+	var fd *int32 = (*int32)(unsafe.Pointer(&fdOri))
+	pollFds := make([]unixsyscall.PollFd, 1)
+	pollFds[0] = unixsyscall.PollFd{
+		Fd:      *fd,
+		Events:  unixsyscall.POLLERR | unixsyscall.POLLPRI,
+		Revents: 0,
+	}
+	//set a minute so that this loop will check if it should exit
+	ret, _ := unixsyscall.Poll(pollFds, timeoutMS)
+	if ret >= 0 {
+		if (pollFds[0].Revents & unixsyscall.POLLERR) == 8 {
+			return true
+		}
+	}
+	return false
 }
