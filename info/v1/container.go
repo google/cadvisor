@@ -541,6 +541,11 @@ type AcceleratorStats struct {
 	DutyCycle uint64 `json:"duty_cycle"`
 }
 
+type PidsStats struct {
+	CurrentPids uint64 `json:"current_pids,omitempty"`
+	MaxPids     uint64 `json:"max_pids,omitempty"`
+}
+
 type ContainerStats struct {
 	// The time of this stat point.
 	Timestamp time.Time    `json:"timestamp"`
@@ -548,6 +553,7 @@ type ContainerStats struct {
 	DiskIo    DiskIoStats  `json:"diskio,omitempty"`
 	Memory    MemoryStats  `json:"memory,omitempty"`
 	Network   NetworkStats `json:"network,omitempty"`
+	Pids      PidsStats    `json:"pids,omitempty"`
 
 	// Filesystem statistics
 	Filesystem []FsStats `json:"filesystem,omitempty"`

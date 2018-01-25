@@ -753,6 +753,20 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc) *PrometheusCo
 						},
 					}
 				},
+			}, {
+				name:      "container_pids_current",
+				help:      "Number of current pids",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Pids.CurrentPids)}}
+				},
+			}, {
+				name:      "container_pids_max",
+				help:      "Number of max pids allowed",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Pids.MaxPids)}}
+				},
 			},
 		},
 	}

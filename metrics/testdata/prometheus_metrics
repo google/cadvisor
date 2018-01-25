@@ -170,6 +170,12 @@ container_network_udp_usage_total{container_env_foo_env="prod",container_label_f
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="listen",zone_name="hello"} 0
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="rxqueued",zone_name="hello"} 0
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="txqueued",zone_name="hello"} 0
+# HELP container_pids_current Number of current pids
+# TYPE container_pids_current gauge
+container_pids_current{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4
+# HELP container_pids_max Number of max pids allowed
+# TYPE container_pids_max gauge
+container_pids_max{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 10
 # HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
 # TYPE container_scrape_error gauge
 container_scrape_error 0
