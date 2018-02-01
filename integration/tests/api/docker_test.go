@@ -193,15 +193,11 @@ func TestDockerContainerSpec(t *testing.T) {
 		labels      = map[string]string{"bar": "baz"}
 	)
 
-	cpusetArg := "--cpuset"
-	if getDockerMinorVersion(fm) >= 10 {
-		cpusetArg = "--cpuset-cpus"
-	}
 	containerId := fm.Docker().Run(framework.DockerRunArgs{
 		Image: image,
 		Args: []string{
 			"--cpu-shares", strconv.FormatUint(cpuShares, 10),
-			cpusetArg, cpuMask,
+			"--cpuset-cpus", cpuMask,
 			"--memory", strconv.FormatUint(memoryLimit, 10),
 			"--env", "TEST_VAR=FOO",
 			"--label", "bar=baz",
