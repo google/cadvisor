@@ -14,21 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [[ -n "${JENKINS_HOME}" ]]; then
-    exec ./build/jenkins_e2e.sh
-fi
-
 set -e
 
-# Build the test binary.
-GO_FLAGS="-race" ./build/build.sh
+log_file="cadvisor.log"
+if [ "$#" -gt 0 ]; then
+  log_file="$1"
+fi
 
 TEST_PID=$$
-sudo printf "" # Refresh sudo credentials if necessary.
+printf "" # Refresh sudo credentials if necessary.
 function start {
   set +e  # We want to handle errors if cAdvisor crashes.
   echo ">> starting cAdvisor locally"
-  GORACE="halt_on_error=1" sudo -E ./cadvisor --docker_env_metadata_whitelist=TEST_VAR
+  GORACE="halt_on_error=1" ./cadvisor --docker_env_metadata_whitelist=TEST_VAR --v=4 --logtostderr &> "$log_file"
   if [ $? != 0 ]; then
     echo "!! cAdvisor exited unexpectedly with Exit $?"
     kill $TEST_PID # cAdvisor crashed: abort testing.
@@ -40,7 +38,7 @@ RUNNER_PID=$!
 function cleanup {
   if pgrep cadvisor > /dev/null; then
     echo ">> stopping cAdvisor"
-    sudo pkill -SIGINT cadvisor
+    pkill -SIGINT cadvisor
     wait $RUNNER_PID
   fi
 }
@@ -58,4 +56,5 @@ while [ "$(curl -Gs http://localhost:8080/healthz)" != "ok" ]; do
 done
 
 echo ">> running integration tests against local cAdvisor"
-go test github.com/google/cadvisor/integration/tests/... --vmodule=*=2
+./api.test --vmodule=*=2
+./healthz.test --vmodule=*=2

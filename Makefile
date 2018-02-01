@@ -22,6 +22,9 @@ test:
 	@$(GO) test -short -race $(pkgs)
 
 test-integration:
+	GO_FLAGS="-race" ./build/build.sh
+	go test -c github.com/google/cadvisor/integration/tests/api
+	go test -c github.com/google/cadvisor/integration/tests/healthz
 	@./build/integration.sh
 
 test-runner:
