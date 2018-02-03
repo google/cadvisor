@@ -30,7 +30,6 @@ import (
 
 	"github.com/google/cadvisor/info/v1"
 
-	"github.com/golang/glog"
 	"time"
 )
 
@@ -229,8 +228,8 @@ func (self *Client) getEventStreamingData(url string, einfo chan *v1.Event) erro
 			if err == io.EOF {
 				break
 			}
-			// if called without &stream=true will not be able to parse event and will trigger fatal
-			glog.Fatalf("Received error %v", err)
+			// if called without &stream=true will not be able to parse event and let the user who call this method to handle this error
+			return fmt.Errorf("received error %v", err)
 		}
 		einfo <- m
 	}
