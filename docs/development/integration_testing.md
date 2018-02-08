@@ -1,12 +1,10 @@
 # Integration Testing cAdvisor
 
-The cAdvisor integration tests can be found in `integration/tests`. These run queries on a running cAdvisor. To run these tests:
-
+The cAdvisor integration tests are run per-pr using the [kubernetes node-e2e testing framework](https://github.com/kubernetes/community/blob/master/contributors/devel/e2e-node-tests.md) on GCE instances.  To make use of this framework, complete the setup of GCP described in the node-e2e testing framework, clone `k8s.io/kubernetes`, and from that repository run:
 ```
-$ go run integration/runner/runner.go -port=PORT <hosts to test>
+$ make test-e2e-node TEST_SUITE=cadvisor REMOTE=true
 ```
-
-This will build a cAdvisor from the current repository and start it on the target machine before running the tests.
+This will create a VM, build cadvisor, run integration tests on that VM, retrieve logs, and will clean up the test afterwards.  See the [node-e2e testing documentation](https://github.com/kubernetes/community/blob/master/contributors/devel/e2e-node-tests.md) for more running options.
 
 To simply run the tests against an existing cAdvisor:
 
