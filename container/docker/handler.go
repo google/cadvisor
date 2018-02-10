@@ -86,6 +86,12 @@ type dockerContainerHandler struct {
 	// Time at which this container was created.
 	creationTime time.Time
 
+	// indicates whether labels should be collected
+	enforceLabelWhitelist bool
+
+	// labels whitelisted for collection
+	labelWhitelist []string
+
 	// Metadata associated with the container.
 	labels map[string]string
 	envs   map[string]string
@@ -155,6 +161,8 @@ func newDockerContainerHandler(
 	thinPoolName string,
 	thinPoolWatcher *devicemapper.ThinPoolWatcher,
 	zfsWatcher *zfs.ZfsWatcher,
+	enforceLabelWhitelist bool,
+	labelWhitelist []string,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := make(map[string]string, len(cgroupSubsystems.MountPoints))
@@ -212,23 +220,25 @@ func newDockerContainerHandler(
 
 	// TODO: extract object mother method
 	handler := &dockerContainerHandler{
-		id:                 id,
-		client:             client,
-		name:               name,
-		machineInfoFactory: machineInfoFactory,
-		cgroupPaths:        cgroupPaths,
-		cgroupManager:      cgroupManager,
-		storageDriver:      storageDriver,
-		fsInfo:             fsInfo,
-		rootFs:             rootFs,
-		poolName:           thinPoolName,
-		zfsFilesystem:      zfsFilesystem,
-		rootfsStorageDir:   rootfsStorageDir,
-		envs:               make(map[string]string),
-		ignoreMetrics:      ignoreMetrics,
-		thinPoolWatcher:    thinPoolWatcher,
-		zfsWatcher:         zfsWatcher,
-		zfsParent:          zfsParent,
+		id:                    id,
+		client:                client,
+		name:                  name,
+		machineInfoFactory:    machineInfoFactory,
+		cgroupPaths:           cgroupPaths,
+		cgroupManager:         cgroupManager,
+		storageDriver:         storageDriver,
+		enforceLabelWhitelist: enforceLabelWhitelist,
+		labelWhitelist:        labelWhitelist,
+		fsInfo:                fsInfo,
+		rootFs:                rootFs,
+		poolName:              thinPoolName,
+		zfsFilesystem:         zfsFilesystem,
+		rootfsStorageDir:      rootfsStorageDir,
+		envs:                  make(map[string]string),
+		ignoreMetrics:         ignoreMetrics,
+		thinPoolWatcher:       thinPoolWatcher,
+		zfsWatcher:            zfsWatcher,
+		zfsParent:             zfsParent,
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -246,7 +256,14 @@ func newDockerContainerHandler(
 
 	// Add the name and bare ID as aliases of the container.
 	handler.aliases = append(handler.aliases, strings.TrimPrefix(ctnr.Name, "/"), id)
-	handler.labels = ctnr.Config.Labels
+
+	if enforceLabelWhitelist {
+		handler.labels = map[string]string{}
+	} else {
+		handler.labels = ctnr.Config.Labels
+	}
+
+	handler.labelWhitelist = labelWhitelist
 	handler.image = ctnr.Config.Image
 	handler.networkMode = ctnr.HostConfig.NetworkMode
 	handler.deviceID = ctnr.GraphDriver.Data["DeviceId"]
@@ -276,6 +293,15 @@ func newDockerContainerHandler(
 			deviceID:        handler.deviceID,
 			zfsFilesystem:   zfsFilesystem,
 		}
+	}
+
+	// retrieve desired labels
+	for _, exposedLabel := range labelWhitelist {
+		labelValue, present := ctnr.Config.Labels[exposedLabel]
+		if !present {
+			continue
+		}
+		handler.labels[exposedLabel] = labelValue
 	}
 
 	// split env vars to get metadata map.
@@ -386,13 +412,27 @@ func (self *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem)
 
 	spec.Labels = self.labels
-	// Only adds restartcount label if it's greater than 0
-	if self.restartCount > 0 {
-		spec.Labels["restartcount"] = strconv.Itoa(self.restartCount)
-	}
 	spec.Envs = self.envs
 	spec.Image = self.image
 	spec.CreationTime = self.creationTime
+
+	// Only adds restartcount label if it's greater than 0 and is
+	// a whitelisted label in case enforceWhitelist is set.
+	if self.restartCount < 1 {
+		return spec, err
+	}
+
+	if self.enforceLabelWhitelist {
+		for _, label := range self.labelWhitelist {
+			if label != "restartCount" {
+				continue
+			}
+
+			spec.Labels["restartcount"] = strconv.Itoa(self.restartCount)
+		}
+	} else {
+		spec.Labels["restartcount"] = strconv.Itoa(self.restartCount)
+	}
 
 	return spec, err
 }

@@ -72,7 +72,7 @@ type rktContainerHandler struct {
 	apiPod *rktapi.Pod
 }
 
-func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPath string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, rootFs string, ignoreMetrics container.MetricSet) (container.ContainerHandler, error) {
+func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPath string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, rootFs string, ignoreMetrics container.MetricSet, enforceLabelWhitelist bool, labelWhitelist []string) (container.ContainerHandler, error) {
 	aliases := make([]string, 1)
 	isPod := false
 
@@ -110,7 +110,8 @@ func newRktContainerHandler(name string, rktClient rktapi.PublicAPIClient, rktPa
 		pid = int(resp.Pod.Pid)
 		apiPod = resp.Pod
 	}
-	labels = createLabels(annotations)
+
+	labels = createLabels(annotations, enforceLabelWhitelist, labelWhitelist)
 
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
@@ -164,10 +165,25 @@ func findAnnotations(apps []*rktapi.App, container string) ([]*rktapi.KeyValue, 
 	return nil, false
 }
 
-func createLabels(annotations []*rktapi.KeyValue) map[string]string {
-	labels := make(map[string]string)
+func createLabels(annotations []*rktapi.KeyValue, enforceLabelWhitelist bool, labelWhitelist []string) map[string]string {
+	containerLabels := make(map[string]string)
+
 	for _, kv := range annotations {
-		labels[kv.Key] = kv.Value
+		containerLabels[kv.Key] = kv.Value
+	}
+
+	if !enforceLabelWhitelist {
+		return containerLabels
+	}
+
+	labels := make(map[string]string)
+	for _, whitelistedLabel := range labelWhitelist {
+		label, present := containerLabels[whitelistedLabel]
+		if !present {
+			continue
+		}
+
+		labels[whitelistedLabel] = label
 	}
 
 	return labels

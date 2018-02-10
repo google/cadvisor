@@ -39,6 +39,16 @@ From [glog](https://github.com/golang/glog) here are some flags we find useful:
 --vmodule=: comma-separated list of pattern=N settings for file-filtered logging
 ```
 
+## Labels
+
+Both Docker and Rkt labels support restricting the amount of labels collected by `cadvisor`. 
+
+```
+--enforce_label_whitelist=false: whether or not to enforce whitelisting of labels
+--label_whitelist="": comma-separated list of label keys that are allowed to be collected
+```
+
+
 ## Docker
 
 ```

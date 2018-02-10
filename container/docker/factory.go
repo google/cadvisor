@@ -110,6 +110,9 @@ type dockerFactory struct {
 
 	dockerAPIVersion []int
 
+	enforceLabelWhitelist bool
+	labelWhitelist        []string
+
 	ignoreMetrics container.MetricSet
 
 	thinPoolName    string
@@ -145,6 +148,8 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 		self.thinPoolName,
 		self.thinPoolWatcher,
 		self.zfsWatcher,
+		self.enforceLabelWhitelist,
+		self.labelWhitelist,
 	)
 	return
 }
@@ -309,7 +314,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics container.MetricSet, enforceLabelWhitelist bool, labelWhiteList []string) error {
 	client, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
@@ -355,18 +360,20 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, ignoreMetrics c
 
 	glog.V(1).Infof("Registering Docker factory")
 	f := &dockerFactory{
-		cgroupSubsystems:   cgroupSubsystems,
-		client:             client,
-		dockerVersion:      dockerVersion,
-		dockerAPIVersion:   dockerAPIVersion,
-		fsInfo:             fsInfo,
-		machineInfoFactory: factory,
-		storageDriver:      storageDriver(dockerInfo.Driver),
-		storageDir:         RootDir(),
-		ignoreMetrics:      ignoreMetrics,
-		thinPoolName:       thinPoolName,
-		thinPoolWatcher:    thinPoolWatcher,
-		zfsWatcher:         zfsWatcher,
+		cgroupSubsystems:      cgroupSubsystems,
+		client:                client,
+		dockerVersion:         dockerVersion,
+		dockerAPIVersion:      dockerAPIVersion,
+		enforceLabelWhitelist: enforceLabelWhitelist,
+		labelWhitelist:        labelWhiteList,
+		fsInfo:                fsInfo,
+		machineInfoFactory:    factory,
+		storageDriver:         storageDriver(dockerInfo.Driver),
+		storageDir:            RootDir(),
+		ignoreMetrics:         ignoreMetrics,
+		thinPoolName:          thinPoolName,
+		thinPoolWatcher:       thinPoolWatcher,
+		zfsWatcher:            zfsWatcher,
 	}
 
 	container.RegisterContainerHandlerFactory(f, []watcher.ContainerWatchSource{watcher.Raw})
