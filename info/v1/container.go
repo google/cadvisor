@@ -87,6 +87,8 @@ type ContainerReference struct {
 	Namespace string `json:"namespace,omitempty"`
 
 	Labels map[string]string `json:"labels,omitempty"`
+
+	Envs map[string]string `json:"envs,omitempty"`
 }
 
 // Sorts by container name.
