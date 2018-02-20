@@ -28,7 +28,7 @@ container_cpu_load_average_10s{container_env_foo_env="prod",container_label_foo_
 # HELP container_cpu_system_seconds_total Cumulative system cpu time consumed in seconds.
 # TYPE container_cpu_system_seconds_total counter
 container_cpu_system_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 7e-09
-# HELP container_cpu_usage_seconds_total Cumulative cpu time consumed per cpu in seconds.
+# HELP container_cpu_usage_seconds_total Cumulative cpu time consumed in seconds.
 # TYPE container_cpu_usage_seconds_total counter
 container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="cpu00",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2e-09
 container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="cpu01",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3e-09
