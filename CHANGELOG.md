@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.29.0 (2018-02-20)
+- Disable per-cpu metrics by default for scalability
+- Fix disk usage monitoring of overlayFs
+- Retry docker connection on startup timeout
+
 ### 0.28.3 (2017-12-7)
 - Add timeout for docker calls
 - Fix prometheus label consistency
