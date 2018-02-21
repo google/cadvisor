@@ -16,129 +16,14 @@ package libcontainer
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 
-	info "github.com/google/cadvisor/info/v1"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	"github.com/opencontainers/runc/libcontainer/system"
 )
-
-func TestScanInterfaceStats(t *testing.T) {
-	stats, err := scanInterfaceStats("testdata/procnetdev")
-	if err != nil {
-		t.Error(err)
-	}
-
-	var netdevstats = []info.InterfaceStats{
-		{
-			Name:      "wlp4s0",
-			RxBytes:   1,
-			RxPackets: 2,
-			RxErrors:  3,
-			RxDropped: 4,
-			TxBytes:   9,
-			TxPackets: 10,
-			TxErrors:  11,
-			TxDropped: 12,
-		},
-		{
-			Name:      "em1",
-			RxBytes:   315849,
-			RxPackets: 1172,
-			RxErrors:  0,
-			RxDropped: 0,
-			TxBytes:   315850,
-			TxPackets: 1173,
-			TxErrors:  0,
-			TxDropped: 0,
-		},
-	}
-
-	if len(stats) != len(netdevstats) {
-		t.Errorf("Expected 2 net stats, got %d", len(stats))
-	}
-
-	for i, v := range netdevstats {
-		if v != stats[i] {
-			t.Errorf("Expected %#v, got %#v", v, stats[i])
-		}
-	}
-}
-
-func TestScanUDPStats(t *testing.T) {
-	udpStatsFile := "testdata/procnetudp"
-	r, err := os.Open(udpStatsFile)
-	if err != nil {
-		t.Errorf("failure opening %s: %v", udpStatsFile, err)
-	}
-
-	stats, err := scanUdpStats(r)
-	if err != nil {
-		t.Error(err)
-	}
-
-	var udpstats = info.UdpStat{
-		Listen:   2,
-		Dropped:  4,
-		RxQueued: 10,
-		TxQueued: 11,
-	}
-
-	if stats != udpstats {
-		t.Errorf("Expected %#v, got %#v", udpstats, stats)
-	}
-}
-
-// https://github.com/docker/libcontainer/blob/v2.2.1/cgroups/fs/cpuacct.go#L19
-const nanosecondsInSeconds = 1000000000
-
-var clockTicks = uint64(system.GetClockTicks())
-
-func TestMorePossibleCPUs(t *testing.T) {
-	realNumCPUs := uint32(8)
-	numCpusFunc = func() (uint32, error) {
-		return realNumCPUs, nil
-	}
-	possibleCPUs := uint32(31)
-
-	perCpuUsage := make([]uint64, possibleCPUs)
-	for i := uint32(0); i < realNumCPUs; i++ {
-		perCpuUsage[i] = 8562955455524
-	}
-
-	s := &cgroups.Stats{
-		CpuStats: cgroups.CpuStats{
-			CpuUsage: cgroups.CpuUsage{
-				PercpuUsage:       perCpuUsage,
-				TotalUsage:        33802947350272,
-				UsageInKernelmode: 734746 * nanosecondsInSeconds / clockTicks,
-				UsageInUsermode:   2767637 * nanosecondsInSeconds / clockTicks,
-			},
-		},
-	}
-	var ret info.ContainerStats
-	setCpuStats(s, &ret, true)
-
-	expected := info.ContainerStats{
-		Cpu: info.CpuStats{
-			Usage: info.CpuUsage{
-				PerCpu: perCpuUsage[0:realNumCPUs],
-				User:   s.CpuStats.CpuUsage.UsageInUsermode,
-				System: s.CpuStats.CpuUsage.UsageInKernelmode,
-				Total:  33802947350272,
-			},
-		},
-	}
-
-	if !ret.Eq(&expected) {
-		t.Fatalf("expected %+v == %+v", ret, expected)
-	}
-}
 
 var defaultCgroupSubsystems = []string{
 	"systemd", "freezer", "memory", "blkio", "hugetlb", "net_cls,net_prio", "pids", "cpu,cpuacct", "devices", "cpuset", "perf_events",
