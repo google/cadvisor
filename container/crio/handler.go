@@ -209,7 +209,6 @@ func (self *crioContainerHandler) ContainerReference() (info.ContainerReference,
 		Name:      self.name,
 		Aliases:   self.aliases,
 		Namespace: CrioNamespace,
-		Labels:    self.labels,
 	}, nil
 }
 

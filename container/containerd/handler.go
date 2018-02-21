@@ -148,7 +148,6 @@ func (self *containerdContainerHandler) ContainerReference() (info.ContainerRefe
 		Id:        self.id,
 		Name:      self.name,
 		Namespace: k8sContainerdNamespace,
-		Labels:    self.labels,
 		Aliases:   self.aliases,
 	}, nil
 }

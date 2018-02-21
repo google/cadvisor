@@ -27,8 +27,10 @@ import (
 const containerName = "/container"
 
 var (
-	containerRef = info.ContainerReference{Name: containerName}
-	zero         time.Time
+	cInfo = info.ContainerInfo{
+		ContainerReference: info.ContainerReference{Name: containerName},
+	}
+	zero time.Time
 )
 
 // Make stats with the specified identifier.
@@ -51,15 +53,17 @@ func TestAddStats(t *testing.T) {
 	memoryCache := New(60*time.Second, nil)
 
 	assert := assert.New(t)
-	assert.Nil(memoryCache.AddStats(containerRef, makeStat(0)))
-	assert.Nil(memoryCache.AddStats(containerRef, makeStat(1)))
-	assert.Nil(memoryCache.AddStats(containerRef, makeStat(2)))
-	assert.Nil(memoryCache.AddStats(containerRef, makeStat(0)))
-	containerRef2 := info.ContainerReference{
-		Name: "/container2",
+	assert.Nil(memoryCache.AddStats(&cInfo, makeStat(0)))
+	assert.Nil(memoryCache.AddStats(&cInfo, makeStat(1)))
+	assert.Nil(memoryCache.AddStats(&cInfo, makeStat(2)))
+	assert.Nil(memoryCache.AddStats(&cInfo, makeStat(0)))
+	cInfo2 := info.ContainerInfo{
+		ContainerReference: info.ContainerReference{
+			Name: "/container2",
+		},
 	}
-	assert.Nil(memoryCache.AddStats(containerRef2, makeStat(0)))
-	assert.Nil(memoryCache.AddStats(containerRef2, makeStat(1)))
+	assert.Nil(memoryCache.AddStats(&cInfo2, makeStat(0)))
+	assert.Nil(memoryCache.AddStats(&cInfo2, makeStat(1)))
 }
 
 func TestRecentStatsNoRecentStats(t *testing.T) {
@@ -74,7 +78,7 @@ func makeWithStats(n int) *InMemoryCache {
 	memoryCache := New(60*time.Second, nil)
 
 	for i := 0; i < n; i++ {
-		memoryCache.AddStats(containerRef, makeStat(i))
+		memoryCache.AddStats(&cInfo, makeStat(i))
 	}
 	return memoryCache
 }

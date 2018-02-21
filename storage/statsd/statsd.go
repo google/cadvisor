@@ -105,16 +105,16 @@ func (self *statsdStorage) containerFsStatsToValues(
 }
 
 // Push the data into redis
-func (self *statsdStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (self *statsdStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
 
 	var containerName string
-	if len(ref.Aliases) > 0 {
-		containerName = ref.Aliases[0]
+	if len(cInfo.ContainerReference.Aliases) > 0 {
+		containerName = cInfo.ContainerReference.Aliases[0]
 	} else {
-		containerName = ref.Name
+		containerName = cInfo.ContainerReference.Name
 	}
 
 	series := self.containerStatsToValues(stats)
