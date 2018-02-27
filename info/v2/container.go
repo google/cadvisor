@@ -92,6 +92,7 @@ type ContainerSpec struct {
 
 	// Following resources have no associated spec, but are being isolated.
 	HasNetwork    bool `json:"has_network"`
+	HasPids       bool `json:"has_pids"`
 	HasFilesystem bool `json:"has_filesystem"`
 	HasDiskIo     bool `json:"has_diskio"`
 
@@ -117,6 +118,9 @@ type DeprecatedContainerStats struct {
 	// Network statistics
 	HasNetwork bool         `json:"has_network"`
 	Network    NetworkStats `json:"network,omitempty"`
+	// Pids statistics
+	HasPids bool         `json:"has_pids"`
+	Pids    v1.PidsStats `json:"pids,omitempty"`
 	// Filesystem statistics
 	HasFilesystem bool         `json:"has_filesystem"`
 	Filesystem    []v1.FsStats `json:"filesystem,omitempty"`
@@ -142,6 +146,8 @@ type ContainerStats struct {
 	Memory *v1.MemoryStats `json:"memory,omitempty"`
 	// Network statistics
 	Network *NetworkStats `json:"network,omitempty"`
+	// Pids statistics
+	Pids *v1.PidsStats `json:"pids,omitempty"`
 	// Filesystem statistics
 	Filesystem *FilesystemStats `json:"filesystem,omitempty"`
 	// Task load statistics

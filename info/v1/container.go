@@ -57,6 +57,7 @@ type ContainerSpec struct {
 	Memory    MemorySpec `json:"memory,omitempty"`
 
 	HasNetwork bool `json:"has_network"`
+	HasPids    bool `json:"has_pids"`
 
 	HasFilesystem bool `json:"has_filesystem"`
 
@@ -194,6 +195,9 @@ func (self *ContainerSpec) Eq(b *ContainerSpec) bool {
 		return false
 	}
 	if self.HasNetwork != b.HasNetwork {
+		return false
+	}
+	if self.HasPids != b.HasPids {
 		return false
 	}
 	if self.HasFilesystem != b.HasFilesystem {
@@ -607,6 +611,9 @@ func (a *ContainerStats) StatsEq(b *ContainerStats) bool {
 		return false
 	}
 	if !reflect.DeepEqual(a.Network, b.Network) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Pids, b.Pids) {
 		return false
 	}
 	if !reflect.DeepEqual(a.Filesystem, b.Filesystem) {

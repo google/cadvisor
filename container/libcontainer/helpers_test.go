@@ -128,3 +128,28 @@ func assertCgroupSubsystemsEqual(t *testing.T, expected, actual CgroupSubsystems
 		t.Fatalf("%s Expected %v == %v", message, expected.Mounts, actual.Mounts)
 	}
 }
+
+func TestSetPidsStas(t *testing.T) {
+	var ret info.ContainerStats
+	s := &cgroups.Stats{
+		PidsStats: cgroups.PidsStats{
+			Current: 1,
+			Limit:   2,
+		},
+	}
+	setPidsStats(s, &ret)
+
+	expected := info.ContainerStats{
+		Pids: info.PidsStats{
+			CurrentPids: s.PidsStats.Current,
+			MaxPids:     s.PidsStats.Limit,
+		},
+	}
+
+	if expected.Pids.CurrentPids != ret.Pids.CurrentPids {
+		t.Fatalf("expected CurrentPids %+v == %+v", ret.Pids.CurrentPids, expected.Pids.CurrentPids)
+	}
+	if expected.Pids.MaxPids != ret.Pids.MaxPids {
+		t.Fatalf("expected MaxPids %+v == %+v", ret.Pids.MaxPids, expected.Pids.MaxPids)
+	}
+}

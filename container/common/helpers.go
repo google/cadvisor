@@ -115,6 +115,15 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 	}
 
 	spec.HasNetwork = hasNetwork
+
+	// PIDs
+	pidsRoot, ok := cgroupPaths["pids"]
+	if ok {
+		if utils.FileExists(pidsRoot) {
+			spec.HasPids = true
+		}
+	}
+
 	spec.HasFilesystem = hasFilesystem
 
 	if blkioRoot, ok := cgroupPaths["blkio"]; ok && utils.FileExists(blkioRoot) {
