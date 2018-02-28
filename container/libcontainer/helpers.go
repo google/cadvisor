@@ -87,6 +87,7 @@ var supportedSubsystems map[string]struct{} = map[string]struct{}{
 	"cpuset":  {},
 	"blkio":   {},
 	"devices": {},
+	"pids": {},
 }
 
 func DiskStatsCopy0(major, minor uint64) *info.PerDiskStats {

@@ -490,6 +490,11 @@ func setNetworkStats(libcontainerStats *libcontainer.Stats, ret *info.ContainerS
 	}
 }
 
+func setPidsStats(s *cgroups.Stats, ret *info.ContainerStats) {
+	ret.Pids.CurrentPids = s.PidsStats.Current
+	ret.Pids.MaxPids = s.PidsStats.Limit
+}
+
 func newContainerStats(libcontainerStats *libcontainer.Stats, withPerCPU bool) *info.ContainerStats {
 	ret := &info.ContainerStats{
 		Timestamp: time.Now(),
@@ -499,6 +504,7 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, withPerCPU bool) *
 		setCpuStats(s, ret, withPerCPU)
 		setDiskIoStats(s, ret)
 		setMemoryStats(s, ret)
+		setPidsStats(s, ret)
 	}
 	if len(libcontainerStats.Interfaces) > 0 {
 		setNetworkStats(libcontainerStats, ret)
