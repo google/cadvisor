@@ -25,6 +25,15 @@ container_cpu_cfs_throttled_seconds_total{container_env_foo_env="prod",container
 # HELP container_cpu_load_average_10s Value of container cpu load average over the last 10 seconds.
 # TYPE container_cpu_load_average_10s gauge
 container_cpu_load_average_10s{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2
+# HELP container_cpu_schedstat_run_periods_total Number of times processes of the cgroup have run on the cpu
+# TYPE container_cpu_schedstat_run_periods_total counter
+container_cpu_schedstat_run_periods_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 984285
+# HELP container_cpu_schedstat_run_seconds_total Time duration the processes of the container have run on the CPU.
+# TYPE container_cpu_schedstat_run_seconds_total counter
+container_cpu_schedstat_run_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.053643567
+# HELP container_cpu_schedstat_runqueue_seconds_total Time duration processes of the container have been waiting on a runqueue.
+# TYPE container_cpu_schedstat_runqueue_seconds_total counter
+container_cpu_schedstat_runqueue_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 479.424566378
 # HELP container_cpu_system_seconds_total Cumulative system cpu time consumed in seconds.
 # TYPE container_cpu_system_seconds_total counter
 container_cpu_system_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 7e-09

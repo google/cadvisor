@@ -293,10 +293,24 @@ type CpuCFS struct {
 	ThrottledTime uint64 `json:"throttled_time"`
 }
 
+// Cpu Aggregated scheduler statistics
+type CpuSchedstat struct {
+	// https://www.kernel.org/doc/Documentation/scheduler/sched-stats.txt
+
+	// These numbers are summed up over all processes in a cgroup and can therefore not capture processes after they are gone.
+	// time spent on the cpu
+	RunTime uint64 `json:"run_time"`
+	// time spent waiting on a runqueue
+	RunqueueTime uint64 `json:"runqueue_time"`
+	// # of timeslices run on this cpu
+	RunPeriods uint64 `json:"run_periods"`
+}
+
 // All CPU usage metrics are cumulative from the creation of the container
 type CpuStats struct {
-	Usage CpuUsage `json:"usage"`
-	CFS   CpuCFS   `json:"cfs"`
+	Usage     CpuUsage     `json:"usage"`
+	CFS       CpuCFS       `json:"cfs"`
+	Schedstat CpuSchedstat `json:"schedstat"`
 	// Smoothed average of number of runnable threads x 1000.
 	// We multiply by thousand to avoid using floats, but preserving precision.
 	// Load is smoothed over the last 10 seconds. Instantaneous value can be read
