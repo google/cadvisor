@@ -368,7 +368,12 @@ func (self *manager) watchDiskMountChange(quit chan error) {
 	for {
 		select {
 		case <-self.fsInfoChange:
-			glog.Infof("get a disk and mount changed! fsInfo has refresh: %+v", self.fsInfo)
+			globalFsInfo, err := self.fsInfo.GetGlobalFsInfo()
+			if err != nil {
+				glog.Warningf("GetGlobalFsInfo failed. %s", err.Error())
+				continue
+			}
+			glog.Infof("get a disk and mount changed! fsInfo has refresh: %+v", globalFsInfo)
 			// If cAdvisor was started with host's rootfs mounted, assume that its running
 			// in its own namespaces.
 			inHostNamespace := false
