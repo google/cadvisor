@@ -220,13 +220,15 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		sysfs:                    sysfs,
 	}
 
-	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
+	machineInfo, err := machine.Info(sysfs, inHostNamespace)
 	if err != nil {
 		return nil, err
 	}
-	newManager.machineInfoLock.Lock()
 	newManager.machineInfo = *machineInfo
-	newManager.machineInfoLock.Unlock()
+	fs := machine.GetFsFromFsInfo(newManager.fsInfo)
+	newManager.machineFsLock.Lock()
+	newManager.machineInfo.Filesystems = fs
+	newManager.machineFsLock.Unlock()
 	glog.V(1).Infof("Machine: %+v", newManager.machineInfo)
 
 	versionInfo, err := getVersionInfo()
@@ -255,7 +257,7 @@ type manager struct {
 	memoryCache              *memory.InMemoryCache
 	fsInfo                   fs.FsInfo
 	fsInfoChange             chan bool
-	machineInfoLock          sync.RWMutex
+	machineFsLock            sync.RWMutex
 	machineInfo              info.MachineInfo
 	quitChannels             []chan error
 	cadvisorContainer        string
@@ -368,27 +370,11 @@ func (self *manager) watchDiskMountChange(quit chan error) {
 	for {
 		select {
 		case <-self.fsInfoChange:
-			globalFsInfo, err := self.fsInfo.GetGlobalFsInfo()
-			if err != nil {
-				glog.Warningf("GetGlobalFsInfo failed. %s", err.Error())
-				continue
-			}
-			glog.Infof("get a disk and mount changed! fsInfo has refresh: %+v", globalFsInfo)
-			// If cAdvisor was started with host's rootfs mounted, assume that its running
-			// in its own namespaces.
-			inHostNamespace := false
-			if _, err := os.Stat("/rootfs/proc"); os.IsNotExist(err) {
-				inHostNamespace = true
-			}
-			machineInfo, err := machine.Info(self.sysfs, self.fsInfo, inHostNamespace)
-			if err != nil {
-				glog.Warningf("get machine info failed. %s, will ignore it.", err.Error())
-				continue
-			}
-			self.machineInfoLock.Lock()
-			self.machineInfo = *machineInfo
-			glog.V(1).Infof("Machine: %+v", self.machineInfo)
-			self.machineInfoLock.Unlock()
+			fs := machine.GetFsFromFsInfo(self.fsInfo)
+			self.machineFsLock.Lock()
+			self.machineInfo.Filesystems = fs
+			self.machineFsLock.Unlock()
+			glog.V(2).Infof("machine fileSystem has change to :%+v", fs)
 		case <-quit:
 			quit <- nil
 			return
@@ -842,16 +828,26 @@ func (self *manager) GetFsInfo(label string) ([]v2.FsInfo, error) {
 
 func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
 	// Copy and return the MachineInfo.
-	m.machineInfoLock.RLock()
-	defer m.machineInfoLock.RUnlock()
-	machineInfo := m.machineInfo
-	machineInfo.DiskMap = make(map[string]info.DiskInfo)
-	for k, v := range m.machineInfo.DiskMap {
-		machineInfo.DiskMap[k] = v
+	machineInfo := info.MachineInfo{
+		NumCores:       m.machineInfo.NumCores,
+		CpuFrequency:   m.machineInfo.CpuFrequency,
+		MemoryCapacity: m.machineInfo.MemoryCapacity,
+		MachineID:      m.machineInfo.MachineID,
+		SystemUUID:     m.machineInfo.SystemUUID,
+		BootID:         m.machineInfo.BootID,
+		CloudProvider:  m.machineInfo.CloudProvider,
+		InstanceType:   m.machineInfo.InstanceType,
+		InstanceID:     m.machineInfo.InstanceID,
 	}
+	m.machineFsLock.RLock()
 	machineInfo.Filesystems = make([]info.FsInfo, len(m.machineInfo.Filesystems))
 	for i, v := range m.machineInfo.Filesystems {
 		machineInfo.Filesystems[i] = v
+	}
+	m.machineFsLock.RUnlock()
+	machineInfo.DiskMap = make(map[string]info.DiskInfo)
+	for k, v := range m.machineInfo.DiskMap {
+		machineInfo.DiskMap[k] = v
 	}
 	machineInfo.HugePages = make([]info.HugePagesInfo, len(m.machineInfo.HugePages))
 	for i, v := range m.machineInfo.HugePages {

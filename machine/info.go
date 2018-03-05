@@ -30,7 +30,6 @@ import (
 	"github.com/google/cadvisor/utils/sysinfo"
 
 	"github.com/golang/glog"
-
 	"golang.org/x/sys/unix"
 )
 
@@ -92,7 +91,7 @@ func GetHugePagesInfo() ([]info.HugePagesInfo, error) {
 	return hugePagesInfo, nil
 }
 
-func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.MachineInfo, error) {
+func Info(sysFs sysfs.SysFs, inHostNamespace bool) (*info.MachineInfo, error) {
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
@@ -112,11 +111,6 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	hugePagesInfo, err := GetHugePagesInfo()
 	if err != nil {
 		return nil, err
-	}
-
-	filesystems, err := fsInfo.GetGlobalFsInfo()
-	if err != nil {
-		glog.Errorf("Failed to get global filesystem information: %v", err)
 	}
 
 	diskMap, err := sysinfo.GetBlockDeviceInfo(sysFs)
@@ -159,17 +153,24 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		InstanceType:   instanceType,
 		InstanceID:     instanceID,
 	}
+	return machineInfo, nil
+}
 
-	for i := range filesystems {
-		fs := filesystems[i]
+func GetFsFromFsInfo(fsInfo fs.FsInfo) []info.FsInfo {
+	globalFsInfo, err := fsInfo.GetGlobalFsInfo()
+	if err != nil {
+		glog.Errorf("Failed to get global filesystem information: %v. Filesystem of machineInfo won't changed", err)
+	}
+	filesystems := make([]info.FsInfo, len(globalFsInfo))
+	for i := range globalFsInfo {
+		fs := globalFsInfo[i]
 		inodes := uint64(0)
 		if fs.Inodes != nil {
 			inodes = *fs.Inodes
 		}
-		machineInfo.Filesystems = append(machineInfo.Filesystems, info.FsInfo{Device: fs.Device, DeviceMajor: uint64(fs.Major), DeviceMinor: uint64(fs.Minor), Type: fs.Type.String(), Capacity: fs.Capacity, Inodes: inodes, HasInodes: fs.Inodes != nil})
+		filesystems[i] = info.FsInfo{Device: fs.Device, DeviceMajor: uint64(fs.Major), DeviceMinor: uint64(fs.Minor), Type: fs.Type.String(), Capacity: fs.Capacity, Inodes: inodes, HasInodes: fs.Inodes != nil}
 	}
-
-	return machineInfo, nil
+	return filesystems
 }
 
 func ContainerOsVersion() string {
