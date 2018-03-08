@@ -90,6 +90,11 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							ThrottledPeriods: 18,
 							ThrottledTime:    1724314000,
 						},
+						Schedstat: info.CpuSchedstat{
+							RunTime:      53643567,
+							RunqueueTime: 479424566378,
+							RunPeriods:   984285,
+						},
 						LoadAverage: 2,
 					},
 					Memory: info.MemoryStats{

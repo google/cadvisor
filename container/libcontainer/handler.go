@@ -28,6 +28,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 
+	"bytes"
 	"github.com/golang/glog"
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
@@ -39,18 +40,20 @@ import (
 import "C"
 
 type Handler struct {
-	cgroupManager cgroups.Manager
-	rootFs        string
-	pid           int
-	ignoreMetrics container.MetricSet
+	cgroupManager   cgroups.Manager
+	rootFs          string
+	pid             int
+	ignoreMetrics   container.MetricSet
+	pidMetricsCache map[int]*info.CpuSchedstat
 }
 
 func NewHandler(cgroupManager cgroups.Manager, rootFs string, pid int, ignoreMetrics container.MetricSet) *Handler {
 	return &Handler{
-		cgroupManager: cgroupManager,
-		rootFs:        rootFs,
-		pid:           pid,
-		ignoreMetrics: ignoreMetrics,
+		cgroupManager:   cgroupManager,
+		rootFs:          rootFs,
+		pid:             pid,
+		ignoreMetrics:   ignoreMetrics,
+		pidMetricsCache: make(map[int]*info.CpuSchedstat),
 	}
 }
 
@@ -65,6 +68,18 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 	}
 	withPerCPU := !h.ignoreMetrics.Has(container.PerCpuUsageMetrics)
 	stats := newContainerStats(libcontainerStats, withPerCPU)
+
+	if !h.ignoreMetrics.Has(container.ProcessSchedulerMetrics) {
+		pids, err := h.cgroupManager.GetAllPids()
+		if err != nil {
+			glog.V(4).Infof("Could not get PIDs for container %d: %v", h.pid, err)
+		} else {
+			stats.Cpu.Schedstat, err = schedulerStatsFromProcs(h.rootFs, pids, h.pidMetricsCache)
+			if err != nil {
+				glog.V(4).Infof("Unable to get Process Scheduler Stats: %v", err)
+			}
+		}
+	}
 
 	// If we know the pid then get network stats from /proc/<pid>/net/dev
 	if h.pid == 0 {
@@ -115,6 +130,50 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 	}
 
 	return stats, nil
+}
+
+func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]*info.CpuSchedstat) (info.CpuSchedstat, error) {
+	for _, pid := range pids {
+		f, err := os.Open(path.Join(rootFs, "proc", strconv.Itoa(pid), "schedstat"))
+		if err != nil {
+			return info.CpuSchedstat{}, fmt.Errorf("couldn't open scheduler statistics for process %d: %v", pid, err)
+		}
+		defer f.Close()
+		contents, err := ioutil.ReadAll(f)
+		if err != nil {
+			return info.CpuSchedstat{}, fmt.Errorf("couldn't read scheduler statistics for process %d: %v", pid, err)
+		}
+		rawMetrics := bytes.Split(bytes.TrimRight(contents, "\n"), []byte(" "))
+		if len(rawMetrics) != 3 {
+			return info.CpuSchedstat{}, fmt.Errorf("unexpected number of metrics in schedstat file for process %d", pid)
+		}
+		cacheEntry, ok := pidMetricsCache[pid]
+		if !ok {
+			cacheEntry = &info.CpuSchedstat{}
+			pidMetricsCache[pid] = cacheEntry
+		}
+		for i, rawMetric := range rawMetrics {
+			metric, err := strconv.ParseUint(string(rawMetric), 10, 64)
+			if err != nil {
+				return info.CpuSchedstat{}, fmt.Errorf("parsing error while reading scheduler statistics for process: %d: %v", pid, err)
+			}
+			switch i {
+			case 0:
+				cacheEntry.RunTime = metric
+			case 1:
+				cacheEntry.RunqueueTime = metric
+			case 2:
+				cacheEntry.RunPeriods = metric
+			}
+		}
+	}
+	schedstats := info.CpuSchedstat{}
+	for _, v := range pidMetricsCache {
+		schedstats.RunPeriods += v.RunPeriods
+		schedstats.RunqueueTime += v.RunqueueTime
+		schedstats.RunTime += v.RunTime
+	}
+	return schedstats, nil
 }
 
 func networkStatsFromProc(rootFs string, pid int) ([]info.InterfaceStats, error) {

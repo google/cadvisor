@@ -64,6 +64,7 @@ var (
 	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
 		container.NetworkTcpUsageMetrics: struct{}{},
 		container.NetworkUdpUsageMetrics: struct{}{},
+		container.ProcessSchedulerMetrics: struct{}{},
 	}}
 
 	// List of metrics that can be ignored.
@@ -73,6 +74,7 @@ var (
 		container.NetworkTcpUsageMetrics: struct{}{},
 		container.NetworkUdpUsageMetrics: struct{}{},
 		container.PerCpuUsageMetrics:     struct{}{},
+		container.ProcessSchedulerMetrics: struct{}{},
 	}
 )
 
