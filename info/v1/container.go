@@ -297,7 +297,6 @@ type CpuCFS struct {
 type CpuSchedstat struct {
 	// https://www.kernel.org/doc/Documentation/scheduler/sched-stats.txt
 
-	// These numbers are summed up over all processes in a cgroup and can therefore not capture processes after they are gone.
 	// time spent on the cpu
 	RunTime uint64 `json:"run_time"`
 	// time spent waiting on a runqueue
