@@ -57,6 +57,10 @@ func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSu
 		return nil, err
 	}
 
+	if isRootCgroup(name) {
+		delete(cgroupPaths, "pids")
+	}
+
 	// Generate the equivalent cgroup manager for this container.
 	cgroupManager := &cgroupfs.Manager{
 		Cgroups: &configs.Cgroup{
