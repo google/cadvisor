@@ -41,6 +41,8 @@ const (
 	colMemoryUsage string = "memory_usage"
 	// Working set size
 	colMemoryWorkingSet string = "memory_working_set"
+	// Resident set size
+	colMemoryRSS string = "memory_rss"
 	// Cumulative count of bytes received.
 	colRxBytes string = "rx_bytes"
 	// Cumulative count of receive errors encountered.
@@ -79,6 +81,9 @@ func (self *statsdStorage) containerStatsToValues(
 
 	// Working set size
 	series[colMemoryWorkingSet] = stats.Memory.WorkingSet
+
+	// Resident set size
+	series[colMemoryRSS] = stats.Memory.RSS
 
 	// Network stats.
 	series[colRxBytes] = stats.Network.RxBytes
