@@ -25,7 +25,7 @@ import (
 	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/dialer"
 	"github.com/containerd/containerd/errdefs"
-	pempty "github.com/golang/protobuf/ptypes/empty"
+	ptypes "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 )
 
@@ -101,7 +101,7 @@ func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
 }
 
 func (c *client) Version(ctx context.Context) (string, error) {
-	response, err := c.versionService.Version(ctx, &pempty.Empty{})
+	response, err := c.versionService.Version(ctx, &ptypes.Empty{})
 	if err != nil {
 		return "", errdefs.FromGRPC(err)
 	}
