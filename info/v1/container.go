@@ -41,6 +41,21 @@ type MemorySpec struct {
 	SwapLimit uint64 `json:"swap_limit,omitempty"`
 }
 
+type AcceleratorSpec struct {
+	// Make of the accelerator (nvidia, amd, google etc.)
+	Make string `json:"make"`
+
+	// Model of the accelerator (tesla-p100, tesla-k80 etc.)
+	Model string `json:"model"`
+
+	// ID of the accelerator.
+	ID string `json:"id"`
+
+	// Total accelerator memory.
+	// unit: bytes
+	MemoryTotal uint64 `json:"memory_total"`
+}
+
 type ContainerSpec struct {
 	// Time at which the container was created.
 	CreationTime time.Time `json:"creation_time,omitempty"`
@@ -55,6 +70,9 @@ type ContainerSpec struct {
 
 	HasMemory bool       `json:"has_memory"`
 	Memory    MemorySpec `json:"memory,omitempty"`
+
+	HasAccelerators bool              `json:"has_accelerators"`
+	Accelerators    []AcceleratorSpec `json:"accelerators,omitempty"`
 
 	HasNetwork bool `json:"has_network"`
 

@@ -159,6 +159,21 @@ func (nm *NvidiaManager) GetCollector(devicesCgroupPath string) (AcceleratorColl
 	return nc, nil
 }
 
+// GetCollector returns a collector that can fetch all nvidia gpu metrics for nvidia devices
+func (nm *NvidiaManager) GetAllDevicesCollector() (AcceleratorCollector, error) {
+	nc := &NvidiaCollector{}
+	nm.RLock()
+	if !nm.nvmlInitialized || len(nm.nvidiaDevices) == 0 {
+		nm.RUnlock()
+		return nil, nil
+	}
+	nm.RUnlock()
+	for _, device := range nm.nvidiaDevices {
+		nc.Devices = append(nc.Devices, device)
+	}
+	return nc, nil
+}
+
 // parseDevicesCgroup parses the devices cgroup devices.list file for the container
 // and returns a list of minor numbers corresponding to NVIDIA GPU devices that the
 // container is allowed to access. In cases where the container has access to all
@@ -248,5 +263,36 @@ func (nc *NvidiaCollector) UpdateStats(stats *info.ContainerStats) error {
 			DutyCycle:   uint64(utilizationGPU),
 		})
 	}
+	return nil
+}
+
+// UpdateSpec updates the spec for NVIDIA GPUs (if any) attached to the container.
+func (nm *NvidiaCollector) UpdateSpec(spec *info.ContainerSpec) error {
+	if len(nm.Devices) == 0 {
+		spec.HasAccelerators = false
+		return nil
+	}
+	spec.HasAccelerators = true
+	for _, device := range nm.Devices {
+		model, err := device.Name()
+		if err != nil {
+			return fmt.Errorf("error while getting gpu name: %v", err)
+		}
+		uuid, err := device.UUID()
+		if err != nil {
+			return fmt.Errorf("error while getting gpu uuid: %v", err)
+		}
+		memoryTotal, _, err := device.MemoryInfo()
+		if err != nil {
+			return fmt.Errorf("error while getting gpu memory info: %v", err)
+		}
+		spec.Accelerators = append(spec.Accelerators, info.AcceleratorSpec{
+			Make:        "nvidia",
+			Model:       model,
+			ID:          uuid,
+			MemoryTotal: memoryTotal,
+		})
+	}
+
 	return nil
 }

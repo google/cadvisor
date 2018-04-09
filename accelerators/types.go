@@ -25,8 +25,10 @@ type AcceleratorManager interface {
 	Setup()
 	Destroy()
 	GetCollector(deviceCgroup string) (AcceleratorCollector, error)
+	GetAllDevicesCollector() (AcceleratorCollector, error)
 }
 
 type AcceleratorCollector interface {
 	UpdateStats(*info.ContainerStats) error
+	UpdateSpec(spec *info.ContainerSpec) error
 }

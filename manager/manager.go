@@ -971,7 +971,11 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 	if err != nil {
 		glog.Warningf("Error getting devices cgroup path: %v", err)
 	} else {
-		cont.nvidiaCollector, err = m.nvidiaManager.GetCollector(devicesCgroupPath)
+		if containerName == "/" {
+			cont.nvidiaCollector, err = m.nvidiaManager.GetAllDevicesCollector()
+		} else {
+			cont.nvidiaCollector, err = m.nvidiaManager.GetCollector(devicesCgroupPath)
+		}
 		if err != nil {
 			glog.V(4).Infof("GPU metrics may be unavailable/incomplete for container %q: %v", cont.info.Name, err)
 		}
@@ -999,6 +1003,9 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 	contSpec, err := cont.handler.GetSpec()
 	if err != nil {
 		return err
+	}
+	if cont.nvidiaCollector != nil {
+		cont.nvidiaCollector.UpdateSpec(&contSpec)
 	}
 
 	contRef, err := cont.handler.ContainerReference()

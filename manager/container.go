@@ -526,6 +526,9 @@ func (c *containerData) updateSpec() error {
 		}
 		return err
 	}
+	if c.nvidiaCollector != nil {
+		c.nvidiaCollector.UpdateSpec(&spec)
+	}
 
 	customMetrics, err := c.collectorManager.GetSpec()
 	if err != nil {
