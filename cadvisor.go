@@ -62,18 +62,18 @@ var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
 	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
-		container.NetworkTcpUsageMetrics: struct{}{},
-		container.NetworkUdpUsageMetrics: struct{}{},
+		container.NetworkTcpUsageMetrics:  struct{}{},
+		container.NetworkUdpUsageMetrics:  struct{}{},
 		container.ProcessSchedulerMetrics: struct{}{},
 	}}
 
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
-		container.DiskUsageMetrics:       struct{}{},
-		container.NetworkUsageMetrics:    struct{}{},
-		container.NetworkTcpUsageMetrics: struct{}{},
-		container.NetworkUdpUsageMetrics: struct{}{},
-		container.PerCpuUsageMetrics:     struct{}{},
+		container.DiskUsageMetrics:        struct{}{},
+		container.NetworkUsageMetrics:     struct{}{},
+		container.NetworkTcpUsageMetrics:  struct{}{},
+		container.NetworkUdpUsageMetrics:  struct{}{},
+		container.PerCpuUsageMetrics:      struct{}{},
 		container.ProcessSchedulerMetrics: struct{}{},
 	}
 )
@@ -132,7 +132,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient)
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient, []string{"/"})
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
