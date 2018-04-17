@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"flag"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -34,6 +35,7 @@ import (
 
 func init() {
 	storage.RegisterStorageDriver("kafka", new)
+	kafka.Logger = log.New(os.Stderr, "[kafka]", log.LstdFlags)
 }
 
 var (
@@ -141,7 +143,7 @@ func newStorage(machineName string) (storage.StorageDriver, error) {
 	config.Producer.RequiredAcks = kafka.WaitForAll
 
 	brokerList := strings.Split(*brokers, ",")
-	glog.V(4).Infof("Kafka brokers:%q", brokers)
+	glog.V(4).Infof("Kafka brokers:%q", *brokers)
 
 	producer, err := kafka.NewAsyncProducer(brokerList, config)
 	if err != nil {
