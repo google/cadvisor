@@ -541,6 +541,10 @@ func (self *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) {
 			return &DeviceInfo{mount.Source, uint(major), uint(minor)}, nil
 		}
 	}
+	if found && mount.Fstype == "overlay" {
+		return &DeviceInfo{mount.Source, uint(mount.Major), uint(mount.Minor)}, nil
+	}
+
 	return nil, fmt.Errorf("could not find device with major: %d, minor: %d in cached partitions map", major, minor)
 }
 
