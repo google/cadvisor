@@ -12,8 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ifeq ($(ARCH),)
+ARCH := amd64 #amd64 as the default architecture.
+endif
+
+ifeq ($(REV),)
+REV := $(shell git rev-parse --short HEAD)
+endif
+
+
 GO := go
 pkgs  = $(shell $(GO) list ./... | grep -v vendor)
+
 
 all: presubmit build test
 
@@ -22,10 +32,11 @@ test:
 	@$(GO) test -short -race $(pkgs)
 
 test-integration:
-	GO_FLAGS="-race" ./build/build.sh
+	ARCH=$(ARCH) GO_FLAGS="-race" ./build/build.sh
+	cp cadvisor.${ARCH} cadvisor
 	go test -c github.com/google/cadvisor/integration/tests/api
 	go test -c github.com/google/cadvisor/integration/tests/healthz
-	@./build/integration.sh
+	ARCH=$(ARCH) ./build/integration.sh
 
 test-runner:
 	@$(GO) build github.com/google/cadvisor/integration/runner
@@ -40,7 +51,7 @@ vet:
 
 build: assets
 	@echo ">> building binaries"
-	@./build/build.sh
+	ARCH=$(ARCH) ./build/build.sh
 
 assets:
 	@echo ">> building assets"
@@ -48,10 +59,11 @@ assets:
 
 release:
 	@echo ">> building release binaries"
-	@./build/release.sh
+	ARCH=$(ARCH) ./build/release.sh
 
-docker:
-	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
+docker: build
+	@echo ">> building docker images"
+	ARCH=$(ARCH) TAGS="-t cadvisor:$(REV)-$(ARCH)" ./build/docker.sh
 
 presubmit: vet
 	@echo ">> checking go formatting"

@@ -43,11 +43,23 @@ ldflags="
   -X ${repo_path}/version.BuildDate${ldseparator}${BUILD_DATE}
   -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
 
-echo ">> building cadvisor"
+echo ">> building cadvisor for ${ARCH}"
+
+if [ "${ARCH}" == "arm64" ]; then
+  ldflags="${ldflags} -extldflags '-static'"
+fi
 
 if [ -n "$VERBOSE" ]; then
   echo "Building with -ldflags $ldflags"
 fi
+
+if [ "${ARCH}" == "arm64" ]; then
+   CGO_ENABLED=1 CC=aarch64-linux-gnu-gccgo GOARCH=$ARCH GOBIN=$PWD go build ${GO_FLAGS} -o cadvisor.${ARCH} -ldflags "${ldflags}" "${repo_path}"
+else
+   GOARCH=$ARCH GOBIN=$PWD go build ${GO_FLAGS} -o cadvisor.${ARCH} -ldflags "${ldflags}" "${repo_path}"
+fi
+
+echo "Successfully built $(stat -c '%n - %z' cadvisor.${ARCH})" && exit 0
 
 GOBIN=$PWD go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
 

@@ -36,13 +36,13 @@ fi
 export BUILD_USER="$git_user"
 export BUILD_DATE=$( date +%Y%m%d ) # Release date is only to day-granularity
 export VERBOSE=true
-build/build.sh
+ARCH=${ARCH} build/build.sh
 
 # Build the docker image
 echo ">> building cadvisor docker image"
-docker_tag="google/cadvisor:$VERSION"
-gcr_tag="gcr.io/google_containers/cadvisor:$VERSION"
-docker build -t $docker_tag -t $gcr_tag -f deploy/Dockerfile .
+docker_tag="google/cadvisor:$VERSION-$ARCH"
+gcr_tag="gcr.io/google_containers/cadvisor:$VERSION-$ARCH"
+ARCH=${ARCH} TAGS="-t $docker_tag -t $gcr_tag" build/docker.sh
 
 echo
 echo "Release info:"

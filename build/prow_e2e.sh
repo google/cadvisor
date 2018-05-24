@@ -35,7 +35,7 @@ if [[ ! -z "$(git diff --name-only pages)" ]]; then
   exit 1
 fi
 
-make all
+ARCH=amd64 make all
 
 # compile integration tests so they can be run without go installed
 go test -c github.com/google/cadvisor/integration/tests/api

@@ -1,0 +1,10 @@
+FROM multiarch/alpine:aarch64-edge
+
+MAINTAINER jorge.niedbalski@linaro.org
+RUN apk --upgrade add libc6-compat
+
+# Grab cadvisor from the staging directory.
+ADD cadvisor.arm64 /usr/bin/cadvisor
+
+EXPOSE 8080
+ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr"]
