@@ -33,6 +33,7 @@ import (
 	"github.com/google/cadvisor/container/containerd"
 	"github.com/google/cadvisor/container/crio"
 	"github.com/google/cadvisor/container/docker"
+	"github.com/google/cadvisor/container/mesos"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/container/rkt"
 	"github.com/google/cadvisor/container/systemd"
@@ -319,6 +320,11 @@ func (self *manager) Start() error {
 	err = crio.Register(self, self.fsInfo, self.ignoreMetrics)
 	if err != nil {
 		glog.V(5).Infof("Registration of the crio container factory failed: %v", err)
+	}
+
+	err = mesos.Register(self, self.fsInfo, self.ignoreMetrics)
+	if err != nil {
+		glog.V(5).Infof("Registration of the mesos container factory failed: %v", err)
 	}
 
 	err = systemd.Register(self, self.fsInfo, self.ignoreMetrics)
