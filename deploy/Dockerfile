@@ -11,6 +11,7 @@ RUN apk --no-cache add ca-certificates curl device-mapper findutils && \
     curl -f -L -o glibc-bin-${GLIBC_VERSION}.apk  https://github.com/andyshinn/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk && \
     apk add glibc-${GLIBC_VERSION}.apk glibc-bin-${GLIBC_VERSION}.apk && \
     /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib && \
+    rm glibc-${GLIBC_VERSION}.apk glibc-bin-${GLIBC_VERSION}.apk && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
 
