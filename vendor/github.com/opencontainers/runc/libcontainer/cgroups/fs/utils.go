@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"encoding/binary"
 )
 
 var (
@@ -65,6 +66,22 @@ func getCgroupParamUint(cgroupPath, cgroupFile string) (uint64, error) {
 		return res, fmt.Errorf("unable to parse %q as a uint from Cgroup file %q", string(contents), fileName)
 	}
 	return res, nil
+}
+
+// Sets a single uint64 value from the specified cgroup file.
+func setCgroupParamUint(cgroupPath, cgroupFile string, value uint64) (error) {
+        fileName := filepath.Join(cgroupPath, cgroupFile)
+
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, value)
+
+        err := ioutil.WriteFile(fileName, b, 0)
+
+        if err != nil {
+                return err
+        }
+
+        return nil
 }
 
 // Gets a string value from the specified cgroup file

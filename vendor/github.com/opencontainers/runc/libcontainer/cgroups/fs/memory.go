@@ -299,6 +299,10 @@ func getMemoryData(path, name string) (cgroups.MemoryData, error) {
 		}
 		return cgroups.MemoryData{}, fmt.Errorf("failed to parse %s - %v", failcnt, err)
 	}
+	err = setCgroupParamUint(path, maxUsage, 0)
+	if err != nil {
+		return cgroups.MemoryData{}, fmt.Errorf("failed to reset max_usage_in_bytes")
+	}
 	memoryData.Failcnt = value
 	value, err = getCgroupParamUint(path, limit)
 	if err != nil {
