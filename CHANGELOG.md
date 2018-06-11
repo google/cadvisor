@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.30.1 (2018-06-11)
+- Revert switch from inotify to fsnotify
+
 ### 0.30.0 (2018-06-05)
 - Use IONice to reduce IO priority of `du` and `find`
 - BREAKING API CHANGE: ContainerReference no longer contains Labels.  Use ContainerSpec instead.
