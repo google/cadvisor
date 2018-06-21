@@ -1,5 +1,14 @@
 # Changelog
 
+### 0.29.2 (2018-06-21)
+- Fix concurrent map access panic
+- Don't watch .mount cgroups to reduce number of inotify watches
+- Fix NVML initialization race condition
+- Fix brtfs disk metrics when using a subdirectory of a subvolume
+
+### 0.29.1 (2018-02-26)
+- Fix containerd initialization race condition
+
 ### 0.29.0 (2018-02-20)
 - Disable per-cpu metrics by default for scalability
 - Fix disk usage monitoring of overlayFs
