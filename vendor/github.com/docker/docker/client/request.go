@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/versions"
 	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -123,7 +123,10 @@ func (cli *Client) sendRequest(ctx context.Context, method, path string, query u
 	if err != nil {
 		return resp, err
 	}
-	return resp, cli.checkResponseErr(resp)
+	if err := cli.checkResponseErr(resp); err != nil {
+		return resp, err
+	}
+	return resp, nil
 }
 
 func (cli *Client) doRequest(ctx context.Context, req *http.Request) (serverResponse, error) {
@@ -200,7 +203,7 @@ func (cli *Client) checkResponseErr(serverResp serverResponse) error {
 		return err
 	}
 	if len(body) == 0 {
-		return fmt.Errorf("request returned %s for API route and version %s, check if the server supports the requested API version", http.StatusText(serverResp.statusCode), serverResp.reqURL)
+		return fmt.Errorf("Error: request returned %s for API route and version %s, check if the server supports the requested API version", http.StatusText(serverResp.statusCode), serverResp.reqURL)
 	}
 
 	var ct string

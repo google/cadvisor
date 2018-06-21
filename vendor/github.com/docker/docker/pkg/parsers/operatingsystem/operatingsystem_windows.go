@@ -1,45 +1,44 @@
 package operatingsystem
 
 import (
-	"fmt"
+	"unsafe"
 
-	"golang.org/x/sys/windows/registry"
+	"golang.org/x/sys/windows"
 )
+
+// See https://code.google.com/p/go/source/browse/src/pkg/mime/type_windows.go?r=d14520ac25bf6940785aabb71f5be453a286f58c
+// for a similar sample
 
 // GetOperatingSystem gets the name of the current operating system.
 func GetOperatingSystem() (string, error) {
 
+	var h windows.Handle
+
 	// Default return value
 	ret := "Unknown Operating System"
 
-	k, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, registry.QUERY_VALUE)
-	if err != nil {
+	if err := windows.RegOpenKeyEx(windows.HKEY_LOCAL_MACHINE,
+		windows.StringToUTF16Ptr(`SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\`),
+		0,
+		windows.KEY_READ,
+		&h); err != nil {
 		return ret, err
 	}
-	defer k.Close()
+	defer windows.RegCloseKey(h)
 
-	pn, _, err := k.GetStringValue("ProductName")
-	if err != nil {
-		return ret, err
-	}
-	ret = pn
+	var buf [1 << 10]uint16
+	var typ uint32
+	n := uint32(len(buf) * 2) // api expects array of bytes, not uint16
 
-	ri, _, err := k.GetStringValue("ReleaseId")
-	if err != nil {
+	if err := windows.RegQueryValueEx(h,
+		windows.StringToUTF16Ptr("ProductName"),
+		nil,
+		&typ,
+		(*byte)(unsafe.Pointer(&buf[0])),
+		&n); err != nil {
 		return ret, err
 	}
-	ret = fmt.Sprintf("%s Version %s", ret, ri)
-
-	cbn, _, err := k.GetStringValue("CurrentBuildNumber")
-	if err != nil {
-		return ret, err
-	}
-
-	ubr, _, err := k.GetIntegerValue("UBR")
-	if err != nil {
-		return ret, err
-	}
-	ret = fmt.Sprintf("%s (OS Build %s.%d)", ret, cbn, ubr)
+	ret = windows.UTF16ToString(buf[:])
 
 	return ret, nil
 }

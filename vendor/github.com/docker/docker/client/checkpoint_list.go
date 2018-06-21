@@ -1,11 +1,12 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
+	"net/http"
 	"net/url"
 
 	"github.com/docker/docker/api/types"
+	"golang.org/x/net/context"
 )
 
 // CheckpointList returns the checkpoints of the given container in the docker host
@@ -19,7 +20,10 @@ func (cli *Client) CheckpointList(ctx context.Context, container string, options
 
 	resp, err := cli.get(ctx, "/containers/"+container+"/checkpoints", query, nil)
 	if err != nil {
-		return checkpoints, wrapResponseError(err, resp, "container", container)
+		if resp.statusCode == http.StatusNotFound {
+			return checkpoints, containerNotFoundError{container}
+		}
+		return checkpoints, err
 	}
 
 	err = json.NewDecoder(resp.body).Decode(&checkpoints)

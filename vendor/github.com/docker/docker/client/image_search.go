@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/registry"
+	"golang.org/x/net/context"
 )
 
 // ImageSearch makes the docker host to search by a term in a remote registry.
@@ -21,7 +21,7 @@ func (cli *Client) ImageSearch(ctx context.Context, term string, options types.I
 	query.Set("limit", fmt.Sprintf("%d", options.Limit))
 
 	if options.Filters.Len() > 0 {
-		filterJSON, err := filters.ToJSON(options.Filters)
+		filterJSON, err := filters.ToParam(options.Filters)
 		if err != nil {
 			return results, err
 		}
