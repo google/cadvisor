@@ -1,5 +1,14 @@
 # Changelog
 
+### 0.28.5 (2018-06-21)
+- Fix concurrent map access panic
+- Don't watch .mount cgroups to reduce number of inotify watches
+- Fix NVML initialization race condition
+- Fix brtfs disk metrics when using a subdirectory of a subvolume
+
+### 0.28.4 (2018-05-23)
+- Fix docker container creation time
+
 ### 0.28.3 (2017-12-7)
 - Add timeout for docker calls
 - Fix prometheus label consistency
