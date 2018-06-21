@@ -1,5 +1,14 @@
 # Changelog
 
+### 0.30.2 (2018-06-21)
+- Fix concurrent map access panic
+- Don't watch .mount cgroups to reduce number of inotify watches
+- Fix NVML initialization race condition
+- Fix brtfs disk metrics when using a subdirectory of a subvolume
+
+### 0.30.1 (2018-06-11)
+- Revert switch from inotify to fsnotify
+
 ### 0.30.0 (2018-06-05)
 - Use IONice to reduce IO priority of `du` and `find`
 - BREAKING API CHANGE: ContainerReference no longer contains Labels.  Use ContainerSpec instead.
