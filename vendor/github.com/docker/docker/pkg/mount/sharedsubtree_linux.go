@@ -1,3 +1,5 @@
+// +build linux
+
 package mount
 
 // MakeShared ensures a mounted filesystem has the SHARED mount option enabled.

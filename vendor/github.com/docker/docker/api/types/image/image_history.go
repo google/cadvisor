@@ -7,7 +7,7 @@ package image
 // See hack/generate-swagger-api.sh
 // ----------------------------------------------------------------------------
 
-// HistoryResponseItem individual image layer information in response to ImageHistory operation
+// HistoryResponseItem history response item
 // swagger:model HistoryResponseItem
 type HistoryResponseItem struct {
 

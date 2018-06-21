@@ -7,7 +7,7 @@ package container
 // See hack/generate-swagger-api.sh
 // ----------------------------------------------------------------------------
 
-// ContainerChangeResponseItem change item in response to ContainerChanges operation
+// ContainerChangeResponseItem container change response item
 // swagger:model ContainerChangeResponseItem
 type ContainerChangeResponseItem struct {
 

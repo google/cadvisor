@@ -1,8 +1,9 @@
 package client
 
 import (
-	"context"
 	"net/url"
+
+	"golang.org/x/net/context"
 )
 
 // SwarmLeave leaves the swarm.
