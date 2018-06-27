@@ -842,6 +842,44 @@ func DefaultContainerLabels(container *info.ContainerInfo) map[string]string {
 	return set
 }
 
+type LabelWhitelist map[string]struct{}
+
+func (w LabelWhitelist) Has(key string) bool {
+	_, exists := w[key]
+	return exists
+}
+
+func (w LabelWhitelist) Add(key string) {
+	w[key] = struct{}{}
+}
+
+// WhitelistedContainerLabels returns a ContainerLabelsFunc which includes only whitelisted container labels.
+func WhitelistedContainerLabels(whitelist LabelWhitelist) ContainerLabelsFunc {
+	return func(container *info.ContainerInfo) map[string]string {
+		set := map[string]string{}
+		if whitelist.Has(LabelID) {
+			set[LabelID] = container.Name
+		}
+		if len(container.Aliases) > 0 && whitelist.Has(LabelName) {
+			set[LabelName] = container.Aliases[0]
+		}
+		if image := container.Spec.Image; len(image) > 0 && whitelist.Has(LabelImage) {
+			set[LabelImage] = image
+		}
+		for k, v := range container.Spec.Labels {
+			if whitelist.Has(ContainerLabelPrefix + k) {
+				set[ContainerLabelPrefix+k] = v
+			}
+		}
+		for k, v := range container.Spec.Envs {
+			if whitelist.Has(ContainerEnvPrefix + k) {
+				set[ContainerEnvPrefix+k] = v
+			}
+		}
+		return set
+	}
+}
+
 func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
 	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 1})
 	if err != nil {

@@ -29,6 +29,7 @@ import (
 	"github.com/google/cadvisor/container"
 	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
+	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
@@ -49,6 +50,7 @@ var httpDigestFile = flag.String("http_digest_file", "", "HTTP digest file for t
 var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest file for the web UI")
 
 var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
+var enforceLabelWhitelist = flag.Bool("enforce_storage_label_whitelist", false, "Whether to only attach lables in the whitelist to metrics")
 
 var maxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings")
 var allowDynamicHousekeeping = flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic")
@@ -59,6 +61,13 @@ var collectorCert = flag.String("collector_cert", "", "Collector's certificate, 
 var collectorKey = flag.String("collector_key", "", "Key for the collector's certificate")
 
 var (
+	// Labels which are included when enforce_storage_label_whitelist is set
+	labelWhitelist labelWhitelistValue = labelWhitelistValue{metrics.LabelWhitelist{
+		metrics.LabelID:    struct{}{},
+		metrics.LabelName:  struct{}{},
+		metrics.LabelImage: struct{}{},
+	}}
+
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
 	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
@@ -105,8 +114,32 @@ func (ml *metricSetValue) Set(value string) error {
 	return nil
 }
 
+type labelWhitelistValue struct {
+	metrics.LabelWhitelist
+}
+
+func (lw *labelWhitelistValue) String() string {
+	var values []string
+	for label, _ := range lw.LabelWhitelist {
+		values = append(values, string(label))
+	}
+	return strings.Join(values, ",")
+}
+
+func (lw *labelWhitelistValue) Set(value string) error {
+	lw.LabelWhitelist = metrics.LabelWhitelist{}
+	if value == "" {
+		return nil
+	}
+	for _, label := range strings.Split(value, ",") {
+		(*lw).Add(label)
+	}
+	return nil
+}
+
 func init() {
 	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp', 'udp', 'percpu'. Note: tcp and udp are disabled by default due to high CPU usage.")
+	flag.Var(&labelWhitelist, "label_whitelist", "comma-separated list of label keys that are attached to metrics.  'id', 'name', and 'image' are included by default.")
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
@@ -152,7 +185,11 @@ func main() {
 		glog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
 
-	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, nil)
+	var labelsFunc metrics.ContainerLabelsFunc
+	if *enforceLabelWhitelist {
+		labelsFunc = metrics.WhitelistedContainerLabels(labelWhitelist.LabelWhitelist)
+	}
+	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, labelsFunc)
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {
