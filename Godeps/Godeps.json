@@ -22,6 +22,26 @@
 			"Rev": "862b6557927a5c5c81e411c12aa6de7e566cbb7a"
 		},
 		{
+			"ImportPath": "github.com/Rican7/retry",
+			"Comment": "v0.1.0-9-g272ad12",
+			"Rev": "272ad122d6e5ce1be757544007cf8bcd1c9c9ab0"
+		},
+		{
+			"ImportPath": "github.com/Rican7/retry/backoff",
+			"Comment": "v0.1.0-9-g272ad12",
+			"Rev": "272ad122d6e5ce1be757544007cf8bcd1c9c9ab0"
+		},
+		{
+			"ImportPath": "github.com/Rican7/retry/jitter",
+			"Comment": "v0.1.0-9-g272ad12",
+			"Rev": "272ad122d6e5ce1be757544007cf8bcd1c9c9ab0"
+		},
+		{
+			"ImportPath": "github.com/Rican7/retry/strategy",
+			"Comment": "v0.1.0-9-g272ad12",
+			"Rev": "272ad122d6e5ce1be757544007cf8bcd1c9c9ab0"
+		},
+		{
 			"ImportPath": "github.com/SeanDolphin/bqschema",
 			"Rev": "f92a08f515e1bf718e995076a37c2f534b1deb08"
 		},
@@ -395,7 +415,17 @@
 			"Rev": "c7fdd8b5cd55e87b4e1f4e372cdb1db61dd6c66f"
 		},
 		{
+			"ImportPath": "github.com/gogo/protobuf/gogoproto",
+			"Comment": "v0.4-3-gc0656edd",
+			"Rev": "c0656edd0d9eab7c66d1eb0c568f9039345796f7"
+		},
+		{
 			"ImportPath": "github.com/gogo/protobuf/proto",
+			"Comment": "v0.4-3-gc0656edd",
+			"Rev": "c0656edd0d9eab7c66d1eb0c568f9039345796f7"
+		},
+		{
+			"ImportPath": "github.com/gogo/protobuf/protoc-gen-gogo/descriptor",
 			"Comment": "v0.4-3-gc0656edd",
 			"Rev": "c0656edd0d9eab7c66d1eb0c568f9039345796f7"
 		},
@@ -478,6 +508,76 @@
 		{
 			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
 			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/agent",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/agent/calls",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/client",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/debug",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/encoding",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/encoding/codecs",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/encoding/framing",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/encoding/json",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/encoding/proto",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/httpcli",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/httpcli/apierrors",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/recordio",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
+		},
+		{
+			"ImportPath": "github.com/mesos/mesos-go/api/v1/lib/roles",
+			"Comment": "mesos-1.4.x-33-g29de6ff",
+			"Rev": "29de6ff97b48c29cb5ac07029ed75186e5ba0eed"
 		},
 		{
 			"ImportPath": "github.com/mindprince/gonvml",
@@ -615,6 +715,14 @@
 			"ImportPath": "github.com/pmezard/go-difflib/difflib",
 			"Comment": "v1.0.0",
 			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
+			"ImportPath": "github.com/pquerna/ffjson/fflib/v1",
+			"Rev": "d49c2bc1aa135aad0c6f4fc2056623ec78f5d5ac"
+		},
+		{
+			"ImportPath": "github.com/pquerna/ffjson/fflib/v1/internal",
+			"Rev": "d49c2bc1aa135aad0c6f4fc2056623ec78f5d5ac"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
