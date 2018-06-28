@@ -8,7 +8,7 @@ Building the cAdvisor Docker container is simple, just run:
 $ ./deploy/build.sh
 ```
 
-Which will statically build the cAdvisor binary and then build the Docker image. The resulting Docker image will be called `google/cadvisor:canary`. This image is very bare, containing the cAdvisor binary and nothing else.
+Which will statically build the cAdvisor binary and then build the Docker image. The resulting Docker image will be called `google/cadvisor:beta`. This image is very bare, containing the cAdvisor binary and nothing else.
 
 ## Deploying
 
