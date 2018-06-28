@@ -35,6 +35,7 @@ import (
 	"crypto/tls"
 
 	"github.com/golang/glog"
+	"github.com/google/cadvisor/metrics"
 )
 
 var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
@@ -57,6 +58,8 @@ var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web in
 
 var collectorCert = flag.String("collector_cert", "", "Collector's certificate, exposed to endpoints for certificate based authentication.")
 var collectorKey = flag.String("collector_key", "", "Key for the collector's certificate")
+
+var storeContainerLabels = flag.Bool("store_container_labels", true, "convert container labels and environment variables into labels on prometheus metrics for each container. If flag set to false, then only metrics exported are container name, first alias, and image name")
 
 var (
 	// Metrics to be ignored.
@@ -152,7 +155,11 @@ func main() {
 		glog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
 
-	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, nil)
+	containerLabelFunc := metrics.DefaultContainerLabels
+	if !*storeContainerLabels {
+		containerLabelFunc = metrics.BaseContainerLabels
+	}
+	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, containerLabelFunc)
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {
