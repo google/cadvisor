@@ -30,7 +30,7 @@ const (
 )
 
 type mContainers *agent.Response_GetContainers
-type mContainer = agent.Response_GetContainers_Container
+type mContainer agent.Response_GetContainers_Container
 
 type (
 	state struct {
