@@ -100,7 +100,8 @@ func (self *client) getContainer(id string) (*mContainer, error) {
 	// Check if there is a container with given id and return the container
 	for _, c := range cntrs.Containers {
 		if c.ContainerID.Value == id {
-			return &c, nil
+			container := mContainer(c)
+			return &container, nil
 		}
 	}
 	return nil, fmt.Errorf("can't locate container %s", id)
