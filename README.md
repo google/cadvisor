@@ -29,6 +29,8 @@ cAdvisor is now running (in the background) on `http://localhost:8080`. The setu
 
 We have detailed [instructions](docs/running.md#standalone) on running cAdvisor standalone outside of Docker. cAdvisor [running options](docs/runtime_options.md) may also be interesting for advanced usecases. If you want to build your own cAdvisor Docker image see our [deployment](docs/deploy.md) page.
 
+For [Kubernetes](https://github.com/kubernetes/kubernetes) users, cAdvisor can be run as a daemonset.  See the [instructions](deploy/kubernetes) for how to get started, and for how to kustomize it to fit your needs.
+
 ## Building and Testing
 
 See the more detailed instructions in the [build page](docs/development/build.md). This includes instructions for building and deploying the cAdvisor Docker image.
