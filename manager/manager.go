@@ -628,6 +628,11 @@ func (self *manager) AllDockerContainers(query *info.ContainerInfoRequest) (map[
 	for name, cont := range containers {
 		inf, err := self.containerDataToContainerInfo(cont, query)
 		if err != nil {
+			// Ignore the error because of race condition and return best-effort result.
+			if err == memory.ErrDataNotFound {
+				glog.Warningf("Error getting data for container %s because of race condition", name)
+				continue
+			}
 			return nil, err
 		}
 		output[name] = *inf
