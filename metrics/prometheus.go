@@ -842,6 +842,19 @@ func DefaultContainerLabels(container *info.ContainerInfo) map[string]string {
 	return set
 }
 
+// BaseContainerLabels implements ContainerLabelsFunc. It only exports the
+// container name, first alias, and image name.
+func BaseContainerLabels(container *info.ContainerInfo) map[string]string {
+	set := map[string]string{LabelID: container.Name}
+	if len(container.Aliases) > 0 {
+		set[LabelName] = container.Aliases[0]
+	}
+	if image := container.Spec.Image; len(image) > 0 {
+		set[LabelImage] = image
+	}
+	return set
+}
+
 func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
 	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 1})
 	if err != nil {
