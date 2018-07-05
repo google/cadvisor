@@ -16,6 +16,7 @@ package mesos
 
 import (
 	"fmt"
+
 	"github.com/mesos/mesos-go/api/v1/lib"
 	"github.com/mesos/mesos-go/api/v1/lib/agent"
 )
@@ -30,7 +31,7 @@ const (
 )
 
 type mContainers *agent.Response_GetContainers
-type mContainer = agent.Response_GetContainers_Container
+type mContainer agent.Response_GetContainers_Container
 
 type (
 	state struct {
