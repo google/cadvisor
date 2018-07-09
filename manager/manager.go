@@ -142,7 +142,7 @@ type Manager interface {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, ignoreMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, includedMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -213,7 +213,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		startupTime:                           time.Now(),
 		maxHousekeepingInterval:               maxHousekeepingInterval,
 		allowDynamicHousekeeping:              allowDynamicHousekeeping,
-		ignoreMetrics:                         ignoreMetricsSet,
+		includedMetrics:                       includedMetricsSet,
 		containerWatchers:                     []watcher.ContainerWatcher{},
 		eventsChannel:                         eventsChannel,
 		collectorHttpClient:                   collectorHttpClient,
@@ -285,7 +285,7 @@ type manager struct {
 	startupTime              time.Time
 	maxHousekeepingInterval  time.Duration
 	allowDynamicHousekeeping bool
-	ignoreMetrics            container.MetricSet
+	includedMetrics          container.MetricSet
 	containerWatchers        []watcher.ContainerWatcher
 	eventsChannel            chan watcher.ContainerEvent
 	collectorHttpClient      *http.Client
@@ -296,12 +296,12 @@ type manager struct {
 
 // Start the container manager.
 func (self *manager) Start() error {
-	err := docker.Register(self, self.fsInfo, self.ignoreMetrics)
+	err := docker.Register(self, self.fsInfo, self.includedMetrics)
 	if err != nil {
 		glog.V(5).Infof("Registration of the Docker container factory failed: %v.", err)
 	}
 
-	err = rkt.Register(self, self.fsInfo, self.ignoreMetrics)
+	err = rkt.Register(self, self.fsInfo, self.includedMetrics)
 	if err != nil {
 		glog.V(5).Infof("Registration of the rkt container factory failed: %v", err)
 	} else {
@@ -312,27 +312,27 @@ func (self *manager) Start() error {
 		self.containerWatchers = append(self.containerWatchers, watcher)
 	}
 
-	err = containerd.Register(self, self.fsInfo, self.ignoreMetrics)
+	err = containerd.Register(self, self.fsInfo, self.includedMetrics)
 	if err != nil {
 		glog.V(5).Infof("Registration of the containerd container factory failed: %v", err)
 	}
 
-	err = crio.Register(self, self.fsInfo, self.ignoreMetrics)
+	err = crio.Register(self, self.fsInfo, self.includedMetrics)
 	if err != nil {
 		glog.V(5).Infof("Registration of the crio container factory failed: %v", err)
 	}
 
-	err = mesos.Register(self, self.fsInfo, self.ignoreMetrics)
+	err = mesos.Register(self, self.fsInfo, self.includedMetrics)
 	if err != nil {
 		glog.V(5).Infof("Registration of the mesos container factory failed: %v", err)
 	}
 
-	err = systemd.Register(self, self.fsInfo, self.ignoreMetrics)
+	err = systemd.Register(self, self.fsInfo, self.includedMetrics)
 	if err != nil {
 		glog.V(5).Infof("Registration of the systemd container factory failed: %v", err)
 	}
 
-	err = raw.Register(self, self.fsInfo, self.ignoreMetrics, self.rawContainerCgroupPathPrefixWhiteList)
+	err = raw.Register(self, self.fsInfo, self.includedMetrics, self.rawContainerCgroupPathPrefixWhiteList)
 	if err != nil {
 		glog.Errorf("Registration of the raw container factory failed: %v", err)
 	}

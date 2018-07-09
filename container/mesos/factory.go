@@ -50,7 +50,7 @@ type mesosFactory struct {
 	// Information about mounted filesystems.
 	fsInfo fs.FsInfo
 
-	ignoreMetrics map[container.MetricKind]struct{}
+	includedMetrics map[container.MetricKind]struct{}
 
 	client mesosAgentClient
 }
@@ -70,7 +70,7 @@ func (self *mesosFactory) NewContainerHandler(name string, inHostNamespace bool)
 		&self.cgroupSubsystems,
 		self.machineInfoFactory,
 		self.fsInfo,
-		self.ignoreMetrics,
+		self.includedMetrics,
 		inHostNamespace,
 		client,
 	)
@@ -127,7 +127,7 @@ func (self *mesosFactory) DebugInfo() map[string][]string {
 func Register(
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
-	ignoreMetrics container.MetricSet,
+	includedMetrics container.MetricSet,
 ) error {
 	client, err := Client()
 
@@ -145,7 +145,7 @@ func Register(
 		machineInfoFactory: machineInfoFactory,
 		cgroupSubsystems:   cgroupSubsystems,
 		fsInfo:             fsInfo,
-		ignoreMetrics:      ignoreMetrics,
+		includedMetrics:    includedMetrics,
 		client:             client,
 	}
 	container.RegisterContainerHandlerFactory(factory, []watcher.ContainerWatchSource{watcher.Raw})

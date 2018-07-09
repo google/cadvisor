@@ -124,6 +124,8 @@ func main() {
 		os.Exit(0)
 	}
 
+	includedMetrics := toIncludedMetrics(ignoreMetrics.MetricSet)
+
 	setMaxProcs()
 
 	memoryStorage, err := NewMemoryStorage()
@@ -135,7 +137,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient, []string{"/"})
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, []string{"/"})
 	if err != nil {
 		glog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
@@ -159,7 +161,7 @@ func main() {
 	if !*storeContainerLabels {
 		containerLabelFunc = metrics.BaseContainerLabels
 	}
-	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, containerLabelFunc)
+	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {
@@ -232,4 +234,28 @@ func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
 	}
 
 	return http.Client{Transport: transport}
+}
+
+func toIncludedMetrics(ignoreMetrics container.MetricSet) container.MetricSet {
+	set := container.MetricSet{}
+	allMetrics := []container.MetricKind{
+		container.CpuUsageMetrics,
+		container.ProcessSchedulerMetrics,
+		container.PerCpuUsageMetrics,
+		container.MemoryUsageMetrics,
+		container.CpuLoadMetrics,
+		container.DiskIOMetrics,
+		container.DiskUsageMetrics,
+		container.NetworkUsageMetrics,
+		container.NetworkTcpUsageMetrics,
+		container.NetworkUdpUsageMetrics,
+		container.AcceleratorUsageMetrics,
+		container.AppMetrics,
+	}
+	for _, metric := range allMetrics {
+		if !ignoreMetrics.Has(metric) {
+			set[metric] = struct{}{}
+		}
+	}
+	return set
 }
