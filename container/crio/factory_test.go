@@ -30,7 +30,7 @@ func TestCanHandleAndAccept(t *testing.T) {
 		machineInfoFactory: nil,
 		storageDriver:      "",
 		storageDir:         "",
-		ignoreMetrics:      nil,
+		includedMetrics:    nil,
 	}
 	for k, v := range map[string]bool{
 		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f":           true,

@@ -42,7 +42,7 @@ func TestHandler(t *testing.T) {
 		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
 		inHostNamespace    bool
 		metadataEnvs       []string
-		ignoreMetrics      container.MetricSet
+		includedMetrics    container.MetricSet
 		storageDir         string
 
 		hasErr         bool
@@ -92,7 +92,7 @@ func TestHandler(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newContainerdContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.ignoreMetrics)
+		handler, err := newContainerdContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.includedMetrics)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {

@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/google/cadvisor/api"
+	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/healthz"
 	httpmux "github.com/google/cadvisor/http/mux"
 	"github.com/google/cadvisor/manager"
@@ -93,10 +94,11 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 
 // RegisterPrometheusHandler creates a new PrometheusCollector and configures
 // the provided HTTP mux to handle the given Prometheus endpoint.
-func RegisterPrometheusHandler(mux httpmux.Mux, containerManager manager.Manager, prometheusEndpoint string, f metrics.ContainerLabelsFunc) {
+func RegisterPrometheusHandler(mux httpmux.Mux, containerManager manager.Manager, prometheusEndpoint string,
+	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(
-		metrics.NewPrometheusCollector(containerManager, f),
+		metrics.NewPrometheusCollector(containerManager, f, includedMetrics),
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(os.Getpid(), ""),
 	)

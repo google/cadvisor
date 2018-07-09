@@ -37,7 +37,7 @@ func TestHandler(t *testing.T) {
 		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
 		inHostNamespace    bool
 		metadataEnvs       []string
-		ignoreMetrics      container.MetricSet
+		includedMetrics    container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -102,7 +102,7 @@ func TestHandler(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newCrioContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.storageDriver, ts.storageDir, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.ignoreMetrics)
+		handler, err := newCrioContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.storageDriver, ts.storageDir, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.includedMetrics)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {

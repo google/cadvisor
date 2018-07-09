@@ -62,7 +62,7 @@ func TestCanHandleAndAccept(t *testing.T) {
 		cgroupSubsystems:   containerlibcontainer.CgroupSubsystems{},
 		fsInfo:             nil,
 		machineInfoFactory: nil,
-		ignoreMetrics:      nil,
+		includedMetrics:    nil,
 	}
 	for k, v := range map[string]bool{
 		"/kubepods/besteffort/podd76e26fba3bf2bfd215eb29011d55250/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9":                        true,

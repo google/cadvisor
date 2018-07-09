@@ -43,8 +43,8 @@ type mesosContainerHandler struct {
 	// File System Info
 	fsInfo fs.FsInfo
 
-	// Metrics to be ignored.
-	ignoreMetrics container.MetricSet
+	// Metrics to be included.
+	includedMetrics container.MetricSet
 
 	labels map[string]string
 
@@ -63,7 +63,7 @@ func newMesosContainerHandler(
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
-	ignoreMetrics container.MetricSet,
+	includedMetrics container.MetricSet,
 	inHostNamespace bool,
 	client mesosAgentClient,
 ) (container.ContainerHandler, error) {
@@ -96,7 +96,7 @@ func newMesosContainerHandler(
 	labels := cinfo.labels
 	pid := int(*cinfo.cntr.ContainerStatus.ExecutorPID)
 
-	libcontainerHandler := containerlibcontainer.NewHandler(cgroupManager, rootFs, pid, ignoreMetrics)
+	libcontainerHandler := containerlibcontainer.NewHandler(cgroupManager, rootFs, pid, includedMetrics)
 
 	reference := info.ContainerReference{
 		Id:        id,
@@ -110,7 +110,7 @@ func newMesosContainerHandler(
 		machineInfoFactory:  machineInfoFactory,
 		cgroupPaths:         cgroupPaths,
 		fsInfo:              fsInfo,
-		ignoreMetrics:       ignoreMetrics,
+		includedMetrics:     includedMetrics,
 		labels:              labels,
 		reference:           reference,
 		libcontainerHandler: libcontainerHandler,
@@ -154,7 +154,7 @@ func (self *mesosContainerHandler) getFsStats(stats *info.ContainerStats) error 
 		return err
 	}
 
-	if !self.ignoreMetrics.Has(container.DiskIOMetrics) {
+	if self.includedMetrics.Has(container.DiskIOMetrics) {
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
 	}
 

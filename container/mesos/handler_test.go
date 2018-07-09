@@ -43,7 +43,7 @@ func TestContainerReference(t *testing.T) {
 		fsInfo             fs.FsInfo
 		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
 		inHostNamespace    bool
-		ignoreMetrics      container.MetricSet
+		includedMetrics    container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -95,7 +95,7 @@ func TestContainerReference(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.ignoreMetrics, ts.inHostNamespace, ts.client)
+		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.client)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {
