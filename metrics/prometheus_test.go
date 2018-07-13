@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -63,9 +64,9 @@ var allMetrics = container.MetricSet{
 	container.NetworkUdpUsageMetrics:  struct{}{},
 }
 
-func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
-	return []*info.ContainerInfo{
-		{
+func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
+	return map[string]*info.ContainerInfo{
+		"testcontainer": {
 			ContainerReference: info.ContainerReference{
 				Name:    "testcontainer",
 				Aliases: []string{"testcontaineralias"},
@@ -248,11 +249,17 @@ var (
 )
 
 func TestPrometheusCollector(t *testing.T) {
+	maxAge := time.Duration(0)
 	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, allMetrics)
+	}, allMetrics, v2.RequestOptions{
+		IdType:    v2.TypeName,
+		Count:     1,
+		Recursive: true,
+		MaxAge:    &maxAge,
+	})
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 
@@ -304,12 +311,12 @@ func (p *erroringSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo,
 	return p.successfulProvider.GetMachineInfo()
 }
 
-func (p *erroringSubcontainersInfoProvider) SubcontainersInfo(
-	a string, r *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
+func (p *erroringSubcontainersInfoProvider) GetRequestedContainersInfo(
+	a string, opt v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
 	if p.shouldFail {
-		return []*info.ContainerInfo{}, errors.New("Oops 3")
+		return nil, errors.New("Oops 3")
 	}
-	return p.successfulProvider.SubcontainersInfo(a, r)
+	return p.successfulProvider.GetRequestedContainersInfo(a, opt)
 }
 
 func TestPrometheusCollector_scrapeFailure(t *testing.T) {
@@ -317,12 +324,18 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		successfulProvider: testSubcontainersInfoProvider{},
 		shouldFail:         true,
 	}
+	maxAge := time.Duration(0)
 
 	c := NewPrometheusCollector(provider, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, allMetrics)
+	}, allMetrics, v2.RequestOptions{
+		IdType:    v2.TypeName,
+		Count:     1,
+		Recursive: true,
+		MaxAge:    &maxAge,
+	})
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 

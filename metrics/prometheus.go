@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
 
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
@@ -28,9 +29,8 @@ import (
 
 // infoProvider will usually be manager.Manager, but can be swapped out for testing.
 type infoProvider interface {
-	// SubcontainersInfo provides information about all subcontainers of the
-	// specified container including itself.
-	SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error)
+	// GetRequestedContainersInfo gets info for all requested containers based on the request options.
+	GetRequestedContainersInfo(containerName string, options v2.RequestOptions) (map[string]*info.ContainerInfo, error)
 	// GetVersionInfo provides information about the version.
 	GetVersionInfo() (*info.VersionInfo, error)
 	// GetMachineInfo provides information about the machine.
@@ -109,19 +109,21 @@ type PrometheusCollector struct {
 	errors              prometheus.Gauge
 	containerMetrics    []containerMetric
 	containerLabelsFunc ContainerLabelsFunc
+	opt                 v2.RequestOptions
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector. The passed
 // ContainerLabelsFunc specifies which base labels will be attached to all
 // exported metrics. If left to nil, the DefaultContainerLabels function
 // will be used instead.
-func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet) *PrometheusCollector {
+func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, opt v2.RequestOptions) *PrometheusCollector {
 	if f == nil {
 		f = DefaultContainerLabels
 	}
 	c := &PrometheusCollector{
 		infoProvider:        i,
 		containerLabelsFunc: f,
+		opt:                 opt,
 		errors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: "container",
 			Name:      "scrape_error",
@@ -907,7 +909,7 @@ func BaseContainerLabels(container *info.ContainerInfo) map[string]string {
 }
 
 func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
-	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 1})
+	containers, err := c.infoProvider.GetRequestedContainersInfo("/", c.opt)
 	if err != nil {
 		c.errors.Set(1)
 		glog.Warningf("Couldn't get containers: %s", err)
