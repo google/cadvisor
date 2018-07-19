@@ -10,5 +10,5 @@ cAdvisor supports exporting stats to various storage driver plugins. To enable a
 - [Kafka](http://kafka.apache.org/). See the [documentation](kafka.md) for usage.
 - [Prometheus](https://prometheus.io). See the [documentation](prometheus.md) for usage and examples.
 - [Redis](http://redis.io/)
-- [StatsD](https://github.com/etsy/statsd)
+- [StatsD](https://github.com/etsy/statsd). See the [documentation](statsd.md) for usage and examples.
 - `stdout` - write stats to standard output.
