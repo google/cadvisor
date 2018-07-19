@@ -16,3 +16,9 @@ Specify what statsd instance to push data to:
 ```
 
 # Examples
+
+The easiest way to get up an running is to start the cadvisor binary with the `--storage_driver` and `--storage_driver_host` flags.
+
+```
+cadvisor --storage_driver="statsd" --storage_driver_host="localhost:8125"
+```
