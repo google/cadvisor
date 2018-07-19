@@ -11,7 +11,7 @@ Set the storage driver as statsd.
 Specify what statsd instance to push data to:
 
 ```
- # The *ip:port* of the database. Default is 'localhost:8086'
+ # The *ip:port* of the instance. Default is 'localhost:8086'
  -storage_driver_host=ip:port
 ```
 
@@ -22,3 +22,5 @@ The easiest way to get up an running is to start the cadvisor binary with the `-
 ```
 cadvisor --storage_driver="statsd" --storage_driver_host="localhost:8125"
 ```
+
+The default port for statsd is 8125, so this wil start pumping metrics directly to it.
