@@ -32,6 +32,23 @@ func (c *FakeMesosAgentClient) ContainerInfo(id string) (*containerInfo, error) 
 	return cInfo, nil
 }
 
+func (c *FakeMesosAgentClient) ContainerPid(id string) (int, error) {
+	if c.err != nil {
+		return invalidPID, c.err
+	}
+	cInfo, ok := c.cntrInfo[id]
+	if !ok {
+		return invalidPID, fmt.Errorf("can't locate container %s", id)
+	}
+
+	if cInfo.cntr.ContainerStatus == nil {
+		return invalidPID, fmt.Errorf("error fetching Pid")
+	}
+
+	pid := int(*cInfo.cntr.ContainerStatus.ExecutorPID)
+	return pid, nil
+}
+
 func fakeMesosAgentClient(cntrInfo map[string]*containerInfo, err error) mesosAgentClient {
 	return &FakeMesosAgentClient{
 		err:      err,

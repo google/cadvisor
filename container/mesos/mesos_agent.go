@@ -62,12 +62,37 @@ func (s *state) GetExecutor(id string) (*mesos.ExecutorInfo, error) {
 
 // GetTask returns a task launched by given executor.
 func (s *state) GetTask(exID string) (*mesos.Task, error) {
+	// Check if task is in Launched Tasks list
 	for _, t := range s.st.GetTasks.LaunchedTasks {
-		if t.ExecutorID.Value == exID {
+		if s.isMatchingTask(&t, exID) {
+			return &t, nil
+		}
+	}
+
+	// Check if task is in Queued Tasks list
+	for _, t := range s.st.GetTasks.QueuedTasks {
+		if s.isMatchingTask(&t, exID) {
 			return &t, nil
 		}
 	}
 	return nil, fmt.Errorf("unable to find task matching executor id %s", exID)
+}
+
+func (s *state) isMatchingTask(t *mesos.Task, exID string) bool {
+	// MESOS-9111: For tasks launched through mesos command/default executor, the
+	// executorID(which is same as the taskID) field is not filled in the TaskInfo object.
+	// The workaround is compare with taskID field if executorID is empty
+	if t.ExecutorID != nil {
+		if t.ExecutorID.Value == exID {
+			return true
+		}
+	} else {
+		if t.TaskID.Value == exID {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (s *state) fetchLabelsFromTask(exID string, labels map[string]string) error {
