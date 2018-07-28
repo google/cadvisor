@@ -498,12 +498,13 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Memory.Usage = s.MemoryStats.Usage.Usage
 	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
 	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
-	ret.Memory.Cache = s.MemoryStats.Stats["cache"]
 
 	if s.MemoryStats.UseHierarchy {
+		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["total_rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["total_swap"]
 	} else {
+		ret.Memory.Cache = s.MemoryStats.Stats["cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["swap"]
 	}
