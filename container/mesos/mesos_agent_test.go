@@ -47,12 +47,15 @@ func PopulateExecutors(exID string) *agent.Response_GetExecutors {
 	return execs
 }
 
-func PopulateTasks() *agent.Response_GetTasks {
+func PopulateTasks(taskID string, exID string) *agent.Response_GetTasks {
 	tasks := &agent.Response_GetTasks{}
 	tasks.LaunchedTasks = make([]mesos.Task, 1)
 
 	task := mesos.Task{
-		ExecutorID: &mesos.ExecutorID{Value: "exec-id1"},
+		TaskID: mesos.TaskID{Value: taskID},
+	}
+	if len(exID) > 0 {
+		task.ExecutorID = &mesos.ExecutorID{Value: exID}
 	}
 
 	task.Resources = make([]mesos.Resource, 1)
@@ -92,7 +95,23 @@ func TestFetchLabels(t *testing.T) {
 			agentState: &agent.Response_GetState{
 				GetFrameworks: PopulateFrameworks("fw-id1"),
 				GetExecutors:  PopulateExecutors("exec-id1"),
-				GetTasks:      PopulateTasks(),
+				GetTasks:      PopulateTasks("task-id1", "exec-id1"),
+			},
+			expectedError: nil,
+			expectedLabels: map[string]string{
+				framework:    "TestFramework",
+				source:       "source1",
+				schedulerSLA: nonRevocable,
+				"key1":       "value1",
+			},
+		},
+		{
+			frameworkID: "fw-id1",
+			executorID:  "task-id1",
+			agentState: &agent.Response_GetState{
+				GetFrameworks: PopulateFrameworks("fw-id1"),
+				GetExecutors:  PopulateExecutors("task-id1"),
+				GetTasks:      PopulateTasks("task-id1", ""),
 			},
 			expectedError: nil,
 			expectedLabels: map[string]string{
@@ -108,7 +127,7 @@ func TestFetchLabels(t *testing.T) {
 			agentState: &agent.Response_GetState{
 				GetFrameworks: PopulateFrameworks("fw-id1"),
 				GetExecutors:  PopulateExecutors("exec-id1"),
-				GetTasks:      PopulateTasks(),
+				GetTasks:      PopulateTasks("task-id1", "exec-id1"),
 			},
 			expectedError:  fmt.Errorf("framework ID \"fw-id2\" not found: unable to find framework id fw-id2"),
 			expectedLabels: map[string]string{},

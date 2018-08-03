@@ -94,7 +94,10 @@ func newMesosContainerHandler(
 	}
 
 	labels := cinfo.labels
-	pid := int(*cinfo.cntr.ContainerStatus.ExecutorPID)
+	pid, err := client.ContainerPid(id)
+	if err != nil {
+		return nil, err
+	}
 
 	libcontainerHandler := containerlibcontainer.NewHandler(cgroupManager, rootFs, pid, includedMetrics)
 

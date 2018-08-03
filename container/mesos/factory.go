@@ -107,14 +107,9 @@ func (self *mesosFactory) CanHandleAndAccept(name string) (handle bool, accept b
 	// Check if the container is known to mesos and it is active.
 	id := ContainerNameToMesosId(name)
 
-	c, err := self.client.ContainerInfo(id)
+	_, err = self.client.ContainerInfo(id)
 	if err != nil {
 		return false, true, fmt.Errorf("error getting running container: %v", err)
-	}
-
-	pid := int(*c.cntr.ContainerStatus.ExecutorPID)
-	if pid <= 0 {
-		return false, true, fmt.Errorf("mesos container pid: %d is invalid", pid)
 	}
 
 	return true, true, nil

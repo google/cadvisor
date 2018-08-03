@@ -30,6 +30,7 @@ import (
 
 const (
 	maxRetryAttempts = 3
+	invalidPID       = -1
 )
 
 var (
@@ -43,6 +44,7 @@ type client struct {
 
 type mesosAgentClient interface {
 	ContainerInfo(id string) (*containerInfo, error)
+	ContainerPid(id string) (int, error)
 }
 
 type containerInfo struct {
@@ -88,6 +90,32 @@ func (self *client) ContainerInfo(id string) (*containerInfo, error) {
 		cntr:   c,
 		labels: l,
 	}, nil
+}
+
+// Get the Pid of the container
+func (self *client) ContainerPid(id string) (int, error) {
+	var pid int
+	var err error
+	err = retry.Retry(
+		func(attempt uint) error {
+			c, err := self.ContainerInfo(id)
+			if err != nil {
+				return err
+			}
+
+			if c.cntr.ContainerStatus != nil {
+				pid = int(*c.cntr.ContainerStatus.ExecutorPID)
+			} else {
+				err = fmt.Errorf("error fetching Pid")
+			}
+			return err
+		},
+		strategy.Limit(maxRetryAttempts),
+	)
+	if err != nil {
+		return invalidPID, fmt.Errorf("failed to fetch pid")
+	}
+	return pid, err
 }
 
 func (self *client) getContainer(id string) (*mContainer, error) {
