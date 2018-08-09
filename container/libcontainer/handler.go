@@ -503,9 +503,11 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	if s.MemoryStats.UseHierarchy {
 		ret.Memory.RSS = s.MemoryStats.Stats["total_rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["total_swap"]
+		ret.Memory.MappedFile = s.MemoryStats.Stats["total_mapped_file"]
 	} else {
 		ret.Memory.RSS = s.MemoryStats.Stats["rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["swap"]
+		ret.Memory.MappedFile = s.MemoryStats.Stats["mapped_file"]
 	}
 	if v, ok := s.MemoryStats.Stats["pgfault"]; ok {
 		ret.Memory.ContainerData.Pgfault = v
