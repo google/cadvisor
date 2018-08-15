@@ -798,7 +798,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
-	if includedMetrics.Has(container.NetworkTcpUsageMetrics) {
+	if includedMetrics.Has(container.NetworkUdpUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
 				name:        "container_network_udp_usage_total",
