@@ -26,6 +26,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+const (
+	defaultValidTimeRange = 3 * 10 * time.Second // 3 times of defaultHousekeepingInterval
+)
+
 // infoProvider will usually be manager.Manager, but can be swapped out for testing.
 type infoProvider interface {
 	// SubcontainersInfo provides information about all subcontainers of the
@@ -907,7 +911,17 @@ func BaseContainerLabels(container *info.ContainerInfo) map[string]string {
 }
 
 func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
-	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 1})
+
+	now := time.Now()
+	start := now.Truncate(defaultValidTimeRange)
+	end := start.Add(defaultValidTimeRange)
+
+	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{
+		Start:    start,
+		NumStats: 1,
+		End:      end,
+	})
+
 	if err != nil {
 		c.errors.Set(1)
 		glog.Warningf("Couldn't get containers: %s", err)
