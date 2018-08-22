@@ -30,6 +30,9 @@ spec:
         - name: docker
           mountPath: /var/lib/docker
           readOnly: true
+        - name: disk
+          mountPath: /dev/disk
+          readOnly: true
         ports:
           - name: http
             containerPort: 8080
@@ -49,3 +52,6 @@ spec:
       - name: docker
         hostPath:
           path: /var/lib/docker
+      - name: disk
+        hostPath:
+          path: /dev/disk
