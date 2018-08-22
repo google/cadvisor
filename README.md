@@ -13,7 +13,7 @@ To quickly tryout cAdvisor on your machine with Docker, we have a Docker image t
 ```
 sudo docker run \
   --volume=/:/rootfs:ro \
-  --volume=/var/run:/var/run:rw \
+  --volume=/var/run:/var/run:ro \
   --volume=/sys:/sys:ro \
   --volume=/var/lib/docker/:/var/lib/docker:ro \
   --volume=/dev/disk/:/dev/disk:ro \
