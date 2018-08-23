@@ -36,6 +36,7 @@ import (
 )
 
 const hugepagesDirectory = "/sys/kernel/mm/hugepages/"
+const pciBusPath = "/sys/bus/pci/devices/"
 
 var machineIdFilePath = flag.String("machine_id_file", "/etc/machine-id,/var/lib/dbus/machine-id", "Comma-separated list of files to check for machine-id. Use the first one that exists.")
 var bootIdFilePath = flag.String("boot_id_file", "/proc/sys/kernel/random/boot_id", "Comma-separated list of files to check for boot-id. Use the first one that exists.")
@@ -130,7 +131,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		klog.Errorf("Failed to get network devices: %v", err)
 	}
 
-	topology, numCores, err := GetTopology(sysFs, string(cpuinfo))
+	topology, numCores, err := GetTopology(sysFs, string(cpuinfo), pciBusPath)
 	if err != nil {
 		klog.Errorf("Failed to get topology information: %v", err)
 	}

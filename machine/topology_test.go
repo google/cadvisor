@@ -24,6 +24,9 @@ import (
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 )
 
+var numaPciPath = "./testdata/numa/pci"
+var smpPciPath = "./testdata/smp/pci"
+
 func TestTopology(t *testing.T) {
 	testfile := "./testdata/cpuinfo"
 	testcpuinfo, err := ioutil.ReadFile(testfile)
@@ -38,7 +41,7 @@ func TestTopology(t *testing.T) {
 		Cpus:  2,
 	}
 	sysFs.SetCacheInfo(c)
-	topology, numCores, err := GetTopology(sysFs, string(testcpuinfo))
+	topology, numCores, err := GetTopology(sysFs, string(testcpuinfo), numaPciPath)
 	if err != nil {
 		t.Errorf("failed to get topology for sample cpuinfo %s: %v", string(testcpuinfo), err)
 	}
@@ -55,6 +58,10 @@ func TestTopology(t *testing.T) {
 		Type:  "unified",
 		Level: 1,
 	}
+	pci0 := "0000:00:00.0"
+	pci1 := "0000:00:00.1"
+	pci2 := "0000:00:01.0"
+
 	for i := 0; i < numNodes; i++ {
 		node := info.Node{Id: i}
 		// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
@@ -66,6 +73,13 @@ func TestTopology(t *testing.T) {
 				core.Threads = append(core.Threads, k*numCoresPerNode*numNodes+core.Id)
 			}
 			node.Cores = append(node.Cores, core)
+		}
+		if i == 0 {
+			node.Pcis = append(node.Pcis, pci0)
+			node.Pcis = append(node.Pcis, pci1)
+		}
+		if i == 1 {
+			node.Pcis = append(node.Pcis, pci2)
 		}
 		expected_topology = append(expected_topology, node)
 	}
@@ -84,7 +98,7 @@ func TestTopologyWithSimpleCpuinfo(t *testing.T) {
 		Cpus:  1,
 	}
 	sysFs.SetCacheInfo(c)
-	topology, numCores, err := GetTopology(sysFs, "processor\t: 0\n")
+	topology, numCores, err := GetTopology(sysFs, "processor\t: 0\n", smpPciPath)
 	if err != nil {
 		t.Errorf("Expected cpuinfo with no topology data to succeed.")
 	}
@@ -96,8 +110,12 @@ func TestTopologyWithSimpleCpuinfo(t *testing.T) {
 		Type:  "unified",
 		Level: 1,
 	}
+	pci0 := "0000:00:00.0"
+
 	core.Caches = append(core.Caches, cache)
 	node.Cores = append(node.Cores, core)
+	node.Pcis = append(node.Pcis, pci0)
+
 	// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
 	node.Memory = topology[0].Memory
 	expected := []info.Node{node}
@@ -110,7 +128,7 @@ func TestTopologyWithSimpleCpuinfo(t *testing.T) {
 }
 
 func TestTopologyEmptyCpuinfo(t *testing.T) {
-	_, _, err := GetTopology(&fakesysfs.FakeSysFs{}, "")
+	_, _, err := GetTopology(&fakesysfs.FakeSysFs{}, "", "")
 	if err == nil {
 		t.Errorf("Expected empty cpuinfo to fail.")
 	}

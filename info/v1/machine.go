@@ -38,9 +38,10 @@ type FsInfo struct {
 type Node struct {
 	Id int `json:"node_id"`
 	// Per-node memory
-	Memory uint64  `json:"memory"`
-	Cores  []Core  `json:"cores"`
-	Caches []Cache `json:"caches"`
+	Memory uint64   `json:"memory"`
+	Cores  []Core   `json:"cores"`
+	Caches []Cache  `json:"caches"`
+	Pcis   []string `json:"pcis"`
 }
 
 type Core struct {
@@ -92,6 +93,10 @@ func (self *Node) AddPerCoreCache(c Cache) {
 	for idx := range self.Cores {
 		self.Cores[idx].Caches = append(self.Cores[idx].Caches, c)
 	}
+}
+
+func (self *Node) AddNodePci(pci string) {
+	self.Pcis = append(self.Pcis, pci)
 }
 
 type HugePagesInfo struct {

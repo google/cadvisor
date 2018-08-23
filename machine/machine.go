@@ -191,7 +191,30 @@ func getNodeIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	return nodeId, nil
 }
 
-func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
+/* Look for sysfs pci path containing node_id. */
+/* Such as: /sys/bus/pci/devices/0000\:00\:00.0/numa_node */
+func getNodeIdFromPciBus(pciBusPath string, pciAddr string) (int, error) {
+	p := filepath.Join(pciBusPath, pciAddr)
+	file := filepath.Join(p, "numa_node")
+
+	num, err := ioutil.ReadFile(file)
+	if err != nil {
+		return 0, err
+	}
+
+	nodeId, err := strconv.ParseInt(string(bytes.TrimSpace(num)), 10, 32)
+	if err != nil {
+		return 0, err
+	}
+
+	if nodeId < 0 {
+		nodeId = 0
+	}
+
+	return int(nodeId), nil
+}
+
+func GetTopology(sysFs sysfs.SysFs, cpuinfo string, pciBusPath string) ([]info.Node, int, error) {
 	nodes := []info.Node{}
 
 	// s390/s390x changes
@@ -302,6 +325,29 @@ func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 				nodes[idx].AddPerCoreCache(c)
 			}
 			// Ignore unknown caches.
+		}
+	}
+
+	/* Look for sysfs pci path containing node_id. */
+	/* Match the relationship between pci device id and node_id. */
+	for idx, _ := range nodes {
+		files, err := ioutil.ReadDir(pciBusPath)
+		if err != nil {
+			return nil, -1, fmt.Errorf("failed to find pci bus path %s: %v", pciBusPath, err)
+		}
+
+		for _, file := range files {
+			pciAddr := file.Name()
+
+			num, err := getNodeIdFromPciBus(pciBusPath, pciAddr)
+			if err != nil {
+				// report node 0 if no NUMA
+				num = 0
+			}
+
+			if num == idx {
+				nodes[idx].AddNodePci(pciAddr)
+			}
 		}
 	}
 	return nodes, numCores, nil
