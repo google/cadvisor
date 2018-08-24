@@ -68,7 +68,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 		{
 			ContainerReference: info.ContainerReference{
 				Name:    "testcontainer",
-				Aliases: []string{"testcontaineralias"},
+				Aliases: []string{"k8s_container_pod_namespace_uid_restart-count"},
 			},
 			Spec: info.ContainerSpec{
 				Image:  "test",
