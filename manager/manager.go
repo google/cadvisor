@@ -1100,7 +1100,7 @@ func (m *manager) getContainersDiff(containerName string) (added []info.Containe
 	m.containersLock.RUnlock()
 	allContainers, err := contHandler.ListContainers(container.ListRecursive)
 	m.containersLock.RLock()
-				       
+
 	if err != nil {
 		return nil, nil, err
 	}
