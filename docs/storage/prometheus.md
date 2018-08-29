@@ -53,6 +53,7 @@ Metric name | Type | Description | Unit (where applicable)
 `container_memory_max_usage_bytes` | Gauge | Maximum memory usage recorded | bytes
 `container_memory_rss` | Gauge | Size of RSS | bytes
 `container_memory_swap` | Gauge | Container swap usage | bytes
+`container_memory_mapped_file` | Gauge | Size of memory mapped files | bytes
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes
 `container_network_receive_bytes_total` | Counter | Cumulative count of bytes received | bytes
