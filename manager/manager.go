@@ -1086,21 +1086,24 @@ func (m *manager) destroyContainerLocked(containerName string) error {
 
 // Detect all containers that have been added or deleted from the specified container.
 func (m *manager) getContainersDiff(containerName string) (added []info.ContainerReference, removed []info.ContainerReference, err error) {
-	m.containersLock.RLock()
-	defer m.containersLock.RUnlock()
-
 	// Get all subcontainers recursively.
+	m.containersLock.RLock()
 	cont, ok := m.containers[namespacedContainerName{
 		Name: containerName,
 	}]
+	m.containersLock.RUnlock()
 	if !ok {
 		return nil, nil, fmt.Errorf("failed to find container %q while checking for new containers", containerName)
 	}
 	allContainers, err := cont.handler.ListContainers(container.ListRecursive)
+
 	if err != nil {
 		return nil, nil, err
 	}
 	allContainers = append(allContainers, info.ContainerReference{Name: containerName})
+
+	m.containersLock.RLock()
+	defer m.containersLock.RUnlock()
 
 	// Determine which were added and which were removed.
 	allContainersSet := make(map[string]*containerData)
