@@ -1095,8 +1095,7 @@ func (m *manager) getContainersDiff(containerName string) (added []info.Containe
 	if !ok {
 		return nil, nil, fmt.Errorf("failed to find container %q while checking for new containers", containerName)
 	}
-	contHandler := cont.handler
-	allContainers, err := contHandler.ListContainers(container.ListRecursive)
+	allContainers, err := cont.handler.ListContainers(container.ListRecursive)
 
 	if err != nil {
 		return nil, nil, err
