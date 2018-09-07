@@ -1,5 +1,16 @@
 # Changelog
 
+### 0.31.0 (2018-09-07)
+- Fix NVML initialization race condition
+- Fix brtfs filesystem discovery
+- Fix race condition with AllDockerContainers
+- Don't watch .mount cgroups
+- Reduce lock contention during list containers
+- Don't produce prometheus metrics for ignored metrics
+- Add option to not export container labels as prometheus labels
+- Docs: Publish cAdvisor daemonset
+- Docs: Add documentation for exported prometheus metrics
+
 ### 0.30.1 (2018-06-11)
 - Revert switch from inotify to fsnotify
 
