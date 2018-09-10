@@ -140,11 +140,11 @@ type glogAdapter struct{}
 var _ kmsgparser.Logger = glogAdapter{}
 
 func (glogAdapter) Infof(format string, args ...interface{}) {
-	glog.V(4).Infof(format, args)
+	glog.V(4).Infof(format, args...)
 }
 func (glogAdapter) Warningf(format string, args ...interface{}) {
-	glog.V(2).Infof(format, args)
+	glog.V(2).Infof(format, args...)
 }
 func (glogAdapter) Errorf(format string, args ...interface{}) {
-	glog.Warningf(format, args)
+	glog.Warningf(format, args...)
 }
