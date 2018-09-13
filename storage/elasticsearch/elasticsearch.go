@@ -15,6 +15,7 @@
 package elasticsearch
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -24,7 +25,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	storage "github.com/google/cadvisor/storage"
 
-	"gopkg.in/olivere/elastic.v2"
+	"gopkg.in/olivere/elastic.v6"
 )
 
 func init() {
@@ -100,7 +101,7 @@ func (self *elasticStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Cont
 			Index(self.indexName).
 			Type(self.typeName).
 			BodyJson(detail).
-			Do()
+			Do(context.Background())
 		if err != nil {
 			// Handle error
 			fmt.Printf("failed to write stats to ElasticSearch - %s", err)
@@ -140,7 +141,7 @@ func newStorage(
 	}
 
 	// Ping the Elasticsearch server to get e.g. the version number
-	info, code, err := client.Ping().URL(elasticHost).Do()
+	info, code, err := client.Ping(elasticHost).Do(context.Background())
 	if err != nil {
 		// Handle error
 		return nil, fmt.Errorf("failed to ping the elasticsearch - %s", err)
