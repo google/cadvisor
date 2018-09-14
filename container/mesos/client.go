@@ -141,6 +141,10 @@ func (self *client) getContainers() (mContainers, error) {
 		return nil, fmt.Errorf("failed to get mesos containers: %v", err)
 	}
 	cntrs := result.GetContainers
+
+	if cntrs == nil {
+		return nil, fmt.Errorf("failed to get mesos containers")
+	}
 	return cntrs, nil
 }
 
