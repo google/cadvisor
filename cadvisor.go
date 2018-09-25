@@ -60,6 +60,7 @@ var collectorCert = flag.String("collector_cert", "", "Collector's certificate, 
 var collectorKey = flag.String("collector_key", "", "Key for the collector's certificate")
 
 var storeContainerLabels = flag.Bool("store_container_labels", true, "convert container labels and environment variables into labels on prometheus metrics for each container. If flag set to false, then only metrics exported are container name, first alias, and image name")
+var redirectPrefix = flag.String("redirect_prefix", "", "prefix path that will be added to 3xx redirects")
 
 var (
 	// Metrics to be ignored.
@@ -152,7 +153,7 @@ func main() {
 	}
 
 	// Register all HTTP handlers.
-	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
+	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *redirectPrefix)
 	if err != nil {
 		glog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
