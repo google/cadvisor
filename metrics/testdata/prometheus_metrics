@@ -117,10 +117,10 @@ container_memory_cache{container_env_foo_env="prod",container_label_foo_label="b
 container_memory_failcnt{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0
 # HELP container_memory_failures_total Cumulative count of memory allocation failures.
 # TYPE container_memory_failures_total counter
-container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="container",type="pgfault",zone_name="hello"} 10
-container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="container",type="pgmajfault",zone_name="hello"} 11
-container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",type="pgfault",zone_name="hello"} 12
-container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",type="pgmajfault",zone_name="hello"} 13
+container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",failure_type="pgfault",id="testcontainer",image="test",name="testcontaineralias",scope="container",zone_name="hello"} 10
+container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",failure_type="pgfault",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",zone_name="hello"} 12
+container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",failure_type="pgmajfault",id="testcontainer",image="test",name="testcontaineralias",scope="container",zone_name="hello"} 11
+container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",failure_type="pgmajfault",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",zone_name="hello"} 13
 # HELP container_memory_mapped_file Size of memory mapped files in bytes.
 # TYPE container_memory_mapped_file gauge
 container_memory_mapped_file{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 16
