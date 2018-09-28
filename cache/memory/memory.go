@@ -29,7 +29,7 @@ import (
 // ErrDataNotFound is the error resulting if failed to find a container in memory cache.
 var ErrDataNotFound = errors.New("unable to find data in memory cache")
 
-// TODO(vmarmol): See about refactoring this class, we have an unecessary redirection of containerCache and InMemoryCache.
+// TODO(vmarmol): See about refactoring this class, we have an unnecessary redirection of containerCache and InMemoryCache.
 // containerCache is used to store per-container information
 type containerCache struct {
 	ref         info.ContainerReference
