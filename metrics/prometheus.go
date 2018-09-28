@@ -954,7 +954,7 @@ func BaseContainerLabels(container *info.ContainerInfo) map[string]string {
 }
 
 func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
-	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 1})
+	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 2})
 	if err != nil {
 		c.errors.Set(1)
 		glog.Warningf("Couldn't get containers: %s", err)
