@@ -26,9 +26,9 @@ import (
 	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/manager/watcher"
+	inotify "github.com/sigma/go-inotify"
 
 	"github.com/golang/glog"
-	"golang.org/x/exp/inotify"
 )
 
 type rawContainerWatcher struct {

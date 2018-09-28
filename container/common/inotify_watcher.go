@@ -17,7 +17,7 @@ package common
 import (
 	"sync"
 
-	"golang.org/x/exp/inotify"
+	inotify "github.com/sigma/go-inotify"
 )
 
 // Watcher for container-related inotify events in the cgroup hierarchy.
