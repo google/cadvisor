@@ -87,12 +87,13 @@ func ioValues(ioStats []info.PerDiskStats, ioType string, ioValueFn func(uint64)
 // containerMetric describes a multi-dimensional metric used for exposing a
 // certain type of container statistic.
 type containerMetric struct {
-	name        string
-	help        string
-	valueType   prometheus.ValueType
-	extraLabels []string
-	condition   func(s info.ContainerSpec) bool
-	getValues   func(s *info.ContainerStats) metricValues
+	name           string
+	help           string
+	valueType      prometheus.ValueType
+	extraLabels    []string
+	condition      func(s info.ContainerSpec) bool
+	getValues      func(s *info.ContainerStats) metricValues
+	getRangeValues func(ss []*info.ContainerStats) metricValues
 }
 
 func (cm *containerMetric) desc(baseLabels []string) *prometheus.Desc {
@@ -178,6 +179,45 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 						}
 					}
 					return values
+				},
+			}, {
+				name:      "container_cpu_user_usage_rate",
+				help:      "container cpu user usage rate.",
+				valueType: prometheus.GaugeValue,
+				getRangeValues: func(ss []*info.ContainerStats) metricValues {
+					if ss == nil || len(ss) < 2 {
+						return metricValues{{value: float64(0) / float64(time.Second)}}
+					}
+					deltaValue := ss[1].Cpu.Usage.User - ss[0].Cpu.Usage.User
+					deltaTime := ss[1].Timestamp.UnixNano() - ss[0].Timestamp.UnixNano()
+
+					return metricValues{{value: 1000 * float64(deltaValue) / float64(deltaTime)}}
+				},
+			}, {
+				name:      "container_cpu_system_usage_rate",
+				help:      "container cpu system usage rate.",
+				valueType: prometheus.GaugeValue,
+				getRangeValues: func(ss []*info.ContainerStats) metricValues {
+					if ss == nil || len(ss) < 2 {
+						return metricValues{{value: float64(0) / float64(time.Second)}}
+					}
+					deltaValue := ss[1].Cpu.Usage.System - ss[0].Cpu.Usage.System
+					deltaTime := ss[1].Timestamp.UnixNano() - ss[0].Timestamp.UnixNano()
+
+					return metricValues{{value: 1000 * float64(deltaValue) / float64(deltaTime)}}
+				},
+			}, {
+				name:      "container_cpu_usage_rate",
+				help:      "container cpu usage rate.",
+				valueType: prometheus.GaugeValue,
+				getRangeValues: func(ss []*info.ContainerStats) metricValues {
+					if ss == nil || len(ss) < 2 {
+						return metricValues{{value: float64(0) / float64(time.Second)}}
+					}
+					deltaValue := ss[1].Cpu.Usage.Total - ss[0].Cpu.Usage.Total
+					deltaTime := ss[1].Timestamp.UnixNano() - ss[0].Timestamp.UnixNano()
+
+					return metricValues{{value: 1000 * float64(deltaValue) / float64(deltaTime)}}
 				},
 			}, {
 				name:      "container_cpu_cfs_periods_total",
@@ -969,6 +1009,12 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 				continue
 			}
 			desc := cm.desc(labels)
+			if cm.getRangeValues != nil {
+				for _, metricValue := range cm.getRangeValues(container.Stats) {
+					ch <- prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append(values, metricValue.labels...)...)
+				}
+				continue
+			}
 			for _, metricValue := range cm.getValues(stats) {
 				ch <- prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append(values, metricValue.labels...)...)
 			}
