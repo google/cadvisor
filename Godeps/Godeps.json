@@ -764,6 +764,10 @@
 			"Rev": "1b506fc7c24eec5a3693cdcbed40d9c226cfc6a1"
 		},
 		{
+			"ImportPath": "github.com/sigma/go-inotify",
+			"Rev": "6e160422f7699ab1472cc86362da4f009a7efc60"
+		},
+		{
 			"ImportPath": "github.com/sirupsen/logrus",
 			"Comment": "v1.0.3-11-g89742ae",
 			"Rev": "89742aefa4b206dcf400792f3bd35b542998eb3b"
@@ -802,10 +806,6 @@
 		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",
 			"Rev": "eb71ad9bd329b5ac0fd0148dd99bd62e8be8e035"
-		},
-		{
-			"ImportPath": "golang.org/x/exp/inotify",
-			"Rev": "292a51b8d262487dab23a588950e8052d63d9113"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
