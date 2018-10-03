@@ -78,7 +78,7 @@ func (iw *InotifyWatcher) RemoveWatch(containerName, dir string) (bool, error) {
 	iw.lock.Lock()
 	defer iw.lock.Unlock()
 
-	// If we don't have a watch registed for this, just return.
+	// If we don't have a watch registered for this, just return.
 	cgroupsWatched, ok := iw.containersWatched[containerName]
 	if !ok {
 		return false, nil

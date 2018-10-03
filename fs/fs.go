@@ -114,7 +114,7 @@ func NewFsInfo(context Context) (FsInfo, error) {
 
 	fsUUIDToDeviceName, err := getFsUUIDToDeviceNameMap()
 	if err != nil {
-		// UUID is not always avaiable across different OS distributions.
+		// UUID is not always available across different OS distributions.
 		// Do not fail if there is an error.
 		glog.Warningf("Failed to get disk UUID mapping, getting disk info by uuid will not work: %v", err)
 	}

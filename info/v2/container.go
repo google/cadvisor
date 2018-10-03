@@ -38,7 +38,7 @@ type CpuSpec struct {
 	Mask string `json:"mask,omitempty"`
 	// CPUQuota Default is disabled
 	Quota uint64 `json:"quota,omitempty"`
-	// Period is the CPU reference time in ns e.g the quota is compared aginst this.
+	// Period is the CPU reference time in ns e.g the quota is compared against this.
 	Period uint64 `json:"period,omitempty"`
 }
 
