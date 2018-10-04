@@ -6,7 +6,13 @@ metadata:
   annotations:
       seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
 spec:
+  selector:
+    matchLabels:
+      name: cadvisor
   template:
+    metadata:
+      labels:
+        name: cadvisor
     spec:
       containers:
       - name: cadvisor
