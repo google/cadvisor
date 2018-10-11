@@ -53,6 +53,7 @@ const (
 	NetworkUdpUsageMetrics  MetricKind = "udp"
 	AcceleratorUsageMetrics MetricKind = "accelerator"
 	AppMetrics              MetricKind = "app"
+	ProcessMetrics          MetricKind = "process"
 )
 
 func (mk MetricKind) String() string {

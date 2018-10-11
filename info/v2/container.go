@@ -254,6 +254,7 @@ type ProcessInfo struct {
 	RunningTime   string  `json:"running_time"`
 	CgroupPath    string  `json:"cgroup_path"`
 	Cmd           string  `json:"cmd"`
+	FdCount       int     `json:"fd_count"`
 }
 
 type TcpStat struct {

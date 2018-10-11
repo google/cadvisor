@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -49,6 +50,26 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 	}, nil
 }
 
+func (p testSubcontainersInfoProvider) GetProcessList(containerName string, options v2.RequestOptions) ([]v2.ProcessInfo, error) {
+	return []v2.ProcessInfo{
+		{
+			User:          "user1",
+			Pid:           1,
+			Ppid:          2,
+			StartTime:     "OCT2018",
+			PercentCpu:    0.0,
+			PercentMemory: 0.0,
+			RSS:           3,
+			VirtualSize:   4,
+			Status:        "S",
+			RunningTime:   "00:00:00",
+			Cmd:           "cmd1",
+			CgroupPath:    "path",
+			FdCount:       5,
+		},
+	}, nil
+}
+
 var allMetrics = container.MetricSet{
 	container.CpuUsageMetrics:         struct{}{},
 	container.ProcessSchedulerMetrics: struct{}{},
@@ -61,6 +82,7 @@ var allMetrics = container.MetricSet{
 	container.NetworkUsageMetrics:     struct{}{},
 	container.NetworkTcpUsageMetrics:  struct{}{},
 	container.NetworkUdpUsageMetrics:  struct{}{},
+	container.ProcessMetrics:          struct{}{},
 }
 
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
@@ -303,6 +325,13 @@ func (p *erroringSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo,
 		return nil, errors.New("Oops 2")
 	}
 	return p.successfulProvider.GetMachineInfo()
+}
+
+func (p *erroringSubcontainersInfoProvider) GetProcessList(containerName string, options v2.RequestOptions) ([]v2.ProcessInfo, error) {
+	if p.shouldFail {
+		return nil, errors.New("Oops 2")
+	}
+	return p.successfulProvider.GetProcessList(containerName, options)
 }
 
 func (p *erroringSubcontainersInfoProvider) SubcontainersInfo(
