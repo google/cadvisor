@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"golang.org/x/exp/inotify"
+	inotify "github.com/sigma/go-inotify"
 )
 
 type Tail struct {
