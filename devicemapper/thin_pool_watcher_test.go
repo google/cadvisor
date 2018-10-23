@@ -61,8 +61,8 @@ func TestRefresh(t *testing.T) {
 			name: "no existing reservation - ok",
 			dmsetupCommands: []fake.DmsetupCommand{
 				{Name: "status", Result: "0 75497472 thin-pool 65 327/524288 14092/589824 - rw no_discard_passdown error_if_no_space - ", Err: nil}, // status check
-				{Name: "message", Result: "", Err: nil},                                                                                             // make reservation
-				{Name: "message", Result: "", Err: nil},                                                                                             // release reservation
+				{Name: "message", Result: "", Err: nil}, // make reservation
+				{Name: "message", Result: "", Err: nil}, // release reservation
 			},
 			thinLsOutput:  usage,
 			expectedError: false,
