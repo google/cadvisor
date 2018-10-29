@@ -148,7 +148,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 			NetworkAvailable:       cont.Spec.HasNetwork,
 			FsAvailable:            cont.Spec.HasFilesystem,
 			CustomMetricsAvailable: cont.Spec.HasCustomMetrics,
-			Root: rootDir,
+			Root:                   rootDir,
 		}
 	}
 

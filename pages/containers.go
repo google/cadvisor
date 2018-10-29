@@ -235,7 +235,7 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		FsAvailable:            cont.Spec.HasFilesystem,
 		CustomMetricsAvailable: cont.Spec.HasCustomMetrics,
 		SubcontainersAvailable: len(subcontainerLinks) > 0,
-		Root: rootDir,
+		Root:                   rootDir,
 	}
 	err = pageTemplate.Execute(w, data)
 	if err != nil {
