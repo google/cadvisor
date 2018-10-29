@@ -6,7 +6,7 @@
 
 cAdvisor is written in the [Go](http://golang.org) programming language. If you haven't set up a Go development environment, please follow [these instructions](http://golang.org/doc/code.html) to install go tool and set up GOPATH. Note that the version of Go in package repositories of some operating systems is outdated, so please [download](https://golang.org/dl/) the latest version.
 
-**Note**: cAdvisor requires Go 1.10 to build.
+**Note**: cAdvisor requires Go 1.11 to build.
 
 After setting up Go, you should be able to `go get` cAdvisor as expected (we use `-d` to only download):
 
