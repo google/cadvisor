@@ -28,6 +28,7 @@ import (
 	"github.com/google/cadvisor/utils"
 
 	"github.com/golang/glog"
+	"github.com/karrick/godirwalk"
 )
 
 func DebugInfo(watches map[string][]string) map[string][]string {
@@ -156,7 +157,12 @@ func readUInt64(dirpath string, file string) uint64 {
 
 // Lists all directories under "path" and outputs the results as children of "parent".
 func ListDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}) error {
-	entries, err := ioutil.ReadDir(dirpath)
+	buf := make([]byte, godirwalk.DefaultScratchBufferSize)
+	return listDirectories(dirpath, parent, recursive, output, buf)
+}
+
+func listDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}, buf []byte) error {
+	dirents, err := godirwalk.ReadDirents(dirpath, buf)
 	if err != nil {
 		// Ignore if this hierarchy does not exist.
 		if os.IsNotExist(err) {
@@ -164,18 +170,21 @@ func ListDirectories(dirpath string, parent string, recursive bool, output map[s
 		}
 		return err
 	}
-	for _, entry := range entries {
+	for _, dirent := range dirents {
 		// We only grab directories.
-		if entry.IsDir() {
-			name := path.Join(parent, entry.Name())
-			output[name] = struct{}{}
+		if !dirent.IsDir() {
+			continue
+		}
+		dirname := dirent.Name()
 
-			// List subcontainers if asked to.
-			if recursive {
-				err := ListDirectories(path.Join(dirpath, entry.Name()), name, true, output)
-				if err != nil {
-					return err
-				}
+		name := path.Join(parent, dirname)
+		output[name] = struct{}{}
+
+		// List subcontainers if asked to.
+		if recursive {
+			err := listDirectories(path.Join(dirpath, dirname), name, true, output, buf)
+			if err != nil {
+				return err
 			}
 		}
 	}
