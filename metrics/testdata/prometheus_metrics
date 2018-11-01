@@ -46,6 +46,9 @@ container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_f
 # HELP container_cpu_user_seconds_total Cumulative user cpu time consumed in seconds.
 # TYPE container_cpu_user_seconds_total counter
 container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 6e-09
+# HELP container_file_descriptors Number of open file descriptors for the container.
+# TYPE container_file_descriptors gauge
+container_file_descriptors{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5
 # HELP container_fs_inodes_free Number of available Inodes
 # TYPE container_fs_inodes_free gauge
 container_fs_inodes_free{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 524288
@@ -182,6 +185,9 @@ container_network_udp_usage_total{container_env_foo_env="prod",container_label_f
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="listen",zone_name="hello"} 0
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="rxqueued",zone_name="hello"} 0
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="txqueued",zone_name="hello"} 0
+# HELP container_processes Number of processes running inside the container.
+# TYPE container_processes gauge
+container_processes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1
 # HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
 # TYPE container_scrape_error gauge
 container_scrape_error 0

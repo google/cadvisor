@@ -47,7 +47,9 @@ import (
 var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 
-var cgroupPathRegExp = regexp.MustCompile(`devices[^:]*:(.*?)[,;$]`)
+// cgroup type chosen to fetch the cgroup path of a process.
+// Memory has been chosen, as it is one of the default cgroups that is enabled for most containers.
+var cgroupPathRegExp = regexp.MustCompile(`memory[^:]*:(.*?)[,;$]`)
 
 type containerInfo struct {
 	info.ContainerReference
@@ -185,8 +187,8 @@ func (c *containerData) getCgroupPath(cgroups string) (string, error) {
 	}
 	matches := cgroupPathRegExp.FindSubmatch([]byte(cgroups))
 	if len(matches) != 2 {
-		glog.V(3).Infof("failed to get devices cgroup path from %q", cgroups)
-		// return root in case of failures - devices hierarchy might not be enabled.
+		glog.V(3).Infof("failed to get memory cgroup path from %q", cgroups)
+		// return root in case of failures - memory hierarchy might not be enabled.
 		return "/", nil
 	}
 	return string(matches[1]), nil
@@ -266,6 +268,10 @@ func (c *containerData) getContainerPids(inHostNamespace bool) ([]string, error)
 func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace bool) ([]v2.ProcessInfo, error) {
 	// report all processes for root.
 	isRoot := c.info.Name == "/"
+	rootfs := "/"
+	if !inHostNamespace {
+		rootfs = "/rootfs"
+	}
 	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm,cgroup"
 	out, err := c.getPsOutput(inHostNamespace, format)
 	if err != nil {
@@ -324,6 +330,15 @@ func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace
 			cgroupPath = cgroup
 		}
 
+		var fdCount int
+		dirPath := path.Join(rootfs, "/proc", strconv.Itoa(pid), "fd")
+		fds, err := ioutil.ReadDir(dirPath)
+		if err != nil {
+			glog.V(4).Infof("error while listing directory %q to measure fd count: %v", dirPath, err)
+			continue
+		}
+		fdCount = len(fds)
+
 		if isRoot || c.info.Name == cgroup {
 			processes = append(processes, v2.ProcessInfo{
 				User:          fields[0],
@@ -338,6 +353,7 @@ func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace
 				RunningTime:   fields[9],
 				Cmd:           fields[10],
 				CgroupPath:    cgroupPath,
+				FdCount:       fdCount,
 			})
 		}
 	}

@@ -29,6 +29,7 @@ Metric name | Type | Description | Unit (where applicable)
 `container_cpu_system_seconds_total` | Counter | Cumulative system cpu time consumed | seconds
 `container_cpu_usage_seconds_total` | Counter | Cumulative cpu time consumed | seconds
 `container_cpu_user_seconds_total` | Counter | Cumulative user cpu time consumed | seconds
+`container_file_descriptors` | Gauge | Number of open file descriptors for the container |
 `container_fs_inodes_free` | Gauge | Number of available Inodes |
 `container_fs_inodes_total` | Gauge | Total number of Inodes |
 `container_fs_io_current` | Gauge | Number of I/Os currently in progress |
@@ -66,6 +67,7 @@ Metric name | Type | Description | Unit (where applicable)
 `container_network_transmit_errors_total` | Counter | Cumulative count of errors encountered while transmitting |
 `container_network_tcp_usage_total` | Gauge | tcp connection usage statistic for container |
 `container_network_udp_usage_total` | Gauge | udp connection usage statistic for container |
+`container_processes` | Gauge | Number of processes running inside the container |
 `container_spec_cpu_period` | Gauge | CPU period of the container |
 `container_spec_cpu_quota` | Gauge | CPU quota of the container |
 `container_spec_cpu_shares` | Gauge | CPU share of the container |

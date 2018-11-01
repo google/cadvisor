@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/info/v2"
 
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
@@ -35,6 +36,8 @@ type infoProvider interface {
 	GetVersionInfo() (*info.VersionInfo, error)
 	// GetMachineInfo provides information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
+	// GetProcessList provides information about each container's processes
+	GetProcessList(containerName string, options v2.RequestOptions) ([]v2.ProcessInfo, error)
 }
 
 // metricValue describes a single metric value for a given set of label values
@@ -109,6 +112,7 @@ type PrometheusCollector struct {
 	errors              prometheus.Gauge
 	containerMetrics    []containerMetric
 	containerLabelsFunc ContainerLabelsFunc
+	includedMetrics     container.MetricSet
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector. The passed
@@ -137,6 +141,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 		},
+		includedMetrics: includedMetrics,
 	}
 	if includedMetrics.Has(container.CpuUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
@@ -926,10 +931,15 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			rawLabels[l] = struct{}{}
 		}
 	}
-	for _, container := range containers {
+
+	psReqOpt := v2.RequestOptions{
+		IdType: v2.TypeName,
+	}
+
+	for _, cont := range containers {
 		values := make([]string, 0, len(rawLabels))
 		labels := make([]string, 0, len(rawLabels))
-		containerLabels := c.containerLabelsFunc(container)
+		containerLabels := c.containerLabelsFunc(cont)
 		for l := range rawLabels {
 			labels = append(labels, sanitizeLabelName(l))
 			values = append(values, containerLabels[l])
@@ -937,35 +947,50 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 
 		// Container spec
 		desc := prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
-		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(container.Spec.CreationTime.Unix()), values...)
+		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), values...)
 
-		if container.Spec.HasCpu {
+		if cont.Spec.HasCpu {
 			desc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(container.Spec.Cpu.Period), values...)
-			if container.Spec.Cpu.Quota != 0 {
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Period), values...)
+			if cont.Spec.Cpu.Quota != 0 {
 				desc = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", labels, nil)
-				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(container.Spec.Cpu.Quota), values...)
+				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Quota), values...)
 			}
 			desc := prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(container.Spec.Cpu.Limit), values...)
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Limit), values...)
 
 		}
-		if container.Spec.HasMemory {
+		if cont.Spec.HasMemory {
 			desc := prometheus.NewDesc("container_spec_memory_limit_bytes", "Memory limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(container.Spec.Memory.Limit), values...)
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Limit), values...)
 			desc = prometheus.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(container.Spec.Memory.SwapLimit), values...)
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), values...)
 			desc = prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(container.Spec.Memory.Reservation), values...)
+			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Reservation), values...)
+		}
+
+		if c.includedMetrics.Has(container.ProcessMetrics) {
+			psList, err := c.infoProvider.GetProcessList(cont.Name, psReqOpt)
+			if err == nil {
+				desc = prometheus.NewDesc("container_processes", "Number of processes running inside the container.", labels, nil)
+				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(len(psList)), values...)
+
+				var fd int
+				for _, ps := range psList {
+					fd += ps.FdCount
+				}
+				desc = prometheus.NewDesc("container_file_descriptors", "Number of open file descriptors for the container.", labels, nil)
+				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(fd), values...)
+			}
 		}
 
 		// Now for the actual metrics
-		if len(container.Stats) == 0 {
+		if len(cont.Stats) == 0 {
 			continue
 		}
-		stats := container.Stats[0]
+		stats := cont.Stats[0]
 		for _, cm := range c.containerMetrics {
-			if cm.condition != nil && !cm.condition(container.Spec) {
+			if cm.condition != nil && !cm.condition(cont.Spec) {
 				continue
 			}
 			desc := cm.desc(labels)

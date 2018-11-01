@@ -68,6 +68,7 @@ var (
 		container.NetworkTcpUsageMetrics:  struct{}{},
 		container.NetworkUdpUsageMetrics:  struct{}{},
 		container.ProcessSchedulerMetrics: struct{}{},
+		container.ProcessMetrics:          struct{}{},
 	}}
 
 	// List of metrics that can be ignored.
@@ -78,6 +79,7 @@ var (
 		container.NetworkUdpUsageMetrics:  struct{}{},
 		container.PerCpuUsageMetrics:      struct{}{},
 		container.ProcessSchedulerMetrics: struct{}{},
+		container.ProcessMetrics:          struct{}{},
 	}
 )
 
@@ -109,7 +111,7 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp', 'udp', 'percpu'. Note: tcp and udp are disabled by default due to high CPU usage.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process'. Note: tcp and udp are disabled by default due to high CPU usage.")
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
@@ -251,6 +253,7 @@ func toIncludedMetrics(ignoreMetrics container.MetricSet) container.MetricSet {
 		container.NetworkUdpUsageMetrics,
 		container.AcceleratorUsageMetrics,
 		container.AppMetrics,
+		container.ProcessMetrics,
 	}
 	for _, metric := range allMetrics {
 		if !ignoreMetrics.Has(metric) {
