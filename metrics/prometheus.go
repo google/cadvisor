@@ -840,6 +840,26 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.ProcessMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:      "container_processes",
+				help:      "Number of processes running inside the container.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Processes.ProcessCount)}}
+				},
+			},
+			{
+				name:      "container_file_descriptors",
+				help:      "Number of open file descriptors for the container.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Processes.FdCount)}}
+				},
+			},
+		}...)
+	}
 
 	return c
 }
@@ -932,10 +952,6 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		}
 	}
 
-	psReqOpt := v2.RequestOptions{
-		IdType: v2.TypeName,
-	}
-
 	for _, cont := range containers {
 		values := make([]string, 0, len(rawLabels))
 		labels := make([]string, 0, len(rawLabels))
@@ -967,21 +983,6 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), values...)
 			desc = prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Reservation), values...)
-		}
-
-		if c.includedMetrics.Has(container.ProcessMetrics) {
-			psList, err := c.infoProvider.GetProcessList(cont.Name, psReqOpt)
-			if err == nil {
-				desc = prometheus.NewDesc("container_processes", "Number of processes running inside the container.", labels, nil)
-				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(len(psList)), values...)
-
-				var fd int
-				for _, ps := range psList {
-					fd += ps.FdCount
-				}
-				desc = prometheus.NewDesc("container_file_descriptors", "Number of open file descriptors for the container.", labels, nil)
-				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(fd), values...)
-			}
 		}
 
 		// Now for the actual metrics

@@ -123,6 +123,18 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 			stats.Network.Udp6 = u6
 		}
 	}
+	if h.includedMetrics.Has(container.ProcessMetrics) {
+		paths := h.cgroupManager.GetPaths()
+		path, ok := paths["cpu"]
+		if !ok {
+			glog.V(4).Infof("Could not find cgroups CPU for container %d", h.pid)
+		} else {
+			stats.Processes, err = processStatsFromProcs(h.rootFs, path)
+			if err != nil {
+				glog.V(4).Infof("Unable to get Process Stats: %v", err)
+			}
+		}
+	}
 
 	// For backwards compatibility.
 	if len(stats.Network.Interfaces) > 0 {
@@ -130,6 +142,41 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 	}
 
 	return stats, nil
+}
+
+func processStatsFromProcs(rootFs string, cgroupPath string) (info.ProcessStats, error) {
+	var fdCount uint64
+	filePath := path.Join(cgroupPath, "cgroup.procs")
+	out, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return info.ProcessStats{}, fmt.Errorf("couldn't open cpu cgroup procs file %v : %v", filePath, err)
+	}
+
+	pids := strings.Split(string(out), "\n")
+
+	// EOL is also treated as a new line while reading "cgroup.procs" file with ioutil.ReadFile.
+	// The last value is an empty string "". Ex: pids = ["22", "1223", ""]
+	// Trim the last value
+	if len(pids) != 0 && pids[len(pids)-1] == "" {
+		pids = pids[:len(pids)-1]
+	}
+
+	for _, pid := range pids {
+		dirPath := path.Join(rootFs, "/proc", pid, "fd")
+		fds, err := ioutil.ReadDir(dirPath)
+		if err != nil {
+			glog.V(4).Infof("error while listing directory %q to measure fd count: %v", dirPath, err)
+			continue
+		}
+		fdCount += uint64(len(fds))
+	}
+
+	processStats := info.ProcessStats{
+		ProcessCount: uint64(len(pids)),
+		FdCount:      fdCount,
+	}
+
+	return processStats, nil
 }
 
 func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]*info.CpuSchedstat) (info.CpuSchedstat, error) {

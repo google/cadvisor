@@ -252,6 +252,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							DutyCycle:   6,
 						},
 					},
+					Processes: info.ProcessStats{
+						ProcessCount: 1,
+						FdCount:      5,
+					},
 					TaskStats: info.LoadStats{
 						NrSleeping:        50,
 						NrRunning:         51,
