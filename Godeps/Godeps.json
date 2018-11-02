@@ -765,7 +765,7 @@
 		},
 		{
 			"ImportPath": "github.com/sigma/go-inotify",
-			"Rev": "6e160422f7699ab1472cc86362da4f009a7efc60"
+			"Rev": "c87b6cf5033d2c6486046f045eeebdc3d910fd38"
 		},
 		{
 			"ImportPath": "github.com/sirupsen/logrus",
