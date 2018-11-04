@@ -30,7 +30,7 @@ import (
 
 	"github.com/google/cadvisor/info/v1"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 	"time"
 )
 
@@ -230,7 +230,7 @@ func (self *Client) getEventStreamingData(url string, einfo chan *v1.Event) erro
 				break
 			}
 			// if called without &stream=true will not be able to parse event and will trigger fatal
-			glog.Fatalf("Received error %v", err)
+			klog.Fatalf("Received error %v", err)
 		}
 		einfo <- m
 	}

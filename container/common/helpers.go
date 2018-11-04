@@ -26,10 +26,10 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
-
-	"github.com/golang/glog"
 	"github.com/karrick/godirwalk"
 	"github.com/pkg/errors"
+
+	"k8s.io/klog"
 )
 
 func DebugInfo(watches map[string][]string) map[string][]string {
@@ -87,7 +87,7 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 			if quota != "" && quota != "-1" {
 				val, err := strconv.ParseUint(quota, 10, 64)
 				if err != nil {
-					glog.Errorf("GetSpec: Failed to parse CPUQuota from %q: %s", path.Join(cpuRoot, "cpu.cfs_quota_us"), err)
+					klog.Errorf("GetSpec: Failed to parse CPUQuota from %q: %s", path.Join(cpuRoot, "cpu.cfs_quota_us"), err)
 				}
 				spec.Cpu.Quota = val
 			}
@@ -134,7 +134,7 @@ func readString(dirpath string, file string) string {
 	if err != nil {
 		// Ignore non-existent files
 		if !os.IsNotExist(err) {
-			glog.Errorf("readString: Failed to read %q: %s", cgroupFile, err)
+			klog.Errorf("readString: Failed to read %q: %s", cgroupFile, err)
 		}
 		return ""
 	}
@@ -149,7 +149,7 @@ func readUInt64(dirpath string, file string) uint64 {
 
 	val, err := strconv.ParseUint(out, 10, 64)
 	if err != nil {
-		glog.Errorf("readUInt64: Failed to parse int %q from file %q: %s", out, path.Join(dirpath, file), err)
+		klog.Errorf("readUInt64: Failed to parse int %q from file %q: %s", out, path.Join(dirpath, file), err)
 		return 0
 	}
 

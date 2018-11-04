@@ -440,10 +440,6 @@
 			"Rev": "c0656edd0d9eab7c66d1eb0c568f9039345796f7"
 		},
 		{
-			"ImportPath": "github.com/golang/glog",
-			"Rev": "fca8c8854093a154ff1eb580aae10276ad6b1b5f"
-		},
-		{
 			"ImportPath": "github.com/golang/protobuf/proto",
 			"Rev": "ab9f9a6dab164b7d1246e0e688b0ab7b94d8553e"
 		},
@@ -1001,6 +997,10 @@
 			"ImportPath": "gopkg.in/olivere/elastic.v2/uritemplates",
 			"Comment": "v2.0.12",
 			"Rev": "3cfe88295d20b6299bd935131fc0fd17316405ad"
+		},
+		{
+			"ImportPath": "k8s.io/klog",
+			"Rev": "b9b56d5dfc9208f60ea747056670942d8b0afdc8"
 		},
 		{
 			"ImportPath": "k8s.io/utils/clock",
