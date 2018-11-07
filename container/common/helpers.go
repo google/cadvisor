@@ -29,6 +29,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/karrick/godirwalk"
+	"github.com/pkg/errors"
 )
 
 func DebugInfo(watches map[string][]string) map[string][]string {
@@ -165,7 +166,7 @@ func listDirectories(dirpath string, parent string, recursive bool, output map[s
 	dirents, err := godirwalk.ReadDirents(dirpath, buf)
 	if err != nil {
 		// Ignore if this hierarchy does not exist.
-		if os.IsNotExist(err) {
+		if os.IsNotExist(errors.Cause(err)) {
 			err = nil
 		}
 		return err
