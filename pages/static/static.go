@@ -23,7 +23,7 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 const StaticResource = "/static/"
@@ -72,6 +72,6 @@ func HandleRequest(w http.ResponseWriter, u *url.URL) {
 	}
 
 	if _, err := w.Write(content); err != nil {
-		glog.Errorf("Failed to write response: %v", err)
+		klog.Errorf("Failed to write response: %v", err)
 	}
 }

@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
 	"github.com/google/cadvisor/client/v2"
+	"k8s.io/klog"
 )
 
 var host = flag.String("host", "localhost", "Address of the host being tested")
@@ -329,7 +329,7 @@ func (self shellActions) Run(command string, args ...string) (string, string) {
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	glog.Infof("About to run - %v", cmd.Args)
+	klog.Infof("About to run - %v", cmd.Args)
 	err := cmd.Run()
 	if err != nil {
 		self.fm.T().Fatalf("Failed to run %q %v in %q with error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())

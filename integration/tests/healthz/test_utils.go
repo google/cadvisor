@@ -13,3 +13,9 @@
 // limitations under the License.
 
 package healthz
+
+import "k8s.io/klog"
+
+func init() {
+	klog.InitFlags(nil)
+}

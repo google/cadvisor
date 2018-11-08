@@ -30,7 +30,7 @@ import (
 	"github.com/google/cadvisor/utils/container"
 
 	kafka "github.com/Shopify/sarama"
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 func init() {
@@ -143,7 +143,7 @@ func newStorage(machineName string) (storage.StorageDriver, error) {
 	config.Producer.RequiredAcks = kafka.WaitForAll
 
 	brokerList := strings.Split(*brokers, ",")
-	glog.V(4).Infof("Kafka brokers:%q", *brokers)
+	klog.V(4).Infof("Kafka brokers:%q", *brokers)
 
 	producer, err := kafka.NewAsyncProducer(brokerList, config)
 	if err != nil {

@@ -33,7 +33,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 const (
@@ -68,7 +68,7 @@ const (
 func handleRequest(supportedApiVersions map[string]ApiVersion, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
 	defer func() {
-		glog.V(4).Infof("Request took %s", time.Since(start))
+		klog.V(4).Infof("Request took %s", time.Since(start))
 	}()
 
 	request := r.URL.Path
@@ -157,7 +157,7 @@ func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *
 		case ev := <-eventChannel.GetChannel():
 			err := enc.Encode(ev)
 			if err != nil {
-				glog.Errorf("error encoding message %+v for result stream: %v", ev, err)
+				klog.Errorf("error encoding message %+v for result stream: %v", ev, err)
 			}
 			flusher.Flush()
 		}

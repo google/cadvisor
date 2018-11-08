@@ -34,8 +34,9 @@ import (
 
 	"crypto/tls"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/metrics"
+
+	"k8s.io/klog"
 )
 
 var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
@@ -118,7 +119,8 @@ func init() {
 }
 
 func main() {
-	defer glog.Flush()
+	klog.InitFlags(nil)
+	defer klog.Flush()
 	flag.Parse()
 
 	if *versionFlag {
@@ -132,7 +134,7 @@ func main() {
 
 	memoryStorage, err := NewMemoryStorage()
 	if err != nil {
-		glog.Fatalf("Failed to initialize storage driver: %s", err)
+		klog.Fatalf("Failed to initialize storage driver: %s", err)
 	}
 
 	sysFs := sysfs.NewRealSysFs()
@@ -141,7 +143,7 @@ func main() {
 
 	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, []string{"/"})
 	if err != nil {
-		glog.Fatalf("Failed to create a Container Manager: %s", err)
+		klog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
 
 	mux := http.NewServeMux()
@@ -156,7 +158,7 @@ func main() {
 	// Register all HTTP handlers.
 	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
 	if err != nil {
-		glog.Fatalf("Failed to register HTTP handlers: %v", err)
+		klog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
 
 	containerLabelFunc := metrics.DefaultContainerLabels
@@ -167,16 +169,16 @@ func main() {
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {
-		glog.Fatalf("Failed to start container manager: %v", err)
+		klog.Fatalf("Failed to start container manager: %v", err)
 	}
 
 	// Install signal handler.
 	installSignalHandler(containerManager)
 
-	glog.V(1).Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
+	klog.V(1).Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
 
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
-	glog.Fatal(http.ListenAndServe(addr, mux))
+	klog.Fatal(http.ListenAndServe(addr, mux))
 }
 
 func setMaxProcs() {
@@ -193,7 +195,7 @@ func setMaxProcs() {
 	// Check if the setting was successful.
 	actualNumProcs := runtime.GOMAXPROCS(0)
 	if actualNumProcs != numProcs {
-		glog.Warningf("Specified max procs of %v but using %v", numProcs, actualNumProcs)
+		klog.Warningf("Specified max procs of %v but using %v", numProcs, actualNumProcs)
 	}
 }
 
@@ -205,9 +207,9 @@ func installSignalHandler(containerManager manager.Manager) {
 	go func() {
 		sig := <-c
 		if err := containerManager.Stop(); err != nil {
-			glog.Errorf("Failed to stop container manager: %v", err)
+			klog.Errorf("Failed to stop container manager: %v", err)
 		}
-		glog.Infof("Exiting given signal: %v", sig)
+		klog.Infof("Exiting given signal: %v", sig)
 		os.Exit(0)
 	}()
 }
@@ -220,11 +222,11 @@ func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
 
 	if collectorCert != "" {
 		if collectorKey == "" {
-			glog.Fatal("The collector_key value must be specified if the collector_cert value is set.")
+			klog.Fatal("The collector_key value must be specified if the collector_cert value is set.")
 		}
 		cert, err := tls.LoadX509KeyPair(collectorCert, collectorKey)
 		if err != nil {
-			glog.Fatalf("Failed to use the collector certificate and key: %s", err)
+			klog.Fatalf("Failed to use the collector certificate and key: %s", err)
 		}
 
 		tlsConfig.Certificates = []tls.Certificate{cert}

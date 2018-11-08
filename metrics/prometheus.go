@@ -23,8 +23,8 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 
-	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/klog"
 )
 
 // infoProvider will usually be manager.Manager, but can be swapped out for testing.
@@ -942,7 +942,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 	containers, err := c.infoProvider.SubcontainersInfo("/", &info.ContainerInfoRequest{NumStats: 1})
 	if err != nil {
 		c.errors.Set(1)
-		glog.Warningf("Couldn't get containers: %s", err)
+		klog.Warningf("Couldn't get containers: %s", err)
 		return
 	}
 	rawLabels := map[string]struct{}{}
@@ -1006,7 +1006,7 @@ func (c *PrometheusCollector) collectVersionInfo(ch chan<- prometheus.Metric) {
 	versionInfo, err := c.infoProvider.GetVersionInfo()
 	if err != nil {
 		c.errors.Set(1)
-		glog.Warningf("Couldn't get version info: %s", err)
+		klog.Warningf("Couldn't get version info: %s", err)
 		return
 	}
 	ch <- prometheus.MustNewConstMetric(versionInfoDesc, prometheus.GaugeValue, 1, []string{versionInfo.KernelVersion, versionInfo.ContainerOsVersion, versionInfo.DockerVersion, versionInfo.CadvisorVersion, versionInfo.CadvisorRevision}...)
@@ -1016,7 +1016,7 @@ func (c *PrometheusCollector) collectMachineInfo(ch chan<- prometheus.Metric) {
 	machineInfo, err := c.infoProvider.GetMachineInfo()
 	if err != nil {
 		c.errors.Set(1)
-		glog.Warningf("Couldn't get machine info: %s", err)
+		klog.Warningf("Couldn't get machine info: %s", err)
 		return
 	}
 	ch <- prometheus.MustNewConstMetric(machineInfoCoresDesc, prometheus.GaugeValue, float64(machineInfo.NumCores))

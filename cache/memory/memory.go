@@ -23,7 +23,7 @@ import (
 	"github.com/google/cadvisor/storage"
 	"github.com/google/cadvisor/utils"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 // ErrDataNotFound is the error resulting if failed to find a container in memory cache.
@@ -91,7 +91,7 @@ func (self *InMemoryCache) AddStats(cInfo *info.ContainerInfo, stats *info.Conta
 		// may want to start a pool of goroutines to do write
 		// operations.
 		if err := self.backend.AddStats(cInfo, stats); err != nil {
-			glog.Error(err)
+			klog.Error(err)
 		}
 	}
 	return cstore.AddStats(stats)

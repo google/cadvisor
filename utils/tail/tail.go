@@ -24,8 +24,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	inotify "github.com/sigma/go-inotify"
+	"k8s.io/klog"
 )
 
 type Tail struct {
@@ -96,7 +96,7 @@ func (t *Tail) attemptOpen() error {
 	var lastErr error
 	for interval := defaultRetryInterval; ; interval *= 2 {
 		attempt++
-		glog.V(4).Infof("Opening %s (attempt %d)", t.filename, attempt)
+		klog.V(4).Infof("Opening %s (attempt %d)", t.filename, attempt)
 		var err error
 		t.file, err = os.Open(t.filename)
 		if err == nil {
@@ -106,7 +106,7 @@ func (t *Tail) attemptOpen() error {
 			return nil
 		}
 		lastErr = err
-		glog.V(4).Infof("open log file %s error: %v", t.filename, err)
+		klog.V(4).Infof("open log file %s error: %v", t.filename, err)
 
 		if interval >= maxRetryInterval {
 			break
@@ -127,7 +127,7 @@ func (t *Tail) watchLoop() {
 	for {
 		err := t.watchFile()
 		if err != nil {
-			glog.Errorf("Tail failed on %s: %v", t.filename, err)
+			klog.Errorf("Tail failed on %s: %v", t.filename, err)
 			break
 		}
 	}
@@ -152,7 +152,7 @@ func (t *Tail) watchFile() error {
 		case event := <-t.watcher.Event:
 			eventPath := filepath.Clean(event.Name) // Directory events have an extra '/'
 			if eventPath == t.filename {
-				glog.V(4).Infof("Log file %s moved/deleted", t.filename)
+				klog.V(4).Infof("Log file %s moved/deleted", t.filename)
 				return nil
 			}
 		case <-t.stop:
