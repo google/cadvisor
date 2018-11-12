@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.32.0 (2018-11-12)
+- Add container process and file descriptor metrics (disabled by default)
+- Rename `type` label to `failure_type` for prometheus `memory_failures_total` metric
+- Reduce mesos error logging when mesos not present
+
 ### 0.31.0 (2018-09-07)
 - Fix NVML initialization race condition
 - Fix brtfs filesystem discovery
