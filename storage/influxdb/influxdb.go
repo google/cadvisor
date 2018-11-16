@@ -108,7 +108,7 @@ const (
 )
 
 func (self *influxdbStorage) containerFilesystemStatsToPoints(
-	ref info.ContainerReference,
+	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats) (points []*influxdb.Point) {
 	if len(stats.Filesystem) == 0 {
 		return points
@@ -143,20 +143,20 @@ func (self *influxdbStorage) containerFilesystemStatsToPoints(
 		points = append(points, pointFsUsage, pointFsLimit)
 	}
 
-	self.tagPoints(ref, stats, points)
+	self.tagPoints(cInfo, stats, points)
 
 	return points
 }
 
 // Set tags and timestamp for all points of the batch.
 // Points should inherit the tags that are set for BatchPoints, but that does not seem to work.
-func (self *influxdbStorage) tagPoints(ref info.ContainerReference, stats *info.ContainerStats, points []*influxdb.Point) {
+func (self *influxdbStorage) tagPoints(cInfo *info.ContainerInfo, stats *info.ContainerStats, points []*influxdb.Point) {
 	// Use container alias if possible
 	var containerName string
-	if len(ref.Aliases) > 0 {
-		containerName = ref.Aliases[0]
+	if len(cInfo.ContainerReference.Aliases) > 0 {
+		containerName = cInfo.ContainerReference.Aliases[0]
 	} else {
-		containerName = ref.Name
+		containerName = cInfo.ContainerReference.Name
 	}
 
 	commonTags := map[string]string{
@@ -166,13 +166,13 @@ func (self *influxdbStorage) tagPoints(ref info.ContainerReference, stats *info.
 	for i := 0; i < len(points); i++ {
 		// merge with existing tags if any
 		addTagsToPoint(points[i], commonTags)
-		addTagsToPoint(points[i], ref.Labels)
+		addTagsToPoint(points[i], cInfo.Spec.Labels)
 		points[i].Time = stats.Timestamp
 	}
 }
 
 func (self *influxdbStorage) containerStatsToPoints(
-	ref info.ContainerReference,
+	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (points []*influxdb.Point) {
 	// CPU usage: Total usage in nanoseconds
@@ -208,7 +208,7 @@ func (self *influxdbStorage) containerStatsToPoints(
 	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
 	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
 
-	self.tagPoints(ref, stats, points)
+	self.tagPoints(cInfo, stats, points)
 
 	return points
 }
@@ -221,7 +221,7 @@ func (self *influxdbStorage) defaultReadyToFlush() bool {
 	return time.Since(self.lastWrite) >= self.bufferDuration
 }
 
-func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (self *influxdbStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
@@ -231,8 +231,8 @@ func (self *influxdbStorage) AddStats(ref info.ContainerReference, stats *info.C
 		self.lock.Lock()
 		defer self.lock.Unlock()
 
-		self.points = append(self.points, self.containerStatsToPoints(ref, stats)...)
-		self.points = append(self.points, self.containerFilesystemStatsToPoints(ref, stats)...)
+		self.points = append(self.points, self.containerStatsToPoints(cInfo, stats)...)
+		self.points = append(self.points, self.containerFilesystemStatsToPoints(cInfo, stats)...)
 		if self.readyToFlush() {
 			pointsToFlush = self.points
 			self.points = make([]*influxdb.Point, 0)

@@ -65,13 +65,13 @@ func (self *redisStorage) defaultReadyToFlush() bool {
 }
 
 // We must add some default params (for example: MachineName,ContainerName...)because containerStats do not include them
-func (self *redisStorage) containerStatsAndDefaultValues(ref info.ContainerReference, stats *info.ContainerStats) *detailSpec {
+func (self *redisStorage) containerStatsAndDefaultValues(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
 	timestamp := stats.Timestamp.UnixNano() / 1E3
 	var containerName string
-	if len(ref.Aliases) > 0 {
-		containerName = ref.Aliases[0]
+	if len(cInfo.ContainerReference.Aliases) > 0 {
+		containerName = cInfo.ContainerReference.Aliases[0]
 	} else {
-		containerName = ref.Name
+		containerName = cInfo.ContainerReference.Name
 	}
 	detail := &detailSpec{
 		Timestamp:      timestamp,
@@ -83,7 +83,7 @@ func (self *redisStorage) containerStatsAndDefaultValues(ref info.ContainerRefer
 }
 
 // Push the data into redis
-func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (self *redisStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
@@ -93,7 +93,7 @@ func (self *redisStorage) AddStats(ref info.ContainerReference, stats *info.Cont
 		self.lock.Lock()
 		defer self.lock.Unlock()
 		// Add some default params based on containerStats
-		detail := self.containerStatsAndDefaultValues(ref, stats)
+		detail := self.containerStatsAndDefaultValues(cInfo, stats)
 		// To json
 		b, _ := json.Marshal(detail)
 		if self.readyToFlush() {

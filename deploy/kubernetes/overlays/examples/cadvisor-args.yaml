@@ -1,0 +1,19 @@
+# This patch is an example of setting arguments for the cAdvisor container.
+# This set of arguments mirrors what the kubelet currently uses for cAdvisor, 
+# enables only cpu, memory, and diskIO metrics, and shows only container metrics.
+apiVersion: apps/v1 # for Kubernetes versions before 1.9.0 use apps/v1beta2
+kind: DaemonSet
+metadata:
+  name: cadvisor
+spec:
+  template:
+    spec:
+      containers:
+      - name: cadvisor
+        args:
+          - --housekeeping_interval=10s                   # kubernetes default args
+          - --max_housekeeping_interval=15s
+          - --event_storage_event_limit=default=0
+          - --event_storage_age_limit=default=0
+          - --disable_metrics=percpu,disk,network,tcp,udp # enable only diskIO, cpu, memory
+          - --docker_only                                 # only show stats for docker containers

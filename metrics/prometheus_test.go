@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -48,6 +49,21 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 	}, nil
 }
 
+var allMetrics = container.MetricSet{
+	container.CpuUsageMetrics:         struct{}{},
+	container.ProcessSchedulerMetrics: struct{}{},
+	container.PerCpuUsageMetrics:      struct{}{},
+	container.MemoryUsageMetrics:      struct{}{},
+	container.CpuLoadMetrics:          struct{}{},
+	container.DiskIOMetrics:           struct{}{},
+	container.AcceleratorUsageMetrics: struct{}{},
+	container.DiskUsageMetrics:        struct{}{},
+	container.NetworkUsageMetrics:     struct{}{},
+	container.NetworkTcpUsageMetrics:  struct{}{},
+	container.NetworkUdpUsageMetrics:  struct{}{},
+	container.ProcessMetrics:          struct{}{},
+}
+
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
 	return []*info.ContainerInfo{
 		{
@@ -62,6 +78,11 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Limit:  1000,
 					Period: 100000,
 					Quota:  10000,
+				},
+				Memory: info.MemorySpec{
+					Limit:       2048,
+					Reservation: 1024,
+					SwapLimit:   4096,
 				},
 				CreationTime: time.Unix(1257894000, 0),
 				Labels: map[string]string{
@@ -85,10 +106,16 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							ThrottledPeriods: 18,
 							ThrottledTime:    1724314000,
 						},
+						Schedstat: info.CpuSchedstat{
+							RunTime:      53643567,
+							RunqueueTime: 479424566378,
+							RunPeriods:   984285,
+						},
 						LoadAverage: 2,
 					},
 					Memory: info.MemoryStats{
 						Usage:      8,
+						MaxUsage:   8,
 						WorkingSet: 9,
 						ContainerData: info.MemoryStatsMemoryData{
 							Pgfault:    10,
@@ -98,9 +125,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							Pgfault:    12,
 							Pgmajfault: 13,
 						},
-						Cache: 14,
-						RSS:   15,
-						Swap:  8192,
+						Cache:      14,
+						RSS:        15,
+						MappedFile: 16,
+						Swap:       8192,
 					},
 					Network: info.NetworkStats{
 						InterfaceStats: info.InterfaceStats{
@@ -185,6 +213,28 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							WeightedIoTime:  49,
 						},
 					},
+					Accelerators: []info.AcceleratorStats{
+						{
+							Make:        "nvidia",
+							Model:       "tesla-p100",
+							ID:          "GPU-deadbeef-1234-5678-90ab-feedfacecafe",
+							MemoryTotal: 20304050607,
+							MemoryUsed:  2030405060,
+							DutyCycle:   12,
+						},
+						{
+							Make:        "nvidia",
+							Model:       "tesla-k80",
+							ID:          "GPU-deadbeef-0123-4567-89ab-feedfacecafe",
+							MemoryTotal: 10203040506,
+							MemoryUsed:  1020304050,
+							DutyCycle:   6,
+						},
+					},
+					Processes: info.ProcessStats{
+						ProcessCount: 1,
+						FdCount:      5,
+					},
 					TaskStats: info.LoadStats{
 						NrSleeping:        50,
 						NrRunning:         51,
@@ -208,7 +258,7 @@ func TestPrometheusCollector(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	})
+	}, allMetrics)
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 
@@ -278,7 +328,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	})
+	}, allMetrics)
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 

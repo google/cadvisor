@@ -1,0 +1,5 @@
+commonLabels:
+  app: cadvisor
+resources:
+- namespace.yaml
+- daemonset.yaml

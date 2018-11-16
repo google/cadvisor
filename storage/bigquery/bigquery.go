@@ -193,7 +193,7 @@ func (self *bigqueryStorage) GetSchema() *bigquery.TableSchema {
 }
 
 func (self *bigqueryStorage) containerStatsToRows(
-	ref info.ContainerReference,
+	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (row map[string]interface{}) {
 	row = make(map[string]interface{})
@@ -205,9 +205,9 @@ func (self *bigqueryStorage) containerStatsToRows(
 	row[colMachineName] = self.machineName
 
 	// Container name
-	name := ref.Name
-	if len(ref.Aliases) > 0 {
-		name = ref.Aliases[0]
+	name := cInfo.ContainerReference.Name
+	if len(cInfo.ContainerReference.Aliases) > 0 {
+		name = cInfo.ContainerReference.Aliases[0]
 	}
 	row[colContainerName] = name
 
@@ -250,7 +250,7 @@ func (self *bigqueryStorage) containerStatsToRows(
 }
 
 func (self *bigqueryStorage) containerFilesystemStatsToRows(
-	ref info.ContainerReference,
+	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (rows []map[string]interface{}) {
 	for _, fsStat := range stats.Filesystem {
@@ -263,13 +263,13 @@ func (self *bigqueryStorage) containerFilesystemStatsToRows(
 	return rows
 }
 
-func (self *bigqueryStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (self *bigqueryStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
 	rows := make([]map[string]interface{}, 0)
-	rows = append(rows, self.containerStatsToRows(ref, stats))
-	rows = append(rows, self.containerFilesystemStatsToRows(ref, stats)...)
+	rows = append(rows, self.containerStatsToRows(cInfo, stats))
+	rows = append(rows, self.containerFilesystemStatsToRows(cInfo, stats)...)
 	for _, row := range rows {
 		err := self.client.InsertRow(row)
 		if err != nil {

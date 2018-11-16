@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"flag"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -29,11 +30,12 @@ import (
 	"github.com/google/cadvisor/utils/container"
 
 	kafka "github.com/Shopify/sarama"
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 func init() {
 	storage.RegisterStorageDriver("kafka", new)
+	kafka.Logger = log.New(os.Stderr, "[kafka]", log.LstdFlags)
 }
 
 var (
@@ -60,11 +62,11 @@ type detailSpec struct {
 	ContainerStats  *info.ContainerStats `json:"container_stats,omitempty"`
 }
 
-func (driver *kafkaStorage) infoToDetailSpec(ref info.ContainerReference, stats *info.ContainerStats) *detailSpec {
+func (driver *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
 	timestamp := time.Now()
-	containerID := ref.Id
-	containerLabels := ref.Labels
-	containerName := container.GetPreferredName(ref)
+	containerID := cInfo.ContainerReference.Id
+	containerLabels := cInfo.Spec.Labels
+	containerName := container.GetPreferredName(cInfo.ContainerReference)
 
 	detail := &detailSpec{
 		Timestamp:       timestamp,
@@ -77,8 +79,8 @@ func (driver *kafkaStorage) infoToDetailSpec(ref info.ContainerReference, stats 
 	return detail
 }
 
-func (driver *kafkaStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
-	detail := driver.infoToDetailSpec(ref, stats)
+func (driver *kafkaStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+	detail := driver.infoToDetailSpec(cInfo, stats)
 	b, err := json.Marshal(detail)
 
 	driver.producer.Input() <- &kafka.ProducerMessage{
@@ -141,7 +143,7 @@ func newStorage(machineName string) (storage.StorageDriver, error) {
 	config.Producer.RequiredAcks = kafka.WaitForAll
 
 	brokerList := strings.Split(*brokers, ",")
-	glog.V(4).Infof("Kafka brokers:%q", brokers)
+	klog.V(4).Infof("Kafka brokers:%q", *brokers)
 
 	producer, err := kafka.NewAsyncProducer(brokerList, config)
 	if err != nil {

@@ -37,7 +37,7 @@ func TestHandler(t *testing.T) {
 		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
 		inHostNamespace    bool
 		metadataEnvs       []string
-		ignoreMetrics      container.MetricSet
+		includedMetrics    container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -99,11 +99,10 @@ func TestHandler(t *testing.T) {
 				Name:      "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f",
 				Aliases:   []string{"test", "81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f"},
 				Namespace: CrioNamespace,
-				Labels:    map[string]string{"io.kubernetes.container.name": "POD"},
 			},
 		},
 	} {
-		handler, err := newCrioContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.storageDriver, ts.storageDir, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.ignoreMetrics)
+		handler, err := newCrioContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.storageDriver, ts.storageDir, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.includedMetrics)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {

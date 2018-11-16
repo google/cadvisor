@@ -28,7 +28,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 const ContainersPage = "/containers/"
@@ -235,14 +235,14 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		FsAvailable:            cont.Spec.HasFilesystem,
 		CustomMetricsAvailable: cont.Spec.HasCustomMetrics,
 		SubcontainersAvailable: len(subcontainerLinks) > 0,
-		Root: rootDir,
+		Root:                   rootDir,
 	}
 	err = pageTemplate.Execute(w, data)
 	if err != nil {
-		glog.Errorf("Failed to apply template: %s", err)
+		klog.Errorf("Failed to apply template: %s", err)
 	}
 
-	glog.V(5).Infof("Request took %s", time.Since(start))
+	klog.V(5).Infof("Request took %s", time.Since(start))
 }
 
 // Build a relative path to the root of the container page.

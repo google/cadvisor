@@ -32,8 +32,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
 	cadvisorApi "github.com/google/cadvisor/info/v2"
+	"k8s.io/klog"
 )
 
 // must be able to ssh into hosts without password
@@ -90,7 +90,7 @@ func RunSshCommand(cmd string, args ...string) error {
 
 func PushAndRunTests(host, testDir string) (result error) {
 	// Push binary.
-	glog.Infof("Pushing cAdvisor binary to %q...", host)
+	klog.Infof("Pushing cAdvisor binary to %q...", host)
 
 	err := RunSshCommand("ssh", host, "--", "mkdir", "-p", testDir)
 	if err != nil {
@@ -99,7 +99,7 @@ func PushAndRunTests(host, testDir string) (result error) {
 	defer func() {
 		err = RunSshCommand("ssh", host, "--", "rm", "-rf", testDir)
 		if err != nil {
-			glog.Errorf("Failed to cleanup test directory: %v", err)
+			klog.Errorf("Failed to cleanup test directory: %v", err)
 		}
 	}()
 
@@ -109,7 +109,7 @@ func PushAndRunTests(host, testDir string) (result error) {
 	}
 
 	// Start cAdvisor.
-	glog.Infof("Running cAdvisor on %q...", host)
+	klog.Infof("Running cAdvisor on %q...", host)
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error)
 	go func() {
@@ -121,7 +121,7 @@ func PushAndRunTests(host, testDir string) (result error) {
 	defer func() {
 		err = RunSshCommand("ssh", host, "--", "sudo", "pkill", cadvisorBinary)
 		if err != nil {
-			glog.Errorf("Failed to cleanup: %v", err)
+			klog.Errorf("Failed to cleanup: %v", err)
 		}
 	}()
 	defer func() {
@@ -138,12 +138,12 @@ func PushAndRunTests(host, testDir string) (result error) {
 				result = fmt.Errorf("error reading local log file: %v for %v", err, result)
 				return
 			}
-			glog.Errorf("----------------------\nLogs from Host: %q\n%v\n", host, string(logs))
+			klog.Errorf("----------------------\nLogs from Host: %q\n%v\n", host, string(logs))
 
 			// Get attributes for debugging purposes.
 			attributes, err := getAttributes(host, portStr)
 			if err != nil {
-				glog.Errorf("Failed to read host attributes: %v", err)
+				klog.Errorf("Failed to read host attributes: %v", err)
 			}
 			result = fmt.Errorf("error on host %s: %v\n%+v", host, result, attributes)
 		}
@@ -171,12 +171,12 @@ func PushAndRunTests(host, testDir string) (result error) {
 	}
 
 	// Run the tests in a retry loop.
-	glog.Infof("Running integration tests targeting %q...", host)
+	klog.Infof("Running integration tests targeting %q...", host)
 	for i := 0; i <= *testRetryCount; i++ {
 		// Check if this is a retry
 		if i > 0 {
 			time.Sleep(time.Second * 15) // Wait 15 seconds before retrying
-			glog.Warningf("Retrying (%d of %d) tests on host %s due to error %v", i, *testRetryCount, host, err)
+			klog.Warningf("Retrying (%d of %d) tests on host %s due to error %v", i, *testRetryCount, host, err)
 		}
 		// Run the command
 
@@ -188,7 +188,7 @@ func PushAndRunTests(host, testDir string) (result error) {
 
 		// Only retry on test failures caused by these known flaky failure conditions
 		if retryRegex == nil || !retryRegex.Match([]byte(err.Error())) {
-			glog.Warningf("Skipping retry for tests on host %s because error is not whitelisted", host)
+			klog.Warningf("Skipping retry for tests on host %s because error is not whitelisted", host)
 			break
 		}
 	}
@@ -198,16 +198,16 @@ func PushAndRunTests(host, testDir string) (result error) {
 func Run() error {
 	start := time.Now()
 	defer func() {
-		glog.Infof("Execution time %v", time.Since(start))
+		klog.Infof("Execution time %v", time.Since(start))
 	}()
-	defer glog.Flush()
+	defer klog.Flush()
 
 	hosts := flag.Args()
 	testDir := fmt.Sprintf("/tmp/cadvisor-%d", os.Getpid())
-	glog.Infof("Running integration tests on host(s) %q", strings.Join(hosts, ","))
+	klog.Infof("Running integration tests on host(s) %q", strings.Join(hosts, ","))
 
 	// Build cAdvisor.
-	glog.Infof("Building cAdvisor...")
+	klog.Infof("Building cAdvisor...")
 	err := RunCommand("build/build.sh")
 	if err != nil {
 		return err
@@ -215,7 +215,7 @@ func Run() error {
 	defer func() {
 		err := RunCommand("rm", cadvisorBinary)
 		if err != nil {
-			glog.Error(err)
+			klog.Error(err)
 		}
 	}()
 
@@ -249,7 +249,7 @@ func Run() error {
 		return errors.New(buffer.String())
 	}
 
-	glog.Infof("All tests pass!")
+	klog.Infof("All tests pass!")
 	return nil
 }
 
@@ -261,7 +261,7 @@ func initRetryWhitelist() {
 
 	file, err := os.Open(*testRetryWhitelist)
 	if err != nil {
-		glog.Fatal(err)
+		klog.Fatal(err)
 	}
 	defer file.Close()
 
@@ -274,23 +274,24 @@ func initRetryWhitelist() {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		glog.Fatal(err)
+		klog.Fatal(err)
 	}
 	retryRegex = regexp.MustCompile(strings.Join(retryStrings, "|"))
 }
 
 func main() {
+	klog.InitFlags(nil)
 	flag.Parse()
 
 	// Check usage.
 	if len(flag.Args()) == 0 {
-		glog.Fatalf("USAGE: runner <hosts to test>")
+		klog.Fatalf("USAGE: runner <hosts to test>")
 	}
 	initRetryWhitelist()
 
 	// Run the tests.
 	err := Run()
 	if err != nil {
-		glog.Fatal(err)
+		klog.Fatal(err)
 	}
 }

@@ -35,7 +35,6 @@ fi
 # Build the release.
 export BUILD_USER="$git_user"
 export BUILD_DATE=$( date +%Y%m%d ) # Release date is only to day-granularity
-export GO_CMD="build" # Don't use cached build objects for releases.
 export VERBOSE=true
 build/build.sh
 
