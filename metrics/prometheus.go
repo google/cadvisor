@@ -806,8 +806,92 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 		}...)
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_network_tcp6_usage_total",
+				help:        "tcp6 connection usage statistic for container",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"tcp_state"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{
+						{
+							value:  float64(s.Network.Tcp6.Established),
+							labels: []string{"established"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.SynSent),
+							labels: []string{"synsent"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.SynRecv),
+							labels: []string{"synrecv"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.FinWait1),
+							labels: []string{"finwait1"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.FinWait2),
+							labels: []string{"finwait2"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.TimeWait),
+							labels: []string{"timewait"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.Close),
+							labels: []string{"close"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.CloseWait),
+							labels: []string{"closewait"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.LastAck),
+							labels: []string{"lastack"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.Listen),
+							labels: []string{"listen"},
+						},
+						{
+							value:  float64(s.Network.Tcp6.Closing),
+							labels: []string{"closing"},
+						},
+					}
+				},
+			},
+		}...)
 	}
 	if includedMetrics.Has(container.NetworkUdpUsageMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_network_udp6_usage_total",
+				help:        "udp6 connection usage statistic for container",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"udp_state"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{
+						{
+							value:  float64(s.Network.Udp6.Listen),
+							labels: []string{"listen"},
+						},
+						{
+							value:  float64(s.Network.Udp6.Dropped),
+							labels: []string{"dropped"},
+						},
+						{
+							value:  float64(s.Network.Udp6.RxQueued),
+							labels: []string{"rxqueued"},
+						},
+						{
+							value:  float64(s.Network.Udp6.TxQueued),
+							labels: []string{"txqueued"},
+						},
+					}
+				},
+			},
+		}...)
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
 				name:        "container_network_udp_usage_total",
