@@ -75,6 +75,7 @@ var (
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
 		container.DiskUsageMetrics:        struct{}{},
+		container.DiskIOMetrics:           struct{}{},
 		container.NetworkUsageMetrics:     struct{}{},
 		container.NetworkTcpUsageMetrics:  struct{}{},
 		container.NetworkUdpUsageMetrics:  struct{}{},
@@ -112,7 +113,7 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process'. Note: tcp and udp are disabled by default due to high CPU usage.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'diskIO', network', 'tcp', 'udp', 'percpu', 'sched', 'process'.")
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
