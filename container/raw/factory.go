@@ -49,6 +49,9 @@ type rawFactory struct {
 
 	// List of raw container cgroup path prefix whitelist.
 	rawPrefixWhiteList []string
+
+	// Map of raw container cgroup path whitelist.
+	rawWhiteList map[string]struct{}
 }
 
 func (self *rawFactory) String() string {
@@ -67,6 +70,10 @@ func (self *rawFactory) NewContainerHandler(name string, inHostNamespace bool) (
 func (self *rawFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	accept := name == "/" || !*dockerOnly
 
+	if _, ok := self.rawWhiteList[name]; ok {
+		return true, true, nil
+	}
+
 	for _, prefix := range self.rawPrefixWhiteList {
 		if strings.HasPrefix(name, prefix) {
 			accept = true
@@ -80,7 +87,7 @@ func (self *rawFactory) DebugInfo() map[string][]string {
 	return common.DebugInfo(self.watcher.GetWatches())
 }
 
-func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics map[container.MetricKind]struct{}, rawPrefixWhiteList []string) error {
+func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics map[container.MetricKind]struct{}, rawPrefixWhiteList, rawWhiteList []string) error {
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
 	if err != nil {
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
@@ -95,6 +102,10 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, incl
 	}
 
 	klog.V(1).Infof("Registering Raw factory")
+	rawWhiteListMap := make(map[string]struct{})
+	for _, raw := range rawWhiteList {
+		rawWhiteListMap[raw] = struct{}{}
+	}
 	factory := &rawFactory{
 		machineInfoFactory: machineInfoFactory,
 		fsInfo:             fsInfo,
@@ -102,6 +113,7 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, incl
 		watcher:            watcher,
 		includedMetrics:    includedMetrics,
 		rawPrefixWhiteList: rawPrefixWhiteList,
+		rawWhiteList:       rawWhiteListMap,
 	}
 	container.RegisterContainerHandlerFactory(factory, []watch.ContainerWatchSource{watch.Raw})
 	return nil
