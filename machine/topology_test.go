@@ -115,3 +115,27 @@ func TestTopologyEmptyCpuinfo(t *testing.T) {
 		t.Errorf("Expected empty cpuinfo to fail.")
 	}
 }
+
+func TestTopologyCoreId(t *testing.T) {
+	val, _ := getCoreIdFromCpuBus("./testdata", 0)
+	if val != 0 {
+		t.Errorf("Expected core 0, found %d", val)
+	}
+
+	val, _ = getCoreIdFromCpuBus("./testdata", 9999)
+	if val != 8888 {
+		t.Errorf("Expected core 8888, found %d", val)
+	}
+}
+
+func TestTopologyNodeId(t *testing.T) {
+	val, _ := getNodeIdFromCpuBus("./testdata", 0)
+	if val != 0 {
+		t.Errorf("Expected core 0, found %d", val)
+	}
+
+	val, _ = getNodeIdFromCpuBus("./testdata", 9999)
+	if val != 1234 {
+		t.Errorf("Expected core 1234 , found %d", val)
+	}
+}
