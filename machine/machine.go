@@ -16,8 +16,10 @@
 package machine
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -46,6 +48,7 @@ var (
 )
 
 const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
+const cpuBusPath  = "/sys/bus/cpu/devices/"
 
 // GetClockSpeed returns the CPU clock speed, given a []byte formatted as the /proc/cpuinfo file.
 func GetClockSpeed(procInfo []byte) (uint64, error) {
@@ -127,6 +130,53 @@ func parseCapacity(b []byte, r *regexp.Regexp) (uint64, error) {
 	return m * 1024, err
 }
 
+/* look for sysfs cpu path containing core_id */
+/* such as: sys/bus/cpu/devices/cpu0/topology/core_id */
+func getCoreIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
+	path := filepath.Join(cpuBusPath, fmt.Sprintf("cpu%d/topology", threadId))
+	file := filepath.Join(path, "core_id")
+
+	num, err := ioutil.ReadFile(file)
+	if err != nil {
+		// report threadId if no NUMA
+		return threadId, nil
+	}
+
+	coreId, err := strconv.ParseInt(string(bytes.TrimSpace(num)), 10, 8)
+	if err != nil {
+		return 0, err
+	}
+
+	if coreId < 0 {
+		coreId = 0
+	}
+
+	return int(coreId), nil
+}
+
+/* look for sysfs cpu path containing node id */
+/* such as: /sys/bus/cpu/devices/cpu0/node%d */
+func getNodeIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
+	path := filepath.Join(cpuBusPath, fmt.Sprintf("cpu%d", threadId))
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return 0, err
+	}
+
+	nodeId := 0
+	for _, file := range files {
+		filename := file.Name()
+		if !strings.HasPrefix(filename, "node") {
+			continue
+		}
+
+		nodeId, _ = strconv.Atoi(filename[4:])
+	}
+
+	return nodeId, nil
+}
+
 func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 	nodes := []info.Node{}
 
@@ -161,8 +211,34 @@ func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 				lastNode = -1
 			}
 			lastThread = thread
+
+			/* On Arm platform, no 'core id' and 'physical id' in '/proc/cpuinfo'. */
+			/* So we search sysfs cpu path directly. */
+			/* This method can also be used on other platforms, such as x86, ppc64le... */
+			/* /sys/bus/cpu/devices/cpu%d contains the information of 'core_id' & 'node_id'. */
+			/* Such as: /sys/bus/cpu/devices/cpu0/topology/core_id */
+			/* Such as:  /sys/bus/cpu/devices/cpu0/node0 */
+			if true == isAArch64() {
+				val, err = getCoreIdFromCpuBus(cpuBusPath, lastThread)
+				if err != nil {
+					return nil, -1, fmt.Errorf("could not parse core info from %q: %v", cpuBusPath, err)
+				}
+				lastCore = val
+
+				val, err = getNodeIdFromCpuBus(cpuBusPath, lastThread)
+				if err != nil {
+					return nil, -1, fmt.Errorf("could not parse node info from %q: %v", cpuBusPath, err)
+				}
+				lastNode = val
+			}
 			continue
 		}
+
+		if true == isAArch64() {
+			/* On Arm platform, no 'core id' and 'physical id' in '/proc/cpuinfo'. */
+			continue
+		}
+
 		ok, val, err = extractValue(line, coreRegExp)
 		if err != nil {
 			return nil, -1, fmt.Errorf("could not parse core info from %q: %v", line, err)
@@ -171,6 +247,7 @@ func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 			lastCore = val
 			continue
 		}
+
 		ok, val, err = extractValue(line, nodeRegExp)
 		if err != nil {
 			return nil, -1, fmt.Errorf("could not parse node info from %q: %v", line, err)
@@ -180,6 +257,7 @@ func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 			continue
 		}
 	}
+
 	nodeIdx, err := addNode(&nodes, lastNode)
 	if err != nil {
 		return nil, -1, fmt.Errorf("failed to add node %d: %v", lastNode, err)
