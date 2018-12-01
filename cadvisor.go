@@ -61,6 +61,7 @@ var collectorCert = flag.String("collector_cert", "", "Collector's certificate, 
 var collectorKey = flag.String("collector_key", "", "Key for the collector's certificate")
 
 var storeContainerLabels = flag.Bool("store_container_labels", true, "convert container labels and environment variables into labels on prometheus metrics for each container. If flag set to false, then only metrics exported are container name, first alias, and image name")
+var whiteListedContainerLabels = flag.String("white_listed_container_labels", "", "comma separated list of container labels to be converted to labels on prometheus metrics for each container.")
 
 var (
 	// Metrics to be ignored.
@@ -162,7 +163,11 @@ func main() {
 	}
 
 	containerLabelFunc := metrics.DefaultContainerLabels
-	if !*storeContainerLabels {
+
+	whiteListedLabels := strings.Split(*whiteListedContainerLabels, ",")
+	if len(whiteListedLabels) > 0 {
+		containerLabelFunc = metrics.WhiteListedContainerLabels(whiteListedLabels)
+	} else if !*storeContainerLabels {
 		containerLabelFunc = metrics.BaseContainerLabels
 	}
 	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)

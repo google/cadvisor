@@ -902,6 +902,32 @@ const (
 	LabelImage = "image"
 )
 
+// WhiteListedContainerLabels returns a ContainerLabelsFunc that exports the
+// container name, first alias, image name as well as white listed label
+// values.
+func WhiteListedContainerLabels(whiteList []string) func(container *info.ContainerInfo) map[string]string {
+	whiteListMap := make(map[string]struct{}, len(whiteList))
+	for _, k := range whiteList {
+		whiteListMap[k] = struct{}{}
+	}
+
+	return func(container *info.ContainerInfo) map[string]string {
+		set := map[string]string{LabelID: container.Name}
+		if len(container.Aliases) > 0 {
+			set[LabelName] = container.Aliases[0]
+		}
+		if image := container.Spec.Image; len(image) > 0 {
+			set[LabelImage] = image
+		}
+		for k, v := range container.Spec.Labels {
+			if _, ok := whiteListMap[k]; ok {
+				set[ContainerLabelPrefix+k] = v
+			}
+		}
+		return set
+	}
+}
+
 // DefaultContainerLabels implements ContainerLabelsFunc. It exports the
 // container name, first alias, image name as well as all its env and label
 // values.
