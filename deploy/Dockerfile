@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM alpine:3.8
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
 ENV GLIBC_VERSION "2.28-r0"
@@ -11,6 +11,7 @@ RUN apk --no-cache add ca-certificates wget device-mapper findutils && \
     wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk && \
     apk add glibc-${GLIBC_VERSION}.apk glibc-bin-${GLIBC_VERSION}.apk && \
     /usr/glibc-compat/sbin/ldconfig /lib /usr/glibc-compat/lib && \
+    rm glibc-${GLIBC_VERSION}.apk glibc-bin-${GLIBC_VERSION}.apk && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
 
@@ -18,4 +19,8 @@ RUN apk --no-cache add ca-certificates wget device-mapper findutils && \
 ADD cadvisor /usr/bin/cadvisor
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080/healthz || exit 1
+
 ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr"]
