@@ -34,7 +34,9 @@ import (
 
 	"crypto/tls"
 
-	"github.com/golang/glog"
+	"github.com/google/cadvisor/metrics"
+
+	"k8s.io/klog"
 )
 
 var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
@@ -58,23 +60,27 @@ var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web in
 var collectorCert = flag.String("collector_cert", "", "Collector's certificate, exposed to endpoints for certificate based authentication.")
 var collectorKey = flag.String("collector_key", "", "Key for the collector's certificate")
 
+var storeContainerLabels = flag.Bool("store_container_labels", true, "convert container labels and environment variables into labels on prometheus metrics for each container. If flag set to false, then only metrics exported are container name, first alias, and image name")
+
 var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
 	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
-		container.NetworkTcpUsageMetrics: struct{}{},
-		container.NetworkUdpUsageMetrics: struct{}{},
+		container.NetworkTcpUsageMetrics:  struct{}{},
+		container.NetworkUdpUsageMetrics:  struct{}{},
 		container.ProcessSchedulerMetrics: struct{}{},
+		container.ProcessMetrics:          struct{}{},
 	}}
 
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
-		container.DiskUsageMetrics:       struct{}{},
-		container.NetworkUsageMetrics:    struct{}{},
-		container.NetworkTcpUsageMetrics: struct{}{},
-		container.NetworkUdpUsageMetrics: struct{}{},
-		container.PerCpuUsageMetrics:     struct{}{},
+		container.DiskUsageMetrics:        struct{}{},
+		container.NetworkUsageMetrics:     struct{}{},
+		container.NetworkTcpUsageMetrics:  struct{}{},
+		container.NetworkUdpUsageMetrics:  struct{}{},
+		container.PerCpuUsageMetrics:      struct{}{},
 		container.ProcessSchedulerMetrics: struct{}{},
+		container.ProcessMetrics:          struct{}{},
 	}
 )
 
@@ -106,14 +112,15 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp', 'udp', 'percpu'. Note: tcp and udp are disabled by default due to high CPU usage.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process'. Note: tcp and udp are disabled by default due to high CPU usage.")
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
 }
 
 func main() {
-	defer glog.Flush()
+	klog.InitFlags(nil)
+	defer klog.Flush()
 	flag.Parse()
 
 	if *versionFlag {
@@ -121,20 +128,22 @@ func main() {
 		os.Exit(0)
 	}
 
+	includedMetrics := toIncludedMetrics(ignoreMetrics.MetricSet)
+
 	setMaxProcs()
 
 	memoryStorage, err := NewMemoryStorage()
 	if err != nil {
-		glog.Fatalf("Failed to initialize storage driver: %s", err)
+		klog.Fatalf("Failed to initialize storage driver: %s", err)
 	}
 
 	sysFs := sysfs.NewRealSysFs()
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, ignoreMetrics.MetricSet, &collectorHttpClient)
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, []string{"/"})
 	if err != nil {
-		glog.Fatalf("Failed to create a Container Manager: %s", err)
+		klog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
 
 	mux := http.NewServeMux()
@@ -149,23 +158,27 @@ func main() {
 	// Register all HTTP handlers.
 	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
 	if err != nil {
-		glog.Fatalf("Failed to register HTTP handlers: %v", err)
+		klog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
 
-	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, nil)
+	containerLabelFunc := metrics.DefaultContainerLabels
+	if !*storeContainerLabels {
+		containerLabelFunc = metrics.BaseContainerLabels
+	}
+	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)
 
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {
-		glog.Fatalf("Failed to start container manager: %v", err)
+		klog.Fatalf("Failed to start container manager: %v", err)
 	}
 
 	// Install signal handler.
 	installSignalHandler(containerManager)
 
-	glog.V(1).Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
+	klog.V(1).Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
 
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
-	glog.Fatal(http.ListenAndServe(addr, mux))
+	klog.Fatal(http.ListenAndServe(addr, mux))
 }
 
 func setMaxProcs() {
@@ -182,7 +195,7 @@ func setMaxProcs() {
 	// Check if the setting was successful.
 	actualNumProcs := runtime.GOMAXPROCS(0)
 	if actualNumProcs != numProcs {
-		glog.Warningf("Specified max procs of %v but using %v", numProcs, actualNumProcs)
+		klog.Warningf("Specified max procs of %v but using %v", numProcs, actualNumProcs)
 	}
 }
 
@@ -194,9 +207,9 @@ func installSignalHandler(containerManager manager.Manager) {
 	go func() {
 		sig := <-c
 		if err := containerManager.Stop(); err != nil {
-			glog.Errorf("Failed to stop container manager: %v", err)
+			klog.Errorf("Failed to stop container manager: %v", err)
 		}
-		glog.Infof("Exiting given signal: %v", sig)
+		klog.Infof("Exiting given signal: %v", sig)
 		os.Exit(0)
 	}()
 }
@@ -209,11 +222,11 @@ func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
 
 	if collectorCert != "" {
 		if collectorKey == "" {
-			glog.Fatal("The collector_key value must be specified if the collector_cert value is set.")
+			klog.Fatal("The collector_key value must be specified if the collector_cert value is set.")
 		}
 		cert, err := tls.LoadX509KeyPair(collectorCert, collectorKey)
 		if err != nil {
-			glog.Fatalf("Failed to use the collector certificate and key: %s", err)
+			klog.Fatalf("Failed to use the collector certificate and key: %s", err)
 		}
 
 		tlsConfig.Certificates = []tls.Certificate{cert}
@@ -225,4 +238,29 @@ func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
 	}
 
 	return http.Client{Transport: transport}
+}
+
+func toIncludedMetrics(ignoreMetrics container.MetricSet) container.MetricSet {
+	set := container.MetricSet{}
+	allMetrics := []container.MetricKind{
+		container.CpuUsageMetrics,
+		container.ProcessSchedulerMetrics,
+		container.PerCpuUsageMetrics,
+		container.MemoryUsageMetrics,
+		container.CpuLoadMetrics,
+		container.DiskIOMetrics,
+		container.DiskUsageMetrics,
+		container.NetworkUsageMetrics,
+		container.NetworkTcpUsageMetrics,
+		container.NetworkUdpUsageMetrics,
+		container.AcceleratorUsageMetrics,
+		container.AppMetrics,
+		container.ProcessMetrics,
+	}
+	for _, metric := range allMetrics {
+		if !ignoreMetrics.Has(metric) {
+			set[metric] = struct{}{}
+		}
+	}
+	return set
 }

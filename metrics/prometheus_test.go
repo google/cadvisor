@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -46,6 +47,21 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 		NumCores:       4,
 		MemoryCapacity: 1024,
 	}, nil
+}
+
+var allMetrics = container.MetricSet{
+	container.CpuUsageMetrics:         struct{}{},
+	container.ProcessSchedulerMetrics: struct{}{},
+	container.PerCpuUsageMetrics:      struct{}{},
+	container.MemoryUsageMetrics:      struct{}{},
+	container.CpuLoadMetrics:          struct{}{},
+	container.DiskIOMetrics:           struct{}{},
+	container.AcceleratorUsageMetrics: struct{}{},
+	container.DiskUsageMetrics:        struct{}{},
+	container.NetworkUsageMetrics:     struct{}{},
+	container.NetworkTcpUsageMetrics:  struct{}{},
+	container.NetworkUdpUsageMetrics:  struct{}{},
+	container.ProcessMetrics:          struct{}{},
 }
 
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
@@ -109,9 +125,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							Pgfault:    12,
 							Pgmajfault: 13,
 						},
-						Cache: 14,
-						RSS:   15,
-						Swap:  8192,
+						Cache:      14,
+						RSS:        15,
+						MappedFile: 16,
+						Swap:       8192,
 					},
 					Network: info.NetworkStats{
 						InterfaceStats: info.InterfaceStats{
@@ -214,6 +231,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							DutyCycle:   6,
 						},
 					},
+					Processes: info.ProcessStats{
+						ProcessCount: 1,
+						FdCount:      5,
+					},
 					TaskStats: info.LoadStats{
 						NrSleeping:        50,
 						NrRunning:         51,
@@ -237,7 +258,7 @@ func TestPrometheusCollector(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	})
+	}, allMetrics)
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 
@@ -307,7 +328,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	})
+	}, allMetrics)
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 

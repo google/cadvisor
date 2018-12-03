@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/google/cadvisor/api"
+	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/healthz"
 	httpmux "github.com/google/cadvisor/http/mux"
 	"github.com/google/cadvisor/manager"
@@ -29,9 +30,9 @@ import (
 	"github.com/google/cadvisor/validate"
 
 	auth "github.com/abbot/go-http-auth"
-	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"k8s.io/klog"
 )
 
 func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAuthFile, httpAuthRealm, httpDigestFile, httpDigestRealm string) error {
@@ -60,7 +61,7 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 
 	// Setup the authenticator object
 	if httpAuthFile != "" {
-		glog.V(1).Infof("Using auth file %s", httpAuthFile)
+		klog.V(1).Infof("Using auth file %s", httpAuthFile)
 		secrets := auth.HtpasswdFileProvider(httpAuthFile)
 		authenticator := auth.NewBasicAuthenticator(httpAuthRealm, secrets)
 		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
@@ -70,7 +71,7 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 		authenticated = true
 	}
 	if httpAuthFile == "" && httpDigestFile != "" {
-		glog.V(1).Infof("Using digest file %s", httpDigestFile)
+		klog.V(1).Infof("Using digest file %s", httpDigestFile)
 		secrets := auth.HtdigestFileProvider(httpDigestFile)
 		authenticator := auth.NewDigestAuthenticator(httpDigestRealm, secrets)
 		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
@@ -93,10 +94,11 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 
 // RegisterPrometheusHandler creates a new PrometheusCollector and configures
 // the provided HTTP mux to handle the given Prometheus endpoint.
-func RegisterPrometheusHandler(mux httpmux.Mux, containerManager manager.Manager, prometheusEndpoint string, f metrics.ContainerLabelsFunc) {
+func RegisterPrometheusHandler(mux httpmux.Mux, containerManager manager.Manager, prometheusEndpoint string,
+	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(
-		metrics.NewPrometheusCollector(containerManager, f),
+		metrics.NewPrometheusCollector(containerManager, f, includedMetrics),
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(os.Getpid(), ""),
 	)

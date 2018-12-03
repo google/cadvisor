@@ -71,17 +71,29 @@ func TestGetCollector(t *testing.T) {
 		return []int{2, 3}, nil
 	}
 	parseDevicesCgroup = mockParser
+	originalInitializeNVML := initializeNVML
+	initializeNVML = func(_ *NvidiaManager) {}
 	defer func() {
 		parseDevicesCgroup = originalParser
+		initializeNVML = originalInitializeNVML
 	}()
 
 	nm := &NvidiaManager{}
 
-	// When nvmlInitialized is false, empty collector should be returned.
+	// When devicesPresent is false, empty collector should be returned.
 	ac, err := nm.GetCollector("does-not-matter")
 	assert.Nil(t, err)
 	assert.NotNil(t, ac)
 	nc, ok := ac.(*NvidiaCollector)
+	assert.True(t, ok)
+	assert.Equal(t, 0, len(nc.Devices))
+
+	// When nvmlInitialized is false, empty collector should be returned.
+	nm.devicesPresent = true
+	ac, err = nm.GetCollector("does-not-matter")
+	assert.Nil(t, err)
+	assert.NotNil(t, ac)
+	nc, ok = ac.(*NvidiaCollector)
 	assert.True(t, ok)
 	assert.Equal(t, 0, len(nc.Devices))
 

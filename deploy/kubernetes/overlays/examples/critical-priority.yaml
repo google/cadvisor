@@ -1,0 +1,15 @@
+# This patch sets the priorityClass to system-node-critical, the highest priority available.
+apiVersion: apps/v1 # for Kubernetes versions before 1.9.0 use apps/v1beta2
+kind: DaemonSet
+metadata:
+  name: cadvisor
+spec:
+  template:
+    metadata:
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      priorityClassName: system-node-critical
+      tolerations:
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"

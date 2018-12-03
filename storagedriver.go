@@ -30,7 +30,7 @@ import (
 	_ "github.com/google/cadvisor/storage/statsd"
 	_ "github.com/google/cadvisor/storage/stdout"
 
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 var (
@@ -45,8 +45,8 @@ func NewMemoryStorage() (*memory.InMemoryCache, error) {
 		return nil, err
 	}
 	if *storageDriver != "" {
-		glog.V(1).Infof("Using backend storage type %q", *storageDriver)
+		klog.V(1).Infof("Using backend storage type %q", *storageDriver)
 	}
-	glog.V(1).Infof("Caching stats in memory for %v", *storageDuration)
+	klog.V(1).Infof("Caching stats in memory for %v", *storageDuration)
 	return memory.New(*storageDuration, backendStorage), nil
 }

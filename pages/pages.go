@@ -26,7 +26,7 @@ import (
 	"github.com/google/cadvisor/manager"
 
 	auth "github.com/abbot/go-http-auth"
-	"github.com/golang/glog"
+	"k8s.io/klog"
 )
 
 var pageTemplate *template.Template
@@ -71,7 +71,7 @@ func init() {
 	pageTemplate = template.New("containersTemplate").Funcs(funcMap)
 	_, err := pageTemplate.Parse(string(containersHtmlTemplate))
 	if err != nil {
-		glog.Fatalf("Failed to parse template: %s", err)
+		klog.Fatalf("Failed to parse template: %s", err)
 	}
 }
 
