@@ -1,4 +1,4 @@
-FROM alpine:3.7
+FROM alpine:3.8
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
 RUN apk --no-cache add libc6-compat device-mapper findutils zfs && \
@@ -10,4 +10,8 @@ RUN apk --no-cache add libc6-compat device-mapper findutils zfs && \
 ADD cadvisor /usr/bin/cadvisor
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8080/healthz || exit 1
+
 ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr"]

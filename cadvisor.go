@@ -62,6 +62,8 @@ var collectorKey = flag.String("collector_key", "", "Key for the collector's cer
 
 var storeContainerLabels = flag.Bool("store_container_labels", true, "convert container labels and environment variables into labels on prometheus metrics for each container. If flag set to false, then only metrics exported are container name, first alias, and image name")
 
+var urlBasePrefix = flag.String("url_base_prefix", "", "prefix path that will be prepended to all paths to support some reverse proxies")
+
 var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
@@ -156,7 +158,7 @@ func main() {
 	}
 
 	// Register all HTTP handlers.
-	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
+	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *urlBasePrefix)
 	if err != nil {
 		klog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
@@ -177,8 +179,11 @@ func main() {
 
 	klog.V(1).Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
 
+	rootMux := http.NewServeMux()
+	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, mux))
+
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
-	klog.Fatal(http.ListenAndServe(addr, mux))
+	klog.Fatal(http.ListenAndServe(addr, rootMux))
 }
 
 func setMaxProcs() {
