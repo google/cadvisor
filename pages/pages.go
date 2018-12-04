@@ -100,7 +100,7 @@ func dockerHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFu
 }
 
 // Register http handlers
-func RegisterHandlersDigest(mux httpmux.Mux, containerManager manager.Manager, authenticator *auth.DigestAuth) error {
+func RegisterHandlersDigest(mux httpmux.Mux, containerManager manager.Manager, authenticator *auth.DigestAuth, urlBasePrefix string) error {
 	// Register the handler for the containers page.
 	if authenticator != nil {
 		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
@@ -109,10 +109,20 @@ func RegisterHandlersDigest(mux httpmux.Mux, containerManager manager.Manager, a
 		mux.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
 		mux.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
 	}
+
+	if ContainersPage[len(ContainersPage)-1] == '/' {
+		redirectHandler := http.RedirectHandler(urlBasePrefix+ContainersPage, http.StatusMovedPermanently)
+		mux.Handle(ContainersPage[0:len(ContainersPage)-1], redirectHandler)
+	}
+	if DockerPage[len(DockerPage)-1] == '/' {
+		redirectHandler := http.RedirectHandler(urlBasePrefix+DockerPage, http.StatusMovedPermanently)
+		mux.Handle(DockerPage[0:len(DockerPage)-1], redirectHandler)
+	}
+
 	return nil
 }
 
-func RegisterHandlersBasic(mux httpmux.Mux, containerManager manager.Manager, authenticator *auth.BasicAuth) error {
+func RegisterHandlersBasic(mux httpmux.Mux, containerManager manager.Manager, authenticator *auth.BasicAuth, urlBasePrefix string) error {
 	// Register the handler for the containers and docker age.
 	if authenticator != nil {
 		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
@@ -121,6 +131,16 @@ func RegisterHandlersBasic(mux httpmux.Mux, containerManager manager.Manager, au
 		mux.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
 		mux.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
 	}
+
+	if ContainersPage[len(ContainersPage)-1] == '/' {
+		redirectHandler := http.RedirectHandler(urlBasePrefix+ContainersPage, http.StatusMovedPermanently)
+		mux.Handle(ContainersPage[0:len(ContainersPage)-1], redirectHandler)
+	}
+	if DockerPage[len(DockerPage)-1] == '/' {
+		redirectHandler := http.RedirectHandler(urlBasePrefix+DockerPage, http.StatusMovedPermanently)
+		mux.Handle(DockerPage[0:len(DockerPage)-1], redirectHandler)
+	}
+
 	return nil
 }
 

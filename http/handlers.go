@@ -35,7 +35,7 @@ import (
 	"k8s.io/klog"
 )
 
-func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAuthFile, httpAuthRealm, httpDigestFile, httpDigestRealm string) error {
+func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAuthFile, httpAuthRealm, httpDigestFile, httpDigestRealm string, urlBasePrefix string) error {
 	// Basic health handler.
 	if err := healthz.RegisterHandler(mux); err != nil {
 		return fmt.Errorf("failed to register healthz handler: %s", err)
@@ -55,7 +55,7 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 	}
 
 	// Redirect / to containers page.
-	mux.Handle("/", http.RedirectHandler(pages.ContainersPage, http.StatusTemporaryRedirect))
+	mux.Handle("/", http.RedirectHandler(urlBasePrefix+pages.ContainersPage, http.StatusTemporaryRedirect))
 
 	var authenticated bool
 
@@ -65,7 +65,7 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 		secrets := auth.HtpasswdFileProvider(httpAuthFile)
 		authenticator := auth.NewBasicAuthenticator(httpAuthRealm, secrets)
 		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
-		if err := pages.RegisterHandlersBasic(mux, containerManager, authenticator); err != nil {
+		if err := pages.RegisterHandlersBasic(mux, containerManager, authenticator, urlBasePrefix); err != nil {
 			return fmt.Errorf("failed to register pages auth handlers: %s", err)
 		}
 		authenticated = true
@@ -75,7 +75,7 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 		secrets := auth.HtdigestFileProvider(httpDigestFile)
 		authenticator := auth.NewDigestAuthenticator(httpDigestRealm, secrets)
 		mux.HandleFunc(static.StaticResource, authenticator.Wrap(staticHandler))
-		if err := pages.RegisterHandlersDigest(mux, containerManager, authenticator); err != nil {
+		if err := pages.RegisterHandlersDigest(mux, containerManager, authenticator, urlBasePrefix); err != nil {
 			return fmt.Errorf("failed to register pages digest handlers: %s", err)
 		}
 		authenticated = true
@@ -84,7 +84,7 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 	// Change handler based on authenticator initalization
 	if !authenticated {
 		mux.HandleFunc(static.StaticResource, staticHandlerNoAuth)
-		if err := pages.RegisterHandlersBasic(mux, containerManager, nil); err != nil {
+		if err := pages.RegisterHandlersBasic(mux, containerManager, nil, urlBasePrefix); err != nil {
 			return fmt.Errorf("failed to register pages handlers: %s", err)
 		}
 	}
