@@ -26,7 +26,6 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -94,6 +93,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 			},
 			Stats: []*info.ContainerStats{
 				{
+					Timestamp: time.Unix(1395066363, 0),
 					Cpu: info.CpuStats{
 						Usage: info.CpuUsage{
 							Total:  1,

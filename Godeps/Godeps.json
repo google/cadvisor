@@ -726,13 +726,13 @@
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus",
-			"Comment": "v0.8.0-62-g08fd2e1",
-			"Rev": "08fd2e12372a66e68e30523c7642e0cbc3e4fbde"
+			"Comment": "v0.9.1",
+			"Rev": "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus/promhttp",
-			"Comment": "v0.8.0-62-g08fd2e1",
-			"Rev": "08fd2e12372a66e68e30523c7642e0cbc3e4fbde"
+			"Comment": "v0.9.1",
+			"Rev": "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
 		},
 		{
 			"ImportPath": "github.com/prometheus/client_model/go",
@@ -1009,6 +1009,11 @@
 		{
 			"ImportPath": "k8s.io/utils/clock/testing",
 			"Rev": "aedf551cdb8b0119df3a19c65fde413a13b34997"
+		},
+		{
+			"ImportPath": "github.com/prometheus/client_golang/prometheus/internal",
+			"Comment": "v0.9.1",
+			"Rev": "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
 		}
 	]
 }
