@@ -1,0 +1,23 @@
+name: cadvisor
+version: '1.0'
+summary: Analyzes resource usage and performance characteristics of running containers
+description: |
+  Analyzes resource usage and performance characteristics of running containers.
+grade: stable
+confinement: classic
+parts:
+  cadvisor:
+    plugin: go
+    source: https://github.com/google/cadvisor.git
+    go-importpath: github.com/google/cadvisor
+    build-packages:
+      - build-essential
+apps:
+  cadvisor:
+    command: bin/cadvisor
+    daemon: simple
+    restart-condition: on-abnormal
+    plugs:
+      - home
+      - network
+      - network-bind
