@@ -17,8 +17,8 @@ package http
 import (
 	"fmt"
 	"net/http"
-	"os"
 
+	auth "github.com/abbot/go-http-auth"
 	"github.com/google/cadvisor/api"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/healthz"
@@ -28,8 +28,6 @@ import (
 	"github.com/google/cadvisor/pages"
 	"github.com/google/cadvisor/pages/static"
 	"github.com/google/cadvisor/validate"
-
-	auth "github.com/abbot/go-http-auth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/klog"
@@ -100,7 +98,7 @@ func RegisterPrometheusHandler(mux httpmux.Mux, containerManager manager.Manager
 	r.MustRegister(
 		metrics.NewPrometheusCollector(containerManager, f, includedMetrics),
 		prometheus.NewGoCollector(),
-		prometheus.NewProcessCollector(os.Getpid(), ""),
+		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
 	)
 	mux.Handle(prometheusEndpoint, promhttp.HandlerFor(r, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
 }
