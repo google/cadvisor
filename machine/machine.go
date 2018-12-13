@@ -130,8 +130,8 @@ func parseCapacity(b []byte, r *regexp.Regexp) (uint64, error) {
 	return m * 1024, err
 }
 
-/* look for sysfs cpu path containing core_id */
-/* such as: sys/bus/cpu/devices/cpu0/topology/core_id */
+/* Look for sysfs cpu path containing core_id */
+/* Such as: sys/bus/cpu/devices/cpu0/topology/core_id */
 func getCoreIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	path := filepath.Join(cpuBusPath, fmt.Sprintf("cpu%d/topology", threadId))
 	file := filepath.Join(path, "core_id")
@@ -154,8 +154,8 @@ func getCoreIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	return int(coreId), nil
 }
 
-/* look for sysfs cpu path containing node id */
-/* such as: /sys/bus/cpu/devices/cpu0/node%d */
+/* Look for sysfs cpu path containing node id */
+/* Such as: /sys/bus/cpu/devices/cpu0/node%d */
 func getNodeIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	path := filepath.Join(cpuBusPath, fmt.Sprintf("cpu%d", threadId))
 
@@ -235,13 +235,15 @@ func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 			if isAArch64() {
 				val, err = getCoreIdFromCpuBus(cpuBusPath, lastThread)
 				if err != nil {
-					return nil, -1, fmt.Errorf("could not parse core info from %q: %v", cpuBusPath, err)
+					// Report thread id if no NUMA
+					val = lastThread
 				}
 				lastCore = val
 
 				val, err = getNodeIdFromCpuBus(cpuBusPath, lastThread)
 				if err != nil {
-					return nil, -1, fmt.Errorf("could not parse node info from %q: %v", cpuBusPath, err)
+					// Report node 0 if no NUMA
+					val = 0
 				}
 				lastNode = val
 			}
