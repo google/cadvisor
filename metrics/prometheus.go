@@ -1153,8 +1153,10 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		labels := make([]string, 0, len(rawLabels))
 		containerLabels := c.containerLabelsFunc(cont)
 		for l := range rawLabels {
-			labels = append(labels, sanitizeLabelName(l))
-			values = append(values, containerLabels[l])
+			if v, ok := containerLabels[l]; ok && len(v) > 0 {
+				labels = append(labels, sanitizeLabelName(l))
+				values = append(values, v)
+			}
 		}
 
 		// Container spec
