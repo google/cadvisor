@@ -139,7 +139,10 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				help:      "Last time a container was seen by the exporter",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(time.Now().Unix())}}
+					return metricValues{{
+						value:     float64(time.Now().Unix()),
+						timestamp: time.Now(),
+					}}
 				},
 			},
 		},
