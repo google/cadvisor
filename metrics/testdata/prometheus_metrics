@@ -111,7 +111,7 @@ container_fs_writes_total{container_env_foo_env="prod",container_label_foo_label
 container_fs_writes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 43 1395066363000
 # HELP container_last_seen Last time a container was seen by the exporter
 # TYPE container_last_seen gauge
-container_last_seen{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.426203694e+09 1395066363000
+container_last_seen{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.395066363e+09 1395066363000
 # HELP container_memory_cache Number of bytes of page cache memory.
 # TYPE container_memory_cache gauge
 container_memory_cache{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 14 1395066363000
