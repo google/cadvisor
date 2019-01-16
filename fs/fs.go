@@ -648,6 +648,12 @@ func getVfsStats(path string) (total uint64, free uint64, avail uint64, inodes u
 	return total, free, avail, inodes, inodesFree, nil
 }
 
+func (self *RealFsInfo) GetVfsStats(dir string) (total uint64, free uint64, avail uint64, inodes uint64, inodesFree uint64, err error) {
+	claimToken()
+	defer releaseToken()
+	return getVfsStats(dir)
+}
+
 // Devicemapper thin provisioning is detailed at
 // https://www.kernel.org/doc/Documentation/device-mapper/thin-provisioning.txt
 func dockerDMDevice(driverStatus map[string]string, dmsetup devicemapper.DmsetupClient) (string, uint, uint, uint, error) {

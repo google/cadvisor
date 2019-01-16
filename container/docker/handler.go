@@ -410,6 +410,8 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 	fsStat.BaseUsage = usage.BaseUsageBytes
 	fsStat.Usage = usage.TotalUsageBytes
 	fsStat.Inodes = usage.InodeUsage
+	fsStat.Available = usage.FreeBytes
+	fsStat.InodesFree = usage.InodesFree
 
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 

@@ -79,6 +79,11 @@ type FsInfo interface {
 	// GetDirUsage returns a usage information for 'dir'.
 	GetDirUsage(dir string) (UsageInfo, error)
 
+	// Returns the total number of bytes, number of free bytes, number of available
+	// bytes, number of inodes in use, and nmber of inodes free in the
+	// filesystem containing 'dir'.
+	GetVfsStats(dir string) (uint64, uint64, uint64, uint64, uint64, error)
+
 	// GetDeviceInfoByFsUUID returns the information of the device with the
 	// specified filesystem uuid. If no such device exists, this function will
 	// return the ErrNoSuchDevice error.
