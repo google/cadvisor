@@ -300,7 +300,7 @@ func TestStreamOOMs(t *testing.T) {
 				ProcessName:         "badsysprogram",
 				TimeOfDeath:         testTime,
 				ContainerName:       "/",
-				VictimContainerName: "",
+				VictimContainerName: "/",
 			}},
 		},
 		{ // Multiple OOMs
