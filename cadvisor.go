@@ -65,6 +65,8 @@ var whitelistedContainerLabels = flag.String("whitelisted_container_labels", "",
 
 var urlBasePrefix = flag.String("url_base_prefix", "", "prefix path that will be prepended to all paths to support some reverse proxies")
 
+var rawCgroupPrefixWhiteList = flag.String("raw_cgroup_prefix_whitelist", "", "A comma-separated list of cgroup path prefix that needs to be collected even when -docker_only is specified")
+
 var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
@@ -145,7 +147,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, []string{"/"})
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList,","))
 	if err != nil {
 		klog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
