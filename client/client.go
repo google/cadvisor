@@ -218,7 +218,7 @@ func (self *Client) getEventStreamingData(url string, einfo chan *v1.Event) erro
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Status code is not OK: %v (%s)", resp.StatusCode, resp.Status)
+		return fmt.Errorf("status code is not OK: %v (%s)", resp.StatusCode, resp.Status)
 	}
 
 	dec := json.NewDecoder(resp.Body)

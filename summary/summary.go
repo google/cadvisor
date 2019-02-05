@@ -152,7 +152,7 @@ func (s *StatsSummary) getDerivedUsage(n int) (info.Usage, error) {
 	samples := s.minuteSamples.RecentStats(n)
 	numSamples := len(samples)
 	if numSamples < 1 {
-		return info.Usage{}, fmt.Errorf("failed to retrieve any minute stats.")
+		return info.Usage{}, fmt.Errorf("failed to retrieve any minute stats")
 	}
 	// We generate derived stats even with partial data.
 	usage := GetDerivedPercentiles(samples)
@@ -178,7 +178,7 @@ func New(spec v1.ContainerSpec) (*StatsSummary, error) {
 		summary.available.Memory = true
 	}
 	if !summary.available.Cpu && !summary.available.Memory {
-		return nil, fmt.Errorf("none of the resources are being tracked.")
+		return nil, fmt.Errorf("none of the resources are being tracked")
 	}
 	summary.minuteSamples = NewSamplesBuffer(60 /* one hour */)
 	return &summary, nil
