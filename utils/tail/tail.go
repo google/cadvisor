@@ -143,7 +143,7 @@ func (t *Tail) watchFile() error {
 	watchDir := filepath.Dir(t.filename)
 	err = t.watcher.AddWatch(watchDir, inotify.IN_MOVED_FROM|inotify.IN_DELETE)
 	if err != nil {
-		return fmt.Errorf("Failed to add watch to directory %s: %v", watchDir, err)
+		return fmt.Errorf("failed to add watch to directory %s: %v", watchDir, err)
 	}
 	defer t.watcher.RemoveWatch(watchDir)
 
