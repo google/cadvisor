@@ -279,7 +279,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 	// RHEL/Centos 7.x from here on
 	if sem.Major != 3 {
 		// only 3.x kernels *may* work correctly
-		return fmt.Errorf("rHEL/Centos 7.x kernel version 3.10.0-366 or later is required to use thin_ls - you have %q", kernelVersion)
+		return fmt.Errorf("RHEL/Centos 7.x kernel version 3.10.0-366 or later is required to use thin_ls - you have %q", kernelVersion)
 	}
 
 	if sem.GT(minRhel7KernelVersion) {
@@ -305,7 +305,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 		}
 	}
 
-	return fmt.Errorf("rHEL/Centos 7.x kernel version 3.10.0-366 or later is required to use thin_ls - you have %q", kernelVersion)
+	return fmt.Errorf("RHEL/Centos 7.x kernel version 3.10.0-366 or later is required to use thin_ls - you have %q", kernelVersion)
 }
 
 // Register root container before running this function!
