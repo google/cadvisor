@@ -1098,6 +1098,6 @@ function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
   // Get machine info, then get the stats every 1s.
   getMachineInfo(rootDir, function(machineInfo) {
     window.cadvisor.machineInfo = machineInfo;
-    setInterval(function() { refreshStats(); }, 1000);
+    setInterval(function() { refreshStats(); }, 10000);
   });
 }
