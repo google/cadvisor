@@ -228,10 +228,23 @@ func (self *influxdbStorage) containerStatsToPoints(
 	points = append(points, makePoint(serMemoryWorkingSet, stats.Memory.WorkingSet))
 
 	// Network Stats
-	points = append(points, makePoint(serRxBytes, stats.Network.RxBytes))
-	points = append(points, makePoint(serRxErrors, stats.Network.RxErrors))
-	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
-	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
+	for _, networkInterface := range stats.Network.Interfaces {
+		pointRxBytes := makePoint(serRxBytes, networkInterface.RxBytes)
+		pointRxErrors := makePoint(serRxErrors, networkInterface.RxErrors)
+		pointTxBytes := makePoint(serTxBytes, networkInterface.TxBytes)
+		pointTxErrors := makePoint(serTxErrors, networkInterface.TxErrors)
+
+		tags := map[string]string{"interface": networkInterface.Name}
+		addTagsToPoint(pointRxBytes, tags)
+		addTagsToPoint(pointRxErrors, tags)
+		addTagsToPoint(pointTxBytes, tags)
+		addTagsToPoint(pointTxErrors, tags)
+
+		points = append(points, pointRxBytes)
+		points = append(points, pointRxErrors)
+		points = append(points, pointTxBytes)
+		points = append(points, pointTxErrors)
+	}
 
 	self.tagPoints(cInfo, stats, points)
 
