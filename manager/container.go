@@ -29,13 +29,12 @@ import (
 	"sync"
 	"time"
 
-	v2 "github.com/ddtmachado/cadvisor/info/v2"
 	"github.com/google/cadvisor/accelerators"
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/info/v2"
+	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
 
@@ -624,30 +623,12 @@ func (c *containerData) updateStats() error {
 		nvidiaStatsErr = c.nvidiaCollector.UpdateStats(stats)
 	}
 
-	ref, err := c.handler.ContainerReference()
-	if err != nil {
-		// Ignore errors if the container is dead.
-		if !c.handler.Exists() {
-			return nil
-		}
-		return err
-	}
-
-	spec, err := c.handler.GetSpec()
-	if err != nil {
-		// Ignore errors if the container is dead.
-		if !c.handler.Exists() {
-			return nil
-		}
-		return err
-	}
-
 	cInfo := info.ContainerInfo{
-		ContainerReference: ref,
-		Spec:               spec,
+		ContainerReference: c.info.ContainerReference,
+		Spec:               c.info.Spec,
 	}
 
-	err = c.memoryCache.AddStats(&cInfo, stats)
+	err := c.memoryCache.AddStats(&cInfo, stats)
 	if err != nil {
 		return err
 	}

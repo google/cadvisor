@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,17 +35,19 @@ func init() {
 }
 
 var argDbRetentionPolicy = flag.String("storage_driver_influxdb_retention_policy", "", "retention policy")
+var argWhitelistedLabels = flag.String("storage_driver_influxdb_whitelisted_labels", "", "retention policy")
 
 type influxdbStorage struct {
-	client          *influxdb.Client
-	machineName     string
-	database        string
-	retentionPolicy string
-	bufferDuration  time.Duration
-	lastWrite       time.Time
-	points          []*influxdb.Point
-	lock            sync.Mutex
-	readyToFlush    func() bool
+	client            *influxdb.Client
+	machineName       string
+	database          string
+	retentionPolicy   string
+	bufferDuration    time.Duration
+	whitelistedLabels string
+	lastWrite         time.Time
+	points            []*influxdb.Point
+	lock              sync.Mutex
+	readyToFlush      func() bool
 }
 
 // Series names
@@ -86,6 +89,7 @@ func new() (storage.StorageDriver, error) {
 		*storage.ArgDbTable,
 		*storage.ArgDbName,
 		*argDbRetentionPolicy,
+		*argWhitelistedLabels,
 		*storage.ArgDbUsername,
 		*storage.ArgDbPassword,
 		*storage.ArgDbHost,
@@ -105,6 +109,7 @@ const (
 const (
 	tagMachineName   string = "machine"
 	tagContainerName string = "container_name"
+	tagContainerId   string = "container_id"
 )
 
 func (self *influxdbStorage) containerFilesystemStatsToPoints(
@@ -162,11 +167,31 @@ func (self *influxdbStorage) tagPoints(cInfo *info.ContainerInfo, stats *info.Co
 	commonTags := map[string]string{
 		tagMachineName:   self.machineName,
 		tagContainerName: containerName,
+		tagContainerId:   cInfo.ContainerReference.Id,
 	}
+
+	containerLabels := make(map[string]string)
+
+	if self.whitelistedLabels != "" {
+		whiteListLabels := strings.Split(self.whitelistedLabels, ",")
+		whiteListMap := make(map[string]struct{}, len(whiteListLabels))
+		for _, k := range whiteListLabels {
+			whiteListMap[k] = struct{}{}
+		}
+
+		for k, v := range cInfo.Spec.Labels {
+			if _, ok := whiteListMap[k]; ok {
+				containerLabels[k] = v
+			}
+		}
+	} else {
+		containerLabels = cInfo.Spec.Labels
+	}
+
 	for i := 0; i < len(points); i++ {
 		// merge with existing tags if any
 		addTagsToPoint(points[i], commonTags)
-		addTagsToPoint(points[i], cInfo.Spec.Labels)
+		addTagsToPoint(points[i], containerLabels)
 		points[i].Time = stats.Timestamp
 	}
 }
@@ -274,6 +299,7 @@ func newStorage(
 	tablename,
 	database,
 	retentionPolicy,
+	whitelistedLabels,
 	username,
 	password,
 	influxdbHost string,
@@ -300,13 +326,14 @@ func newStorage(
 	}
 
 	ret := &influxdbStorage{
-		client:          client,
-		machineName:     machineName,
-		database:        database,
-		retentionPolicy: retentionPolicy,
-		bufferDuration:  bufferDuration,
-		lastWrite:       time.Now(),
-		points:          make([]*influxdb.Point, 0),
+		client:            client,
+		machineName:       machineName,
+		database:          database,
+		retentionPolicy:   retentionPolicy,
+		whitelistedLabels: whitelistedLabels,
+		bufferDuration:    bufferDuration,
+		lastWrite:         time.Now(),
+		points:            make([]*influxdb.Point, 0),
 	}
 	ret.readyToFlush = ret.defaultReadyToFlush
 	return ret, nil

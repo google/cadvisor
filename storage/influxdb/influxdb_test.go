@@ -215,12 +215,12 @@ func TestContainerStatsToPoints(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, storage)
 
-	ref, stats := createTestStats()
+	cInfo, stats := createTestStats()
 	require.Nil(t, err)
 	require.NotNil(t, stats)
 
 	// When
-	points := storage.containerStatsToPoints(*ref, stats)
+	points := storage.containerStatsToPoints(*cInfo, stats)
 
 	// Then
 	assert.NotEmpty(t, points)
@@ -238,7 +238,11 @@ func TestContainerStatsToPoints(t *testing.T) {
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxErrors)
 
 	for _, cpu_usage := range stats.Cpu.Usage.PerCpu {
-		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)
+		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)		
+	}
+
+	for _, point := points {
+		assertPointWithLabel(t, point, "testLabel")
 	}
 }
 
@@ -251,6 +255,17 @@ func assertContainsPointWithValue(t *testing.T, points []*influxdb.Point, name s
 		}
 	}
 	return assert.True(t, found, "no point found with name='%v' and value=%v", name, value)
+}
+
+func assertPointWithLabel(t *testing.T, point *influxdb.Point, label string) bool {
+	found := false
+	for _, tag := range point.Tags {
+		if tag == label {
+			found = true
+			break
+		}
+	}
+	return assert.True(t, found, "no label found with name='%v'", label)
 }
 
 func createTestStorage() (*influxdbStorage, error) {
@@ -274,10 +289,15 @@ func createTestStorage() (*influxdbStorage, error) {
 	return storage, err
 }
 
-func createTestStats() (*info.ContainerReference, *info.ContainerStats) {
+func createTestStats() (*info.ContainerInfo, *info.ContainerStats) {
 	ref := &info.ContainerReference{
+		Id:      "abcd",
 		Name:    "testContainername",
 		Aliases: []string{"testContainerAlias1", "testContainerAlias2"},
+	}
+
+	spec := &info.ContainerSpec{
+		Labels: map[string]string{"testLabel": "testLabelValue"},
 	}
 
 	cpuUsage := info.CpuUsage{
@@ -294,5 +314,10 @@ func createTestStats() (*info.ContainerReference, *info.ContainerStats) {
 			LoadAverage: int32(rand.Intn(1000)),
 		},
 	}
-	return ref, stats
+
+	cinfo := &info.ContainerInfo{
+		ContainerReference: ref,
+		Spec:               spec,
+	}
+	return cinfo, stats
 }
