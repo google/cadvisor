@@ -238,10 +238,10 @@ func TestContainerStatsToPoints(t *testing.T) {
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxErrors)
 
 	for _, cpu_usage := range stats.Cpu.Usage.PerCpu {
-		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)		
+		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)
 	}
 
-	for _, point := points {
+	for _, point := range points {
 		assertPointWithLabel(t, point, "testLabel")
 	}
 }

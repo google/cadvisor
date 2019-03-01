@@ -623,10 +623,12 @@ func (c *containerData) updateStats() error {
 		nvidiaStatsErr = c.nvidiaCollector.UpdateStats(stats)
 	}
 
+	c.lock.Lock()
 	cInfo := info.ContainerInfo{
 		ContainerReference: c.info.ContainerReference,
 		Spec:               c.info.Spec,
 	}
+	c.lock.Unlock()
 
 	err := c.memoryCache.AddStats(&cInfo, stats)
 	if err != nil {
