@@ -35,7 +35,6 @@ func init() {
 }
 
 var argDbRetentionPolicy = flag.String("storage_driver_influxdb_retention_policy", "", "retention policy")
-var argWhitelistedLabels = flag.String("storage_driver_influxdb_whitelisted_labels", "", "retention policy")
 
 type influxdbStorage struct {
 	client            *influxdb.Client
@@ -43,7 +42,7 @@ type influxdbStorage struct {
 	database          string
 	retentionPolicy   string
 	bufferDuration    time.Duration
-	whitelistedLabels string
+	whitelistedLabels map[string]struct{}
 	lastWrite         time.Time
 	points            []*influxdb.Point
 	lock              sync.Mutex
@@ -89,7 +88,6 @@ func new() (storage.StorageDriver, error) {
 		*storage.ArgDbTable,
 		*storage.ArgDbName,
 		*argDbRetentionPolicy,
-		*argWhitelistedLabels,
 		*storage.ArgDbUsername,
 		*storage.ArgDbPassword,
 		*storage.ArgDbHost,
@@ -170,23 +168,7 @@ func (self *influxdbStorage) tagPoints(cInfo *info.ContainerInfo, stats *info.Co
 		tagContainerId:   cInfo.ContainerReference.Id,
 	}
 
-	containerLabels := make(map[string]string)
-
-	if self.whitelistedLabels != "" {
-		whiteListLabels := strings.Split(self.whitelistedLabels, ",")
-		whiteListMap := make(map[string]struct{}, len(whiteListLabels))
-		for _, k := range whiteListLabels {
-			whiteListMap[k] = struct{}{}
-		}
-
-		for k, v := range cInfo.Spec.Labels {
-			if _, ok := whiteListMap[k]; ok {
-				containerLabels[k] = v
-			}
-		}
-	} else {
-		containerLabels = cInfo.Spec.Labels
-	}
+	containerLabels := containerLabels(&cInfo.Spec, self.whitelistedLabels)
 
 	for i := 0; i < len(points); i++ {
 		// merge with existing tags if any
@@ -312,7 +294,6 @@ func newStorage(
 	tablename,
 	database,
 	retentionPolicy,
-	whitelistedLabels,
 	username,
 	password,
 	influxdbHost string,
@@ -338,12 +319,23 @@ func newStorage(
 		return nil, err
 	}
 
+	//Reuse cadvisor flag for whitelisted container labels
+	var argWhitelistedLabels = flag.Lookup("whitelisted_container_labels").Value.(flag.Getter).Get().(string)
+
+	whitelistMap := make(map[string]struct{}, len(argWhitelistedLabels))
+	if argWhitelistedLabels != "" {
+		whitelistLabels := strings.Split(argWhitelistedLabels, ",")
+		for _, k := range whitelistLabels {
+			whitelistMap[k] = struct{}{}
+		}
+	}
+
 	ret := &influxdbStorage{
 		client:            client,
 		machineName:       machineName,
 		database:          database,
 		retentionPolicy:   retentionPolicy,
-		whitelistedLabels: whitelistedLabels,
+		whitelistedLabels: whitelistMap,
 		bufferDuration:    bufferDuration,
 		lastWrite:         time.Now(),
 		points:            make([]*influxdb.Point, 0),
@@ -414,4 +406,18 @@ func toSignedIfUnsigned(value interface{}) interface{} {
 		return int(v)
 	}
 	return value
+}
+
+func containerLabels(cSpec *info.ContainerSpec, whiteListMap map[string]struct{}) map[string]string {
+	containerLabels := make(map[string]string)
+	if len(whiteListMap) == 0 {
+		containerLabels = cSpec.Labels
+	} else {
+		for k, v := range cSpec.Labels {
+			if _, ok := whiteListMap[k]; ok {
+				containerLabels[k] = v
+			}
+		}
+	}
+	return containerLabels
 }
