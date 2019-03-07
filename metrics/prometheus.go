@@ -1159,13 +1159,13 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		for l := range rawLabels {
 			sl := sanitizeLabelName(l)
 			for _, x := range labels {
-			   if sl != x {
-				   duplicate = true
+				if sl != x {
+					duplicate = true
 					break
-			   }
+				}
 			}
 			if duplicate != true {
-			   labels = append(labels, sl)
+				labels = append(labels, sl)
 			}
 			values = append(values, containerLabels[l])
 		}
