@@ -1160,7 +1160,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			sl := sanitizeLabelName(l)
 			for _, x := range labels {
 				duplicate = false
-				if sl != x {
+				if sl == x {
 					duplicate = true
 					break
 				}
