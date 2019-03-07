@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/klog"
 )
@@ -1156,10 +1155,17 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		values := make([]string, 0, len(rawLabels))
 		labels := make([]string, 0, len(rawLabels))
 		containerLabels := c.containerLabelsFunc(cont)
+		duplicate := false
 		for l := range rawLabels {
-			s := sanitizeLabelName(l)
-			if utils.SliceContains(labels, s) == false {
-				labels = append(labels, s)
+			sl := sanitizeLabelName(l)
+			for _, x := range labels {
+			   if sl != x {
+				   duplicate = true
+					break
+			   }
+			}
+			if duplicate != true {
+			   labels = append(labels, sl)
 			}
 			values = append(values, containerLabels[l])
 		}
