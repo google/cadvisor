@@ -1155,11 +1155,10 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		values := make([]string, 0, len(rawLabels))
 		labels := make([]string, 0, len(rawLabels))
 		containerLabels := c.containerLabelsFunc(cont)
-		duplicate := false
 		for l := range rawLabels {
+			duplicate := false
 			sl := sanitizeLabelName(l)
 			for _, x := range labels {
-				duplicate = false
 				if sl == x {
 					duplicate = true
 					break
