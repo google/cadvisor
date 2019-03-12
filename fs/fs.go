@@ -404,20 +404,19 @@ func (self *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, er
 				err error
 				fs  Fs
 			)
-			var fsType = partition.fsType
-			if fsType == ZFS.String() {
-				if _, devZfs := os.Stat("/dev/zfs"); os.IsNotExist(devZfs) {
-					fsType = "ZFS_no_dev"
-				}
-			}
-			switch fsType {
+			switch partition.fsType {
 			case DeviceMapper.String():
 				fs.Capacity, fs.Free, fs.Available, err = getDMStats(device, partition.blockSize)
 				klog.V(5).Infof("got devicemapper fs capacity stats: capacity: %v free: %v available: %v:", fs.Capacity, fs.Free, fs.Available)
 				fs.Type = DeviceMapper
 			case ZFS.String():
-				fs.Capacity, fs.Free, fs.Available, err = getZfstats(device)
-				fs.Type = ZFS
+				if _, devzfs := os.Stat("/dev/zfs"); os.IsExist(devzfs) {
+					fs.Capacity, fs.Free, fs.Available, err = getZfstats(device)
+					fs.Type = ZFS
+					break
+				}
+				// if /dev/zfs is not present default to VFS
+				fallthrough
 			default:
 				var inodes, inodesFree uint64
 				if utils.FileExists(partition.mountpoint) {
