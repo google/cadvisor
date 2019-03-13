@@ -1069,7 +1069,7 @@ function drawCustomMetrics(elementId, containerInfo, metricsInfo) {
 }
 
 // Executed when the page finishes loading.
-function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
+function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot, maschineInfoRefreshRate) {
   // Don't fetch data if we don't have any resource.
   if (!hasCpu && !hasMemory) {
     return;
@@ -1098,6 +1098,6 @@ function startPage(containerName, hasCpu, hasMemory, rootDir, isRoot) {
   // Get machine info, then get the stats every 1s.
   getMachineInfo(rootDir, function(machineInfo) {
     window.cadvisor.machineInfo = machineInfo;
-    setInterval(function() { refreshStats(); }, 1000);
+    setInterval(function() { refreshStats(); }, maschineInfoRefreshRate);
   });
 }
