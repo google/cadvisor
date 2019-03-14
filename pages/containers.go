@@ -236,7 +236,7 @@ func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		CustomMetricsAvailable: cont.Spec.HasCustomMetrics,
 		SubcontainersAvailable: len(subcontainerLinks) > 0,
 		Root:                   rootDir,
-		MaschineInfoRefreshRate: m.GetMaschineInfoRefreshRate(),
+		MachineInfoRefreshRate: m.GetMachineInfoRefreshRate(),
 
 	}
 	err = pageTemplate.Execute(w, data)

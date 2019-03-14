@@ -140,10 +140,12 @@ type Manager interface {
 
 	// Returns debugging information. Map of lines per category.
 	DebugInfo() map[string][]string
+
+	GetMachineInfoRefreshRate() int
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, includedMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, maschineInfoRefreshRate int) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, includedMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, machineInfoRefreshRate int) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -221,7 +223,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		collectorHttpClient:                   collectorHttpClient,
 		nvidiaManager:                         &accelerators.NvidiaManager{},
 		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
-		maschineInfoRefreshRate:			   maschineInfoRefreshRate,
+		machineInfoRefreshRate:			   	   machineInfoRefreshRate,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -297,7 +299,7 @@ type manager struct {
 	nvidiaManager            accelerators.AcceleratorManager
 	// List of raw container cgroup path prefix whitelist.
 	rawContainerCgroupPathPrefixWhiteList []string
-	maschineInfoRefreshRate	 int
+	machineInfoRefreshRate	 int
 }
 
 // Start the container manager.
@@ -1460,6 +1462,6 @@ func (f partialFailure) OrNil() error {
 	return f
 }
 
-func (m *manager) GetMaschineInfoRefreshRate() int {
-	return m.maschineInfoRefreshRate
+func (m *manager) GetMachineInfoRefreshRate() int {
+	return m.machineInfoRefreshRate
 }

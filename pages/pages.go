@@ -64,7 +64,7 @@ type pageData struct {
 	DockerStatus           []keyVal
 	DockerDriverStatus     []keyVal
 	DockerImages           []info.DockerImage
-	MaschineInfoRefreshRate int
+	MachineInfoRefreshRate int
 }
 
 func init() {
