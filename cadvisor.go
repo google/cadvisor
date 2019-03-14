@@ -67,7 +67,7 @@ var urlBasePrefix = flag.String("url_base_prefix", "", "prefix path that will be
 
 var rawCgroupPrefixWhiteList = flag.String("raw_cgroup_prefix_whitelist", "", "A comma-separated list of cgroup path prefix that needs to be collected even when -docker_only is specified")
 
-var machineInfoRefreshRate = flag.Int("text", 1000, "explanation")
+var machineInfoRefreshRate = flag.Int("machine_info_refresh_rate", 1000, "The refresh rate of the machine information displayed on the webpage in milliseconds.")
 
 var (
 	// Metrics to be ignored.
