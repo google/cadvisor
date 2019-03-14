@@ -367,7 +367,7 @@ func TestDockerContainersInfo(t *testing.T) {
 }
 
 func TestNewNilManager(t *testing.T) {
-	_, err := New(nil, nil, 60*time.Second, true, container.MetricSet{}, http.DefaultClient, []string{"/"})
+	_, err := New(nil, nil, 60*time.Second, true, container.MetricSet{}, http.DefaultClient, []string{"/"}, 1000)
 	if err == nil {
 		t.Fatalf("Expected nil manager to return error")
 	}
