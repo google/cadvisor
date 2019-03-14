@@ -135,7 +135,6 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 			http.Error(w, fmt.Sprintf("failed to get machine info: %v", err), http.StatusInternalServerError)
 			return
 		}
-		machineInfoRefreshRate = m.GetMachineInfoRefreshRate()
 
 		data = &pageData{
 			DisplayName:            displayName,
@@ -151,8 +150,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 			FsAvailable:            cont.Spec.HasFilesystem,
 			CustomMetricsAvailable: cont.Spec.HasCustomMetrics,
 			Root:                   rootDir,
-			MachineInfoRefreshRate: machineInfoRefreshRate,
-
+			MachineInfoRefreshRate: m.GetMachineInfoRefreshRate(),
 		}
 	}
 
