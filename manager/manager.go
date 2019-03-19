@@ -40,7 +40,7 @@ import (
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/machine"
 	"github.com/google/cadvisor/manager/watcher"
 	rawwatcher "github.com/google/cadvisor/manager/watcher/raw"
