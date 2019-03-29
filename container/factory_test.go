@@ -19,7 +19,7 @@ import (
 
 	"github.com/google/cadvisor/container"
 	containertest "github.com/google/cadvisor/container/testing"
-	"github.com/google/cadvisor/manager/watcher"
+	"github.com/google/cadvisor/watcher"
 
 	"github.com/stretchr/testify/mock"
 )

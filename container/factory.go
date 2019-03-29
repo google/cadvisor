@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/google/cadvisor/manager/watcher"
+	"github.com/google/cadvisor/fs"
+	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/watcher"
 
 	"k8s.io/klog"
 )
@@ -69,6 +71,40 @@ func (ms MetricSet) Has(mk MetricKind) bool {
 
 func (ms MetricSet) Add(mk MetricKind) {
 	ms[mk] = struct{}{}
+}
+
+type Register func(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) (watcher.ContainerWatcher, error)
+
+// All registered auth provider plugins.
+var pluginsLock sync.Mutex
+var plugins = make(map[string]Register)
+
+func RegisterPlugin(name string, plugin Register) error {
+	pluginsLock.Lock()
+	defer pluginsLock.Unlock()
+	if _, found := plugins[name]; found {
+		return fmt.Errorf("Plugin %q was registered twice", name)
+	}
+	klog.V(4).Infof("Registered Plugin %q", name)
+	plugins[name] = plugin
+	return nil
+}
+
+func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) []watcher.ContainerWatcher {
+	pluginsLock.Lock()
+	defer pluginsLock.Unlock()
+
+	containerWatchers := []watcher.ContainerWatcher{}
+	for name, register := range plugins {
+		watcher, err := register(factory, fsInfo, includedMetrics)
+		if err != nil {
+			klog.V(5).Infof("Registration of the %s container factory failed: %v", name, err)
+		}
+		if watcher != nil {
+			containerWatchers = append(containerWatchers, watcher)
+		}
+	}
+	return containerWatchers
 }
 
 // TODO(vmarmol): Consider not making this global.

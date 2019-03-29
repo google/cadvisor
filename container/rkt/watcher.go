@@ -19,8 +19,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/google/cadvisor/container/rkt"
-	"github.com/google/cadvisor/manager/watcher"
+	"github.com/google/cadvisor/watcher"
 
 	rktapi "github.com/coreos/rkt/api/v1alpha"
 	"golang.org/x/net/context"
@@ -118,7 +117,7 @@ func (self *rktContainerWatcher) sendDestroyEvent(cgroup string, events chan wat
 }
 
 func listRunningPods() ([]*rktapi.Pod, error) {
-	client, err := rkt.Client()
+	client, err := Client()
 	if err != nil {
 		return nil, err
 	}

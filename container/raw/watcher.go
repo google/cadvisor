@@ -25,7 +25,7 @@ import (
 
 	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/container/libcontainer"
-	"github.com/google/cadvisor/manager/watcher"
+	"github.com/google/cadvisor/watcher"
 	inotify "github.com/sigma/go-inotify"
 
 	"k8s.io/klog"
