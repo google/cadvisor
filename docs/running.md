@@ -71,7 +71,7 @@ This is a problem seen in older versions of Docker. To fix, start cAdvisor witho
 
 ## Standalone
 
-cAdvisor is a static Go binary with no external dependencies. To run it standalone all you should need to do is run it! Note that some data sources may require root priviledges. cAdvisor will gracefully degrade its features to those it can expose with the access given.
+cAdvisor is a static Go binary with no external dependencies. To run it standalone all you should need to do is run it! Note that some data sources may require root privileges. cAdvisor will gracefully degrade its features to those it can expose with the access given.
 
 ```
 $ sudo cadvisor
