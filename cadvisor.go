@@ -15,6 +15,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"net/http"
@@ -29,12 +30,14 @@ import (
 	"github.com/google/cadvisor/container"
 	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
+	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
-	"crypto/tls"
-
-	"github.com/google/cadvisor/metrics"
+	// Register CloudProviders
+	_ "github.com/google/cadvisor/utils/cloudinfo/aws"
+	_ "github.com/google/cadvisor/utils/cloudinfo/azure"
+	_ "github.com/google/cadvisor/utils/cloudinfo/gce"
 
 	"k8s.io/klog"
 )
@@ -147,7 +150,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList,","))
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","))
 	if err != nil {
 		klog.Fatalf("Failed to create a Container Manager: %s", err)
 	}

@@ -15,40 +15,50 @@
 package cloudinfo
 
 import (
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
+	"github.com/aws/aws-sdk-go/aws/session"
+
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/utils/cloudinfo"
 )
 
 const (
-	ProductVerFileName = "/sys/class/dmi/id/product_version"
-	BiosVerFileName    = "/sys/class/dmi/id/bios_vendor"
-	Amazon             = "amazon"
+	productVerFileName = "/sys/class/dmi/id/product_version"
+	biosVerFileName    = "/sys/class/dmi/id/bios_vendor"
+	amazon             = "amazon"
 )
 
-func onAWS() bool {
+func init() {
+	cloudinfo.RegisterCloudProvider(info.AWS, &provider{})
+}
+
+type provider struct{}
+
+var _ cloudinfo.CloudProvider = provider{}
+
+func (provider) IsActiveProvider() bool {
 	var dataProduct []byte
 	var dataBios []byte
-	if _, err := os.Stat(ProductVerFileName); err == nil {
-		dataProduct, err = ioutil.ReadFile(ProductVerFileName)
+	if _, err := os.Stat(productVerFileName); err == nil {
+		dataProduct, err = ioutil.ReadFile(productVerFileName)
 		if err != nil {
 			return false
 		}
 	}
 
-	if _, err := os.Stat(BiosVerFileName); err == nil {
-		dataBios, err = ioutil.ReadFile(BiosVerFileName)
+	if _, err := os.Stat(biosVerFileName); err == nil {
+		dataBios, err = ioutil.ReadFile(biosVerFileName)
 		if err != nil {
 			return false
 		}
 	}
 
-	return strings.Contains(string(dataProduct), Amazon) || strings.Contains(strings.ToLower(string(dataBios)), Amazon)
+	return strings.Contains(string(dataProduct), amazon) || strings.Contains(strings.ToLower(string(dataBios)), amazon)
 }
 
 func getAwsMetadata(name string) string {
@@ -60,10 +70,10 @@ func getAwsMetadata(name string) string {
 	return data
 }
 
-func getAwsInstanceType() info.InstanceType {
+func (provider) GetInstanceType() info.InstanceType {
 	return info.InstanceType(getAwsMetadata("instance-type"))
 }
 
-func getAwsInstanceID() info.InstanceID {
+func (provider) GetInstanceID() info.InstanceID {
 	return info.InstanceID(getAwsMetadata("instance-id"))
 }
