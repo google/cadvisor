@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -29,8 +30,10 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/crio"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
+	"github.com/google/cadvisor/container/rkt"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -41,6 +44,8 @@ import (
 	"github.com/google/cadvisor/version"
 	"github.com/google/cadvisor/watcher"
 
+	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"golang.org/x/net/context"
 	"k8s.io/klog"
 	"k8s.io/utils/clock"
 )
@@ -51,6 +56,8 @@ var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log th
 var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h", "Max length of time for which to store events (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is a duration. Default is applied to all non-specified event types")
 var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
 var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
+
+const dockerClientTimeout = 10 * time.Second
 
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
@@ -130,6 +137,129 @@ type Manager interface {
 	DebugInfo() map[string][]string
 }
 
+// New takes a memory storage and returns a new manager.
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, includedMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string) (Manager, error) {
+	if memoryCache == nil {
+		return nil, fmt.Errorf("manager requires memory storage")
+	}
+
+	// Detect the container we are running on.
+	selfContainer, err := cgroups.GetOwnCgroupPath("cpu")
+	if err != nil {
+		return nil, err
+	}
+	klog.V(2).Infof("cAdvisor running in container: %q", selfContainer)
+
+	var (
+		dockerStatus info.DockerStatus
+		rktPath      string
+	)
+	docker.SetTimeout(dockerClientTimeout)
+	// Try to connect to docker indefinitely on startup.
+	dockerStatus = retryDockerStatus()
+
+	if tmpRktPath, err := rkt.RktPath(); err != nil {
+		klog.V(5).Infof("Rkt not connected: %v", err)
+	} else {
+		rktPath = tmpRktPath
+	}
+
+	crioClient, err := crio.Client()
+	if err != nil {
+		return nil, err
+	}
+	crioInfo, err := crioClient.Info()
+	if err != nil {
+		klog.V(5).Infof("CRI-O not connected: %v", err)
+	}
+
+	context := fs.Context{
+		Docker: fs.DockerContext{
+			Root:         docker.RootDir(),
+			Driver:       dockerStatus.Driver,
+			DriverStatus: dockerStatus.DriverStatus,
+		},
+		RktPath: rktPath,
+		Crio: fs.CrioContext{
+			Root: crioInfo.StorageRoot,
+		},
+	}
+	fsInfo, err := fs.NewFsInfo(context)
+	if err != nil {
+		return nil, err
+	}
+
+	// If cAdvisor was started with host's rootfs mounted, assume that its running
+	// in its own namespaces.
+	inHostNamespace := false
+	if _, err := os.Stat("/rootfs/proc"); os.IsNotExist(err) {
+		inHostNamespace = true
+	}
+
+	// Register for new subcontainers.
+	eventsChannel := make(chan watcher.ContainerEvent, 16)
+
+	newManager := &manager{
+		containers:                            make(map[namespacedContainerName]*containerData),
+		quitChannels:                          make([]chan error, 0, 2),
+		memoryCache:                           memoryCache,
+		fsInfo:                                fsInfo,
+		sysFs:                                 sysfs,
+		cadvisorContainer:                     selfContainer,
+		inHostNamespace:                       inHostNamespace,
+		startupTime:                           time.Now(),
+		maxHousekeepingInterval:               maxHousekeepingInterval,
+		allowDynamicHousekeeping:              allowDynamicHousekeeping,
+		includedMetrics:                       includedMetricsSet,
+		containerWatchers:                     []watcher.ContainerWatcher{},
+		eventsChannel:                         eventsChannel,
+		collectorHttpClient:                   collectorHttpClient,
+		nvidiaManager:                         &accelerators.NvidiaManager{},
+		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
+	}
+
+	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
+	if err != nil {
+		return nil, err
+	}
+	newManager.machineInfo = *machineInfo
+	klog.V(1).Infof("Machine: %+v", newManager.machineInfo)
+
+	versionInfo, err := getVersionInfo()
+	if err != nil {
+		return nil, err
+	}
+	klog.V(1).Infof("Version: %+v", *versionInfo)
+
+	newManager.eventHandler = events.NewEventManager(parseEventsStoragePolicy())
+	return newManager, nil
+}
+
+func retryDockerStatus() info.DockerStatus {
+	startupTimeout := dockerClientTimeout
+	maxTimeout := 4 * startupTimeout
+	for {
+		ctx, _ := context.WithTimeout(context.Background(), startupTimeout)
+		dockerStatus, err := docker.StatusWithContext(ctx)
+		if err == nil {
+			return dockerStatus
+		}
+
+		switch err {
+		case context.DeadlineExceeded:
+			klog.Warningf("Timeout trying to communicate with docker during initialization, will retry")
+		default:
+			klog.V(5).Infof("Docker not connected: %v", err)
+			return info.DockerStatus{}
+		}
+
+		startupTimeout = 2 * startupTimeout
+		if startupTimeout > maxTimeout {
+			startupTimeout = maxTimeout
+		}
+	}
+}
+
 // A namespaced container name.
 type namespacedContainerName struct {
 	// The namespace of the container. Can be empty for the root namespace.
@@ -137,47 +267,6 @@ type namespacedContainerName struct {
 
 	// The name of the container in this namespace.
 	Name string
-}
-
-func New(
-	memoryCache *memory.InMemoryCache,
-	fsInfo fs.FsInfo,
-	sysFs sysfs.SysFs,
-	machineInfo info.MachineInfo,
-	quitChannels []chan error,
-	cadvisorContainer string,
-	inHostNamespace bool,
-	startupTime time.Time,
-	maxHousekeepingInterval time.Duration,
-	allowDynamicHousekeeping bool,
-	includedMetrics container.MetricSet,
-	containerWatchers []watcher.ContainerWatcher,
-	eventsChannel chan watcher.ContainerEvent,
-	collectorHttpClient *http.Client,
-	nvidiaManager accelerators.AcceleratorManager,
-	rawContainerCgroupPathPrefixWhiteList []string,
-) Manager {
-	impl := &manager{
-		containers:                            make(map[namespacedContainerName]*containerData),
-		memoryCache:                           memoryCache,
-		fsInfo:                                fsInfo,
-		sysFs:                                 sysFs,
-		machineInfo:                           machineInfo,
-		quitChannels:                          quitChannels,
-		cadvisorContainer:                     cadvisorContainer,
-		inHostNamespace:                       inHostNamespace,
-		startupTime:                           startupTime,
-		maxHousekeepingInterval:               maxHousekeepingInterval,
-		allowDynamicHousekeeping:              allowDynamicHousekeeping,
-		includedMetrics:                       includedMetrics,
-		containerWatchers:                     containerWatchers,
-		eventsChannel:                         eventsChannel,
-		collectorHttpClient:                   collectorHttpClient,
-		nvidiaManager:                         nvidiaManager,
-		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
-	}
-	impl.eventHandler = events.NewEventManager(parseEventsStoragePolicy())
-	return impl
 }
 
 type manager struct {
