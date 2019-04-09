@@ -34,6 +34,9 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
+	// Register container providers
+	_ "github.com/google/cadvisor/container/install"
+
 	// Register CloudProviders
 	_ "github.com/google/cadvisor/utils/cloudinfo/aws"
 	_ "github.com/google/cadvisor/utils/cloudinfo/azure"

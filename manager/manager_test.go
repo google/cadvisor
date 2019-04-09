@@ -35,6 +35,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	clock "k8s.io/utils/clock/testing"
+
+	_ "github.com/google/cadvisor/container/install"
 )
 
 // TODO(vmarmol): Refactor these tests.

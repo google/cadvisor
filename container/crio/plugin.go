@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package docker
+package crio
 
 import (
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/watcher"
-	"k8s.io/klog"
 )
 
-func init() {
-	err := container.RegisterPlugin("docker", func(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
-		err := Register(factory, fsInfo, includedMetrics)
-		return nil, err
-	})
-	if err != nil {
-		klog.Fatalf("Failed to register docker plugin: %v", err)
-	}
+// NewPlugin returns an implementation of container.Plugin suitable for passing to container.RegisterPlugin()
+func NewPlugin() container.Plugin {
+	return &plugin{}
+}
+
+type plugin struct{}
+
+func (p *plugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
+	err := Register(factory, fsInfo, includedMetrics)
+	return nil, err
 }

@@ -73,13 +73,17 @@ func (ms MetricSet) Add(mk MetricKind) {
 	ms[mk] = struct{}{}
 }
 
-type Register func(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) (watcher.ContainerWatcher, error)
-
 // All registered auth provider plugins.
 var pluginsLock sync.Mutex
-var plugins = make(map[string]Register)
+var plugins = make(map[string]Plugin)
 
-func RegisterPlugin(name string, plugin Register) error {
+type Plugin interface {
+	// Register is invoked when starting a manager. It can optionally return a container watcher.
+	// A returned error is logged, but is not fatal.
+	Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) (watcher.ContainerWatcher, error)
+}
+
+func RegisterPlugin(name string, plugin Plugin) error {
 	pluginsLock.Lock()
 	defer pluginsLock.Unlock()
 	if _, found := plugins[name]; found {
@@ -95,8 +99,8 @@ func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includ
 	defer pluginsLock.Unlock()
 
 	containerWatchers := []watcher.ContainerWatcher{}
-	for name, register := range plugins {
-		watcher, err := register(factory, fsInfo, includedMetrics)
+	for name, plugin := range plugins {
+		watcher, err := plugin.Register(factory, fsInfo, includedMetrics)
 		if err != nil {
 			klog.V(5).Infof("Registration of the %s container factory failed: %v", name, err)
 		}

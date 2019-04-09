@@ -19,15 +19,16 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/watcher"
-	"k8s.io/klog"
 )
 
-func init() {
-	err := container.RegisterPlugin("mesos", func(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
-		err := Register(factory, fsInfo, includedMetrics)
-		return nil, err
-	})
-	if err != nil {
-		klog.Fatalf("Failed to register mesos plugin: %v", err)
-	}
+// NewPlugin returns an implementation of container.Plugin suitable for passing to container.RegisterPlugin()
+func NewPlugin() container.Plugin {
+	return &plugin{}
+}
+
+type plugin struct{}
+
+func (p *plugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
+	err := Register(factory, fsInfo, includedMetrics)
+	return nil, err
 }

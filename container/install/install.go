@@ -12,25 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package rkt
+// The install package registers all included container providers when imported
+package install
 
 import (
-	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/fs"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/watcher"
-	"k8s.io/klog"
+	_ "github.com/google/cadvisor/container/containerd/install"
+	_ "github.com/google/cadvisor/container/crio/install"
+	_ "github.com/google/cadvisor/container/docker/install"
+	_ "github.com/google/cadvisor/container/mesos/install"
+	_ "github.com/google/cadvisor/container/rkt/install"
+	_ "github.com/google/cadvisor/container/systemd/install"
 )
-
-func init() {
-	err := container.RegisterPlugin("rkt", func(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
-		err := Register(factory, fsInfo, includedMetrics)
-		if err != nil {
-			return nil, err
-		}
-		return NewRktContainerWatcher()
-	})
-	if err != nil {
-		klog.Fatalf("Failed to register rkt plugin: %v", err)
-	}
-}
