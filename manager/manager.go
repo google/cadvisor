@@ -43,7 +43,6 @@ import (
 	"github.com/google/cadvisor/watcher"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	"golang.org/x/net/context"
 	"k8s.io/klog"
 	"k8s.io/utils/clock"
 )
@@ -54,8 +53,6 @@ var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log th
 var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h", "Max length of time for which to store events (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is a duration. Default is applied to all non-specified event types")
 var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
 var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
-
-const dockerClientTimeout = 10 * time.Second
 
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
@@ -148,20 +145,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	}
 	klog.V(2).Infof("cAdvisor running in container: %q", selfContainer)
 
-	var (
-		dockerStatus info.DockerStatus
-	)
-	docker.SetTimeout(dockerClientTimeout)
-	// Try to connect to docker indefinitely on startup.
-	dockerStatus = retryDockerStatus()
-
-	context := fs.Context{
-		Docker: fs.DockerContext{
-			Root:         docker.RootDir(),
-			Driver:       dockerStatus.Driver,
-			DriverStatus: dockerStatus.DriverStatus,
-		},
-	}
+	context := fs.Context{}
 
 	if err := container.InitializeFSContext(&context); err != nil {
 		return nil, err
@@ -216,31 +200,6 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 
 	newManager.eventHandler = events.NewEventManager(parseEventsStoragePolicy())
 	return newManager, nil
-}
-
-func retryDockerStatus() info.DockerStatus {
-	startupTimeout := dockerClientTimeout
-	maxTimeout := 4 * startupTimeout
-	for {
-		ctx, _ := context.WithTimeout(context.Background(), startupTimeout)
-		dockerStatus, err := docker.StatusWithContext(ctx)
-		if err == nil {
-			return dockerStatus
-		}
-
-		switch err {
-		case context.DeadlineExceeded:
-			klog.Warningf("Timeout trying to communicate with docker during initialization, will retry")
-		default:
-			klog.V(5).Infof("Docker not connected: %v", err)
-			return info.DockerStatus{}
-		}
-
-		startupTimeout = 2 * startupTimeout
-		if startupTimeout > maxTimeout {
-			startupTimeout = maxTimeout
-		}
-	}
 }
 
 // A namespaced container name.
