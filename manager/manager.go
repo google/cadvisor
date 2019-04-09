@@ -184,6 +184,11 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 			Root: crioInfo.StorageRoot,
 		},
 	}
+
+	if err := container.InitializeFSContext(&context); err != nil {
+		return nil, err
+	}
+
 	fsInfo, err := fs.NewFsInfo(context)
 	if err != nil {
 		return nil, err

@@ -28,6 +28,10 @@ func NewPlugin() container.Plugin {
 
 type plugin struct{}
 
+func (p *plugin) InitializeFSContext(context *fs.Context) error {
+	return nil
+}
+
 func (p *plugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
 	err := Register(factory, fsInfo, includedMetrics)
 	return nil, err

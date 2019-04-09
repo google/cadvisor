@@ -78,6 +78,10 @@ var pluginsLock sync.Mutex
 var plugins = make(map[string]Plugin)
 
 type Plugin interface {
+	// InitializeFSContext is invoked when populating an fs.Context object for a new manager.
+	// A returned error here is fatal.
+	InitializeFSContext(context *fs.Context) error
+
 	// Register is invoked when starting a manager. It can optionally return a container watcher.
 	// A returned error is logged, but is not fatal.
 	Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) (watcher.ContainerWatcher, error)
@@ -91,6 +95,19 @@ func RegisterPlugin(name string, plugin Plugin) error {
 	}
 	klog.V(4).Infof("Registered Plugin %q", name)
 	plugins[name] = plugin
+	return nil
+}
+
+func InitializeFSContext(context *fs.Context) error {
+	pluginsLock.Lock()
+	defer pluginsLock.Unlock()
+	for name, plugin := range plugins {
+		err := plugin.InitializeFSContext(context)
+		if err != nil {
+			klog.V(5).Infof("Initialization of the %s context failed: %v", name, err)
+			return err
+		}
+	}
 	return nil
 }
 
