@@ -33,7 +33,6 @@ import (
 	"github.com/google/cadvisor/container/crio"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
-	"github.com/google/cadvisor/container/rkt"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -152,17 +151,10 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 
 	var (
 		dockerStatus info.DockerStatus
-		rktPath      string
 	)
 	docker.SetTimeout(dockerClientTimeout)
 	// Try to connect to docker indefinitely on startup.
 	dockerStatus = retryDockerStatus()
-
-	if tmpRktPath, err := rkt.RktPath(); err != nil {
-		klog.V(5).Infof("Rkt not connected: %v", err)
-	} else {
-		rktPath = tmpRktPath
-	}
 
 	crioClient, err := crio.Client()
 	if err != nil {
@@ -179,7 +171,6 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 			Driver:       dockerStatus.Driver,
 			DriverStatus: dockerStatus.DriverStatus,
 		},
-		RktPath: rktPath,
 		Crio: fs.CrioContext{
 			Root: crioInfo.StorageRoot,
 		},

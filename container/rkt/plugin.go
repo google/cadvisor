@@ -19,6 +19,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/watcher"
+	"k8s.io/klog"
 )
 
 // NewPlugin returns an implementation of container.Plugin suitable for passing to container.RegisterPlugin()
@@ -29,6 +30,11 @@ func NewPlugin() container.Plugin {
 type plugin struct{}
 
 func (p *plugin) InitializeFSContext(context *fs.Context) error {
+	if tmpRktPath, err := RktPath(); err != nil {
+		klog.V(5).Infof("Rkt not connected: %v", err)
+	} else {
+		context.RktPath = tmpRktPath
+	}
 	return nil
 }
 
