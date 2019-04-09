@@ -30,7 +30,6 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/crio"
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
@@ -156,23 +155,11 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	// Try to connect to docker indefinitely on startup.
 	dockerStatus = retryDockerStatus()
 
-	crioClient, err := crio.Client()
-	if err != nil {
-		return nil, err
-	}
-	crioInfo, err := crioClient.Info()
-	if err != nil {
-		klog.V(5).Infof("CRI-O not connected: %v", err)
-	}
-
 	context := fs.Context{
 		Docker: fs.DockerContext{
 			Root:         docker.RootDir(),
 			Driver:       dockerStatus.Driver,
 			DriverStatus: dockerStatus.DriverStatus,
-		},
-		Crio: fs.CrioContext{
-			Root: crioInfo.StorageRoot,
 		},
 	}
 
