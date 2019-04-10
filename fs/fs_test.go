@@ -482,7 +482,6 @@ func TestProcessMounts(t *testing.T) {
 		{
 			name: "unsupported fs types",
 			mounts: []*mount.Info{
-				{Fstype: "overlay"},
 				{Fstype: "somethingelse"},
 			},
 			expected: map[string]partition{},
@@ -517,13 +516,15 @@ func TestProcessMounts(t *testing.T) {
 				{Root: "/", Mountpoint: "/c", Source: "/dev/sdc", Fstype: "btrfs", Major: 253, Minor: 2},
 				{Root: "/", Mountpoint: "/d", Source: "/dev/sdd", Fstype: "xfs", Major: 253, Minor: 3},
 				{Root: "/", Mountpoint: "/e", Source: "/dev/sde", Fstype: "zfs", Major: 253, Minor: 4},
+				{Root: "/", Mountpoint: "/f", Source: "overlay", Fstype: "overlay", Major: 253, Minor: 5},
 			},
 			expected: map[string]partition{
-				"/dev/sda": {fsType: "ext3", mountpoint: "/a", major: 253, minor: 0},
-				"/dev/sdb": {fsType: "ext4", mountpoint: "/b", major: 253, minor: 1},
-				"/dev/sdc": {fsType: "btrfs", mountpoint: "/c", major: 253, minor: 2},
-				"/dev/sdd": {fsType: "xfs", mountpoint: "/d", major: 253, minor: 3},
-				"/dev/sde": {fsType: "zfs", mountpoint: "/e", major: 253, minor: 4},
+				"/dev/sda":      {fsType: "ext3", mountpoint: "/a", major: 253, minor: 0},
+				"/dev/sdb":      {fsType: "ext4", mountpoint: "/b", major: 253, minor: 1},
+				"/dev/sdc":      {fsType: "btrfs", mountpoint: "/c", major: 253, minor: 2},
+				"/dev/sdd":      {fsType: "xfs", mountpoint: "/d", major: 253, minor: 3},
+				"/dev/sde":      {fsType: "zfs", mountpoint: "/e", major: 253, minor: 4},
+				"overlay_253-5": {fsType: "overlay", mountpoint: "/f", major: 253, minor: 5},
 			},
 		},
 	}
