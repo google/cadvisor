@@ -91,23 +91,6 @@ type RealFsInfo struct {
 	fsUUIDToDeviceName map[string]string
 }
 
-type Context struct {
-	// docker root directory.
-	Docker  DockerContext
-	RktPath string
-	Crio    CrioContext
-}
-
-type DockerContext struct {
-	Root         string
-	Driver       string
-	DriverStatus map[string]string
-}
-
-type CrioContext struct {
-	Root string
-}
-
 func NewFsInfo(context Context) (FsInfo, error) {
 	mounts, err := mount.GetMounts(nil)
 	if err != nil {
