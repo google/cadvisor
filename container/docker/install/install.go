@@ -12,22 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package systemd
+// The install package registers docker.NewPlugin() as the "docker" container provider when imported
+package install
 
 import (
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/fs"
-	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/watcher"
+	"github.com/google/cadvisor/container/docker"
 	"k8s.io/klog"
 )
 
 func init() {
-	err := container.RegisterPlugin("systemd", func(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
-		err := Register(factory, fsInfo, includedMetrics)
-		return nil, err
-	})
+	err := container.RegisterPlugin("docker", docker.NewPlugin())
 	if err != nil {
-		klog.Fatalf("Failed to register systemd plugin: %v", err)
+		klog.Fatalf("Failed to register docker plugin: %v", err)
 	}
 }

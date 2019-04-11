@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -41,6 +42,7 @@ import (
 	"github.com/google/cadvisor/version"
 	"github.com/google/cadvisor/watcher"
 
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"k8s.io/klog"
 	"k8s.io/utils/clock"
 )
@@ -130,6 +132,76 @@ type Manager interface {
 	DebugInfo() map[string][]string
 }
 
+// New takes a memory storage and returns a new manager.
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, includedMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string) (Manager, error) {
+	if memoryCache == nil {
+		return nil, fmt.Errorf("manager requires memory storage")
+	}
+
+	// Detect the container we are running on.
+	selfContainer, err := cgroups.GetOwnCgroupPath("cpu")
+	if err != nil {
+		return nil, err
+	}
+	klog.V(2).Infof("cAdvisor running in container: %q", selfContainer)
+
+	context := fs.Context{}
+
+	if err := container.InitializeFSContext(&context); err != nil {
+		return nil, err
+	}
+
+	fsInfo, err := fs.NewFsInfo(context)
+	if err != nil {
+		return nil, err
+	}
+
+	// If cAdvisor was started with host's rootfs mounted, assume that its running
+	// in its own namespaces.
+	inHostNamespace := false
+	if _, err := os.Stat("/rootfs/proc"); os.IsNotExist(err) {
+		inHostNamespace = true
+	}
+
+	// Register for new subcontainers.
+	eventsChannel := make(chan watcher.ContainerEvent, 16)
+
+	newManager := &manager{
+		containers:                            make(map[namespacedContainerName]*containerData),
+		quitChannels:                          make([]chan error, 0, 2),
+		memoryCache:                           memoryCache,
+		fsInfo:                                fsInfo,
+		sysFs:                                 sysfs,
+		cadvisorContainer:                     selfContainer,
+		inHostNamespace:                       inHostNamespace,
+		startupTime:                           time.Now(),
+		maxHousekeepingInterval:               maxHousekeepingInterval,
+		allowDynamicHousekeeping:              allowDynamicHousekeeping,
+		includedMetrics:                       includedMetricsSet,
+		containerWatchers:                     []watcher.ContainerWatcher{},
+		eventsChannel:                         eventsChannel,
+		collectorHttpClient:                   collectorHttpClient,
+		nvidiaManager:                         &accelerators.NvidiaManager{},
+		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
+	}
+
+	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
+	if err != nil {
+		return nil, err
+	}
+	newManager.machineInfo = *machineInfo
+	klog.V(1).Infof("Machine: %+v", newManager.machineInfo)
+
+	versionInfo, err := getVersionInfo()
+	if err != nil {
+		return nil, err
+	}
+	klog.V(1).Infof("Version: %+v", *versionInfo)
+
+	newManager.eventHandler = events.NewEventManager(parseEventsStoragePolicy())
+	return newManager, nil
+}
+
 // A namespaced container name.
 type namespacedContainerName struct {
 	// The namespace of the container. Can be empty for the root namespace.
@@ -137,47 +209,6 @@ type namespacedContainerName struct {
 
 	// The name of the container in this namespace.
 	Name string
-}
-
-func New(
-	memoryCache *memory.InMemoryCache,
-	fsInfo fs.FsInfo,
-	sysFs sysfs.SysFs,
-	machineInfo info.MachineInfo,
-	quitChannels []chan error,
-	cadvisorContainer string,
-	inHostNamespace bool,
-	startupTime time.Time,
-	maxHousekeepingInterval time.Duration,
-	allowDynamicHousekeeping bool,
-	includedMetrics container.MetricSet,
-	containerWatchers []watcher.ContainerWatcher,
-	eventsChannel chan watcher.ContainerEvent,
-	collectorHttpClient *http.Client,
-	nvidiaManager accelerators.AcceleratorManager,
-	rawContainerCgroupPathPrefixWhiteList []string,
-) Manager {
-	impl := &manager{
-		containers:                            make(map[namespacedContainerName]*containerData),
-		memoryCache:                           memoryCache,
-		fsInfo:                                fsInfo,
-		sysFs:                                 sysFs,
-		machineInfo:                           machineInfo,
-		quitChannels:                          quitChannels,
-		cadvisorContainer:                     cadvisorContainer,
-		inHostNamespace:                       inHostNamespace,
-		startupTime:                           startupTime,
-		maxHousekeepingInterval:               maxHousekeepingInterval,
-		allowDynamicHousekeeping:              allowDynamicHousekeeping,
-		includedMetrics:                       includedMetrics,
-		containerWatchers:                     containerWatchers,
-		eventsChannel:                         eventsChannel,
-		collectorHttpClient:                   collectorHttpClient,
-		nvidiaManager:                         nvidiaManager,
-		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
-	}
-	impl.eventHandler = events.NewEventManager(parseEventsStoragePolicy())
-	return impl
 }
 
 type manager struct {

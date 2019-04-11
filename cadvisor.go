@@ -34,6 +34,9 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
+	// Register container providers
+	_ "github.com/google/cadvisor/container/install"
+
 	// Register CloudProviders
 	_ "github.com/google/cadvisor/utils/cloudinfo/aws"
 	_ "github.com/google/cadvisor/utils/cloudinfo/azure"
@@ -150,7 +153,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","))
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","))
 	if err != nil {
 		klog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
