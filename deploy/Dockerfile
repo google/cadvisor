@@ -1,7 +1,7 @@
-FROM alpine:3.8
+FROM alpine:3.9
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
-ENV GLIBC_VERSION "2.28-r0"
+ENV GLIBC_VERSION "2.29-r0"
 
 RUN apk --no-cache add ca-certificates curl device-mapper findutils && \
     apk --no-cache add zfs --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
