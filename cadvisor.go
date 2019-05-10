@@ -15,6 +15,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"net/http"
@@ -29,12 +30,17 @@ import (
 	"github.com/google/cadvisor/container"
 	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
+	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 
-	"crypto/tls"
+	// Register container providers
+	_ "github.com/google/cadvisor/container/install"
 
-	"github.com/google/cadvisor/metrics"
+	// Register CloudProviders
+	_ "github.com/google/cadvisor/utils/cloudinfo/aws"
+	_ "github.com/google/cadvisor/utils/cloudinfo/azure"
+	_ "github.com/google/cadvisor/utils/cloudinfo/gce"
 
 	"k8s.io/klog"
 )
@@ -64,6 +70,8 @@ var storeContainerLabels = flag.Bool("store_container_labels", true, "convert co
 var whitelistedContainerLabels = flag.String("whitelisted_container_labels", "", "comma separated list of container labels to be converted to labels on prometheus metrics for each container. store_container_labels must be set to false for this to take effect.")
 
 var urlBasePrefix = flag.String("url_base_prefix", "", "prefix path that will be prepended to all paths to support some reverse proxies")
+
+var rawCgroupPrefixWhiteList = flag.String("raw_cgroup_prefix_whitelist", "", "A comma-separated list of cgroup path prefix that needs to be collected even when -docker_only is specified")
 
 var (
 	// Metrics to be ignored.
@@ -145,7 +153,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, []string{"/"})
+	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","))
 	if err != nil {
 		klog.Fatalf("Failed to create a Container Manager: %s", err)
 	}
