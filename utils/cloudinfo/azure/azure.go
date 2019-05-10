@@ -15,32 +15,42 @@
 package cloudinfo
 
 import (
-	info "github.com/google/cadvisor/info/v1"
 	"io/ioutil"
 	"strings"
+
+	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/utils/cloudinfo"
 )
 
 const (
-	SysVendorFileName    = "/sys/class/dmi/id/sys_vendor"
-	BiosUUIDFileName     = "/sys/class/dmi/id/product_uuid"
-	MicrosoftCorporation = "Microsoft Corporation"
+	sysVendorFileName    = "/sys/class/dmi/id/sys_vendor"
+	biosUUIDFileName     = "/sys/class/dmi/id/product_uuid"
+	microsoftCorporation = "Microsoft Corporation"
 )
 
-func onAzure() bool {
-	data, err := ioutil.ReadFile(SysVendorFileName)
+func init() {
+	cloudinfo.RegisterCloudProvider(info.Azure, &provider{})
+}
+
+type provider struct{}
+
+var _ cloudinfo.CloudProvider = provider{}
+
+func (provider) IsActiveProvider() bool {
+	data, err := ioutil.ReadFile(sysVendorFileName)
 	if err != nil {
 		return false
 	}
-	return strings.Contains(string(data), MicrosoftCorporation)
+	return strings.Contains(string(data), microsoftCorporation)
 }
 
 // TODO: Implement method.
-func getAzureInstanceType() info.InstanceType {
+func (provider) GetInstanceType() info.InstanceType {
 	return info.UnknownInstance
 }
 
-func getAzureInstanceID() info.InstanceID {
-	data, err := ioutil.ReadFile(BiosUUIDFileName)
+func (provider) GetInstanceID() info.InstanceID {
+	data, err := ioutil.ReadFile(biosUUIDFileName)
 	if err != nil {
 		return info.UnNamedInstance
 	}

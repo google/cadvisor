@@ -23,8 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"net/http"
-
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
@@ -37,6 +35,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	clock "k8s.io/utils/clock/testing"
+
+	_ "github.com/google/cadvisor/container/install"
 )
 
 // TODO(vmarmol): Refactor these tests.
@@ -363,12 +363,5 @@ func TestDockerContainersInfo(t *testing.T) {
 	expectedError := "unable to find container. Container \"c\" is not unique"
 	if err == nil {
 		t.Errorf("expected error %q but received %q", expectedError, err)
-	}
-}
-
-func TestNewNilManager(t *testing.T) {
-	_, err := New(nil, nil, 60*time.Second, true, container.MetricSet{}, http.DefaultClient, []string{"/"})
-	if err == nil {
-		t.Fatalf("Expected nil manager to return error")
 	}
 }
