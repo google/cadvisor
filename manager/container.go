@@ -631,9 +631,18 @@ func (c *containerData) updateStats() error {
 		}
 		return err
 	}
+	spec, err := c.handler.GetSpec()
+	if err != nil {
+		// Ignore errors if the container is dead.
+		if !c.handler.Exists() {
+			return nil
+		}
+		return err
+	}
 
 	cInfo := info.ContainerInfo{
 		ContainerReference: ref,
+		Spec:               spec,
 	}
 
 	err = c.memoryCache.AddStats(&cInfo, stats)
