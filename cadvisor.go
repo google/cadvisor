@@ -124,7 +124,7 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'diskIO', network', 'tcp', 'udp', 'percpu', 'sched', 'process'.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'disk', 'diskIO', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process'.")
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
