@@ -95,6 +95,9 @@ type dockerContainerHandler struct {
 	reference info.ContainerReference
 
 	libcontainerHandler *containerlibcontainer.Handler
+
+	// Monitor docker restart events
+	eventHandler *eventHandler
 }
 
 var _ container.ContainerHandler = &dockerContainerHandler{}
@@ -211,6 +214,10 @@ func newDockerContainerHandler(
 	}
 	handler.libcontainerHandler = containerlibcontainer.NewHandler(cgroupManager, rootFs, ctnr.State.Pid, includedMetrics)
 
+	if err := handler.newDockerEventHandlerWithStart(client, id); err != nil {
+		return nil, err
+	}
+
 	// Add the name and bare ID as aliases of the container.
 	handler.reference = info.ContainerReference{
 		Id:        id,
@@ -264,6 +271,16 @@ func newDockerContainerHandler(
 	}
 
 	return handler, nil
+}
+
+func (d *dockerContainerHandler) newDockerEventHandlerWithStart(client *docker.Client, id string) error {
+	// We use the event handler to monitor when containers restart.
+	eventHandler, err := newDockerEventHandler(client, id, d.libcontainerHandler)
+	if err != nil {
+		return fmt.Errorf("failed to monitor docker events for container %q: %v", id, err)
+	}
+	d.eventHandler = eventHandler
+	return nil
 }
 
 // dockerFsHandler is a composite FsHandler implementation the incorporates
@@ -329,11 +346,19 @@ func (self *dockerContainerHandler) Start() {
 	if self.fsHandler != nil {
 		self.fsHandler.Start()
 	}
+
+	if self.eventHandler != nil {
+		self.eventHandler.Start()
+	}
 }
 
 func (self *dockerContainerHandler) Cleanup() {
 	if self.fsHandler != nil {
 		self.fsHandler.Stop()
+	}
+
+	if self.eventHandler != nil {
+		self.eventHandler.Stop()
 	}
 }
 
@@ -418,6 +443,11 @@ func (self *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error
 
 // TODO(vmarmol): Get from libcontainer API instead of cgroup manager when we don't have to support older Dockers.
 func (self *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
+
+	eventMutex := self.eventHandler.EventMutex()
+	eventMutex.Lock()
+	defer eventMutex.Unlock()
+
 	stats, err := self.libcontainerHandler.GetStats()
 	if err != nil {
 		return stats, err

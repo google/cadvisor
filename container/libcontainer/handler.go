@@ -140,6 +140,13 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
+func (h *Handler) UpdatePid(pid int) {
+	if pid != h.pid {
+		klog.V(6).Infof("updating %d pid to %d pid", h.pid, pid)
+		h.pid = pid
+	}
+}
+
 func processStatsFromProcs(rootFs string, cgroupPath string) (info.ProcessStats, error) {
 	var fdCount uint64
 	filePath := path.Join(cgroupPath, "cgroup.procs")
