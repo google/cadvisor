@@ -134,3 +134,30 @@ func TestMorePossibleCPUs(t *testing.T) {
 		t.Fatalf("expected %+v == %+v", ret, expected)
 	}
 }
+
+func TestSetPidsStats(t *testing.T) {
+	var ret info.ContainerStats
+	s := &cgroups.Stats{
+		PidsStats: cgroups.PidsStats{
+			Current: 5,
+			Limit:   100,
+		},
+	}
+	setPidsStats(s, &ret)
+
+	expected := info.ContainerStats{
+
+		Pids: info.PidsStats{
+			Current: s.PidsStats.Current,
+			Max:     s.PidsStats.Limit,
+		},
+	}
+
+	if expected.Pids.Current != ret.Pids.Current {
+		t.Fatalf("expected current pids: %d == %d", ret.Pids.Current, expected.Pids.Current)
+	}
+	if expected.Pids.Max != ret.Pids.Max {
+		t.Fatalf("expected max pids: %d == %d", ret.Pids.Max, expected.Pids.Max)
+	}
+
+}

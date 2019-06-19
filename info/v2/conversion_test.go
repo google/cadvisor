@@ -47,6 +47,7 @@ func TestContanierSpecFromV1(t *testing.T) {
 			SwapLimit:   8192,
 		},
 		HasNetwork:       true,
+		HasPids:          true,
 		HasFilesystem:    true,
 		HasDiskIo:        true,
 		HasCustomMetrics: true,
@@ -79,6 +80,7 @@ func TestContanierSpecFromV1(t *testing.T) {
 			SwapLimit:   8192,
 		},
 		HasNetwork:       true,
+		HasPids:          true,
 		HasFilesystem:    true,
 		HasDiskIo:        true,
 		HasCustomMetrics: true,
@@ -116,6 +118,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 			SwapLimit:   8192,
 		},
 		HasNetwork:       true,
+		HasPids:          true,
 		HasFilesystem:    true,
 		HasDiskIo:        true,
 		HasCustomMetrics: true,
@@ -168,6 +171,10 @@ func TestContainerStatsFromV1(t *testing.T) {
 				TxDropped: 80,
 			}},
 		},
+		Pids: v1.PidsStats{
+			Current: 5,
+			Max:     100,
+		},
 		Filesystem: []v1.FsStats{{
 			Device:     "dev0",
 			Limit:      500,
@@ -190,6 +197,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 		Cpu:       &v1Stats.Cpu,
 		DiskIo:    &v1Stats.DiskIo,
 		Memory:    &v1Stats.Memory,
+		Pids:      &v1Stats.Pids,
 		Network: &NetworkStats{
 			Interfaces: v1Stats.Network.Interfaces,
 		},

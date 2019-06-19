@@ -415,6 +415,26 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.PidsMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:      "container_pids_max",
+				help:      "The number of container max pids, infinity if value is zero",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Pids.Max)}}
+				},
+			},
+			{
+				name:      "container_pids_current",
+				help:      "The number of container current pids",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Pids.Current)}}
+				},
+			},
+		}...)
+	}
 	if includedMetrics.Has(container.AcceleratorUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
