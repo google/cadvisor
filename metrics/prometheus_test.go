@@ -261,6 +261,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						NrUninterruptible: 53,
 						NrIoWait:          54,
 					},
+					Pids: info.PidsStats{
+						Current: 5,
+						Max:     100,
+					},
 				},
 			},
 		},

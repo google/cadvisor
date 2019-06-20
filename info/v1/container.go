@@ -41,6 +41,10 @@ type MemorySpec struct {
 	SwapLimit uint64 `json:"swap_limit,omitempty"`
 }
 
+type PidsSpec struct {
+	Limit uint64 `json:"limit,omitempty"`
+}
+
 type ContainerSpec struct {
 	// Time at which the container was created.
 	CreationTime time.Time `json:"creation_time,omitempty"`
@@ -57,6 +61,9 @@ type ContainerSpec struct {
 	Memory    MemorySpec `json:"memory,omitempty"`
 
 	HasNetwork bool `json:"has_network"`
+
+	HasPids bool     `json:"has_pids"`
+	Pids    PidsSpec `json:"pids,omitempty"`
 
 	HasFilesystem bool `json:"has_filesystem"`
 
@@ -565,6 +572,11 @@ type ProcessStats struct {
 	FdCount uint64 `json:"fd_count"`
 }
 
+type PidsStats struct {
+	Current uint64 `json:"current,omitempty"`
+	Max     uint64 `json:"max,omitempty"`
+}
+
 type ContainerStats struct {
 	// The time of this stat point.
 	Timestamp time.Time    `json:"timestamp"`
@@ -572,6 +584,7 @@ type ContainerStats struct {
 	DiskIo    DiskIoStats  `json:"diskio,omitempty"`
 	Memory    MemoryStats  `json:"memory,omitempty"`
 	Network   NetworkStats `json:"network,omitempty"`
+	Pids      PidsStats    `json:"pids,omitempty"`
 
 	// Filesystem statistics
 	Filesystem []FsStats `json:"filesystem,omitempty"`
@@ -628,6 +641,9 @@ func (a *ContainerStats) StatsEq(b *ContainerStats) bool {
 		return false
 	}
 	if !reflect.DeepEqual(a.Network, b.Network) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Pids, b.Pids) {
 		return false
 	}
 	if !reflect.DeepEqual(a.Filesystem, b.Filesystem) {

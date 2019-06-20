@@ -53,6 +53,7 @@ const (
 	NetworkUsageMetrics     MetricKind = "network"
 	NetworkTcpUsageMetrics  MetricKind = "tcp"
 	NetworkUdpUsageMetrics  MetricKind = "udp"
+	PidsMetrics             MetricKind = "pids"
 	AcceleratorUsageMetrics MetricKind = "accelerator"
 	AppMetrics              MetricKind = "app"
 	ProcessMetrics          MetricKind = "process"
