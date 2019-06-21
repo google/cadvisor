@@ -26,12 +26,14 @@ import (
 var (
 	timestamp = time.Date(1987, time.August, 10, 0, 0, 0, 0, time.UTC)
 	labels    = map[string]string{"foo": "bar"}
+	envs      = map[string]string{"foo": "bar"}
 )
 
 func TestContanierSpecFromV1(t *testing.T) {
 	v1Spec := v1.ContainerSpec{
 		CreationTime: timestamp,
 		Labels:       labels,
+		Envs:         envs,
 		HasCpu:       true,
 		Cpu: v1.CpuSpec{
 			Limit:    2048,
@@ -63,6 +65,7 @@ func TestContanierSpecFromV1(t *testing.T) {
 	expectedV2Spec := ContainerSpec{
 		CreationTime: timestamp,
 		Labels:       labels,
+		Envs:         envs,
 		HasCpu:       true,
 		Cpu: CpuSpec{
 			Limit:    2048,
@@ -173,6 +176,14 @@ func TestContainerStatsFromV1(t *testing.T) {
 			Available:  300,
 			InodesFree: 100,
 		}},
+		Accelerators: []v1.AcceleratorStats{{
+			Make:        "nvidia",
+			Model:       "tesla-p100",
+			ID:          "GPU-deadbeef-1234-5678-90ab-feedfacecafe",
+			MemoryTotal: 20304050607,
+			MemoryUsed:  2030405060,
+			DutyCycle:   12,
+		}},
 	}
 	expectedV2Stats := ContainerStats{
 		Timestamp: timestamp,
@@ -187,6 +198,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 			BaseUsageBytes:  &v1Stats.Filesystem[0].BaseUsage,
 			InodeUsage:      &v1Stats.Filesystem[0].Inodes,
 		},
+		Accelerators: v1Stats.Accelerators,
 	}
 
 	v2Stats := ContainerStatsFromV1("test", &v1Spec, []*v1.ContainerStats{&v1Stats})
@@ -226,16 +238,6 @@ func TestInstCpuStats(t *testing.T) {
 			},
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0),
-			},
-			nil,
-		},
-		// Unexpectedly small time delta
-		{
-			&v1.ContainerStats{
-				Timestamp: time.Unix(100, 0),
-			},
-			&v1.ContainerStats{
-				Timestamp: time.Unix(100, 0).Add(30 * time.Millisecond),
 			},
 			nil,
 		},

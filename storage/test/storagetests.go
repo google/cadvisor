@@ -123,14 +123,16 @@ func StorageDriverFillRandomStatsFunc(
 
 	samplePeriod := 1 * time.Second
 
-	ref := info.ContainerReference{
-		Name: containerName,
+	cInfo := info.ContainerInfo{
+		ContainerReference: info.ContainerReference{
+			Name: containerName,
+		},
 	}
 
 	trace := buildTrace(cpuTrace, memTrace, samplePeriod)
 
 	for _, stats := range trace {
-		err := driver.AddStats(ref, stats)
+		err := driver.AddStats(&cInfo, stats)
 		if err != nil {
 			t.Fatalf("unable to add stats: %v", err)
 		}

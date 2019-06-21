@@ -1,0 +1,29 @@
+# This patch adds the required hostpath mounts and privilages to initialize NVML, as well as to access devices.
+# This patch meets the requirements described in the accellerator docs: 
+# https://github.com/google/cadvisor/blob/master/docs/running.md#hardware-accelerator-monitoring
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cadvisor
+spec:
+  template:
+    spec:
+      containers:
+      - name: cadvisor
+        volumeMounts:
+        - name: dev
+          mountPath: /dev
+        - name: libnvidia
+          mountPath: /bin/nvidia/lib64/
+        securityContext:
+          privileged: true  # TODO use more granular permissions (e.g. linux capabilities) to allow cAdvisor to use NVML
+        env:
+        - name: LD_LIBRARY_PATH
+          value: "/bin/nvidia/lib64/"
+      volumes:
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: libnvidia
+          hostPath:
+            path: /home/kubernetes/bin/nvidia/lib64/  # Insert your path to libnvidia here

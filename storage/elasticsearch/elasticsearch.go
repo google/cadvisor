@@ -68,13 +68,13 @@ func new() (storage.StorageDriver, error) {
 }
 
 func (self *elasticStorage) containerStatsAndDefaultValues(
-	ref info.ContainerReference, stats *info.ContainerStats) *detailSpec {
+	cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
 	timestamp := stats.Timestamp.UnixNano() / 1E3
 	var containerName string
-	if len(ref.Aliases) > 0 {
-		containerName = ref.Aliases[0]
+	if len(cInfo.ContainerReference.Aliases) > 0 {
+		containerName = cInfo.ContainerReference.Aliases[0]
 	} else {
-		containerName = ref.Name
+		containerName = cInfo.ContainerReference.Name
 	}
 	detail := &detailSpec{
 		Timestamp:      timestamp,
@@ -85,7 +85,7 @@ func (self *elasticStorage) containerStatsAndDefaultValues(
 	return detail
 }
 
-func (self *elasticStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (self *elasticStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
@@ -94,7 +94,7 @@ func (self *elasticStorage) AddStats(ref info.ContainerReference, stats *info.Co
 		self.lock.Lock()
 		defer self.lock.Unlock()
 		// Add some default params based on ContainerStats
-		detail := self.containerStatsAndDefaultValues(ref, stats)
+		detail := self.containerStatsAndDefaultValues(cInfo, stats)
 		// Index a cadvisor (using JSON serialization)
 		_, err := self.client.Index().
 			Index(self.indexName).

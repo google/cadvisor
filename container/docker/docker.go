@@ -17,40 +17,69 @@ package docker
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
-	"strings"
 
-	dockertypes "github.com/docker/engine-api/types"
+	dockertypes "github.com/docker/docker/api/types"
 	"golang.org/x/net/context"
+
+	"time"
 
 	"github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/machine"
 )
 
+var dockerTimeout = 10 * time.Second
+
+func defaultContext() context.Context {
+	ctx, _ := context.WithTimeout(context.Background(), dockerTimeout)
+	return ctx
+}
+
+func SetTimeout(timeout time.Duration) {
+	dockerTimeout = timeout
+}
+
 func Status() (v1.DockerStatus, error) {
+	return StatusWithContext(defaultContext())
+}
+
+func StatusWithContext(ctx context.Context) (v1.DockerStatus, error) {
 	client, err := Client()
 	if err != nil {
 		return v1.DockerStatus{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	dockerInfo, err := client.Info(context.Background())
+	dockerInfo, err := client.Info(ctx)
 	if err != nil {
 		return v1.DockerStatus{}, err
 	}
+	return StatusFromDockerInfo(dockerInfo)
+}
 
+func StatusFromDockerInfo(dockerInfo dockertypes.Info) (v1.DockerStatus, error) {
 	out := v1.DockerStatus{}
-	out.Version = VersionString()
 	out.KernelVersion = machine.KernelVersion()
 	out.OS = dockerInfo.OperatingSystem
 	out.Hostname = dockerInfo.Name
 	out.RootDir = dockerInfo.DockerRootDir
 	out.Driver = dockerInfo.Driver
-	out.ExecDriver = dockerInfo.ExecutionDriver
 	out.NumImages = dockerInfo.Images
 	out.NumContainers = dockerInfo.Containers
 	out.DriverStatus = make(map[string]string, len(dockerInfo.DriverStatus))
 	for _, v := range dockerInfo.DriverStatus {
 		out.DriverStatus[v[0]] = v[1]
 	}
+	var err error
+	ver, err := VersionString()
+	if err != nil {
+		return out, err
+	}
+	out.Version = ver
+	ver, err = APIVersionString()
+	if err != nil {
+		return out, err
+	}
+	out.APIVersion = ver
 	return out, nil
 }
 
@@ -59,7 +88,7 @@ func Images() ([]v1.DockerImage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	images, err := client.ImageList(context.Background(), dockertypes.ImageListOptions{All: false})
+	images, err := client.ImageList(defaultContext(), dockertypes.ImageListOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
@@ -92,33 +121,26 @@ func ValidateInfo() (*dockertypes.Info, error) {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
 
-	dockerInfo, err := client.Info(context.Background())
+	dockerInfo, err := client.Info(defaultContext())
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
 	}
 
 	// Fall back to version API if ServerVersion is not set in info.
 	if dockerInfo.ServerVersion == "" {
-		version, err := client.ServerVersion(context.Background())
+		version, err := client.ServerVersion(defaultContext())
 		if err != nil {
 			return nil, fmt.Errorf("unable to get docker version: %v", err)
 		}
 		dockerInfo.ServerVersion = version.Version
 	}
-	version, err := parseDockerVersion(dockerInfo.ServerVersion)
+	version, err := parseVersion(dockerInfo.ServerVersion, version_re, 3)
 	if err != nil {
 		return nil, err
 	}
 
 	if version[0] < 1 {
 		return nil, fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as %q", []int{1, 0, 0}, version, dockerInfo.ServerVersion)
-	}
-
-	// Check that the libcontainer execdriver is used if the version is < 1.11
-	// (execution drivers are no longer supported as of 1.11).
-	if version[0] <= 1 && version[1] <= 10 &&
-		!strings.HasPrefix(dockerInfo.ExecutionDriver, "native") {
-		return nil, fmt.Errorf("docker found, but not using native exec driver")
 	}
 
 	if dockerInfo.Driver == "" {
@@ -129,33 +151,56 @@ func ValidateInfo() (*dockertypes.Info, error) {
 }
 
 func Version() ([]int, error) {
-	return parseDockerVersion(VersionString())
+	ver, err := VersionString()
+	if err != nil {
+		return nil, err
+	}
+	return parseVersion(ver, version_re, 3)
 }
 
-func VersionString() string {
+func APIVersion() ([]int, error) {
+	ver, err := APIVersionString()
+	if err != nil {
+		return nil, err
+	}
+	return parseVersion(ver, apiversion_re, 2)
+}
+
+func VersionString() (string, error) {
 	docker_version := "Unknown"
 	client, err := Client()
 	if err == nil {
-		version, err := client.ServerVersion(context.Background())
+		version, err := client.ServerVersion(defaultContext())
 		if err == nil {
 			docker_version = version.Version
 		}
 	}
-	return docker_version
+	return docker_version, err
 }
 
-// TODO: switch to a semantic versioning library.
-func parseDockerVersion(full_version_string string) ([]int, error) {
-	matches := version_re.FindAllStringSubmatch(full_version_string, -1)
+func APIVersionString() (string, error) {
+	docker_api_version := "Unknown"
+	client, err := Client()
+	if err == nil {
+		version, err := client.ServerVersion(defaultContext())
+		if err == nil {
+			docker_api_version = version.APIVersion
+		}
+	}
+	return docker_api_version, err
+}
+
+func parseVersion(version_string string, regex *regexp.Regexp, length int) ([]int, error) {
+	matches := regex.FindAllStringSubmatch(version_string, -1)
 	if len(matches) != 1 {
-		return nil, fmt.Errorf("version string \"%v\" doesn't match expected regular expression: \"%v\"", full_version_string, version_regexp_string)
+		return nil, fmt.Errorf("version string \"%v\" doesn't match expected regular expression: \"%v\"", version_string, regex.String())
 	}
 	version_string_array := matches[0][1:]
-	version_array := make([]int, 3)
-	for index, version_string := range version_string_array {
-		version, err := strconv.Atoi(version_string)
+	version_array := make([]int, length)
+	for index, version_str := range version_string_array {
+		version, err := strconv.Atoi(version_str)
 		if err != nil {
-			return nil, fmt.Errorf("error while parsing \"%v\" in \"%v\"", version_string, full_version_string)
+			return nil, fmt.Errorf("error while parsing \"%v\" in \"%v\"", version_str, version_string)
 		}
 		version_array[index] = version
 	}

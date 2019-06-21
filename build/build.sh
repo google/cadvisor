@@ -16,8 +16,7 @@
 
 set -e
 
-GO_FLAGS=${GO_FLAGS:-}    # Extra go flags to use in the build.
-GO_CMD=${GO_CMD:-"install"}
+GO_FLAGS=${GO_FLAGS:-"-tags netgo"}    # Extra go flags to use in the build.
 BUILD_USER=${BUILD_USER:-"${USER}@${HOSTNAME}"}
 BUILD_DATE=${BUILD_DATE:-$( date +%Y%m%d-%H:%M:%S )}
 VERBOSE=${VERBOSE:-}
@@ -37,7 +36,6 @@ if [ "${go_version:0:3}" = "1.4" ]; then
 fi
 
 ldflags="
-  -extldflags '-static'
   -X ${repo_path}/version.Version${ldseparator}${version}
   -X ${repo_path}/version.Revision${ldseparator}${revision}
   -X ${repo_path}/version.Branch${ldseparator}${branch}
@@ -51,6 +49,6 @@ if [ -n "$VERBOSE" ]; then
   echo "Building with -ldflags $ldflags"
 fi
 
-GOBIN=$PWD go "$GO_CMD" ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
+GOBIN=$PWD go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
 
 exit 0

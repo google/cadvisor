@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/google/cadvisor/client"
 	"github.com/google/cadvisor/client/v2"
+	"k8s.io/klog"
 )
 
 var host = flag.String("host", "localhost", "Address of the host being tested")
@@ -91,6 +91,7 @@ func New(t *testing.T) Framework {
 const (
 	Aufs         string = "aufs"
 	Overlay      string = "overlay"
+	Overlay2     string = "overlay2"
 	DeviceMapper string = "devicemapper"
 	Unknown      string = ""
 )
@@ -276,12 +277,8 @@ func (self dockerActions) StorageDriver() string {
 			idx := strings.LastIndex(line, ": ") + 2
 			driver := line[idx:]
 			switch driver {
-			case Aufs:
-				return Aufs
-			case Overlay:
-				return Overlay
-			case DeviceMapper:
-				return DeviceMapper
+			case Aufs, Overlay, Overlay2, DeviceMapper:
+				return driver
 			default:
 				return Unknown
 			}
@@ -332,7 +329,7 @@ func (self shellActions) Run(command string, args ...string) (string, string) {
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	glog.Infof("About to run - %v", cmd.Args)
+	klog.Infof("About to run - %v", cmd.Args)
 	err := cmd.Run()
 	if err != nil {
 		self.fm.T().Fatalf("Failed to run %q %v in %q with error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())

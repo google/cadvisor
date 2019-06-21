@@ -21,7 +21,12 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 
 	"github.com/stretchr/testify/assert"
+	"k8s.io/klog"
 )
+
+func init() {
+	klog.InitFlags(nil)
+}
 
 // Checks that expected and actual are within delta of each other.
 func inDelta(t *testing.T, expected, actual, delta uint64, description string) {

@@ -89,14 +89,14 @@ func (driver *stdoutStorage) containerFsStatsToValues(series *map[string]uint64,
 	}
 }
 
-func (driver *stdoutStorage) AddStats(ref info.ContainerReference, stats *info.ContainerStats) error {
+func (driver *stdoutStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
 
-	containerName := ref.Name
-	if len(ref.Aliases) > 0 {
-		containerName = ref.Aliases[0]
+	containerName := cInfo.ContainerReference.Name
+	if len(cInfo.ContainerReference.Aliases) > 0 {
+		containerName = cInfo.ContainerReference.Aliases[0]
 	}
 
 	var buffer bytes.Buffer

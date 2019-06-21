@@ -12,11 +12,15 @@ import (
 	"net/http"
 )
 
-func configureTransport(t1 *http.Transport) error {
+func configureTransport(t1 *http.Transport) (*Transport, error) {
 	connPool := new(clientConnPool)
-	t2 := &Transport{ConnPool: noDialClientConnPool{connPool}}
+	t2 := &Transport{
+		ConnPool: noDialClientConnPool{connPool},
+		t1:       t1,
+	}
+	connPool.t = t2
 	if err := registerHTTPSProtocol(t1, noDialH2RoundTripper{t2}); err != nil {
-		return err
+		return nil, err
 	}
 	if t1.TLSClientConfig == nil {
 		t1.TLSClientConfig = new(tls.Config)
@@ -24,13 +28,21 @@ func configureTransport(t1 *http.Transport) error {
 	if !strSliceContains(t1.TLSClientConfig.NextProtos, "h2") {
 		t1.TLSClientConfig.NextProtos = append([]string{"h2"}, t1.TLSClientConfig.NextProtos...)
 	}
+	if !strSliceContains(t1.TLSClientConfig.NextProtos, "http/1.1") {
+		t1.TLSClientConfig.NextProtos = append(t1.TLSClientConfig.NextProtos, "http/1.1")
+	}
 	upgradeFn := func(authority string, c *tls.Conn) http.RoundTripper {
-		cc, err := t2.NewClientConn(c)
-		if err != nil {
-			c.Close()
+		addr := authorityAddr("https", authority)
+		if used, err := connPool.addConnIfNeeded(addr, t2, c); err != nil {
+			go c.Close()
 			return erringRoundTripper{err}
+		} else if !used {
+			// Turns out we don't need this c.
+			// For example, two goroutines made requests to the same host
+			// at the same time, both kicking off TCP dials. (since protocol
+			// was unknown)
+			go c.Close()
 		}
-		connPool.addConn(authorityAddr(authority), cc)
 		return t2
 	}
 	if m := t1.TLSNextProto; len(m) == 0 {
@@ -40,7 +52,7 @@ func configureTransport(t1 *http.Transport) error {
 	} else {
 		m["h2"] = upgradeFn
 	}
-	return nil
+	return t2, nil
 }
 
 // registerHTTPSProtocol calls Transport.RegisterProtocol but
@@ -53,16 +65,6 @@ func registerHTTPSProtocol(t *http.Transport, rt http.RoundTripper) (err error) 
 	}()
 	t.RegisterProtocol("https", rt)
 	return nil
-}
-
-// noDialClientConnPool is an implementation of http2.ClientConnPool
-// which never dials.  We let the HTTP/1.1 client dial and use its TLS
-// connection instead.
-type noDialClientConnPool struct{ *clientConnPool }
-
-func (p noDialClientConnPool) GetClientConn(req *http.Request, addr string) (*ClientConn, error) {
-	const doDial = false
-	return p.getClientConn(req, addr, doDial)
 }
 
 // noDialH2RoundTripper is a RoundTripper which only tries to complete the request

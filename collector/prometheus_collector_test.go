@@ -95,19 +95,19 @@ metric_with_multiple_labels{label1="One", label2="Two", label3="Three"} 81
 	assert.Equal(1.7560473e+07, go_gc_duration_sum[0].FloatValue)
 	assert.Equal("__name__=go_gc_duration_seconds_sum", go_gc_duration_sum[0].Label)
 	go_gc_duration_count := metrics["go_gc_duration_seconds_count"]
-	assert.Equal(2693, go_gc_duration_count[0].FloatValue)
+	assert.Equal(float64(2693), go_gc_duration_count[0].FloatValue)
 	assert.Equal("__name__=go_gc_duration_seconds_count", go_gc_duration_count[0].Label)
 
 	goRoutines := metrics["go_goroutines"]
-	assert.Equal(16, goRoutines[0].FloatValue)
+	assert.Equal(float64(16), goRoutines[0].FloatValue)
 	assert.Equal("__name__=go_goroutines", goRoutines[0].Label)
 
 	metricWithSpaces := metrics["metric_with_spaces_in_label"]
-	assert.Equal(72, metricWithSpaces[0].FloatValue)
+	assert.Equal(float64(72), metricWithSpaces[0].FloatValue)
 	assert.Equal("__name__=metric_with_spaces_in_label\xffname=Network Agent", metricWithSpaces[0].Label)
 
 	metricWithMultipleLabels := metrics["metric_with_multiple_labels"]
-	assert.Equal(81, metricWithMultipleLabels[0].FloatValue)
+	assert.Equal(float64(81), metricWithMultipleLabels[0].FloatValue)
 	assert.Equal("__name__=metric_with_multiple_labels\xfflabel1=One\xfflabel2=Two\xfflabel3=Three", metricWithMultipleLabels[0].Label)
 }
 
@@ -215,7 +215,7 @@ go_goroutines 16
 	assert.Len(metrics, 1)
 
 	goRoutines := metrics["go_goroutines"]
-	assert.Equal(goRoutines[0].FloatValue, 16)
+	assert.Equal(goRoutines[0].FloatValue, float64(16))
 }
 
 func TestPrometheusFiltersMetricsCountLimit(t *testing.T) {

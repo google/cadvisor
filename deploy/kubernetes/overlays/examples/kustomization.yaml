@@ -1,0 +1,7 @@
+bases:
+- ../../base
+patches:
+- stackdriver-sidecar.yaml
+- critical-priority.yaml
+- cadvisor-args.yaml
+- gpu-privilages.yaml

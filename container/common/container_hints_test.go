@@ -27,7 +27,7 @@ func TestGetContainerHintsFromFile(t *testing.T) {
 
 	if cHints.AllHosts[0].NetworkInterface.VethHost != "veth24031eth1" &&
 		cHints.AllHosts[0].NetworkInterface.VethChild != "eth1" {
-		t.Errorf("Cannot find network interface in %s", cHints)
+		t.Errorf("Cannot find network interface in %+v", cHints)
 	}
 
 	correctMountDirs := [...]string{
@@ -44,7 +44,7 @@ func TestGetContainerHintsFromFile(t *testing.T) {
 
 	for i, mountDir := range cHints.AllHosts[0].Mounts {
 		if correctMountDirs[i] != mountDir.HostDir {
-			t.Errorf("Cannot find mount %s in %s", mountDir.HostDir, cHints)
+			t.Errorf("Cannot find mount %s in %+v", mountDir.HostDir, cHints)
 		}
 	}
 }
