@@ -1166,7 +1166,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			}
 			if !duplicate {
 				labels = append(labels, sl)
-			   values = append(values, containerLabels[l])
+				values = append(values, containerLabels[l])
 			}
 		}
 
