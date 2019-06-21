@@ -180,12 +180,6 @@ container_network_tcp_usage_total{container_env_foo_env="prod",container_label_f
 container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="synrecv",zone_name="hello"} 0 1395066363000
 container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="synsent",zone_name="hello"} 0 1395066363000
 container_network_tcp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="timewait",zone_name="hello"} 0 1395066363000
-# HELP container_pids_current The number of container current pids
-# TYPE container_pids_current gauge
-container_pids_current{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5
-# HELP container_pids_max The number of container max pids, infinity if value is zero
-# TYPE container_pids_max gauge
-container_pids_max{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 100
 # HELP container_network_transmit_bytes_total Cumulative count of bytes transmitted
 # TYPE container_network_transmit_bytes_total counter
 container_network_transmit_bytes_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",interface="eth0",name="testcontaineralias",zone_name="hello"} 18 1395066363000
@@ -210,6 +204,12 @@ container_network_udp_usage_total{container_env_foo_env="prod",container_label_f
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="listen",zone_name="hello"} 0 1395066363000
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="rxqueued",zone_name="hello"} 0 1395066363000
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="txqueued",zone_name="hello"} 0 1395066363000
+# HELP container_pids_current The number of container current pids
+# TYPE container_pids_current gauge
+container_pids_current{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5 1395066363000
+# HELP container_pids_max The number of container max pids, infinity if value is zero
+# TYPE container_pids_max gauge
+container_pids_max{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 100 1395066363000
 # HELP container_processes Number of processes running inside the container.
 # TYPE container_processes gauge
 container_processes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000

@@ -422,7 +422,10 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				help:      "The number of container max pids, infinity if value is zero",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Pids.Max)}}
+					return metricValues{{
+						value:     float64(s.Pids.Max),
+						timestamp: s.Timestamp,
+					}}
 				},
 			},
 			{
@@ -430,7 +433,10 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				help:      "The number of container current pids",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.Pids.Current)}}
+					return metricValues{{
+						value:     float64(s.Pids.Current),
+						timestamp: s.Timestamp,
+					}}
 				},
 			},
 		}...)
