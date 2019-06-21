@@ -27,17 +27,14 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+	"golang.org/x/sys/unix"
 
 	"bytes"
+
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"k8s.io/klog"
 )
-
-/*
-#include <unistd.h>
-*/
-import "C"
 
 type Handler struct {
 	cgroupManager   cgroups.Manager
@@ -66,8 +63,7 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 	libcontainerStats := &libcontainer.Stats{
 		CgroupStats: cgroupStats,
 	}
-	withPerCPU := h.includedMetrics.Has(container.PerCpuUsageMetrics)
-	stats := newContainerStats(libcontainerStats, withPerCPU)
+	stats := newContainerStats(libcontainerStats, h.includedMetrics)
 
 	if h.includedMetrics.Has(container.ProcessSchedulerMetrics) {
 		pids, err := h.cgroupManager.GetAllPids()
@@ -515,19 +511,12 @@ func setCpuStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 
 }
 
-// Copied from
-// https://github.com/moby/moby/blob/8b1adf55c2af329a4334f21d9444d6a169000c81/daemon/stats/collector_unix.go#L73
-// Apache 2.0, Copyright Docker, Inc.
 func getNumberOnlineCPUs() (uint32, error) {
-	i, err := C.sysconf(C._SC_NPROCESSORS_ONLN)
-	// According to POSIX - errno is undefined after successful
-	// sysconf, and can be non-zero in several cases, so look for
-	// error in returned value not in errno.
-	// (https://sourceware.org/bugzilla/show_bug.cgi?id=21536)
-	if i == -1 {
+	var availableCPUs unix.CPUSet
+	if err := unix.SchedGetaffinity(0, &availableCPUs); err != nil {
 		return 0, err
 	}
-	return uint32(i), nil
+	return uint32(availableCPUs.Count()), nil
 }
 
 func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
@@ -599,14 +588,16 @@ func setNetworkStats(libcontainerStats *libcontainer.Stats, ret *info.ContainerS
 	}
 }
 
-func newContainerStats(libcontainerStats *libcontainer.Stats, withPerCPU bool) *info.ContainerStats {
+func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics container.MetricSet) *info.ContainerStats {
 	ret := &info.ContainerStats{
 		Timestamp: time.Now(),
 	}
 
 	if s := libcontainerStats.CgroupStats; s != nil {
-		setCpuStats(s, ret, withPerCPU)
-		setDiskIoStats(s, ret)
+		setCpuStats(s, ret, includedMetrics.Has(container.PerCpuUsageMetrics))
+		if includedMetrics.Has(container.DiskIOMetrics) {
+			setDiskIoStats(s, ret)
+		}
 		setMemoryStats(s, ret)
 	}
 	if len(libcontainerStats.Interfaces) > 0 {

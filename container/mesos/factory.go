@@ -26,7 +26,7 @@ import (
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/manager/watcher"
+	"github.com/google/cadvisor/watcher"
 	"k8s.io/klog"
 )
 
@@ -130,7 +130,7 @@ func Register(
 		return fmt.Errorf("unable to create mesos agent client: %v", err)
 	}
 
-	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems()
+	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems(includedMetrics)
 	if err != nil {
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}

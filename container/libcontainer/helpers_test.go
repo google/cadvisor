@@ -97,7 +97,7 @@ func TestGetCgroupSubsystems(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		subSystems, err := getCgroupSubsystemsHelper(testCase.mounts)
+		subSystems, err := getCgroupSubsystemsHelper(testCase.mounts, map[string]struct{}{})
 		if testCase.err {
 			if err == nil {
 				t.Fatalf("[case %d] Expected error but didn't get one", i)

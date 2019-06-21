@@ -107,6 +107,7 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 ```
 --boot_id_file="/proc/sys/kernel/random/boot_id": Comma-separated list of files to check for boot-id. Use the first one that exists. (default "/proc/sys/kernel/random/boot_id")
 --machine_id_file="/etc/machine-id,/var/lib/dbus/machine-id": Comma-separated list of files to check for machine-id. Use the first one that exists. (default "/etc/machine-id,/var/lib/dbus/machine-id")
+--update_machine_info_interval=5m: Interval between machine info updates. (default 5m)
 ```
 
 ## Metrics

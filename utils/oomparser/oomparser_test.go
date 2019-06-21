@@ -26,40 +26,6 @@ import (
 const startLine = "ruby invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0"
 const endLine = "Killed process 19667 (evil-program2) total-vm:1460016kB, anon-rss:1414008kB, file-rss:4kB"
 const containerLine = "Task in /mem2 killed as a result of limit of /mem3"
-const containerLogFile = "containerOomExampleLog.txt"
-const systemLogFile = "systemOomExampleLog.txt"
-
-func createExpectedContainerOomInstance(t *testing.T) *OomInstance {
-	const longForm = "Jan _2 15:04:05 2006"
-	deathTime, err := time.ParseInLocation(longForm, fmt.Sprintf("Jan  5 15:19:27 %d", time.Now().Year()), time.Local)
-	if err != nil {
-		t.Fatalf("could not parse expected time when creating expected container oom instance. Had error %v", err)
-		return nil
-	}
-	return &OomInstance{
-		Pid:                 13536,
-		ProcessName:         "memorymonster",
-		TimeOfDeath:         deathTime,
-		ContainerName:       "/mem2",
-		VictimContainerName: "/mem2",
-	}
-}
-
-func createExpectedSystemOomInstance(t *testing.T) *OomInstance {
-	const longForm = "Jan _2 15:04:05 2006"
-	deathTime, err := time.ParseInLocation(longForm, fmt.Sprintf("Jan 28 19:58:45 %d", time.Now().Year()), time.Local)
-	if err != nil {
-		t.Fatalf("could not parse expected time when creating expected system oom instance. Had error %v", err)
-		return nil
-	}
-	return &OomInstance{
-		Pid:                 1532,
-		ProcessName:         "badsysprogram",
-		TimeOfDeath:         deathTime,
-		ContainerName:       "/",
-		VictimContainerName: "",
-	}
-}
 
 func TestGetContainerName(t *testing.T) {
 	currentOomInstance := new(OomInstance)
@@ -300,7 +266,7 @@ func TestStreamOOMs(t *testing.T) {
 				ProcessName:         "badsysprogram",
 				TimeOfDeath:         testTime,
 				ContainerName:       "/",
-				VictimContainerName: "",
+				VictimContainerName: "/",
 			}},
 		},
 		{ // Multiple OOMs

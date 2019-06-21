@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.9
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
 RUN apk --no-cache add libc6-compat device-mapper findutils zfs && \

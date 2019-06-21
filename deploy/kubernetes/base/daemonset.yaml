@@ -14,6 +14,7 @@ spec:
       labels:
         name: cadvisor
     spec:
+      serviceAccountName: cadvisor
       containers:
       - name: cadvisor
         image: k8s.gcr.io/cadvisor:v0.30.2

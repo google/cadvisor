@@ -66,7 +66,9 @@ Metric name | Type | Description | Unit (where applicable)
 `container_network_transmit_packets_dropped_total` | Counter | Cumulative count of packets dropped while transmitting |
 `container_network_transmit_errors_total` | Counter | Cumulative count of errors encountered while transmitting |
 `container_network_tcp_usage_total` | Gauge | tcp connection usage statistic for container |
+`container_network_tcp6_usage_total` | Gauge | tcp6 connection usage statistic for container |
 `container_network_udp_usage_total` | Gauge | udp connection usage statistic for container |
+`container_network_udp6_usage_total` | Gauge | udp6 connection usage statistic for container |
 `container_processes` | Gauge | Number of processes running inside the container |
 `container_spec_cpu_period` | Gauge | CPU period of the container |
 `container_spec_cpu_quota` | Gauge | CPU quota of the container |
