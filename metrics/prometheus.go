@@ -419,7 +419,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
 				name:      "container_pids_max",
-				help:      "The number of container max pids, infinity if value is zero",
+				help:      "The maximum number of processes allowed in the container, infinity if value is zero",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{
@@ -430,7 +430,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 			{
 				name:      "container_pids_current",
-				help:      "The number of container current pids",
+				help:      "The current number of processes in the container",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{

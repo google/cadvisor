@@ -204,10 +204,10 @@ container_network_udp_usage_total{container_env_foo_env="prod",container_label_f
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="listen",zone_name="hello"} 0 1395066363000
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="rxqueued",zone_name="hello"} 0 1395066363000
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="txqueued",zone_name="hello"} 0 1395066363000
-# HELP container_pids_current The number of container current pids
+# HELP container_pids_current The current number of processes in the container
 # TYPE container_pids_current gauge
 container_pids_current{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5 1395066363000
-# HELP container_pids_max The number of container max pids, infinity if value is zero
+# HELP container_pids_max The maximum number of processes allowed in the container, infinity if value is zero
 # TYPE container_pids_max gauge
 container_pids_max{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 100 1395066363000
 # HELP container_processes Number of processes running inside the container.
