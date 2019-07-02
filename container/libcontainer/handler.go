@@ -129,8 +129,10 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 			if err != nil {
 				klog.V(4).Infof("Unable to get Process Stats: %v", err)
 			}
-			setThreadsStats(cgroupStats, stats)
 		}
+
+		// if include processes metrics, just set threads metrics if exist, and has no relationship with cpu path
+		setThreadsStats(cgroupStats, stats)
 	}
 
 	// For backwards compatibility.
