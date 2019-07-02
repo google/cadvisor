@@ -129,6 +129,7 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 			if err != nil {
 				klog.V(4).Infof("Unable to get Process Stats: %v", err)
 			}
+			setThreadsStats(cgroupStats, stats)
 		}
 	}
 
@@ -589,9 +590,12 @@ func setNetworkStats(libcontainerStats *libcontainer.Stats, ret *info.ContainerS
 }
 
 // read from pids path not cpu
-func setProcessesStats(s *cgroups.Stats, ret *info.ContainerStats) {
-	ret.Processes.ThreadsCurrent = s.PidsStats.Current
-	ret.Processes.ThreadsMax = s.PidsStats.Limit
+func setThreadsStats(s *cgroups.Stats, ret *info.ContainerStats) {
+	if s != nil {
+		ret.Processes.ThreadsCurrent = s.PidsStats.Current
+		ret.Processes.ThreadsMax = s.PidsStats.Limit
+	}
+
 }
 
 func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics container.MetricSet) *info.ContainerStats {
@@ -605,7 +609,6 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics co
 			setDiskIoStats(s, ret)
 		}
 		setMemoryStats(s, ret)
-		setProcessesStats(s, ret)
 	}
 	if len(libcontainerStats.Interfaces) > 0 {
 		setNetworkStats(libcontainerStats, ret)
