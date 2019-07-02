@@ -571,10 +571,10 @@ type ProcessStats struct {
 	// Number of open file descriptors
 	FdCount uint64 `json:"fd_count"`
 
-	// Number of processes including threads in container
+	// Number of threads currently in container
 	ThreadsCurrent uint64 `json:"threads_current,omitempty"`
 
-	// Maxium number of processes including threads in container
+	// Maxium number of threads allowed in container
 	ThreadsMax uint64 `json:"threads_max,omitempty"`
 }
 
