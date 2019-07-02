@@ -41,7 +41,7 @@ type MemorySpec struct {
 	SwapLimit uint64 `json:"swap_limit,omitempty"`
 }
 
-type PidsSpec struct {
+type ProcessSpec struct {
 	Limit uint64 `json:"limit,omitempty"`
 }
 
@@ -62,8 +62,8 @@ type ContainerSpec struct {
 
 	HasNetwork bool `json:"has_network"`
 
-	HasPids bool     `json:"has_pids"`
-	Pids    PidsSpec `json:"pids,omitempty"`
+	HasProcesses bool        `json:"has_processes"`
+	Processes    ProcessSpec `json:"processes,omitempty"`
 
 	HasFilesystem bool `json:"has_filesystem"`
 
@@ -570,11 +570,12 @@ type ProcessStats struct {
 
 	// Number of open file descriptors
 	FdCount uint64 `json:"fd_count"`
-}
 
-type PidsStats struct {
-	Current uint64 `json:"current,omitempty"`
-	Max     uint64 `json:"max,omitempty"`
+	// Number of processes including threads in container
+	ThreadsCurrent uint64 `json:"threads_current,omitempty"`
+
+	// Maxium number of processes including threads in container
+	ThreadsMax uint64 `json:"threads_max,omitempty"`
 }
 
 type ContainerStats struct {
@@ -584,7 +585,6 @@ type ContainerStats struct {
 	DiskIo    DiskIoStats  `json:"diskio,omitempty"`
 	Memory    MemoryStats  `json:"memory,omitempty"`
 	Network   NetworkStats `json:"network,omitempty"`
-	Pids      PidsStats    `json:"pids,omitempty"`
 
 	// Filesystem statistics
 	Filesystem []FsStats `json:"filesystem,omitempty"`
@@ -643,7 +643,7 @@ func (a *ContainerStats) StatsEq(b *ContainerStats) bool {
 	if !reflect.DeepEqual(a.Network, b.Network) {
 		return false
 	}
-	if !reflect.DeepEqual(a.Pids, b.Pids) {
+	if !reflect.DeepEqual(a.Processes, b.Processes) {
 		return false
 	}
 	if !reflect.DeepEqual(a.Filesystem, b.Filesystem) {

@@ -61,7 +61,6 @@ var allMetrics = container.MetricSet{
 	container.NetworkTcpUsageMetrics:  struct{}{},
 	container.NetworkUdpUsageMetrics:  struct{}{},
 	container.ProcessMetrics:          struct{}{},
-	container.PidsMetrics:             struct{}{},
 }
 
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
@@ -84,8 +83,8 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Reservation: 1024,
 					SwapLimit:   4096,
 				},
-				HasPids: true,
-				Pids: info.PidsSpec{
+				HasProcesses: true,
+				Processes: info.ProcessSpec{
 					Limit: 100,
 				},
 				CreationTime: time.Unix(1257894000, 0),
@@ -237,10 +236,6 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							WeightedIoTime:  49,
 						},
 					},
-					Pids: info.PidsStats{
-						Current: 5,
-						Max:     100,
-					},
 					Accelerators: []info.AcceleratorStats{
 						{
 							Make:        "nvidia",
@@ -260,8 +255,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						},
 					},
 					Processes: info.ProcessStats{
-						ProcessCount: 1,
-						FdCount:      5,
+						ProcessCount:   1,
+						FdCount:        5,
+						ThreadsCurrent: 5,
+						ThreadsMax:     100,
 					},
 					TaskStats: info.LoadStats{
 						NrSleeping:        50,

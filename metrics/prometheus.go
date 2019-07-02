@@ -415,32 +415,6 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
-	if includedMetrics.Has(container.PidsMetrics) {
-		c.containerMetrics = append(c.containerMetrics, []containerMetric{
-			{
-				name:      "container_pids_max",
-				help:      "The maximum number of processes allowed in the container, infinity if value is zero",
-				valueType: prometheus.GaugeValue,
-				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{
-						value:     float64(s.Pids.Max),
-						timestamp: s.Timestamp,
-					}}
-				},
-			},
-			{
-				name:      "container_pids_current",
-				help:      "The current number of processes in the container",
-				valueType: prometheus.GaugeValue,
-				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{
-						value:     float64(s.Pids.Current),
-						timestamp: s.Timestamp,
-					}}
-				},
-			},
-		}...)
-	}
 	if includedMetrics.Has(container.AcceleratorUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
@@ -1071,7 +1045,30 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return metricValues{{value: float64(s.Processes.FdCount), timestamp: s.Timestamp}}
 				},
 			},
+			{
+				name:      "container_pids_max",
+				help:      "The maximum number of processes allowed in the container, infinity if value is zero",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{
+						value:     float64(s.Processes.ThreadsMax),
+						timestamp: s.Timestamp,
+					}}
+				},
+			},
+			{
+				name:      "container_pids_current",
+				help:      "The current number of processes in the container",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{
+						value:     float64(s.Processes.ThreadsCurrent),
+						timestamp: s.Timestamp,
+					}}
+				},
+			},
 		}...)
+
 	}
 
 	return c

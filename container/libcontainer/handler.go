@@ -588,9 +588,10 @@ func setNetworkStats(libcontainerStats *libcontainer.Stats, ret *info.ContainerS
 	}
 }
 
-func setPidsStats(s *cgroups.Stats, ret *info.ContainerStats) {
-	ret.Pids.Current = s.PidsStats.Current
-	ret.Pids.Max = s.PidsStats.Limit
+// read from pids path not cpu
+func setProcessesStats(s *cgroups.Stats, ret *info.ContainerStats) {
+	ret.Processes.ThreadsCurrent = s.PidsStats.Current
+	ret.Processes.ThreadsMax = s.PidsStats.Limit
 }
 
 func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics container.MetricSet) *info.ContainerStats {
@@ -604,7 +605,7 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics co
 			setDiskIoStats(s, ret)
 		}
 		setMemoryStats(s, ret)
-		setPidsStats(s, ret)
+		setProcessesStats(s, ret)
 	}
 	if len(libcontainerStats.Interfaces) > 0 {
 		setNetworkStats(libcontainerStats, ret)

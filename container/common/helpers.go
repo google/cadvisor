@@ -116,12 +116,12 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 		}
 	}
 
-	// Pids
+	// Processes, read it's value from pids path directly
 	pidsRoot, ok := cgroupPaths["pids"]
 	if ok {
 		if utils.FileExists(pidsRoot) {
-			spec.HasPids = true
-			spec.Pids.Limit = readUInt64(pidsRoot, "pids.max")
+			spec.HasProcesses = true
+			spec.Processes.Limit = readUInt64(pidsRoot, "pids.max")
 		}
 	}
 
