@@ -83,6 +83,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Reservation: 1024,
 					SwapLimit:   4096,
 				},
+				HasProcesses: true,
+				Processes: info.ProcessSpec{
+					Limit: 100,
+				},
 				CreationTime: time.Unix(1257894000, 0),
 				Labels: map[string]string{
 					"foo.label": "bar",
@@ -251,8 +255,10 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						},
 					},
 					Processes: info.ProcessStats{
-						ProcessCount: 1,
-						FdCount:      5,
+						ProcessCount:   1,
+						FdCount:        5,
+						ThreadsCurrent: 5,
+						ThreadsMax:     100,
 					},
 					TaskStats: info.LoadStats{
 						NrSleeping:        50,

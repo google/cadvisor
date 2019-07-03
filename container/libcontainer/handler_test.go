@@ -134,3 +134,44 @@ func TestMorePossibleCPUs(t *testing.T) {
 		t.Fatalf("expected %+v == %+v", ret, expected)
 	}
 }
+
+func TestSetProcessesStats(t *testing.T) {
+	ret := info.ContainerStats{
+		Processes: info.ProcessStats{
+			ProcessCount: 1,
+			FdCount:      2,
+		},
+	}
+	s := &cgroups.Stats{
+		PidsStats: cgroups.PidsStats{
+			Current: 5,
+			Limit:   100,
+		},
+	}
+	setThreadsStats(s, &ret)
+
+	expected := info.ContainerStats{
+
+		Processes: info.ProcessStats{
+			ProcessCount:   1,
+			FdCount:        2,
+			ThreadsCurrent: s.PidsStats.Current,
+			ThreadsMax:     s.PidsStats.Limit,
+		},
+	}
+
+	if expected.Processes.ProcessCount != ret.Processes.ProcessCount {
+		t.Fatalf("expected ProcessCount: %d == %d", ret.Processes.ProcessCount, expected.Processes.ProcessCount)
+	}
+	if expected.Processes.FdCount != ret.Processes.FdCount {
+		t.Fatalf("expected FdCount: %d == %d", ret.Processes.FdCount, expected.Processes.FdCount)
+	}
+
+	if expected.Processes.ThreadsCurrent != ret.Processes.ThreadsCurrent {
+		t.Fatalf("expected current threads: %d == %d", ret.Processes.ThreadsCurrent, expected.Processes.ThreadsCurrent)
+	}
+	if expected.Processes.ThreadsMax != ret.Processes.ThreadsMax {
+		t.Fatalf("expected max threads: %d == %d", ret.Processes.ThreadsMax, expected.Processes.ThreadsMax)
+	}
+
+}
