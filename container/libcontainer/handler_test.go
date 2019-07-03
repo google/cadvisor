@@ -168,10 +168,10 @@ func TestSetProcessesStats(t *testing.T) {
 	}
 
 	if expected.Processes.ThreadsCurrent != ret.Processes.ThreadsCurrent {
-		t.Fatalf("expected current pids: %d == %d", ret.Processes.ThreadsCurrent, expected.Processes.ThreadsCurrent)
+		t.Fatalf("expected current threads: %d == %d", ret.Processes.ThreadsCurrent, expected.Processes.ThreadsCurrent)
 	}
 	if expected.Processes.ThreadsMax != ret.Processes.ThreadsMax {
-		t.Fatalf("expected max pids: %d == %d", ret.Processes.ThreadsMax, expected.Processes.ThreadsMax)
+		t.Fatalf("expected max threads: %d == %d", ret.Processes.ThreadsMax, expected.Processes.ThreadsMax)
 	}
 
 }

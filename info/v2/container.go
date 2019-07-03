@@ -149,7 +149,7 @@ type ContainerStats struct {
 	// Network statistics
 	Network *NetworkStats `json:"network,omitempty"`
 	// Processes statistics
-	Processes *v1.ProcessStats `json:"pids,omitempty"`
+	Processes *v1.ProcessStats `json:"processes,omitempty"`
 	// Filesystem statistics
 	Filesystem *FilesystemStats `json:"filesystem,omitempty"`
 	// Task load statistics
