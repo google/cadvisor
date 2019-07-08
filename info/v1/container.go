@@ -571,6 +571,9 @@ type ProcessStats struct {
 	// Number of open file descriptors
 	FdCount uint64 `json:"fd_count"`
 
+	// Number of sockets
+	SocketCount uint64 `json:"socket_count"`
+
 	// Number of threads currently in container
 	ThreadsCurrent uint64 `json:"threads_current,omitempty"`
 

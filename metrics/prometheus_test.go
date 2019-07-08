@@ -257,6 +257,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Processes: info.ProcessStats{
 						ProcessCount:   1,
 						FdCount:        5,
+						SocketCount:    3,
 						ThreadsCurrent: 5,
 						ThreadsMax:     100,
 					},
