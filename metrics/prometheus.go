@@ -1046,6 +1046,14 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 			{
+				name:      "container_sockets",
+				help:      "Number of open sockets for the container.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Processes.SocketCount), timestamp: s.Timestamp}}
+				},
+			},
+			{
 				name:      "container_threads_max",
 				help:      "Maximum number of threads allowed inside the container, infinity if value is zero",
 				valueType: prometheus.GaugeValue,

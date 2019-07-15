@@ -210,6 +210,9 @@ container_processes{container_env_foo_env="prod",container_label_foo_label="bar"
 # HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
 # TYPE container_scrape_error gauge
 container_scrape_error 0
+# HELP container_sockets Number of open sockets for the container.
+# TYPE container_sockets gauge
+container_sockets{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3 1395066363000
 # HELP container_spec_cpu_period CPU period of the container.
 # TYPE container_spec_cpu_period gauge
 container_spec_cpu_period{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 100000

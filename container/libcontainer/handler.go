@@ -144,7 +144,7 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 }
 
 func processStatsFromProcs(rootFs string, cgroupPath string) (info.ProcessStats, error) {
-	var fdCount uint64
+	var fdCount, socketCount uint64
 	filePath := path.Join(cgroupPath, "cgroup.procs")
 	out, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -168,11 +168,23 @@ func processStatsFromProcs(rootFs string, cgroupPath string) (info.ProcessStats,
 			continue
 		}
 		fdCount += uint64(len(fds))
+		for _, fd := range fds {
+			fdPath := path.Join(dirPath, fd.Name())
+			linkName, err := os.Readlink(fdPath)
+			if err != nil {
+				klog.V(4).Infof("error while reading %q link: %v", fdPath, err)
+				continue
+			}
+			if strings.HasPrefix(linkName, "socket") {
+				socketCount++
+			}
+		}
 	}
 
 	processStats := info.ProcessStats{
 		ProcessCount: uint64(len(pids)),
 		FdCount:      fdCount,
+		SocketCount:  socketCount,
 	}
 
 	return processStats, nil
