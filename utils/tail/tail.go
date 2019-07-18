@@ -24,8 +24,8 @@ import (
 	"sync"
 	"time"
 
-	inotify "k8s.io/utils/inotify"
 	"k8s.io/klog"
+	inotify "k8s.io/utils/inotify"
 )
 
 type Tail struct {
