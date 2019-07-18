@@ -36,6 +36,7 @@ import (
 	"unsafe"
 )
 
+// Event represents a notification
 type Event struct {
 	Mask   uint32 // Mask of events
 	Cookie uint32 // Unique cookie associating related events (for rename(2))
@@ -47,6 +48,7 @@ type watch struct {
 	flags uint32 // inotify flags of this watch (see inotify(7) for the list of valid flags)
 }
 
+// Watcher represents an inotify instance
 type Watcher struct {
 	mu       sync.Mutex
 	fd       int               // File descriptor (as returned by the inotify_init() syscall)
@@ -60,7 +62,7 @@ type Watcher struct {
 
 // NewWatcher creates and returns a new inotify instance using inotify_init(2)
 func NewWatcher() (*Watcher, error) {
-	fd, errno := syscall.InotifyInit()
+	fd, errno := syscall.InotifyInit1(syscall.IN_CLOEXEC)
 	if fd == -1 {
 		return nil, os.NewSyscallError("inotify_init", errno)
 	}
@@ -130,14 +132,14 @@ func (w *Watcher) AddWatch(path string, flags uint32) error {
 
 // Watch adds path to the watched file set, watching all events.
 func (w *Watcher) Watch(path string) error {
-	return w.AddWatch(path, IN_ALL_EVENTS)
+	return w.AddWatch(path, InAllEvents)
 }
 
 // RemoveWatch removes path from the watched file set.
 func (w *Watcher) RemoveWatch(path string) error {
 	watch, ok := w.watches[path]
 	if !ok {
-		return errors.New(fmt.Sprintf("can't remove non-existent inotify watch for: %s", path))
+		return fmt.Errorf("can't remove non-existent inotify watch for: %s", path)
 	}
 	success, errno := syscall.InotifyRmWatch(w.fd, watch.wd)
 	if success == -1 {
@@ -186,7 +188,7 @@ func (w *Watcher) readEvents() {
 			continue
 		}
 
-		var offset uint32 = 0
+		var offset uint32
 		// We don't know how many events we just read into the buffer
 		// While the offset points to at least one whole event...
 		for offset <= uint32(n-syscall.SizeofInotifyEvent) {
@@ -223,7 +225,7 @@ func (w *Watcher) readEvents() {
 // String formats the event e in the form
 // "filename: 0xEventMask = IN_ACCESS|IN_ATTRIB_|..."
 func (e *Event) String() string {
-	var events string = ""
+	var events string
 
 	m := e.Mask
 	for _, b := range eventBits {
@@ -249,58 +251,83 @@ const (
 	// IN_NONBLOCK   uint32 = syscall.IN_NONBLOCK
 
 	// Options for AddWatch
-	IN_DONT_FOLLOW uint32 = syscall.IN_DONT_FOLLOW
-	IN_ONESHOT     uint32 = syscall.IN_ONESHOT
-	IN_ONLYDIR     uint32 = syscall.IN_ONLYDIR
+
+	// InDontFollow : Don't dereference pathname if it is a symbolic link
+	InDontFollow uint32 = syscall.IN_DONT_FOLLOW
+	// InOneshot : Monitor the filesystem object corresponding to pathname for one event, then remove from watch list
+	InOneshot uint32 = syscall.IN_ONESHOT
+	// InOnlydir : Watch pathname only if it is a directory
+	InOnlydir uint32 = syscall.IN_ONLYDIR
 
 	// The "IN_MASK_ADD" option is not exported, as AddWatch
 	// adds it automatically, if there is already a watch for the given path
 	// IN_MASK_ADD      uint32 = syscall.IN_MASK_ADD
 
 	// Events
-	IN_ACCESS        uint32 = syscall.IN_ACCESS
-	IN_ALL_EVENTS    uint32 = syscall.IN_ALL_EVENTS
-	IN_ATTRIB        uint32 = syscall.IN_ATTRIB
-	IN_CLOSE         uint32 = syscall.IN_CLOSE
-	IN_CLOSE_NOWRITE uint32 = syscall.IN_CLOSE_NOWRITE
-	IN_CLOSE_WRITE   uint32 = syscall.IN_CLOSE_WRITE
-	IN_CREATE        uint32 = syscall.IN_CREATE
-	IN_DELETE        uint32 = syscall.IN_DELETE
-	IN_DELETE_SELF   uint32 = syscall.IN_DELETE_SELF
-	IN_MODIFY        uint32 = syscall.IN_MODIFY
-	IN_MOVE          uint32 = syscall.IN_MOVE
-	IN_MOVED_FROM    uint32 = syscall.IN_MOVED_FROM
-	IN_MOVED_TO      uint32 = syscall.IN_MOVED_TO
-	IN_MOVE_SELF     uint32 = syscall.IN_MOVE_SELF
-	IN_OPEN          uint32 = syscall.IN_OPEN
+
+	// InAccess : File was accessed
+	InAccess uint32 = syscall.IN_ACCESS
+	// InAllEvents : Bit mask for all notify events
+	InAllEvents uint32 = syscall.IN_ALL_EVENTS
+	// InAttrib : Metadata changed
+	InAttrib uint32 = syscall.IN_ATTRIB
+	// InClose : Equates to IN_CLOSE_WRITE | IN_CLOSE_NOWRITE
+	InClose uint32 = syscall.IN_CLOSE
+	// InCloseNowrite : File or directory not opened for writing was closed
+	InCloseNowrite uint32 = syscall.IN_CLOSE_NOWRITE
+	// InCloseWrite : File opened for writing was closed
+	InCloseWrite uint32 = syscall.IN_CLOSE_WRITE
+	// InCreate : File/directory created in watched directory
+	InCreate uint32 = syscall.IN_CREATE
+	// InDelete : File/directory deleted from watched directory
+	InDelete uint32 = syscall.IN_DELETE
+	// InDeleteSelf : Watched file/directory was itself deleted
+	InDeleteSelf uint32 = syscall.IN_DELETE_SELF
+	// InModify : File was modified
+	InModify uint32 = syscall.IN_MODIFY
+	// InMove : Equates to IN_MOVED_FROM | IN_MOVED_TO
+	InMove uint32 = syscall.IN_MOVE
+	// InMovedFrom : Generated for the directory containing the old filename when a file is renamed
+	InMovedFrom uint32 = syscall.IN_MOVED_FROM
+	// InMovedTo : Generated for the directory containing the new filename when a file is renamed
+	InMovedTo uint32 = syscall.IN_MOVED_TO
+	// InMoveSelf : Watched file/directory was itself moved
+	InMoveSelf uint32 = syscall.IN_MOVE_SELF
+	// InOpen : File or directory was opened
+	InOpen uint32 = syscall.IN_OPEN
 
 	// Special events
-	IN_ISDIR      uint32 = syscall.IN_ISDIR
-	IN_IGNORED    uint32 = syscall.IN_IGNORED
-	IN_Q_OVERFLOW uint32 = syscall.IN_Q_OVERFLOW
-	IN_UNMOUNT    uint32 = syscall.IN_UNMOUNT
+
+	// InIsdir : Subject of this event is a directory
+	InIsdir uint32 = syscall.IN_ISDIR
+	// InIgnored : Watch was removed explicitly or automatically
+	InIgnored uint32 = syscall.IN_IGNORED
+	// InQOverflow : Event queue overflowed
+	InQOverflow uint32 = syscall.IN_Q_OVERFLOW
+	// InUnmount : Filesystem containing watched object was unmounted
+	InUnmount uint32 = syscall.IN_UNMOUNT
 )
 
 var eventBits = []struct {
 	Value uint32
 	Name  string
 }{
-	{IN_ACCESS, "IN_ACCESS"},
-	{IN_ATTRIB, "IN_ATTRIB"},
-	{IN_CLOSE, "IN_CLOSE"},
-	{IN_CLOSE_NOWRITE, "IN_CLOSE_NOWRITE"},
-	{IN_CLOSE_WRITE, "IN_CLOSE_WRITE"},
-	{IN_CREATE, "IN_CREATE"},
-	{IN_DELETE, "IN_DELETE"},
-	{IN_DELETE_SELF, "IN_DELETE_SELF"},
-	{IN_MODIFY, "IN_MODIFY"},
-	{IN_MOVE, "IN_MOVE"},
-	{IN_MOVED_FROM, "IN_MOVED_FROM"},
-	{IN_MOVED_TO, "IN_MOVED_TO"},
-	{IN_MOVE_SELF, "IN_MOVE_SELF"},
-	{IN_OPEN, "IN_OPEN"},
-	{IN_ISDIR, "IN_ISDIR"},
-	{IN_IGNORED, "IN_IGNORED"},
-	{IN_Q_OVERFLOW, "IN_Q_OVERFLOW"},
-	{IN_UNMOUNT, "IN_UNMOUNT"},
+	{InAccess, "IN_ACCESS"},
+	{InAttrib, "IN_ATTRIB"},
+	{InClose, "IN_CLOSE"},
+	{InCloseNowrite, "IN_CLOSE_NOWRITE"},
+	{InCloseWrite, "IN_CLOSE_WRITE"},
+	{InCreate, "IN_CREATE"},
+	{InDelete, "IN_DELETE"},
+	{InDeleteSelf, "IN_DELETE_SELF"},
+	{InModify, "IN_MODIFY"},
+	{InMove, "IN_MOVE"},
+	{InMovedFrom, "IN_MOVED_FROM"},
+	{InMovedTo, "IN_MOVED_TO"},
+	{InMoveSelf, "IN_MOVE_SELF"},
+	{InOpen, "IN_OPEN"},
+	{InIsdir, "IN_ISDIR"},
+	{InIgnored, "IN_IGNORED"},
+	{InQOverflow, "IN_Q_OVERFLOW"},
+	{InUnmount, "IN_UNMOUNT"},
 }

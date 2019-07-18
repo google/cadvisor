@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	inotify "github.com/sigma/go-inotify"
+	inotify "k8s.io/utils/inotify"
 	"k8s.io/klog"
 )
 
@@ -141,7 +141,7 @@ func (t *Tail) watchFile() error {
 	defer t.file.Close()
 
 	watchDir := filepath.Dir(t.filename)
-	err = t.watcher.AddWatch(watchDir, inotify.IN_MOVED_FROM|inotify.IN_DELETE)
+	err = t.watcher.AddWatch(watchDir, inotify.InMovedFrom|inotify.InDelete)
 	if err != nil {
 		return fmt.Errorf("Failed to add watch to directory %s: %v", watchDir, err)
 	}

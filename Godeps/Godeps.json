@@ -488,6 +488,21 @@
 			"Rev": "2de2192f9e35ce981c152a873ed943b93b79ced4"
 		},
 		{
+			"ImportPath": "github.com/karrick/godirwalk/examples/clean-empties",
+			"Comment": "v1.7.5",
+			"Rev": "2de2192f9e35ce981c152a873ed943b93b79ced4"
+		},
+		{
+			"ImportPath": "github.com/karrick/godirwalk/examples/walk-fast",
+			"Comment": "v1.7.5",
+			"Rev": "2de2192f9e35ce981c152a873ed943b93b79ced4"
+		},
+		{
+			"ImportPath": "github.com/karrick/godirwalk/examples/walk-stdlib",
+			"Comment": "v1.7.5",
+			"Rev": "2de2192f9e35ce981c152a873ed943b93b79ced4"
+		},
+		{
 			"ImportPath": "github.com/klauspost/crc32",
 			"Rev": "a3b15ae34567abb20a22992b989cd76f48d09c47"
 		},
@@ -730,6 +745,11 @@
 			"Rev": "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
 		},
 		{
+			"ImportPath": "github.com/prometheus/client_golang/prometheus/internal",
+			"Comment": "v0.9.1",
+			"Rev": "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
+		},
+		{
 			"ImportPath": "github.com/prometheus/client_golang/prometheus/promhttp",
 			"Comment": "v0.9.1",
 			"Rev": "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
@@ -762,10 +782,6 @@
 		{
 			"ImportPath": "github.com/seccomp/libseccomp-golang",
 			"Rev": "1b506fc7c24eec5a3693cdcbed40d9c226cfc6a1"
-		},
-		{
-			"ImportPath": "github.com/sigma/go-inotify",
-			"Rev": "c87b6cf5033d2c6486046f045eeebdc3d910fd38"
 		},
 		{
 			"ImportPath": "github.com/sirupsen/logrus",
@@ -864,12 +880,16 @@
 			"Rev": "a5b02f93d862f065920dd6a40dddc66b60d0dec4"
 		},
 		{
+			"ImportPath": "golang.org/x/sys/unix/linux",
+			"Rev": "a5b02f93d862f065920dd6a40dddc66b60d0dec4"
+		},
+		{
 			"ImportPath": "golang.org/x/sys/windows",
-			"Rev": "95c6576299259db960f6c5b9b69ea52422860fce"
+			"Rev": "a5b02f93d862f065920dd6a40dddc66b60d0dec4"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/windows/registry",
-			"Rev": "95c6576299259db960f6c5b9b69ea52422860fce"
+			"Rev": "a5b02f93d862f065920dd6a40dddc66b60d0dec4"
 		},
 		{
 			"ImportPath": "golang.org/x/text/secure/bidirule",
@@ -1004,16 +1024,15 @@
 		},
 		{
 			"ImportPath": "k8s.io/utils/clock",
-			"Rev": "aedf551cdb8b0119df3a19c65fde413a13b34997"
+			"Rev": "3dccf664f023863740c508fb4284e49742bedfa4"
 		},
 		{
 			"ImportPath": "k8s.io/utils/clock/testing",
-			"Rev": "aedf551cdb8b0119df3a19c65fde413a13b34997"
+			"Rev": "3dccf664f023863740c508fb4284e49742bedfa4"
 		},
 		{
-			"ImportPath": "github.com/prometheus/client_golang/prometheus/internal",
-			"Comment": "v0.9.1",
-			"Rev": "abad2d1bd44235a26707c172eab6bca5bf2dbad3"
+			"ImportPath": "k8s.io/utils/inotify",
+			"Rev": "3dccf664f023863740c508fb4284e49742bedfa4"
 		}
 	]
 }
