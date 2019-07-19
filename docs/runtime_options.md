@@ -116,7 +116,7 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --application_metrics_count_limit=100: Max number of application metrics to store (per container) (default 100)
 --collector_cert="": Collector's certificate, exposed to endpoints for certificate based authentication.
 --collector_key="": Key for the collector's certificate
---disable_metrics=tcp, udp: comma-separated list of metrics to be disabled. Options are 'disk', 'network', 'tcp', 'udp'. Note: tcp and udp are disabled by default due to high CPU usage. (default tcp,udp)
+--disable_metrics=tcp,udp,sched,process: comma-separated list of metrics to be disabled. Options are 'disk', 'network', 'tcp', 'udp', 'sched', 'process'. Note: tcp and udp are disabled by default due to high CPU usage. (default tcp,udp,sched,process)
 --prometheus_endpoint="/metrics": Endpoint to expose Prometheus metrics on (default "/metrics")
 ```
 
