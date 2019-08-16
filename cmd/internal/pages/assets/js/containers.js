@@ -606,11 +606,11 @@ function drawProcesses(isRoot, rootDir, processInfo) {
   }
   var titles = [
     'User', 'PID', 'PPID', 'Start Time', 'CPU %', 'MEM %', 'RSS',
-    'Virtual Size', 'Status', 'Running Time', 'Command'
+    'Virtual Size', 'Status', 'Running Time', 'Command', 'PSR'
   ];
   var titleTypes = [
     'string', 'number', 'number', 'string', 'number', 'number', 'number',
-    'number', 'string', 'string', 'string'
+    'number', 'string', 'string', 'string', 'number'
   ];
   var sortIndex = 4;
   if (isRoot) {
@@ -647,6 +647,7 @@ function drawProcesses(isRoot, rootDir, processInfo) {
           cgroup.substr(0, 30) + ' </a>';
       elements.push({v: cgroup, f: cgroupLink});
     }
+    elements.push(processInfo[i].psr);
     data.push(elements);
   }
   drawTable(titles, titleTypes, data, 'processes-top', 25, sortIndex);
