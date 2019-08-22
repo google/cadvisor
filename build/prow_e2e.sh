@@ -31,7 +31,7 @@ FORCE=true build/assets.sh
 if [[ ! -z "$(git diff --name-only pages)" ]]; then
   echo "Found changes to UI assets:"
   git diff --name-only pages
-  echo "Run: `make assets FORCE=true`"
+  echo "Run: 'make assets FORCE=true'"
   exit 1
 fi
 
