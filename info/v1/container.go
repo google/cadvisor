@@ -352,6 +352,10 @@ type MemoryStats struct {
 	// Units: Bytes.
 	MaxUsage uint64 `json:"max_usage"`
 
+	// Size of kernel memory allocated in bytes.
+	// Units: Bytes.
+	Kernel uint64 `json:"kernel"`
+
 	// Number of bytes of page cache memory.
 	// Units: Bytes.
 	Cache uint64 `json:"cache"`

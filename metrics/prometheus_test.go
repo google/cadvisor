@@ -132,6 +132,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						Cache:      14,
 						RSS:        15,
 						MappedFile: 16,
+						Kernel:     17,
 						Swap:       8192,
 					},
 					Network: info.NetworkStats{

@@ -47,6 +47,7 @@ func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info
 		stats.Memory.Cache = uint64(rand.Int63n(4096))
 		stats.Memory.RSS = uint64(rand.Int63n(4096))
 		stats.Memory.MappedFile = uint64(rand.Int63n(4096))
+		stats.Memory.Kernel = uint64(rand.Int63n(4096))
 		ret[i] = stats
 	}
 	return ret

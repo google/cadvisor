@@ -549,6 +549,7 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Memory.Usage = s.MemoryStats.Usage.Usage
 	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
 	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
+	ret.Memory.Kernel = s.MemoryStats.KernelUsage.Usage
 
 	if s.MemoryStats.UseHierarchy {
 		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]

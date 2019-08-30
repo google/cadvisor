@@ -337,6 +337,14 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.RSS), timestamp: s.Timestamp}}
 				},
+			},
+			{
+				name:      "container_memory_kernel",
+				help:      "Size of kernel memory allocated in bytes.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Kernel), timestamp: s.Timestamp}}
+				},
 			}, {
 				name:      "container_memory_mapped_file",
 				help:      "Size of memory mapped files in bytes.",
