@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
 	// s390/s390x changes
 	"runtime"
 
@@ -45,10 +46,12 @@ var (
 	cpuClockSpeedMHz     = regexp.MustCompile(`(?:cpu MHz|clock)\s*:\s*([0-9]+\.[0-9]+)(?:MHz)?`)
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
 	swapCapacityRegexp   = regexp.MustCompile(`SwapTotal:\s*([0-9]+) kB`)
+	hugePageSizeRegexp   = regexp.MustCompile(`hugepages-\s*([0-9]+)kB`)
 )
 
 const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 const cpuBusPath = "/sys/bus/cpu/devices/"
+const nodePath = "/sys/devices/system/node"
 
 // GetClockSpeed returns the CPU clock speed, given a []byte formatted as the /proc/cpuinfo file.
 func GetClockSpeed(procInfo []byte) (uint64, error) {
@@ -191,6 +194,45 @@ func getNodeIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	return nodeId, nil
 }
 
+/* Look for per-node hugepages info using node id */
+/* Such as: /sys/devices/system/node/node%d/hugepages */
+func getHugePagesInfoFromNode(nodePath string, nodeIndex int) ([]info.HugePagesInfo, error) {
+	hugePagesInfo := []info.HugePagesInfo{}
+	path := filepath.Join(nodePath, fmt.Sprintf("node%d/hugepages", nodeIndex))
+	files, err := ioutil.ReadDir(path)
+	// Ignore if per-node info is not available.
+	if err != nil {
+		klog.Errorf("failed to get hugepages information for node %d: %v", nodeIndex, err)
+		return nil, nil
+	}
+
+	for _, file := range files {
+		fileName := file.Name()
+		pageSize, err := parseCapacity([]byte(fileName), hugePageSizeRegexp)
+		if err != nil {
+			return nil, err
+		}
+
+		file := filepath.Join(path, fileName, "nr_hugepages")
+		num, err := ioutil.ReadFile(file)
+		if err != nil {
+			return nil, err
+		}
+
+		pageNum, err := strconv.ParseUint(string(bytes.TrimSpace(num)), 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		hugePagesInfo = append(hugePagesInfo, info.HugePagesInfo{
+			PageSize: pageSize / 1024, // Convert to kB.
+			NumPages: pageNum,
+		})
+	}
+
+	return hugePagesInfo, nil
+}
+
 func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 	nodes := []info.Node{}
 
@@ -305,6 +347,13 @@ func GetTopology(sysFs sysfs.SysFs, cpuinfo string) ([]info.Node, int, error) {
 			}
 			// Ignore unknown caches.
 		}
+
+		// Add a node-level huge pages info.
+		hugePagesInfo, err := getHugePagesInfoFromNode(nodePath, node.Id)
+		if err != nil {
+			return nil, -1, err
+		}
+		nodes[idx].HugePages = hugePagesInfo
 	}
 	return nodes, numCores, nil
 }
