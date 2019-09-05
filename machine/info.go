@@ -100,6 +100,9 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	}
 
 	cpuinfo, err := ioutil.ReadFile(filepath.Join(rootFs, "/proc/cpuinfo"))
+	if err != nil {
+		return nil, err
+	}
 	clockSpeed, err := GetClockSpeed(cpuinfo)
 	if err != nil {
 		return nil, err
