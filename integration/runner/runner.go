@@ -162,7 +162,6 @@ func PushAndRunTests(host, testDir string) (result error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s:%s/healthz", host, portStr))
 			if err == nil && resp.StatusCode == http.StatusOK {
 				done = true
-				break
 			}
 		}
 	}
