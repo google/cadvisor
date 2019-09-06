@@ -167,10 +167,11 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 
 	supportedFsType := map[string]bool{
 		// all ext systems are checked through prefix.
-		"btrfs": true,
-		"tmpfs": true,
-		"xfs":   true,
-		"zfs":   true,
+		"btrfs":   true,
+		"overlay": true,
+		"tmpfs":   true,
+		"xfs":     true,
+		"zfs":     true,
 	}
 
 	for _, mount := range mounts {
@@ -203,6 +204,11 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 				mount.Major = major
 				mount.Minor = minor
 			}
+		}
+
+		// overlay fix: Making mount source unique for all overlay mounts, using the mount's major and minor ids.
+		if mount.Fstype == "overlay" {
+			mount.Source = fmt.Sprintf("%s_%d-%d", mount.Source, mount.Major, mount.Minor)
 		}
 
 		partitions[mount.Source] = partition{
