@@ -223,6 +223,7 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 			}
 		}
 
+		// overlay fix: Making mount source unique for all overlay mounts, using the mount's major and minor ids.
 		if mount.Fstype == "overlay" {
 			mount.Source = fmt.Sprintf("%s_%d-%d", mount.Source, mount.Major, mount.Minor)
 		}
