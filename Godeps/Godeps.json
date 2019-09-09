@@ -624,13 +624,13 @@
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer",
-			"Comment": "v1.0.0-rc4-197-gd5b4a3ed",
-			"Rev": "d5b4a3eddbe4c890843da971b64f45a0f023f4db"
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/apparmor",
-			"Comment": "v1.0.0-rc4-197-gd5b4a3ed",
-			"Rev": "d5b4a3eddbe4c890843da971b64f45a0f023f4db"
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/cgroups",
@@ -669,13 +669,13 @@
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/keys",
-			"Comment": "v1.0.0-rc4-197-gd5b4a3ed",
-			"Rev": "d5b4a3eddbe4c890843da971b64f45a0f023f4db"
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/mount",
-			"Comment": "v1.0.0-rc4-197-gd5b4a3ed",
-			"Rev": "d5b4a3eddbe4c890843da971b64f45a0f023f4db"
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/seccomp",
@@ -684,23 +684,23 @@
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/stacktrace",
-			"Comment": "v1.0.0-rc4-197-gd5b4a3ed",
-			"Rev": "d5b4a3eddbe4c890843da971b64f45a0f023f4db"
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/system",
-			"Comment": "v1.0.0-rc4-197-gd5b4a3ed",
-			"Rev": "d5b4a3eddbe4c890843da971b64f45a0f023f4db"
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/user",
-			"Comment": "v1.0.0-rc4-197-gd5b4a3ed",
-			"Rev": "d5b4a3eddbe4c890843da971b64f45a0f023f4db"
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runc/libcontainer/utils",
-			"Comment": "v1.0.0-rc4-197-gd5b4a3ed",
-			"Rev": "d5b4a3eddbe4c890843da971b64f45a0f023f4db"
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		},
 		{
 			"ImportPath": "github.com/opencontainers/runtime-spec/specs-go",
@@ -1033,6 +1033,16 @@
 		{
 			"ImportPath": "k8s.io/utils/inotify",
 			"Rev": "3dccf664f023863740c508fb4284e49742bedfa4"
+		},
+		{
+			"ImportPath": "github.com/opencontainers/runc/vendor/github.com/pkg/errors",
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
+		},
+		{
+			"ImportPath": "github.com/opencontainers/runc/vendor/golang.org/x/sys/unix",
+			"Comment": "v1.0.0-rc8-79-ga6606a7a",
+			"Rev": "a6606a7ae9d9e00bf0a8721ee1d4eb095fcc4ad6"
 		}
 	]
 }

@@ -264,6 +264,10 @@ function drawCpuPerCoreUsage(elementId, machineInfo, stats) {
     var prev = stats.stats[i - 1];
     var intervalNs = getInterval(cur.timestamp, prev.timestamp);
 
+    if (cur.cpu.usage.per_cpu_usage == undefined) {
+        return;
+    }
+
     var elements = [];
     elements.push(cur.timestamp);
     for (var j = 0; j < machineInfo.num_cores; j++) {

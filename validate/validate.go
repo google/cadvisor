@@ -139,7 +139,7 @@ func validateCpuCfsBandwidth(available_cgroups map[string]int) string {
 	if !ok {
 		return "\tCpu cfs bandwidth status unknown: cpu cgroup not enabled.\n"
 	}
-	mnt, err := cgroups.FindCgroupMountpoint("cpu")
+	mnt, err := cgroups.FindCgroupMountpoint("/", "cpu")
 	if err != nil {
 		return "\tCpu cfs bandwidth status unknown: cpu cgroup not mounted.\n"
 	}
@@ -156,7 +156,7 @@ func validateMemoryAccounting(available_cgroups map[string]int) string {
 	if !ok {
 		return "\tHierarchical memory accounting status unknown: memory cgroup not enabled.\n"
 	}
-	mnt, err := cgroups.FindCgroupMountpoint("memory")
+	mnt, err := cgroups.FindCgroupMountpoint("/", "memory")
 	if err != nil {
 		return "\tHierarchical memory accounting status unknown: memory cgroup not mounted.\n"
 	}
@@ -216,7 +216,7 @@ func validateDockerInfo() (string, string) {
 func validateCgroupMounts() (string, string) {
 	const recommendedMount = "/sys/fs/cgroup"
 	desc := fmt.Sprintf("\tAny cgroup mount point that is detectible and accessible is supported. %s is recommended as a standard location.\n", recommendedMount)
-	mnt, err := cgroups.FindCgroupMountpoint("cpu")
+	mnt, err := cgroups.FindCgroupMountpoint("/", "cpu")
 	if err != nil {
 		out := "Could not locate cgroup mount point.\n"
 		out += desc
