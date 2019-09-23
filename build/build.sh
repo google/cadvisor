@@ -49,6 +49,11 @@ if [ -n "$VERBOSE" ]; then
   echo "Building with -ldflags $ldflags"
 fi
 
-GOBIN=$PWD go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
+if [ $1 == "ppc64le" ]
+then
+  GOBIN=$PWD env GOOS=linux GOARCH=ppc64le go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
+else
+  GOBIN=$PWD go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
+fi
 
 exit 0
