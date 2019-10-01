@@ -138,7 +138,7 @@ func (s *state) FetchLabels(fwID string, exID string) (map[string]string, error)
 		return labels, fmt.Errorf("executor ID %q not found: %v", exID, err)
 	}
 
-	labels[source] = *exec.Source
+	labels[source] = exec.GetSource()
 
 	err = s.fetchLabelsFromTask(exID, labels)
 	if err != nil {
