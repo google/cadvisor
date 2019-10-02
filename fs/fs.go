@@ -41,7 +41,6 @@ import (
 const (
 	LabelSystemRoot   = "root"
 	LabelDockerImages = "docker-images"
-	LabelRktImages    = "rkt-images"
 	LabelCrioImages   = "crio-images"
 )
 
@@ -118,7 +117,6 @@ func NewFsInfo(context Context) (FsInfo, error) {
 		fsInfo.mounts[mount.Mountpoint] = mount
 	}
 
-	fsInfo.addRktImagesLabel(context, mounts)
 	// need to call this before the log line below printing out the partitions, as this function may
 	// add a "partition" for devicemapper to fsInfo.partitions
 	fsInfo.addDockerImagesLabel(context, mounts)
@@ -293,20 +291,6 @@ func (self *RealFsInfo) addCrioImagesLabel(context Context, mounts []*mount.Info
 			crioPath = filepath.Dir(crioPath)
 		}
 		self.updateContainerImagesPath(LabelCrioImages, mounts, crioImagePaths)
-	}
-}
-
-func (self *RealFsInfo) addRktImagesLabel(context Context, mounts []*mount.Info) {
-	if context.RktPath != "" {
-		rktPath := context.RktPath
-		rktImagesPaths := map[string]struct{}{
-			"/": {},
-		}
-		for rktPath != "/" && rktPath != "." {
-			rktImagesPaths[rktPath] = struct{}{}
-			rktPath = filepath.Dir(rktPath)
-		}
-		self.updateContainerImagesPath(LabelRktImages, mounts, rktImagesPaths)
 	}
 }
 
