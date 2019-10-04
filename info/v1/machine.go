@@ -39,7 +39,7 @@ type Node struct {
 	Id int `json:"node_id"`
 	// Per-node memory
 	Memory    uint64          `json:"memory"`
-	HugePages []HugePagesInfo `json:"huge_pages"`
+	HugePages []HugePagesInfo `json:"hugepages"`
 	Cores     []Core          `json:"cores"`
 	Caches    []Cache         `json:"caches"`
 }
