@@ -395,7 +395,7 @@ func addNode(nodes *[]info.Node, id int) (int, error) {
 		}
 		// Look for per-node hugepages info using node id
 		// Such as: /sys/devices/system/node/node%d/hugepages
-		hugepagesDirectory := nodePath + "/node" + string(id) + "/hugepages/"
+		hugepagesDirectory := fmt.Sprintf("%s/node%d/hugepages/", nodePath, id)
 		hugePagesInfo, err := GetHugePagesInfo(hugepagesDirectory)
 		if err != nil {
 			return -1, err
