@@ -143,3 +143,26 @@ func TestTopologyNodeId(t *testing.T) {
 		t.Errorf("Expected core 1234 , found %d", val)
 	}
 }
+
+func TestGetHugePagesInfo(t *testing.T) {
+	testPath := "./testdata/hugepages/"
+	expected := []info.HugePagesInfo{
+		{
+			NumPages: 1,
+			PageSize: 1048576,
+		},
+		{
+			NumPages: 2,
+			PageSize: 2048,
+		},
+	}
+
+	val, err := GetHugePagesInfo(testPath)
+	if err != nil {
+		t.Errorf("Failed to GetHugePagesInfo() for sample path %s: %v", testPath, err)
+	}
+
+	if !reflect.DeepEqual(expected, val) {
+		t.Errorf("Expected HugePagesInfo %+v, got %+v", expected, val)
+	}
+}

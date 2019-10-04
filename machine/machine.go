@@ -194,6 +194,8 @@ func getNodeIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 }
 
 // GetHugePagesInfo returns information about pre-allocated huge pages
+// hugepagesDirectory should be top directory of hugepages
+// Such as: /sys/kernel/mm/hugepages/
 func GetHugePagesInfo(hugepagesDirectory string) ([]info.HugePagesInfo, error) {
 	var hugePagesInfo []info.HugePagesInfo
 	files, err := ioutil.ReadDir(hugepagesDirectory)
