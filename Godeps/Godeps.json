@@ -242,11 +242,6 @@
 			"Rev": "7f080b6c11ac2d2347c3cd7521e810207ea1a041"
 		},
 		{
-			"ImportPath": "github.com/coreos/rkt/api/v1alpha",
-			"Comment": "v1.25.0",
-			"Rev": "ec37f3cb649bfb72408906e7cbf330e4aeda1075"
-		},
-		{
 			"ImportPath": "github.com/cyphar/filepath-securejoin",
 			"Comment": "v0.2.1-1-gae69057",
 			"Rev": "ae69057f2299fb9e5ba2df738607e6a505b74ab6"

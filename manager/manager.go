@@ -1121,9 +1121,6 @@ func (self *manager) watchForNewContainers(quit chan error) error {
 				switch {
 				case event.EventType == watcher.ContainerAdd:
 					switch event.WatchSource {
-					// the Rkt and Raw watchers can race, and if Raw wins, we want Rkt to override and create a new handler for Rkt containers
-					case watcher.Rkt:
-						err = self.overrideContainer(event.Name, event.WatchSource)
 					default:
 						err = self.createContainer(event.Name, event.WatchSource)
 					}

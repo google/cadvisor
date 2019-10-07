@@ -20,6 +20,5 @@ import (
 	_ "github.com/google/cadvisor/container/crio/install"
 	_ "github.com/google/cadvisor/container/docker/install"
 	_ "github.com/google/cadvisor/container/mesos/install"
-	_ "github.com/google/cadvisor/container/rkt/install"
 	_ "github.com/google/cadvisor/container/systemd/install"
 )
