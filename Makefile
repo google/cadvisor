@@ -40,7 +40,7 @@ vet:
 
 build: assets
 	@echo ">> building binaries"
-	@./build/build.sh
+	@./build/build.sh `arch`
 
 assets:
 	@echo ">> building assets"
@@ -50,8 +50,8 @@ release:
 	@echo ">> building release binaries"
 	@./build/release.sh
 
-docker:
-	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
+docker-%:
+	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile-$* .
 
 presubmit: vet
 	@echo ">> checking go formatting"
