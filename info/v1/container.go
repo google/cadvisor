@@ -564,6 +564,12 @@ type AcceleratorStats struct {
 	DutyCycle uint64 `json:"duty_cycle"`
 }
 
+type UlimitSpec struct {
+	Name      string `json:"name"`
+	SoftLimit int64  `json:"soft_limit"`
+	HardLimit int64  `json:"hard_limit"`
+}
+
 type ProcessStats struct {
 	// Number of processes
 	ProcessCount uint64 `json:"process_count"`
@@ -579,6 +585,9 @@ type ProcessStats struct {
 
 	// Maxium number of threads allowed in container
 	ThreadsMax uint64 `json:"threads_max,omitempty"`
+
+	// Ulimits for the top-level container process
+	Ulimits []UlimitSpec `json:"ulimits,omitempty"`
 }
 
 type ContainerStats struct {

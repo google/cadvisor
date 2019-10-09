@@ -16,6 +16,7 @@ package libcontainer
 
 import (
 	"os"
+	"reflect"
 	"testing"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -174,4 +175,43 @@ func TestSetProcessesStats(t *testing.T) {
 		t.Fatalf("expected max threads: %d == %d", ret.Processes.ThreadsMax, expected.Processes.ThreadsMax)
 	}
 
+}
+
+func TestParseLimitsFile(t *testing.T) {
+	var testData = []struct {
+		limitLine string
+		expected  []info.UlimitSpec
+	}{
+		{
+			"Limit                     Soft Limit           Hard Limit           Units   \n",
+			[]info.UlimitSpec{},
+		},
+		{
+			"Max open files            8192                 8192                 files   \n",
+			[]info.UlimitSpec{{Name: "max_open_files", SoftLimit: 8192, HardLimit: 8192}},
+		},
+		{
+			"Max open files            85899345920          85899345920          files   \n",
+			[]info.UlimitSpec{{Name: "max_open_files", SoftLimit: 85899345920, HardLimit: 85899345920}},
+		},
+		{
+			"Max open files            gibberish1           8192                 files   \n",
+			[]info.UlimitSpec{},
+		},
+		{
+			"Max open files            8192                 0xbaddata            files   \n",
+			[]info.UlimitSpec{},
+		},
+		{
+			"Max stack size            8192                 8192                 files   \n",
+			[]info.UlimitSpec{},
+		},
+	}
+
+	for _, testItem := range testData {
+		actual := processLimitsFile(testItem.limitLine)
+		if reflect.DeepEqual(actual, testItem.expected) == false {
+			t.Fatalf("Parsed ulimit doesn't match expected values for line: %s", testItem.limitLine)
+		}
+	}
 }

@@ -1079,6 +1079,23 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					}
 				},
 			},
+			{
+				name:        "container_ulimits_soft",
+				help:        "Soft ulimit values for the container root process. Unlimited if -1, except priority and nice",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"ulimit"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Processes.Ulimits))
+					for _, ulimit := range s.Processes.Ulimits {
+						values = append(values, metricValue{
+							value:     float64(ulimit.SoftLimit),
+							labels:    []string{ulimit.Name},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			},
 		}...)
 
 	}

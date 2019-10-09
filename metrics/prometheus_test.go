@@ -260,6 +260,13 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						SocketCount:    3,
 						ThreadsCurrent: 5,
 						ThreadsMax:     100,
+						Ulimits: []info.UlimitSpec{
+							{
+								Name:      "max_open_files",
+								SoftLimit: 16384,
+								HardLimit: 16384,
+							},
+						},
 					},
 					TaskStats: info.LoadStats{
 						NrSleeping:        50,
