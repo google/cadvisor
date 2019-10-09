@@ -20,6 +20,7 @@ GO_FLAGS=${GO_FLAGS:-"-tags netgo"}    # Extra go flags to use in the build.
 BUILD_USER=${BUILD_USER:-"${USER}@${HOSTNAME}"}
 BUILD_DATE=${BUILD_DATE:-$( date +%Y%m%d-%H:%M:%S )}
 VERBOSE=${VERBOSE:-}
+GOARCH=$1
 
 repo_path="github.com/google/cadvisor"
 
@@ -49,11 +50,12 @@ if [ -n "$VERBOSE" ]; then
   echo "Building with -ldflags $ldflags"
 fi
 
-if [ $1 == "ppc64le" ]
+
+if [ -z "$GOARCH" ]
 then
-  GOBIN=$PWD env GOOS=linux GOARCH=ppc64le go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
-else
   GOBIN=$PWD go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
+else
+  GOBIN=$PWD env GOOS=linux GOARCH=$GOARCH go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
 fi
 
 exit 0
