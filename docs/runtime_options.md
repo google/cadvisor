@@ -79,6 +79,7 @@ Per-container housekeeping is run once on each container cAdvisor tracks. This t
 --global_housekeeping_interval=1m0s: Interval between global housekeepings
 --housekeeping_interval=1s: Interval between container housekeepings
 --max_housekeeping_interval=1m0s: Largest interval to allow between container housekeepings (default 1m0s)
+--housekeeping_jitter_factor=1.0: Housekeeping interval jitter factor. Full interval equals interval + factor * random(interval) (default 1)
 ```
 
 ## HTTP
