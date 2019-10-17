@@ -14,7 +14,7 @@
 
 GO := go
 pkgs  = $(shell $(GO) list ./... | grep -v vendor)
-ARCH ?= $(shell go env GOOS)-$(shell go env GOARCH)
+arch ?= $(shell go env GOARCH)
 
 all: presubmit build test
 
@@ -41,7 +41,7 @@ vet:
 
 build: assets
 	@echo ">> building binaries"
-	@./build/build.sh $(ARCH)
+	@./build/build.sh $(arch)
 
 assets:
 	@echo ">> building assets"
