@@ -24,7 +24,7 @@ Example:
     }
 
 */
-package inotify
+package inotify // import "k8s.io/utils/inotify"
 
 import (
 	"errors"
