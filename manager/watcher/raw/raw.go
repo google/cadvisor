@@ -87,7 +87,7 @@ func (self *rawContainerWatcher) Start(events chan watcher.ContainerEvent) error
 					glog.Warningf("Error while processing event (%+v): %v", event, err)
 				}
 			case err := <-self.watcher.Error():
-				glog.Warningf("Error while watching %q:", "/", err)
+				glog.Warningf("Error while watching %q: %s", "/", err)
 			case <-self.stopWatcher:
 				err := self.watcher.Close()
 				if err == nil {
