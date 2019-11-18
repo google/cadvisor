@@ -87,6 +87,8 @@ func TestScanUDPStats(t *testing.T) {
 	if stats != udpstats {
 		t.Errorf("Expected %#v, got %#v", udpstats, stats)
 	}
+
+	r.Close()
 }
 
 // https://github.com/docker/libcontainer/blob/v2.2.1/cgroups/fs/cpuacct.go#L19

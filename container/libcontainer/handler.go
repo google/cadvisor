@@ -414,6 +414,8 @@ func udpStatsFromProc(rootFs string, pid int, file string) (info.UdpStat, error)
 		return udpStats, fmt.Errorf("couldn't read udp stats: %v", err)
 	}
 
+	r.Close()
+
 	return udpStats, nil
 }
 
