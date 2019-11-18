@@ -39,6 +39,7 @@ require (
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
+	github.com/jteeuwen/go-bindata v3.0.7+incompatible // indirect
 	github.com/karrick/godirwalk v1.7.5
 	github.com/klauspost/crc32 v0.0.0-20151223135126-a3b15ae34567 // indirect
 	github.com/kr/pretty v0.0.0-20140723054909-088c856450c0
@@ -55,7 +56,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.0-rc6.0.20170604055404-372ad780f634 // indirect
 	github.com/opencontainers/runc v1.0.0-rc8.0.20190906011214-a6606a7ae9d9
 	github.com/opencontainers/runtime-spec v1.0.0
-	github.com/opencontainers/selinux v1.0.0-rc1.0.20170621221121-4a2974bf1ee9 // indirect
+	github.com/opencontainers/selinux v1.3.1-0.20190929122143-5215b1806f52 // indirect
 	github.com/pborman/uuid v0.0.0-20150824212802-cccd189d45f7 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
@@ -64,10 +65,10 @@ require (
 	github.com/prometheus/common v0.0.0-20170220103846-49fee292b27b
 	github.com/prometheus/procfs v0.0.0-20170419201554-1e2146578273 // indirect
 	github.com/seccomp/libseccomp-golang v0.0.0-20150813023252-1b506fc7c24e // indirect
-	github.com/sirupsen/logrus v1.0.4-0.20170822132746-89742aefa4b2 // indirect
+	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.3.0
-	github.com/syndtr/gocapability v0.0.0-20160928074757-e7cb7fa329f4 // indirect
+	github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2 // indirect
 	github.com/vishvananda/netlink v0.0.0-20150820014904-1e2e08e8a2dc // indirect
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	golang.org/x/net v0.0.0-20190603091049-60506f45cf65
