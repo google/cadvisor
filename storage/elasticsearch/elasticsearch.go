@@ -69,7 +69,7 @@ func new() (storage.StorageDriver, error) {
 
 func (self *elasticStorage) containerStatsAndDefaultValues(
 	cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
-	timestamp := stats.Timestamp.UnixNano() / 1E3
+	timestamp := stats.Timestamp.UnixNano() / 1e3
 	var containerName string
 	if len(cInfo.ContainerReference.Aliases) > 0 {
 		containerName = cInfo.ContainerReference.Aliases[0]
