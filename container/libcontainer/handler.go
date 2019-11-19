@@ -408,13 +408,11 @@ func udpStatsFromProc(rootFs string, pid int, file string) (info.UdpStat, error)
 	if err != nil {
 		return udpStats, fmt.Errorf("failure opening %s: %v", udpStatsFile, err)
 	}
-
-	udpStats, err = scanUdpStats(r)
+	defer r.Close()
 	if err != nil {
 		return udpStats, fmt.Errorf("couldn't read udp stats: %v", err)
 	}
 
-	r.Close()
 
 	return udpStats, nil
 }

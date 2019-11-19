@@ -71,6 +71,7 @@ func TestScanUDPStats(t *testing.T) {
 	if err != nil {
 		t.Errorf("failure opening %s: %v", udpStatsFile, err)
 	}
+	defer r.Close()
 
 	stats, err := scanUdpStats(r)
 	if err != nil {
@@ -88,7 +89,6 @@ func TestScanUDPStats(t *testing.T) {
 		t.Errorf("Expected %#v, got %#v", udpstats, stats)
 	}
 
-	r.Close()
 }
 
 // https://github.com/docker/libcontainer/blob/v2.2.1/cgroups/fs/cpuacct.go#L19
