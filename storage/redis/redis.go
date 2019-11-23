@@ -66,7 +66,7 @@ func (self *redisStorage) defaultReadyToFlush() bool {
 
 // We must add some default params (for example: MachineName,ContainerName...)because containerStats do not include them
 func (self *redisStorage) containerStatsAndDefaultValues(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
-	timestamp := stats.Timestamp.UnixNano() / 1E3
+	timestamp := stats.Timestamp.UnixNano() / 1e3
 	var containerName string
 	if len(cInfo.ContainerReference.Aliases) > 0 {
 		containerName = cInfo.ContainerReference.Aliases[0]
