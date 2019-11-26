@@ -176,9 +176,11 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 		if !strings.HasPrefix(mount.Fstype, "ext") && !supportedFsType[mount.Fstype] {
 			continue
 		}
-		// Avoid bind mounts.
+		// Avoid bind mounts, exclude tmpfs.
 		if _, ok := partitions[mount.Source]; ok {
-			continue
+			if mount.Fstype != "tmpfs" {
+				continue
+			}
 		}
 
 		hasPrefix := false
@@ -192,6 +194,10 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 			continue
 		}
 
+		// using mountpoint to replace device once fstype it tmpfs
+		if mount.Fstype == "tmpfs" {
+			mount.Source = mount.Mountpoint
+		}
 		// btrfs fix: following workaround fixes wrong btrfs Major and Minor Ids reported in /proc/self/mountinfo.
 		// instead of using values from /proc/self/mountinfo we use stat to get Ids from btrfs mount point
 		if mount.Fstype == "btrfs" && mount.Major == 0 && strings.HasPrefix(mount.Source, "/dev/") {
