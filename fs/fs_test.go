@@ -517,6 +517,8 @@ func TestProcessMounts(t *testing.T) {
 				{Root: "/", Mountpoint: "/d", Source: "/dev/sdd", Fstype: "xfs", Major: 253, Minor: 3},
 				{Root: "/", Mountpoint: "/e", Source: "/dev/sde", Fstype: "zfs", Major: 253, Minor: 4},
 				{Root: "/", Mountpoint: "/f", Source: "overlay", Fstype: "overlay", Major: 253, Minor: 5},
+				{Root: "/", Mountpoint: "/test1", Source: "tmpfs", Fstype: "tmpfs", Major: 253, Minor: 4},
+				{Root: "/", Mountpoint: "/test2", Source: "tmpfs", Fstype: "tmpfs", Major: 253, Minor: 4},
 			},
 			expected: map[string]partition{
 				"/dev/sda":      {fsType: "ext3", mountpoint: "/a", major: 253, minor: 0},
@@ -525,6 +527,8 @@ func TestProcessMounts(t *testing.T) {
 				"/dev/sdd":      {fsType: "xfs", mountpoint: "/d", major: 253, minor: 3},
 				"/dev/sde":      {fsType: "zfs", mountpoint: "/e", major: 253, minor: 4},
 				"overlay_253-5": {fsType: "overlay", mountpoint: "/f", major: 253, minor: 5},
+				"/test1":        {fsType: "tmpfs", mountpoint: "/test1", major: 253, minor: 4},
+				"/test2":        {fsType: "tmpfs", mountpoint: "/test2", major: 253, minor: 4},
 			},
 		},
 	}
