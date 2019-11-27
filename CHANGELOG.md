@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.35.0 (2019-11-27)
+- Add hugepage info per-numa-node
+- Add support for cgoups v2 unified higherarchy
+- Drop support for rkt
+- Fix a bug that prevented running with multiple tmpfs mounts
+
 ### 0.34.0 (2019-08-26)
 - Fix disk stats in LXD using ZFS storage pool
 - Support monitoring non-k8s containerd namespaces
