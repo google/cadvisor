@@ -39,8 +39,8 @@ require (
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
-	github.com/jteeuwen/go-bindata v3.0.7+incompatible // indirect
 	github.com/karrick/godirwalk v1.7.5
+	github.com/kevinburke/go-bindata v3.16.0+incompatible // indirect
 	github.com/klauspost/crc32 v0.0.0-20151223135126-a3b15ae34567 // indirect
 	github.com/kr/pretty v0.0.0-20140723054909-088c856450c0
 	github.com/kr/text v0.0.0-20130911015532-6807e777504f // indirect
@@ -79,8 +79,6 @@ require (
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20170731182057-09f6ed296fc6 // indirect
 	google.golang.org/grpc v1.7.0
-	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
-	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/olivere/elastic.v2 v2.0.12
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/klog v0.3.0
