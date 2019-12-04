@@ -43,7 +43,7 @@ func NewBuddyInfo() ([]BuddyInfo, error) {
 
 // NewBuddyInfo reads the buddyinfo statistics from the specified `proc` filesystem.
 func (fs FS) NewBuddyInfo() ([]BuddyInfo, error) {
-	file, err := os.Open(fs.Path("buddyinfo"))
+	file, err := os.Open(fs.proc.Path("buddyinfo"))
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func parseBuddyInfo(r io.Reader) ([]BuddyInfo, error) {
 	for scanner.Scan() {
 		var err error
 		line := scanner.Text()
-		parts := strings.Fields(string(line))
+		parts := strings.Fields(line)
 
 		if len(parts) < 4 {
 			return nil, fmt.Errorf("invalid number of fields when parsing buddyinfo")

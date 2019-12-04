@@ -3,7 +3,7 @@ module github.com/google/cadvisor
 go 1.13
 
 require (
-	cloud.google.com/go v0.1.1-0.20160913182117-3b1ae45394a2
+	cloud.google.com/go v0.26.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Microsoft/go-winio v0.3.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
@@ -17,7 +17,8 @@ require (
 	github.com/blang/semver v3.1.0+incompatible
 	github.com/checkpoint-restore/go-criu v0.0.0-20190109184317-bdb7599cd87b // indirect
 	github.com/containerd/console v0.0.0-20170925154832-84eeaae905fa // indirect
-	github.com/containerd/containerd v1.0.2
+	github.com/containerd/containerd v1.3.0-beta.2.0.20190828155532-0293cbd26c69
+	github.com/containerd/ttrpc v0.0.0-20191028202541-4f1b8fe65a5c // indirect
 	github.com/containerd/typeurl v0.0.0-20190911142611-5eb25027c9fd
 	github.com/coreos/go-systemd v0.0.0-20160527140244-4484981625c1 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2-0.20170720062807-ae69057f2299 // indirect
@@ -32,7 +33,6 @@ require (
 	github.com/go-ini/ini v1.9.0 // indirect
 	github.com/godbus/dbus v0.0.0-20151105175453-c7fdd8b5cd55 // indirect
 	github.com/gogo/protobuf v1.3.0
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/snappy v0.0.0-20150730031844-723cc1e459b8 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
@@ -63,22 +63,19 @@ require (
 	github.com/prometheus/client_golang v0.9.1
 	github.com/prometheus/client_model v0.0.0-20170216185247-6f3806018612
 	github.com/prometheus/common v0.0.0-20170220103846-49fee292b27b
-	github.com/prometheus/procfs v0.0.0-20170419201554-1e2146578273 // indirect
 	github.com/seccomp/libseccomp-golang v0.0.0-20150813023252-1b506fc7c24e // indirect
-	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2 // indirect
 	github.com/vishvananda/netlink v0.0.0-20150820014904-1e2e08e8a2dc // indirect
 	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
 	golang.org/x/net v0.0.0-20190603091049-60506f45cf65
-	golang.org/x/oauth2 v0.0.0-20150321034511-ca8a464d23d5
-	golang.org/x/sys v0.0.0-20190509141414-a5b02f93d862
+	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
+	golang.org/x/sys v0.0.0-20190522044717-8097e1b27ff5
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/api v0.0.0-20150730141719-0c2979aeaa5b
 	google.golang.org/appengine v1.6.5 // indirect
-	google.golang.org/genproto v0.0.0-20170731182057-09f6ed296fc6 // indirect
-	google.golang.org/grpc v1.7.0
+	google.golang.org/grpc v1.21.0
 	gopkg.in/olivere/elastic.v2 v2.0.12
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/klog v0.3.0

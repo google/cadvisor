@@ -30,12 +30,6 @@ type Timespec struct {
 	Nsec int64
 }
 
-type StTimespec struct {
-	Sec  int64
-	Nsec int32
-	_    [4]byte
-}
-
 type Timeval struct {
 	Sec  int64
 	Usec int32
@@ -103,9 +97,9 @@ type Stat_t struct {
 	Gid      uint32
 	Rdev     uint64
 	Ssize    int32
-	Atim     StTimespec
-	Mtim     StTimespec
-	Ctim     StTimespec
+	Atim     Timespec
+	Mtim     Timespec
+	Ctim     Timespec
 	Blksize  int64
 	Blocks   int64
 	Vfstype  int32

@@ -1,6 +1,5 @@
-# cloud.google.com/go v0.1.1-0.20160913182117-3b1ae45394a2
+# cloud.google.com/go v0.26.0
 cloud.google.com/go/compute/metadata
-cloud.google.com/go/internal
 # github.com/Microsoft/go-winio v0.3.2
 github.com/Microsoft/go-winio
 # github.com/Rican7/retry v0.1.1-0.20160712041035-272ad122d6e5
@@ -45,16 +44,18 @@ github.com/blang/semver
 github.com/checkpoint-restore/go-criu/rpc
 # github.com/containerd/console v0.0.0-20170925154832-84eeaae905fa
 github.com/containerd/console
-# github.com/containerd/containerd v1.0.2
+# github.com/containerd/containerd v1.3.0-beta.2.0.20190828155532-0293cbd26c69
 github.com/containerd/containerd/api/services/containers/v1
 github.com/containerd/containerd/api/services/tasks/v1
 github.com/containerd/containerd/api/services/version/v1
 github.com/containerd/containerd/api/types
 github.com/containerd/containerd/api/types/task
 github.com/containerd/containerd/containers
-github.com/containerd/containerd/dialer
 github.com/containerd/containerd/errdefs
 github.com/containerd/containerd/namespaces
+github.com/containerd/containerd/pkg/dialer
+# github.com/containerd/ttrpc v0.0.0-20191028202541-4f1b8fe65a5c
+github.com/containerd/ttrpc
 # github.com/containerd/typeurl v0.0.0-20190911142611-5eb25027c9fd
 github.com/containerd/typeurl
 # github.com/coreos/go-systemd v0.0.0-20160527140244-4484981625c1
@@ -206,9 +207,9 @@ github.com/prometheus/client_model/go
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 github.com/prometheus/common/model
-# github.com/prometheus/procfs v0.0.0-20170419201554-1e2146578273
+# github.com/prometheus/procfs v0.0.0-20190522114515-bc1a522cf7b1
 github.com/prometheus/procfs
-github.com/prometheus/procfs/xfs
+github.com/prometheus/procfs/internal/fs
 # github.com/seccomp/libseccomp-golang v0.0.0-20150813023252-1b506fc7c24e
 github.com/seccomp/libseccomp-golang
 # github.com/sirupsen/logrus v1.4.2
@@ -235,12 +236,12 @@ golang.org/x/net/internal/socks
 golang.org/x/net/internal/timeseries
 golang.org/x/net/proxy
 golang.org/x/net/trace
-# golang.org/x/oauth2 v0.0.0-20150321034511-ca8a464d23d5
+# golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
-# golang.org/x/sys v0.0.0-20190509141414-a5b02f93d862
+# golang.org/x/sys v0.0.0-20190522044717-8097e1b27ff5
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
@@ -261,26 +262,41 @@ google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/remote_api
 google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/urlfetch
-# google.golang.org/genproto v0.0.0-20170731182057-09f6ed296fc6
+# google.golang.org/genproto v0.0.0-20190522204451-c2c4e71fbf69
 google.golang.org/genproto/googleapis/rpc/status
-# google.golang.org/grpc v1.7.0
+# google.golang.org/grpc v1.21.0
 google.golang.org/grpc
 google.golang.org/grpc/balancer
+google.golang.org/grpc/balancer/base
+google.golang.org/grpc/balancer/roundrobin
+google.golang.org/grpc/binarylog/grpc_binarylog_v1
 google.golang.org/grpc/codes
 google.golang.org/grpc/connectivity
 google.golang.org/grpc/credentials
-google.golang.org/grpc/grpclb/grpc_lb_v1/messages
+google.golang.org/grpc/credentials/internal
+google.golang.org/grpc/encoding
+google.golang.org/grpc/encoding/proto
 google.golang.org/grpc/grpclog
 google.golang.org/grpc/internal
+google.golang.org/grpc/internal/backoff
+google.golang.org/grpc/internal/balancerload
+google.golang.org/grpc/internal/binarylog
+google.golang.org/grpc/internal/channelz
+google.golang.org/grpc/internal/envconfig
+google.golang.org/grpc/internal/grpcrand
+google.golang.org/grpc/internal/grpcsync
+google.golang.org/grpc/internal/syscall
+google.golang.org/grpc/internal/transport
 google.golang.org/grpc/keepalive
 google.golang.org/grpc/metadata
 google.golang.org/grpc/naming
 google.golang.org/grpc/peer
 google.golang.org/grpc/resolver
+google.golang.org/grpc/resolver/dns
+google.golang.org/grpc/resolver/passthrough
 google.golang.org/grpc/stats
 google.golang.org/grpc/status
 google.golang.org/grpc/tap
-google.golang.org/grpc/transport
 # gopkg.in/olivere/elastic.v2 v2.0.12
 gopkg.in/olivere/elastic.v2
 gopkg.in/olivere/elastic.v2/uritemplates
