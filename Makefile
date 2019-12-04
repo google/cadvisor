@@ -14,6 +14,14 @@
 
 GO := go
 pkgs  = $(shell $(GO) list ./... | grep -v vendor)
+arch ?= $(shell go env GOARCH)
+
+ifeq ($(arch), amd64)
+  Dockerfile_tag := ''
+else
+  Dockerfile_tag := '.''$(arch)'
+endif
+
 
 all: presubmit build test
 
@@ -40,7 +48,7 @@ vet:
 
 build: assets
 	@echo ">> building binaries"
-	@./build/build.sh
+	@./build/build.sh $(arch)
 
 assets:
 	@echo ">> building assets"
@@ -50,8 +58,8 @@ release:
 	@echo ">> building release binaries"
 	@./build/release.sh
 
-docker:
-	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
+docker-%:
+	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile$(Dockerfile_tag) .
 
 presubmit: vet
 	@echo ">> checking go formatting"
