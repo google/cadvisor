@@ -238,6 +238,9 @@ container_threads{container_env_foo_env="prod",container_label_foo_label="bar",i
 # HELP container_threads_max Maximum number of threads allowed inside the container, infinity if value is zero
 # TYPE container_threads_max gauge
 container_threads_max{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 100 1395066363000
+# HELP container_ulimits_soft Soft ulimit values for the container root process. Unlimited if -1, except priority and nice
+# TYPE container_ulimits_soft gauge
+container_ulimits_soft{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",ulimit="max_open_files",zone_name="hello"} 16384 1395066363000
 # HELP machine_cpu_cores Number of CPU cores on the machine.
 # TYPE machine_cpu_cores gauge
 machine_cpu_cores 4
