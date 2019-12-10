@@ -21,6 +21,7 @@ import (
 
 var ArgDbUsername = flag.String("storage_driver_user", "root", "database username")
 var ArgDbPassword = flag.String("storage_driver_password", "root", "database password")
+var ArgDbPasswordFile = flag.String("storage_driver_password_file", "", "database password from file")
 var ArgDbHost = flag.String("storage_driver_host", "localhost:8086", "database host:port")
 var ArgDbName = flag.String("storage_driver_db", "cadvisor", "database name")
 var ArgDbTable = flag.String("storage_driver_table", "stats", "table name")
