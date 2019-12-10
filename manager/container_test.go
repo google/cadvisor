@@ -287,3 +287,28 @@ func TestConcurrentOnDemandHousekeeping(t *testing.T) {
 	checkNumStats(t, memoryCache, 1)
 	mockHandler.AssertExpectations(t)
 }
+
+func TestOnDemandHousekeepingReturnsAfterStopped(t *testing.T) {
+	statsList := itest.GenerateRandomStats(1, 4, 1*time.Second)
+	stats := statsList[0]
+
+	cd, mockHandler, memoryCache, fakeClock := newTestContainerData(t)
+	mockHandler.On("GetStats").Return(stats, nil)
+
+	// trigger housekeeping update
+	go cd.OnDemandHousekeeping(0 * time.Second)
+	cd.housekeepingTick(fakeClock.NewTimer(time.Minute).C(), testLongHousekeeping)
+
+	checkNumStats(t, memoryCache, 1)
+
+	fakeClock.Step(2 * time.Second)
+
+	cd.Stop()
+	// housekeeping tick should detect stop and not store any more metrics
+	assert.False(t, cd.housekeepingTick(fakeClock.NewTimer(time.Minute).C(), testLongHousekeeping))
+	fakeClock.Step(1 * time.Second)
+	// on demand housekeeping should not block and return
+	cd.OnDemandHousekeeping(-1 * time.Second)
+
+	mockHandler.AssertExpectations(t)
+}
