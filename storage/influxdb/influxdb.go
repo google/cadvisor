@@ -17,8 +17,10 @@ package influxdb
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -76,11 +78,33 @@ const (
 	serFsUsage string = "fs_usage"
 )
 
+// read a db password from a file 
+func readPassword(passwordFile string) (string, error) {
+
+	passwordFileData, err := ioutil.ReadFile(passwordFile)
+	if err != nil {
+		return "", err
+	}
+
+	password := string(passwordFileData)
+	password = strings.TrimSuffix(password, "\n")
+
+	return password, nil
+}
+
 func new() (storage.StorageDriver, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, err
 	}
+	
+	if *storage.ArgDbPasswordFile != "" {
+		*storage.ArgDbPassword, err = readPassword(*storage.ArgDbPasswordFile)
+		if err != nil {
+			return nil, err
+		}
+	}	
+	
 	return newStorage(
 		hostname,
 		*storage.ArgDbTable,
