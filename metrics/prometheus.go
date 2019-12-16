@@ -17,7 +17,6 @@ package metrics
 import (
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/google/cadvisor/container"
@@ -1675,37 +1674,27 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 				)
 			}
 		}
+                if c.includedMetrics.Has(container.AppMetrics) {
+                    for metricLabel, v := range stats.CustomMetrics {
+                        for _, metric := range v {
+                            clabels := make([]string, len(rawLabels), len(rawLabels) + len(metric.Labels))
+                            cvalues := make([]string, len(rawLabels), len(rawLabels) + len(metric.Labels))
+                            copy(clabels, labels)
+                            copy(cvalues, values)
+                            for label, value := range metric.Labels {
+                                if label == "__name__" {
+                                    continue
+                                }
+                                clabels = append(clabels, sanitizeLabelName(label))
+                                cvalues = append(cvalues, value)
+                            }
+                            desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
+                            ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), cvalues...)
+                        }
+                    }
+                }
 	}
 
-	if c.includedMetrics.Has(container.AppMetrics) {
-		for _, container := range containers {
-			cstats := container.Stats
-			if len(cstats) > 0 {
-				last := cstats[len(cstats)-1]
-				for metricLabel, v := range last.CustomMetrics {
-					for _, metric := range v {
-						values := make([]string, 0, len(metric.Labels)+2)
-						labels := make([]string, 0, len(metric.Labels)+2)
-						labels = append(labels, "container_name")
-						values = append(values, container.ContainerReference.Name)
-						alias := strings.Join(container.ContainerReference.Aliases, ".")
-						labels = append(labels, "container_alias")
-						values = append(values, alias)
-						for label, value := range metric.Labels {
-							if label == "__name__" {
-								continue
-							}
-							labels = append(labels, sanitizeLabelName(label))
-							values = append(values, value)
-						}
-						desc := prometheus.NewDesc(metricLabel, "Custom application metric.", labels, nil)
-						ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), values...)
-					}
-				}
-
-			}
-		}
-	}
 }
 
 func (c *PrometheusCollector) collectVersionInfo(ch chan<- prometheus.Metric) {
