@@ -1674,25 +1674,25 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 				)
 			}
 		}
-                if c.includedMetrics.Has(container.AppMetrics) {
-                    for metricLabel, v := range stats.CustomMetrics {
-                        for _, metric := range v {
-                            clabels := make([]string, len(rawLabels), len(rawLabels) + len(metric.Labels))
-                            cvalues := make([]string, len(rawLabels), len(rawLabels) + len(metric.Labels))
-                            copy(clabels, labels)
-                            copy(cvalues, values)
-                            for label, value := range metric.Labels {
-                                if label == "__name__" {
-                                    continue
-                                }
-                                clabels = append(clabels, sanitizeLabelName(label))
-                                cvalues = append(cvalues, value)
-                            }
-                            desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
-                            ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), cvalues...)
-                        }
-                    }
-                }
+		if c.includedMetrics.Has(container.AppMetrics) {
+			for metricLabel, v := range stats.CustomMetrics {
+				for _, metric := range v {
+					clabels := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
+					cvalues := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
+					copy(clabels, labels)
+					copy(cvalues, values)
+					for label, value := range metric.Labels {
+						if label == "__name__" {
+							continue
+						}
+						clabels = append(clabels, sanitizeLabelName(label))
+						cvalues = append(cvalues, value)
+					}
+					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
+					ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), cvalues...)
+				}
+			}
+		}
 	}
 
 }
