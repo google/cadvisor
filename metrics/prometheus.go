@@ -1682,9 +1682,6 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 					copy(clabels, labels)
 					copy(cvalues, values)
 					for label, value := range metric.Labels {
-						if label == "__name__" {
-							continue
-						}
 						clabels = append(clabels, sanitizeLabelName(label))
 						cvalues = append(cvalues, value)
 					}

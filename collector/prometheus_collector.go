@@ -187,6 +187,9 @@ func (s byName) Less(i, j int) bool {
 func prometheusLabelSetToCadvisorLabels(promLabels model.Metric) map[string]string {
 	labels := make(map[string]string)
 	for k, v := range promLabels {
+		if string(k) == "__name__" {
+			continue
+		}
 		labels[string(k)] = string(v)
 	}
 	return labels
