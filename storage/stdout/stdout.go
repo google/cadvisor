@@ -17,6 +17,7 @@ package stdout
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/storage"
@@ -31,6 +32,8 @@ type stdoutStorage struct {
 }
 
 const (
+	colTimestamp = "timestamp"
+	// CPU Uasge
 	colCpuCumulativeUsage = "cpu_cumulative_usage"
 	// Memory Usage
 	colMemoryUsage = "memory_usage"
@@ -58,6 +61,9 @@ func new() (storage.StorageDriver, error) {
 
 func (driver *stdoutStorage) containerStatsToValues(stats *info.ContainerStats) (series map[string]uint64) {
 	series = make(map[string]uint64)
+
+	// Unix Timestamp
+	series[colTimestamp] = uint64(time.Now().UnixNano())
 
 	// Cumulative Cpu Usage
 	series[colCpuCumulativeUsage] = stats.Cpu.Usage.Total
