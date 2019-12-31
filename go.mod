@@ -17,7 +17,7 @@ require (
 	github.com/blang/semver v3.1.0+incompatible
 	github.com/checkpoint-restore/go-criu v0.0.0-20190109184317-bdb7599cd87b // indirect
 	github.com/containerd/console v0.0.0-20170925154832-84eeaae905fa // indirect
-	github.com/containerd/containerd v1.0.2
+	github.com/containerd/containerd v1.2.0
 	github.com/containerd/typeurl v0.0.0-20190911142611-5eb25027c9fd
 	github.com/coreos/go-systemd v0.0.0-20160527140244-4484981625c1 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2-0.20170720062807-ae69057f2299 // indirect

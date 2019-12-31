@@ -26,8 +26,8 @@ github.com/checkpoint-restore/go-criu v0.0.0-20190109184317-bdb7599cd87b h1:T4nW
 github.com/checkpoint-restore/go-criu v0.0.0-20190109184317-bdb7599cd87b/go.mod h1:TrMrLQfeENAPYPRsJuq3jsqdlRh3lvi6trTZJG8+tho=
 github.com/containerd/console v0.0.0-20170925154832-84eeaae905fa h1:GnRy2maqb8vcJhYRN5L+5WyYNKfUG4otiz2zxE182ng=
 github.com/containerd/console v0.0.0-20170925154832-84eeaae905fa/go.mod h1:Tj/on1eG8kiEhd0+fhSDzsPAFESxzBBvdyEgyryXffw=
-github.com/containerd/containerd v1.0.2 h1:AcqeeOunmUuo2CvPPtHMhWn7mi54clu+j9yqXKxGFtk=
-github.com/containerd/containerd v1.0.2/go.mod h1:bC6axHOhabU15QhwfG7w5PipXdVtMXFTttgp+kVtyUA=
+github.com/containerd/containerd v1.2.0 h1:0NP+uCCcSf7IHOEw/WE1vgcKh6DKIlTqqfh+dtoxDhw=
+github.com/containerd/containerd v1.2.0/go.mod h1:bC6axHOhabU15QhwfG7w5PipXdVtMXFTttgp+kVtyUA=
 github.com/containerd/typeurl v0.0.0-20190911142611-5eb25027c9fd h1:bRLyitWw3PT/2YuVaCKTPg0cA5dOFKFwKtkfcP2dLsA=
 github.com/containerd/typeurl v0.0.0-20190911142611-5eb25027c9fd/go.mod h1:GeKYzf2pQcqv7tJ0AoCuuhtnqhva5LNU3U+OyKxxJpk=
 github.com/coreos/go-systemd v0.0.0-20160527140244-4484981625c1 h1:hu0LKsi9FSTm1/lYVREY/hVON+GOkj1dN3JHiNE7+s8=
