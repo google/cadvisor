@@ -54,8 +54,8 @@ const nodePath = "/sys/devices/system/node"
 
 // GetClockSpeed returns the CPU clock speed, given a []byte formatted as the /proc/cpuinfo file.
 func GetClockSpeed(procInfo []byte) (uint64, error) {
-	// s390/s390x, aarch64 and arm32 changes
-	if isSystemZ() || isAArch64() || isArm32() {
+	// s390/s390x, riscv64, aarch64 and arm32 changes
+	if isSystemZ() || isAArch64() || isArm32() || isRiscv64() {
 		return 0, nil
 	}
 
@@ -444,6 +444,15 @@ func isSystemZ() bool {
 	arch, err := getMachineArch()
 	if err == nil {
 		return strings.Contains(arch, "390")
+	}
+	return false
+}
+
+// riscv64 changes
+func isRiscv64() bool {
+	arch, err := getMachineArch()
+	if err == nil {
+		return strings.Contains(arch, "riscv64")
 	}
 	return false
 }
