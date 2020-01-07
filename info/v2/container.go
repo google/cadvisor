@@ -290,6 +290,8 @@ type NetworkStats struct {
 	Udp v1.UdpStat `json:"udp"`
 	// UDP6 connection stats
 	Udp6 v1.UdpStat `json:"udp6"`
+	// TCP advanced stats
+	TcpAdvanced v1.TcpAdvancedStat `json:"tcp_advanced"`
 }
 
 // Instantaneous CPU stats

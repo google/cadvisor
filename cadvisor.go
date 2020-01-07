@@ -77,22 +77,24 @@ var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
 	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
-		container.NetworkTcpUsageMetrics:  struct{}{},
-		container.NetworkUdpUsageMetrics:  struct{}{},
-		container.ProcessSchedulerMetrics: struct{}{},
-		container.ProcessMetrics:          struct{}{},
+		container.NetworkTcpUsageMetrics:         struct{}{},
+		container.NetworkUdpUsageMetrics:         struct{}{},
+		container.NetworkAdvancedTcpUsageMetrics: struct{}{},
+		container.ProcessSchedulerMetrics:        struct{}{},
+		container.ProcessMetrics:                 struct{}{},
 	}}
 
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
-		container.DiskUsageMetrics:        struct{}{},
-		container.DiskIOMetrics:           struct{}{},
-		container.NetworkUsageMetrics:     struct{}{},
-		container.NetworkTcpUsageMetrics:  struct{}{},
-		container.NetworkUdpUsageMetrics:  struct{}{},
-		container.PerCpuUsageMetrics:      struct{}{},
-		container.ProcessSchedulerMetrics: struct{}{},
-		container.ProcessMetrics:          struct{}{},
+		container.DiskUsageMetrics:               struct{}{},
+		container.DiskIOMetrics:                  struct{}{},
+		container.NetworkUsageMetrics:            struct{}{},
+		container.NetworkTcpUsageMetrics:         struct{}{},
+		container.NetworkAdvancedTcpUsageMetrics: struct{}{},
+		container.NetworkUdpUsageMetrics:         struct{}{},
+		container.PerCpuUsageMetrics:             struct{}{},
+		container.ProcessSchedulerMetrics:        struct{}{},
+		container.ProcessMetrics:                 struct{}{},
 	}
 )
 
@@ -269,6 +271,7 @@ func toIncludedMetrics(ignoreMetrics container.MetricSet) container.MetricSet {
 		container.DiskUsageMetrics,
 		container.NetworkUsageMetrics,
 		container.NetworkTcpUsageMetrics,
+		container.NetworkAdvancedTcpUsageMetrics,
 		container.NetworkUdpUsageMetrics,
 		container.AcceleratorUsageMetrics,
 		container.AppMetrics,
