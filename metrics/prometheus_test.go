@@ -49,18 +49,19 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 }
 
 var allMetrics = container.MetricSet{
-	container.CpuUsageMetrics:         struct{}{},
-	container.ProcessSchedulerMetrics: struct{}{},
-	container.PerCpuUsageMetrics:      struct{}{},
-	container.MemoryUsageMetrics:      struct{}{},
-	container.CpuLoadMetrics:          struct{}{},
-	container.DiskIOMetrics:           struct{}{},
-	container.AcceleratorUsageMetrics: struct{}{},
-	container.DiskUsageMetrics:        struct{}{},
-	container.NetworkUsageMetrics:     struct{}{},
-	container.NetworkTcpUsageMetrics:  struct{}{},
-	container.NetworkUdpUsageMetrics:  struct{}{},
-	container.ProcessMetrics:          struct{}{},
+	container.CpuUsageMetrics:                struct{}{},
+	container.ProcessSchedulerMetrics:        struct{}{},
+	container.PerCpuUsageMetrics:             struct{}{},
+	container.MemoryUsageMetrics:             struct{}{},
+	container.CpuLoadMetrics:                 struct{}{},
+	container.DiskIOMetrics:                  struct{}{},
+	container.AcceleratorUsageMetrics:        struct{}{},
+	container.DiskUsageMetrics:               struct{}{},
+	container.NetworkUsageMetrics:            struct{}{},
+	container.NetworkTcpUsageMetrics:         struct{}{},
+	container.NetworkAdvancedTcpUsageMetrics: struct{}{},
+	container.NetworkUdpUsageMetrics:         struct{}{},
+	container.ProcessMetrics:                 struct{}{},
 }
 
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
@@ -185,7 +186,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							Listen:      3,
 							Closing:     0,
 						},
-						TcpAdvance: info.TcpAdvanceStat{
+						TcpAdvanced: info.TcpAdvancedStat{
 							TCPFullUndo:               2361,
 							TCPMD5NotFound:            0,
 							TCPDSACKRecv:              83680,

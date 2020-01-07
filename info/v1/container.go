@@ -416,8 +416,8 @@ type NetworkStats struct {
 	Udp UdpStat `json:"udp"`
 	// UDP6 connection stats
 	Udp6 UdpStat `json:"udp6"`
-	// Advance TCP stats
-	TcpAdvance TcpAdvanceStat `json:"tcp_advance"`
+	// TCP advanced stats
+	TcpAdvanced TcpAdvancedStat `json:"tcp_advanced"`
 }
 
 type TcpStat struct {
@@ -445,7 +445,7 @@ type TcpStat struct {
 	Closing uint64
 }
 
-type TcpAdvanceStat struct {
+type TcpAdvancedStat struct {
 	// The algorithm used to determine the timeout value used for
 	// retransmitting unacknowledged octets, ref: RFC2698, default 1
 	RtoAlgorithm uint64

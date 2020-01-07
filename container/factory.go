@@ -43,19 +43,20 @@ type ContainerHandlerFactory interface {
 type MetricKind string
 
 const (
-	CpuUsageMetrics         MetricKind = "cpu"
-	ProcessSchedulerMetrics MetricKind = "sched"
-	PerCpuUsageMetrics      MetricKind = "percpu"
-	MemoryUsageMetrics      MetricKind = "memory"
-	CpuLoadMetrics          MetricKind = "cpuLoad"
-	DiskIOMetrics           MetricKind = "diskIO"
-	DiskUsageMetrics        MetricKind = "disk"
-	NetworkUsageMetrics     MetricKind = "network"
-	NetworkTcpUsageMetrics  MetricKind = "tcp"
-	NetworkUdpUsageMetrics  MetricKind = "udp"
-	AcceleratorUsageMetrics MetricKind = "accelerator"
-	AppMetrics              MetricKind = "app"
-	ProcessMetrics          MetricKind = "process"
+	CpuUsageMetrics                MetricKind = "cpu"
+	ProcessSchedulerMetrics        MetricKind = "sched"
+	PerCpuUsageMetrics             MetricKind = "percpu"
+	MemoryUsageMetrics             MetricKind = "memory"
+	CpuLoadMetrics                 MetricKind = "cpuLoad"
+	DiskIOMetrics                  MetricKind = "diskIO"
+	DiskUsageMetrics               MetricKind = "disk"
+	NetworkUsageMetrics            MetricKind = "network"
+	NetworkTcpUsageMetrics         MetricKind = "tcp"
+	NetworkAdvancedTcpUsageMetrics MetricKind = "advtcp"
+	NetworkUdpUsageMetrics         MetricKind = "udp"
+	AcceleratorUsageMetrics        MetricKind = "accelerator"
+	AppMetrics                     MetricKind = "app"
+	ProcessMetrics                 MetricKind = "process"
 )
 
 func (mk MetricKind) String() string {
