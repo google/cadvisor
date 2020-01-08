@@ -76,6 +76,8 @@ github.com/docker/distribution v2.6.0-rc.1.0.20170726174610-edc3ab29cdff+incompa
 github.com/docker/distribution v2.6.0-rc.1.0.20170726174610-edc3ab29cdff+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/distribution v2.7.1+incompatible h1:a5mlkVzth6W5A4fOsS3D2EO5BUmsJpcB+cRlLU7cSug=
 github.com/docker/distribution v2.7.1+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
+github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0 h1:w3NnFcKR5241cfmQU5ZZAsf0xcpId6mWOupTvJlUX2U=
+github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker v1.4.2-0.20180612054059-a9fbbdc8dd87 h1:25yKDyt5jahmGFDjYSofLaQskWh5A5TW7h6abNj2uW0=
 github.com/docker/docker v1.4.2-0.20180612054059-a9fbbdc8dd87/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.3.0 h1:3lOnM9cSzgGwx8VfK/NGOW5fLQ0GjIlCkaktF+n1M6o=
