@@ -1,7 +1,10 @@
+// +build windows
+
 package winio
 
 import (
 	"os"
+	"runtime"
 	"syscall"
 	"unsafe"
 )
@@ -17,7 +20,8 @@ const (
 // FileBasicInfo contains file access time and file attributes information.
 type FileBasicInfo struct {
 	CreationTime, LastAccessTime, LastWriteTime, ChangeTime syscall.Filetime
-	FileAttributes                                          uintptr // includes padding
+	FileAttributes                                          uint32
+	pad                                                     uint32 // padding
 }
 
 // GetFileBasicInfo retrieves times and attributes for a file.
@@ -26,6 +30,7 @@ func GetFileBasicInfo(f *os.File) (*FileBasicInfo, error) {
 	if err := getFileInformationByHandleEx(syscall.Handle(f.Fd()), fileBasicInfo, (*byte)(unsafe.Pointer(bi)), uint32(unsafe.Sizeof(*bi))); err != nil {
 		return nil, &os.PathError{Op: "GetFileInformationByHandleEx", Path: f.Name(), Err: err}
 	}
+	runtime.KeepAlive(f)
 	return bi, nil
 }
 
@@ -34,6 +39,7 @@ func SetFileBasicInfo(f *os.File, bi *FileBasicInfo) error {
 	if err := setFileInformationByHandle(syscall.Handle(f.Fd()), fileBasicInfo, (*byte)(unsafe.Pointer(bi)), uint32(unsafe.Sizeof(*bi))); err != nil {
 		return &os.PathError{Op: "SetFileInformationByHandle", Path: f.Name(), Err: err}
 	}
+	runtime.KeepAlive(f)
 	return nil
 }
 
@@ -50,5 +56,6 @@ func GetFileID(f *os.File) (*FileIDInfo, error) {
 	if err := getFileInformationByHandleEx(syscall.Handle(f.Fd()), fileIDInfo, (*byte)(unsafe.Pointer(fileID)), uint32(unsafe.Sizeof(*fileID))); err != nil {
 		return nil, &os.PathError{Op: "GetFileInformationByHandleEx", Path: f.Name(), Err: err}
 	}
+	runtime.KeepAlive(f)
 	return fileID, nil
 }
