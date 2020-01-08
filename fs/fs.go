@@ -511,8 +511,8 @@ func (self *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) {
 	}
 
 	// The type Dev in Stat_t is 32bit on mips.
-	major := major(uint64(buf.Dev))  // nolint: unconvert
-	minor := minor(uint64(buf.Dev))  // nolint: unconvert
+	major := major(uint64(buf.Dev)) // nolint: unconvert
+	minor := minor(uint64(buf.Dev)) // nolint: unconvert
 	for device, partition := range self.partitions {
 		if partition.major == major && partition.minor == minor {
 			return &DeviceInfo{device, major, minor}, nil
@@ -754,7 +754,7 @@ func getBtrfsMajorMinorIds(mount *mount.Info) (int, int, error) {
 		}
 
 		// The type Dev and Rdev in Stat_t are 32bit on mips.
-		klog.V(4).Infof("btrfs dev major:minor %d:%d\n", int(major(uint64(buf.Dev))), int(minor(uint64(buf.Dev)))) // nolint: unconvert
+		klog.V(4).Infof("btrfs dev major:minor %d:%d\n", int(major(uint64(buf.Dev))), int(minor(uint64(buf.Dev))))    // nolint: unconvert
 		klog.V(4).Infof("btrfs rdev major:minor %d:%d\n", int(major(uint64(buf.Rdev))), int(minor(uint64(buf.Rdev)))) // nolint: unconvert
 
 		return int(major(uint64(buf.Dev))), int(minor(uint64(buf.Dev))), nil // nolint: unconvert
