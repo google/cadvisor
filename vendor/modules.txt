@@ -123,6 +123,8 @@ github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
 # github.com/golang/snappy v0.0.0-20150730031844-723cc1e459b8
 github.com/golang/snappy
+# github.com/google/uuid v1.1.1
+github.com/google/uuid
 # github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
 github.com/influxdb/influxdb/client
 github.com/influxdb/influxdb/models
@@ -160,7 +162,7 @@ github.com/mesos/mesos-go/api/v1/lib/recordio
 github.com/mesos/mesos-go/api/v1/lib/roles
 # github.com/mindprince/gonvml v0.0.0-20171110221305-fee913ce8fb2
 github.com/mindprince/gonvml
-# github.com/mistifyio/go-zfs v2.1.2-0.20170901132433-166dd29edf05+incompatible
+# github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
 github.com/mistifyio/go-zfs
 # github.com/mrunalp/fileutils v0.0.0-20160930181131-4ee1cc9a8058
 github.com/mrunalp/fileutils
@@ -191,8 +193,6 @@ github.com/opencontainers/runtime-spec/specs-go
 # github.com/opencontainers/selinux v1.3.1-0.20190929122143-5215b1806f52
 github.com/opencontainers/selinux/go-selinux
 github.com/opencontainers/selinux/go-selinux/label
-# github.com/pborman/uuid v0.0.0-20150824212802-cccd189d45f7
-github.com/pborman/uuid
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
