@@ -38,6 +38,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7 // indirect
 	github.com/golang/snappy v0.0.0-20150730031844-723cc1e459b8 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
+	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
@@ -53,7 +54,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mesos/mesos-go v0.0.7-0.20180413204204-29de6ff97b48
 	github.com/mindprince/gonvml v0.0.0-20171110221305-fee913ce8fb2
-	github.com/mistifyio/go-zfs v2.1.2-0.20170901132433-166dd29edf05+incompatible
+	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
 	github.com/mrunalp/fileutils v0.0.0-20160930181131-4ee1cc9a8058 // indirect
 	github.com/onsi/ginkgo v1.10.3 // indirect
 	github.com/onsi/gomega v1.7.1 // indirect

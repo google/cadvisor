@@ -1,4 +1,4 @@
-// Copyright 2011 Google Inc.  All rights reserved.
+// Copyright 2016 Google Inc.  All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -13,29 +13,32 @@ import (
 // or SetNodeInterface then it will be set automatically.  If the NodeID cannot
 // be set NewUUID returns nil.  If clock sequence has not been set by
 // SetClockSequence then it will be set automatically.  If GetTime fails to
-// return the current NewUUID returns nil.
-func NewUUID() UUID {
-	if nodeID == nil {
-		SetNodeInterface("")
+// return the current NewUUID returns nil and an error.
+//
+// In most cases, New should be used.
+func NewUUID() (UUID, error) {
+	nodeMu.Lock()
+	if nodeID == zeroID {
+		setNodeInterface("")
 	}
+	nodeMu.Unlock()
 
+	var uuid UUID
 	now, seq, err := GetTime()
 	if err != nil {
-		return nil
+		return uuid, err
 	}
 
-	uuid := make([]byte, 16)
+	timeLow := uint32(now & 0xffffffff)
+	timeMid := uint16((now >> 32) & 0xffff)
+	timeHi := uint16((now >> 48) & 0x0fff)
+	timeHi |= 0x1000 // Version 1
 
-	time_low := uint32(now & 0xffffffff)
-	time_mid := uint16((now >> 32) & 0xffff)
-	time_hi := uint16((now >> 48) & 0x0fff)
-	time_hi |= 0x1000 // Version 1
-
-	binary.BigEndian.PutUint32(uuid[0:], time_low)
-	binary.BigEndian.PutUint16(uuid[4:], time_mid)
-	binary.BigEndian.PutUint16(uuid[6:], time_hi)
+	binary.BigEndian.PutUint32(uuid[0:], timeLow)
+	binary.BigEndian.PutUint16(uuid[4:], timeMid)
+	binary.BigEndian.PutUint16(uuid[6:], timeHi)
 	binary.BigEndian.PutUint16(uuid[8:], seq)
-	copy(uuid[10:], nodeID)
+	copy(uuid[10:], nodeID[:])
 
-	return uuid
+	return uuid, nil
 }
