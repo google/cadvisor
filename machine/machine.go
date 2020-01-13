@@ -54,7 +54,7 @@ const nodePath = "/sys/devices/system/node"
 
 // GetClockSpeed returns the CPU clock speed, given a []byte formatted as the /proc/cpuinfo file.
 func GetClockSpeed(procInfo []byte) (uint64, error) {
-	// s390/s390x,mips64, riscv64, aarch64 and arm32 changes
+	// s390/s390x, mips64, riscv64, aarch64 and arm32 changes
 	if isMips64() || isSystemZ() || isAArch64() || isArm32() || isRiscv64() {
 		return 0, nil
 	}
