@@ -92,6 +92,7 @@ Specify where cAdvisor listens.
 --http_digest_realm="localhost": HTTP digest file for the web UI (default "localhost")
 --listen_ip="": IP to listen on, defaults to all IPs
 --port=8080: port to listen (default 8080)
+--url_base_prefix=/: optional path prefix aded to all resource URLs; useful when running cAdvisor behind a proxy. (default /)
 ```
 
 ## Local Storage Duration
