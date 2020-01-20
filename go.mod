@@ -86,5 +86,5 @@ require (
 	google.golang.org/grpc v1.26.0
 	gopkg.in/olivere/elastic.v2 v2.0.12
 	k8s.io/klog v0.3.0
-	k8s.io/utils v0.0.0-20190712204705-3dccf664f023
+	k8s.io/utils v0.0.0-20200117235808-5f6fbceb4c31
 )
