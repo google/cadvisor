@@ -27,12 +27,12 @@ import (
 	"github.com/blang/semver"
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/google/cadvisor/container"
+	dockerutil "github.com/google/cadvisor/container/docker/utils"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/devicemapper"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/machine"
-	dockerutil "github.com/google/cadvisor/utils/docker"
 	"github.com/google/cadvisor/watcher"
 	"github.com/google/cadvisor/zfs"
 

@@ -32,7 +32,6 @@ import (
 
 	"github.com/google/cadvisor/devicemapper"
 	"github.com/google/cadvisor/utils"
-	dockerutil "github.com/google/cadvisor/utils/docker"
 	zfs "github.com/mistifyio/go-zfs"
 
 	"k8s.io/klog"
@@ -40,9 +39,11 @@ import (
 )
 
 const (
-	LabelSystemRoot   = "root"
-	LabelDockerImages = "docker-images"
-	LabelCrioImages   = "crio-images"
+	LabelSystemRoot          = "root"
+	LabelDockerImages        = "docker-images"
+	LabelCrioImages          = "crio-images"
+	DriverStatusPoolName     = "Pool Name"
+	DriverStatusDataLoopFile = "Data loop file"
 )
 
 const (
@@ -236,7 +237,7 @@ func (self *RealFsInfo) getDockerDeviceMapperInfo(context DockerContext) (string
 		return "", nil, nil
 	}
 
-	dataLoopFile := context.DriverStatus[dockerutil.DriverStatusDataLoopFile]
+	dataLoopFile := context.DriverStatus[DriverStatusDataLoopFile]
 	if len(dataLoopFile) > 0 {
 		return "", nil, nil
 	}
@@ -632,7 +633,7 @@ func getVfsStats(path string) (total uint64, free uint64, avail uint64, inodes u
 // Devicemapper thin provisioning is detailed at
 // https://www.kernel.org/doc/Documentation/device-mapper/thin-provisioning.txt
 func dockerDMDevice(driverStatus map[string]string, dmsetup devicemapper.DmsetupClient) (string, uint, uint, uint, error) {
-	poolName, ok := driverStatus[dockerutil.DriverStatusPoolName]
+	poolName, ok := driverStatus[DriverStatusPoolName]
 	if !ok || len(poolName) == 0 {
 		return "", 0, 0, 0, fmt.Errorf("Could not get dm pool name")
 	}
