@@ -28,7 +28,7 @@ TEMPLATES_PACKAGE="pages"
 
 FORCE="${FORCE:-}" # Force assets to be rebuilt if FORCE=true
 
-go get -u github.com/kevinburke/go-bindata/...
+GO111MODULE=off go get -u github.com/kevinburke/go-bindata/...
 
 build_asset () {
   local package=$1

@@ -46,6 +46,10 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
+tidy:
+	@echo ">> tidying modules"
+	@./build/tidy.sh
+
 build: assets
 	@echo ">> building binaries"
 	@./build/build.sh $(arch)
@@ -64,10 +68,10 @@ docker-%:
 docker-build:
 	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.12 make build
 
-presubmit: vet
+presubmit: vet tidy
 	@echo ">> checking go formatting"
 	@./build/check_gofmt.sh
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
 
-.PHONY: all build docker format release test test-integration vet presubmit
+.PHONY: all build docker format tidy release test test-integration vet presubmit

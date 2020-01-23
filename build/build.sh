@@ -51,11 +51,13 @@ if [ -n "$VERBOSE" ]; then
 fi
 
 
+pushd "cmd" >/dev/null
 if [ -z "$GOARCH" ]
 then
-  GOBIN=$PWD go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
+  GOBIN=$PWD go build ${GO_FLAGS} -ldflags "${ldflags}" -o ../cadvisor "${repo_path}/cmd"
 else
-  GOBIN=$PWD env GOOS=linux GOARCH=$GOARCH go build ${GO_FLAGS} -ldflags "${ldflags}" "${repo_path}"
+  GOBIN=$PWD env GOOS=linux GOARCH=$GOARCH go build ${GO_FLAGS} -ldflags "${ldflags}" -o ../cadvisor "${repo_path}/cmd"
 fi
+popd >/dev/null
 
 exit 0
