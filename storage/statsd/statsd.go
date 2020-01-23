@@ -16,7 +16,7 @@ package statsd
 
 import (
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/registry/storage"
 	client "github.com/google/cadvisor/storage/statsd/client"
 )
 

@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/cache/memory"
-	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/registry/storage"
 	_ "github.com/google/cadvisor/storage/bigquery"
 	_ "github.com/google/cadvisor/storage/elasticsearch"
 	_ "github.com/google/cadvisor/storage/influxdb"

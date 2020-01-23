@@ -26,8 +26,7 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/storage"
-	"github.com/google/cadvisor/utils/container"
+	"github.com/google/cadvisor/registry/storage"
 
 	kafka "github.com/Shopify/sarama"
 	"k8s.io/klog"
@@ -66,7 +65,7 @@ func (driver *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *i
 	timestamp := time.Now()
 	containerID := cInfo.ContainerReference.Id
 	containerLabels := cInfo.Spec.Labels
-	containerName := container.GetPreferredName(cInfo.ContainerReference)
+	containerName := GetPreferredName(cInfo.ContainerReference)
 
 	detail := &detailSpec{
 		Timestamp:       timestamp,
@@ -77,6 +76,18 @@ func (driver *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *i
 		ContainerStats:  stats,
 	}
 	return detail
+}
+
+// Returns the alias a container is known by within a certain namespace,
+// if available. Otherwise returns the absolute name of the container.
+func GetPreferredName(ref info.ContainerReference) string {
+	var containerName string
+	if len(ref.Aliases) > 0 {
+		containerName = ref.Aliases[0]
+	} else {
+		containerName = ref.Name
+	}
+	return containerName
 }
 
 func (driver *kafkaStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
