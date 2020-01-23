@@ -104,7 +104,7 @@ type metricSetValue struct {
 
 func (ml *metricSetValue) String() string {
 	var values []string
-	for metric, _ := range ml.MetricSet {
+	for metric := range ml.MetricSet {
 		values = append(values, string(metric))
 	}
 	return strings.Join(values, ",")
