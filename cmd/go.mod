@@ -1,6 +1,19 @@
-module github.com/google/cadvisor
+module github.com/google/cadvisor/cmd
 
 go 1.13
+
+require (
+	github.com/google/cadvisor v0.35.0
+	github.com/google/cadvisor/info v0.35.0
+	github.com/google/cadvisor/registry v0.35.0
+	github.com/google/cadvisor/storage v0.35.0
+)
+replace (
+	github.com/google/cadvisor => ../
+	github.com/google/cadvisor/info => ../info
+	github.com/google/cadvisor/registry => ../registry
+	github.com/google/cadvisor/storage => ../storage
+)
 
 require (
 	cloud.google.com/go v0.26.0

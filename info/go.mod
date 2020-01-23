@@ -1,4 +1,4 @@
-module github.com/google/cadvisor
+module github.com/google/cadvisor/info
 
 go 1.13
 

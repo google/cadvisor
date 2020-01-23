@@ -3,6 +3,15 @@ module github.com/google/cadvisor
 go 1.13
 
 require (
+	github.com/google/cadvisor/info v0.35.0
+	github.com/google/cadvisor/registry v0.35.0
+)
+replace (
+	github.com/google/cadvisor/info => ./info
+	github.com/google/cadvisor/registry => ./registry
+)
+
+require (
 	cloud.google.com/go v0.26.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
 	github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5 // indirect
