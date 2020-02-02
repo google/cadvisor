@@ -46,6 +46,16 @@ container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_f
 # HELP container_cpu_user_seconds_total Cumulative user cpu time consumed in seconds.
 # TYPE container_cpu_user_seconds_total counter
 container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 6e-09 1395066363000
+# HELP container_custom_app_metric_1 Custom application metric.
+# TYPE container_custom_app_metric_1 gauge
+container_custom_app_metric_1{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",test_label="1_1",test_label_2="2_1",zone_name="hello"} 1.1
+container_custom_app_metric_1{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",test_label="1_2",test_label_2="2_2",zone_name="hello"} 1.2
+# HELP container_custom_app_metric_2 Custom application metric.
+# TYPE container_custom_app_metric_2 gauge
+container_custom_app_metric_2{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",test_label="test_value",zone_name="hello"} 2
+# HELP container_custom_app_metric_3 Custom application metric.
+# TYPE container_custom_app_metric_3 gauge
+container_custom_app_metric_3{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",test_label="test_value",zone_name="hello"} 3
 # HELP container_file_descriptors Number of open file descriptors for the container.
 # TYPE container_file_descriptors gauge
 container_file_descriptors{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5 1395066363000

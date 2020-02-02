@@ -62,6 +62,7 @@ var allMetrics = container.MetricSet{
 	container.NetworkAdvancedTcpUsageMetrics: struct{}{},
 	container.NetworkUdpUsageMetrics:         struct{}{},
 	container.ProcessMetrics:                 struct{}{},
+	container.AppMetrics:                     struct{}{},
 }
 
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
@@ -376,6 +377,38 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						NrStopped:         52,
 						NrUninterruptible: 53,
 						NrIoWait:          54,
+					},
+					CustomMetrics: map[string][]info.MetricVal{
+						"container_custom_app_metric_1": {
+							{
+								FloatValue: float64(1.1),
+								Timestamp:  time.Now(),
+								Label:      "testlabel_1_1_1",
+								Labels:     map[string]string{"test_label": "1_1", "test_label_2": "2_1"},
+							},
+							{
+								FloatValue: float64(1.2),
+								Timestamp:  time.Now(),
+								Label:      "testlabel_1_1_2",
+								Labels:     map[string]string{"test_label": "1_2", "test_label_2": "2_2"},
+							},
+						},
+						"container_custom_app_metric_2": {
+							{
+								FloatValue: float64(2),
+								Timestamp:  time.Now(),
+								Label:      "testlabel2",
+								Labels:     map[string]string{"test_label": "test_value"},
+							},
+						},
+						"container_custom_app_metric_3": {
+							{
+								FloatValue: float64(3),
+								Timestamp:  time.Now(),
+								Label:      "testlabel3",
+								Labels:     map[string]string{"test_label": "test_value"},
+							},
+						},
 					},
 				},
 			},
