@@ -1682,7 +1682,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 					copy(clabels, labels)
 					copy(cvalues, values)
 					for label, value := range metric.Labels {
-						clabels = append(clabels, sanitizeLabelName(label))
+						clabels = append(clabels, sanitizeLabelName("app_"+label))
 						cvalues = append(cvalues, value)
 					}
 					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
