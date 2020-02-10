@@ -17,6 +17,7 @@ package machine
 import (
 	"io/ioutil"
 	"reflect"
+	"runtime"
 	"testing"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -25,6 +26,9 @@ import (
 )
 
 func TestTopology(t *testing.T) {
+	if runtime.GOARCH != "amd64" {
+		t.Skip("cpuinfo testdata is for amd64")
+	}
 	testfile := "./testdata/cpuinfo"
 	testcpuinfo, err := ioutil.ReadFile(testfile)
 	if err != nil {
