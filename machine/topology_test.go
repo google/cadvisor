@@ -82,6 +82,9 @@ func TestTopology(t *testing.T) {
 }
 
 func TestTopologyWithSimpleCpuinfo(t *testing.T) {
+	if isSystemZ() {
+		t.Skip("systemZ has no topology info")
+	}
 	sysFs := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{
 		Size:  32 * 1024,
@@ -118,6 +121,9 @@ func TestTopologyWithSimpleCpuinfo(t *testing.T) {
 }
 
 func TestTopologyEmptyCpuinfo(t *testing.T) {
+	if isSystemZ() {
+		t.Skip("systemZ has no topology info")
+	}
 	_, _, err := GetTopology(&fakesysfs.FakeSysFs{}, "")
 	if err == nil {
 		t.Errorf("Expected empty cpuinfo to fail.")
