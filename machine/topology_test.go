@@ -254,9 +254,8 @@ func TestMemoryInfo(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Len(t, memory, 2)
-	assert.Equal(t, uint64(789), memory["Unbuffered-DDR4"].Capacity)
-	assert.Equal(t, uint64(579), memory["Non-volatile-RAM"].Capacity)
+	assert.Equal(t, uint64(789*1024*1024), memory["Unbuffered-DDR4"].Capacity)
+	assert.Equal(t, uint64(579*1024*1024), memory["Non-volatile-RAM"].Capacity)
 	assert.Equal(t, uint(1), memory["Unbuffered-DDR4"].DimmCount)
 	assert.Equal(t, uint(2), memory["Non-volatile-RAM"].DimmCount)
-
 }

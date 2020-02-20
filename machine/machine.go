@@ -173,7 +173,7 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error
 					if err != nil {
 						return map[string]*info.MemoryInfo{}, err
 					}
-					memory[string(memType)].Capacity += uint64(capacity)
+					memory[string(memType)].Capacity += uint64(mbToBytes(capacity))
 					memory[string(memType)].DimmCount++
 				}
 			}
@@ -181,6 +181,10 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error
 	}
 
 	return memory, nil
+}
+
+func mbToBytes(megabytes int) int {
+	return megabytes * 1024 * 1024
 }
 
 // GetMachineSwapCapacity returns the machine's total swap from /proc/meminfo.
