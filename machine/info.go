@@ -34,6 +34,7 @@ import (
 )
 
 const hugepagesDirectory = "/sys/kernel/mm/hugepages/"
+const memoryControllerPath = "/sys/devices/system/edac/mc/"
 
 var machineIdFilePath = flag.String("machine_id_file", "/etc/machine-id,/var/lib/dbus/machine-id", "Comma-separated list of files to check for machine-id. Use the first one that exists.")
 var bootIdFilePath = flag.String("boot_id_file", "/proc/sys/kernel/random/boot_id", "Comma-separated list of files to check for boot-id. Use the first one that exists.")
@@ -68,6 +69,11 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	}
 
 	memoryCapacity, err := GetMachineMemoryCapacity()
+	if err != nil {
+		return nil, err
+	}
+
+	memoryByType, err := GetMachineMemoryByType(memoryControllerPath)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +119,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		NumSockets:       GetSockets(cpuinfo),
 		CpuFrequency:     clockSpeed,
 		MemoryCapacity:   memoryCapacity,
+		MemoryByType:     memoryByType,
 		HugePages:        hugePagesInfo,
 		DiskMap:          diskMap,
 		NetworkDevices:   netDevices,
