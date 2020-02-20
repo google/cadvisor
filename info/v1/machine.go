@@ -178,7 +178,7 @@ type MachineInfo struct {
 	MemoryDimmCount uint `json:"memory_dimm_count"`
 
 	// Memory capacity and number of DIMMs by memory type
-	MemoryByType map[string]MemoryInfo `json:"memory_by_type"`
+	MemoryByType map[string]*MemoryInfo `json:"memory_by_type"`
 
 	// HugePages on this machine.
 	HugePages []HugePagesInfo `json:"hugepages"`
