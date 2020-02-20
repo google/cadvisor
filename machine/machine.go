@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -131,6 +132,40 @@ func GetMachineMemoryCapacity() (uint64, error) {
 		return 0, err
 	}
 	return memoryCapacity, err
+}
+
+// GetMachineMemoryByType returns information about memory capcity and number of DIMMs.
+// Information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/)
+// introduced in kernel 3.6. Documentation can be found at
+// https://www.kernel.org/doc/Documentation/admin-guide/ras.rst.
+func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error) {
+	memory := make(map[string]*info.MemoryInfo)
+	names, _ := ioutil.ReadDir(edacPath)
+	isMcEntry := regexp.MustCompile("mc[0-9]+")
+	isDimm := regexp.MustCompile("dimm[0-9]+")
+	for _, name := range names {
+		fmt.Println(name.Name())
+		if isMcEntry.MatchString(name.Name()) {
+			dimms, _ := ioutil.ReadDir(path.Join(edacPath, name.Name()))
+			for _, namename := range dimms {
+				fmt.Println(namename.Name())
+				if isDimm.MatchString(namename.Name()) {
+					memType, err := ioutil.ReadFile(path.Join(edacPath, name.Name(), namename.Name(), "dimm_mem_type"))
+					fmt.Println(err)
+					fmt.Println(string(memType))
+					if _, exists := memory[string(memType)]; !exists {
+						memory[string(memType)] = &info.MemoryInfo{}
+					}
+					size, _ := ioutil.ReadFile(path.Join(edacPath, name.Name(), namename.Name(), "size"))
+					capacity, _ := strconv.Atoi(string(size))
+					memory[string(memType)].Capacity += uint64(capacity)
+					memory[string(memType)].DimmCount++
+				}
+			}
+		}
+	}
+
+	return memory, nil
 }
 
 // GetMachineSwapCapacity returns the machine's total swap from /proc/meminfo.
