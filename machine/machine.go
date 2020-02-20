@@ -56,6 +56,8 @@ const nodePath = "/sys/devices/system/node"
 const sysFsCPUCoreID = "core_id"
 const sysFsCPUPhysicalPackageID = "physical_package_id"
 const sysFsCPUTopology = "topology"
+const memTypeFileName = "dimm_mem_type"
+const sizeFileName = "size"
 
 // GetPhysicalCores returns number of CPU cores reading /proc/cpuinfo file or if needed information from sysfs cpu path
 func GetPhysicalCores(procInfo []byte) int {
@@ -139,24 +141,31 @@ func GetMachineMemoryCapacity() (uint64, error) {
 // introduced in kernel 3.6. Documentation can be found at
 // https://www.kernel.org/doc/Documentation/admin-guide/ras.rst.
 func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error) {
-	memory := make(map[string]*info.MemoryInfo)
-	names, _ := ioutil.ReadDir(edacPath)
-	isMcEntry := regexp.MustCompile("mc[0-9]+")
+	memory := map[string]*info.MemoryInfo{}
+	names, err := ioutil.ReadDir(edacPath)
+	if err != nil {
+		return memory, err
+	}
+	isController := regexp.MustCompile("mc[0-9]+")
 	isDimm := regexp.MustCompile("dimm[0-9]+")
-	for _, name := range names {
-		fmt.Println(name.Name())
-		if isMcEntry.MatchString(name.Name()) {
-			dimms, _ := ioutil.ReadDir(path.Join(edacPath, name.Name()))
-			for _, namename := range dimms {
-				fmt.Println(namename.Name())
-				if isDimm.MatchString(namename.Name()) {
-					memType, err := ioutil.ReadFile(path.Join(edacPath, name.Name(), namename.Name(), "dimm_mem_type"))
-					fmt.Println(err)
-					fmt.Println(string(memType))
+	for _, controllerDir := range names {
+		controller := controllerDir.Name()
+		if isController.MatchString(controller) {
+			dimms, err := ioutil.ReadDir(path.Join(edacPath, controllerDir.Name()))
+			if err != nil {
+				return map[string]*info.MemoryInfo{}, err
+			}
+			for _, dimmDir := range dimms {
+				dimm := dimmDir.Name()
+				if isDimm.MatchString(dimm) {
+					memType, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, memTypeFileName))
+					if err != nil {
+						return map[string]*info.MemoryInfo{}, err
+					}
 					if _, exists := memory[string(memType)]; !exists {
 						memory[string(memType)] = &info.MemoryInfo{}
 					}
-					size, _ := ioutil.ReadFile(path.Join(edacPath, name.Name(), namename.Name(), "size"))
+					size, _ := ioutil.ReadFile(path.Join(edacPath, controller, dimm, sizeFileName))
 					capacity, _ := strconv.Atoi(string(size))
 					memory[string(memType)].Capacity += uint64(capacity)
 					memory[string(memType)].DimmCount++
