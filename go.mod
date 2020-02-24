@@ -45,7 +45,7 @@ require (
 	github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/karrick/godirwalk v1.7.5
-	github.com/kevinburke/go-bindata v3.16.0+incompatible // indirect
+	github.com/kevinburke/go-bindata v3.17.0+incompatible // indirect
 	github.com/klauspost/crc32 v0.0.0-20151223135126-a3b15ae34567 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.0.0-20140723054909-088c856450c0
