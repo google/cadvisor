@@ -311,7 +311,7 @@ gopkg.in/olivere/elastic.v2/uritemplates
 gopkg.in/yaml.v2
 # k8s.io/klog v0.3.0
 k8s.io/klog
-# k8s.io/utils v0.0.0-20200117235808-5f6fbceb4c31
+# k8s.io/utils v0.0.0-20200122174043-1e243dd1a584
 k8s.io/utils/clock
 k8s.io/utils/clock/testing
 k8s.io/utils/exec
