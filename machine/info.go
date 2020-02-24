@@ -108,19 +108,21 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	instanceID := realCloudInfo.GetInstanceID()
 
 	machineInfo := &info.MachineInfo{
-		NumCores:       numCores,
-		CpuFrequency:   clockSpeed,
-		MemoryCapacity: memoryCapacity,
-		HugePages:      hugePagesInfo,
-		DiskMap:        diskMap,
-		NetworkDevices: netDevices,
-		Topology:       topology,
-		MachineID:      getInfoFromFiles(filepath.Join(rootFs, *machineIdFilePath)),
-		SystemUUID:     systemUUID,
-		BootID:         getInfoFromFiles(filepath.Join(rootFs, *bootIdFilePath)),
-		CloudProvider:  cloudProvider,
-		InstanceType:   instanceType,
-		InstanceID:     instanceID,
+		NumCores:         numCores,
+		NumPhysicalCores: GetPhysicalCores(cpuinfo),
+		NumSockets:       GetSockets(cpuinfo),
+		CpuFrequency:     clockSpeed,
+		MemoryCapacity:   memoryCapacity,
+		HugePages:        hugePagesInfo,
+		DiskMap:          diskMap,
+		NetworkDevices:   netDevices,
+		Topology:         topology,
+		MachineID:        getInfoFromFiles(filepath.Join(rootFs, *machineIdFilePath)),
+		SystemUUID:       systemUUID,
+		BootID:           getInfoFromFiles(filepath.Join(rootFs, *bootIdFilePath)),
+		CloudProvider:    cloudProvider,
+		InstanceType:     instanceType,
+		InstanceID:       instanceID,
 	}
 
 	for i := range filesystems {
