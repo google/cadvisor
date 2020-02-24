@@ -262,16 +262,21 @@ func (self *crioContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		limit  uint64
 		fsType string
 	)
+	deviceFound := false
 
 	// crio does not impose any filesystem limits for containers. So use capacity as limit.
 	for _, fs := range mi.Filesystems {
 		if fs.Device == device {
 			limit = fs.Capacity
 			fsType = fs.Type
+			deviceFound = true
 			break
 		}
 	}
 
+	if !deviceFound {
+		return fmt.Errorf("unable to determine fs type for device: %v", device)
+	}
 	fsStat := info.FsStats{Device: device, Type: fsType, Limit: limit}
 	usage := self.fsHandler.Usage()
 	fsStat.BaseUsage = usage.BaseUsageBytes
