@@ -170,23 +170,13 @@ func getNodeIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	for _, file := range files {
 		filename := file.Name()
 
-		isNode, error := regexp.MatchString("^node([0-9]+)$", filename)
-		if error != nil {
-			continue
-		}
-		if !isNode {
-			continue
-		}
-
 		ok, val, _ := extractValue(filename, nodeBusRegExp)
-		if err != nil {
-			continue
-		}
 		if ok {
 			if val < 0 {
 				continue
 			}
 			nodeId = val
+			break
 		}
 	}
 
