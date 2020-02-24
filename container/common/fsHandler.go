@@ -90,7 +90,7 @@ func (fh *realFsHandler) update() error {
 	fh.Lock()
 	defer fh.Unlock()
 	fh.lastUpdate = time.Now()
-	if fh.rootfs != "" && rootErr == nil {
+	if fh.rootfs != "" && rootErr == nil && extraErr == nil {
 		fh.usage.InodeUsage = rootUsage.Inodes
 		fh.usage.TotalUsageBytes = rootUsage.Bytes + extraUsage.Bytes
 	}
