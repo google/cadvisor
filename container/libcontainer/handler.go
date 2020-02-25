@@ -477,6 +477,9 @@ func scanAdvancedTcpStats(advancedStats *info.TcpAdvancedStat, advancedTcpStatsF
 			}
 		}
 	}
+	if scanner.Err() != nil {
+		return scanner.Err()
+	}
 
 	b, err := json.Marshal(advancedTcpStats)
 	if err != nil {
@@ -488,7 +491,7 @@ func scanAdvancedTcpStats(advancedStats *info.TcpAdvancedStat, advancedTcpStatsF
 		return err
 	}
 
-	return scanner.Err()
+	return nil
 
 }
 
