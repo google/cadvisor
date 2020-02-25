@@ -30,6 +30,21 @@ $GOPATH/src/github.com/google/cadvisor $ make test
 
 For integration tests, see the [integration testing](integration_testing.md) page.
 
+### Non-volatile Memory Support
+
+cAdvisor can be linked against [libipmctl](https://github.com/intel/ipmctl) library that allows to gather information about Intel® Optane™ DC Persistent memory. If you want to build cAdvisor with libipmctl support you must meet following requirements:
+* `libimpctl-devel` must be installed on build system.
+* `libimpctl` must be installed on all systems where cAdvisor is running.
+
+Detaled information about building `libipmctl` can be found in the project's [README](https://github.com/intel/ipmctl#build).
+
+To enable `libimpctl` support `GO_FLAGS` variable must be set:
+
+```
+$GOPATH/src/github.com/google/cadvisor $ GO_FLAGS="-tags=libipmctl,netgo" make build
+```
+
+
 ## Running Built Binary
 
 Now you can run the built binary:
