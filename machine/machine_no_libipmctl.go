@@ -17,7 +17,7 @@
 package machine
 
 // GetNVMAvgPowerBudget retrieves configured power budget
-// (in watts)for NVM devices. When libipmct is not available
+// (in watts) for NVM devices. When libipmct is not available
 // zero is returned.
 func GetNVMAvgPowerBudget() (uint, error) {
 	return uint(0), nil
