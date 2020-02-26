@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -143,7 +144,12 @@ func GetMachineMemoryCapacity() (uint64, error) {
 func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error) {
 	memory := map[string]*info.MemoryInfo{}
 	names, err := ioutil.ReadDir(edacPath)
-	if err != nil {
+	// On some architectures (such as ARM) memory controller device may not exist.
+	// If this is the case then we ignore error and return empty slice.
+	_, ok := err.(*os.PathError)
+	if err != nil && ok {
+		return memory, nil
+	} else if err != nil {
 		return memory, err
 	}
 	isController := regexp.MustCompile("mc[0-9]+")

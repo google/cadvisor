@@ -259,3 +259,11 @@ func TestMemoryInfo(t *testing.T) {
 	assert.Equal(t, uint(1), memory["Unbuffered-DDR4"].DimmCount)
 	assert.Equal(t, uint(2), memory["Non-volatile-RAM"].DimmCount)
 }
+
+func TestMemoryInfoOnArchThatDoNotExposeMemoryController(t *testing.T) {
+	testPath := "./there/is/no/spoon"
+	memory, err := GetMachineMemoryByType(testPath)
+
+	assert.Nil(t, err)
+	assert.Len(t, memory, 0)
+}
