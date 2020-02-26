@@ -33,7 +33,7 @@ func GetNVMAvgPowerBudget() (uint, error) {
 	err := C.nvm_init()
 	if err != C.NVM_SUCCESS {
 		klog.Warningf("libipmctl initialization failed with status %d", err)
-		return 0, fmt.Errorf("libipmctl initialization failed with status %d", err)
+		return uint(0), fmt.Errorf("libipmctl initialization failed with status %d", err)
 	}
 	defer C.nvm_uninit()
 
