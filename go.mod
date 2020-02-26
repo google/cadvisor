@@ -61,7 +61,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v1.0.0-rc8.0.20190906011214-a6606a7ae9d9
 	github.com/opencontainers/runtime-spec v1.0.1
-	github.com/opencontainers/selinux v1.3.1-0.20190929122143-5215b1806f52 // indirect
+	github.com/opencontainers/selinux v1.3.2 // indirect
 	github.com/pborman/uuid v0.0.0-20150824212802-cccd189d45f7 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
