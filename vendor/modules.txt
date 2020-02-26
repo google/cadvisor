@@ -45,7 +45,7 @@ github.com/blang/semver
 github.com/checkpoint-restore/go-criu/rpc
 # github.com/containerd/console v0.0.0-20180822173158-c12b1e7919c1
 github.com/containerd/console
-# github.com/containerd/containerd v1.3.2
+# github.com/containerd/containerd v1.3.3
 github.com/containerd/containerd/api/services/containers/v1
 github.com/containerd/containerd/api/services/tasks/v1
 github.com/containerd/containerd/api/services/version/v1
@@ -65,7 +65,7 @@ github.com/coreos/go-systemd/dbus
 github.com/cyphar/filepath-securejoin
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/docker/distribution v2.7.1+incompatible
+# github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible
 github.com/docker/distribution/digestset
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/api/errcode
@@ -159,7 +159,7 @@ github.com/mesos/mesos-go/api/v1/lib/httpcli
 github.com/mesos/mesos-go/api/v1/lib/httpcli/apierrors
 github.com/mesos/mesos-go/api/v1/lib/recordio
 github.com/mesos/mesos-go/api/v1/lib/roles
-# github.com/mindprince/gonvml v0.0.0-20171110221305-fee913ce8fb2
+# github.com/mindprince/gonvml v0.0.0-20190828220739-9ebdce4bb989
 github.com/mindprince/gonvml
 # github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
 github.com/mistifyio/go-zfs
@@ -189,7 +189,7 @@ github.com/opencontainers/runc/libcontainer/user
 github.com/opencontainers/runc/libcontainer/utils
 # github.com/opencontainers/runtime-spec v1.0.1
 github.com/opencontainers/runtime-spec/specs-go
-# github.com/opencontainers/selinux v1.3.1-0.20190929122143-5215b1806f52
+# github.com/opencontainers/selinux v1.3.2
 github.com/opencontainers/selinux/go-selinux
 github.com/opencontainers/selinux/go-selinux/label
 # github.com/pkg/errors v0.8.1
