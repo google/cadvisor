@@ -36,7 +36,7 @@ cAdvisor can be linked against [libipmctl](https://github.com/intel/ipmctl) libr
 * `libimpctl-devel` must be installed on build system.
 * `libimpctl` must be installed on all systems where cAdvisor is running.
 
-Detaled information about building `libipmctl` can be found in the project's [README](https://github.com/intel/ipmctl#build).
+Detailed information about building `libipmctl` can be found in the project's [README](https://github.com/intel/ipmctl#build). Make sure to use the most up to date released version.
 
 To enable `libimpctl` support `GO_FLAGS` variable must be set:
 
@@ -52,4 +52,3 @@ Now you can run the built binary:
 ```
 $GOPATH/src/github.com/google/cadvisor $ sudo ./cadvisor
 ```
-
