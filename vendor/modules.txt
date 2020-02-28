@@ -43,6 +43,11 @@ github.com/beorn7/perks/quantile
 github.com/blang/semver
 # github.com/checkpoint-restore/go-criu v0.0.0-20190109184317-bdb7599cd87b
 github.com/checkpoint-restore/go-criu/rpc
+# github.com/cilium/ebpf v0.0.0-20191113100448-d9fb101ca1fb
+github.com/cilium/ebpf
+github.com/cilium/ebpf/asm
+github.com/cilium/ebpf/internal
+github.com/cilium/ebpf/internal/unix
 # github.com/containerd/console v0.0.0-20180822173158-c12b1e7919c1
 github.com/containerd/console
 # github.com/containerd/containerd v1.3.3
@@ -170,11 +175,15 @@ github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.1
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
-# github.com/opencontainers/runc v1.0.0-rc8.0.20190906011214-a6606a7ae9d9
+# github.com/opencontainers/runc v1.0.0-rc10
 github.com/opencontainers/runc/libcontainer
 github.com/opencontainers/runc/libcontainer/apparmor
 github.com/opencontainers/runc/libcontainer/cgroups
+github.com/opencontainers/runc/libcontainer/cgroups/ebpf
+github.com/opencontainers/runc/libcontainer/cgroups/ebpf/devicefilter
 github.com/opencontainers/runc/libcontainer/cgroups/fs
+github.com/opencontainers/runc/libcontainer/cgroups/fs2
+github.com/opencontainers/runc/libcontainer/cgroups/fscommon
 github.com/opencontainers/runc/libcontainer/cgroups/systemd
 github.com/opencontainers/runc/libcontainer/configs
 github.com/opencontainers/runc/libcontainer/configs/validate
@@ -187,6 +196,7 @@ github.com/opencontainers/runc/libcontainer/stacktrace
 github.com/opencontainers/runc/libcontainer/system
 github.com/opencontainers/runc/libcontainer/user
 github.com/opencontainers/runc/libcontainer/utils
+github.com/opencontainers/runc/types
 # github.com/opencontainers/runtime-spec v1.0.1
 github.com/opencontainers/runtime-spec/specs-go
 # github.com/opencontainers/selinux v1.3.2
