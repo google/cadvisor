@@ -1,5 +1,14 @@
 # Changelog
 
+### 0.36.0 (2020-02-28)
+- Add support for risc and mips CPUs
+- Add advanced TCP stats
+- Fix bug in which cAdvisor could fail to discover docker's root directory
+- The stdout storage driver now supports metric timestamps
+- Add ulimit metrics
+- Support multi-arch container builds
+- Switch to go modules
+
 ### 0.35.0 (2019-11-27)
 - Add hugepage info per-numa-node
 - Add support for cgoups v2 unified higherarchy
