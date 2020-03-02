@@ -89,13 +89,6 @@ Go to https://github.com/google/cadvisor/releases and click "Draft a new release
 
 ## 6. Finalize the release
 
-Once you are satisfied with the release quality (consider waiting a week for bug reports to come in), it is time to promote the release to *latest*
+~~Once you are satisfied with the release quality (consider waiting a week for bug reports to come in), it is time to promote the release to *latest*~~
 
-1. Edit the github release a final time, and uncheck the "Pre-release" checkbox
-2. Tag the docker & gcr.io releases with the latest version
-```
-$ docker pull google/cadvisor:$VERSION
-$ docker tag -f google/cadvisor:$VERSION google/cadvisor:latest
-$ docker tag -f google/cadvisor:$VERSION gcr.io/google_containers/cadvisor:latest
-```
-3. Repeat steps 4.a and 4.b to push the image tagged with latest
+cAdvisor is no longer pushed with the :latest tag.  This is to ensure tagged images are immutable.
