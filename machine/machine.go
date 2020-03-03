@@ -166,11 +166,12 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, uint,
 				dimm := dimmDir.Name()
 				if isDimm.MatchString(dimm) {
 					memType, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, memTypeFileName))
+					readableMemType := strings.TrimSpace(string(memType))
 					if err != nil {
 						return map[string]*info.MemoryInfo{}, uint(0), err
 					}
-					if _, exists := memory[string(memType)]; !exists {
-						memory[string(memType)] = &info.MemoryInfo{}
+					if _, exists := memory[readableMemType]; !exists {
+						memory[readableMemType] = &info.MemoryInfo{}
 					}
 					size, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, sizeFileName))
 					if err != nil {
@@ -180,8 +181,8 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, uint,
 					if err != nil {
 						return map[string]*info.MemoryInfo{}, uint(0), err
 					}
-					memory[string(memType)].Capacity += uint64(mbToBytes(capacity))
-					memory[string(memType)].DimmCount++
+					memory[readableMemType].Capacity += uint64(mbToBytes(capacity))
+					memory[readableMemType].DimmCount++
 					dimmCount++
 				}
 			}
