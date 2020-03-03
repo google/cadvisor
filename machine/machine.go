@@ -175,7 +175,7 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error
 					if err != nil {
 						return map[string]*info.MemoryInfo{}, err
 					}
-					capacity, err := strconv.Atoi(string(size))
+					capacity, err := strconv.Atoi(strings.TrimSpace(string(size)))
 					if err != nil {
 						return map[string]*info.MemoryInfo{}, err
 					}
