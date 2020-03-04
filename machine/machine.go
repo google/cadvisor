@@ -141,6 +141,8 @@ func GetMachineMemoryCapacity() (uint64, error) {
 // Information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/)
 // introduced in kernel 3.6. Documentation can be found at
 // https://www.kernel.org/doc/Documentation/admin-guide/ras.rst.
+// Full list of memory types can be found in edac_mc.c
+// (https://github.com/torvalds/linux/blob/v5.5/drivers/edac/edac_mc.c#L198)
 func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, uint, error) {
 	var dimmCount uint
 	memory := map[string]*info.MemoryInfo{}
