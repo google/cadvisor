@@ -608,7 +608,7 @@ func GetDirUsage(dir string) (UsageInfo, error) {
 		return nil
 	})
 
-	return usage, nil
+	return usage, err
 }
 
 func (self *RealFsInfo) GetDirUsage(dir string) (UsageInfo, error) {
