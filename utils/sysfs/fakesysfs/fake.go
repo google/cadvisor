@@ -15,6 +15,7 @@
 package fakesysfs
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -53,6 +54,49 @@ func (self *FileInfo) Sys() interface{} {
 type FakeSysFs struct {
 	info  FileInfo
 	cache sysfs.CacheInfo
+
+	nodesPaths  []string
+	nodePathErr error
+
+	cpusPaths  map[string][]string
+	cpuPathErr error
+
+	coreThread map[string]string
+	coreIDErr  error
+
+	memTotal string
+	memErr   error
+
+	hugePages    []os.FileInfo
+	hugePagesErr error
+
+	hugePagesNr    map[string]string
+	hugePagesNrErr error
+}
+
+func (self *FakeSysFs) GetNodesPaths() ([]string, error) {
+	return self.nodesPaths, self.nodePathErr
+}
+
+func (self *FakeSysFs) GetCPUsPaths(nodePath string) ([]string, error) {
+	return self.cpusPaths[nodePath], self.cpuPathErr
+}
+
+func (self *FakeSysFs) GetCoreID(coreIDPath string) (string, error) {
+	return self.coreThread[coreIDPath], self.coreIDErr
+}
+
+func (self *FakeSysFs) GetMemInfo(nodePath string) (string, error) {
+	return self.memTotal, self.memErr
+}
+
+func (self *FakeSysFs) GetHugePagesInfo(hugepagesDirectory string) ([]os.FileInfo, error) {
+	return self.hugePages, self.hugePagesErr
+}
+
+func (self *FakeSysFs) GetHugePagesNr(hugepagesDirectory string, hugePageName string) (string, error) {
+	hugePageFile := fmt.Sprintf("%s%s/%s", hugepagesDirectory, hugePageName, sysfs.HugePagesNrFile)
+	return self.hugePagesNr[hugePageFile], self.hugePagesNrErr
 }
 
 func (self *FakeSysFs) GetBlockDevices() ([]os.FileInfo, error) {
@@ -103,6 +147,36 @@ func (self *FakeSysFs) GetCacheInfo(cpu int, cache string) (sysfs.CacheInfo, err
 
 func (self *FakeSysFs) SetCacheInfo(cache sysfs.CacheInfo) {
 	self.cache = cache
+}
+
+func (self *FakeSysFs) SetNodesPaths(paths []string, err error) {
+	self.nodesPaths = paths
+	self.nodePathErr = err
+}
+
+func (self *FakeSysFs) SetCPUsPaths(paths map[string][]string, err error) {
+	self.cpusPaths = paths
+	self.cpuPathErr = err
+}
+
+func (self *FakeSysFs) SetCoreThreads(coreThread map[string]string, err error) {
+	self.coreThread = coreThread
+	self.coreIDErr = err
+}
+
+func (self *FakeSysFs) SetMemory(memTotal string, err error) {
+	self.memTotal = memTotal
+	self.memErr = err
+}
+
+func (self *FakeSysFs) SetHugePages(hugePages []os.FileInfo, err error) {
+	self.hugePages = hugePages
+	self.hugePagesErr = err
+}
+
+func (self *FakeSysFs) SetHugePagesNr(hugePagesNr map[string]string, err error) {
+	self.hugePagesNr = hugePagesNr
+	self.hugePagesNrErr = err
 }
 
 func (self *FakeSysFs) SetEntryName(name string) {

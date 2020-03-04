@@ -15,12 +15,414 @@
 package sysinfo
 
 import (
+	"encoding/json"
+	"fmt"
+	"os"
 	"testing"
 
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestGetHugePagesInfo(t *testing.T) {
+	fakeSys := fakesysfs.FakeSysFs{}
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+		&fakesysfs.FileInfo{EntryName: "hugepages-1048576kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages":    "1",
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, nil)
+
+	hugePagesInfo, err := GetHugePagesInfo(&fakeSys, "/fakeSysfs/devices/system/node/node0/hugepages/")
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(hugePagesInfo))
+}
+
+func TestGetHugePagesInfoWithHugePagesDirectory(t *testing.T) {
+	fakeSys := fakesysfs.FakeSysFs{}
+	hugePagesInfo, err := GetHugePagesInfo(&fakeSys, "/fakeSysfs/devices/system/node/node0/hugepages/")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(hugePagesInfo))
+}
+
+func TestGetHugePagesInfoWithWrongDirName(t *testing.T) {
+	fakeSys := fakesysfs.FakeSysFs{}
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-abckB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePagesInfo, err := GetHugePagesInfo(&fakeSys, "/fakeSysfs/devices/system/node/node0/hugepages/")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, len(hugePagesInfo))
+}
+
+func TestGetHugePagesInfoWithReadingNrHugePagesError(t *testing.T) {
+	fakeSys := fakesysfs.FakeSysFs{}
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+		&fakesysfs.FileInfo{EntryName: "hugepages-1048576kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages":    "1",
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, fmt.Errorf("Error in reading nr_hugepages"))
+
+	hugePagesInfo, err := GetHugePagesInfo(&fakeSys, "/fakeSysfs/devices/system/node/node0/hugepages/")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, len(hugePagesInfo))
+}
+
+func TestGetHugePagesInfoWithWrongNrHugePageValue(t *testing.T) {
+	fakeSys := fakesysfs.FakeSysFs{}
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+		&fakesysfs.FileInfo{EntryName: "hugepages-1048576kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages":    "*****",
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, nil)
+
+	hugePagesInfo, err := GetHugePagesInfo(&fakeSys, "/fakeSysfs/devices/system/node/node0/hugepages/")
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, len(hugePagesInfo))
+}
+
+func TestGetNodesInfo(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	c := sysfs.CacheInfo{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 3,
+		Cpus:  2,
+	}
+	fakeSys.SetCacheInfo(c)
+
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+		"/fakeSysfs/devices/system/node/node1",
+	}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+		"/fakeSysfs/devices/system/node/node1": {
+			"/fakeSysfs/devices/system/node/node0/cpu2",
+			"/fakeSysfs/devices/system/node/node0/cpu3",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu3": "1",
+	}
+	fakeSys.SetCoreThreads(coreThread, nil)
+
+	memTotal := "MemTotal:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages": "1",
+		"/fakeSysfs/devices/system/node/node1/hugepages/hugepages-2048kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, nil)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(nodes))
+	assert.Equal(t, 4, cores)
+
+	nodesJSON, err := json.Marshal(nodes)
+	assert.Nil(t, err)
+	expectedNodes := `
+	[
+      {
+        "node_id": 0,
+        "memory": 33604804608,
+        "hugepages": [
+          {
+            "page_size": 2048,
+            "num_pages": 1
+          }
+        ],
+        "cores": [
+          {
+            "core_id": 0,
+            "thread_ids": [
+              0,
+              1
+            ],
+            "caches": null
+          }
+        ],
+        "caches": [
+          {
+            "size": 32768,
+            "type": "unified",
+            "level": 3
+          }
+        ]
+      },
+      {
+        "node_id": 1,
+        "memory": 33604804608,
+        "hugepages": [
+          {
+            "page_size": 2048,
+            "num_pages": 1
+          }
+        ],
+        "cores": [
+          {
+            "core_id": 1,
+            "thread_ids": [
+              2,
+              3
+            ],
+            "caches": null
+          }
+        ],
+        "caches": [
+          {
+            "size": 32768,
+            "type": "unified",
+            "level": 3
+          }
+        ]
+      }
+    ]
+    `
+	assert.JSONEq(t, expectedNodes, string(nodesJSON))
+}
+
+func TestGetNodesWithoutMemoryInfo(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	c := sysfs.CacheInfo{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 3,
+		Cpus:  2,
+	}
+	fakeSys.SetCacheInfo(c)
+
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+		"/fakeSysfs/devices/system/node/node1",
+	}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+		"/fakeSysfs/devices/system/node/node1": {
+			"/fakeSysfs/devices/system/node/node0/cpu2",
+			"/fakeSysfs/devices/system/node/node0/cpu3",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu3": "1",
+	}
+	fakeSys.SetCoreThreads(coreThread, nil)
+
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages": "1",
+		"/fakeSysfs/devices/system/node/node1/hugepages/hugepages-2048kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, nil)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.NotNil(t, err)
+	assert.Equal(t, []info.Node([]info.Node(nil)), nodes)
+	assert.Equal(t, 0, cores)
+}
+
+func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	c := sysfs.CacheInfo{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 2,
+		Cpus:  2,
+	}
+	fakeSys.SetCacheInfo(c)
+
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+		"/fakeSysfs/devices/system/node/node1",
+	}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+		"/fakeSysfs/devices/system/node/node1": {
+			"/fakeSysfs/devices/system/node/node0/cpu2",
+			"/fakeSysfs/devices/system/node/node0/cpu3",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu3": "1",
+	}
+	fakeSys.SetCoreThreads(coreThread, nil)
+
+	memTotal := "MemTotal:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(nodes))
+	assert.Equal(t, 4, cores)
+
+	nodesJSON, err := json.Marshal(nodes)
+	assert.Nil(t, err)
+	expectedNodes := `
+	[
+      {
+        "node_id": 0,
+        "memory": 33604804608,
+        "hugepages": null,
+        "cores": [
+          {
+            "core_id": 0,
+            "thread_ids": [
+              0,
+              1
+            ],
+            "caches": [
+              {
+                "size": 32768,
+                "type": "unified",
+                "level": 2
+              }
+            ]
+          }
+        ],
+        "caches": null
+      },
+      {
+        "node_id": 1,
+        "memory": 33604804608,
+        "hugepages": null,
+        "cores": [
+          {
+            "core_id": 1,
+            "thread_ids": [
+              2,
+              3
+            ],
+            "caches": [
+              {
+                "size": 32768,
+                "type": "unified",
+                "level": 2
+              }
+            ]
+          }
+        ],
+        "caches": null
+      }
+    ]`
+	assert.JSONEq(t, expectedNodes, string(nodesJSON))
+}
+
+func TestGetNodeMemInfo(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	memTotal := "MemTotal:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	mem, err := getNodeMemInfo(fakeSys, "/fakeSysfs/devices/system/node/node0")
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(32817192*1024), mem)
+}
+
+func TestGetNodeMemInfoWithMissingMemTotaInMemInfo(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	memTotal := "MemXXX:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	mem, err := getNodeMemInfo(fakeSys, "/fakeSysfs/devices/system/node/node0")
+	assert.NotNil(t, err)
+	assert.Equal(t, uint64(0), mem)
+}
+
+func TestGetNodeMemInfoWhenMemInfoMissing(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	memTotal := ""
+	fakeSys.SetMemory(memTotal, fmt.Errorf("Cannot read meminfo file"))
+
+	mem, err := getNodeMemInfo(fakeSys, "/fakeSysfs/devices/system/node/node0")
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(0), mem)
+}
+
+func TestGetCoresInfoWhenCoreIDIsNotDigit(t *testing.T) {
+	sysFs := &fakesysfs.FakeSysFs{}
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+	}
+	sysFs.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+		},
+	}
+	sysFs.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "abc",
+	}
+	sysFs.SetCoreThreads(coreThread, nil)
+
+	cores, coreID, err := getCoresInfo(sysFs, "/fakeSysfs/devices/system/node/node0")
+	assert.NotNil(t, err)
+	assert.Equal(t, []info.Core(nil), cores)
+	assert.Equal(t, 0, coreID)
+}
 
 func TestGetBlockDeviceInfo(t *testing.T) {
 	fakeSys := fakesysfs.FakeSysFs{}

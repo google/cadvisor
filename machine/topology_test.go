@@ -15,9 +15,10 @@
 package machine
 
 import (
+	"encoding/json"
 	"io/ioutil"
+	"os"
 	"reflect"
-	"runtime"
 	"testing"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -38,7 +39,7 @@ func TestPhysicalCores(t *testing.T) {
 }
 
 func TestPhysicalCoresReadingFromCpuBus(t *testing.T) {
-	cpuBusPath = "./testdata/"           // overwriting global variable to mock sysfs
+	cpuBusPath = "./testdata/"           // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without core id
 
 	testcpuinfo, err := ioutil.ReadFile(testfile)
@@ -50,7 +51,7 @@ func TestPhysicalCoresReadingFromCpuBus(t *testing.T) {
 }
 
 func TestPhysicalCoresFromWrongSysFs(t *testing.T) {
-	cpuBusPath = "./testdata/wrongsysfs" // overwriting global variable to mock sysfs
+	cpuBusPath = "./testdata/wrongsysfs" // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without core id
 
 	testcpuinfo, err := ioutil.ReadFile(testfile)
@@ -73,7 +74,7 @@ func TestSockets(t *testing.T) {
 }
 
 func TestSocketsReadingFromCpuBus(t *testing.T) {
-	cpuBusPath = "./testdata/wrongsysfs" // overwriting global variable to mock sysfs
+	cpuBusPath = "./testdata/wrongsysfs" // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without physical id
 
 	testcpuinfo, err := ioutil.ReadFile(testfile)
@@ -85,7 +86,7 @@ func TestSocketsReadingFromCpuBus(t *testing.T) {
 }
 
 func TestSocketsReadingFromWrongSysFs(t *testing.T) {
-	cpuBusPath = "./testdata/"           // overwriting global variable to mock sysfs
+	cpuBusPath = "./testdata/"           // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without physical id
 
 	testcpuinfo, err := ioutil.ReadFile(testfile)
@@ -97,14 +98,7 @@ func TestSocketsReadingFromWrongSysFs(t *testing.T) {
 }
 
 func TestTopology(t *testing.T) {
-	if runtime.GOARCH != "amd64" {
-		t.Skip("cpuinfo testdata is for amd64")
-	}
-	testfile := "./testdata/cpuinfo"
-	testcpuinfo, err := ioutil.ReadFile(testfile)
-	if err != nil {
-		t.Fatalf("unable to read input test file %s", testfile)
-	}
+	machineArch = "" // overwrite package variable
 	sysFs := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{
 		Size:  32 * 1024,
@@ -113,14 +107,70 @@ func TestTopology(t *testing.T) {
 		Cpus:  2,
 	}
 	sysFs.SetCacheInfo(c)
-	topology, numCores, err := GetTopology(sysFs, string(testcpuinfo))
-	if err != nil {
-		t.Errorf("failed to get topology for sample cpuinfo %s: %v", string(testcpuinfo), err)
-	}
 
-	if numCores != 12 {
-		t.Errorf("Expected 12 cores, found %d", numCores)
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+		"/fakeSysfs/devices/system/node/node1",
 	}
+	sysFs.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+			"/fakeSysfs/devices/system/node/node0/cpu2",
+			"/fakeSysfs/devices/system/node/node0/cpu6",
+			"/fakeSysfs/devices/system/node/node0/cpu7",
+			"/fakeSysfs/devices/system/node/node0/cpu8",
+		},
+		"/fakeSysfs/devices/system/node/node1": {
+			"/fakeSysfs/devices/system/node/node0/cpu3",
+			"/fakeSysfs/devices/system/node/node0/cpu4",
+			"/fakeSysfs/devices/system/node/node0/cpu5",
+			"/fakeSysfs/devices/system/node/node0/cpu9",
+			"/fakeSysfs/devices/system/node/node0/cpu10",
+			"/fakeSysfs/devices/system/node/node0/cpu11",
+		},
+	}
+	sysFs.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0":  "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1":  "1",
+		"/fakeSysfs/devices/system/node/node0/cpu2":  "2",
+		"/fakeSysfs/devices/system/node/node0/cpu3":  "3",
+		"/fakeSysfs/devices/system/node/node0/cpu4":  "4",
+		"/fakeSysfs/devices/system/node/node0/cpu5":  "5",
+		"/fakeSysfs/devices/system/node/node0/cpu6":  "0",
+		"/fakeSysfs/devices/system/node/node0/cpu7":  "1",
+		"/fakeSysfs/devices/system/node/node0/cpu8":  "2",
+		"/fakeSysfs/devices/system/node/node0/cpu9":  "3",
+		"/fakeSysfs/devices/system/node/node0/cpu10": "4",
+		"/fakeSysfs/devices/system/node/node0/cpu11": "5",
+	}
+	sysFs.SetCoreThreads(coreThread, nil)
+
+	memTotal := "MemTotal:       32817192 kB"
+	sysFs.SetMemory(memTotal, nil)
+
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+		&fakesysfs.FileInfo{EntryName: "hugepages-1048576kB"},
+	}
+	sysFs.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages":    "1",
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages": "1",
+		"/fakeSysfs/devices/system/node/node1/hugepages/hugepages-2048kB/nr_hugepages":    "1",
+		"/fakeSysfs/devices/system/node/node1/hugepages/hugepages-1048576kB/nr_hugepages": "1",
+	}
+	sysFs.SetHugePagesNr(hugePageNr, nil)
+
+	topology, numCores, err := GetTopology(sysFs)
+	assert.Nil(t, err)
+	assert.Equal(t, 12, numCores)
+
 	expected_topology := []info.Node{}
 	numNodes := 2
 	numCoresPerNode := 3
@@ -147,105 +197,93 @@ func TestTopology(t *testing.T) {
 		expected_topology = append(expected_topology, node)
 	}
 
-	if !reflect.DeepEqual(topology, expected_topology) {
-		t.Errorf("Expected topology %+v, got %+v", expected_topology, topology)
-	}
+	assert.NotNil(t, reflect.DeepEqual(topology, expected_topology))
 }
 
-func TestTopologyWithSimpleCpuinfo(t *testing.T) {
-	if isSystemZ() {
-		t.Skip("systemZ has no topology info")
-	}
+func TestTopologyEmptySysFs(t *testing.T) {
+	machineArch = "" // overwrite package variable
+	_, _, err := GetTopology(&fakesysfs.FakeSysFs{})
+	assert.NotNil(t, err)
+}
+
+func TestTopologyWithNodesWithoutCPU(t *testing.T) {
+	machineArch = "" // overwrite package variable
 	sysFs := &fakesysfs.FakeSysFs{}
-	c := sysfs.CacheInfo{
-		Size:  32 * 1024,
-		Type:  "unified",
-		Level: 1,
-		Cpus:  1,
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+		"/fakeSysfs/devices/system/node/node1",
 	}
-	sysFs.SetCacheInfo(c)
-	topology, numCores, err := GetTopology(sysFs, "processor\t: 0\n")
-	if err != nil {
-		t.Errorf("Expected cpuinfo with no topology data to succeed.")
+	sysFs.SetNodesPaths(nodesPaths, nil)
+
+	memTotal := "MemTotal:       32817192 kB"
+	sysFs.SetMemory(memTotal, nil)
+
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+		&fakesysfs.FileInfo{EntryName: "hugepages-1048576kB"},
 	}
-	node := info.Node{Id: 0}
-	core := info.Core{Id: 0}
-	core.Threads = append(core.Threads, 0)
-	cache := info.Cache{
-		Size:  32 * 1024,
-		Type:  "unified",
-		Level: 1,
+	sysFs.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages":    "1",
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-1048576kB/nr_hugepages": "1",
+		"/fakeSysfs/devices/system/node/node1/hugepages/hugepages-2048kB/nr_hugepages":    "1",
+		"/fakeSysfs/devices/system/node/node1/hugepages/hugepages-1048576kB/nr_hugepages": "1",
 	}
-	core.Caches = append(core.Caches, cache)
-	node.Cores = append(node.Cores, core)
-	// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
-	node.Memory = topology[0].Memory
-	// Copy over HugePagesInfo from result. TODO(ohsewon): Use HugePagesInfo from fake.
-	node.HugePages = topology[0].HugePages
-	expected := []info.Node{node}
-	if !reflect.DeepEqual(topology, expected) {
-		t.Errorf("Expected topology %+v, got %+v", expected, topology)
-	}
-	if numCores != 1 {
-		t.Errorf("Expected 1 core, found %d", numCores)
-	}
+	sysFs.SetHugePagesNr(hugePageNr, nil)
+
+	topology, numCores, err := GetTopology(sysFs)
+
+	assert.Nil(t, err)
+	assert.Equal(t, 0, numCores)
+
+	topologyJSON, err := json.Marshal(topology)
+	assert.Nil(t, err)
+
+	expectedTopology := `[
+     {
+      "caches": null,
+      "cores": null,
+      "hugepages": [
+       {
+        "num_pages": 1,
+        "page_size": 2048
+       },
+       {
+        "num_pages": 1,
+        "page_size": 1048576
+       }
+      ],
+      "memory": 33604804608,
+      "node_id": 0
+     },
+     {
+      "caches": null,
+      "cores": null,
+      "hugepages": [
+       {
+        "num_pages": 1,
+        "page_size": 2048
+       },
+       {
+        "num_pages": 1,
+        "page_size": 1048576
+       }
+      ],
+      "memory": 33604804608,
+      "node_id": 1
+     }
+    ]
+    `
+	assert.JSONEq(t, expectedTopology, string(topologyJSON))
 }
 
-func TestTopologyEmptyCpuinfo(t *testing.T) {
-	if isSystemZ() {
-		t.Skip("systemZ has no topology info")
-	}
-	_, _, err := GetTopology(&fakesysfs.FakeSysFs{}, "")
-	if err == nil {
-		t.Errorf("Expected empty cpuinfo to fail.")
-	}
-}
-
-func TestTopologyCoreId(t *testing.T) {
-	val, _ := getCoreIdFromCpuBus("./testdata", 0)
-	if val != 0 {
-		t.Errorf("Expected core 0, found %d", val)
-	}
-
-	val, _ = getCoreIdFromCpuBus("./testdata", 9999)
-	if val != 8888 {
-		t.Errorf("Expected core 8888, found %d", val)
-	}
-}
-
-func TestTopologyNodeId(t *testing.T) {
-	val, _ := getNodeIdFromCpuBus("./testdata", 0)
-	if val != 0 {
-		t.Errorf("Expected core 0, found %d", val)
-	}
-
-	val, _ = getNodeIdFromCpuBus("./testdata", 9999)
-	if val != 1234 {
-		t.Errorf("Expected core 1234 , found %d", val)
-	}
-}
-
-func TestGetHugePagesInfo(t *testing.T) {
-	testPath := "./testdata/hugepages/"
-	expected := []info.HugePagesInfo{
-		{
-			NumPages: 1,
-			PageSize: 1048576,
-		},
-		{
-			NumPages: 2,
-			PageSize: 2048,
-		},
-	}
-
-	val, err := GetHugePagesInfo(testPath)
-	if err != nil {
-		t.Errorf("Failed to GetHugePagesInfo() for sample path %s: %v", testPath, err)
-	}
-
-	if !reflect.DeepEqual(expected, val) {
-		t.Errorf("Expected HugePagesInfo %+v, got %+v", expected, val)
-	}
+func TestTopologyOnSystemZ(t *testing.T) {
+	machineArch = "s390" // overwrite package variable
+	nodes, cores, err := GetTopology(&fakesysfs.FakeSysFs{})
+	assert.Nil(t, err)
+	assert.Nil(t, nodes)
+	assert.NotNil(t, cores)
 }
 
 func TestMemoryInfo(t *testing.T) {
