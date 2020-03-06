@@ -250,10 +250,9 @@ func TestGetHugePagesInfo(t *testing.T) {
 
 func TestMemoryInfo(t *testing.T) {
 	testPath := "./testdata/edac/mc"
-	memory, dimmCount, err := GetMachineMemoryByType(testPath)
+	memory, err := GetMachineMemoryByType(testPath)
 
 	assert.Nil(t, err)
-	assert.Equal(t, uint(3), dimmCount)
 	assert.Len(t, memory, 2)
 	assert.Equal(t, uint64(789*1024*1024), memory["Unbuffered-DDR4"].Capacity)
 	assert.Equal(t, uint64(579*1024*1024), memory["Non-volatile-RAM"].Capacity)
@@ -263,9 +262,8 @@ func TestMemoryInfo(t *testing.T) {
 
 func TestMemoryInfoOnArchThatDoNotExposeMemoryController(t *testing.T) {
 	testPath := "./there/is/no/spoon"
-	memory, dimmCount, err := GetMachineMemoryByType(testPath)
+	memory, err := GetMachineMemoryByType(testPath)
 
 	assert.Nil(t, err)
-	assert.Zero(t, dimmCount)
 	assert.Len(t, memory, 0)
 }

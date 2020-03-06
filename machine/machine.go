@@ -145,17 +145,16 @@ func GetMachineMemoryCapacity() (uint64, error) {
 // https://www.kernel.org/doc/Documentation/admin-guide/ras.rst.
 // Full list of memory types can be found in edac_mc.c
 // (https://github.com/torvalds/linux/blob/v5.5/drivers/edac/edac_mc.c#L198)
-func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, uint, error) {
-	var dimmCount uint
+func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error) {
 	memory := map[string]*info.MemoryInfo{}
 	names, err := ioutil.ReadDir(edacPath)
 	// On some architectures (such as ARM) memory controller device may not exist.
 	// If this is the case then we ignore error and return empty slice.
 	_, ok := err.(*os.PathError)
 	if err != nil && ok {
-		return memory, dimmCount, nil
+		return memory, nil
 	} else if err != nil {
-		return memory, dimmCount, err
+		return memory, err
 	}
 	for _, controllerDir := range names {
 		controller := controllerDir.Name()
@@ -164,7 +163,7 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, uint,
 		}
 		dimms, err := ioutil.ReadDir(path.Join(edacPath, controllerDir.Name()))
 		if err != nil {
-			return map[string]*info.MemoryInfo{}, uint(0), err
+			return map[string]*info.MemoryInfo{}, err
 		}
 		for _, dimmDir := range dimms {
 			dimm := dimmDir.Name()
@@ -174,26 +173,25 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, uint,
 			memType, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, memTypeFileName))
 			readableMemType := strings.TrimSpace(string(memType))
 			if err != nil {
-				return map[string]*info.MemoryInfo{}, uint(0), err
+				return map[string]*info.MemoryInfo{}, err
 			}
 			if _, exists := memory[readableMemType]; !exists {
 				memory[readableMemType] = &info.MemoryInfo{}
 			}
 			size, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, sizeFileName))
 			if err != nil {
-				return map[string]*info.MemoryInfo{}, uint(0), err
+				return map[string]*info.MemoryInfo{}, err
 			}
 			capacity, err := strconv.Atoi(strings.TrimSpace(string(size)))
 			if err != nil {
-				return map[string]*info.MemoryInfo{}, uint(0), err
+				return map[string]*info.MemoryInfo{}, err
 			}
 			memory[readableMemType].Capacity += uint64(mbToBytes(capacity))
 			memory[readableMemType].DimmCount++
-			dimmCount++
 		}
 	}
 
-	return memory, dimmCount, nil
+	return memory, nil
 }
 
 func mbToBytes(megabytes int) int {

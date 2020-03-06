@@ -173,10 +173,6 @@ type MachineInfo struct {
 	// The amount of memory (in bytes) in this machine
 	MemoryCapacity uint64 `json:"memory_capacity"`
 
-	// Number of memory DIMMs in this machine.
-	// 0 if number is uknown (e.g. in virtualized envirtonment).
-	MemoryDimmCount uint `json:"memory_dimm_count"`
-
 	// Memory capacity and number of DIMMs by memory type
 	MemoryByType map[string]*MemoryInfo `json:"memory_by_type"`
 
