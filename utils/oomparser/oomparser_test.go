@@ -23,28 +23,75 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const startLine = "ruby invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0"
-const endLine = "Killed process 19667 (evil-program2) total-vm:1460016kB, anon-rss:1414008kB, file-rss:4kB"
-const containerLine = "Task in /mem2 killed as a result of limit of /mem3"
+const (
+	startLine           = "ruby invoked oom-killer: gfp_mask=0x201da, order=0, oom_score_adj=0"
+	endLine             = "Killed process 19667 (evil-program2) total-vm:1460016kB, anon-rss:1414008kB, file-rss:4kB"
+	legacyContainerLine = "Task in /mem2 killed as a result of limit of /mem3"
+	containerLine       = "oom-kill:constraint=CONSTRAINT_MEMCG,nodemask=(null),cpuset=ef807430361e6e82b45db92e2e9b6fbec98f419b12c591e655c1a725565e73a8,mems_allowed=0,oom_memcg=/kubepods/burstable/podfbdfe8e3-1c87-4ff2-907 c-b2ec8e25d012,task_memcg=/kubepods/burstable/podfbdfe8e3-1c87-4ff2-907c-b2ec8e25d012/ef807430361e6e82b45db92e2e9b6fbec98f419b12c591e655c1a725565e73a8,task=manager,pid=966,uid=0"
+)
 
-func TestGetContainerName(t *testing.T) {
+func TestGetLegacyContainerName(t *testing.T) {
 	currentOomInstance := new(OomInstance)
-	err := getContainerName(startLine, currentOomInstance)
+	finished, err := getContainerName(startLine, currentOomInstance)
 	if err != nil {
 		t.Errorf("bad line fed to getContainerName should yield no error, but had error %v", err)
+	}
+	if finished {
+		t.Errorf("bad line fed to getContainerName should not result in a finished oom log, but it did")
 	}
 	if currentOomInstance.ContainerName != "" {
 		t.Errorf("bad line fed to getContainerName yielded no container name but set it to %s", currentOomInstance.ContainerName)
 	}
-	err = getContainerName(containerLine, currentOomInstance)
+	finished, err = getContainerName(legacyContainerLine, currentOomInstance)
 	if err != nil {
 		t.Errorf("container line fed to getContainerName should yield no error, but had error %v", err)
+	}
+	if finished {
+		t.Errorf("getContainerName with the legacy log line should not result in a finished oom log, but it did")
+
 	}
 	if currentOomInstance.ContainerName != "/mem2" {
 		t.Errorf("getContainerName should have set containerName to /mem2, not %s", currentOomInstance.ContainerName)
 	}
 	if currentOomInstance.VictimContainerName != "/mem3" {
 		t.Errorf("getContainerName should have set victimContainerName to /mem3, not %s", currentOomInstance.VictimContainerName)
+	}
+}
+
+func TestGetContainerName(t *testing.T) {
+	currentOomInstance := new(OomInstance)
+	finished, err := getContainerName(startLine, currentOomInstance)
+	if err != nil {
+		t.Errorf("bad line fed to getContainerName should yield no error, but had error %v", err)
+	}
+	if finished {
+		t.Errorf("bad line fed to getContainerName should not result in a finished oom log, but it did")
+	}
+	if currentOomInstance.ContainerName != "" {
+		t.Errorf("bad line fed to getContainerName yielded no container name but set it to %s", currentOomInstance.ContainerName)
+	}
+	finished, err = getContainerName(containerLine, currentOomInstance)
+	if err != nil {
+		t.Errorf("container line fed to getContainerName should yield no error, but had error %v", err)
+	}
+	if !finished {
+		t.Errorf("getContainerName with the complete log line should result in a finished oom log, but it did not")
+
+	}
+	if currentOomInstance.ContainerName != "/kubepods/burstable/podfbdfe8e3-1c87-4ff2-907c-b2ec8e25d012/ef807430361e6e82b45db92e2e9b6fbec98f419b12c591e655c1a725565e73a8" {
+		t.Errorf("getContainerName should have set containerName to /kubepods/burstable/podfbdfe8e3-1c87-4ff2-907c-b2ec8e25d012/ef807430361e6e82b45db92e2e9b6fbec98f419b12c591e655c1a725565e73a8, not %s", currentOomInstance.ContainerName)
+	}
+	if currentOomInstance.VictimContainerName != "/kubepods/burstable/podfbdfe8e3-1c87-4ff2-907" {
+		t.Errorf("getContainerName should have set victimContainerName to /kubepods/burstable/podfbdfe8e3-1c87-4ff2-907, not %s", currentOomInstance.VictimContainerName)
+	}
+	if currentOomInstance.Pid != 966 {
+		t.Errorf("getContainerName should have set Pid to 966, not %d", currentOomInstance.Pid)
+	}
+	if currentOomInstance.ProcessName != "manager" {
+		t.Errorf("getContainerName should have set ProcessName to manager, not %s", currentOomInstance.ProcessName)
+	}
+	if currentOomInstance.Constraint != "CONSTRAINT_MEMCG" {
+		t.Errorf("getContainerName should have set ProcessName to CONSTRAINT_MEMCG, not %s", currentOomInstance.Constraint)
 	}
 }
 
