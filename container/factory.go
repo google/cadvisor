@@ -48,6 +48,7 @@ const (
 	PerCpuUsageMetrics             MetricKind = "percpu"
 	MemoryUsageMetrics             MetricKind = "memory"
 	CpuLoadMetrics                 MetricKind = "cpuLoad"
+	HugetlbUsageMetrics            MetricKind = "hugetlb"
 	DiskIOMetrics                  MetricKind = "diskIO"
 	DiskUsageMetrics               MetricKind = "disk"
 	NetworkUsageMetrics            MetricKind = "network"

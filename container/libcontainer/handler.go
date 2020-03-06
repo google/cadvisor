@@ -739,6 +739,17 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Memory.WorkingSet = workingSet
 }
 
+func setHugepageStats(s *cgroups.Stats, ret *info.ContainerStats) {
+	ret.Hugetlb = make(map[string]info.HugetlbStats)
+	for k, v := range s.HugetlbStats {
+		ret.Hugetlb[k] = info.HugetlbStats{
+			Usage:    v.Usage,
+			MaxUsage: v.MaxUsage,
+			Failcnt:  v.Failcnt,
+		}
+	}
+}
+
 func setNetworkStats(libcontainerStats *libcontainer.Stats, ret *info.ContainerStats) {
 	ret.Network.Interfaces = make([]info.InterfaceStats, len(libcontainerStats.Interfaces))
 	for i := range libcontainerStats.Interfaces {
@@ -781,6 +792,9 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics co
 			setDiskIoStats(s, ret)
 		}
 		setMemoryStats(s, ret)
+		if s.HugetlbStats != nil && len(s.HugetlbStats) > 0 {
+			setHugepageStats(s, ret)
+		}
 	}
 	if len(libcontainerStats.Interfaces) > 0 {
 		setNetworkStats(libcontainerStats, ret)

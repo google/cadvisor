@@ -267,6 +267,7 @@ func toIncludedMetrics(ignoreMetrics container.MetricSet) container.MetricSet {
 		container.PerCpuUsageMetrics,
 		container.MemoryUsageMetrics,
 		container.CpuLoadMetrics,
+		container.HugetlbUsageMetrics,
 		container.DiskIOMetrics,
 		container.DiskUsageMetrics,
 		container.NetworkUsageMetrics,

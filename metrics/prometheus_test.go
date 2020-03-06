@@ -53,6 +53,7 @@ var allMetrics = container.MetricSet{
 	container.ProcessSchedulerMetrics:        struct{}{},
 	container.PerCpuUsageMetrics:             struct{}{},
 	container.MemoryUsageMetrics:             struct{}{},
+	container.HugetlbUsageMetrics:            struct{}{},
 	container.CpuLoadMetrics:                 struct{}{},
 	container.DiskIOMetrics:                  struct{}{},
 	container.AcceleratorUsageMetrics:        struct{}{},
@@ -62,7 +63,6 @@ var allMetrics = container.MetricSet{
 	container.NetworkAdvancedTcpUsageMetrics: struct{}{},
 	container.NetworkUdpUsageMetrics:         struct{}{},
 	container.ProcessMetrics:                 struct{}{},
-	container.AppMetrics:                     struct{}{},
 }
 
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
@@ -85,6 +85,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Reservation: 1024,
 					SwapLimit:   4096,
 				},
+				HasHugetlb:   true,
 				HasProcesses: true,
 				Processes: info.ProcessSpec{
 					Limit: 100,
@@ -135,6 +136,18 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						RSS:        15,
 						MappedFile: 16,
 						Swap:       8192,
+					},
+					Hugetlb: map[string]info.HugetlbStats{
+						"2Mi": {
+							Usage:    4,
+							MaxUsage: 10,
+							Failcnt:  1,
+						},
+						"1Gi": {
+							Usage:    0,
+							MaxUsage: 0,
+							Failcnt:  0,
+						},
 					},
 					Network: info.NetworkStats{
 						InterfaceStats: info.InterfaceStats{
@@ -377,38 +390,6 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						NrStopped:         52,
 						NrUninterruptible: 53,
 						NrIoWait:          54,
-					},
-					CustomMetrics: map[string][]info.MetricVal{
-						"container_custom_app_metric_1": {
-							{
-								FloatValue: float64(1.1),
-								Timestamp:  time.Now(),
-								Label:      "testlabel_1_1_1",
-								Labels:     map[string]string{"test_label": "1_1", "test_label_2": "2_1"},
-							},
-							{
-								FloatValue: float64(1.2),
-								Timestamp:  time.Now(),
-								Label:      "testlabel_1_1_2",
-								Labels:     map[string]string{"test_label": "1_2", "test_label_2": "2_2"},
-							},
-						},
-						"container_custom_app_metric_2": {
-							{
-								FloatValue: float64(2),
-								Timestamp:  time.Now(),
-								Label:      "testlabel2",
-								Labels:     map[string]string{"test_label": "test_value"},
-							},
-						},
-						"container_custom_app_metric_3": {
-							{
-								FloatValue: float64(3),
-								Timestamp:  time.Now(),
-								Label:      "testlabel3",
-								Labels:     map[string]string{"test_label": "test_value"},
-							},
-						},
 					},
 				},
 			},

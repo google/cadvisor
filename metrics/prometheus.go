@@ -321,6 +321,60 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.HugetlbUsageMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_hugetlb_failcnt",
+				help:        "Number of hugepage usage hits limits",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"pagesize"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Hugetlb))
+					for k, v := range s.Hugetlb {
+						values = append(values, metricValue{
+							value:     float64(v.Failcnt),
+							labels:    []string{k},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			}, {
+				name:        "container_hugetlb_usage_bytes",
+				help:        "Current hugepage usage in bytes",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"pagesize"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Hugetlb))
+					for k, v := range s.Hugetlb {
+						values = append(values, metricValue{
+							value:     float64(v.Usage),
+							labels:    []string{k},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			},
+			{
+				name:        "container_hugetlb_max_usage_bytes",
+				help:        "Maximum hugepage usage recorded in bytes",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"pagesize"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Hugetlb))
+					for k, v := range s.Hugetlb {
+						values = append(values, metricValue{
+							value:     float64(v.MaxUsage),
+							labels:    []string{k},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			},
+		}...)
+	}
 	if includedMetrics.Has(container.MemoryUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
@@ -1674,24 +1728,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 				)
 			}
 		}
-		if c.includedMetrics.Has(container.AppMetrics) {
-			for metricLabel, v := range stats.CustomMetrics {
-				for _, metric := range v {
-					clabels := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
-					cvalues := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
-					copy(clabels, labels)
-					copy(cvalues, values)
-					for label, value := range metric.Labels {
-						clabels = append(clabels, sanitizeLabelName("app_"+label))
-						cvalues = append(cvalues, value)
-					}
-					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
-					ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), cvalues...)
-				}
-			}
-		}
 	}
-
 }
 
 func (c *PrometheusCollector) collectVersionInfo(ch chan<- prometheus.Metric) {
