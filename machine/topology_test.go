@@ -23,7 +23,78 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestPhysicalCores(t *testing.T) {
+	testfile := "./testdata/cpuinfo"
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	numPhysicalCores := GetPhysicalCores(testcpuinfo)
+	assert.Equal(t, 6, numPhysicalCores)
+}
+
+func TestPhysicalCoresReadingFromCpuBus(t *testing.T) {
+	cpuBusPath = "./testdata/"           // overwriting global variable to mock sysfs
+	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without core id
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	numPhysicalCores := GetPhysicalCores(testcpuinfo)
+	assert.Equal(t, 2, numPhysicalCores)
+}
+
+func TestPhysicalCoresFromWrongSysFs(t *testing.T) {
+	cpuBusPath = "./testdata/wrongsysfs" // overwriting global variable to mock sysfs
+	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without core id
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	numPhysicalCores := GetPhysicalCores(testcpuinfo)
+	assert.Equal(t, 0, numPhysicalCores)
+}
+
+func TestSockets(t *testing.T) {
+	testfile := "./testdata/cpuinfo"
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	numSockets := GetSockets(testcpuinfo)
+	assert.Equal(t, 2, numSockets)
+}
+
+func TestSocketsReadingFromCpuBus(t *testing.T) {
+	cpuBusPath = "./testdata/wrongsysfs" // overwriting global variable to mock sysfs
+	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without physical id
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	numSockets := GetSockets(testcpuinfo)
+	assert.Equal(t, 0, numSockets)
+}
+
+func TestSocketsReadingFromWrongSysFs(t *testing.T) {
+	cpuBusPath = "./testdata/"           // overwriting global variable to mock sysfs
+	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without physical id
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	numSockets := GetSockets(testcpuinfo)
+	assert.Equal(t, 1, numSockets)
+}
 
 func TestTopology(t *testing.T) {
 	if runtime.GOARCH != "amd64" {

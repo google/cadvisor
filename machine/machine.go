@@ -39,18 +39,50 @@ import (
 
 var (
 	cpuRegExp     = regexp.MustCompile(`^processor\s*:\s*([0-9]+)$`)
-	coreRegExp    = regexp.MustCompile(`^core id\s*:\s*([0-9]+)$`)
-	nodeRegExp    = regexp.MustCompile(`^physical id\s*:\s*([0-9]+)$`)
+	coreRegExp    = regexp.MustCompile(`(?m)^core id\s*:\s*([0-9]+)$`)
+	nodeRegExp    = regexp.MustCompile(`(?m)^physical id\s*:\s*([0-9]+)$`)
 	nodeBusRegExp = regexp.MustCompile(`^node([0-9]+)$`)
 	// Power systems have a different format so cater for both
 	cpuClockSpeedMHz     = regexp.MustCompile(`(?:cpu MHz|clock)\s*:\s*([0-9]+\.[0-9]+)(?:MHz)?`)
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
 	swapCapacityRegexp   = regexp.MustCompile(`SwapTotal:\s*([0-9]+) kB`)
+
+	cpuBusPath = "/sys/bus/cpu/devices/"
 )
 
 const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
-const cpuBusPath = "/sys/bus/cpu/devices/"
 const nodePath = "/sys/devices/system/node"
+const sysFsCPUCoreID = "core_id"
+const sysFsCPUPhysicalPackageID = "physical_package_id"
+const sysFsCPUTopology = "topology"
+
+// GetPhysicalCores returns number of CPU cores reading /proc/cpuinfo file or if needed information from sysfs cpu path
+func GetPhysicalCores(procInfo []byte) int {
+	numCores := getUniqueMatchesCount(string(procInfo), coreRegExp)
+	if numCores == 0 {
+		// read number of cores from /sys/bus/cpu/devices/cpu*/topology/core_id to deal with processors
+		// for which 'core id' is not available in /proc/cpuinfo
+		numCores = getUniqueCPUPropertyCount(cpuBusPath, sysFsCPUCoreID)
+	}
+	if numCores == 0 {
+		klog.Errorf("Cannot read number of physical cores correctly, number of cores set to %d", numCores)
+	}
+	return numCores
+}
+
+// GetSockets returns number of CPU sockets reading /proc/cpuinfo file or if needed information from sysfs cpu path
+func GetSockets(procInfo []byte) int {
+	numSocket := getUniqueMatchesCount(string(procInfo), nodeRegExp)
+	if numSocket == 0 {
+		// read number of sockets from /sys/bus/cpu/devices/cpu*/topology/physical_package_id to deal with processors
+		// for which 'physical id' is not available in /proc/cpuinfo
+		numSocket = getUniqueCPUPropertyCount(cpuBusPath, sysFsCPUPhysicalPackageID)
+	}
+	if numSocket == 0 {
+		klog.Errorf("Cannot read number of sockets correctly, number of sockets set to %d", numSocket)
+	}
+	return numSocket
+}
 
 // GetClockSpeed returns the CPU clock speed, given a []byte formatted as the /proc/cpuinfo file.
 func GetClockSpeed(procInfo []byte) (uint64, error) {
@@ -132,11 +164,11 @@ func parseCapacity(b []byte, r *regexp.Regexp) (uint64, error) {
 	return m * 1024, err
 }
 
-/* Look for sysfs cpu path containing core_id */
-/* Such as: sys/bus/cpu/devices/cpu0/topology/core_id */
+// Looks for sysfs cpu path containing core_id
+// Such as: sys/bus/cpu/devices/cpu0/topology/core_id
 func getCoreIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	path := filepath.Join(cpuBusPath, fmt.Sprintf("cpu%d/topology", threadId))
-	file := filepath.Join(path, "core_id")
+	file := filepath.Join(path, sysFsCPUCoreID)
 
 	num, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -156,8 +188,30 @@ func getCoreIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	return int(coreId), nil
 }
 
-/* Look for sysfs cpu path containing node id */
-/* Such as: /sys/bus/cpu/devices/cpu0/node%d */
+// Looks for sysfs cpu path containing given CPU property, e.g. core_id or physical_package_id
+// and returns number of unique values of given property, exemplary usage: getting number of CPU physical cores
+func getUniqueCPUPropertyCount(cpuBusPath string, propertyName string) int {
+	pathPattern := cpuBusPath + "cpu*[0-9]"
+	sysCPUPaths, err := filepath.Glob(pathPattern)
+	if err != nil {
+		klog.Errorf("Cannot find files matching pattern (pathPattern: %s),  number of unique %s set to 0", pathPattern, propertyName)
+		return 0
+	}
+	uniques := make(map[string]bool)
+	for _, sysCPUPath := range sysCPUPaths {
+		propertyPath := filepath.Join(sysCPUPath, sysFsCPUTopology, propertyName)
+		propertyVal, err := ioutil.ReadFile(propertyPath)
+		if err != nil {
+			klog.Errorf("Cannot open %s, number of unique %s  set to 0", propertyPath, propertyName)
+			return 0
+		}
+		uniques[string(propertyVal)] = true
+	}
+	return len(uniques)
+}
+
+// Looks for sysfs cpu path containing node id
+// Such as: /sys/bus/cpu/devices/cpu0/node%d
 func getNodeIdFromCpuBus(cpuBusPath string, threadId int) (int, error) {
 	path := filepath.Join(cpuBusPath, fmt.Sprintf("cpu%d", threadId))
 
@@ -352,6 +406,16 @@ func extractValue(s string, r *regexp.Regexp) (bool, int, error) {
 		return true, int(val), nil
 	}
 	return false, -1, nil
+}
+
+// getUniqueMatchesCount returns number of unique matches in given argument using provided regular expression
+func getUniqueMatchesCount(s string, r *regexp.Regexp) int {
+	matches := r.FindAllString(s, -1)
+	uniques := make(map[string]bool)
+	for _, match := range matches {
+		uniques[match] = true
+	}
+	return len(uniques)
 }
 
 func findNode(nodes []info.Node, id int) (bool, int) {
