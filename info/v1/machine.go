@@ -173,6 +173,9 @@ type MachineInfo struct {
 	// The amount of memory (in bytes) in this machine
 	MemoryCapacity uint64 `json:"memory_capacity"`
 
+	// Memory capacity and number of DIMMs by memory type
+	MemoryByType map[string]*MemoryInfo `json:"memory_by_type"`
+
 	// HugePages on this machine.
 	HugePages []HugePagesInfo `json:"hugepages"`
 
@@ -206,6 +209,14 @@ type MachineInfo struct {
 
 	// ID of cloud instance (e.g. instance-1) given to it by the cloud provider.
 	InstanceID InstanceID `json:"instance_id"`
+}
+
+type MemoryInfo struct {
+	// The amount of memory (in bytes).
+	Capacity uint64
+
+	// Number of memory DIMMs.
+	DimmCount uint
 }
 
 type VersionInfo struct {

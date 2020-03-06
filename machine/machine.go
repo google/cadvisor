@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -47,7 +49,9 @@ var (
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
 	swapCapacityRegexp   = regexp.MustCompile(`SwapTotal:\s*([0-9]+) kB`)
 
-	cpuBusPath = "/sys/bus/cpu/devices/"
+	cpuBusPath         = "/sys/bus/cpu/devices/"
+	isMemoryController = regexp.MustCompile("mc[0-9]+")
+	isDimm             = regexp.MustCompile("dimm[0-9]+")
 )
 
 const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
@@ -55,6 +59,8 @@ const nodePath = "/sys/devices/system/node"
 const sysFsCPUCoreID = "core_id"
 const sysFsCPUPhysicalPackageID = "physical_package_id"
 const sysFsCPUTopology = "topology"
+const memTypeFileName = "dimm_mem_type"
+const sizeFileName = "size"
 
 // GetPhysicalCores returns number of CPU cores reading /proc/cpuinfo file or if needed information from sysfs cpu path
 func GetPhysicalCores(procInfo []byte) int {
@@ -131,6 +137,65 @@ func GetMachineMemoryCapacity() (uint64, error) {
 		return 0, err
 	}
 	return memoryCapacity, err
+}
+
+// GetMachineMemoryByType returns information about memory capcity and number of DIMMs.
+// Information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/)
+// introduced in kernel 3.6. Documentation can be found at
+// https://www.kernel.org/doc/Documentation/admin-guide/ras.rst.
+// Full list of memory types can be found in edac_mc.c
+// (https://github.com/torvalds/linux/blob/v5.5/drivers/edac/edac_mc.c#L198)
+func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error) {
+	memory := map[string]*info.MemoryInfo{}
+	names, err := ioutil.ReadDir(edacPath)
+	// On some architectures (such as ARM) memory controller device may not exist.
+	// If this is the case then we ignore error and return empty slice.
+	_, ok := err.(*os.PathError)
+	if err != nil && ok {
+		return memory, nil
+	} else if err != nil {
+		return memory, err
+	}
+	for _, controllerDir := range names {
+		controller := controllerDir.Name()
+		if !isMemoryController.MatchString(controller) {
+			continue
+		}
+		dimms, err := ioutil.ReadDir(path.Join(edacPath, controllerDir.Name()))
+		if err != nil {
+			return map[string]*info.MemoryInfo{}, err
+		}
+		for _, dimmDir := range dimms {
+			dimm := dimmDir.Name()
+			if !isDimm.MatchString(dimm) {
+				continue
+			}
+			memType, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, memTypeFileName))
+			readableMemType := strings.TrimSpace(string(memType))
+			if err != nil {
+				return map[string]*info.MemoryInfo{}, err
+			}
+			if _, exists := memory[readableMemType]; !exists {
+				memory[readableMemType] = &info.MemoryInfo{}
+			}
+			size, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, sizeFileName))
+			if err != nil {
+				return map[string]*info.MemoryInfo{}, err
+			}
+			capacity, err := strconv.Atoi(strings.TrimSpace(string(size)))
+			if err != nil {
+				return map[string]*info.MemoryInfo{}, err
+			}
+			memory[readableMemType].Capacity += uint64(mbToBytes(capacity))
+			memory[readableMemType].DimmCount++
+		}
+	}
+
+	return memory, nil
+}
+
+func mbToBytes(megabytes int) int {
+	return megabytes * 1024 * 1024
 }
 
 // GetMachineSwapCapacity returns the machine's total swap from /proc/meminfo.
