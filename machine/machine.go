@@ -49,7 +49,9 @@ var (
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
 	swapCapacityRegexp   = regexp.MustCompile(`SwapTotal:\s*([0-9]+) kB`)
 
-	cpuBusPath = "/sys/bus/cpu/devices/"
+	cpuBusPath         = "/sys/bus/cpu/devices/"
+	isMemoryController = regexp.MustCompile("mc[0-9]+")
+	isDimm             = regexp.MustCompile("dimm[0-9]+")
 )
 
 const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
@@ -155,39 +157,39 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, uint,
 	} else if err != nil {
 		return memory, dimmCount, err
 	}
-	isController := regexp.MustCompile("mc[0-9]+")
-	isDimm := regexp.MustCompile("dimm[0-9]+")
 	for _, controllerDir := range names {
 		controller := controllerDir.Name()
-		if isController.MatchString(controller) {
-			dimms, err := ioutil.ReadDir(path.Join(edacPath, controllerDir.Name()))
+		if !isMemoryController.MatchString(controller) {
+			continue
+		}
+		dimms, err := ioutil.ReadDir(path.Join(edacPath, controllerDir.Name()))
+		if err != nil {
+			return map[string]*info.MemoryInfo{}, uint(0), err
+		}
+		for _, dimmDir := range dimms {
+			dimm := dimmDir.Name()
+			if !isDimm.MatchString(dimm) {
+				continue
+			}
+			memType, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, memTypeFileName))
+			readableMemType := strings.TrimSpace(string(memType))
 			if err != nil {
 				return map[string]*info.MemoryInfo{}, uint(0), err
 			}
-			for _, dimmDir := range dimms {
-				dimm := dimmDir.Name()
-				if isDimm.MatchString(dimm) {
-					memType, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, memTypeFileName))
-					readableMemType := strings.TrimSpace(string(memType))
-					if err != nil {
-						return map[string]*info.MemoryInfo{}, uint(0), err
-					}
-					if _, exists := memory[readableMemType]; !exists {
-						memory[readableMemType] = &info.MemoryInfo{}
-					}
-					size, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, sizeFileName))
-					if err != nil {
-						return map[string]*info.MemoryInfo{}, uint(0), err
-					}
-					capacity, err := strconv.Atoi(strings.TrimSpace(string(size)))
-					if err != nil {
-						return map[string]*info.MemoryInfo{}, uint(0), err
-					}
-					memory[readableMemType].Capacity += uint64(mbToBytes(capacity))
-					memory[readableMemType].DimmCount++
-					dimmCount++
-				}
+			if _, exists := memory[readableMemType]; !exists {
+				memory[readableMemType] = &info.MemoryInfo{}
 			}
+			size, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, sizeFileName))
+			if err != nil {
+				return map[string]*info.MemoryInfo{}, uint(0), err
+			}
+			capacity, err := strconv.Atoi(strings.TrimSpace(string(size)))
+			if err != nil {
+				return map[string]*info.MemoryInfo{}, uint(0), err
+			}
+			memory[readableMemType].Capacity += uint64(mbToBytes(capacity))
+			memory[readableMemType].DimmCount++
+			dimmCount++
 		}
 	}
 
