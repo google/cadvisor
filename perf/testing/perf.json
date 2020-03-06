@@ -1,0 +1,30 @@
+{
+  "non_grouped": [
+    {
+      "type": 4,
+      "config": [
+        "0xc0"
+      ],
+      "name": "instructions_retired"
+    }
+  ],
+  "grouped": [
+    [
+      {
+        "type": 13,
+        "config": [
+          "0xc04"
+        ],
+        "name": "UNC_M_CAS_COUNT_WRITE"
+      },
+      {
+        "type": 13,
+        "config": [
+          "0xc304"
+        ],
+        "name": "UNC_M_CAS_COUNT_READ"
+      }
+    ]
+  ],
+  "interval": "5s"
+}

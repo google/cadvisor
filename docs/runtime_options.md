@@ -134,7 +134,90 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --storage_driver_user="root": database username (default "root")
 ```
 
-For storage driver specific instructions:
+## Perf Events
+
+```
+--perf_events_config="" Path to a JSON file containing configuration of perf events to measure. Empty value disables perf events measuring.
+```
+
+See example configuration below:
+```json
+{
+  "non_grouped": [
+    {
+      "type": 4,
+      "config": [
+        "0xc0"
+      ],
+      "name": "instructions_retired"
+    }
+  ],
+  "grouped": [
+    [
+      {
+        "type": 13,
+        "config": [
+          "0xc04"
+        ],
+        "name": "UNC_M_CAS_COUNT_WRITE"
+      },
+      {
+        "type": 13,
+        "config": [
+          "0xc304"
+        ],
+        "name": "UNC_M_CAS_COUNT_READ"
+      }
+    ]
+  ],
+  "interval": "5s"
+}
+```
+
+In the example above number:
+* `INST_RETIRED.ANY_P` (number of instructions retired on 2nd Generation Intel® Xeon® Scalable Processor) identified by
+`config[0xc0]` will be measured as non-grouped event
+* `UNC_M_CAS_COUNT.WR` (all DRAM Write CAS commands issued or `cas_count_write`) identified by `config[0xC04]` and 
+`UNC_M_CAS_COUNT.RD` (all DRAM Read CAS commands issued or `cas_count_read`) identified by `config[0xc304]` will be 
+measured as grouped events. In their case `type` attribute indicates memory controller.
+
+Event name should be a human readable string that will become a metric name.
+
+##### Translating event name to config values
+
+In order to determine what values must be used to configure particular event you should follow a procedure:
+1. Identify the event in `perf list` output. 
+2. Execute command: `perf stat -I 5000 -vvv -e [EVENT_NAME]` (replace `[EVENT_NAME]` with value from step 1).
+3. Find `perf_event_attr` section on `perf stat` output; it should be similar to `UNC_M_CAS_COUNT.RD`:
+
+        ------------------------------------------------------------
+        perf_event_attr:
+          type                             13
+          size                             112
+          config                           0x304
+          sample_type                      IDENTIFIER
+          read_format                      TOTAL_TIME_ENABLED|TOTAL_TIME_RUNNING
+          disabled                         1
+          inherit                          1
+          exclude_guest                    1
+        ------------------------------------------------------------
+
+   and use value of `type` to populate `type` field  and values of `config`, `config1` and `config2` to populate `config`
+   field in configuration JSON:
+   
+    ```json
+        {
+          "config": [
+            "config",
+            "config1",
+            "config2"
+          ]
+        }
+    ```
+
+4. Repeat if you want to measure more events.
+
+## Storage driver specific instructions:
 
 * [InfluxDB instructions](storage/influxdb.md).
 * [ElasticSearch instructions](storage/elasticsearch.md).

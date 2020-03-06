@@ -91,6 +91,9 @@ type containerData struct {
 
 	// nvidiaCollector updates stats for Nvidia GPUs attached to the container.
 	nvidiaCollector stats.Collector
+
+	// perfCollector updates stats for perf_event cgroup controller.
+	perfCollector stats.Collector
 }
 
 // jitter returns a time.Duration between duration and duration + maxFactor * duration,
@@ -115,6 +118,9 @@ func (c *containerData) Stop() error {
 		return err
 	}
 	close(c.stop)
+	if c.perfCollector != nil {
+		c.perfCollector.Destroy()
+	}
 	return nil
 }
 
@@ -626,6 +632,11 @@ func (c *containerData) updateStats() error {
 		nvidiaStatsErr = c.nvidiaCollector.UpdateStats(stats)
 	}
 
+	var perfStatsErr error
+	if c.perfCollector != nil {
+		perfStatsErr = c.perfCollector.UpdateStats(stats)
+	}
+
 	ref, err := c.handler.ContainerReference()
 	if err != nil {
 		// Ignore errors if the container is dead.
@@ -648,6 +659,9 @@ func (c *containerData) updateStats() error {
 	}
 	if nvidiaStatsErr != nil {
 		return nvidiaStatsErr
+	}
+	if perfStatsErr != nil {
+		return perfStatsErr
 	}
 	return customStatsErr
 }
