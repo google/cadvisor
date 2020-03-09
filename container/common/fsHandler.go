@@ -92,10 +92,11 @@ func (fh *realFsHandler) update() error {
 	fh.lastUpdate = time.Now()
 	if fh.rootfs != "" && rootErr == nil {
 		fh.usage.InodeUsage = rootUsage.Inodes
-		fh.usage.TotalUsageBytes = rootUsage.Bytes + extraUsage.Bytes
+		fh.usage.BaseUsageBytes = rootUsage.Bytes
+		fh.usage.TotalUsageBytes = rootUsage.Bytes
 	}
 	if fh.extraDir != "" && extraErr == nil {
-		fh.usage.BaseUsageBytes = rootUsage.Bytes
+		fh.usage.TotalUsageBytes += extraUsage.Bytes
 	}
 
 	// Combine errors into a single error to return
