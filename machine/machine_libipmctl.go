@@ -22,25 +22,19 @@ import "C"
 import (
 	"fmt"
 
+	info "github.com/google/cadvisor/info/v1"
+
 	"k8s.io/klog"
 )
 
-// GetNVMAvgPowerBudget retrieves configured power budget
+// getNVMAvgPowerBudget retrieves configured power budget
 // (in watts) for NVM devices. When libipmct is not available
 // zero is returned.
-func GetNVMAvgPowerBudget() (uint, error) {
-	// Initialize libipmctl library.
-	err := C.nvm_init()
-	if err != C.NVM_SUCCESS {
-		klog.Warningf("libipmctl initialization failed with status %d", err)
-		return uint(0), fmt.Errorf("libipmctl initialization failed with status %d", err)
-	}
-	defer C.nvm_uninit()
-
+func getNVMAvgPowerBudget() (uint, error) {
 	// Get number of devices on the platform
 	// see: https://github.com/intel/ipmctl/blob/v01.00.00.3497/src/os/nvm_api/nvm_management.h#L1478
 	var count C.uint
-	err = C.nvm_get_number_of_devices(&count)
+	err := C.nvm_get_number_of_devices(&count)
 	if err != C.NVM_SUCCESS {
 		klog.Warningf("Unable to get number of NVM devices. Status code: %d", err)
 		return uint(0), fmt.Errorf("Unable to get number of NVM devices. Status code: %d", err)
@@ -66,4 +60,40 @@ func GetNVMAvgPowerBudget() (uint, error) {
 	}
 
 	return uint(device.avg_power_budget / 1000), nil
+}
+
+// getNVMMemoryModeCapcity retrieves the total NVM capacity in bytes for memory mode
+func getNVMMemoryModeCapcity() (uint, error) {
+	var caps C.struct_device_capacities
+	err := C.nvm_get_nvm_capacities(&caps)
+	if err != C.NVM_SUCCESS {
+		klog.Warningf("Unable to get NVM capacity. Status code: %d", err)
+		return uint(0), fmt.Errorf("Unable to get NVM capacity. Status code: %d", err)
+	}
+	return uint(caps.memory_capacity), nil
+}
+
+// GetNVMInfo returns information specific for non-volatile memory modules:
+// average power budget and total memory mode capacity
+func GetNVMInfo() (info.NVMInfo, error) {
+	nvmInfo := info.NVMInfo{}
+	// Initialize libipmctl library.
+	cErr := C.nvm_init()
+	if cErr != C.NVM_SUCCESS {
+		klog.Warningf("libipmctl initialization failed with status %d", cErr)
+		return info.NVMInfo{}, fmt.Errorf("libipmctl initialization failed with status %d", cErr)
+	}
+	defer C.nvm_uninit()
+
+	var err error
+	nvmInfo.MemoryModeCapcity, err = getNVMMemoryModeCapcity()
+	if err != nil {
+		return info.NVMInfo{}, fmt.Errorf("Unable to get NVM capacity in bytes for memory mode, err: %s", err)
+	}
+
+	nvmInfo.AvgPowerBudget, err = getNVMAvgPowerBudget()
+	if err != nil {
+		return info.NVMInfo{}, fmt.Errorf("Unable to get NVM average power budget, err: %s", err)
+	}
+	return nvmInfo, nil
 }

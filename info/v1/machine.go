@@ -222,6 +222,9 @@ type MemoryInfo struct {
 }
 
 type NVMInfo struct {
+	// The total NVM capacity in bytes for memory mode.
+	MemoryModeCapcity uint `json:"memory_mode_capcity"`
+
 	// Average power budget for NVM devices configured in BIOS.
 	AvgPowerBudget uint `json:"avg_power_budget"`
 }
