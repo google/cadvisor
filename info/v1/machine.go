@@ -213,10 +213,10 @@ type MachineInfo struct {
 
 type MemoryInfo struct {
 	// The amount of memory (in bytes).
-	Capacity uint64
+	Capacity uint64 `json:"capacity"`
 
 	// Number of memory DIMMs.
-	DimmCount uint
+	DimmCount uint `json:"dimm_count"`
 }
 
 type VersionInfo struct {
