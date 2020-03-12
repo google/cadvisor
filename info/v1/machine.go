@@ -176,8 +176,7 @@ type MachineInfo struct {
 	// Memory capacity and number of DIMMs by memory type
 	MemoryByType map[string]*MemoryInfo `json:"memory_by_type"`
 
-	// Average power budget for NVM devices configured in BIOS.
-	NVMAvgPowerBudget uint `json:"nvm_avg_power_budget"`
+	NVMInfo NVMInfo `json:"nvm_info"`
 
 	// HugePages on this machine.
 	HugePages []HugePagesInfo `json:"hugepages"`
@@ -220,6 +219,11 @@ type MemoryInfo struct {
 
 	// Number of memory DIMMs.
 	DimmCount uint `json:"dimm_count"`
+}
+
+type NVMInfo struct {
+	// Average power budget for NVM devices configured in BIOS.
+	AvgPowerBudget uint `json:"avg_power_budget"`
 }
 
 type VersionInfo struct {
