@@ -176,7 +176,7 @@ type MachineInfo struct {
 	// Memory capacity and number of DIMMs by memory type
 	MemoryByType map[string]*MemoryInfo `json:"memory_by_type"`
 
-	NVMInfo NVMInfo `json:"nvm_info"`
+	NVMInfo NVMInfo `json:"nvm"`
 
 	// HugePages on this machine.
 	HugePages []HugePagesInfo `json:"hugepages"`
