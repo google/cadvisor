@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/docker/docker/pkg/parsers/operatingsystem"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/cloudinfo"
@@ -145,7 +144,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 }
 
 func ContainerOsVersion() string {
-	os, err := operatingsystem.GetOperatingSystem()
+	os, err := getOperatingSystem()
 	if err != nil {
 		os = "Unknown"
 	}

@@ -93,7 +93,6 @@ github.com/docker/docker/api/types/versions
 github.com/docker/docker/api/types/volume
 github.com/docker/docker/client
 github.com/docker/docker/errdefs
-github.com/docker/docker/pkg/parsers/operatingsystem
 # github.com/docker/go-connections v0.3.0
 github.com/docker/go-connections/nat
 github.com/docker/go-connections/sockets
@@ -145,8 +144,6 @@ github.com/konsorten/go-windows-terminal-sequences
 github.com/kr/pretty
 # github.com/kr/text v0.0.0-20130911015532-6807e777504f
 github.com/kr/text
-# github.com/mattn/go-shellwords v1.0.4-0.20180201004752-39dbbfa24bbc
-github.com/mattn/go-shellwords
 # github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mesos/mesos-go v0.0.7-0.20180413204204-29de6ff97b48
