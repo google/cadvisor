@@ -48,23 +48,6 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 	}, nil
 }
 
-var allMetrics = container.MetricSet{
-	container.CpuUsageMetrics:                struct{}{},
-	container.ProcessSchedulerMetrics:        struct{}{},
-	container.PerCpuUsageMetrics:             struct{}{},
-	container.MemoryUsageMetrics:             struct{}{},
-	container.CpuLoadMetrics:                 struct{}{},
-	container.DiskIOMetrics:                  struct{}{},
-	container.AcceleratorUsageMetrics:        struct{}{},
-	container.DiskUsageMetrics:               struct{}{},
-	container.NetworkUsageMetrics:            struct{}{},
-	container.NetworkTcpUsageMetrics:         struct{}{},
-	container.NetworkAdvancedTcpUsageMetrics: struct{}{},
-	container.NetworkUdpUsageMetrics:         struct{}{},
-	container.ProcessMetrics:                 struct{}{},
-	container.AppMetrics:                     struct{}{},
-}
-
 func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
 	return []*info.ContainerInfo{
 		{
@@ -426,7 +409,7 @@ func TestPrometheusCollector(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, allMetrics)
+	}, container.AllMetrics)
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 
@@ -496,7 +479,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, allMetrics)
+	}, container.AllMetrics)
 	prometheus.MustRegister(c)
 	defer prometheus.Unregister(c)
 
