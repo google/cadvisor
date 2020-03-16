@@ -77,6 +77,11 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		return nil, err
 	}
 
+	nvmPowerBudget, err := GetNVMAvgPowerBudget()
+	if err != nil {
+		return nil, err
+	}
+
 	hugePagesInfo, err := GetHugePagesInfo(hugepagesDirectory)
 	if err != nil {
 		return nil, err
@@ -119,6 +124,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		CpuFrequency:     clockSpeed,
 		MemoryCapacity:   memoryCapacity,
 		MemoryByType:     memoryByType,
+		NVMInfo:          info.NVMInfo{AvgPowerBudget: nvmPowerBudget},
 		HugePages:        hugePagesInfo,
 		DiskMap:          diskMap,
 		NetworkDevices:   netDevices,
