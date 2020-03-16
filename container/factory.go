@@ -59,6 +59,24 @@ const (
 	ProcessMetrics                 MetricKind = "process"
 )
 
+// AllMetrics represents all kinds of metrics that cAdvisor supported.
+var AllMetrics = MetricSet{
+	CpuUsageMetrics:                struct{}{},
+	ProcessSchedulerMetrics:        struct{}{},
+	PerCpuUsageMetrics:             struct{}{},
+	MemoryUsageMetrics:             struct{}{},
+	CpuLoadMetrics:                 struct{}{},
+	DiskIOMetrics:                  struct{}{},
+	AcceleratorUsageMetrics:        struct{}{},
+	DiskUsageMetrics:               struct{}{},
+	NetworkUsageMetrics:            struct{}{},
+	NetworkTcpUsageMetrics:         struct{}{},
+	NetworkAdvancedTcpUsageMetrics: struct{}{},
+	NetworkUdpUsageMetrics:         struct{}{},
+	ProcessMetrics:                 struct{}{},
+	AppMetrics:                     struct{}{},
+}
+
 func (mk MetricKind) String() string {
 	return string(mk)
 }
@@ -72,6 +90,16 @@ func (ms MetricSet) Has(mk MetricKind) bool {
 
 func (ms MetricSet) Add(mk MetricKind) {
 	ms[mk] = struct{}{}
+}
+
+func (ms MetricSet) Difference(ms1 MetricSet) MetricSet {
+	result := MetricSet{}
+	for kind := range ms {
+		if !ms1.Has(kind) {
+			result.Add(kind)
+		}
+	}
+	return result
 }
 
 // All registered auth provider plugins.

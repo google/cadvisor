@@ -59,3 +59,39 @@ func TestIgnoreMetrics(t *testing.T) {
 		}
 	}
 }
+
+func TestToIncludedMetrics(t *testing.T) {
+	ignores := []container.MetricSet{
+		{
+			container.CpuUsageMetrics: struct{}{},
+		},
+		{
+		},
+		container.AllMetrics,
+	}
+
+	expected := []container.MetricSet{
+		{
+			container.ProcessSchedulerMetrics:        struct{}{},
+			container.PerCpuUsageMetrics:             struct{}{},
+			container.MemoryUsageMetrics:             struct{}{},
+			container.CpuLoadMetrics:                 struct{}{},
+			container.DiskIOMetrics:                  struct{}{},
+			container.AcceleratorUsageMetrics:        struct{}{},
+			container.DiskUsageMetrics:               struct{}{},
+			container.NetworkUsageMetrics:            struct{}{},
+			container.NetworkTcpUsageMetrics:         struct{}{},
+			container.NetworkAdvancedTcpUsageMetrics: struct{}{},
+			container.NetworkUdpUsageMetrics:         struct{}{},
+			container.ProcessMetrics:                 struct{}{},
+			container.AppMetrics:                     struct{}{},
+		},
+		container.AllMetrics,
+		{},
+	}
+
+	for idx, ignore := range ignores {
+		actual := toIncludedMetrics(ignore)
+		assert.Equal(t, actual, expected[idx])
+	}
+}
