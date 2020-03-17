@@ -76,7 +76,7 @@ var AllMetrics = MetricSet{
 	NetworkUdpUsageMetrics:         struct{}{},
 	ProcessMetrics:                 struct{}{},
 	AppMetrics:                     struct{}{},
-	HugetlbUsageMetrics: 			struct{}{},
+	HugetlbUsageMetrics:            struct{}{},
 }
 
 func (mk MetricKind) String() string {
