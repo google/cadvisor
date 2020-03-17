@@ -18,7 +18,6 @@ package manager
 import (
 	"flag"
 	"fmt"
-	"github.com/google/cadvisor/stats"
 	"net/http"
 	"os"
 	"path"
@@ -38,6 +37,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/machine"
+	"github.com/google/cadvisor/stats"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"

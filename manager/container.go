@@ -17,7 +17,6 @@ package manager
 import (
 	"flag"
 	"fmt"
-	"github.com/google/cadvisor/stats"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -35,6 +34,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/stats"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
 

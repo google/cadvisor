@@ -16,7 +16,6 @@ package accelerators
 import (
 	"bufio"
 	"fmt"
-	"github.com/google/cadvisor/stats"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -26,6 +25,7 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/stats"
 
 	"github.com/mindprince/gonvml"
 	"k8s.io/klog"
