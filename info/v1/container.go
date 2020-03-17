@@ -848,7 +848,7 @@ type ContainerStats struct {
 	Cpu       CpuStats                `json:"cpu,omitempty"`
 	DiskIo    DiskIoStats             `json:"diskio,omitempty"`
 	Memory    MemoryStats             `json:"memory,omitempty"`
-	Hugetlb   map[string]HugetlbStats `json:"hugetlb"`
+	Hugetlb   map[string]HugetlbStats `json:"hugetlb,omitempty"`
 	Network   NetworkStats            `json:"network,omitempty"`
 	// Filesystem statistics
 	Filesystem []FsStats `json:"filesystem,omitempty"`

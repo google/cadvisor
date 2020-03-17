@@ -792,7 +792,7 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics co
 			setDiskIoStats(s, ret)
 		}
 		setMemoryStats(s, ret)
-		if s.HugetlbStats != nil && len(s.HugetlbStats) > 0 {
+		if includedMetrics.Has(container.HugetlbUsageMetrics) {
 			setHugepageStats(s, ret)
 		}
 	}

@@ -48,7 +48,6 @@ const (
 	PerCpuUsageMetrics             MetricKind = "percpu"
 	MemoryUsageMetrics             MetricKind = "memory"
 	CpuLoadMetrics                 MetricKind = "cpuLoad"
-	HugetlbUsageMetrics            MetricKind = "hugetlb"
 	DiskIOMetrics                  MetricKind = "diskIO"
 	DiskUsageMetrics               MetricKind = "disk"
 	NetworkUsageMetrics            MetricKind = "network"
@@ -58,6 +57,7 @@ const (
 	AcceleratorUsageMetrics        MetricKind = "accelerator"
 	AppMetrics                     MetricKind = "app"
 	ProcessMetrics                 MetricKind = "process"
+	HugetlbUsageMetrics            MetricKind = "hugetlb"
 )
 
 // AllMetrics represents all kinds of metrics that cAdvisor supported.
@@ -67,7 +67,6 @@ var AllMetrics = MetricSet{
 	PerCpuUsageMetrics:             struct{}{},
 	MemoryUsageMetrics:             struct{}{},
 	CpuLoadMetrics:                 struct{}{},
-	HugetlbUsageMetrics: 			struct{}{},
 	DiskIOMetrics:                  struct{}{},
 	AcceleratorUsageMetrics:        struct{}{},
 	DiskUsageMetrics:               struct{}{},
@@ -77,6 +76,7 @@ var AllMetrics = MetricSet{
 	NetworkUdpUsageMetrics:         struct{}{},
 	ProcessMetrics:                 struct{}{},
 	AppMetrics:                     struct{}{},
+	HugetlbUsageMetrics: 			struct{}{},
 }
 
 func (mk MetricKind) String() string {
