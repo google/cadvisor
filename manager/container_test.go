@@ -217,7 +217,7 @@ func TestUpdateNvidiaStats(t *testing.T) {
 	stats := info.ContainerStats{}
 
 	// When there are no devices, we should not get an error and stats should not change.
-	cd.nvidiaCollector = &accelerators.NvidiaCollector{}
+	cd.nvidiaCollector = accelerators.NewNvidiaCollector([]gonvml.Device{})
 	err := cd.nvidiaCollector.UpdateStats(&stats)
 	assert.Nil(t, err)
 	assert.Equal(t, info.ContainerStats{}, stats)
@@ -225,7 +225,7 @@ func TestUpdateNvidiaStats(t *testing.T) {
 	// This is an impossible situation (there are devices but nvml is not initialized).
 	// Here I am testing that the CGo gonvml library doesn't panic when passed bad
 	// input and instead returns an error.
-	cd.nvidiaCollector = &accelerators.NvidiaCollector{Devices: []gonvml.Device{{}, {}}}
+	cd.nvidiaCollector = accelerators.NewNvidiaCollector([]gonvml.Device{{}, {}})
 	err = cd.nvidiaCollector.UpdateStats(&stats)
 	assert.NotNil(t, err)
 	assert.Equal(t, info.ContainerStats{}, stats)
