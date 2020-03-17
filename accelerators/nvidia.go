@@ -129,7 +129,7 @@ func (nm *nvidiaManager) Destroy() {
 // GetCollector returns a collector that can fetch nvidia gpu metrics for nvidia devices
 // present in the devices.list file in the given devicesCgroupPath.
 func (nm *nvidiaManager) GetCollector(devicesCgroupPath string) (stats.Collector, error) {
-	nc := &NvidiaCollector{}
+	nc := &nvidiaCollector{}
 
 	if !nm.devicesPresent {
 		return nc, nil
@@ -154,7 +154,7 @@ func (nm *nvidiaManager) GetCollector(devicesCgroupPath string) (stats.Collector
 		if !ok {
 			return nc, fmt.Errorf("nvidia device minor number %d not found in cached devices", minor)
 		}
-		nc.Devices = append(nc.Devices, device)
+		nc.devices = append(nc.devices, device)
 	}
 	return nc, nil
 }
@@ -213,14 +213,18 @@ var parseDevicesCgroup = func(devicesCgroupPath string) ([]int, error) {
 	return nvidiaMinorNumbers, nil
 }
 
-type NvidiaCollector struct {
+type nvidiaCollector struct {
 	// Exposed for testing
-	Devices []gonvml.Device
+	devices []gonvml.Device
+}
+
+func NewNvidiaCollector(devices []gonvml.Device) stats.Collector {
+	return &nvidiaCollector{devices: devices}
 }
 
 // UpdateStats updates the stats for NVIDIA GPUs (if any) attached to the container.
-func (nc *NvidiaCollector) UpdateStats(stats *info.ContainerStats) error {
-	for _, device := range nc.Devices {
+func (nc *nvidiaCollector) UpdateStats(stats *info.ContainerStats) error {
+	for _, device := range nc.devices {
 		model, err := device.Name()
 		if err != nil {
 			return fmt.Errorf("error while getting gpu name: %v", err)
