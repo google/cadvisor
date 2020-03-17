@@ -72,13 +72,13 @@ func TestGetCollector(t *testing.T) {
 	}
 	parseDevicesCgroup = mockParser
 	originalInitializeNVML := initializeNVML
-	initializeNVML = func(_ *NvidiaManager) {}
+	initializeNVML = func(_ *nvidiaManager) {}
 	defer func() {
 		parseDevicesCgroup = originalParser
 		initializeNVML = originalInitializeNVML
 	}()
 
-	nm := &NvidiaManager{}
+	nm := &nvidiaManager{}
 
 	// When devicesPresent is false, empty collector should be returned.
 	ac, err := nm.GetCollector("does-not-matter")

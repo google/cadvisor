@@ -17,6 +17,7 @@ package manager
 import (
 	"flag"
 	"fmt"
+	"github.com/google/cadvisor/stats"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -29,7 +30,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/cadvisor/accelerators"
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
@@ -90,7 +90,7 @@ type containerData struct {
 	collectorManager collector.CollectorManager
 
 	// nvidiaCollector updates stats for Nvidia GPUs attached to the container.
-	nvidiaCollector accelerators.AcceleratorCollector
+	nvidiaCollector stats.Collector
 }
 
 // jitter returns a time.Duration between duration and duration + maxFactor * duration,

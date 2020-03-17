@@ -16,6 +16,7 @@ package accelerators
 import (
 	"bufio"
 	"fmt"
+	"github.com/google/cadvisor/stats"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -30,7 +31,7 @@ import (
 	"k8s.io/klog"
 )
 
-type NvidiaManager struct {
+type nvidiaManager struct {
 	sync.Mutex
 
 	// true if there are NVIDIA devices present on the node
@@ -47,8 +48,12 @@ var sysFsPCIDevicesPath = "/sys/bus/pci/devices/"
 
 const nvidiaVendorId = "0x10de"
 
+func NewNvidiaManager() stats.Manager {
+	return &nvidiaManager{}
+}
+
 // Setup initializes NVML if nvidia devices are present on the node.
-func (nm *NvidiaManager) Setup() {
+func (nm *nvidiaManager) Setup() {
 	if !detectDevices(nvidiaVendorId) {
 		klog.V(4).Info("No NVIDIA devices found.")
 		return
@@ -84,7 +89,7 @@ func detectDevices(vendorId string) bool {
 
 // initializeNVML initializes the NVML library and sets up the nvmlDevices map.
 // This is defined as a variable to help in testing.
-var initializeNVML = func(nm *NvidiaManager) {
+var initializeNVML = func(nm *nvidiaManager) {
 	if err := gonvml.Initialize(); err != nil {
 		// This is under a logging level because otherwise we may cause
 		// log spam if the drivers/nvml is not installed on the system.
@@ -115,7 +120,7 @@ var initializeNVML = func(nm *NvidiaManager) {
 }
 
 // Destroy shuts down NVML.
-func (nm *NvidiaManager) Destroy() {
+func (nm *nvidiaManager) Destroy() {
 	if nm.nvmlInitialized {
 		gonvml.Shutdown()
 	}
@@ -123,7 +128,7 @@ func (nm *NvidiaManager) Destroy() {
 
 // GetCollector returns a collector that can fetch nvidia gpu metrics for nvidia devices
 // present in the devices.list file in the given devicesCgroupPath.
-func (nm *NvidiaManager) GetCollector(devicesCgroupPath string) (AcceleratorCollector, error) {
+func (nm *nvidiaManager) GetCollector(devicesCgroupPath string) (stats.Collector, error) {
 	nc := &NvidiaCollector{}
 
 	if !nm.devicesPresent {

@@ -18,6 +18,7 @@ package manager
 import (
 	"flag"
 	"fmt"
+	"github.com/google/cadvisor/stats"
 	"net/http"
 	"os"
 	"path"
@@ -181,7 +182,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		containerWatchers:                     []watcher.ContainerWatcher{},
 		eventsChannel:                         eventsChannel,
 		collectorHttpClient:                   collectorHttpClient,
-		nvidiaManager:                         &accelerators.NvidiaManager{},
+		nvidiaManager:                         accelerators.NewNvidiaManager(),
 		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
 	}
 
@@ -230,7 +231,7 @@ type manager struct {
 	containerWatchers        []watcher.ContainerWatcher
 	eventsChannel            chan watcher.ContainerEvent
 	collectorHttpClient      *http.Client
-	nvidiaManager            accelerators.AcceleratorManager
+	nvidiaManager            stats.Manager
 	// List of raw container cgroup path prefix whitelist.
 	rawContainerCgroupPathPrefixWhiteList []string
 }
