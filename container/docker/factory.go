@@ -60,7 +60,7 @@ const rootDirRetryPeriod time.Duration = 1000 * time.Millisecond
 // --cgroup-parent have another prefix than 'docker'
 var dockerCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
 
-var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys that needs to be collected for docker containers")
+var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys matched with specified prefix that needs to be collected for docker containers")
 
 var (
 	// Basepath to all container specific information that libcontainer stores.
