@@ -16,9 +16,10 @@
 
 package machine
 
-// GetNVMAvgPowerBudget retrieves configured power budget
-// (in watts) for NVM devices. When libipmct is not available
-// zero is returned.
-func GetNVMAvgPowerBudget() (uint, error) {
-	return uint(0), nil
+import info "github.com/google/cadvisor/info/v1"
+
+// GetNVMInfo returns information specific for non-volatile memory modules.
+// When libipmct is not available zero value is returned.
+func GetNVMInfo() (info.NVMInfo, error) {
+	return info.NVMInfo{}, nil
 }
