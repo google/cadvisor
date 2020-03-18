@@ -228,7 +228,7 @@ type NVMInfo struct {
 	//The total NVM capacity in bytes for app direct mode.
 	AppDirectModeCapcity uint64 `json:"app direct_mode_capcity"`
 
-	// Average power budget for NVM devices configured in BIOS.
+	// Average power budget in watts for NVM devices configured in BIOS.
 	AvgPowerBudget uint `json:"avg_power_budget"`
 }
 
