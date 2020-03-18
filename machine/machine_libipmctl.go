@@ -62,19 +62,18 @@ func getNVMAvgPowerBudget() (uint, error) {
 	return uint(device.avg_power_budget / 1000), nil
 }
 
-// getNVMMemoryModeCapcity retrieves the total NVM capacity in bytes for memory mode
-func getNVMMemoryModeCapcity() (uint, error) {
+// getNVMCapacities retrieves the total NVM capacity in bytes for memory mode and app direct mode
+func getNVMCapacities() (uint64, uint64, error) {
 	var caps C.struct_device_capacities
 	err := C.nvm_get_nvm_capacities(&caps)
 	if err != C.NVM_SUCCESS {
 		klog.Warningf("Unable to get NVM capacity. Status code: %d", err)
-		return uint(0), fmt.Errorf("Unable to get NVM capacity. Status code: %d", err)
+		return uint64(0), uint64(0), fmt.Errorf("Unable to get NVM capacity. Status code: %d", err)
 	}
-	return uint(caps.memory_capacity), nil
+	return uint64(caps.memory_capacity), uint64(caps.app_direct_capacity), nil
 }
 
-// GetNVMInfo returns information specific for non-volatile memory modules:
-// average power budget and total memory mode capacity
+// GetNVMInfo returns information specific for non-volatile memory modules
 func GetNVMInfo() (info.NVMInfo, error) {
 	nvmInfo := info.NVMInfo{}
 	// Initialize libipmctl library.
@@ -86,9 +85,9 @@ func GetNVMInfo() (info.NVMInfo, error) {
 	defer C.nvm_uninit()
 
 	var err error
-	nvmInfo.MemoryModeCapcity, err = getNVMMemoryModeCapcity()
+	nvmInfo.MemoryModeCapcity, nvmInfo.AppDirectModeCapcity, err = getNVMCapacities()
 	if err != nil {
-		return info.NVMInfo{}, fmt.Errorf("Unable to get NVM capacity in bytes for memory mode, err: %s", err)
+		return info.NVMInfo{}, fmt.Errorf("Unable to get NVM capacities, err: %s", err)
 	}
 
 	nvmInfo.AvgPowerBudget, err = getNVMAvgPowerBudget()
