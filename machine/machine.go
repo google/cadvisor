@@ -139,7 +139,7 @@ func GetMachineMemoryCapacity() (uint64, error) {
 	return memoryCapacity, err
 }
 
-// GetMachineMemoryByType returns information about memory capcity and number of DIMMs.
+// GetMachineMemoryByType returns information about memory capacity and number of DIMMs.
 // Information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/)
 // introduced in kernel 3.6. Documentation can be found at
 // https://www.kernel.org/doc/Documentation/admin-guide/ras.rst.

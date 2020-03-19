@@ -85,7 +85,7 @@ func GetNVMInfo() (info.NVMInfo, error) {
 	defer C.nvm_uninit()
 
 	var err error
-	nvmInfo.MemoryModeCapcity, nvmInfo.AppDirectModeCapcity, err = getNVMCapacities()
+	nvmInfo.MemoryModeCapacity, nvmInfo.AppDirectModeCapacity, err = getNVMCapacities()
 	if err != nil {
 		return info.NVMInfo{}, fmt.Errorf("Unable to get NVM capacities, err: %s", err)
 	}
