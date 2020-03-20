@@ -13,7 +13,8 @@
 # limitations under the License.
 
 GO := go
-pkgs  = $(shell $(GO) list ./... | grep -v vendor)
+pkgs     = $(shell $(GO) list ./... | grep -v vendor)
+cmd_pkgs = $(shell cd cmd && $(GO) list ./... | grep -v vendor)
 arch ?= $(shell go env GOARCH)
 
 ifeq ($(arch), amd64)
@@ -28,6 +29,7 @@ all: presubmit build test
 test:
 	@echo ">> running tests"
 	@$(GO) test -short -race $(pkgs)
+	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
 
 test-integration:
 	GO_FLAGS="-race" ./build/build.sh
@@ -41,10 +43,12 @@ test-runner:
 format:
 	@echo ">> formatting code"
 	@$(GO) fmt $(pkgs)
+	@cd cmd && $(GO) fmt $(cmd_pkgs)
 
 vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
+	@cd cmd && $(GO) vet $(cmd_pkgs)
 
 build: assets
 	@echo ">> building binaries"
