@@ -27,6 +27,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type testSubcontainersInfoProvider struct{}
@@ -431,7 +432,7 @@ func TestPrometheusCollector(t *testing.T) {
 
 func testPrometheusCollector(t *testing.T, c *PrometheusCollector, metricsFile string) {
 	rw := httptest.NewRecorder()
-	prometheus.Handler().ServeHTTP(rw, &http.Request{})
+	promhttp.Handler().ServeHTTP(rw, &http.Request{})
 
 	wantMetrics, err := ioutil.ReadFile(metricsFile)
 	if err != nil {
