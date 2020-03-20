@@ -21,14 +21,14 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/cache/memory"
+	_ "github.com/google/cadvisor/cmd/internal/storage/bigquery"
+	_ "github.com/google/cadvisor/cmd/internal/storage/elasticsearch"
+	_ "github.com/google/cadvisor/cmd/internal/storage/influxdb"
+	_ "github.com/google/cadvisor/cmd/internal/storage/kafka"
+	_ "github.com/google/cadvisor/cmd/internal/storage/redis"
+	_ "github.com/google/cadvisor/cmd/internal/storage/statsd"
+	_ "github.com/google/cadvisor/cmd/internal/storage/stdout"
 	"github.com/google/cadvisor/storage"
-	_ "github.com/google/cadvisor/storage/bigquery"
-	_ "github.com/google/cadvisor/storage/elasticsearch"
-	_ "github.com/google/cadvisor/storage/influxdb"
-	_ "github.com/google/cadvisor/storage/kafka"
-	_ "github.com/google/cadvisor/storage/redis"
-	_ "github.com/google/cadvisor/storage/statsd"
-	_ "github.com/google/cadvisor/storage/stdout"
 
 	"k8s.io/klog"
 )

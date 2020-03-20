@@ -12,13 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The install package registers all included container providers when imported
+// The install package registers mesos.NewPlugin() as the "mesos" container provider when imported
 package install
 
 import (
-	_ "github.com/google/cadvisor/container/containerd/install"
-	_ "github.com/google/cadvisor/container/crio/install"
-	_ "github.com/google/cadvisor/container/docker/install"
-	_ "github.com/google/cadvisor/container/mesos/install"
-	_ "github.com/google/cadvisor/container/systemd/install"
+	"github.com/google/cadvisor/cmd/internal/container/mesos"
+	"github.com/google/cadvisor/container"
+	"k8s.io/klog"
 )
+
+func init() {
+	err := container.RegisterPlugin("mesos", mesos.NewPlugin())
+	if err != nil {
+		klog.Fatalf("Failed to register mesos plugin: %v", err)
+	}
+}

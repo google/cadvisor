@@ -35,7 +35,7 @@ import (
 	"github.com/google/cadvisor/version"
 
 	// Register container providers
-	_ "github.com/google/cadvisor/container/install"
+	_ "github.com/google/cadvisor/cmd/internal/container/install"
 
 	// Register CloudProviders
 	_ "github.com/google/cadvisor/utils/cloudinfo/aws"
