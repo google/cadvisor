@@ -60,6 +60,8 @@ type ContainerSpec struct {
 	HasMemory bool       `json:"has_memory"`
 	Memory    MemorySpec `json:"memory,omitempty"`
 
+	HasHugetlb bool `json:"has_hugetlb"`
+
 	HasNetwork bool `json:"has_network"`
 
 	HasProcesses bool        `json:"has_processes"`
@@ -340,6 +342,15 @@ type DiskIoStats struct {
 	IoWaitTime     []PerDiskStats `json:"io_wait_time,omitempty"`
 	IoMerged       []PerDiskStats `json:"io_merged,omitempty"`
 	IoTime         []PerDiskStats `json:"io_time,omitempty"`
+}
+
+type HugetlbStats struct {
+	// current res_counter usage for hugetlb
+	Usage uint64 `json:"usage,omitempty"`
+	// maximum usage ever recorded.
+	MaxUsage uint64 `json:"max_usage,omitempty"`
+	// number of times hugetlb usage allocation failure.
+	Failcnt uint64 `json:"failcnt"`
 }
 
 type MemoryStats struct {
@@ -833,12 +844,12 @@ type ProcessStats struct {
 
 type ContainerStats struct {
 	// The time of this stat point.
-	Timestamp time.Time    `json:"timestamp"`
-	Cpu       CpuStats     `json:"cpu,omitempty"`
-	DiskIo    DiskIoStats  `json:"diskio,omitempty"`
-	Memory    MemoryStats  `json:"memory,omitempty"`
-	Network   NetworkStats `json:"network,omitempty"`
-
+	Timestamp time.Time               `json:"timestamp"`
+	Cpu       CpuStats                `json:"cpu,omitempty"`
+	DiskIo    DiskIoStats             `json:"diskio,omitempty"`
+	Memory    MemoryStats             `json:"memory,omitempty"`
+	Hugetlb   map[string]HugetlbStats `json:"hugetlb,omitempty"`
+	Network   NetworkStats            `json:"network,omitempty"`
 	// Filesystem statistics
 	Filesystem []FsStats `json:"filesystem,omitempty"`
 
@@ -888,6 +899,9 @@ func (a *ContainerStats) StatsEq(b *ContainerStats) bool {
 		return false
 	}
 	if !reflect.DeepEqual(a.Memory, b.Memory) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Hugetlb, b.Hugetlb) {
 		return false
 	}
 	if !reflect.DeepEqual(a.DiskIo, b.DiskIo) {

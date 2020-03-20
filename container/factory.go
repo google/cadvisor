@@ -57,6 +57,7 @@ const (
 	AcceleratorUsageMetrics        MetricKind = "accelerator"
 	AppMetrics                     MetricKind = "app"
 	ProcessMetrics                 MetricKind = "process"
+	HugetlbUsageMetrics            MetricKind = "hugetlb"
 )
 
 // AllMetrics represents all kinds of metrics that cAdvisor supported.
@@ -75,6 +76,7 @@ var AllMetrics = MetricSet{
 	NetworkUdpUsageMetrics:         struct{}{},
 	ProcessMetrics:                 struct{}{},
 	AppMetrics:                     struct{}{},
+	HugetlbUsageMetrics:            struct{}{},
 }
 
 func (mk MetricKind) String() string {

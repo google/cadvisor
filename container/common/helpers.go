@@ -156,6 +156,14 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 		}
 	}
 
+	// Hugepage
+	hugepageRoot, ok := cgroupPaths["hugetlb"]
+	if ok {
+		if utils.FileExists(hugepageRoot) {
+			spec.HasHugetlb = true
+		}
+	}
+
 	// Processes, read it's value from pids path directly
 	pidsRoot, ok := cgroupPaths["pids"]
 	if ok {

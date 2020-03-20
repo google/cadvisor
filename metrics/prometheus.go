@@ -321,6 +321,60 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.HugetlbUsageMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_hugetlb_failcnt",
+				help:        "Number of hugepage usage hits limits",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"pagesize"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Hugetlb))
+					for k, v := range s.Hugetlb {
+						values = append(values, metricValue{
+							value:     float64(v.Failcnt),
+							labels:    []string{k},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			}, {
+				name:        "container_hugetlb_usage_bytes",
+				help:        "Current hugepage usage in bytes",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"pagesize"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Hugetlb))
+					for k, v := range s.Hugetlb {
+						values = append(values, metricValue{
+							value:     float64(v.Usage),
+							labels:    []string{k},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			},
+			{
+				name:        "container_hugetlb_max_usage_bytes",
+				help:        "Maximum hugepage usage recorded in bytes",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"pagesize"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Hugetlb))
+					for k, v := range s.Hugetlb {
+						values = append(values, metricValue{
+							value:     float64(v.MaxUsage),
+							labels:    []string{k},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			},
+		}...)
+	}
 	if includedMetrics.Has(container.MemoryUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{

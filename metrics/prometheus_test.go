@@ -68,6 +68,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 					Reservation: 1024,
 					SwapLimit:   4096,
 				},
+				HasHugetlb:   true,
 				HasProcesses: true,
 				Processes: info.ProcessSpec{
 					Limit: 100,
@@ -118,6 +119,18 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						RSS:        15,
 						MappedFile: 16,
 						Swap:       8192,
+					},
+					Hugetlb: map[string]info.HugetlbStats{
+						"2Mi": {
+							Usage:    4,
+							MaxUsage: 10,
+							Failcnt:  1,
+						},
+						"1Gi": {
+							Usage:    0,
+							MaxUsage: 0,
+							Failcnt:  0,
+						},
 					},
 					Network: info.NetworkStats{
 						InterfaceStats: info.InterfaceStats{
