@@ -40,6 +40,10 @@ test-integration:
 test-runner:
 	@$(GO) build github.com/google/cadvisor/integration/runner
 
+tidy:
+	@$(GO) mod tidy
+	@cd cmd && $(GO) mod tidy
+
 format:
 	@echo ">> formatting code"
 	@$(GO) fmt $(pkgs)
@@ -74,4 +78,4 @@ presubmit: vet
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
 
-.PHONY: all build docker format release test test-integration vet presubmit
+.PHONY: all build docker format release test test-integration vet presubmit tidy
