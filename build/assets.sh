@@ -28,7 +28,10 @@ TEMPLATES_PACKAGE="pages"
 
 FORCE="${FORCE:-}" # Force assets to be rebuilt if FORCE=true
 
+# Install while in a temp dir to avoid polluting go.mod/go.sum
+pushd "${TMPDIR:-/tmp}" > /dev/null
 go get -u github.com/kevinburke/go-bindata/...
+popd > /dev/null
 
 build_asset () {
   local package=$1
