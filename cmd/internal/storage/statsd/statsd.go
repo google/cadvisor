@@ -15,9 +15,9 @@
 package statsd
 
 import (
+	client "github.com/google/cadvisor/cmd/internal/storage/statsd/client"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/storage"
-	client "github.com/google/cadvisor/storage/statsd/client"
 )
 
 func init() {

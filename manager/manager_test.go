@@ -36,7 +36,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	clock "k8s.io/utils/clock/testing"
 
-	_ "github.com/google/cadvisor/container/install"
+	// install all the container runtimes included in the library version for testing.
+	// as these are moved to cmd/internal/container, remove them from here.
+	_ "github.com/google/cadvisor/container/containerd/install"
+	_ "github.com/google/cadvisor/container/crio/install"
+	_ "github.com/google/cadvisor/container/docker/install"
+	_ "github.com/google/cadvisor/container/systemd/install"
 )
 
 // TODO(vmarmol): Refactor these tests.

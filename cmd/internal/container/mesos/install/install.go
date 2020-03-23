@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2019 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package healthz
+// The install package registers mesos.NewPlugin() as the "mesos" container provider when imported
+package install
 
 import (
-	"net/http"
-
-	httpmux "github.com/google/cadvisor/http/mux"
+	"github.com/google/cadvisor/cmd/internal/container/mesos"
+	"github.com/google/cadvisor/container"
+	"k8s.io/klog"
 )
 
-func handleHealthz(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok"))
-}
-
-// Register simple HTTP /healthz handler to return "ok".
-func RegisterHandler(mux httpmux.Mux) error {
-	mux.HandleFunc("/healthz", handleHealthz)
-	return nil
+func init() {
+	err := container.RegisterPlugin("mesos", mesos.NewPlugin())
+	if err != nil {
+		klog.Fatalf("Failed to register mesos plugin: %v", err)
+	}
 }

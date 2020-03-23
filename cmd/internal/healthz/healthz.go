@@ -1,4 +1,4 @@
-// Copyright 2019 Google Inc. All Rights Reserved.
+// Copyright 2014 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The install package registers all included container providers when imported
-package install
+package healthz
 
 import (
-	_ "github.com/google/cadvisor/container/containerd/install"
-	_ "github.com/google/cadvisor/container/crio/install"
-	_ "github.com/google/cadvisor/container/docker/install"
-	_ "github.com/google/cadvisor/container/mesos/install"
-	_ "github.com/google/cadvisor/container/systemd/install"
+	"net/http"
+
+	httpmux "github.com/google/cadvisor/cmd/internal/http/mux"
 )
+
+func handleHealthz(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("ok"))
+}
+
+// Register simple HTTP /healthz handler to return "ok".
+func RegisterHandler(mux httpmux.Mux) error {
+	mux.HandleFunc("/healthz", handleHealthz)
+	return nil
+}

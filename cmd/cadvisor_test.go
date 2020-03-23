@@ -65,8 +65,7 @@ func TestToIncludedMetrics(t *testing.T) {
 		{
 			container.CpuUsageMetrics: struct{}{},
 		},
-		{
-		},
+		{},
 		container.AllMetrics,
 	}
 
@@ -85,7 +84,7 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.NetworkUdpUsageMetrics:         struct{}{},
 			container.ProcessMetrics:                 struct{}{},
 			container.AppMetrics:                     struct{}{},
-			container.HugetlbUsageMetrics:			  struct{}{},
+			container.HugetlbUsageMetrics:            struct{}{},
 		},
 		container.AllMetrics,
 		{},

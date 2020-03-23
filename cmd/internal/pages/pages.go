@@ -21,7 +21,7 @@ import (
 	"net/url"
 	"strings"
 
-	httpmux "github.com/google/cadvisor/http/mux"
+	httpmux "github.com/google/cadvisor/cmd/internal/http/mux"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
 

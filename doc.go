@@ -1,4 +1,4 @@
-// Copyright 2019 Google Inc. All Rights Reserved.
+// Copyright 2020 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The install package registers mesos.NewPlugin() as the "mesos" container provider when imported
-package install
-
-import (
-	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/mesos"
-	"k8s.io/klog"
-)
-
-func init() {
-	err := container.RegisterPlugin("mesos", mesos.NewPlugin())
-	if err != nil {
-		klog.Fatalf("Failed to register mesos plugin: %v", err)
-	}
-}
+package cadvisor
