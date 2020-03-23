@@ -16,6 +16,7 @@ require (
 	github.com/SeanDolphin/bqschema v0.0.0-20150424181127-f92a08f515e1
 	github.com/Shopify/sarama v1.8.0
 	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
+	github.com/abbot/go-http-auth v0.0.0-20140618235127-c0ef4539dfab
 	github.com/eapache/go-resiliency v1.0.1-0.20160104191539-b86b1ec0dd42 // indirect
 	github.com/eapache/queue v1.0.2 // indirect
 	github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7
@@ -27,6 +28,7 @@ require (
 	github.com/onsi/gomega v1.7.1 // indirect
 	github.com/opencontainers/runc v1.0.0-rc10
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
+	github.com/prometheus/client_golang v1.0.0
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	google.golang.org/api v0.0.0-20150730141719-0c2979aeaa5b

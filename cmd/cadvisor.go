@@ -27,8 +27,8 @@ import (
 	"syscall"
 	"time"
 
+	cadvisorhttp "github.com/google/cadvisor/cmd/internal/http"
 	"github.com/google/cadvisor/container"
-	cadvisorhttp "github.com/google/cadvisor/http"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/utils/sysfs"

@@ -18,12 +18,12 @@ set -e
 
 GIT_ROOT=$(dirname "${BASH_SOURCE}")/..
 
-ASSETS_INPUT_DIRS="$GIT_ROOT/pages/assets/js/... $GIT_ROOT/pages/assets/styles/..."
-ASSETS_OUTPUT_PATH="$GIT_ROOT/pages/static/assets.go"
+ASSETS_INPUT_DIRS="$GIT_ROOT/cmd/internal/pages/assets/js/... $GIT_ROOT/cmd/internal/pages/assets/styles/..."
+ASSETS_OUTPUT_PATH="$GIT_ROOT/cmd/internal/pages/static/assets.go"
 ASSETS_PACKAGE="static"
 
-TEMPLATES_INPUT_DIRS="$GIT_ROOT/pages/assets/html/..."
-TEMPLATES_OUTPUT_PATH="$GIT_ROOT/pages/templates.go"
+TEMPLATES_INPUT_DIRS="$GIT_ROOT/cmd/internal/pages/assets/html/..."
+TEMPLATES_OUTPUT_PATH="$GIT_ROOT/cmd/internal/pages/templates.go"
 TEMPLATES_PACKAGE="pages"
 
 FORCE="${FORCE:-}" # Force assets to be rebuilt if FORCE=true
@@ -48,14 +48,14 @@ build_asset () {
   mv "${tmp_output}" "${output_path}"
 }
 
-for f in $GIT_ROOT/pages/assets/js/* $GIT_ROOT/pages/assets/styles/*; do
+for f in $GIT_ROOT/cmd/internal/pages/assets/js/* $GIT_ROOT/cmd/internal/pages/assets/styles/*; do
   if [ "$FORCE" == "true" ] || [ "$f" -nt $ASSETS_OUTPUT_PATH -o ! -e $ASSETS_OUTPUT_PATH ]; then
     build_asset "$ASSETS_PACKAGE" "$ASSETS_OUTPUT_PATH" "$ASSETS_INPUT_DIRS"
     break;
   fi
 done
 
-for f in $GIT_ROOT/pages/assets/html/*; do
+for f in $GIT_ROOT/cmd/internal/pages/assets/html/*; do
   if [ "$FORCE" == "true" ] || [ "$f" -nt $TEMPLATES_OUTPUT_PATH -o ! -e $TEMPLATES_OUTPUT_PATH ]; then
     build_asset "$TEMPLATES_PACKAGE" "$TEMPLATES_OUTPUT_PATH" "$TEMPLATES_INPUT_DIRS"
     break;
