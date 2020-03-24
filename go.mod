@@ -62,5 +62,5 @@ require (
 	gopkg.in/yaml.v2 v2.2.4 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/klog v0.3.0
-	k8s.io/utils v0.0.0-20200122174043-1e243dd1a584
+	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 )
