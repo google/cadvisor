@@ -53,10 +53,6 @@ type mesosContainerHandler struct {
 	libcontainerHandler *containerlibcontainer.Handler
 }
 
-func isRootCgroup(name string) bool {
-	return name == "/"
-}
-
 func newMesosContainerHandler(
 	name string,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,

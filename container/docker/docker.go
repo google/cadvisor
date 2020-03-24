@@ -150,14 +150,6 @@ func ValidateInfo() (*dockertypes.Info, error) {
 	return &dockerInfo, nil
 }
 
-func Version() ([]int, error) {
-	ver, err := VersionString()
-	if err != nil {
-		return nil, err
-	}
-	return parseVersion(ver, version_re, 3)
-}
-
 func APIVersion() ([]int, error) {
 	ver, err := APIVersionString()
 	if err != nil {

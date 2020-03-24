@@ -68,8 +68,6 @@ const (
 	serTxBytes string = "tx_bytes"
 	// Cumulative count of transmit errors encountered.
 	serTxErrors string = "tx_errors"
-	// Filesystem device.
-	serFsDevice string = "fs_device"
 	// Filesystem limit.
 	serFsLimit string = "fs_limit"
 	// Filesystem usage.

@@ -127,14 +127,6 @@ func (self *crioFactory) DebugInfo() map[string][]string {
 	return map[string][]string{}
 }
 
-var (
-	// TODO(runcom): handle versioning in CRI-O
-	version_regexp_string    = `(\d+)\.(\d+)\.(\d+)`
-	version_re               = regexp.MustCompile(version_regexp_string)
-	apiversion_regexp_string = `(\d+)\.(\d+)`
-	apiversion_re            = regexp.MustCompile(apiversion_regexp_string)
-)
-
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
 	client, err := Client()

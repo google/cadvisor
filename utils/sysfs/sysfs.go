@@ -32,9 +32,8 @@ const (
 	ppcDevTree   = "/proc/device-tree"
 	s390xDevTree = "/etc" // s390/s390x changes
 
-	hugePagesDirName = "hugepages"
-	coreIDFilePath   = "/topology/core_id"
-	meminfoFile      = "meminfo"
+	coreIDFilePath = "/topology/core_id"
+	meminfoFile    = "meminfo"
 
 	cpuDirPattern  = "cpu*[0-9]"
 	nodeDirPattern = "node*[0-9]"

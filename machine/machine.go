@@ -39,10 +39,8 @@ import (
 )
 
 var (
-	cpuRegExp     = regexp.MustCompile(`^processor\s*:\s*([0-9]+)$`)
-	coreRegExp    = regexp.MustCompile(`(?m)^core id\s*:\s*([0-9]+)$`)
-	nodeRegExp    = regexp.MustCompile(`(?m)^physical id\s*:\s*([0-9]+)$`)
-	nodeBusRegExp = regexp.MustCompile(`^node([0-9]+)$`)
+	coreRegExp = regexp.MustCompile(`(?m)^core id\s*:\s*([0-9]+)$`)
+	nodeRegExp = regexp.MustCompile(`(?m)^physical id\s*:\s*([0-9]+)$`)
 	// Power systems have a different format so cater for both
 	cpuClockSpeedMHz     = regexp.MustCompile(`(?:cpu MHz|clock)\s*:\s*([0-9]+\.[0-9]+)(?:MHz)?`)
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
@@ -55,7 +53,6 @@ var (
 )
 
 const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
-const nodePath = "/sys/devices/system/node"
 const sysFsCPUCoreID = "core_id"
 const sysFsCPUPhysicalPackageID = "physical_package_id"
 const sysFsCPUTopology = "topology"
@@ -258,18 +255,6 @@ func getUniqueCPUPropertyCount(cpuBusPath string, propertyName string) int {
 		uniques[string(propertyVal)] = true
 	}
 	return len(uniques)
-}
-
-func extractValue(s string, r *regexp.Regexp) (bool, int, error) {
-	matches := r.FindSubmatch([]byte(s))
-	if len(matches) == 2 {
-		val, err := strconv.ParseInt(string(matches[1]), 10, 32)
-		if err != nil {
-			return false, -1, err
-		}
-		return true, int(val), nil
-	}
-	return false, -1, nil
 }
 
 // getUniqueMatchesCount returns number of unique matches in given argument using provided regular expression

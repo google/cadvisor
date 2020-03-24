@@ -359,12 +359,6 @@ func GetCacheInfo(sysFs sysfs.SysFs, id int) ([]sysfs.CacheInfo, error) {
 	return info, nil
 }
 
-func GetNetworkStats(name string) (info.InterfaceStats, error) {
-	// TODO(rjnagal): Take syfs as an argument.
-	sysFs := sysfs.NewRealSysFs()
-	return getNetworkStats(name, sysFs)
-}
-
 func getNetworkStats(name string, sysFs sysfs.SysFs) (info.InterfaceStats, error) {
 	var stats info.InterfaceStats
 	var err error
