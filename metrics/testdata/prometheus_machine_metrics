@@ -1,0 +1,29 @@
+# HELP machine_cpu_cores Number of logical CPU cores.
+# TYPE machine_cpu_cores gauge
+machine_cpu_cores{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 4
+# HELP machine_cpu_physical_cores Number of physical CPU cores.
+# TYPE machine_cpu_physical_cores gauge
+machine_cpu_physical_cores{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1
+# HELP machine_cpu_sockets Number of CPU sockets.
+# TYPE machine_cpu_sockets gauge
+machine_cpu_sockets{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1
+# HELP machine_dimm_capacity_bytes Total RAM DIMM capacity (all types memory modules) value labeled by dimm type.
+# TYPE machine_dimm_capacity_bytes gauge
+machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Non-volatile-RAM"} 2.168421613568e+12
+machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Unbuffered-DDR4"} 4.12316860416e+11
+machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="all"} 2.580738473984e+12
+# HELP machine_dimm_count Number of RAM DIMM (all types memory modules) value labeled by dimm type.
+# TYPE machine_dimm_count gauge
+machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Non-volatile-RAM"} 8
+machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Unbuffered-DDR4"} 12
+machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="all"} 20
+# HELP machine_memory_bytes Amount of memory installed on the machine.
+# TYPE machine_memory_bytes gauge
+machine_memory_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1024
+# HELP machine_nvm_capacity NVM capacity value labeled by NVM mode (memory mode or app direct mode).
+# TYPE machine_nvm_capacity gauge
+machine_nvm_capacity{boot_id="boot-id-test",machine_id="machine-id-test",mode="app_direct_mode",system_uuid="system-uuid-test"} 1.735166787584e+12
+machine_nvm_capacity{boot_id="boot-id-test",machine_id="machine-id-test",mode="memory_mode",system_uuid="system-uuid-test"} 4.294967296e+11
+# HELP machine_scrape_error 1 if there was an error while getting machine metrics, 0 otherwise.
+# TYPE machine_scrape_error gauge
+machine_scrape_error 0
