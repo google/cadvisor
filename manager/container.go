@@ -409,7 +409,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 	cont.summaryReader, err = summary.New(cont.info.Spec)
 	if err != nil {
 		cont.summaryReader = nil
-		klog.Warningf("Failed to create summary reader for %q: %v", ref.Name, err)
+		klog.V(5).Infof("Failed to create summary reader for %q: %v", ref.Name, err)
 	}
 
 	return cont, nil
