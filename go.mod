@@ -10,10 +10,10 @@ require (
 	github.com/blang/semver v3.1.0+incompatible
 	github.com/checkpoint-restore/go-criu v0.0.0-20190109184317-bdb7599cd87b // indirect
 	github.com/cilium/ebpf v0.0.0-20191113100448-d9fb101ca1fb // indirect
-	github.com/containerd/console v0.0.0-20180822173158-c12b1e7919c1 // indirect
+	github.com/containerd/console v1.0.0 // indirect
 	github.com/containerd/containerd v1.3.3
-	github.com/containerd/ttrpc v0.0.0-20191028202541-4f1b8fe65a5c // indirect
-	github.com/containerd/typeurl v0.0.0-20190911142611-5eb25027c9fd
+	github.com/containerd/ttrpc v1.0.0 // indirect
+	github.com/containerd/typeurl v1.0.0
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2-0.20170720062807-ae69057f2299 // indirect
 	github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible // indirect
