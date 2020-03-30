@@ -124,6 +124,18 @@ container_memory_failures_total{container_env_foo_env="prod",container_label_foo
 container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",failure_type="pgfault",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",zone_name="hello"} 12 1395066363000
 container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",failure_type="pgmajfault",id="testcontainer",image="test",name="testcontaineralias",scope="container",zone_name="hello"} 11 1395066363000
 container_memory_failures_total{container_env_foo_env="prod",container_label_foo_label="bar",failure_type="pgmajfault",id="testcontainer",image="test",name="testcontaineralias",scope="hierarchy",zone_name="hello"} 13 1395066363000
+# HELP container_hugetlb_failcnt Number of hugepage usage hits limits
+# TYPE container_hugetlb_failcnt counter
+container_hugetlb_failcnt{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="1Gi",zone_name="hello"} 0 1395066363000
+container_hugetlb_failcnt{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="2Mi",zone_name="hello"} 1 1395066363000
+# HELP container_hugetlb_max_usage_bytes Maximum hugepage usage recorded in bytes
+# TYPE container_hugetlb_max_usage_bytes gauge
+container_hugetlb_max_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="1Gi",zone_name="hello"} 0 1395066363000
+container_hugetlb_max_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="2Mi",zone_name="hello"} 10 1395066363000
+# HELP container_hugetlb_usage_bytes Current hugepage usage in bytes
+# TYPE container_hugetlb_usage_bytes gauge
+container_hugetlb_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="1Gi",zone_name="hello"} 0 1395066363000
+container_hugetlb_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="2Mi",zone_name="hello"} 4 1395066363000
 # HELP container_memory_mapped_file Size of memory mapped files in bytes.
 # TYPE container_memory_mapped_file gauge
 container_memory_mapped_file{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 16 1395066363000

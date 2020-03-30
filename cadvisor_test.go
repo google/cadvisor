@@ -40,6 +40,7 @@ func TestIgnoreMetrics(t *testing.T) {
 		expected []container.MetricKind
 	}{
 		{"", []container.MetricKind{}},
+		{"hugetlb", []container.MetricKind{container.HugetlbUsageMetrics}},
 		{"disk", []container.MetricKind{container.DiskUsageMetrics}},
 		{"disk,tcp,network", []container.MetricKind{container.DiskUsageMetrics, container.NetworkTcpUsageMetrics, container.NetworkUsageMetrics}},
 	}
