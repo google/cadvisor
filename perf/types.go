@@ -17,9 +17,24 @@
 // Types related to handling perf events that are missing from unix package.
 package perf
 
+import "C"
+import "unsafe"
+
+// ReadFormat allows to read perf event's value for non-grouped events
 type ReadFormat struct {
 	Value       uint64 /* The value of the event */
 	TimeEnabled uint64 /* if PERF_FORMAT_TOTAL_TIME_ENABLED */
 	TimeRunning uint64 /* if PERF_FORMAT_TOTAL_TIME_RUNNING */
 	ID          uint64 /* if PERF_FORMAT_ID */
+}
+
+// pfmPerfEncodeArgT represents structure that is used to parse perf event nam
+// into perf_event_attr using libpfm.
+type pfmPerfEncodeArgT struct {
+	attr  unsafe.Pointer
+	fstr  unsafe.Pointer
+	size  C.size_t
+	idx   C.int
+	cpu   C.int
+	flags C.int
 }

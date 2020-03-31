@@ -19,25 +19,23 @@ import (
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"
-	"time"
 )
 
 func TestStringToUint64Unmarshaling(t *testing.T) {
 	configContents, err := ioutil.ReadFile("testing/perf.json")
 	assert.Nil(t, err)
 
-	events := &RawEvents{}
+	events := &Events{}
 	err = json.Unmarshal(configContents, events)
 
 	assert.Nil(t, err)
-	assert.Equal(t, Duration(5*time.Second), events.Interval)
-	assert.Equal(t, events.NonGrouped[0].Config, Config{192})
-	assert.Equal(t, events.NonGrouped[0].Type, uint32(4))
-	assert.Equal(t, events.NonGrouped[0].Name, "instructions_retired")
-	assert.Equal(t, events.Grouped[0][0].Config, Config{3076})
-	assert.Equal(t, events.Grouped[0][0].Type, uint32(13))
-	assert.Equal(t, events.Grouped[0][0].Name, "UNC_M_CAS_COUNT_WRITE")
-	assert.Equal(t, events.Grouped[0][1].Config, Config{49924})
-	assert.Equal(t, events.Grouped[0][1].Type, uint32(13))
-	assert.Equal(t, events.Grouped[0][1].Name, "UNC_M_CAS_COUNT_READ")
+	assert.Equal(t, events.Raw.NonGrouped[0].Config, Config{5439680})
+	assert.Equal(t, events.Raw.NonGrouped[0].Type, uint32(0))
+	assert.Equal(t, events.Raw.NonGrouped[0].Name, "instructions_retired")
+	assert.Equal(t, events.Raw.Grouped[0][0].Config, Config{65538})
+	assert.Equal(t, events.Raw.Grouped[0][0].Type, uint32(0))
+	assert.Equal(t, events.Raw.Grouped[0][0].Name, "LLC-load-misses")
+	assert.Equal(t, events.Raw.Grouped[0][1].Config, Config{65536})
+	assert.Equal(t, events.Raw.Grouped[0][1].Type, uint32(0))
+	assert.Equal(t, events.Raw.Grouped[0][1].Name, "L1-dcache-load-misses")
 }

@@ -1,30 +1,33 @@
 {
-  "non_grouped": [
-    {
-      "type": 4,
-      "config": [
-        "0xc0"
-      ],
-      "name": "instructions_retired"
-    }
-  ],
-  "grouped": [
-    [
+  "non_grouped": ["instructions"],
+  "raw": {
+    "non_grouped": [
       {
-        "type": 13,
+        "type": 0,
         "config": [
-          "0xc04"
+          "0x5300c0"
         ],
-        "name": "UNC_M_CAS_COUNT_WRITE"
-      },
-      {
-        "type": 13,
-        "config": [
-          "0xc304"
-        ],
-        "name": "UNC_M_CAS_COUNT_READ"
+        "name": "instructions_retired"
       }
+    ],
+    "grouped": [
+      [
+        {
+          "type": 0,
+          "config": [
+            "0x10002"
+          ],
+          "name": "LLC-load-misses"
+        },
+        {
+          "type": 0,
+          "config": [
+            "0x10000"
+          ],
+          "name": "L1-dcache-load-misses"
+        }
+      ]
     ]
-  ],
+  },
   "interval": "5s"
 }
