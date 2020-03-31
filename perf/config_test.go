@@ -26,7 +26,7 @@ func TestStringToUint64Unmarshaling(t *testing.T) {
 	configContents, err := ioutil.ReadFile("testing/perf.json")
 	assert.Nil(t, err)
 
-	events := &Events{}
+	events := &RawEvents{}
 	err = json.Unmarshal(configContents, events)
 
 	assert.Nil(t, err)

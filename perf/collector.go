@@ -36,12 +36,12 @@ const (
 
 type collector struct {
 	cgroupPath    string
-	events        Events
+	events        RawEvents
 	perfFiles     map[string][]*os.File
 	perfFilesLock sync.Mutex
 }
 
-func NewCollector(cgroupPath string, events Events) stats.Collector {
+func NewCollector(cgroupPath string, events RawEvents) stats.Collector {
 	return &collector{cgroupPath: cgroupPath, events: events, perfFiles: map[string][]*os.File{}}
 }
 
@@ -95,7 +95,7 @@ func (c *collector) Setup() {
 	}
 }
 
-func createPerfEventAttr(event Event) *unix.PerfEventAttr {
+func createPerfEventAttr(event RawEvent) *unix.PerfEventAttr {
 	length := len(event.Config)
 	size := uint32(unsafe.Sizeof(unix.PerfEventAttr{}))
 

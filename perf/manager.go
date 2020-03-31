@@ -26,7 +26,7 @@ import (
 )
 
 type manager struct {
-	events Events
+	events RawEvents
 	stats.NoopSetupDestroy
 }
 
@@ -39,7 +39,7 @@ func NewManager(configFile string) (stats.Manager, error) {
 		klog.Errorf("Unable to read configuration file %q: %q", configFile, err)
 		return nil, fmt.Errorf("Unable to read configuration file %q: %q", configFile, err)
 	}
-	config := Events{}
+	config := RawEvents{}
 	err = json.Unmarshal(configContents, &config)
 	if err != nil {
 		klog.Errorf("Unable to load perf events configuration from %q: %q", configFile, err)
