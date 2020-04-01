@@ -14,12 +14,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package machine
+package nvm
 
-import info "github.com/google/cadvisor/info/v1"
+import (
+	info "github.com/google/cadvisor/info/v1"
+	"k8s.io/klog"
+)
 
-// GetNVMInfo returns information specific for non-volatile memory modules.
-// When libipmct is not available zero value is returned.
-func GetNVMInfo() (info.NVMInfo, error) {
+// GetInfo returns information specific for non-volatile memory modules.
+// When libipmctl is not available zero value is returned.
+func GetInfo() (info.NVMInfo, error) {
 	return info.NVMInfo{}, nil
+}
+
+// FinalizeLibimpctl un-initializes libipmctl. See https://github.com/google/cadvisor/issues/2457.
+// When libipmctl is not available it just logs that it's being called.
+func FinalizeLibimpctl() {
+	klog.V(4).Info("libimpctl not available, doing nothing.")
 }
