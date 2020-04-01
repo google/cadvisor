@@ -18,7 +18,6 @@ package nvm
 
 // #cgo pkg-config: libipmctl
 // #include <nvm_management.h>
-// #include <stdlib.h>
 import "C"
 import (
 	"fmt"
@@ -83,16 +82,11 @@ func getAvgPowerBudget() (uint, error) {
 // getCapacities retrieves the total NVM capacity in bytes for memory mode and app direct mode
 func getCapacities() (uint64, uint64, error) {
 	caps := C.struct_device_capacities{}
-	//capsMemory := C.malloc(C.ulong(unsafe.Sizeof(C.struct_device_capacities{})))
-	//defer C.free(capsMemory)
-	//caps := (*C.struct_device_capacities)(capsMemory)
-	klog.V(1).Infof("WTF? %#v", caps)
 	err := C.nvm_get_nvm_capacities(&caps)
 	if err != C.NVM_SUCCESS {
 		klog.Warningf("Unable to get NVM capacity. Status code: %d", err)
 		return uint64(0), uint64(0), fmt.Errorf("Unable to get NVM capacity. Status code: %d", err)
 	}
-	klog.V(1).Infof("FULL? %#v", caps)
 	return uint64(caps.memory_capacity), uint64(caps.app_direct_capacity), nil
 }
 
