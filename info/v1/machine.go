@@ -140,15 +140,13 @@ const (
 	GCE             CloudProvider = "GCE"
 	AWS                           = "AWS"
 	Azure                         = "Azure"
-	Baremetal                     = "Baremetal"
 	UnknownProvider               = "Unknown"
 )
 
 type InstanceType string
 
 const (
-	NoInstance      InstanceType = "None"
-	UnknownInstance              = "Unknown"
+	UnknownInstance = "Unknown"
 )
 
 type InstanceID string

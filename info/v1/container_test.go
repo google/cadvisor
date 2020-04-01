@@ -66,14 +66,3 @@ func TestStatsEndTime(t *testing.T) {
 		t.Errorf("start time is %v; should be %v", start, ref)
 	}
 }
-
-func createStats(cpuUsage, memUsage uint64, timestamp time.Time) *ContainerStats {
-	stats := &ContainerStats{}
-	stats.Cpu.Usage.PerCpu = []uint64{cpuUsage}
-	stats.Cpu.Usage.Total = cpuUsage
-	stats.Cpu.Usage.System = 0
-	stats.Cpu.Usage.User = cpuUsage
-	stats.Memory.Usage = memUsage
-	stats.Timestamp = timestamp
-	return stats
-}

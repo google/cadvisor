@@ -16,7 +16,6 @@ package test
 
 import (
 	"math/rand"
-	"reflect"
 	"testing"
 	"time"
 
@@ -75,33 +74,6 @@ func TimeEq(t1, t2 time.Time, tolerance time.Duration) bool {
 		return true
 	}
 	return false
-}
-
-const (
-	// 10ms, i.e. 0.01s
-	timePrecision time.Duration = 10 * time.Millisecond
-)
-
-// This function is useful because we do not require precise time
-// representation.
-func DefaultStatsEq(a, b *info.ContainerStats) bool {
-	if !TimeEq(a.Timestamp, b.Timestamp, timePrecision) {
-		return false
-	}
-	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
-		return false
-	}
-	if !reflect.DeepEqual(a.Memory, b.Memory) {
-		return false
-	}
-	if !reflect.DeepEqual(a.Network, b.Network) {
-		return false
-	}
-	if !reflect.DeepEqual(a.Filesystem, b.Filesystem) {
-		return false
-	}
-
-	return true
 }
 
 // This function will generate random stats and write

@@ -63,12 +63,6 @@ func waitForContainer(alias string, fm framework.Framework) {
 	require.NoError(fm.T(), err, "Timed out waiting for container %q to be available in cAdvisor: %v", alias, err)
 }
 
-func getDockerMinorVersion(fm framework.Framework) int {
-	val, err := strconv.Atoi(fm.Docker().Version()[1])
-	assert.Nil(fm.T(), err)
-	return val
-}
-
 // A Docker container in /docker/<ID>
 func TestDockerContainerById(t *testing.T) {
 	fm := framework.New(t)

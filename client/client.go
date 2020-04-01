@@ -31,7 +31,6 @@ import (
 	"github.com/google/cadvisor/info/v1"
 
 	"k8s.io/klog"
-	"time"
 )
 
 // Client represents the base URL for a cAdvisor client.
@@ -43,13 +42,6 @@ type Client struct {
 // NewClient returns a new v1.3 client with the specified base URL.
 func NewClient(url string) (*Client, error) {
 	return newClient(url, http.DefaultClient)
-}
-
-// NewClientWithTimeout returns a new v1.3 client with the specified base URL and http client timeout.
-func NewClientWithTimeout(url string, timeout time.Duration) (*Client, error) {
-	return newClient(url, &http.Client{
-		Timeout: timeout,
-	})
 }
 
 func newClient(url string, client *http.Client) (*Client, error) {
