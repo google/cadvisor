@@ -1,6 +1,6 @@
 # Monitoring cAdvisor with Prometheus
 
-cAdvisor exposes container statistics as [Prometheus](https://prometheus.io) metrics out of the box. By default, these metrics are served under the `/metrics` HTTP endpoint. This endpoint may be customized by setting the `-prometheus_endpoint` command-line flag.
+cAdvisor exposes container and hardware statistics as [Prometheus](https://prometheus.io) metrics out of the box. By default, these metrics are served under the `/metrics` HTTP endpoint. This endpoint may be customized by setting the `-prometheus_endpoint` command-line flag.
 
 To monitor cAdvisor with Prometheus, simply configure one or more jobs in Prometheus which scrape the relevant cAdvisor processes at that metrics endpoint. For details, see Prometheus's [Configuration](https://prometheus.io/docs/operating/configuration/) documentation, as well as the [Getting started](https://prometheus.io/docs/introduction/getting_started/) guide.
 
@@ -10,9 +10,9 @@ To monitor cAdvisor with Prometheus, simply configure one or more jobs in Promet
 
 * [vegasbrianc](https://github.com/vegasbrianc) provides a [starter project](https://github.com/vegasbrianc/prometheus) for cAdvisor and Prometheus monitoring, alongide a ready-to-use [Grafana dashboard](https://github.com/vegasbrianc/grafana_dashboard).
 
-## Prometheus metrics
+## Prometheus container metrics
 
-The table below lists the Prometheus metrics exposed by cAdvisor (in alphabetical order by metric name):
+The table below lists the Prometheus container metrics exposed by cAdvisor (in alphabetical order by metric name):
 
 Metric name | Type | Description | Unit (where applicable)
 :-----------|:-----|:------------|:-----------------------
@@ -78,3 +78,17 @@ Metric name | Type | Description | Unit (where applicable)
 `container_spec_memory_reservation_limit_bytes` | Gauge | Memory reservation limit for the container | bytes
 `container_start_time_seconds` | Gauge | Start time of the container since unix epoch | seconds
 `container_tasks_state` | Gauge | Number of tasks in given state (`sleeping`, `running`, `stopped`, `uninterruptible`, or `ioawaiting`) |
+
+## Prometheus hardware metrics
+
+The table below lists the Prometheus hardware metrics exposed by cAdvisor (in alphabetical order by metric name):
+
+Metric name | Type | Description | Unit (where applicable)
+:-----------|:-----|:------------|:-----------------------
+`machine_cpu_cores` | Gauge | Number of physical CPU cores |
+`machine_cpu_physical_cores` | Gauge | Number of logical CPU cores |
+`machine_cpu_sockets` | Gauge | Number of CPU sockets |
+`machine_dimm_capacity_bytes` | Gauge | Total RAM DIMM capacity (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 | bytes
+`machine_dimm_count` | Gauge | Number of RAM DIMM (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 |
+`machine_memory_bytes` | Gauge | Amount of memory installed on the machine | bytes
+`machine_nvm_capacity` | Gauge | NVM capacity value labeled by NVM mode (memory mode or app direct mode) | bytes

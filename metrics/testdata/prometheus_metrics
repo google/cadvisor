@@ -364,12 +364,6 @@ container_threads_max{container_env_foo_env="prod",container_label_foo_label="ba
 # HELP container_ulimits_soft Soft ulimit values for the container root process. Unlimited if -1, except priority and nice
 # TYPE container_ulimits_soft gauge
 container_ulimits_soft{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",ulimit="max_open_files",zone_name="hello"} 16384 1395066363000
-# HELP machine_cpu_cores Number of CPU cores on the machine.
-# TYPE machine_cpu_cores gauge
-machine_cpu_cores 4
-# HELP machine_memory_bytes Amount of memory installed on the machine.
-# TYPE machine_memory_bytes gauge
-machine_memory_bytes 1024
 # HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
 # TYPE process_cpu_seconds_total counter
 process_cpu_seconds_total 0

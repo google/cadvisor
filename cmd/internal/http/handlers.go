@@ -92,11 +92,12 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 
 // RegisterPrometheusHandler creates a new PrometheusCollector and configures
 // the provided HTTP mux to handle the given Prometheus endpoint.
-func RegisterPrometheusHandler(mux httpmux.Mux, containerManager manager.Manager, prometheusEndpoint string,
+func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager, prometheusEndpoint string,
 	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(
-		metrics.NewPrometheusCollector(containerManager, f, includedMetrics),
+		metrics.NewPrometheusCollector(resourceManager, f, includedMetrics),
+		metrics.NewPrometheusMachineCollector(resourceManager),
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
 	)

@@ -157,9 +157,10 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	containerManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","))
+	// Create a new manager for containers and machine
+	resourceManager, err := manager.New(memoryStorage, sysFs, *maxHousekeepingInterval, *allowDynamicHousekeeping, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","))
 	if err != nil {
-		klog.Fatalf("Failed to create a Container Manager: %s", err)
+		klog.Fatalf("Failed to create a manager: %s", err)
 	}
 
 	mux := http.NewServeMux()
@@ -172,7 +173,7 @@ func main() {
 	}
 
 	// Register all HTTP handlers.
-	err = cadvisorhttp.RegisterHandlers(mux, containerManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *urlBasePrefix)
+	err = cadvisorhttp.RegisterHandlers(mux, resourceManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *urlBasePrefix)
 	if err != nil {
 		klog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
@@ -183,15 +184,16 @@ func main() {
 		containerLabelFunc = metrics.BaseContainerLabels(whitelistedLabels)
 	}
 
-	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)
+	// Register Prometheus collector to gather information about containers, Go runtime, processes, and machine
+	cadvisorhttp.RegisterPrometheusHandler(mux, resourceManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)
 
 	// Start the manager.
-	if err := containerManager.Start(); err != nil {
-		klog.Fatalf("Failed to start container manager: %v", err)
+	if err := resourceManager.Start(); err != nil {
+		klog.Fatalf("Failed to start manager: %v", err)
 	}
 
 	// Install signal handler.
-	installSignalHandler(containerManager)
+	installSignalHandler(resourceManager)
 
 	klog.V(1).Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
 
