@@ -39,11 +39,13 @@ type ContainerInfo struct {
 	Name        string            `json:"name"`
 	Pid         int               `json:"pid"`
 	Image       string            `json:"image"`
+	ImageRef    string            `json:"image_ref"`
 	CreatedTime int64             `json:"created_time"`
 	Labels      map[string]string `json:"labels"`
 	Annotations map[string]string `json:"annotations"`
 	LogPath     string            `json:"log_path"`
 	Root        string            `json:"root"`
+	Sandbox     string            `json:"sandbox"`
 	IP          string            `json:"ip_address"`
 }
 
