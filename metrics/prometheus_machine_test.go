@@ -74,10 +74,10 @@ func TestGetMemoryByType(t *testing.T) {
 	assert.Nil(t, err)
 
 	capacityMetrics := getMemoryByType(machineInfo, memoryByTypeDimmCapacityKey)
-	assert.Equal(t, 3, len(capacityMetrics))
+	assert.Equal(t, 2, len(capacityMetrics))
 
 	countMetrics := getMemoryByType(machineInfo, memoryByTypeDimmCountKey)
-	assert.Equal(t, 3, len(countMetrics))
+	assert.Equal(t, 2, len(countMetrics))
 }
 
 func TestGetMemoryByTypeWithWrongProperty(t *testing.T) {

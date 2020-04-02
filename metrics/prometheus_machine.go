@@ -32,7 +32,6 @@ const (
 
 	memoryByTypeDimmCountKey    = "DimmCount"
 	memoryByTypeDimmCapacityKey = "Capacity"
-	memoryByTypeAllType         = "all"
 )
 
 // machineMetric describes a multi-dimensional metric used for exposing a
@@ -183,7 +182,6 @@ func (collector *PrometheusMachineCollector) collectMachineInfo(ch chan<- promet
 
 func getMemoryByType(machineInfo *info.MachineInfo, property string) metricValues {
 	mValues := make(metricValues, 0, len(machineInfo.MemoryByType))
-	allValue := 0.0
 	for memoryType, memoryInfo := range machineInfo.MemoryByType {
 		propertyValue := 0.0
 		switch property {
@@ -195,9 +193,7 @@ func getMemoryByType(machineInfo *info.MachineInfo, property string) metricValue
 			klog.Warningf("Incorrect propery name for MemoryByType, property %s", property)
 			return metricValues{}
 		}
-		allValue += propertyValue
 		mValues = append(mValues, metricValue{value: propertyValue, labels: []string{memoryType}})
 	}
-	mValues = append(mValues, metricValue{value: allValue, labels: []string{memoryByTypeAllType}})
 	return mValues
 }

@@ -11,12 +11,10 @@ machine_cpu_sockets{boot_id="boot-id-test",machine_id="machine-id-test",system_u
 # TYPE machine_dimm_capacity_bytes gauge
 machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Non-volatile-RAM"} 2.168421613568e+12
 machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Unbuffered-DDR4"} 4.12316860416e+11
-machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="all"} 2.580738473984e+12
 # HELP machine_dimm_count Number of RAM DIMM (all types memory modules) value labeled by dimm type.
 # TYPE machine_dimm_count gauge
 machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Non-volatile-RAM"} 8
 machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Unbuffered-DDR4"} 12
-machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="all"} 20
 # HELP machine_memory_bytes Amount of memory installed on the machine.
 # TYPE machine_memory_bytes gauge
 machine_memory_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1024
