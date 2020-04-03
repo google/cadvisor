@@ -46,3 +46,9 @@ type ReaderCloser interface {
 	io.Reader
 	io.Closer
 }
+
+// Metadata stores perf event meta information.
+type Metadata struct {
+	Name string
+	Cpu  int
+}

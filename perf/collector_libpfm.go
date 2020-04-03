@@ -48,8 +48,9 @@ const (
 type collector struct {
 	cgroupPath    string
 	events        Events
-	perfFiles     map[string][]ReaderCloser
+	perfFiles     map[Metadata][]ReaderCloser
 	perfFilesLock sync.Mutex
+	numCores      int
 }
 
 var (
@@ -68,8 +69,8 @@ func init() {
 	isLibpfmInitialized = true
 }
 
-func NewCollector(cgroupPath string, events Events) stats.Collector {
-	return &collector{cgroupPath: cgroupPath, events: events, perfFiles: map[string][]ReaderCloser{}}
+func NewCollector(cgroupPath string, events Events, numCores int) stats.Collector {
+	return &collector{cgroupPath: cgroupPath, events: events, perfFiles: map[Metadata][]ReaderCloser{}, numCores: numCores}
 }
 
 func (c *collector) UpdateStats(stats *info.ContainerStats) error {
@@ -78,11 +79,11 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 
 	stats.PerfStats = []info.PerfStat{}
 	klog.V(4).Infof("Attempting to update perf_event stats from cgroup %q", c.cgroupPath)
-	for name, files := range c.perfFiles {
+	for metadata, files := range c.perfFiles {
 		buf := make([]byte, 32)
 		_, err := files[perfFile].Read(buf)
 		if err != nil {
-			klog.Warningf("Unable to read from perf_event file %q for %q", name, c.cgroupPath)
+			klog.Warningf("Unable to read from perf_event file %q for %q", metadata.Name, c.cgroupPath)
 			continue
 		}
 		perfData := &ReadFormat{}
@@ -90,15 +91,16 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 		err = binary.Read(reader, binary.LittleEndian, perfData)
 		now := time.Now()
 		if err != nil {
-			klog.Warningf("Unable to decode from binary format read from perf_event file %q for %q", name, c.cgroupPath)
+			klog.Warningf("Unable to decode from binary format read from perf_event file %q for %q", metadata.Name, c.cgroupPath)
 		}
-		klog.Infof("Read metric for event %q from cgroup %q: %d", name, c.cgroupPath, perfData.Value)
+		klog.Infof("Read metric for event %q from cgroup %q: %d", metadata.Name, c.cgroupPath, perfData.Value)
 		scalingRatio := float64(perfData.TimeEnabled) / float64(perfData.TimeRunning)
 		stat := info.PerfStat{
 			Value:        uint64(float64(perfData.Value) * scalingRatio),
-			Name:         name,
+			Name:         metadata.Name,
 			Time:         now,
 			ScalingRatio: scalingRatio,
+			Cpu:          metadata.Cpu,
 		}
 		stats.PerfStats = append(stats.PerfStats, stat)
 	}
@@ -124,23 +126,26 @@ func (c *collector) registerEvent(config *unix.PerfEventAttr, name string) {
 		klog.Errorf("Cannot open cgroup directory %q: %q", c.cgroupPath, err)
 		return
 	}
-	pid, cpu, groupFd, flags := int(cgroup.Fd()), -1, -1, unix.PERF_FLAG_FD_CLOEXEC|unix.PERF_FLAG_PID_CGROUP
-	fd, err := unix.PerfEventOpen(config, pid, cpu, groupFd, flags)
-	if err != nil {
-		klog.Errorf("Setting up perf event %#v failed: %q", config, err)
-		return
-	}
-	perfFile := os.NewFile(uintptr(fd), name)
-	if perfFile == nil {
-		klog.Warningf("Unable to create os.File from file descriptor %#v", fd)
-	}
+	var cpu int
+	for cpu = 0; cpu < c.numCores; cpu++ {
+		pid, groupFd, flags := int(cgroup.Fd()), -1, unix.PERF_FLAG_FD_CLOEXEC|unix.PERF_FLAG_PID_CGROUP
+		fd, err := unix.PerfEventOpen(config, pid, cpu, groupFd, flags)
+		if err != nil {
+			klog.Errorf("Setting up perf event %#v failed: %q", config, err)
+			return
+		}
+		perfFile := os.NewFile(uintptr(fd), name)
+		if perfFile == nil {
+			klog.Warningf("Unable to create os.File from file descriptor %#v", fd)
+		}
 
-	c.addEventFiles(name, perfFile, cgroup)
+		c.addEventFiles(Metadata{Name: name, Cpu: cpu}, perfFile, cgroup)
+	}
 }
 
-func (c *collector) addEventFiles(name string, perfFile *os.File, cgroup *os.File) {
+func (c *collector) addEventFiles(metadata Metadata, perfFile *os.File, cgroup *os.File) {
 	c.perfFilesLock.Lock()
-	c.perfFiles[name] = []ReaderCloser{perfFile, cgroup}
+	c.perfFiles[metadata] = []ReaderCloser{perfFile, cgroup}
 	c.perfFilesLock.Unlock()
 }
 

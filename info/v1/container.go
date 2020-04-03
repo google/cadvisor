@@ -824,13 +824,16 @@ type PerfStat struct {
 	ScalingRatio float64
 
 	// Value represents value of perf event retrieved from OS.
-	Value  uint64
+	Value uint64
 
 	// Name is human readable name of an event.
-	Name   string
+	Name string
 
 	// Time when event was collected.
 	Time time.Time
+
+	// CPU that perf event was measured on.
+	Cpu int
 }
 
 type UlimitSpec struct {

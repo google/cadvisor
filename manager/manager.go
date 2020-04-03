@@ -175,10 +175,6 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 	// Register for new subcontainers.
 	eventsChannel := make(chan watcher.ContainerEvent, 16)
 
-	perfManager, err := perf.NewManager(perfEventsFile)
-	if err != nil {
-		return nil, err
-	}
 
 	newManager := &manager{
 		containers:                            make(map[namespacedContainerName]*containerData),
@@ -197,7 +193,6 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		collectorHttpClient:                   collectorHttpClient,
 		nvidiaManager:                         accelerators.NewNvidiaManager(),
 		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
-		perfManager:                           perfManager,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -206,6 +201,11 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 	}
 	newManager.machineInfo = *machineInfo
 	klog.V(1).Infof("Machine: %+v", newManager.machineInfo)
+
+	newManager.perfManager, err = perf.NewManager(perfEventsFile, machineInfo.NumCores)
+	if err != nil {
+		return nil, err
+	}
 
 	versionInfo, err := getVersionInfo()
 	if err != nil {

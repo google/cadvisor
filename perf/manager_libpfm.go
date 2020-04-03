@@ -28,11 +28,12 @@ import (
 )
 
 type manager struct {
-	events Events
+	events   Events
+	numCores int
 	stats.NoopSetupDestroy
 }
 
-func NewManager(configFile string) (stats.Manager, error) {
+func NewManager(configFile string, numCores int) (stats.Manager, error) {
 	if configFile == "" {
 		return nil, nil
 	}
@@ -48,9 +49,9 @@ func NewManager(configFile string) (stats.Manager, error) {
 		return nil, fmt.Errorf("unable to load perf events cofiguration from %q: %q", configFile, err)
 	}
 
-	return &manager{events: config}, nil
+	return &manager{events: config, numCores: numCores}, nil
 }
 
 func (m *manager) GetCollector(cgroupPath string) (stats.Collector, error) {
-	return NewCollector(cgroupPath, m.events), nil
+	return NewCollector(cgroupPath, m.events, m.numCores), nil
 }
