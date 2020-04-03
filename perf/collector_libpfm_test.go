@@ -50,20 +50,22 @@ func TestCollector_UpdateStats(t *testing.T) {
 		TimeRunning: 3,
 		ID:          2,
 	})
-	collector.perfFiles = map[Metadata][]ReaderCloser{
-		Metadata{Name: "instructions", Cpu: 0}: {notScaledBuffer},
-		Metadata{Name: "cycles", Cpu: 11}:      {scaledBuffer},
+	collector.cpuFiles = map[string]map[int]readerCloser{
+		"instructions": {0: notScaledBuffer},
+		"cycles":       {11: scaledBuffer},
 	}
 
 	stats := &info.ContainerStats{}
 	collector.UpdateStats(stats)
 
 	assert.Len(t, stats.PerfStats, 2)
+
 	assert.Equal(t, uint64(123456789), stats.PerfStats[0].Value)
 	assert.Equal(t, "instructions", stats.PerfStats[0].Name, "wrong value of instructions perf event; expected: 123456789, actual: %d", stats.PerfStats[0].Value)
 	assert.Equal(t, float64(1), stats.PerfStats[0].ScalingRatio)
 	assert.Equal(t, 0, stats.PerfStats[0].Cpu)
 	assert.NotZero(t, stats.PerfStats[0].Time)
+
 	assert.Equal(t, uint64(111111111), stats.PerfStats[1].Value, "wrong value of cycles perf event; expected: 111111111, actual: %d", stats.PerfStats[1].Value)
 	assert.Equal(t, "cycles", stats.PerfStats[1].Name)
 	assert.InDelta(t, float64(0.333333333), stats.PerfStats[1].ScalingRatio, 0.0000000004)

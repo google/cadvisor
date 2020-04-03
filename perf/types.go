@@ -20,6 +20,7 @@ package perf
 import "C"
 import (
 	"io"
+	"os"
 	"unsafe"
 )
 
@@ -42,13 +43,13 @@ type pfmPerfEncodeArgT struct {
 	flags C.int
 }
 
-type ReaderCloser interface {
+type readerCloser interface {
 	io.Reader
 	io.Closer
 }
 
-// Metadata stores perf event meta information.
-type Metadata struct {
-	Name string
-	Cpu  int
+// metadata stores perf event meta information.
+type metadata struct {
+	name   string
+	cgroup *os.File
 }
