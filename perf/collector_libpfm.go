@@ -83,7 +83,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 		buf := make([]byte, 32)
 		_, err := files[perfFile].Read(buf)
 		if err != nil {
-			klog.Warningf("Unable to read from perf_event file %q for %q", metadata.Name, c.cgroupPath)
+			klog.Warningf("Unable to read from perf_event file (event: %q, CPU: %d) for %q", metadata.Name, metadata.Cpu, c.cgroupPath)
 			continue
 		}
 		perfData := &ReadFormat{}
@@ -91,9 +91,9 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 		err = binary.Read(reader, binary.LittleEndian, perfData)
 		now := time.Now()
 		if err != nil {
-			klog.Warningf("Unable to decode from binary format read from perf_event file %q for %q", metadata.Name, c.cgroupPath)
+			klog.Warningf("Unable to decode from binary format read from perf_event file (event: %q, CPU: %d) for %q", metadata.Name, metadata.Cpu, c.cgroupPath)
 		}
-		klog.Infof("Read metric for event %q from cgroup %q: %d", metadata.Name, c.cgroupPath, perfData.Value)
+		klog.Infof("Read metric for event %q for cpu %d from cgroup %q: %d", metadata.Name, metadata.Cpu, c.cgroupPath, perfData.Value)
 		scalingRatio := float64(perfData.TimeEnabled) / float64(perfData.TimeRunning)
 		stat := info.PerfStat{
 			Value:        uint64(float64(perfData.Value) * scalingRatio),
