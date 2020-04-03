@@ -18,7 +18,10 @@
 package perf
 
 import "C"
-import "unsafe"
+import (
+	"io"
+	"unsafe"
+)
 
 // ReadFormat allows to read perf event's value for non-grouped events
 type ReadFormat struct {
@@ -37,4 +40,9 @@ type pfmPerfEncodeArgT struct {
 	idx   C.int
 	cpu   C.int
 	flags C.int
+}
+
+type ReaderCloser interface {
+	io.Reader
+	io.Closer
 }

@@ -26,9 +26,11 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
+	"time"
 	"unsafe"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -46,33 +48,59 @@ const (
 type collector struct {
 	cgroupPath    string
 	events        Events
-	perfFiles     map[string][]*os.File
+	perfFiles     map[string][]ReaderCloser
 	perfFilesLock sync.Mutex
 }
 
+var (
+	isLibpfmInitialized = false
+	libpmfMutex         = sync.Mutex{}
+)
+
+func init() {
+	libpmfMutex.Lock()
+	defer libpmfMutex.Unlock()
+	pErr := C.pfm_initialize()
+	if pErr != C.PFM_SUCCESS {
+		fmt.Printf("unable to initialize libpfm: %d", int(pErr))
+		return
+	}
+	isLibpfmInitialized = true
+}
+
 func NewCollector(cgroupPath string, events Events) stats.Collector {
-	return &collector{cgroupPath: cgroupPath, events: events, perfFiles: map[string][]*os.File{}}
+	return &collector{cgroupPath: cgroupPath, events: events, perfFiles: map[string][]ReaderCloser{}}
 }
 
 func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 	c.perfFilesLock.Lock()
 	defer c.perfFilesLock.Unlock()
 
+	stats.PerfStats = []info.PerfStat{}
 	klog.V(4).Infof("Attempting to update perf_event stats from cgroup %q", c.cgroupPath)
-	for event, file := range c.perfFiles {
+	for name, files := range c.perfFiles {
 		buf := make([]byte, 32)
-		_, err := file[perfFile].Read(buf)
+		_, err := files[perfFile].Read(buf)
 		if err != nil {
-			klog.Warningf("Unable to read from perf_event file %q for %q", event, c.cgroupPath)
+			klog.Warningf("Unable to read from perf_event file %q for %q", name, c.cgroupPath)
 			continue
 		}
-		metric := &ReadFormat{}
+		perfData := &ReadFormat{}
 		reader := bytes.NewReader(buf)
-		err = binary.Read(reader, binary.LittleEndian, metric)
+		err = binary.Read(reader, binary.LittleEndian, perfData)
+		now := time.Now()
 		if err != nil {
-			klog.Warningf("Unable to decode from binary format read from perf_event file %q for %q", event, c.cgroupPath)
+			klog.Warningf("Unable to decode from binary format read from perf_event file %q for %q", name, c.cgroupPath)
 		}
-		klog.Infof("Read metric for event %q from cgroup %q: %d", event, c.cgroupPath, metric.Value)
+		klog.Infof("Read metric for event %q from cgroup %q: %d", name, c.cgroupPath, perfData.Value)
+		scalingRatio := float64(perfData.TimeEnabled) / float64(perfData.TimeRunning)
+		stat := info.PerfStat{
+			Value:        uint64(float64(perfData.Value) * scalingRatio),
+			Name:         name,
+			Time:         now,
+			ScalingRatio: scalingRatio,
+		}
+		stats.PerfStats = append(stats.PerfStats, stat)
 	}
 	return nil
 }
@@ -96,7 +124,7 @@ func (c *collector) registerEvent(config *unix.PerfEventAttr, name string) {
 		klog.Errorf("Cannot open cgroup directory %q: %q", c.cgroupPath, err)
 		return
 	}
-	pid, cpu, groupFd, flags := int(cgroup.Fd()), -1, -1, unix.PERF_FLAG_FD_CLOEXEC
+	pid, cpu, groupFd, flags := int(cgroup.Fd()), -1, -1, unix.PERF_FLAG_FD_CLOEXEC|unix.PERF_FLAG_PID_CGROUP
 	fd, err := unix.PerfEventOpen(config, pid, cpu, groupFd, flags)
 	if err != nil {
 		klog.Errorf("Setting up perf event %#v failed: %q", config, err)
@@ -112,51 +140,45 @@ func (c *collector) registerEvent(config *unix.PerfEventAttr, name string) {
 
 func (c *collector) addEventFiles(name string, perfFile *os.File, cgroup *os.File) {
 	c.perfFilesLock.Lock()
-	c.perfFiles[name] = []*os.File{perfFile, cgroup}
+	c.perfFiles[name] = []ReaderCloser{perfFile, cgroup}
 	c.perfFilesLock.Unlock()
 }
 
 func (c *collector) setupNonGrouped() error {
-	pErr := C.pfm_initialize()
-	if pErr != C.PFM_SUCCESS {
-		return fmt.Errorf("unable to initialize libpfm: %d", int(pErr))
+	libpmfMutex.Lock()
+	defer libpmfMutex.Unlock()
+	if !isLibpfmInitialized {
+		klog.Warning("libpfm4 is not initialized, cannot proceed with setting perf events up")
+		return errors.New("libpfm4 is not initialized, cannot proceed with setting perf events up")
 	}
-	defer C.pfm_terminate()
 
-	for _, eventName := range c.events.NonGrouped {
-		klog.V(4).Infof("Setting up non-grouped perf event %s", eventName)
+	for _, name := range c.events.NonGrouped {
+		klog.V(4).Infof("Setting up non-grouped perf event %s", name)
 
 		perfEventAttrMemory := C.malloc(C.ulong(unsafe.Sizeof(unix.PerfEventAttr{})))
-		eventMemory := C.malloc(C.ulong(unsafe.Sizeof(pfmPerfEncodeArgT{})))
+		event := pfmPerfEncodeArgT{}
 
 		perfEventAttr := (*unix.PerfEventAttr)(perfEventAttrMemory)
-		event := (*pfmPerfEncodeArgT)(eventMemory)
 		fstr := C.CString("")
 		event.fstr = unsafe.Pointer(fstr)
 		event.attr = perfEventAttrMemory
-		event.size = C.ulong(unsafe.Sizeof(*event))
+		event.size = C.ulong(unsafe.Sizeof(event))
 
-		name := C.CString(eventName)
-		pErr = C.pfm_get_os_event_encoding(name, C.PFM_PLM0|C.PFM_PLM3, C.PFM_OS_PERF_EVENT, eventMemory)
+		cSafeName := C.CString(name)
+		pErr := C.pfm_get_os_event_encoding(cSafeName, C.PFM_PLM0|C.PFM_PLM3, C.PFM_OS_PERF_EVENT, unsafe.Pointer(&event))
 		if pErr != C.PFM_SUCCESS {
-			klog.Warningf("Unable to transform event name %s to perf_event_attr: %d", event, int(pErr))
-			clearMemory(perfEventAttrMemory, eventMemory)
+			klog.Warningf("Unable to transform event name %s to perf_event_attr: %d", name, int(pErr))
+			C.free(perfEventAttrMemory)
 			continue
 		}
 
 		klog.V(1).Infof("perf_event_attr: %#v", perfEventAttr)
 		setAttributes(perfEventAttr)
-		c.registerEvent(perfEventAttr, eventName)
-		clearMemory(perfEventAttrMemory, eventMemory)
+		c.registerEvent(perfEventAttr, name)
+		C.free(perfEventAttrMemory)
 	}
 
 	return nil
-}
-
-func clearMemory(pointers ...unsafe.Pointer) {
-	for _, pointer := range pointers {
-		C.free(pointer)
-	}
 }
 
 func createPerfEventAttr(event RawEvent) *unix.PerfEventAttr {
@@ -202,4 +224,18 @@ func (c *collector) Destroy() {
 		}
 		delete(c.perfFiles, event)
 	}
+}
+
+func Finalize() {
+	libpmfMutex.Lock()
+	defer libpmfMutex.Unlock()
+
+	klog.V(1).Info("Attempting to terminate libpfm4")
+	if !isLibpfmInitialized {
+		klog.V(1).Info("libpfm4 has not been initialized; not terminating.")
+		return
+	}
+
+	C.pfm_terminate()
+	isLibpfmInitialized = false
 }
