@@ -40,11 +40,6 @@ import (
 	"k8s.io/klog"
 )
 
-const (
-	perfFile = iota
-	cgroupFile
-)
-
 type collector struct {
 	cgroupPath   string
 	events       Events
