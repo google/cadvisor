@@ -71,7 +71,7 @@ func init() {
 }
 
 func NewCollector(cgroupPath string, events Events, numCores int) stats.Collector {
-	return &collector{cgroupPath: cgroupPath, events: events, numCores: numCores}
+	return &collector{cgroupPath: cgroupPath, events: events, cpuFiles: map[string]map[int]readerCloser{}, numCores: numCores}
 }
 
 func (c *collector) UpdateStats(stats *info.ContainerStats) error {
@@ -111,6 +111,8 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 }
 
 func (c *collector) Setup() {
+	c.cpuFilesLock.Lock()
+	defer c.cpuFilesLock.Unlock()
 	c.setupRawNonGrouped()
 	c.setupNonGrouped()
 }
@@ -146,23 +148,19 @@ func (c *collector) registerEvent(config *unix.PerfEventAttr, name string) {
 			klog.Warningf("Unable to create os.File from file descriptor %#v", fd)
 		}
 
-		c.addEventFiles(name, perfFile, cpu)
+		c.addEventFile(name, cpu, perfFile)
 	}
 }
 
-func (c *collector) addEventFiles(name string, perfFile *os.File, cpu int) {
-	c.cpuFilesLock.Lock()
+func (c *collector) addEventFile(name string, cpu int, perfFile *os.File) {
 	_, ok := c.cpuFiles[name]
 	if !ok {
 		c.cpuFiles[name] = map[int]readerCloser{}
 	}
 	c.cpuFiles[name][cpu] = perfFile
-	c.cpuFilesLock.Unlock()
 }
 
 func (c *collector) setupNonGrouped() error {
-	libpmfMutex.Lock()
-	defer libpmfMutex.Unlock()
 	if !isLibpfmInitialized {
 		klog.Warning("libpfm4 is not initialized, cannot proceed with setting perf events up")
 		return errors.New("libpfm4 is not initialized, cannot proceed with setting perf events up")
@@ -234,12 +232,13 @@ func (c *collector) Destroy() {
 			if err != nil {
 				klog.Warningf("Unable to close perf_event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
 			}
-			klog.Infof("Closing cgroup file descriptor for %q, event %q and CPU %d", c.cgroupPath, name, cpu)
 		}
 
 		delete(c.cpuFiles, name)
 		if len(c.cpuFiles) == 0 {
+			klog.Infof("Closing cgroup file descriptor for %q", c.cgroupPath)
 			err := c.cgroup.Close()
+			c.cgroup = nil
 			if err != nil {
 				klog.Warningf("Unable to close cgroup file %q", c.cgroupPath)
 			}
@@ -247,6 +246,7 @@ func (c *collector) Destroy() {
 	}
 }
 
+// Finalize terminates libpfm4 to free resources.
 func Finalize() {
 	libpmfMutex.Lock()
 	defer libpmfMutex.Unlock()

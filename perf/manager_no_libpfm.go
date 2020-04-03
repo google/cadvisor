@@ -21,7 +21,7 @@ import (
 	"k8s.io/klog"
 )
 
-func NewManager(configFile string) (stats.Manager, error) {
+func NewManager(configFile string, numCores int) (stats.Manager, error) {
 	klog.V(1).Info("cAdvisor is build without cgo and/or libpfm support. Perf event counters are not available.")
 	return nil, nil
 }
