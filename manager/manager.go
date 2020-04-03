@@ -332,7 +332,8 @@ func (self *manager) Stop() error {
 		}
 	}
 	self.quitChannels = make([]chan error, 0, 2)
-	nvm.FinalizeLibimpctl()
+	nvm.Finalize()
+	perf.Finalize()
 	return nil
 }
 
