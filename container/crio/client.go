@@ -71,7 +71,9 @@ func configureUnixTransport(tr *http.Transport, proto, addr string) error {
 // Client returns a new configured CRI-O client
 func Client() (crioClient, error) {
 	tr := new(http.Transport)
-	configureUnixTransport(tr, "unix", CrioSocket)
+	if err := configureUnixTransport(tr, "unix", CrioSocket); err != nil {
+		return nil, err
+	}
 	c := &http.Client{
 		Transport: tr,
 	}
