@@ -45,6 +45,7 @@ type ContainerInfo struct {
 	LogPath     string            `json:"log_path"`
 	Root        string            `json:"root"`
 	IP          string            `json:"ip_address"`
+	IPs         []string          `json:"ip_addresses"`
 }
 
 type crioClient interface {
@@ -117,6 +118,7 @@ func (c *crioClientImpl) ContainerInfo(id string) (*ContainerInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	cInfo := ContainerInfo{}
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
@@ -129,9 +131,14 @@ func (c *crioClientImpl) ContainerInfo(id string) (*ContainerInfo, error) {
 		return nil, fmt.Errorf("Error finding container %s: Status %d returned error %s", id, resp.StatusCode, resp.Body)
 	}
 
-	cInfo := ContainerInfo{}
 	if err := json.NewDecoder(resp.Body).Decode(&cInfo); err != nil {
 		return nil, err
+	}
+	if len(cInfo.IP) > 0 {
+		return &cInfo, nil
+	}
+	if len(cInfo.IPs) > 0 {
+		cInfo.IP = cInfo.IPs[0]
 	}
 	return &cInfo, nil
 }
