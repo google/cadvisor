@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -26,6 +27,12 @@ import (
 const (
 	CrioSocket            = "/var/run/crio/crio.sock"
 	maxUnixSocketPathSize = len(syscall.RawSockaddrUnix{}.Path)
+)
+
+var (
+	theClient      crioClient
+	clientErr      error
+	crioClientOnce sync.Once
 )
 
 // Info represents CRI-O information as sent by the CRI-O server
@@ -70,16 +77,19 @@ func configureUnixTransport(tr *http.Transport, proto, addr string) error {
 
 // Client returns a new configured CRI-O client
 func Client() (crioClient, error) {
-	tr := new(http.Transport)
-	if err := configureUnixTransport(tr, "unix", CrioSocket); err != nil {
-		return nil, err
-	}
-	c := &http.Client{
-		Transport: tr,
-	}
-	return &crioClientImpl{
-		client: c,
-	}, nil
+	crioClientOnce.Do(func() {
+		tr := new(http.Transport)
+		theClient = nil
+		if clientErr = configureUnixTransport(tr, "unix", CrioSocket); clientErr != nil {
+			return
+		}
+		theClient = &crioClientImpl{
+			client: &http.Client{
+				Transport: tr,
+			},
+		}
+	})
+	return theClient, clientErr
 }
 
 func getRequest(path string) (*http.Request, error) {
