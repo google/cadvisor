@@ -83,7 +83,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		return nil, err
 	}
 
-	hugePagesInfo, err := sysinfo.GetHugePagesInfo(sysFs, hugepagesDirectory)
+	hugePagesInfo, err := GetHugePagesInfo(hugepagesDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		klog.Errorf("Failed to get network devices: %v", err)
 	}
 
-	topology, numCores, err := GetTopology(sysFs)
+	topology, numCores, err := GetTopology(sysFs, string(cpuinfo))
 	if err != nil {
 		klog.Errorf("Failed to get topology information: %v", err)
 	}
