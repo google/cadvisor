@@ -30,12 +30,6 @@ func TestStringToUint64Unmarshaling(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, events.Raw.NonGrouped[0].Config, Config{5439680})
-	assert.Equal(t, events.Raw.NonGrouped[0].Type, uint32(0))
+	assert.Equal(t, events.Raw.NonGrouped[0].Type, uint32(4))
 	assert.Equal(t, events.Raw.NonGrouped[0].Name, "instructions_retired")
-	assert.Equal(t, events.Raw.Grouped[0][0].Config, Config{65538})
-	assert.Equal(t, events.Raw.Grouped[0][0].Type, uint32(0))
-	assert.Equal(t, events.Raw.Grouped[0][0].Name, "LLC-load-misses")
-	assert.Equal(t, events.Raw.Grouped[0][1].Config, Config{65536})
-	assert.Equal(t, events.Raw.Grouped[0][1].Type, uint32(0))
-	assert.Equal(t, events.Raw.Grouped[0][1].Name, "L1-dcache-load-misses")
 }

@@ -18,10 +18,8 @@ package perf
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"time"
-
 	"k8s.io/klog"
+	"strconv"
 )
 
 type Events struct {
@@ -48,9 +46,6 @@ type RawEvents struct {
 	// List of groups of events to be measured. See group_fd
 	// argument documentation at man perf_event_open.
 	Grouped [][]RawEvent `json:"grouped"`
-
-	// Interval between each measurement.
-	Interval Duration `json:"interval"`
 }
 
 type RawEvent struct {
@@ -86,23 +81,5 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 		intermediate = append(intermediate, uintValue)
 	}
 	*c = intermediate
-	return nil
-}
-
-type Duration time.Duration
-
-func (d *Duration) UnmarshalJSON(b []byte) error {
-	var stripped string
-	err := json.Unmarshal(b, &stripped)
-	if err != nil {
-		klog.Errorf("Unmarshalling %#v into string failed: %q", b, err)
-		return fmt.Errorf("unmarshalling %#v into string failed: %q", b, err)
-	}
-	duration, err := time.ParseDuration(stripped)
-	if err != nil {
-		klog.Errorf("Parsing %q into time.Duration failed: %q", stripped, err)
-		return fmt.Errorf("parsing %q into time.Duration failed: %q", stripped, err)
-	}
-	*d = Duration(duration)
 	return nil
 }
