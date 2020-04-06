@@ -143,79 +143,28 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 See example configuration below:
 ```json
 {
-  "non_grouped": [
-    {
-      "type": 4,
-      "config": [
-        "0xc0"
-      ],
-      "name": "instructions_retired"
-    }
-  ],
-  "grouped": [
-    [
+  "non_grouped": ["instructions"],
+  "raw": {
+    "non_grouped": [
       {
-        "type": 13,
+        "type": 4,
         "config": [
-          "0xc04"
+          "0x5300c0"
         ],
-        "name": "UNC_M_CAS_COUNT_WRITE"
-      },
-      {
-        "type": 13,
-        "config": [
-          "0xc304"
-        ],
-        "name": "UNC_M_CAS_COUNT_READ"
+        "name": "instructions_retired"
       }
     ]
-  ],
-  "interval": "5s"
+  }
 }
 ```
 
-In the example above number:
-* `INST_RETIRED.ANY_P` (number of instructions retired on 2nd Generation Intel® Xeon® Scalable Processor) identified by
-`config[0xc0]` will be measured as non-grouped event
-* `UNC_M_CAS_COUNT.WR` (all DRAM Write CAS commands issued or `cas_count_write`) identified by `config[0xC04]` and 
-`UNC_M_CAS_COUNT.RD` (all DRAM Read CAS commands issued or `cas_count_read`) identified by `config[0xc304]` will be 
-measured as grouped events. In their case `type` attribute indicates memory controller.
-
-Event name should be a human readable string that will become a metric name.
-
-##### Translating event name to config values
-
-In order to determine what values must be used to configure particular event you should follow a procedure:
-1. Identify the event in `perf list` output. 
-2. Execute command: `perf stat -I 5000 -vvv -e [EVENT_NAME]` (replace `[EVENT_NAME]` with value from step 1).
-3. Find `perf_event_attr` section on `perf stat` output; it should be similar to `UNC_M_CAS_COUNT.RD`:
-
-        ------------------------------------------------------------
-        perf_event_attr:
-          type                             13
-          size                             112
-          config                           0x304
-          sample_type                      IDENTIFIER
-          read_format                      TOTAL_TIME_ENABLED|TOTAL_TIME_RUNNING
-          disabled                         1
-          inherit                          1
-          exclude_guest                    1
-        ------------------------------------------------------------
-
-   and use value of `type` to populate `type` field  and values of `config`, `config1` and `config2` to populate `config`
-   field in configuration JSON:
-   
-    ```json
-        {
-          "config": [
-            "config",
-            "config1",
-            "config2"
-          ]
-        }
-    ```
-
-4. Repeat if you want to measure more events.
+In the example above:
+* `instructions` will be measured as a non-grouped event and is specified using human friendly interface that can be 
+obtained by calling `perf list`. You can use any name that appears in the output of `perf list` command. This is 
+interface that majority of users will rely on.
+* `instructions_retired` will be measured as non-grouped event and is specified using an advanced API that allows
+to specify any perf event available (some of them are not named and can't be specified with plain string). Event name 
+should be a human readable string that will become a metric name.
 
 ## Storage driver specific instructions:
 
