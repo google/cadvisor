@@ -30,8 +30,10 @@ import (
 var (
 	schedulerRegExp      = regexp.MustCompile(`.*\[(.*)\].*`)
 	nodeDirRegExp        = regexp.MustCompile("node/node(\\d*)")
-	cpuDirRegExp         = regexp.MustCompile("/cpu(\\d*)")
+	cpuDirRegExp         = regexp.MustCompile("/cpu(\\d+)")
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
+
+	cpusPath = "/sys/devices/system/cpu"
 )
 
 const (
@@ -193,25 +195,31 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 	allLogicalCoresCount := 0
 
 	nodesDirs, err := sysFs.GetNodesPaths()
-	if err != nil || len(nodesDirs) == 0 {
-		if len(nodesDirs) == 0 && err == nil {
-			//sysFs.GetNodesPaths uses filePath.Glob which does not return any error if pattern does not match anything
-			err = fmt.Errorf("Any path to specific node is not found")
-		}
+	if err != nil {
 		return nil, 0, err
+	}
+
+	if len(nodesDirs) == 0 {
+		klog.Warningf("Nodes topology is not available, providing CPU topology")
+		return getCPUTopology(sysFs)
 	}
 
 	for _, nodeDir := range nodesDirs {
 		id, err := getMatchedInt(nodeDirRegExp, nodeDir)
 		node := info.Node{Id: id}
 
-		cores, logicalCoreCount, err := getCoresInfo(sysFs, nodeDir)
-		if err != nil {
-			return nil, 0, err
+		cpuDirs, err := sysFs.GetCPUsPaths(nodeDir)
+		if len(cpuDirs) == 0 {
+			klog.Warningf("Found node without any CPU, nodeDir: %s, number of cpuDirs %d, err: %v", nodeDir, len(cpuDirs), err)
+		} else {
+			cores, err := getCoresInfo(sysFs, cpuDirs)
+			if err != nil {
+				return nil, 0, err
+			}
+			node.Cores = cores
 		}
-		node.Cores = cores
 
-		allLogicalCoresCount += logicalCoreCount
+		allLogicalCoresCount += len(cpuDirs)
 		err = addCacheInfo(sysFs, &node)
 		if err != nil {
 			return nil, 0, err
@@ -231,6 +239,62 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 		nodes = append(nodes, node)
 	}
 	return nodes, allLogicalCoresCount, err
+}
+
+func getCPUTopology(sysFs sysfs.SysFs) ([]info.Node, int, error) {
+	nodes := []info.Node{}
+
+	cpusPaths, err := sysFs.GetCPUsPaths(cpusPath)
+	if err != nil {
+		return nil, 0, err
+	}
+	cpusCount := len(cpusPaths)
+
+	if cpusCount == 0 {
+		err = fmt.Errorf("Any CPU is not available, cpusPath: %s", cpusPath)
+		return nil, 0, err
+	}
+
+	cpusByPhysicalPackageID, err := getCpusByPhysicalPackageID(sysFs, cpusPaths)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	for physicalPackageID, cpus := range cpusByPhysicalPackageID {
+		node := info.Node{Id: physicalPackageID}
+
+		cores, err := getCoresInfo(sysFs, cpus)
+		if err != nil {
+			return nil, 0, err
+		}
+		node.Cores = cores
+
+		err = addCacheInfo(sysFs, &node)
+		if err != nil {
+			return nil, 0, err
+		}
+		nodes = append(nodes, node)
+	}
+	return nodes, cpusCount, nil
+}
+
+func getCpusByPhysicalPackageID(sysFs sysfs.SysFs, cpusPaths []string) (map[int][]string, error) {
+	cpuPathsByPhysicalPackageID := make(map[int][]string, 0)
+	for _, cpuPath := range cpusPaths {
+
+		rawPhysicalPackageID, _ := sysFs.GetCPUPhysicalPackageID(cpuPath)
+		physicalPackageID, err := strconv.Atoi(rawPhysicalPackageID)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, ok := cpuPathsByPhysicalPackageID[physicalPackageID]; !ok {
+			cpuPathsByPhysicalPackageID[physicalPackageID] = make([]string, 0)
+		}
+
+		cpuPathsByPhysicalPackageID[physicalPackageID] = append(cpuPathsByPhysicalPackageID[physicalPackageID], cpuPath)
+	}
+	return cpuPathsByPhysicalPackageID, nil
 }
 
 // addCacheInfo adds information about cache for NUMA node
@@ -292,28 +356,22 @@ func getNodeMemInfo(sysFs sysfs.SysFs, nodeDir string) (uint64, error) {
 	return uint64(memory), nil
 }
 
-// getCoresInfo retruns infromation about physical and logical cores assigned to NUMA node
-func getCoresInfo(sysFs sysfs.SysFs, nodeDir string) ([]info.Core, int, error) {
-	cpuDirs, err := sysFs.GetCPUsPaths(nodeDir)
-	if err != nil || len(cpuDirs) == 0 {
-		klog.Warningf("Found node without any CPU, nodeDir: %s, number of cpuDirs %d, err: %v", nodeDir, len(cpuDirs), err)
-		return nil, 0, nil
-	}
-
+// getCoresInfo retruns infromation about physical cores
+func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 	cores := make([]info.Core, 0, len(cpuDirs))
 	for _, cpuDir := range cpuDirs {
 		cpuID, err := getMatchedInt(cpuDirRegExp, cpuDir)
 		if err != nil {
-			return nil, 0, fmt.Errorf("Unexpected format of CPU directory, cpuDirRegExp %s, cpuDir: %s", cpuDirRegExp, cpuDir)
+			return nil, fmt.Errorf("Unexpected format of CPU directory, cpuDirRegExp %s, cpuDir: %s", cpuDirRegExp, cpuDir)
 		}
 
 		rawPhysicalID, err := sysFs.GetCoreID(cpuDir)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		physicalID, err := strconv.Atoi(rawPhysicalID)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 
 		coreIDx := -1
@@ -335,7 +393,7 @@ func getCoresInfo(sysFs sysfs.SysFs, nodeDir string) ([]info.Core, int, error) {
 			desiredCore.Threads = append(desiredCore.Threads, cpuID)
 		}
 	}
-	return cores, len(cpuDirs), nil
+	return cores, nil
 }
 
 // GetCacheInfo return information about a cache accessible from the given cpu thread

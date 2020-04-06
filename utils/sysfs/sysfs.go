@@ -32,8 +32,9 @@ const (
 	ppcDevTree   = "/proc/device-tree"
 	s390xDevTree = "/etc" // s390/s390x changes
 
-	coreIDFilePath = "/topology/core_id"
-	meminfoFile    = "meminfo"
+	coreIDFilePath    = "/topology/core_id"
+	packageIDFilePath = "/topology/physical_package_id"
+	meminfoFile       = "meminfo"
 
 	cpuDirPattern  = "cpu*[0-9]"
 	nodeDirPattern = "node*[0-9]"
@@ -61,10 +62,12 @@ type CacheInfo struct {
 type SysFs interface {
 	// Get NUMA nodes paths
 	GetNodesPaths() ([]string, error)
-	// Get paths to CPU assigned for specified NUMA node
-	GetCPUsPaths(nodePath string) ([]string, error)
+	// Get paths to CPUs in provided directory e.g. /sys/devices/system/node/node0 or /sys/devices/system/cpu
+	GetCPUsPaths(cpusPath string) ([]string, error)
 	// Get physical core id for specified CPU
 	GetCoreID(coreIDFilePath string) (string, error)
+	// Get physical package id for specified CPU
+	GetCPUPhysicalPackageID(cpuPath string) (string, error)
 	// Get total memory for specified NUMA node
 	GetMemInfo(nodeDir string) (string, error)
 	// Get hugepages from specified directory
@@ -105,8 +108,8 @@ func (self *realSysFs) GetNodesPaths() ([]string, error) {
 	return filepath.Glob(pathPattern)
 }
 
-func (self *realSysFs) GetCPUsPaths(nodePath string) ([]string, error) {
-	pathPattern := fmt.Sprintf("%s/%s", nodePath, cpuDirPattern)
+func (self *realSysFs) GetCPUsPaths(cpusPath string) ([]string, error) {
+	pathPattern := fmt.Sprintf("%s/%s", cpusPath, cpuDirPattern)
 	return filepath.Glob(pathPattern)
 }
 
@@ -117,6 +120,15 @@ func (self *realSysFs) GetCoreID(cpuPath string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(coreID)), err
+}
+
+func (self *realSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
+	packageIDFilePath := fmt.Sprintf("%s%s", cpuPath, packageIDFilePath)
+	packageID, err := ioutil.ReadFile(packageIDFilePath)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(packageID)), err
 }
 
 func (self *realSysFs) GetMemInfo(nodePath string) (string, error) {
