@@ -1,0 +1,43 @@
+name: Test
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        go-versions: [1.13.x, 1.14.x]
+        platform: [ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 30
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Run presubmit checks
+      run: make presubmit
+    - name: Run build
+      run: make build
+    - name: Run tests
+      run: make test
+  test-integration:
+    strategy:
+      matrix:
+        go-versions: [1.13.x, 1.14.x]
+        platform: [ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 30
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          path: go/src/github.com/google/cadvisor
+      - name: Run integration tests
+        run: |
+          cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor && make docker-test-integration
