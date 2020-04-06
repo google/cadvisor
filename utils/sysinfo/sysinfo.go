@@ -282,7 +282,11 @@ func getCpusByPhysicalPackageID(sysFs sysfs.SysFs, cpusPaths []string) (map[int]
 	cpuPathsByPhysicalPackageID := make(map[int][]string, 0)
 	for _, cpuPath := range cpusPaths {
 
-		rawPhysicalPackageID, _ := sysFs.GetCPUPhysicalPackageID(cpuPath)
+		rawPhysicalPackageID, err := sysFs.GetCPUPhysicalPackageID(cpuPath)
+		if err != nil {
+			return nil, err
+		}
+
 		physicalPackageID, err := strconv.Atoi(rawPhysicalPackageID)
 		if err != nil {
 			return nil, err
