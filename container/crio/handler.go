@@ -225,6 +225,9 @@ func (self *crioContainerHandler) needNet() bool {
 func (self *crioContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := self.includedMetrics.Has(container.DiskUsageMetrics)
 	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, self.needNet(), hasFilesystem)
+	if err != nil {
+		return info.ContainerSpec{}, err
+	}
 
 	spec.Labels = self.labels
 	spec.Envs = self.envs
@@ -328,7 +331,6 @@ func (self *crioContainerHandler) GetStats() (*info.ContainerStats, error) {
 }
 
 func (self *crioContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	// No-op for Docker driver.
 	return []info.ContainerReference{}, nil
 }
 
