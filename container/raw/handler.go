@@ -25,8 +25,6 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/machine"
 
-	cgroupfs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
-	"github.com/opencontainers/runc/libcontainer/configs"
 	"k8s.io/klog/v2"
 )
 
@@ -51,19 +49,16 @@ func isRootCgroup(name string) bool {
 }
 
 func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet) (container.ContainerHandler, error) {
-	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
-
 	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
 	if err != nil {
 		return nil, err
 	}
 
-	// Generate the equivalent cgroup manager for this container.
-	cgroupManager := &cgroupfs.Manager{
-		Cgroups: &configs.Cgroup{
-			Name: name,
-		},
-		Paths: cgroupPaths,
+	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
+
+	cgroupManager, err := libcontainer.NewCgroupManager(name, cgroupPaths)
+	if err != nil {
+		return nil, err
 	}
 
 	var externalMounts []common.Mount

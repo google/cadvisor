@@ -27,7 +27,7 @@ require (
 	github.com/mesos/mesos-go v0.0.7-0.20180413204204-29de6ff97b48
 	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/onsi/gomega v1.7.1 // indirect
-	github.com/opencontainers/runc v1.0.0-rc10
+	github.com/opencontainers/runc v1.0.0-rc9.0.20200519182809-b207d578ec2d
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
 	github.com/prometheus/client_golang v1.0.0
 	github.com/stretchr/testify v1.4.0

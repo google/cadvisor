@@ -16,6 +16,7 @@ package libcontainer
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -32,10 +33,9 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"golang.org/x/sys/unix"
 
-	"bytes"
-
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
+	fs2 "github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 	"k8s.io/klog/v2"
 )
 
@@ -71,9 +71,21 @@ func NewHandler(cgroupManager cgroups.Manager, rootFs string, pid int, includedM
 
 // Get cgroup and networking stats of the specified container
 func (h *Handler) GetStats() (*info.ContainerStats, error) {
-	cgroupStats, err := h.cgroupManager.GetStats()
-	if err != nil {
-		return nil, err
+	var cgroupStats *cgroups.Stats
+	readCgroupStats := true
+	if cgroups.IsCgroup2UnifiedMode() {
+		// On cgroup v2 there are no stats at the root cgroup
+		// so check whether it is the root cgroup
+		if h.cgroupManager.Path("") == fs2.UnifiedMountpoint {
+			readCgroupStats = false
+		}
+	}
+	var err error
+	if readCgroupStats {
+		cgroupStats, err = h.cgroupManager.GetStats()
+		if err != nil {
+			return nil, err
+		}
 	}
 	libcontainerStats := &libcontainer.Stats{
 		CgroupStats: cgroupStats,
