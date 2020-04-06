@@ -3,7 +3,7 @@
   "raw": {
     "non_grouped": [
       {
-        "type": 0,
+        "type": 4,
         "config": [
           "0x5300c0"
         ],
@@ -13,14 +13,14 @@
     "grouped": [
       [
         {
-          "type": 0,
+          "type": 4,
           "config": [
             "0x10002"
           ],
           "name": "LLC-load-misses"
         },
         {
-          "type": 0,
+          "type": 4,
           "config": [
             "0x10000"
           ],
@@ -28,6 +28,5 @@
         }
       ]
     ]
-  },
-  "interval": "5s"
+  }
 }

@@ -72,3 +72,21 @@ func TestCollector_UpdateStats(t *testing.T) {
 	assert.Equal(t, 11, stats.PerfStats[1].Cpu)
 	assert.NotZero(t, stats.PerfStats[0].Time)
 }
+
+func TestCreatePerfEventAttr(t *testing.T) {
+	event := RawEvent{
+		Type:   0x1,
+		Config: Config{uint64(0x2), uint64(0x3), uint64(0x4)},
+		Name:   "fake_event",
+	}
+
+	attributes := createPerfEventAttr(event)
+
+	assert.Equal(t, uint32(1), attributes.Type)
+	assert.Equal(t, uint64(2), attributes.Config)
+	assert.Equal(t, uint64(3), attributes.Ext1)
+	assert.Equal(t, uint64(4), attributes.Ext2)
+	assert.Equal(t, uint64(65536), attributes.Sample_type)
+	assert.Equal(t, uint64(7), attributes.Read_format)
+	assert.Equal(t, uint64(1048578), attributes.Bits)
+}
