@@ -15,6 +15,7 @@
 package crio
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -70,7 +71,7 @@ func configureUnixTransport(tr *http.Transport, proto, addr string) error {
 	}
 	// No need for compression in local communications.
 	tr.DisableCompression = true
-	tr.Dial = func(_, _ string) (net.Conn, error) {
+	tr.DialContext = func(_ context.Context, _, _ string) (net.Conn, error) {
 		return net.DialTimeout(proto, addr, 32*time.Second)
 	}
 	return nil
