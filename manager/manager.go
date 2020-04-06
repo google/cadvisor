@@ -175,7 +175,6 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 	// Register for new subcontainers.
 	eventsChannel := make(chan watcher.ContainerEvent, 16)
 
-
 	newManager := &manager{
 		containers:                            make(map[namespacedContainerName]*containerData),
 		quitChannels:                          make([]chan error, 0, 2),

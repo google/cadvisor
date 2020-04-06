@@ -227,7 +227,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 			InodeUsage:      &v1Stats.Filesystem[0].Inodes,
 		},
 		Accelerators: v1Stats.Accelerators,
-		PerfStats: v1Stats.PerfStats,
+		PerfStats:    v1Stats.PerfStats,
 	}
 
 	v2Stats := ContainerStatsFromV1("test", &v1Spec, []*v1.ContainerStats{&v1Stats})
