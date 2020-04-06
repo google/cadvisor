@@ -52,7 +52,7 @@ func TestMachineStatsIsReturned(t *testing.T) {
 			as.NotNil(fsStat.ReadsCompleted)
 			require.NotEmpty(t, fsStat.Type)
 			if fsStat.Type == "vfs" {
-				as.NotEmpty(fsStat.InodesFree)
+				as.NotNil(fsStat.InodesFree)
 			}
 		}
 	}

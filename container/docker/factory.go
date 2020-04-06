@@ -103,6 +103,7 @@ const (
 	overlayStorageDriver      storageDriver = "overlay"
 	overlay2StorageDriver     storageDriver = "overlay2"
 	zfsStorageDriver          storageDriver = "zfs"
+	vfsStorageDriver          storageDriver = "vfs"
 )
 
 type dockerFactory struct {

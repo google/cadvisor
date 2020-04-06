@@ -49,7 +49,9 @@ func TestMachineInformationIsReturned(t *testing.T) {
 		if fs.Type == "" {
 			t.Errorf("Filesystem type is not set")
 		} else if fs.Type == "vfs" && fs.Inodes == 0 {
-			t.Errorf("Inodes not available for device %q", fs.Device)
+			if fs.Device != "devpts" {
+				t.Errorf("Inodes not available for device %q", fs.Device)
+			}
 		}
 	}
 }
