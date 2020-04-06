@@ -206,6 +206,104 @@ func TestTopologyEmptySysFs(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestTopologyWithoutNodes(t *testing.T) {
+	machineArch = "" // overwrite package variable
+	sysFs := &fakesysfs.FakeSysFs{}
+
+	c := sysfs.CacheInfo{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 0,
+		Cpus:  2,
+	}
+	sysFs.SetCacheInfo(c)
+
+	nodesPaths := []string{}
+	sysFs.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/sys/devices/system/cpu": {
+			"/sys/devices/system/cpu/cpu0",
+			"/sys/devices/system/cpu/cpu1",
+			"/sys/devices/system/cpu/cpu2",
+			"/sys/devices/system/cpu/cpu3",
+		},
+	}
+	sysFs.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/sys/devices/system/cpu/cpu0": "0",
+		"/sys/devices/system/cpu/cpu1": "1",
+		"/sys/devices/system/cpu/cpu2": "0",
+		"/sys/devices/system/cpu/cpu3": "1",
+	}
+	sysFs.SetCoreThreads(coreThread, nil)
+
+	physicalPackageIDs := map[string]string{
+		"/sys/devices/system/cpu/cpu0": "0",
+		"/sys/devices/system/cpu/cpu1": "1",
+		"/sys/devices/system/cpu/cpu2": "0",
+		"/sys/devices/system/cpu/cpu3": "1",
+	}
+	sysFs.SetPhysicalPackageIDs(physicalPackageIDs, nil)
+
+	topology, numCores, err := GetTopology(sysFs)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(topology))
+	assert.Equal(t, 4, numCores)
+
+	topologyJSON, err := json.Marshal(topology)
+	assert.Nil(t, err)
+
+	expectedTopology := `[
+		{
+			"node_id":0,
+			"memory":0,
+			"hugepages":null,
+			"cores":[
+				{
+					"core_id":0,
+					"thread_ids":[
+					0,
+					2
+					],
+					"caches":[
+					{
+						"size":32768,
+						"type":"unified",
+						"level":0
+					}
+					]
+				}
+			],
+			"caches":null
+		},
+		{
+			"node_id":1,
+			"memory":0,
+			"hugepages":null,
+			"cores":[
+				{
+					"core_id":1,
+					"thread_ids":[
+					1,
+					3
+					],
+					"caches":[
+					{
+						"size":32768,
+						"type":"unified",
+						"level":0
+					}
+					]
+				}
+			],
+			"caches":null
+		}
+	]`
+	assert.JSONEq(t, expectedTopology, string(topologyJSON))
+}
+
 func TestTopologyWithNodesWithoutCPU(t *testing.T) {
 	machineArch = "" // overwrite package variable
 	sysFs := &fakesysfs.FakeSysFs{}
