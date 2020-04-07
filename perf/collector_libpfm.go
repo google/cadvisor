@@ -43,7 +43,6 @@ type collector struct {
 	cgroupPath   string
 	events       Events
 	cpuFiles     map[string]map[int]readerCloser
-	cgroup       *os.File
 	cpuFilesLock sync.Mutex
 	numCores     int
 }
@@ -89,7 +88,10 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 				klog.Warningf("Unable to decode from binary format read from perf_event file (event: %q, CPU: %d) for %q", name, cpu, c.cgroupPath)
 			}
 			klog.Infof("Read metric for event %q for cpu %d from cgroup %q: %d", name, cpu, c.cgroupPath, perfData.Value)
-			scalingRatio := float64(perfData.TimeEnabled) / float64(perfData.TimeRunning)
+			scalingRatio := 1.0
+			if perfData.TimeEnabled != 0 {
+				scalingRatio = float64(perfData.TimeRunning) / float64(perfData.TimeEnabled)
+			}
 			stat := info.PerfStat{
 				Value:        uint64(float64(perfData.Value) / scalingRatio),
 				Name:         name,
@@ -103,33 +105,31 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 }
 
 func (c *collector) Setup() {
+	cgroup, err := os.Open(c.cgroupPath)
+	if err != nil {
+		klog.Warningf("Unable to open cgroup directory %s: %s", c.cgroupPath, err)
+	}
+	defer cgroup.Close()
+
 	c.cpuFilesLock.Lock()
 	defer c.cpuFilesLock.Unlock()
-	c.setupRawNonGrouped()
-	c.setupNonGrouped()
+	cgroupFd := int(cgroup.Fd())
+	c.setupRawNonGrouped(cgroupFd)
+	c.setupNonGrouped(cgroupFd)
 }
 
-func (c *collector) setupRawNonGrouped() {
+func (c *collector) setupRawNonGrouped(cgroup int) {
 	for _, event := range c.events.Raw.NonGrouped {
 		klog.V(4).Infof("Setting up non-grouped raw perf event %#v", event)
 		config := createPerfEventAttr(event)
-		c.registerEvent(config, event.Name)
+		c.registerEvent(config, event.Name, cgroup)
 	}
 }
 
-func (c *collector) registerEvent(config *unix.PerfEventAttr, name string) {
-	if c.cgroup == nil {
-		cgroup, err := os.Open(c.cgroupPath)
-		if err != nil {
-			klog.Errorf("Cannot open cgroup directory %q: %q", c.cgroupPath, err)
-			return
-		}
-		c.cgroup = cgroup
-	}
-
+func (c *collector) registerEvent(config *unix.PerfEventAttr, name string, cgroup int) {
 	var cpu int
 	for cpu = 0; cpu < c.numCores; cpu++ {
-		pid, groupFd, flags := int(c.cgroup.Fd()), -1, unix.PERF_FLAG_FD_CLOEXEC|unix.PERF_FLAG_PID_CGROUP
+		pid, groupFd, flags := cgroup, -1, unix.PERF_FLAG_FD_CLOEXEC|unix.PERF_FLAG_PID_CGROUP
 		fd, err := unix.PerfEventOpen(config, pid, cpu, groupFd, flags)
 		if err != nil {
 			klog.Errorf("Setting up perf event %#v failed: %q", config, err)
@@ -152,7 +152,7 @@ func (c *collector) addEventFile(name string, cpu int, perfFile *os.File) {
 	c.cpuFiles[name][cpu] = perfFile
 }
 
-func (c *collector) setupNonGrouped() error {
+func (c *collector) setupNonGrouped(cgroup int) error {
 	if !isLibpfmInitialized {
 		klog.Warning("libpfm4 is not initialized, cannot proceed with setting perf events up")
 		return errors.New("libpfm4 is not initialized, cannot proceed with setting perf events up")
@@ -180,7 +180,7 @@ func (c *collector) setupNonGrouped() error {
 
 		klog.V(1).Infof("perf_event_attr: %#v", perfEventAttr)
 		setAttributes(perfEventAttr)
-		c.registerEvent(perfEventAttr, name)
+		c.registerEvent(perfEventAttr, name, cgroup)
 		C.free(perfEventAttrMemory)
 	}
 
@@ -227,14 +227,6 @@ func (c *collector) Destroy() {
 		}
 
 		delete(c.cpuFiles, name)
-		if len(c.cpuFiles) == 0 {
-			klog.Infof("Closing cgroup file descriptor for %q", c.cgroupPath)
-			err := c.cgroup.Close()
-			c.cgroup = nil
-			if err != nil {
-				klog.Warningf("Unable to close cgroup file %q", c.cgroupPath)
-			}
-		}
 	}
 }
 

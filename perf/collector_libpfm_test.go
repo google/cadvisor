@@ -46,8 +46,8 @@ func TestCollector_UpdateStats(t *testing.T) {
 	})
 	binary.Write(scaledBuffer, binary.LittleEndian, ReadFormat{
 		Value:       333333333,
-		TimeEnabled: 1,
-		TimeRunning: 3,
+		TimeEnabled: 3,
+		TimeRunning: 1,
 		ID:          2,
 	})
 	collector.cpuFiles = map[string]map[int]readerCloser{
