@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sort"
 	"testing"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -413,6 +414,10 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(nodes))
 	assert.Equal(t, 4, cores)
+
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Id < nodes[j].Id
+	})
 
 	nodesJSON, err := json.Marshal(nodes)
 	assert.Nil(t, err)
