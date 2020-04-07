@@ -26,7 +26,6 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -87,7 +86,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 			if err != nil {
 				klog.Warningf("Unable to decode from binary format read from perf_event file (event: %q, CPU: %d) for %q", name, cpu, c.cgroupPath)
 			}
-			klog.Infof("Read metric for event %q for cpu %d from cgroup %q: %d", name, cpu, c.cgroupPath, perfData.Value)
+			klog.V(4).Infof("Read metric for event %q for cpu %d from cgroup %q: %d", name, cpu, c.cgroupPath, perfData.Value)
 			scalingRatio := 1.0
 			if perfData.TimeEnabled != 0 {
 				scalingRatio = float64(perfData.TimeRunning) / float64(perfData.TimeEnabled)
@@ -155,7 +154,7 @@ func (c *collector) addEventFile(name string, cpu int, perfFile *os.File) {
 func (c *collector) setupNonGrouped(cgroup int) error {
 	if !isLibpfmInitialized {
 		klog.Warning("libpfm4 is not initialized, cannot proceed with setting perf events up")
-		return errors.New("libpfm4 is not initialized, cannot proceed with setting perf events up")
+		return fmt.Errorf("libpfm4 is not initialized, cannot proceed with setting perf events up")
 	}
 
 	for _, name := range c.events.NonGrouped {
@@ -178,7 +177,7 @@ func (c *collector) setupNonGrouped(cgroup int) error {
 			continue
 		}
 
-		klog.V(1).Infof("perf_event_attr: %#v", perfEventAttr)
+		klog.V(4).Infof("perf_event_attr: %#v", perfEventAttr)
 		setAttributes(perfEventAttr)
 		c.registerEvent(perfEventAttr, name, cgroup)
 		C.free(perfEventAttrMemory)
@@ -219,7 +218,7 @@ func (c *collector) Destroy() {
 
 	for name, files := range c.cpuFiles {
 		for cpu, file := range files {
-			klog.Infof("Closing perf_event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
+			klog.V(4).Infof("Closing perf_event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
 			err := file.Close()
 			if err != nil {
 				klog.Warningf("Unable to close perf_event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
