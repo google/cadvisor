@@ -850,8 +850,13 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		ret.Memory.HierarchicalData.Pgmajfault = v
 	}
 
+	inactiveFileKeyName := "total_inactive_file"
+	if cgroups.IsCgroup2UnifiedMode() {
+		inactiveFileKeyName = "inactive_file"
+	}
+
 	workingSet := ret.Memory.Usage
-	if v, ok := s.MemoryStats.Stats["total_inactive_file"]; ok {
+	if v, ok := s.MemoryStats.Stats[inactiveFileKeyName]; ok {
 		if workingSet < v {
 			workingSet = 0
 		} else {
