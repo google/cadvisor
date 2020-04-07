@@ -93,7 +93,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 			klog.Infof("Read metric for event %q for cpu %d from cgroup %q: %d", name, cpu, c.cgroupPath, perfData.Value)
 			scalingRatio := float64(perfData.TimeEnabled) / float64(perfData.TimeRunning)
 			stat := info.PerfStat{
-				Value:        uint64(float64(perfData.Value) * scalingRatio),
+				Value:        uint64(float64(perfData.Value) / scalingRatio),
 				Name:         name,
 				Time:         now,
 				ScalingRatio: scalingRatio,
