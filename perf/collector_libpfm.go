@@ -113,16 +113,25 @@ func (c *collector) Setup() {
 	c.cpuFilesLock.Lock()
 	defer c.cpuFilesLock.Unlock()
 	cgroupFd := int(cgroup.Fd())
-	c.setupRawNonGrouped(cgroupFd)
-	c.setupNonGrouped(cgroupFd)
+	for _, group := range c.events.Events {
+		if len(group) == 1 {
+			c.setupNonGrouped(string(group[0]), cgroupFd)
+		} else {
+			klog.Info("Grouped events are not supported yet")
+		}
+	}
+
+	for _, customGroup := range c.events.CustomEvents {
+		if len(customGroup) == 1 {
+			c.setupRawNonGrouped(customGroup[0], cgroupFd)
+		}
+	}
 }
 
-func (c *collector) setupRawNonGrouped(cgroup int) {
-	for _, event := range c.events.Raw.NonGrouped {
-		klog.V(4).Infof("Setting up non-grouped raw perf event %#v", event)
-		config := createPerfEventAttr(event)
-		c.registerEvent(config, event.Name, cgroup)
-	}
+func (c *collector) setupRawNonGrouped(event CustomEvent, cgroup int) {
+	klog.V(4).Infof("Setting up non-grouped raw perf event %#v", event)
+	config := createPerfEventAttr(event)
+	c.registerEvent(config, event.Name, cgroup)
 }
 
 func (c *collector) registerEvent(config *unix.PerfEventAttr, name string, cgroup int) {
@@ -151,42 +160,39 @@ func (c *collector) addEventFile(name string, cpu int, perfFile *os.File) {
 	c.cpuFiles[name][cpu] = perfFile
 }
 
-func (c *collector) setupNonGrouped(cgroup int) error {
+func (c *collector) setupNonGrouped(name string, cgroup int) error {
 	if !isLibpfmInitialized {
 		klog.Warning("libpfm4 is not initialized, cannot proceed with setting perf events up")
 		return fmt.Errorf("libpfm4 is not initialized, cannot proceed with setting perf events up")
 	}
 
-	for _, name := range c.events.NonGrouped {
-		klog.V(4).Infof("Setting up non-grouped perf event %s", name)
+	klog.V(4).Infof("Setting up non-grouped perf event %s", name)
 
-		perfEventAttrMemory := C.malloc(C.ulong(unsafe.Sizeof(unix.PerfEventAttr{})))
-		event := pfmPerfEncodeArgT{}
+	perfEventAttrMemory := C.malloc(C.ulong(unsafe.Sizeof(unix.PerfEventAttr{})))
+	defer C.free(perfEventAttrMemory)
+	event := pfmPerfEncodeArgT{}
 
-		perfEventAttr := (*unix.PerfEventAttr)(perfEventAttrMemory)
-		fstr := C.CString("")
-		event.fstr = unsafe.Pointer(fstr)
-		event.attr = perfEventAttrMemory
-		event.size = C.ulong(unsafe.Sizeof(event))
+	perfEventAttr := (*unix.PerfEventAttr)(perfEventAttrMemory)
+	fstr := C.CString("")
+	event.fstr = unsafe.Pointer(fstr)
+	event.attr = perfEventAttrMemory
+	event.size = C.ulong(unsafe.Sizeof(event))
 
-		cSafeName := C.CString(name)
-		pErr := C.pfm_get_os_event_encoding(cSafeName, C.PFM_PLM0|C.PFM_PLM3, C.PFM_OS_PERF_EVENT, unsafe.Pointer(&event))
-		if pErr != C.PFM_SUCCESS {
-			klog.Warningf("Unable to transform event name %s to perf_event_attr: %d", name, int(pErr))
-			C.free(perfEventAttrMemory)
-			continue
-		}
-
-		klog.V(4).Infof("perf_event_attr: %#v", perfEventAttr)
-		setAttributes(perfEventAttr)
-		c.registerEvent(perfEventAttr, name, cgroup)
-		C.free(perfEventAttrMemory)
+	cSafeName := C.CString(name)
+	pErr := C.pfm_get_os_event_encoding(cSafeName, C.PFM_PLM0|C.PFM_PLM3, C.PFM_OS_PERF_EVENT, unsafe.Pointer(&event))
+	if pErr != C.PFM_SUCCESS {
+		klog.Warningf("Unable to transform event name %s to perf_event_attr: %d", name, int(pErr))
+		return fmt.Errorf("unable to transform event name %s to perf_event_attr: %d", name, int(pErr))
 	}
+
+	klog.V(4).Infof("perf_event_attr: %#v", perfEventAttr)
+	setAttributes(perfEventAttr)
+	c.registerEvent(perfEventAttr, string(name), cgroup)
 
 	return nil
 }
 
-func createPerfEventAttr(event RawEvent) *unix.PerfEventAttr {
+func createPerfEventAttr(event CustomEvent) *unix.PerfEventAttr {
 	length := len(event.Config)
 
 	config := &unix.PerfEventAttr{

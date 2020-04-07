@@ -72,7 +72,7 @@ func TestCollector_UpdateStats(t *testing.T) {
 }
 
 func TestCreatePerfEventAttr(t *testing.T) {
-	event := RawEvent{
+	event := CustomEvent{
 		Type:   0x1,
 		Config: Config{uint64(0x2), uint64(0x3), uint64(0x4)},
 		Name:   "fake_event",

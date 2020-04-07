@@ -29,7 +29,13 @@ func TestStringToUint64Unmarshaling(t *testing.T) {
 	err = json.Unmarshal(configContents, events)
 
 	assert.Nil(t, err)
-	assert.Equal(t, events.Raw.NonGrouped[0].Config, Config{5439680})
-	assert.Equal(t, events.Raw.NonGrouped[0].Type, uint32(4))
-	assert.Equal(t, events.Raw.NonGrouped[0].Name, "instructions_retired")
+	assert.Len(t, events.Events, 1)
+	assert.Len(t, events.Events[0], 1)
+	assert.Equal(t, events.Events[0][0], Event("instructions"))
+
+	assert.Len(t, events.CustomEvents, 1)
+	assert.Len(t, events.CustomEvents[0], 1)
+	assert.Equal(t, events.CustomEvents[0][0].Config, Config{5439680})
+	assert.Equal(t, events.CustomEvents[0][0].Type, uint32(4))
+	assert.Equal(t, events.CustomEvents[0][0].Name, "instructions_retired")
 }

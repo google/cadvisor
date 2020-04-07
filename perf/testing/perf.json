@@ -1,7 +1,9 @@
 {
-  "non_grouped": ["instructions"],
-  "raw": {
-    "non_grouped": [
+  "events": [
+    ["instructions"]
+  ],
+  "custom_events": [
+    [
       {
         "type": 4,
         "config": [
@@ -9,24 +11,6 @@
         ],
         "name": "instructions_retired"
       }
-    ],
-    "grouped": [
-      [
-        {
-          "type": 4,
-          "config": [
-            "0x10002"
-          ],
-          "name": "LLC-load-misses"
-        },
-        {
-          "type": 4,
-          "config": [
-            "0x10000"
-          ],
-          "name": "L1-dcache-load-misses"
-        }
-      ]
     ]
-  }
+  ]
 }

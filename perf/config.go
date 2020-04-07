@@ -23,32 +23,19 @@ import (
 )
 
 type Events struct {
-	// List of perf events' names to be measured. Events in this list
-	// will not be grouped. See group_fd argument in documentation
-	// at man perf_event_open
-	NonGrouped []string `json:"non_grouped"`
+	// List of perf events' names to be measured. Any value found in
+	// output of perf list can be used.
+	Events [][]Event `json:"events"`
 
-	// List of groups of perf events' names to be measured. See group_fd
-	// argument documentation at man perf_event_open.
-	Grouped [][]string `json:"grouped"`
-
-	// Raw allows to specify events by passing their type and configuration directly.
-	// See symbolically formed events documentation at man perf-stat.
-	Raw RawEvents `json:"raw,omitempty"`
+	// List of custom perf events' to be measured. It is impossible to
+	// specify some events using their names and in such case you have
+	// to provide lower level configuration.
+	CustomEvents [][]CustomEvent `json:"custom_events"`
 }
 
-type RawEvents struct {
-	// List of perf events to be measured. RawEvents in this list
-	// will not be grouped. See group_fd argument documentation
-	// at man perf_event_open.
-	NonGrouped []RawEvent `json:"non_grouped"`
+type Event string
 
-	// List of groups of events to be measured. See group_fd
-	// argument documentation at man perf_event_open.
-	Grouped [][]RawEvent `json:"grouped"`
-}
-
-type RawEvent struct {
+type CustomEvent struct {
 	// Type of the event. See perf_event_attr documentation
 	// at man perf_event_open.
 	Type uint32 `json:"type"`
