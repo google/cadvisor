@@ -18,10 +18,19 @@ package perf
 
 import (
 	"github.com/google/cadvisor/stats"
+
 	"k8s.io/klog"
 )
 
+type noopManager struct {
+	stats.NoopSetupDestroy
+}
+
+func (m *noopManager) GetCollector(cgroup string) (stats.Collector, error) {
+	return &noopCollector{}, nil
+}
+
 func NewManager(configFile string, numCores int) (stats.Manager, error) {
 	klog.V(1).Info("cAdvisor is build without cgo and/or libpfm support. Perf event counters are not available.")
-	return nil, nil
+	return &noopManager{}, nil
 }

@@ -17,7 +17,24 @@
 // Collector of perf events for a container.
 package perf
 
-import "k8s.io/klog"
+import (
+	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/stats"
+
+	"k8s.io/klog"
+)
+
+type noopCollector struct {
+	stats.NoopSetupDestroy
+}
+
+func (c *noopCollector) UpdateStats(stats *info.ContainerStats) error {
+	return nil
+}
+
+func NewCollector(cgroupPath string, events Events, numCores int) stats.Collector {
+	return &noopCollector{}
+}
 
 // Finalize terminates libpfm4 to free resources.
 func Finalize() {

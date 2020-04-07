@@ -34,6 +34,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/perf"
 	"github.com/google/cadvisor/stats"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
@@ -118,9 +119,7 @@ func (c *containerData) Stop() error {
 		return err
 	}
 	close(c.stop)
-	if c.perfCollector != nil {
-		c.perfCollector.Destroy()
-	}
+	c.perfCollector.Destroy()
 	return nil
 }
 
@@ -393,6 +392,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 		collectorManager:         collectorManager,
 		onDemandChan:             make(chan chan struct{}, 100),
 		clock:                    clock,
+		perfCollector:            perf.NewCollector("", perf.Events{}, 0),
 	}
 	cont.info.ContainerReference = ref
 
@@ -632,10 +632,7 @@ func (c *containerData) updateStats() error {
 		nvidiaStatsErr = c.nvidiaCollector.UpdateStats(stats)
 	}
 
-	var perfStatsErr error
-	if c.perfCollector != nil {
-		perfStatsErr = c.perfCollector.UpdateStats(stats)
-	}
+	perfStatsErr := c.perfCollector.UpdateStats(stats)
 
 	ref, err := c.handler.ContainerReference()
 	if err != nil {

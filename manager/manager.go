@@ -338,9 +338,7 @@ func (self *manager) Stop() error {
 
 func (self *manager) destroyPerfCollectors() {
 	for _, container := range self.containers {
-		if container.perfCollector != nil {
-			container.perfCollector.Destroy()
-		}
+		container.perfCollector.Destroy()
 	}
 }
 
@@ -964,13 +962,11 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		if err != nil {
 			klog.Warningf("Error getting perf_event cgroup path: %q", err)
 		} else {
-			if m.perfManager != nil {
-				cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
-				if err == nil {
-					cont.perfCollector.Setup()
-				} else {
-					klog.V(4).Infof("perf_event metrics will not be available for container %q: %q", cont.info.Name, err)
-				}
+			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
+			if err == nil {
+				cont.perfCollector.Setup()
+			} else {
+				klog.V(4).Infof("perf_event metrics will not be available for container %q: %q", cont.info.Name, err)
 			}
 		}
 	}
