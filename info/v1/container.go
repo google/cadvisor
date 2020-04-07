@@ -819,11 +819,15 @@ type AcceleratorStats struct {
 // PerfStat represents value of a single monitored perf event.
 type PerfStat struct {
 	// Indicates scaling ratio for an event: time_enabled/time_running.
-	// value 1.0 indicates that no multiplexing occurred.
+	// value 1.0 indicates that no multiplexing occurred. Value close
+	// to 0 indicates that event was measured for short time and event's
+	// value might be inaccurate.
 	// See: https://lwn.net/Articles/324756/
 	ScalingRatio float64
 
-	// Value represents value of perf event retrieved from OS.
+	// Value represents value of perf event retrieved from OS. It is
+	// normalized against ScalingRatio and takes multiplexing into
+	// consideration.
 	Value uint64
 
 	// Name is human readable name of an event.
