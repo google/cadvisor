@@ -833,9 +833,6 @@ type PerfStat struct {
 	// Name is human readable name of an event.
 	Name string
 
-	// Time when event was collected.
-	Time time.Time
-
 	// CPU that perf event was measured on.
 	Cpu int
 }

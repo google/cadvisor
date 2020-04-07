@@ -30,7 +30,6 @@ import (
 	"fmt"
 	"os"
 	"sync"
-	"time"
 	"unsafe"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -86,7 +85,6 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 			perfData := &ReadFormat{}
 			reader := bytes.NewReader(buf)
 			err = binary.Read(reader, binary.LittleEndian, perfData)
-			now := time.Now()
 			if err != nil {
 				klog.Warningf("Unable to decode from binary format read from perf_event file (event: %q, CPU: %d) for %q", name, cpu, c.cgroupPath)
 			}
@@ -95,7 +93,6 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 			stat := info.PerfStat{
 				Value:        uint64(float64(perfData.Value) / scalingRatio),
 				Name:         name,
-				Time:         now,
 				ScalingRatio: scalingRatio,
 				Cpu:          cpu,
 			}

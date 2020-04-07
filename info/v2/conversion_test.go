@@ -201,13 +201,11 @@ func TestContainerStatsFromV1(t *testing.T) {
 				ScalingRatio: 1,
 				Value:        123,
 				Name:         "instructions",
-				Time:         time.Time{},
 			},
 			{
 				ScalingRatio: 0.3333333,
 				Value:        123456,
 				Name:         "cycles",
-				Time:         time.Time{},
 			},
 		},
 	}
