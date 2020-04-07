@@ -291,7 +291,7 @@ func (self *RealFsInfo) addCrioImagesLabel(context Context, mounts []mount.Mount
 		crioImagePaths := map[string]struct{}{
 			"/": {},
 		}
-		for _, dir := range []string{"overlay", "overlay2"} {
+		for _, dir := range []string{"devicemapper", "btrfs", "aufs", "overlay", "zfs"} {
 			crioImagePaths[path.Join(crioPath, dir+"-images")] = struct{}{}
 		}
 		for crioPath != "/" && crioPath != "." {
