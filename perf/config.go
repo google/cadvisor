@@ -34,7 +34,7 @@ type Events struct {
 	// to provide lower level configuration.
 	CustomEvents []CustomEvent `json:"custom_events"`
 
-	eventToCustomEvent map[Event]*CustomEvent `json:"omit"`
+	eventToCustomEvent map[Event]*CustomEvent
 }
 
 type Event string
