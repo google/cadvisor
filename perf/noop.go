@@ -1,5 +1,3 @@
-// +build !libpfm !cgo
-
 // Copyright 2020 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Collector of perf events for a container.
+// Noop perf Manager and Collector.
 package perf
 
 import (
+	v1 "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/stats"
-
-	"k8s.io/klog"
 )
 
-func NewCollector(cgroupPath string, events Events, numCores int) stats.Collector {
-	return &noopCollector{}
+type noopManager struct {
+	stats.NoopSetupDestroy
 }
 
-// Finalize terminates libpfm4 to free resources.
-func Finalize() {
-	klog.V(1).Info("cAdvisor is build without cgo and/or libpfm support. Nothing to be finalized")
+func (m *noopManager) GetCollector(cgroup string) (stats.Collector, error) {
+	return &noopCollector{}, nil
+}
+
+type noopCollector struct {
+	stats.NoopSetupDestroy
+}
+
+func (c *noopCollector) UpdateStats(stats *v1.ContainerStats) error {
+	return nil
 }
