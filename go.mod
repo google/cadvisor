@@ -30,8 +30,6 @@ require (
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/karrick/godirwalk v1.7.5
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/kr/pretty v0.0.0-20140723054909-088c856450c0
-	github.com/kr/text v0.0.0-20130911015532-6807e777504f // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mindprince/gonvml v0.0.0-20190828220739-9ebdce4bb989
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
@@ -61,6 +59,6 @@ require (
 	google.golang.org/grpc v1.26.0
 	gopkg.in/yaml.v2 v2.2.4 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/klog v0.3.0
+	k8s.io/klog/v2 v2.0.0
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 )

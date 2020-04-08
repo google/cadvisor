@@ -30,7 +30,7 @@ import (
 	_ "github.com/google/cadvisor/cmd/internal/storage/stdout"
 	"github.com/google/cadvisor/storage"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var (

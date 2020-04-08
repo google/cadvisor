@@ -42,7 +42,7 @@ import (
 	_ "github.com/google/cadvisor/utils/cloudinfo/azure"
 	_ "github.com/google/cadvisor/utils/cloudinfo/gce"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")

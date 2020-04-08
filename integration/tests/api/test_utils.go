@@ -21,7 +21,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func init() {

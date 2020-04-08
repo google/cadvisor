@@ -25,7 +25,7 @@ import (
 
 	"github.com/google/cadvisor/client"
 	"github.com/google/cadvisor/client/v2"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var host = flag.String("host", "localhost", "Address of the host being tested")

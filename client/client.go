@@ -30,7 +30,7 @@ import (
 
 	"github.com/google/cadvisor/info/v1"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // Client represents the base URL for a cAdvisor client.

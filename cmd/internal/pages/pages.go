@@ -26,7 +26,7 @@ import (
 	"github.com/google/cadvisor/manager"
 
 	auth "github.com/abbot/go-http-auth"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 var pageTemplate *template.Template
