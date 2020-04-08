@@ -15,27 +15,30 @@
 package perf
 
 import (
-	"encoding/json"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
-func TestStringToUint64Unmarshaling(t *testing.T) {
-	configContents, err := ioutil.ReadFile("testing/perf.json")
+func TestConfigParsing(t *testing.T) {
+	file, err := os.Open("testing/perf.json")
 	assert.Nil(t, err)
+	defer file.Close()
 
-	events := &Events{}
-	err = json.Unmarshal(configContents, events)
+	events, err := parseConfig(file)
 
 	assert.Nil(t, err)
-	assert.Len(t, events.Events, 1)
+	assert.Len(t, events.Events, 2)
 	assert.Len(t, events.Events[0], 1)
-	assert.Equal(t, events.Events[0][0], Event("instructions"))
+	assert.Equal(t, Event("instructions"), events.Events[0][0])
+	assert.Len(t, events.Events[1], 1)
+	assert.Equal(t, Event("instructions_retired"), events.Events[1][0])
 
 	assert.Len(t, events.CustomEvents, 1)
-	assert.Len(t, events.CustomEvents[0], 1)
-	assert.Equal(t, events.CustomEvents[0][0].Config, Config{5439680})
-	assert.Equal(t, events.CustomEvents[0][0].Type, uint32(4))
-	assert.Equal(t, events.CustomEvents[0][0].Name, "instructions_retired")
+	assert.Equal(t, Config{5439680}, events.CustomEvents[0].Config)
+	assert.Equal(t, uint32(4), events.CustomEvents[0].Type)
+	assert.Equal(t, Event("instructions_retired"), events.CustomEvents[0].Name)
+
+	assert.Len(t, events.eventToCustomEvent, 1)
+	assert.Same(t, &events.CustomEvents[0], events.eventToCustomEvent[Event("instructions_retired")])
 }

@@ -18,8 +18,10 @@ package perf
 import (
 	"encoding/json"
 	"fmt"
-	"k8s.io/klog"
+	"os"
 	"strconv"
+
+	"k8s.io/klog"
 )
 
 type Events struct {
@@ -30,7 +32,9 @@ type Events struct {
 	// List of custom perf events' to be measured. It is impossible to
 	// specify some events using their names and in such case you have
 	// to provide lower level configuration.
-	CustomEvents [][]CustomEvent `json:"custom_events"`
+	CustomEvents []CustomEvent `json:"custom_events"`
+
+	eventToCustomEvent map[Event]*CustomEvent `json:"omit"`
 }
 
 type Event string
@@ -46,7 +50,7 @@ type CustomEvent struct {
 	Config Config `json:"config"`
 
 	// Human readable name of metric that will be created from the event.
-	Name string `json:"name"`
+	Name Event `json:"name"`
 }
 
 type Config []uint64
@@ -69,4 +73,23 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 	}
 	*c = intermediate
 	return nil
+}
+
+func parseConfig(file *os.File) (events Events, err error) {
+	decoder := json.NewDecoder(file)
+	err = decoder.Decode(&events)
+	if err != nil {
+		klog.Errorf("Unable to load perf events configuration from %q: %q", file.Name(), err)
+		err = fmt.Errorf("unable to load perf events cofiguration from %q: %q", file.Name(), err)
+		return
+	}
+	mapEventsToCustomEvents(&events)
+	return
+}
+
+func mapEventsToCustomEvents(events *Events) {
+	events.eventToCustomEvent = map[Event]*CustomEvent{}
+	for key, event := range events.CustomEvents {
+		events.eventToCustomEvent[event.Name] = &events.CustomEvents[key]
+	}
 }

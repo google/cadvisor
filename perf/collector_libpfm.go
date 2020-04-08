@@ -115,23 +115,22 @@ func (c *collector) Setup() {
 	cgroupFd := int(cgroup.Fd())
 	for _, group := range c.events.Events {
 		if len(group) == 1 {
-			c.setupNonGrouped(string(group[0]), cgroupFd)
+			customEvent, ok := c.events.eventToCustomEvent[group[0]]
+			if ok {
+				c.setupRawNonGrouped(customEvent, cgroupFd)
+			} else {
+				c.setupNonGrouped(string(group[0]), cgroupFd)
+			}
 		} else {
 			klog.Info("Grouped events are not supported yet")
 		}
 	}
-
-	for _, customGroup := range c.events.CustomEvents {
-		if len(customGroup) == 1 {
-			c.setupRawNonGrouped(customGroup[0], cgroupFd)
-		}
-	}
 }
 
-func (c *collector) setupRawNonGrouped(event CustomEvent, cgroup int) {
+func (c *collector) setupRawNonGrouped(event *CustomEvent, cgroup int) {
 	klog.V(4).Infof("Setting up non-grouped raw perf event %#v", event)
-	config := createPerfEventAttr(event)
-	c.registerEvent(config, event.Name, cgroup)
+	config := createPerfEventAttr(*event)
+	c.registerEvent(config, string(event.Name), cgroup)
 }
 
 func (c *collector) registerEvent(config *unix.PerfEventAttr, name string, cgroup int) {

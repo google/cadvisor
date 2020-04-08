@@ -18,9 +18,8 @@
 package perf
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/google/cadvisor/stats"
 
@@ -37,16 +36,16 @@ func NewManager(configFile string, numCores int) (stats.Manager, error) {
 	if configFile == "" {
 		return &noopManager{}, nil
 	}
-	configContents, err := ioutil.ReadFile(configFile)
+
+	file, err := os.Open(configFile)
 	if err != nil {
 		klog.Errorf("Unable to read configuration file %q: %q", configFile, err)
 		return nil, fmt.Errorf("Unable to read configuration file %q: %q", configFile, err)
 	}
-	config := Events{}
-	err = json.Unmarshal(configContents, &config)
+
+	config, err := parseConfig(file)
 	if err != nil {
-		klog.Errorf("Unable to load perf events configuration from %q: %q", configFile, err)
-		return nil, fmt.Errorf("unable to load perf events cofiguration from %q: %q", configFile, err)
+		return nil, fmt.Errorf("Unable to read configuration file %q: %q", configFile, err)
 	}
 
 	return &manager{events: config, numCores: numCores}, nil
