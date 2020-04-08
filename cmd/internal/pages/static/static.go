@@ -28,16 +28,16 @@ import (
 
 const StaticResource = "/static/"
 
-var popper, _ = Asset("pages/assets/js/popper.min.js")
-var bootstrapJs, _ = Asset("pages/assets/js/bootstrap-4.0.0-beta.2.min.js")
-var containersJs, _ = Asset("pages/assets/js/containers.js")
-var gchartsJs, _ = Asset("pages/assets/js/gcharts.js")
-var googleJsapiJs, _ = Asset("pages/assets/js/google-jsapi.js")
-var jqueryJs, _ = Asset("pages/assets/js/jquery-3.0.0.min.js")
+var popper, _ = Asset("cmd/internal/pages/assets/js/popper.min.js")
+var bootstrapJs, _ = Asset("cmd/internal/pages/assets/js/bootstrap-4.0.0-beta.2.min.js")
+var containersJs, _ = Asset("cmd/internal/pages/assets/js/containers.js")
+var gchartsJs, _ = Asset("cmd/internal/pages/assets/js/gcharts.js")
+var googleJsapiJs, _ = Asset("cmd/internal/pages/assets/js/google-jsapi.js")
+var jqueryJs, _ = Asset("cmd/internal/pages/assets/js/jquery-3.0.0.min.js")
 
-var bootstrapCss, _ = Asset("pages/assets/styles/bootstrap-4.0.0-beta.2.min.css")
-var bootstrapThemeCss, _ = Asset("pages/assets/styles/bootstrap-theme-3.1.1.min.css")
-var containersCss, _ = Asset("pages/assets/styles/containers.css")
+var bootstrapCss, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-4.0.0-beta.2.min.css")
+var bootstrapThemeCss, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-theme-3.1.1.min.css")
+var containersCss, _ = Asset("cmd/internal/pages/assets/styles/containers.css")
 
 var staticFiles = map[string][]byte{
 	"popper.min.js":                  popper,

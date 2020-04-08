@@ -67,7 +67,7 @@ type pageData struct {
 }
 
 func init() {
-	containersHtmlTemplate, _ := Asset("pages/assets/html/containers.html")
+	containersHtmlTemplate, _ := Asset("cmd/internal/pages/assets/html/containers.html")
 	pageTemplate = template.New("containersTemplate").Funcs(funcMap)
 	_, err := pageTemplate.Parse(string(containersHtmlTemplate))
 	if err != nil {
