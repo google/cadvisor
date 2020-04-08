@@ -211,9 +211,9 @@ func createPerfEventAttr(event CustomEvent) *unix.PerfEventAttr {
 }
 
 func setAttributes(config *unix.PerfEventAttr) {
-	config.Sample_type = 1 << 16
+	config.Sample_type = perfSampleIdentifier
 	config.Read_format = unix.PERF_FORMAT_TOTAL_TIME_ENABLED | unix.PERF_FORMAT_TOTAL_TIME_RUNNING | unix.PERF_FORMAT_ID
-	config.Bits = 1<<20 | 1<<1
+	config.Bits = perfAttrBitsInherit | perfAttrBitsExcludeGuest
 	config.Size = uint32(unsafe.Sizeof(unix.PerfEventAttr{}))
 }
 
