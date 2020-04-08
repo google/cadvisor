@@ -168,10 +168,10 @@ func GetMachineMemoryByType(edacPath string) (map[string]*info.MemoryInfo, error
 				continue
 			}
 			memType, err := ioutil.ReadFile(path.Join(edacPath, controller, dimm, memTypeFileName))
-			readableMemType := strings.TrimSpace(string(memType))
 			if err != nil {
 				return map[string]*info.MemoryInfo{}, err
 			}
+			readableMemType := strings.TrimSpace(string(memType))
 			if _, exists := memory[readableMemType]; !exists {
 				memory[readableMemType] = &info.MemoryInfo{}
 			}
