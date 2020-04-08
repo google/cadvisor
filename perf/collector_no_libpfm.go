@@ -24,7 +24,7 @@ import (
 )
 
 func NewCollector(cgroupPath string, events Events, numCores int) stats.Collector {
-	return &noopCollector{}
+	return &stats.noopCollector{}
 }
 
 // Finalize terminates libpfm4 to free resources.
