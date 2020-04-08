@@ -99,6 +99,9 @@ var initializeNVML = func(nm *nvidiaManager) error {
 	if err != nil {
 		return fmt.Errorf("GPU metrics would not be available. Failed to get the number of nvidia devices: %v", err)
 	}
+	if numDevices == 0 {
+		return fmt.Errorf("no nvidia devices found")
+	}
 	klog.V(1).Infof("NVML initialized. Number of nvidia devices: %v", numDevices)
 	nm.nvidiaDevices = make(map[int]gonvml.Device, numDevices)
 	for i := 0; i < int(numDevices); i++ {
