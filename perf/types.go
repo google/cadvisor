@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	perfSampleIdentifier = 1 << 16
-	perfAttrBitsInherit = 1 << 1
+	perfSampleIdentifier     = 1 << 16
+	perfAttrBitsInherit      = 1 << 1
 	perfAttrBitsExcludeGuest = 1 << 20
 )
 
