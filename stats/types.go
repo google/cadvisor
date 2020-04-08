@@ -17,7 +17,6 @@ package stats
 
 import (
 	info "github.com/google/cadvisor/info/v1"
-	"k8s.io/klog"
 )
 
 // This is supposed to store global state about an cAdvisor metrics collector.
@@ -37,16 +36,4 @@ type Collector interface {
 	Setup() error
 	Destroy()
 	UpdateStats(*info.ContainerStats) error
-	Setup()
-	Destroy()
-}
-
-type NoopSetupDestroy struct{}
-
-func (nsd NoopSetupDestroy) Setup() {
-	klog.V(5).Info("No-op Destroy function called")
-}
-
-func (nsd NoopSetupDestroy) Destroy() {
-	klog.V(5).Info("No-op Destroy function called")
 }
