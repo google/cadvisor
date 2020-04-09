@@ -115,19 +115,15 @@ func (c *collector) Setup() error {
 	defer c.cpuFilesLock.Unlock()
 	cgroupFd := int(cgroup.Fd())
 	for _, group := range c.events.Events {
-		if len(group) == 1 {
-			customEvent, ok := c.events.eventToCustomEvent[group[0]]
-			var err error
-			if ok {
-				err = c.setupRawNonGrouped(customEvent, cgroupFd)
-			} else {
-				err = c.setupNonGrouped(string(group[0]), cgroupFd)
-			}
-			if err != nil {
-				return err
-			}
+		customEvent, ok := c.events.eventToCustomEvent[group[0]]
+		var err error
+		if ok {
+			err = c.setupRawNonGrouped(customEvent, cgroupFd)
 		} else {
-			klog.Info("Grouped events are not supported yet")
+			err = c.setupNonGrouped(string(group[0]), cgroupFd)
+		}
+		if err != nil {
+			return err
 		}
 	}
 	return nil

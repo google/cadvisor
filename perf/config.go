@@ -79,7 +79,6 @@ func parseConfig(file *os.File) (events Events, err error) {
 	decoder := json.NewDecoder(file)
 	err = decoder.Decode(&events)
 	if err != nil {
-		klog.Errorf("Unable to load perf events configuration from %q: %q", file.Name(), err)
 		err = fmt.Errorf("unable to load perf events cofiguration from %q: %q", file.Name(), err)
 		return
 	}

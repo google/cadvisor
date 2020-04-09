@@ -22,8 +22,6 @@ import (
 	"os"
 
 	"github.com/google/cadvisor/stats"
-
-	"k8s.io/klog"
 )
 
 type manager struct {
@@ -39,7 +37,6 @@ func NewManager(configFile string, numCores int) (stats.Manager, error) {
 
 	file, err := os.Open(configFile)
 	if err != nil {
-		klog.Errorf("Unable to read configuration file %q: %q", configFile, err)
 		return nil, fmt.Errorf("Unable to read configuration file %q: %q", configFile, err)
 	}
 
@@ -48,7 +45,20 @@ func NewManager(configFile string, numCores int) (stats.Manager, error) {
 		return nil, fmt.Errorf("Unable to read configuration file %q: %q", configFile, err)
 	}
 
+	if areGroupedEventsUsed(config) {
+		return nil, fmt.Errorf("event grouping is not supported you must modify config file at %s", configFile)
+	}
+
 	return &manager{events: config, numCores: numCores}, nil
+}
+
+func areGroupedEventsUsed(events Events) bool {
+	for _, group := range events.Events {
+		if len(group) > 1 {
+			return true
+		}
+	}
+	return false
 }
 
 func (m *manager) GetCollector(cgroupPath string) (stats.Collector, error) {
