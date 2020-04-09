@@ -31,7 +31,6 @@ type Manager interface {
 
 // Collector can update ContainerStats by adding more metrics.
 type Collector interface {
-	Setup() error
 	Destroy()
 	UpdateStats(*info.ContainerStats) error
 }

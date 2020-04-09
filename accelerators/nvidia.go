@@ -220,7 +220,7 @@ type nvidiaCollector struct {
 	// Exposed for testing
 	devices []gonvml.Device
 
-	stats.NoopSetupDestroy
+	stats.NoopDestroy
 }
 
 func NewNvidiaCollector(devices []gonvml.Device) stats.Collector {

@@ -21,17 +21,20 @@ import (
 )
 
 type NoopManager struct {
-	NoopSetupDestroy
+	NoopSetup
+	NoopDestroy
 }
 
-type NoopSetupDestroy struct{}
+type NoopSetup struct{}
 
-func (nsd NoopSetupDestroy) Setup() error {
+func (nsd NoopSetup) Setup() error {
 	klog.V(5).Info("No-op Destroy function called")
 	return nil
 }
 
-func (nsd NoopSetupDestroy) Destroy() {
+type NoopDestroy struct{}
+
+func (nsd NoopDestroy) Destroy() {
 	klog.V(5).Info("No-op Destroy function called")
 }
 
@@ -40,7 +43,7 @@ func (m *NoopManager) GetCollector(cgroup string) (Collector, error) {
 }
 
 type NoopCollector struct {
-	NoopSetupDestroy
+	NoopDestroy
 }
 
 func (c *NoopCollector) UpdateStats(stats *v1.ContainerStats) error {

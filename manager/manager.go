@@ -963,9 +963,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 			klog.Warningf("Error getting perf_event cgroup path: %q", err)
 		} else {
 			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
-			if err == nil {
-				cont.perfCollector.Setup()
-			} else {
+			if err != nil {
 				klog.V(4).Infof("perf_event metrics will not be available for container %q: %q", cont.info.Name, err)
 			}
 		}

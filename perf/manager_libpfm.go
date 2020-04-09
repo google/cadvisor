@@ -27,7 +27,8 @@ import (
 type manager struct {
 	events   Events
 	numCores int
-	stats.NoopSetupDestroy
+	stats.NoopDestroy
+	stats.NoopSetup
 }
 
 func NewManager(configFile string, numCores int) (stats.Manager, error) {
@@ -62,5 +63,10 @@ func areGroupedEventsUsed(events Events) bool {
 }
 
 func (m *manager) GetCollector(cgroupPath string) (stats.Collector, error) {
-	return NewCollector(cgroupPath, m.events, m.numCores), nil
+	collector := newCollector(cgroupPath, m.events, m.numCores)
+	err := collector.setup()
+	if err != nil {
+		return &stats.NoopCollector{}, err
+	}
+	return collector, nil
 }

@@ -32,8 +32,6 @@ import (
 	"unsafe"
 
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/stats"
-
 	"golang.org/x/sys/unix"
 	"k8s.io/klog"
 )
@@ -62,7 +60,7 @@ func init() {
 	isLibpfmInitialized = true
 }
 
-func NewCollector(cgroupPath string, events Events, numCores int) stats.Collector {
+func newCollector(cgroupPath string, events Events, numCores int) *collector {
 	return &collector{cgroupPath: cgroupPath, events: events, cpuFiles: map[string]map[int]readerCloser{}, numCores: numCores}
 }
 
@@ -104,7 +102,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 	return nil
 }
 
-func (c *collector) Setup() error {
+func (c *collector) setup() error {
 	cgroup, err := os.Open(c.cgroupPath)
 	if err != nil {
 		return fmt.Errorf("unable to open cgroup directory %s: %s", c.cgroupPath, err)
