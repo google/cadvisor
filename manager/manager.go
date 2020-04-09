@@ -268,7 +268,7 @@ func (self *manager) Start() error {
 	if err != nil {
 		// We intentionally do nothing here. If Setup() fails then GetCollector()
 		// will return stats.NoopCollector
-		klog.Warningf("Setting up nvidia manager failed: %s", err)
+		klog.Warningf("NVidia GPU metrics will not be available: %s", err)
 	}
 
 	// Create root and then recover all containers.
