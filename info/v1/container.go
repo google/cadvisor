@@ -202,7 +202,13 @@ func (self *ContainerSpec) Eq(b *ContainerSpec) bool {
 	if !reflect.DeepEqual(self.Memory, b.Memory) {
 		return false
 	}
+	if self.HasHugetlb != b.HasHugetlb {
+		return false
+	}
 	if self.HasNetwork != b.HasNetwork {
+		return false
+	}
+	if self.HasProcesses != b.HasProcesses {
 		return false
 	}
 	if self.HasFilesystem != b.HasFilesystem {
@@ -212,6 +218,9 @@ func (self *ContainerSpec) Eq(b *ContainerSpec) bool {
 		return false
 	}
 	if self.HasCustomMetrics != b.HasCustomMetrics {
+		return false
+	}
+	if self.Image != b.Image {
 		return false
 	}
 	return true
