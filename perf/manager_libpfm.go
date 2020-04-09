@@ -34,7 +34,7 @@ type manager struct {
 
 func NewManager(configFile string, numCores int) (stats.Manager, error) {
 	if configFile == "" {
-		return &noopManager{}, nil
+		return &stats.NoopManager{}, nil
 	}
 
 	file, err := os.Open(configFile)
