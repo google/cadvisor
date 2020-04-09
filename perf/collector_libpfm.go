@@ -88,7 +88,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 				klog.Warningf("Unable to decode from binary format read from perf_event file (event: %q, CPU: %d) for %q", name, cpu, c.cgroupPath)
 				continue
 			}
-			klog.V(4).Infof("Read metric for event %q for cpu %d from cgroup %q: %d", name, cpu, c.cgroupPath, perfData.Value)
+			klog.V(5).Infof("Read metric for event %q for cpu %d from cgroup %q: %d", name, cpu, c.cgroupPath, perfData.Value)
 			scalingRatio := 1.0
 			if perfData.TimeEnabled != 0 {
 				scalingRatio = float64(perfData.TimeRunning) / float64(perfData.TimeEnabled)
