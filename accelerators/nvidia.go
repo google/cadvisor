@@ -100,7 +100,7 @@ var initializeNVML = func(nm *nvidiaManager) error {
 		return fmt.Errorf("GPU metrics would not be available. Failed to get the number of nvidia devices: %v", err)
 	}
 	if numDevices == 0 {
-		return fmt.Errorf("no nvidia devices found")
+		return nil
 	}
 	klog.V(1).Infof("NVML initialized. Number of nvidia devices: %v", numDevices)
 	nm.nvidiaDevices = make(map[int]gonvml.Device, numDevices)
@@ -130,7 +130,7 @@ func (nm *nvidiaManager) Destroy() {
 func (nm *nvidiaManager) GetCollector(devicesCgroupPath string) (stats.Collector, error) {
 	nc := &nvidiaCollector{}
 
-	if !nm.devicesPresent || len(nm.nvidiaDevices) == 0 {
+	if !nm.devicesPresent {
 		return &stats.NoopCollector{}, nil
 	}
 	// Makes sure that we don't call initializeNVML() concurrently and
@@ -145,6 +145,9 @@ func (nm *nvidiaManager) GetCollector(devicesCgroupPath string) (stats.Collector
 		}
 	}
 	nm.Unlock()
+	if len(nm.nvidiaDevices) == 0 {
+		return &stats.NoopCollector{}, nil
+	}
 	nvidiaMinorNumbers, err := parseDevicesCgroup(devicesCgroupPath)
 	if err != nil {
 		return nil, err
