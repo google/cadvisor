@@ -49,11 +49,17 @@ var sysFsPCIDevicesPath = "/sys/bus/pci/devices/"
 const nvidiaVendorId = "0x10de"
 
 func NewNvidiaManager() stats.Manager {
-	return &nvidiaManager{}
+	manager := &nvidiaManager{}
+	err := manager.setup()
+	if err != nil {
+		klog.Warningf("NVidia GPU metrics will not be available: %s", err)
+		return &stats.NoopManager{}
+	}
+	return manager
 }
 
-// Setup initializes NVML if nvidia devices are present on the node.
-func (nm *nvidiaManager) Setup() error {
+// setup initializes NVML if nvidia devices are present on the node.
+func (nm *nvidiaManager) setup() error {
 	if !detectDevices(nvidiaVendorId) {
 		return fmt.Errorf("No NVIDIA devices found.")
 	}

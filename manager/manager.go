@@ -276,14 +276,6 @@ func (self *manager) Start() error {
 		return nil
 	}
 
-	// Setup collection of nvidia GPU metrics if any of them are attached to the machine.
-	err = self.nvidiaManager.Setup()
-	if err != nil {
-		// We intentionally do nothing here. If Setup() fails then GetCollector()
-		// will return stats.NoopCollector
-		klog.Warningf("NVidia GPU metrics will not be available: %s", err)
-	}
-
 	// Create root and then recover all containers.
 	err = self.createContainer("/", watcher.Raw)
 	if err != nil {

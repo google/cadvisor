@@ -21,15 +21,7 @@ import (
 )
 
 type NoopManager struct {
-	NoopSetup
 	NoopDestroy
-}
-
-type NoopSetup struct{}
-
-func (nsd NoopSetup) Setup() error {
-	klog.V(5).Info("No-op Destroy function called")
-	return nil
 }
 
 type NoopDestroy struct{}

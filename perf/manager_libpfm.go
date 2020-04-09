@@ -28,7 +28,6 @@ type manager struct {
 	events   Events
 	numCores int
 	stats.NoopDestroy
-	stats.NoopSetup
 }
 
 func NewManager(configFile string, numCores int) (stats.Manager, error) {
