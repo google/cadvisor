@@ -951,6 +951,15 @@ func (a *ContainerStats) StatsEq(b *ContainerStats) bool {
 	if !reflect.DeepEqual(a.Filesystem, b.Filesystem) {
 		return false
 	}
+	if !reflect.DeepEqual(a.TaskStats, b.TaskStats) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Accelerators, b.Accelerators) {
+		return false
+	}
+	if !reflect.DeepEqual(a.CustomMetrics, b.CustomMetrics) {
+		return false
+	}
 	return true
 }
 
