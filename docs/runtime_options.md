@@ -170,7 +170,8 @@ See example configuration below:
 ```json
 {
   "events": [
-    ["instructions"]
+    ["instructions"],
+    ["instructions_retired"]
   ],
   "custom_events": [
     [
