@@ -816,6 +816,29 @@ type AcceleratorStats struct {
 	DutyCycle uint64 `json:"duty_cycle"`
 }
 
+// PerfStat represents value of a single monitored perf event.
+type PerfStat struct {
+	// Indicates scaling ratio for an event: time_running/time_enabled
+	// (amount of time that event was being measured divided by
+	// amount of time that event was enabled for).
+	// value 1.0 indicates that no multiplexing occurred. Value close
+	// to 0 indicates that event was measured for short time and event's
+	// value might be inaccurate.
+	// See: https://lwn.net/Articles/324756/
+	ScalingRatio float64 `json:"scaling_ratio"`
+
+	// Value represents value of perf event retrieved from OS. It is
+	// normalized against ScalingRatio and takes multiplexing into
+	// consideration.
+	Value uint64 `json:"value"`
+
+	// Name is human readable name of an event.
+	Name string `json:"name"`
+
+	// CPU that perf event was measured on.
+	Cpu int `json:"cpu"`
+}
+
 type UlimitSpec struct {
 	Name      string `json:"name"`
 	SoftLimit int64  `json:"soft_limit"`
@@ -864,6 +887,9 @@ type ContainerStats struct {
 
 	// Custom metrics from all collectors
 	CustomMetrics map[string][]MetricVal `json:"custom_metrics,omitempty"`
+
+	// Statistics originating from perf events
+	PerfStats []PerfStat `json:"perf_stats,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

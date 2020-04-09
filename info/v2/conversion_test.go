@@ -196,6 +196,18 @@ func TestContainerStatsFromV1(t *testing.T) {
 			MemoryUsed:  2030405060,
 			DutyCycle:   12,
 		}},
+		PerfStats: []v1.PerfStat{
+			{
+				ScalingRatio: 1,
+				Value:        123,
+				Name:         "instructions",
+			},
+			{
+				ScalingRatio: 0.3333333,
+				Value:        123456,
+				Name:         "cycles",
+			},
+		},
 	}
 	expectedV2Stats := ContainerStats{
 		Timestamp: timestamp,
@@ -213,6 +225,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 			InodeUsage:      &v1Stats.Filesystem[0].Inodes,
 		},
 		Accelerators: v1Stats.Accelerators,
+		PerfStats:    v1Stats.PerfStats,
 	}
 
 	v2Stats := ContainerStatsFromV1("test", &v1Spec, []*v1.ContainerStats{&v1Stats})

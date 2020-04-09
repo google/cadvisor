@@ -49,11 +49,18 @@ var sysFsPCIDevicesPath = "/sys/bus/pci/devices/"
 const nvidiaVendorId = "0x10de"
 
 func NewNvidiaManager() stats.Manager {
-	return &nvidiaManager{}
+	manager := &nvidiaManager{}
+	err := manager.setup()
+	if err != nil {
+		klog.Warningf("NVidia GPU metrics will not be available: %s", err)
+		manager.Destroy()
+		return &stats.NoopManager{}
+	}
+	return manager
 }
 
-// Setup initializes NVML if nvidia devices are present on the node.
-func (nm *nvidiaManager) Setup() error {
+// setup initializes NVML if nvidia devices are present on the node.
+func (nm *nvidiaManager) setup() error {
 	if !detectDevices(nvidiaVendorId) {
 		return fmt.Errorf("No NVIDIA devices found.")
 	}
@@ -98,6 +105,9 @@ var initializeNVML = func(nm *nvidiaManager) error {
 	numDevices, err := gonvml.DeviceCount()
 	if err != nil {
 		return fmt.Errorf("GPU metrics would not be available. Failed to get the number of nvidia devices: %v", err)
+	}
+	if numDevices == 0 {
+		return nil
 	}
 	klog.V(1).Infof("NVML initialized. Number of nvidia devices: %v", numDevices)
 	nm.nvidiaDevices = make(map[int]gonvml.Device, numDevices)
@@ -217,7 +227,7 @@ type nvidiaCollector struct {
 	// Exposed for testing
 	devices []gonvml.Device
 
-	stats.NoopSetupDestroy
+	stats.NoopDestroy
 }
 
 func NewNvidiaCollector(devices []gonvml.Device) stats.Collector {

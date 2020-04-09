@@ -134,7 +134,68 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --storage_driver_user="root": database username (default "root")
 ```
 
-For storage driver specific instructions:
+## Perf Events
+
+```
+--perf_events_config="" Path to a JSON file containing configuration of perf events to measure. Empty value disables perf events measuring.
+```
+
+### Perf subsystem introduction
+
+One of the goals of kernel perf subsystem is to instrument CPU performance counters that allow to profile applications.
+Profiling is performed by setting up performance counters that count hardware events (e.g. number of retired
+instructions, number of cache misses). The counters are CPU hardware registers and amount of them is limited.
+
+Other goals of perf subsystem (such as tracing) are beyond the scope of this documentation and you can follow Further
+Reading section below to learn more about them.
+
+Familiarize yourself with following perf-event-related terms:
+* `multiplexing` - 2nd Generation Intel® Xeon® Scalable Processors provides 4 counters per each hyper thread. If number
+of configured events is greater than number of available counters then Linux will multiplex counting and some (or even
+all) of the events will not be accounted for all the time. In such situation information about amount of time that event
+was accounted for and amount of time when event was enabled is provided. Counter value that cAdvisor exposes is scaled
+automatically.
+* `grouping` - in scenario when accounted for events are used to calculate derivative metrics, it is reasonable to
+measure them in transactional manner: all the events in a group must be accounted for in the same period of time. Keep
+in mind that it is impossible to group more events that there are counters available.
+
+### Further reading
+
+* [perf Examples](http://www.brendangregg.com/perf.html) on Brendan Gregg's blog
+* [Kernel Perf Wiki](https://perf.wiki.kernel.org/index.php/Main_Page)
+* `man perf_event_open`
+* [perf subsystem](https://github.com/torvalds/linux/tree/v5.6/kernel/events) in Linux kernel
+
+See example configuration below:
+```json
+{
+  "events": [
+    ["instructions"],
+    ["instructions_retired"]
+  ],
+  "custom_events": [
+    [
+      {
+        "type": 4,
+        "config": [
+          "0x5300c0"
+        ],
+        "name": "instructions_retired"
+      }
+    ]
+  ]
+}
+```
+
+In the example above:
+* `instructions` will be measured as a non-grouped event and is specified using human friendly interface that can be 
+obtained by calling `perf list`. You can use any name that appears in the output of `perf list` command. This is 
+interface that majority of users will rely on.
+* `instructions_retired` will be measured as non-grouped event and is specified using an advanced API that allows
+to specify any perf event available (some of them are not named and can't be specified with plain string). Event name 
+should be a human readable string that will become a metric name.
+
+## Storage driver specific instructions:
 
 * [InfluxDB instructions](storage/influxdb.md).
 * [ElasticSearch instructions](storage/elasticsearch.md).

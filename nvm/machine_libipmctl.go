@@ -114,8 +114,8 @@ func GetInfo() (info.NVMInfo, error) {
 	return nvmInfo, nil
 }
 
-// FinalizeLibimpctl un-initializes libipmctl. See https://github.com/google/cadvisor/issues/2457.
-func FinalizeLibimpctl() {
+// Finalize un-initializes libipmctl. See https://github.com/google/cadvisor/issues/2457.
+func Finalize() {
 	nvmLibMutex.Lock()
 	defer nvmLibMutex.Unlock()
 

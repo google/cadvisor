@@ -164,6 +164,8 @@ type ContainerStats struct {
 	Accelerators []v1.AcceleratorStats `json:"accelerators,omitempty"`
 	// Custom Metrics
 	CustomMetrics map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
+	// Perf events counters
+	PerfStats []v1.PerfStat `json:"perf_stats,omitempty"`
 }
 
 type Percentiles struct {

@@ -91,6 +91,9 @@ type containerData struct {
 
 	// nvidiaCollector updates stats for Nvidia GPUs attached to the container.
 	nvidiaCollector stats.Collector
+
+	// perfCollector updates stats for perf_event cgroup controller.
+	perfCollector stats.Collector
 }
 
 // jitter returns a time.Duration between duration and duration + maxFactor * duration,
@@ -115,6 +118,7 @@ func (c *containerData) Stop() error {
 		return err
 	}
 	close(c.stop)
+	c.perfCollector.Destroy()
 	return nil
 }
 
@@ -387,6 +391,8 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 		collectorManager:         collectorManager,
 		onDemandChan:             make(chan chan struct{}, 100),
 		clock:                    clock,
+		perfCollector:            &stats.NoopCollector{},
+		nvidiaCollector:          &stats.NoopCollector{},
 	}
 	cont.info.ContainerReference = ref
 
@@ -626,6 +632,8 @@ func (c *containerData) updateStats() error {
 		nvidiaStatsErr = c.nvidiaCollector.UpdateStats(stats)
 	}
 
+	perfStatsErr := c.perfCollector.UpdateStats(stats)
+
 	ref, err := c.handler.ContainerReference()
 	if err != nil {
 		// Ignore errors if the container is dead.
@@ -647,7 +655,12 @@ func (c *containerData) updateStats() error {
 		return statsErr
 	}
 	if nvidiaStatsErr != nil {
+		klog.Errorf("error occurred while collecting nvidia stats for container %s: %s", cInfo.Name, err)
 		return nvidiaStatsErr
+	}
+	if perfStatsErr != nil {
+		klog.Errorf("error occurred while collecting perf stats for container %s: %s", cInfo.Name, err)
+		return perfStatsErr
 	}
 	return customStatsErr
 }

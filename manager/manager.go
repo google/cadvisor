@@ -38,6 +38,7 @@ import (
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/machine"
 	"github.com/google/cadvisor/nvm"
+	"github.com/google/cadvisor/perf"
 	"github.com/google/cadvisor/stats"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
@@ -134,8 +135,14 @@ type Manager interface {
 	DebugInfo() map[string][]string
 }
 
+// Housekeeping configuration for the manager
+type HouskeepingConfig = struct {
+	Interval     *time.Duration
+	AllowDynamic *bool
+}
+
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, includedMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, perfEventsFile string) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -177,8 +184,8 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 		cadvisorContainer:                     selfContainer,
 		inHostNamespace:                       inHostNamespace,
 		startupTime:                           time.Now(),
-		maxHousekeepingInterval:               maxHousekeepingInterval,
-		allowDynamicHousekeeping:              allowDynamicHousekeeping,
+		maxHousekeepingInterval:               *houskeepingConfig.Interval,
+		allowDynamicHousekeeping:              *houskeepingConfig.AllowDynamic,
 		includedMetrics:                       includedMetricsSet,
 		containerWatchers:                     []watcher.ContainerWatcher{},
 		eventsChannel:                         eventsChannel,
@@ -193,6 +200,11 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, maxHousekeepingIn
 	}
 	newManager.machineInfo = *machineInfo
 	klog.V(1).Infof("Machine: %+v", newManager.machineInfo)
+
+	newManager.perfManager, err = perf.NewManager(perfEventsFile, machineInfo.NumCores)
+	if err != nil {
+		return nil, err
+	}
 
 	versionInfo, err := getVersionInfo()
 	if err != nil {
@@ -233,6 +245,7 @@ type manager struct {
 	eventsChannel            chan watcher.ContainerEvent
 	collectorHttpClient      *http.Client
 	nvidiaManager            stats.Manager
+	perfManager              stats.Manager
 	// List of raw container cgroup path prefix whitelist.
 	rawContainerCgroupPathPrefixWhiteList []string
 }
@@ -261,14 +274,6 @@ func (self *manager) Start() error {
 	// If there are no factories, don't start any housekeeping and serve the information we do have.
 	if !container.HasFactories() {
 		return nil
-	}
-
-	// Setup collection of nvidia GPU metrics if any of them are attached to the machine.
-	err = self.nvidiaManager.Setup()
-	if err != nil {
-		// We intentionally do nothing here. If Setup() fails then GetCollector()
-		// will return stats.NoopCollector
-		klog.Warningf("NVidia GPU metrics will not be available: %s", err)
 	}
 
 	// Create root and then recover all containers.
@@ -305,6 +310,7 @@ func (self *manager) Start() error {
 
 func (self *manager) Stop() error {
 	defer self.nvidiaManager.Destroy()
+	defer self.destroyPerfCollectors()
 	// Stop and wait on all quit channels.
 	for i, c := range self.quitChannels {
 		// Send the exit signal and wait on the thread to exit (by closing the channel).
@@ -317,8 +323,15 @@ func (self *manager) Stop() error {
 		}
 	}
 	self.quitChannels = make([]chan error, 0, 2)
-	nvm.FinalizeLibimpctl()
+	nvm.Finalize()
+	perf.Finalize()
 	return nil
+}
+
+func (self *manager) destroyPerfCollectors() {
+	for _, container := range self.containers {
+		container.perfCollector.Destroy()
+	}
 }
 
 func (self *manager) updateMachineInfo(quit chan error) {
@@ -933,7 +946,17 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		} else {
 			cont.nvidiaCollector, err = m.nvidiaManager.GetCollector(devicesCgroupPath)
 			if err != nil {
-				klog.V(4).Infof("GPU metrics may be unavailable/incomplete for container %q: %v", cont.info.Name, err)
+				klog.V(4).Infof("GPU metrics may be unavailable/incomplete for container %s: %s", cont.info.Name, err)
+			}
+		}
+
+		perfCgroupPath, err := handler.GetCgroupPath("perf_event")
+		if err != nil {
+			klog.Warningf("Error getting perf_event cgroup path: %q", err)
+		} else {
+			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
+			if err != nil {
+				klog.Infof("perf_event metrics will not be available for container %s: %s", cont.info.Name, err)
 			}
 		}
 	}
