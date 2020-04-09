@@ -53,6 +53,7 @@ func NewNvidiaManager() stats.Manager {
 	err := manager.setup()
 	if err != nil {
 		klog.Warningf("NVidia GPU metrics will not be available: %s", err)
+		manager.Destroy()
 		return &stats.NoopManager{}
 	}
 	return manager

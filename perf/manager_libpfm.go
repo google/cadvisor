@@ -65,6 +65,7 @@ func (m *manager) GetCollector(cgroupPath string) (stats.Collector, error) {
 	collector := newCollector(cgroupPath, m.events, m.numCores)
 	err := collector.setup()
 	if err != nil {
+		collector.Destroy()
 		return &stats.NoopCollector{}, err
 	}
 	return collector, nil
