@@ -24,12 +24,14 @@ import info "github.com/google/cadvisor/info/v1"
 // GetCollector() is supposed to return an object that can update
 // accelerator stats for that container.
 type Manager interface {
-	Setup()
+	Setup() error
 	Destroy()
 	GetCollector(deviceCgroup string) (Collector, error)
 }
 
 // Collector can update ContainerStats by adding more metrics.
 type Collector interface {
+	Setup() error
+	Destroy()
 	UpdateStats(*info.ContainerStats) error
 }
