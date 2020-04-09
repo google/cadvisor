@@ -34,7 +34,6 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
-	"github.com/google/cadvisor/perf"
 	"github.com/google/cadvisor/stats"
 	"github.com/google/cadvisor/summary"
 	"github.com/google/cadvisor/utils/cpuload"
@@ -392,7 +391,8 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 		collectorManager:         collectorManager,
 		onDemandChan:             make(chan chan struct{}, 100),
 		clock:                    clock,
-		perfCollector:            perf.NewCollector("", perf.Events{}, 0),
+		perfCollector:            &stats.NoopCollector{},
+		nvidiaCollector:          &stats.NoopCollector{},
 	}
 	cont.info.ContainerReference = ref
 
