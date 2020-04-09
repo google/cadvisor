@@ -787,8 +787,8 @@ func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
 }
 
 func (m *manager) Exists(containerName string) bool {
-	m.containersLock.Lock()
-	defer m.containersLock.Unlock()
+	m.containersLock.RLock()
+	defer m.containersLock.RUnlock()
 
 	namespacedName := namespacedContainerName{
 		Name: containerName,
