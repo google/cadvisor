@@ -655,11 +655,11 @@ func (c *containerData) updateStats() error {
 		return statsErr
 	}
 	if nvidiaStatsErr != nil {
-		klog.Errorf("error occurred while collecting nvidia stats: %s", err)
+		klog.Errorf("error occurred while collecting nvidia stats for container %s: %s", cInfo.Name, err)
 		return nvidiaStatsErr
 	}
 	if perfStatsErr != nil {
-		klog.Errorf("error occurred while collecting perf stats: %s", err)
+		klog.Errorf("error occurred while collecting perf stats for container %s: %s", cInfo.Name, err)
 		return perfStatsErr
 	}
 	return customStatsErr

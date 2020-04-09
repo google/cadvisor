@@ -946,7 +946,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		} else {
 			cont.nvidiaCollector, err = m.nvidiaManager.GetCollector(devicesCgroupPath)
 			if err != nil {
-				klog.V(4).Infof("GPU metrics may be unavailable/incomplete for container %q: %v", cont.info.Name, err)
+				klog.Infof("GPU metrics may be unavailable/incomplete for container %s: %s", cont.info.Name, err)
 			}
 		}
 
@@ -956,7 +956,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		} else {
 			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
 			if err != nil {
-				klog.V(4).Infof("perf_event metrics will not be available for container %q: %q", cont.info.Name, err)
+				klog.Infof("perf_event metrics will not be available for container %s: %s", cont.info.Name, err)
 			}
 		}
 	}
