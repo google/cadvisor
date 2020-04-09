@@ -273,6 +273,104 @@ func TestGetNodesWithoutMemoryInfo(t *testing.T) {
 	assert.Equal(t, 0, cores)
 }
 
+func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+		"/fakeSysfs/devices/system/node/node1",
+	}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+		"/fakeSysfs/devices/system/node/node1": {
+			"/fakeSysfs/devices/system/node/node0/cpu2",
+			"/fakeSysfs/devices/system/node/node0/cpu3",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu3": "1",
+	}
+	fakeSys.SetCoreThreads(coreThread, nil)
+
+	memTotal := "MemTotal:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages": "1",
+		"/fakeSysfs/devices/system/node/node1/hugepages/hugepages-2048kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, nil)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(nodes))
+	assert.Equal(t, 4, cores)
+
+	nodesJSON, err := json.Marshal(nodes)
+	assert.Nil(t, err)
+	expectedNodes := `
+	[
+      {
+        "node_id": 0,
+        "memory": 33604804608,
+        "hugepages": [
+          {
+            "page_size": 2048,
+            "num_pages": 1
+          }
+        ],
+        "cores": [
+	  {
+            "core_id": 0,
+            "thread_ids": [
+              0,
+              1
+            ],
+            "caches": null
+          }
+        ],
+        "caches": null
+      },
+      {
+        "node_id": 1,
+        "memory": 33604804608,
+        "hugepages": [
+          {
+            "page_size": 2048,
+            "num_pages": 1
+          }
+        ],
+        "cores": [
+          {
+            "core_id": 1,
+            "thread_ids": [
+              2,
+              3
+            ],
+            "caches": null
+          }
+        ],
+        "caches": null
+      }
+    ]`
+	assert.JSONEq(t, expectedNodes, string(nodesJSON))
+}
+
 func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{

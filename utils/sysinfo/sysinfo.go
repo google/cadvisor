@@ -220,9 +220,12 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 		}
 
 		allLogicalCoresCount += len(cpuDirs)
+
+		// On some Linux platforms(such as Arm64 guest kernel), cache info may not exist.
+		// So, we should ignore error here.
 		err = addCacheInfo(sysFs, &node)
 		if err != nil {
-			return nil, 0, err
+			klog.Warningf("Found node without cache information, nodeDir: %s", nodeDir)
 		}
 
 		node.Memory, err = getNodeMemInfo(sysFs, nodeDir)
@@ -269,9 +272,11 @@ func getCPUTopology(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 		}
 		node.Cores = cores
 
+		// On some Linux platforms(such as Arm64 guest kernel), cache info may not exist.
+		// So, we should ignore error here.
 		err = addCacheInfo(sysFs, &node)
 		if err != nil {
-			return nil, 0, err
+			klog.Warningf("Found cpu without cache information, cpuPath: %s", cpus)
 		}
 		nodes = append(nodes, node)
 	}
