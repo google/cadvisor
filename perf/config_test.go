@@ -38,7 +38,4 @@ func TestConfigParsing(t *testing.T) {
 	assert.Equal(t, Config{5439680}, events.CustomEvents[0].Config)
 	assert.Equal(t, uint32(4), events.CustomEvents[0].Type)
 	assert.Equal(t, Event("instructions_retired"), events.CustomEvents[0].Name)
-
-	assert.Len(t, events.eventToCustomEvent, 1)
-	assert.Same(t, &events.CustomEvents[0], events.eventToCustomEvent[Event("instructions_retired")])
 }

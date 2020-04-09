@@ -88,3 +88,17 @@ func TestCreatePerfEventAttr(t *testing.T) {
 	assert.Equal(t, uint64(7), attributes.Read_format)
 	assert.Equal(t, uint64(1048578), attributes.Bits)
 }
+
+func TestNewCollector(t *testing.T) {
+	perfCollector := newCollector("cgroup", Events{
+		Events: [][]Event{{"event_1"}, {"event_2"}},
+		CustomEvents: []CustomEvent{{
+			Type:   0,
+			Config: []uint64{1, 2, 3},
+			Name:   "event_2",
+		}},
+	}, 1)
+	assert.Len(t, perfCollector.eventToCustomEvent, 1)
+	assert.Nil(t, perfCollector.eventToCustomEvent[Event("event_1")])
+	assert.Same(t, &perfCollector.events.CustomEvents[0], perfCollector.eventToCustomEvent[Event("event_2")])
+}

@@ -33,8 +33,6 @@ type Events struct {
 	// specify some events using their names and in such case you have
 	// to provide lower level configuration.
 	CustomEvents []CustomEvent `json:"custom_events"`
-
-	eventToCustomEvent map[Event]*CustomEvent
 }
 
 type Event string
@@ -82,13 +80,5 @@ func parseConfig(file *os.File) (events Events, err error) {
 		err = fmt.Errorf("unable to load perf events cofiguration from %q: %q", file.Name(), err)
 		return
 	}
-	mapEventsToCustomEvents(&events)
 	return
-}
-
-func mapEventsToCustomEvents(events *Events) {
-	events.eventToCustomEvent = map[Event]*CustomEvent{}
-	for key, event := range events.CustomEvents {
-		events.eventToCustomEvent[event.Name] = &events.CustomEvents[key]
-	}
 }

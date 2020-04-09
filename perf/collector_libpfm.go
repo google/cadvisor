@@ -37,11 +37,12 @@ import (
 )
 
 type collector struct {
-	cgroupPath   string
-	events       Events
-	cpuFiles     map[string]map[int]readerCloser
-	cpuFilesLock sync.Mutex
-	numCores     int
+	cgroupPath         string
+	events             Events
+	cpuFiles           map[string]map[int]readerCloser
+	cpuFilesLock       sync.Mutex
+	numCores           int
+	eventToCustomEvent map[Event]*CustomEvent
 }
 
 var (
@@ -61,7 +62,9 @@ func init() {
 }
 
 func newCollector(cgroupPath string, events Events, numCores int) *collector {
-	return &collector{cgroupPath: cgroupPath, events: events, cpuFiles: map[string]map[int]readerCloser{}, numCores: numCores}
+	collector := &collector{cgroupPath: cgroupPath, events: events, cpuFiles: map[string]map[int]readerCloser{}, numCores: numCores}
+	mapEventsToCustomEvents(collector)
+	return collector
 }
 
 func (c *collector) UpdateStats(stats *info.ContainerStats) error {
@@ -113,7 +116,7 @@ func (c *collector) setup() error {
 	defer c.cpuFilesLock.Unlock()
 	cgroupFd := int(cgroup.Fd())
 	for _, group := range c.events.Events {
-		customEvent, ok := c.events.eventToCustomEvent[group[0]]
+		customEvent, ok := c.eventToCustomEvent[group[0]]
 		var err error
 		if ok {
 			err = c.setupRawNonGrouped(customEvent, cgroupFd)
@@ -248,4 +251,11 @@ func Finalize() {
 
 	C.pfm_terminate()
 	isLibpfmInitialized = false
+}
+
+func mapEventsToCustomEvents(collector *collector) {
+	collector.eventToCustomEvent = map[Event]*CustomEvent{}
+	for key, event := range collector.events.CustomEvents {
+		collector.eventToCustomEvent[event.Name] = &collector.events.CustomEvents[key]
+	}
 }
