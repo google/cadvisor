@@ -169,7 +169,7 @@ func (c *collector) setupNonGrouped(name string, cgroup int) error {
 		return fmt.Errorf("libpfm4 is not initialized, cannot proceed with setting perf events up")
 	}
 
-	klog.V(4).Infof("Setting up non-grouped perf event %s", name)
+	klog.V(5).Infof("Setting up non-grouped perf event %s", name)
 
 	perfEventAttrMemory := C.malloc(C.ulong(unsafe.Sizeof(unix.PerfEventAttr{})))
 	defer C.free(perfEventAttrMemory)
