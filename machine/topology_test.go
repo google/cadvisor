@@ -252,32 +252,13 @@ func TestTopologyWithoutNodes(t *testing.T) {
 	assert.Equal(t, 2, len(topology))
 	assert.Equal(t, 4, numCores)
 
-	topologyJSON, err := json.Marshal(topology)
+	topologyJSON1, err := json.Marshal(topology[0])
+	assert.Nil(t, err)
+	topologyJSON2, err := json.Marshal(topology[1])
 	assert.Nil(t, err)
 
-	expectedTopology := `[
-		{
-			"node_id":0,
-			"memory":0,
-			"hugepages":null,
-			"cores":[
-				{
-					"core_id":0,
-					"thread_ids":[
-					0,
-					2
-					],
-					"caches":[
-					{
-						"size":32768,
-						"type":"unified",
-						"level":0
-					}
-					]
-				}
-			],
-			"caches":null
-		},
+	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"size":32768,"type":"unified","level":0}]}],"caches":null}`
+	expectedTopology2 := `
 		{
 			"node_id":1,
 			"memory":0,
@@ -299,9 +280,16 @@ func TestTopologyWithoutNodes(t *testing.T) {
 				}
 			],
 			"caches":null
-		}
-	]`
-	assert.JSONEq(t, expectedTopology, string(topologyJSON))
+		}`
+
+	json1 := string(topologyJSON1)
+	json2 := string(topologyJSON2)
+	if expectedTopology1 == json1 {
+		assert.JSONEq(t, expectedTopology2, json2)
+	} else {
+		assert.JSONEq(t, expectedTopology2, json1)
+		assert.JSONEq(t, expectedTopology1, json2)
+	}
 }
 
 func TestTopologyWithNodesWithoutCPU(t *testing.T) {
