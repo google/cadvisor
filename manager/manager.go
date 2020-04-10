@@ -793,7 +793,27 @@ func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
 	m.machineMu.RLock()
 	defer m.machineMu.RUnlock()
 	// Copy and return the MachineInfo.
-	return &m.machineInfo, nil
+	copy := info.MachineInfo{
+		NumCores:         m.machineInfo.NumCores,
+		NumPhysicalCores: m.machineInfo.NumPhysicalCores,
+		NumSockets:       m.machineInfo.NumSockets,
+		CpuFrequency:     m.machineInfo.CpuFrequency,
+		MemoryCapacity:   m.machineInfo.MemoryCapacity,
+		MemoryByType:     m.machineInfo.MemoryByType,
+		NVMInfo:          m.machineInfo.NVMInfo,
+		HugePages:        m.machineInfo.HugePages,
+		MachineID:        m.machineInfo.MachineID,
+		SystemUUID:       m.machineInfo.SystemUUID,
+		BootID:           m.machineInfo.BootID,
+		Filesystems:      m.machineInfo.Filesystems,
+		DiskMap:          m.machineInfo.DiskMap,
+		NetworkDevices:   m.machineInfo.NetworkDevices,
+		Topology:         m.machineInfo.Topology,
+		CloudProvider:    m.machineInfo.CloudProvider,
+		InstanceType:     m.machineInfo.InstanceType,
+		InstanceID:       m.machineInfo.InstanceID,
+	}
+	return &copy, nil
 }
 
 func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
