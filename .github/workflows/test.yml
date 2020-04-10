@@ -41,3 +41,9 @@ jobs:
       - name: Run integration tests
         run: |
           cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor && make docker-test-integration
+      - name: Upload cAdvisor log file
+        uses: actions/upload-artifact@v1
+        if: failure()
+        with:
+          name: cadvisor.log
+          path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log

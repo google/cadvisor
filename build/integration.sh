@@ -26,7 +26,7 @@ printf "" # Refresh sudo credentials if necessary.
 function start {
   set +e  # We want to handle errors if cAdvisor crashes.
   echo ">> starting cAdvisor locally"
-  GORACE="halt_on_error=1" ./cadvisor --docker_env_metadata_whitelist=TEST_VAR --v=4 --logtostderr &> "$log_file"
+  GORACE="halt_on_error=1" ./cadvisor --docker_env_metadata_whitelist=TEST_VAR --v=6 --logtostderr $CADVISOR_ARGS &>> "$log_file"
   if [ $? != 0 ]; then
     echo "!! cAdvisor exited unexpectedly with Exit $?"
     kill $TEST_PID # cAdvisor crashed: abort testing.
@@ -56,5 +56,5 @@ while [ "$(curl -Gs http://localhost:8080/healthz)" != "ok" ]; do
 done
 
 echo ">> running integration tests against local cAdvisor"
-./api.test --vmodule=*=2
-./healthz.test --vmodule=*=2
+./api.test --vmodule=*=2 -test.v
+./healthz.test --vmodule=*=2 -test.v
