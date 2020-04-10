@@ -30,7 +30,7 @@ import (
 	"github.com/google/cadvisor/utils/container"
 
 	kafka "github.com/Shopify/sarama"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func init() {

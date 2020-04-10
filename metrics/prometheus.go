@@ -22,7 +22,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/prometheus/client_golang/prometheus"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // asFloat64 converts a uint64 into a float64.

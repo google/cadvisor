@@ -20,7 +20,7 @@ import (
 	"github.com/google/cadvisor/client"
 	info "github.com/google/cadvisor/info/v1"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func staticClientExample() {

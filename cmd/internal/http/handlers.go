@@ -30,7 +30,7 @@ import (
 	"github.com/google/cadvisor/validate"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAuthFile, httpAuthRealm, httpDigestFile, httpDigestRealm string, urlBasePrefix string) error {
