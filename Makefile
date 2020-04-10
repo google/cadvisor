@@ -37,6 +37,9 @@ test-integration:
 	go test -c github.com/google/cadvisor/integration/tests/healthz
 	@./build/integration.sh
 
+docker-test-integration:
+	@./build/integration-in-docker.sh
+
 test-runner:
 	@$(GO) build github.com/google/cadvisor/integration/runner
 
@@ -77,5 +80,8 @@ presubmit: vet
 	@./build/check_gofmt.sh
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
+
+clean:
+	@rm -f *.test cadvisor
 
 .PHONY: all build docker format release test test-integration vet presubmit tidy

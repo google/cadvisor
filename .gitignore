@@ -2,6 +2,9 @@ cadvisor
 /release
 .vscode
 
+# Log files
+*.log
+
 # Go test binaries
 *.test
 

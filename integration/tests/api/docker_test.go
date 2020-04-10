@@ -282,15 +282,26 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	require.NoError(t, err)
 	sanityCheck(containerId, containerInfo, t)
 
-	// Checks for NetworkStats.
 	stat := containerInfo.Stats[0]
+	ifaceStats := stat.Network.InterfaceStats
+	// macOS we have more than one interface, since traffic is
+	// only on eth0 we need to pick that one
+	if len(stat.Network.Interfaces) > 0 {
+		for _, iface := range stat.Network.Interfaces {
+			if iface.Name == "eth0" {
+				ifaceStats = iface
+			}
+		}
+	}
+
+	// Checks for NetworkStats.
 	assert := assert.New(t)
-	assert.NotEqual(0, stat.Network.TxBytes, "Network tx bytes should not be zero")
-	assert.NotEqual(0, stat.Network.TxPackets, "Network tx packets should not be zero")
-	assert.NotEqual(0, stat.Network.RxBytes, "Network rx bytes should not be zero")
-	assert.NotEqual(0, stat.Network.RxPackets, "Network rx packets should not be zero")
-	assert.NotEqual(stat.Network.RxBytes, stat.Network.TxBytes, "Network tx and rx bytes should not be equal")
-	assert.NotEqual(stat.Network.RxPackets, stat.Network.TxPackets, "Network tx and rx packets should not be equal")
+	assert.NotEqual(0, ifaceStats.TxBytes, "Network tx bytes should not be zero")
+	assert.NotEqual(0, ifaceStats.TxPackets, "Network tx packets should not be zero")
+	assert.NotEqual(0, ifaceStats.RxBytes, "Network rx bytes should not be zero")
+	assert.NotEqual(0, ifaceStats.RxPackets, "Network rx packets should not be zero")
+	assert.NotEqual(ifaceStats.RxBytes, ifaceStats.TxBytes, "Network tx and rx bytes should not be equal")
+	assert.NotEqual(ifaceStats.RxPackets, ifaceStats.TxPackets, "Network tx and rx packets should not be equal")
 }
 
 func TestDockerFilesystemStats(t *testing.T) {
