@@ -172,10 +172,17 @@ func (c *containerData) GetInfo(shouldUpdateSubcontainers bool) (*containerInfo,
 		}
 		c.infoLastUpdatedTime = c.clock.Now()
 	}
-	// Make a copy of the info for the user.
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	return &c.info, nil
+	cInfo := containerInfo{
+		Subcontainers: c.info.Subcontainers,
+		Spec:          c.info.Spec,
+	}
+	cInfo.Id = c.info.Id
+	cInfo.Name = c.info.Name
+	cInfo.Aliases = c.info.Aliases
+	cInfo.Namespace = c.info.Namespace
+	return &cInfo, nil
 }
 
 func (c *containerData) DerivedStats() (v2.DerivedStats, error) {
