@@ -61,7 +61,7 @@ function run_tests() {
 CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
 }
 
-GO_FLAGS=${GO_FLAGS:-"-race"}
+GO_FLAGS=${GO_FLAGS:-"-tags=netgo -race"}
 PACKAGES=${PACKAGES:-"sudo"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
 CADVISOR_ARGS=${CADVISOR_ARGS:-}

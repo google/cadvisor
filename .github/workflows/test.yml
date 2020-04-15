@@ -6,6 +6,7 @@ jobs:
       matrix:
         go-versions: [1.13.x, 1.14.x]
         platform: [ubuntu-latest]
+        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
     steps:
