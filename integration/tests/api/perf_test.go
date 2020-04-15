@@ -39,7 +39,7 @@ func TestPerfEvents(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Len(t, info.Stats, 1)
-	assert.Greater(t, len(info.Stats[0].PerfStats), 0, "Length of info.Stats[0].PerfStats is not greater tahn zero")
+	assert.Greater(t, len(info.Stats[0].PerfStats), 0, "Length of info.Stats[0].PerfStats is not greater than zero")
 	for k, stat := range info.Stats[0].PerfStats {
 		//Everything beyond name is non-deterministic unfortunately.
 		assert.Contains(t, []string{"context-switches", "cpu-migrations-custom"}, stat.Name, "Wrong metric name for key %d: %#v", k, stat)
