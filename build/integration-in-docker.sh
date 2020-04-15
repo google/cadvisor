@@ -28,16 +28,7 @@ function delete() {
 }
 trap delete EXIT INT
 
-function reset() {
-  delete
-  TMPDIR=$(mktemp -d)
-}
-
 function run_tests() {
-  GO_FLAGS=${1:-}
-  PACKAGES=${2:-"sudo"}
-  BUILD_PACKAGES=${3:-}
-  CADVISOR_ARGS=${4:-}
   BUILD_CMD="env GOOS=linux GO_FLAGS='$GO_FLAGS' ./build/build.sh amd64 && \
     env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/api && \
     env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/healthz"
@@ -70,6 +61,8 @@ function run_tests() {
 CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
 }
 
-run_tests "-race" "sudo"
-reset
-run_tests "-tags=libpfm,netgo -race" "sudo libpfm4" "libpfm4 libpfm4-dev" "-perf_events_config=perf/testing/perf-non-hardware.json"
+GO_FLAGS=${GO_FLAGS:-"-race"}
+PACKAGES=${PACKAGES:-"sudo"}
+BUILD_PACKAGES=${BUILD_PACKAGES:-}
+CADVISOR_ARGS=${CADVISOR_ARGS:-}
+run_tests "$GO_FLAGS" "$PACKAGES" "$BUILD_PACKAGES" "$CADVISOR_ARGS"
