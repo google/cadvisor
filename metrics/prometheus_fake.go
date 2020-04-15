@@ -411,6 +411,32 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							},
 						},
 					},
+					PerfStats: []info.PerfStat{
+						{
+							ScalingRatio: 1.0,
+							Value:        123,
+							Name:         "instructions",
+							Cpu:          0,
+						},
+						{
+							ScalingRatio: 0.5,
+							Value:        456,
+							Name:         "instructions",
+							Cpu:          1,
+						},
+						{
+							ScalingRatio: 0.66666666666,
+							Value:        321,
+							Name:         "instructions_retired",
+							Cpu:          0,
+						},
+						{
+							ScalingRatio: 0.33333333333,
+							Value:        789,
+							Name:         "instructions_retired",
+							Cpu:          1,
+						},
+					},
 				},
 			},
 		},

@@ -17,6 +17,7 @@ package metrics
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/google/cadvisor/container"
@@ -1714,6 +1715,16 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
 					ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), cvalues...)
 				}
+			}
+		}
+		if c.includedMetrics.Has(container.PerfMetrics) {
+			for _, metric := range stats.PerfStats {
+				labelNames := append(labels, "cpu")
+				labelValues := append(values, strconv.Itoa(metric.Cpu))
+				desc := prometheus.NewDesc(metric.Name, "Perf event metric", labelNames, nil);
+				scalingDesc := prometheus.NewDesc(fmt.Sprintf("%s_scaling_ratio", metric.Name), "Perf event metric scaling ratio", labelNames, nil);
+				ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, float64(metric.Value), labelValues...)
+				ch <- prometheus.MustNewConstMetric(scalingDesc, prometheus.GaugeValue, metric.ScalingRatio, labelValues...)
 			}
 		}
 	}
