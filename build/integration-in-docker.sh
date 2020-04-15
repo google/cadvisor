@@ -19,35 +19,50 @@ set -e
 ROOT="$(cd "$(dirname "${BASH_SOURCE}")/.." && pwd -P)"
 TMPDIR=$(mktemp -d)
 function delete() {
-    echo "Deleting ${TMPDIR}..."
-    if [[ $EUID -ne 0 ]]; then
-      sudo rm -rf "${TMPDIR}"
-    else
-      rm -rf "${TMPDIR}"
-    fi
+  echo "Deleting ${TMPDIR}..."
+  if [[ $EUID -ne 0 ]]; then
+    sudo rm -rf "${TMPDIR}"
+  else
+    rm -rf "${TMPDIR}"
+  fi
 }
 trap delete EXIT INT
 
-docker run --rm \
-  -w /go/src/github.com/google/cadvisor \
-  -v ${PWD}:/go/src/github.com/google/cadvisor \
-  golang:1.13 \
-  bash -c "env GOOS=linux GO_FLAGS='-race' ./build/build.sh amd64 && \
-    env GOOS=linux go test -c github.com/google/cadvisor/integration/tests/api &&  \
-    env GOOS=linux go test -c github.com/google/cadvisor/integration/tests/healthz"
+function run_tests() {
+  BUILD_CMD="env GOOS=linux GO_FLAGS='$GO_FLAGS' ./build/build.sh amd64 && \
+    env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/api && \
+    env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/healthz"
 
-EXTRA_DOCKER_OPTS="-e DOCKER_IN_DOCKER_ENABLED=true"
-if [[ "${OSTYPE}" == "linux"* ]]; then
-  EXTRA_DOCKER_OPTS+=" -v ${TMPDIR}/docker-graph:/docker-graph"
-fi
+  if [ "$BUILD_PACKAGES" != "" ]; then
+    BUILD_CMD="apt-get update && apt-get install $BUILD_PACKAGES && \
+    $BUILD_CMD"
+  fi
+  docker run --rm \
+    -w /go/src/github.com/google/cadvisor \
+    -v ${PWD}:/go/src/github.com/google/cadvisor \
+    golang:1.13 \
+    bash -c "$BUILD_CMD"
 
-mkdir ${TMPDIR}/docker-graph
-docker run --rm \
-  -w /go/src/github.com/google/cadvisor \
-  -v ${ROOT}:/go/src/github.com/google/cadvisor \
-  ${EXTRA_DOCKER_OPTS} \
-  --privileged \
-  --entrypoint="" \
-  gcr.io/k8s-testimages/bootstrap \
-  bash -c "apt update && apt install sudo && \
-/usr/local/bin/runner.sh build/integration.sh"
+  EXTRA_DOCKER_OPTS="-e DOCKER_IN_DOCKER_ENABLED=true"
+  if [[ "${OSTYPE}" == "linux"* ]]; then
+    EXTRA_DOCKER_OPTS+=" -v ${TMPDIR}/docker-graph:/docker-graph"
+  fi
+
+  mkdir ${TMPDIR}/docker-graph
+  docker run --rm \
+    -w /go/src/github.com/google/cadvisor \
+    -v ${ROOT}:/go/src/github.com/google/cadvisor \
+    ${EXTRA_DOCKER_OPTS} \
+    --privileged \
+    --cap-add="sys_admin" \
+    --entrypoint="" \
+    gcr.io/k8s-testimages/bootstrap \
+    bash -c "apt update && apt install $PACKAGES && \
+CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
+}
+
+GO_FLAGS=${GO_FLAGS:-"-tags=netgo -race"}
+PACKAGES=${PACKAGES:-"sudo"}
+BUILD_PACKAGES=${BUILD_PACKAGES:-}
+CADVISOR_ARGS=${CADVISOR_ARGS:-}
+run_tests "$GO_FLAGS" "$PACKAGES" "$BUILD_PACKAGES" "$CADVISOR_ARGS"

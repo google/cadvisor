@@ -1,4 +1,26 @@
-# Integration Testing cAdvisor
+# Integration Testing cAdvisor 
+
+## Docker-based tests
+
+The cAdvisor integration tests are run per-pr using [Github Actions](https://help.github.com/en/actions). Workflow configuration can be found at [.github/workflows/test.yml](.github/workflows/test.yml). Tests are executed in Docker containers run on MS Azure virtual machines.
+
+To run them locally Docker must be installed on your machine. Following command allows you to execute default suite of integration tests:
+
+```
+make docker-test-integration
+```
+
+Build scripts take care of building cAdvisor and integration tests, and executing them against running cAdvisor process.
+
+In order to run non-default tests suites (e.g. such that rely on third-party C libraries) you must source one of the files available at [build/config](build/config), e.g.:
+
+```
+source build/config/libpfm4.sh && make docker-test-integration
+```
+
+All the necessary packages will be installed, build flags will be applied and additional parameters will be passed to cAdvisor automatically. Configuration is performed using shell environment variables.
+
+## VM-base tests (legacy)
 
 The cAdvisor integration tests are run per-pr using the [kubernetes node-e2e testing framework](https://github.com/kubernetes/community/blob/master/contributors/devel/e2e-node-tests.md) on GCE instances.  To make use of this framework, complete the setup of GCP described in the node-e2e testing framework, clone `k8s.io/kubernetes`, and from that repository run:
 ```
