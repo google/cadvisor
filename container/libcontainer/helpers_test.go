@@ -16,6 +16,7 @@ package libcontainer
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -23,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/stretchr/testify/assert"
 )
 
 var defaultCgroupSubsystems = []string{
@@ -128,5 +130,18 @@ func assertCgroupSubsystemsEqual(t *testing.T, expected, actual CgroupSubsystems
 	})
 	if !reflect.DeepEqual(expected.Mounts, actual.Mounts) {
 		t.Fatalf("%s Expected %v == %v", message, expected.Mounts, actual.Mounts)
+	}
+}
+
+func getFileContent(t *testing.T, filePath string) string {
+	fileContent, err := ioutil.ReadFile(filePath)
+	assert.Nil(t, err)
+	return string(fileContent)
+}
+
+func clearTestData(t *testing.T, clearRefsPaths []string) {
+	for _, clearRefsPath := range clearRefsPaths {
+		err := ioutil.WriteFile(clearRefsPath, []byte("0\n"), 0644)
+		assert.Nil(t, err)
 	}
 }

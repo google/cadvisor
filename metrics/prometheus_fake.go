@@ -437,6 +437,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							Cpu:          1,
 						},
 					},
+					ReferencedMemory: 1234,
 				},
 			},
 		},

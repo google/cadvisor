@@ -208,6 +208,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 				Name:         "cycles",
 			},
 		},
+		ReferencedMemory: uint64(1234),
 	}
 	expectedV2Stats := ContainerStats{
 		Timestamp: timestamp,
@@ -224,8 +225,9 @@ func TestContainerStatsFromV1(t *testing.T) {
 			BaseUsageBytes:  &v1Stats.Filesystem[0].BaseUsage,
 			InodeUsage:      &v1Stats.Filesystem[0].Inodes,
 		},
-		Accelerators: v1Stats.Accelerators,
-		PerfStats:    v1Stats.PerfStats,
+		Accelerators:     v1Stats.Accelerators,
+		PerfStats:        v1Stats.PerfStats,
+		ReferencedMemory: v1Stats.ReferencedMemory,
 	}
 
 	v2Stats := ContainerStatsFromV1("test", &v1Spec, []*v1.ContainerStats{&v1Stats})
