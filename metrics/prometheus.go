@@ -1647,7 +1647,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		containerLabels := c.containerLabelsFunc(cont)
 		for l := range rawLabels {
 			duplicate := false
-			sl := sanitizeLabelName(l)
+			sl := sanitizeName(l)
 			for _, x := range labels {
 				if sl == x {
 					duplicate = true
@@ -1709,7 +1709,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 					copy(clabels, labels)
 					copy(cvalues, values)
 					for label, value := range metric.Labels {
-						clabels = append(clabels, sanitizeLabelName("app_"+label))
+						clabels = append(clabels, sanitizeName("app_"+label))
 						cvalues = append(cvalues, value)
 					}
 					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
@@ -1717,12 +1717,20 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 				}
 			}
 		}
+		perfLabelNames := append(labels, "cpu")
 		if c.includedMetrics.Has(container.PerfMetrics) {
 			for _, metric := range stats.PerfStats {
-				labelNames := append(labels, "cpu")
 				labelValues := append(values, strconv.Itoa(metric.Cpu))
-				desc := prometheus.NewDesc(metric.Name, "Perf event metric", labelNames, nil)
-				scalingDesc := prometheus.NewDesc(fmt.Sprintf("%s_scaling_ratio", metric.Name), "Perf event metric scaling ratio", labelNames, nil)
+				desc := prometheus.NewDesc(
+					fmt.Sprintf("container_perf_%s", sanitizeName(metric.Name)),
+					"Perf event metric",
+					perfLabelNames,
+					nil)
+				scalingDesc := prometheus.NewDesc(
+					fmt.Sprintf("container_perf_%s_scaling_ratio", sanitizeName(metric.Name)),
+					"Perf event metric scaling ratio",
+					perfLabelNames,
+					nil)
 				ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, float64(metric.Value), labelValues...)
 				ch <- prometheus.MustNewConstMetric(scalingDesc, prometheus.GaugeValue, metric.ScalingRatio, labelValues...)
 			}
@@ -1752,10 +1760,10 @@ func specMemoryValue(v uint64) float64 {
 	return float64(v)
 }
 
-var invalidLabelCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
+var invalidNameCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 
-// sanitizeLabelName replaces anything that doesn't match
+// sanitizeName replaces anything that doesn't match
 // client_label.LabelNameRE with an underscore.
-func sanitizeLabelName(name string) string {
-	return invalidLabelCharRE.ReplaceAllString(name, "_")
+func sanitizeName(name string) string {
+	return invalidNameCharRE.ReplaceAllString(name, "_")
 }

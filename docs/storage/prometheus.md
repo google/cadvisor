@@ -78,6 +78,8 @@ Metric name | Type | Description | Unit (where applicable)
 `container_spec_memory_reservation_limit_bytes` | Gauge | Memory reservation limit for the container | bytes
 `container_start_time_seconds` | Gauge | Start time of the container since unix epoch | seconds
 `container_tasks_state` | Gauge | Number of tasks in given state (`sleeping`, `running`, `stopped`, `uninterruptible`, or `ioawaiting`) |
+`container_perf_*` | Counter | Scaled counter of perf event. See [perf event configuration](docs/runtime_options.md#perf-events) |
+`container_perf_*_scaling_ratio` | Gauge | Scaling ratio for perf event counter. See [perf event configuration](docs/runtime_options.md#perf-events) |
 
 ## Prometheus hardware metrics
 
