@@ -13,14 +13,14 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v1
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version: ${{ matrix.go-versions }}
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run presubmit checks
       run: GOFLAGS="$GO_FLAGS" make presubmit
     - name: Run tests
       env:
-        GOLANG_VERSION: ${{ matrix.go-version }}
+        GOLANG_VERSION: ${{ matrix.go-versions }}
       run: source ${{ matrix.environment-variables }} && make docker-test
   test-integration:
     strategy:
