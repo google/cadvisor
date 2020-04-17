@@ -14,18 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
-
+#set -ex
+set -x
 function run_tests() {
+  BUILD_CMD="go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v 'vendor\|integration' | tr '\n' ' ') && \
+    cd cmd && go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v vendor | tr '\n' ' ')"
+  if [ "$BUILD_PACKAGES" != "" ]; then
+    BUILD_CMD="apt-get update && apt-get install $BUILD_PACKAGES && \
+    $BUILD_CMD"
+  fi
+
   docker run --rm \
     -w /go/src/github.com/google/cadvisor \
     -v ${PWD}:/go/src/github.com/google/cadvisor \
     golang:${GOLANG_VERSION} \
-    bash -c "go test -simple -race $GO_FLAGS $pkgs && \
-    cd cmd && go test -simple -race $GO_FLAGS $cmd_pkgs"
+    bash -c "$BUILD_CMD"
 }
 
 GO_FLAGS=${GO_FLAGS:-"-tags=netgo -race"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
-GOLANG_VERSION=${GOLAN_VERSION:-"1.14"}
+GOLANG_VERSION=${GOLANG_VERSION:-"1.14"}
 run_tests

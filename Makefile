@@ -32,6 +32,8 @@ test:
 	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
 
 docker-test:
+	@echo ">> runinng tests in docker"
+	@./build/unit-in-docker.sh
 
 
 test-integration:
