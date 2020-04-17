@@ -20,7 +20,7 @@ package perf
 import (
 	"github.com/google/cadvisor/stats"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 func NewManager(configFile string, numCores int) (stats.Manager, error) {

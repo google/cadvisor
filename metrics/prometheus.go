@@ -17,6 +17,7 @@ package metrics
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/google/cadvisor/container"
@@ -1541,7 +1542,44 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 		}...)
-
+		if c.includedMetrics.Has(container.PerfMetrics) {
+			c.containerMetrics = append(c.containerMetrics, []containerMetric{
+				{
+					name:        "container_perf_metric",
+					help:        "Perf event metric",
+					valueType:   prometheus.CounterValue,
+					extraLabels: []string{"cpu", "event"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, len(s.PerfStats))
+						for _, metric := range s.PerfStats {
+							values = append(values, metricValue{
+								value:     float64(metric.Value),
+								labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
+								timestamp: s.Timestamp,
+							})
+						}
+						return values
+					},
+				},
+				{
+					name:        "container_perf_metric_scaling_ratio",
+					help:        "Perf event metric scaling ratio",
+					valueType:   prometheus.GaugeValue,
+					extraLabels: []string{"cpu", "event"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, len(s.PerfStats))
+						for _, metric := range s.PerfStats {
+							values = append(values, metricValue{
+								value:     metric.ScalingRatio,
+								labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
+								timestamp: s.Timestamp,
+							})
+						}
+						return values
+					},
+				},
+			}...)
+		}
 	}
 
 	return c
@@ -1717,7 +1755,6 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			}
 		}
 	}
-
 }
 
 func (c *PrometheusCollector) collectVersionInfo(ch chan<- prometheus.Metric) {
@@ -1741,10 +1778,10 @@ func specMemoryValue(v uint64) float64 {
 	return float64(v)
 }
 
-var invalidLabelCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
+var invalidNameCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 
 // sanitizeLabelName replaces anything that doesn't match
 // client_label.LabelNameRE with an underscore.
 func sanitizeLabelName(name string) string {
-	return invalidLabelCharRE.ReplaceAllString(name, "_")
+	return invalidNameCharRE.ReplaceAllString(name, "_")
 }
