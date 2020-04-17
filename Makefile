@@ -31,6 +31,9 @@ test:
 	@$(GO) test -short -race $(pkgs)
 	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
 
+docker-test:
+
+
 test-integration:
 	GO_FLAGS="-race" ./build/build.sh
 	go test -c github.com/google/cadvisor/integration/tests/api
