@@ -20,7 +20,7 @@ jobs:
       run: GOFLAGS="$GO_FLAGS" make presubmit
     - name: Run tests
       env:
-        GO_VERSION: ${{ matrix.go-version }}
+        GOLANG_VERSION: ${{ matrix.go-version }}
       run: source ${{ matrix.environment-variables }} && make docker-test
   test-integration:
     strategy:
@@ -47,4 +47,3 @@ jobs:
         with:
           name: cadvisor.log
           path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log
-
