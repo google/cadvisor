@@ -33,7 +33,7 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	"golang.org/x/sys/unix"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 type collector struct {

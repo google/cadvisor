@@ -34,5 +34,5 @@ require (
 	google.golang.org/api v0.0.0-20150730141719-0c2979aeaa5b
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/olivere/elastic.v2 v2.0.12
-	k8s.io/klog v0.3.0
+	k8s.io/klog/v2 v2.0.0
 )
