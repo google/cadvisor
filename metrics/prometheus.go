@@ -1542,7 +1542,44 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 		}...)
-
+		if c.includedMetrics.Has(container.PerfMetrics) {
+			c.containerMetrics = append(c.containerMetrics, []containerMetric{
+				{
+					name:        "container_perf_metric",
+					help:        "Perf event metric",
+					valueType:   prometheus.CounterValue,
+					extraLabels: []string{"cpu", "event"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, len(s.PerfStats))
+						for _, metric := range s.PerfStats {
+							values = append(values, metricValue{
+								value:     float64(metric.Value),
+								labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
+								timestamp: s.Timestamp,
+							})
+						}
+						return values
+					},
+				},
+				{
+					name:        "container_perf_metric_scaling_ratio",
+					help:        "Perf event metric scaling ratio",
+					valueType:   prometheus.GaugeValue,
+					extraLabels: []string{"cpu", "event"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, len(s.PerfStats))
+						for _, metric := range s.PerfStats {
+							values = append(values, metricValue{
+								value:     metric.ScalingRatio,
+								labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
+								timestamp: s.Timestamp,
+							})
+						}
+						return values
+					},
+				},
+			}...)
+		}
 	}
 
 	return c
@@ -1717,26 +1754,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 				}
 			}
 		}
-		perfLabelNames := append(labels, "cpu")
-		if c.includedMetrics.Has(container.PerfMetrics) {
-			for _, metric := range stats.PerfStats {
-				labelValues := append(values, strconv.Itoa(metric.Cpu))
-				desc := prometheus.NewDesc(
-					fmt.Sprintf("container_perf_%s", sanitizeName(metric.Name)),
-					"Perf event metric",
-					perfLabelNames,
-					nil)
-				scalingDesc := prometheus.NewDesc(
-					fmt.Sprintf("container_perf_%s_scaling_ratio", sanitizeName(metric.Name)),
-					"Perf event metric scaling ratio",
-					perfLabelNames,
-					nil)
-				ch <- prometheus.MustNewConstMetric(desc, prometheus.CounterValue, float64(metric.Value), labelValues...)
-				ch <- prometheus.MustNewConstMetric(scalingDesc, prometheus.GaugeValue, metric.ScalingRatio, labelValues...)
-			}
-		}
 	}
-
 }
 
 func (c *PrometheusCollector) collectVersionInfo(ch chan<- prometheus.Metric) {

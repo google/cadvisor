@@ -327,22 +327,18 @@ container_network_udp_usage_total{container_env_foo_env="prod",container_label_f
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="listen",zone_name="hello"} 0 1395066363000
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="rxqueued",zone_name="hello"} 0 1395066363000
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="txqueued",zone_name="hello"} 0 1395066363000
-# HELP container_perf_instructions Perf event metric
-# TYPE container_perf_instructions counter
-container_perf_instructions{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 123
-container_perf_instructions{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 456
-# HELP container_perf_instructions_retired Perf event metric
-# TYPE container_perf_instructions_retired counter
-container_perf_instructions_retired{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 321
-container_perf_instructions_retired{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 789
-# HELP container_perf_instructions_retired_scaling_ratio Perf event metric scaling ratio
-# TYPE container_perf_instructions_retired_scaling_ratio gauge
-container_perf_instructions_retired_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.66666666666
-container_perf_instructions_retired_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.33333333333
-# HELP container_perf_instructions_scaling_ratio Perf event metric scaling ratio
-# TYPE container_perf_instructions_scaling_ratio gauge
-container_perf_instructions_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1
-container_perf_instructions_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.5
+# HELP container_perf_metric Perf event metric
+# TYPE container_perf_metric counter
+container_perf_metric{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 123 1395066363000
+container_perf_metric{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 321 1395066363000
+container_perf_metric{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 456 1395066363000
+container_perf_metric{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 789 1395066363000
+# HELP container_perf_metric_scaling_ratio Perf event metric scaling ratio
+# TYPE container_perf_metric_scaling_ratio gauge
+container_perf_metric_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
+container_perf_metric_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.66666666666 1395066363000
+container_perf_metric_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.5 1395066363000
+container_perf_metric_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.33333333333 1395066363000
 # HELP container_processes Number of processes running inside the container.
 # TYPE container_processes gauge
 container_processes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
