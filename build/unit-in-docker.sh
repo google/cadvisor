@@ -18,7 +18,7 @@
 set -x
 function run_tests() {
   BUILD_CMD="go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v 'vendor\|integration' | tr '\n' ' ') && \
-    cd cmd && go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v vendor | tr '\n' ' ')"
+    cd cmd && go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v 'vendor\|integration' | tr '\n' ' ')"
   if [ "$BUILD_PACKAGES" != "" ]; then
     BUILD_CMD="apt-get update && apt-get install $BUILD_PACKAGES && \
     $BUILD_CMD"
