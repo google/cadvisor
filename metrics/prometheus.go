@@ -1684,7 +1684,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		containerLabels := c.containerLabelsFunc(cont)
 		for l := range rawLabels {
 			duplicate := false
-			sl := sanitizeName(l)
+			sl := sanitizeLabelName(l)
 			for _, x := range labels {
 				if sl == x {
 					duplicate = true
@@ -1746,7 +1746,7 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 					copy(clabels, labels)
 					copy(cvalues, values)
 					for label, value := range metric.Labels {
-						clabels = append(clabels, sanitizeName("app_"+label))
+						clabels = append(clabels, sanitizeLabelName("app_"+label))
 						cvalues = append(cvalues, value)
 					}
 					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
@@ -1780,8 +1780,8 @@ func specMemoryValue(v uint64) float64 {
 
 var invalidNameCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 
-// sanitizeName replaces anything that doesn't match
+// sanitizeLabelName replaces anything that doesn't match
 // client_label.LabelNameRE with an underscore.
-func sanitizeName(name string) string {
+func sanitizeLabelName(name string) string {
 	return invalidNameCharRE.ReplaceAllString(name, "_")
 }
