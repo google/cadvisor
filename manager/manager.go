@@ -682,7 +682,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 	containersMap := make(map[string]*containerData)
 	switch options.IdType {
 	case v2.TypeName:
-		if options.Recursive == false {
+		if !options.Recursive {
 			cont, err := self.getContainer(containerName)
 			if err != nil {
 				return containersMap, err
@@ -695,7 +695,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 			}
 		}
 	case v2.TypeDocker:
-		if options.Recursive == false {
+		if !options.Recursive {
 			containerName = strings.TrimPrefix(containerName, "/")
 			cont, err := self.getDockerContainer(containerName)
 			if err != nil {
@@ -812,10 +812,7 @@ func (m *manager) Exists(containerName string) bool {
 	}
 
 	_, ok := m.containers[namespacedName]
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
 
 func (m *manager) GetProcessList(containerName string, options v2.RequestOptions) ([]v2.ProcessInfo, error) {

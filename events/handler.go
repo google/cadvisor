@@ -150,7 +150,7 @@ func DefaultStoragePolicy() StoragePolicy {
 // returns a pointer to an initialized Events object.
 func NewEventManager(storagePolicy StoragePolicy) *events {
 	return &events{
-		eventStore:    make(map[info.EventType]*utils.TimedStore, 0),
+		eventStore:    make(map[info.EventType]*utils.TimedStore),
 		watchers:      make(map[int]*watch),
 		storagePolicy: storagePolicy,
 	}
@@ -196,7 +196,7 @@ func getMaxEventsReturned(request *Request, eSlice []*info.Event) []*info.Event 
 // it checks that the container paths of the event and request are
 // equivalent
 func checkIfIsSubcontainer(request *Request, event *info.Event) bool {
-	if request.IncludeSubcontainers == true {
+	if request.IncludeSubcontainers {
 		return request.ContainerName == "/" || strings.HasPrefix(event.ContainerName+"/", request.ContainerName+"/")
 	}
 	return event.ContainerName == request.ContainerName

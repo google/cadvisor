@@ -244,7 +244,7 @@ func validateCgroupMounts() (string, string) {
 	out += desc
 	info, err := ioutil.ReadFile("/proc/mounts")
 	if err != nil {
-		out := fmt.Sprintf("Could not read /proc/mounts.\n")
+		out := "Could not read /proc/mounts.\n"
 		out += desc
 		return Unsupported, out
 	}

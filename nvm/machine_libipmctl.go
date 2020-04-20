@@ -59,7 +59,7 @@ func getAvgPowerBudget() (uint, error) {
 
 	// Load basic device information for all the devices
 	// to obtain UID of the first one.
-	devices := make([]C.struct_device_discovery, count, count)
+	devices := make([]C.struct_device_discovery, count)
 	err = C.nvm_get_devices(&devices[0], C.uchar(count))
 	if err != C.NVM_SUCCESS {
 		klog.Warningf("Unable to get all NVM devices. Status code: %d", err)

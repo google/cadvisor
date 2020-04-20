@@ -113,7 +113,6 @@ func (s *StatsSummary) updateLatestUsage() {
 	defer s.dataLock.Unlock()
 	s.derivedStats.LatestUsage = usage
 	s.derivedStats.Timestamp = latest.Timestamp
-	return
 }
 
 // Generate new derived stats based on current minute stats samples.

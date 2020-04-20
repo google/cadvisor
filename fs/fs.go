@@ -109,8 +109,8 @@ func NewFsInfo(context Context) (FsInfo, error) {
 	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
 	fsInfo := &RealFsInfo{
 		partitions:         processMounts(mounts, excluded),
-		labels:             make(map[string]string, 0),
-		mounts:             make(map[string]mount.MountInfo, 0),
+		labels:             make(map[string]string),
+		mounts:             make(map[string]mount.MountInfo),
 		dmsetup:            devicemapper.NewDmsetupClient(),
 		fsUUIDToDeviceName: fsUUIDToDeviceName,
 	}
@@ -163,7 +163,7 @@ func getFsUUIDToDeviceNameMap() (map[string]string, error) {
 }
 
 func processMounts(mounts []mount.MountInfo, excludedMountpointPrefixes []string) map[string]partition {
-	partitions := make(map[string]partition, 0)
+	partitions := make(map[string]partition)
 
 	supportedFsType := map[string]bool{
 		// all ext systems are checked through prefix.

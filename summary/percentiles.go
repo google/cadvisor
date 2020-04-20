@@ -156,8 +156,7 @@ func getPercentComplete(stats []*secondSample) (percent int32) {
 
 // Calculate cpurate from two consecutive total cpu usage samples.
 func getCpuRate(latest, previous secondSample) (uint64, error) {
-	var elapsed int64
-	elapsed = latest.Timestamp.Sub(previous.Timestamp).Nanoseconds()
+	elapsed := latest.Timestamp.Sub(previous.Timestamp).Nanoseconds()
 	if elapsed < 10*milliSecondsToNanoSeconds {
 		return 0, fmt.Errorf("elapsed time too small: %d ns: time now %s last %s", elapsed, latest.Timestamp.String(), previous.Timestamp.String())
 	}
