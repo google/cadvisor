@@ -1592,7 +1592,7 @@ var (
 	cpuSharesDesc = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
 )
 
-// Describe describes all the metrics evernilted by cadvisor. It
+// Describe describes all the metrics ever exported by cadvisor. It
 // implements prometheus.PrometheusCollector.
 func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 	c.errors.Describe(ch)
