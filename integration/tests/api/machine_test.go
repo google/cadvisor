@@ -43,7 +43,7 @@ func TestMachineInformationIsReturned(t *testing.T) {
 		if fs.Device == "" {
 			t.Errorf("Expected a non-empty device name in: %+v", fs)
 		}
-		if fs.Capacity >= (1<<60 /* 1 EB*/) {
+		if fs.Capacity >= (1 << 60 /* 1 EB*/) {
 			t.Errorf("Unexpected capacity in device %q: %v", fs.Device, fs.Capacity)
 		}
 		if fs.Type == "" {
