@@ -237,7 +237,10 @@ func TestOnDemandHousekeeping(t *testing.T) {
 
 	cd, mockHandler, memoryCache, fakeClock := newTestContainerData(t)
 	mockHandler.On("GetStats").Return(stats, nil)
-	defer cd.Stop()
+	defer func() {
+		err := cd.Stop()
+		assert.NoError(t, err)
+	}()
 
 	// 0 seconds should always trigger an update
 	go cd.OnDemandHousekeeping(0 * time.Second)
@@ -261,7 +264,10 @@ func TestConcurrentOnDemandHousekeeping(t *testing.T) {
 
 	cd, mockHandler, memoryCache, fakeClock := newTestContainerData(t)
 	mockHandler.On("GetStats").Return(stats, nil)
-	defer cd.Stop()
+	defer func() {
+		err := cd.Stop()
+		assert.NoError(t, err)
+	}()
 
 	numConcurrentCalls := 5
 	var waitForHousekeeping sync.WaitGroup
@@ -303,7 +309,8 @@ func TestOnDemandHousekeepingReturnsAfterStopped(t *testing.T) {
 
 	fakeClock.Step(2 * time.Second)
 
-	cd.Stop()
+	err := cd.Stop()
+	assert.NoError(t, err)
 	// housekeeping tick should detect stop and not store any more metrics
 	assert.False(t, cd.housekeepingTick(fakeClock.NewTimer(time.Minute).C(), testLongHousekeeping))
 	fakeClock.Step(1 * time.Second)

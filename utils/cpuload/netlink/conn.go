@@ -75,8 +75,11 @@ func (self *Connection) WriteMessage(msg syscall.NetlinkMessage) error {
 	msg.Header.Seq = self.seq
 	self.seq++
 	msg.Header.Pid = self.pid
-	binary.Write(w, binary.LittleEndian, msg.Header)
-	_, err := w.Write(msg.Data)
+	err := binary.Write(w, binary.LittleEndian, msg.Header)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(msg.Data)
 	if err != nil {
 		return err
 	}

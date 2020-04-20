@@ -27,6 +27,8 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func cadvisorTestClient(path string, expectedPostObj *info.ContainerInfoRequest, replyObj interface{}, t *testing.T) (*Client, *httptest.Server, error) {
@@ -45,7 +47,8 @@ func cadvisorTestClient(path string, expectedPostObj *info.ContainerInfoRequest,
 				}
 			}
 			encoder := json.NewEncoder(w)
-			encoder.Encode(replyObj)
+			err := encoder.Encode(replyObj)
+			assert.NoError(t, err)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "Page not found.")

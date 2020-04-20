@@ -45,7 +45,8 @@ func cadvisorTestClient(path string, expectedPostObj *v1.ContainerInfoRequest, r
 				}
 			}
 			encoder := json.NewEncoder(w)
-			encoder.Encode(replyObj)
+			err := encoder.Encode(replyObj)
+			assert.NoError(t, err)
 		} else if r.URL.Path == "/api/v2.1/version" {
 			fmt.Fprintf(w, "0.1.2")
 		} else {
