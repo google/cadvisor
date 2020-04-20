@@ -95,7 +95,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 }
 
 func TestNewPrometheusCollectorWithPerf(t *testing.T) {
-	c := NewPrometheusCollector(mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, nil)
+	c := NewPrometheusCollector(mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}})
 
 	assert.Len(t, c.containerMetrics, 3)
 	names := []string{}
