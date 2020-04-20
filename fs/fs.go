@@ -109,8 +109,8 @@ func NewFsInfo(context Context) (FsInfo, error) {
 	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
 	fsInfo := &RealFsInfo{
 		partitions:         processMounts(mounts, excluded),
-		labels:             make(map[string]string, 0),
-		mounts:             make(map[string]mount.MountInfo, 0),
+		labels:             make(map[string]string),
+		mounts:             make(map[string]mount.MountInfo),
 		dmsetup:            devicemapper.NewDmsetupClient(),
 		fsUUIDToDeviceName: fsUUIDToDeviceName,
 	}
@@ -163,7 +163,7 @@ func getFsUUIDToDeviceNameMap() (map[string]string, error) {
 }
 
 func processMounts(mounts []mount.MountInfo, excludedMountpointPrefixes []string) map[string]partition {
-	partitions := make(map[string]partition, 0)
+	partitions := make(map[string]partition)
 
 	supportedFsType := map[string]bool{
 		// all ext systems are checked through prefix.
@@ -725,14 +725,6 @@ func getZfstats(poolName string) (uint64, uint64, uint64, error) {
 	total := dataset.Used + dataset.Avail + dataset.Usedbydataset
 
 	return total, dataset.Avail, dataset.Avail, nil
-}
-
-// Simple io.Writer implementation that counts how many bytes were written.
-type byteCounter struct{ bytesWritten uint64 }
-
-func (b *byteCounter) Write(p []byte) (int, error) {
-	b.bytesWritten += uint64(len(p))
-	return len(p), nil
 }
 
 // Get major and minor Ids for a mount point using btrfs as filesystem.

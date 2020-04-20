@@ -138,9 +138,9 @@ type CloudProvider string
 
 const (
 	GCE             CloudProvider = "GCE"
-	AWS                           = "AWS"
-	Azure                         = "Azure"
-	UnknownProvider               = "Unknown"
+	AWS             CloudProvider = "AWS"
+	Azure           CloudProvider = "Azure"
+	UnknownProvider CloudProvider = "Unknown"
 )
 
 type InstanceType string

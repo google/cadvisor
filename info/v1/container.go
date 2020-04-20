@@ -907,10 +907,7 @@ func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {
 		t1, t2 = t2, t1
 	}
 	diff := t2.Sub(t1)
-	if diff <= tolerance {
-		return true
-	}
-	return false
+	return diff <= tolerance
 }
 
 const (
@@ -987,9 +984,9 @@ type EventType string
 
 const (
 	EventOom               EventType = "oom"
-	EventOomKill                     = "oomKill"
-	EventContainerCreation           = "containerCreation"
-	EventContainerDeletion           = "containerDeletion"
+	EventOomKill           EventType = "oomKill"
+	EventContainerCreation EventType = "containerCreation"
+	EventContainerDeletion EventType = "containerDeletion"
 )
 
 // Extra information about an event. Only one type will be set.

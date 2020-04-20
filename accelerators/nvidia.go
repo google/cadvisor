@@ -128,7 +128,10 @@ var initializeNVML = func(nm *nvidiaManager) error {
 // Destroy shuts down NVML.
 func (nm *nvidiaManager) Destroy() {
 	if nm.nvmlInitialized {
-		gonvml.Shutdown()
+		err := gonvml.Shutdown()
+		if err != nil {
+			klog.Warningf("nvml library shutdown failed: %s", err)
+		}
 	}
 }
 

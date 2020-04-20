@@ -187,7 +187,7 @@ func processLimitsFile(fileData string) []info.UlimitSpec {
 		if strings.HasPrefix(lim, "Max") {
 
 			// Line format: Max open files            16384                16384                files
-			fields := regexp.MustCompile("[\\s]{2,}").Split(lim, -1)
+			fields := regexp.MustCompile(`[\s]{2,}`).Split(lim, -1)
 			name := strings.Replace(strings.ToLower(strings.TrimSpace(fields[0])), " ", "_", -1)
 
 			found := isUlimitWhitelisted(name)

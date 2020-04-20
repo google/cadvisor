@@ -363,10 +363,10 @@ func (self *manager) globalHousekeeping(quit chan error) {
 		longHousekeeping = *globalHousekeepingInterval / 2
 	}
 
-	ticker := time.Tick(*globalHousekeepingInterval)
+	ticker := time.NewTicker(*globalHousekeepingInterval)
 	for {
 		select {
-		case t := <-ticker:
+		case t := <-ticker.C:
 			start := time.Now()
 
 			// Check for new containers.
@@ -682,7 +682,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 	containersMap := make(map[string]*containerData)
 	switch options.IdType {
 	case v2.TypeName:
-		if options.Recursive == false {
+		if !options.Recursive {
 			cont, err := self.getContainer(containerName)
 			if err != nil {
 				return containersMap, err
@@ -695,7 +695,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 			}
 		}
 	case v2.TypeDocker:
-		if options.Recursive == false {
+		if !options.Recursive {
 			containerName = strings.TrimPrefix(containerName, "/")
 			cont, err := self.getDockerContainer(containerName)
 			if err != nil {
@@ -812,10 +812,7 @@ func (m *manager) Exists(containerName string) bool {
 	}
 
 	_, ok := m.containers[namespacedName]
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
 
 func (m *manager) GetProcessList(containerName string, options v2.RequestOptions) ([]v2.ProcessInfo, error) {
@@ -870,35 +867,6 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 		}
 	}
 	return nil
-}
-
-// Enables overwriting an existing containerData/Handler object for a given containerName.
-// Can't use createContainer as it just returns if a given containerName has a handler already.
-// Ex: rkt handler will want to take priority over the raw handler, but the raw handler might be created first.
-
-// Only allow raw handler to be overridden
-func (m *manager) overrideContainer(containerName string, watchSource watcher.ContainerWatchSource) error {
-	m.containersLock.Lock()
-	defer m.containersLock.Unlock()
-
-	namespacedName := namespacedContainerName{
-		Name: containerName,
-	}
-
-	if _, ok := m.containers[namespacedName]; ok {
-		containerData := m.containers[namespacedName]
-
-		if containerData.handler.Type() != container.ContainerTypeRaw {
-			return nil
-		}
-
-		err := m.destroyContainerLocked(containerName)
-		if err != nil {
-			return fmt.Errorf("overrideContainer: failed to destroy containerData/handler for %v: %v", containerName, err)
-		}
-	}
-
-	return m.createContainerLocked(containerName, watchSource)
 }
 
 // Create a container.

@@ -18,7 +18,6 @@ package perf
 import "C"
 import (
 	"io"
-	"os"
 	"unsafe"
 )
 
@@ -39,21 +38,15 @@ type ReadFormat struct {
 // pfmPerfEncodeArgT represents structure that is used to parse perf event nam
 // into perf_event_attr using libpfm.
 type pfmPerfEncodeArgT struct {
-	attr  unsafe.Pointer
-	fstr  unsafe.Pointer
-	size  C.size_t
-	idx   C.int
-	cpu   C.int
-	flags C.int
+	attr unsafe.Pointer
+	fstr unsafe.Pointer
+	size C.size_t
+	_    C.int // idx
+	_    C.int // cpu
+	_    C.int // flags
 }
 
 type readerCloser interface {
 	io.Reader
 	io.Closer
-}
-
-// metadata stores perf event meta information.
-type metadata struct {
-	name   string
-	cgroup *os.File
 }

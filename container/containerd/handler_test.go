@@ -43,7 +43,6 @@ func TestHandler(t *testing.T) {
 		inHostNamespace    bool
 		metadataEnvs       []string
 		includedMetrics    container.MetricSet
-		storageDir         string
 
 		hasErr         bool
 		errContains    string
@@ -67,7 +66,6 @@ func TestHandler(t *testing.T) {
 			false,
 			nil,
 			nil,
-			"",
 			true,
 			"unable to find container \"40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9\"",
 			nil,
@@ -81,7 +79,6 @@ func TestHandler(t *testing.T) {
 			false,
 			nil,
 			nil,
-			"",
 			false,
 			"",
 			&info.ContainerReference{

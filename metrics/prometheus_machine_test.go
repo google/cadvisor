@@ -40,7 +40,7 @@ func TestPrometheusMachineCollector(t *testing.T) {
 		_, err := expfmt.MetricFamilyToText(&metricBuffer, metricFamily)
 		assert.Nil(t, err)
 	}
-	collectedMetrics := string(metricBuffer.Bytes())
+	collectedMetrics := metricBuffer.String()
 	expectedMetrics, err := ioutil.ReadFile(machineMetricsFile)
 	assert.Nil(t, err)
 	assert.Equal(t, string(expectedMetrics), collectedMetrics)
@@ -63,7 +63,7 @@ func TestPrometheusMachineCollectorWithFailure(t *testing.T) {
 		_, err := expfmt.MetricFamilyToText(&metricBuffer, metricFamily)
 		assert.Nil(t, err)
 	}
-	collectedMetrics := string(metricBuffer.Bytes())
+	collectedMetrics := metricBuffer.String()
 	expectedMetrics, err := ioutil.ReadFile(machineMetricsFailureFile)
 	assert.Nil(t, err)
 	assert.Equal(t, string(expectedMetrics), collectedMetrics)

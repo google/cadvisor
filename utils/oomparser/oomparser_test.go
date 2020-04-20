@@ -136,7 +136,9 @@ func TestLastLineRegex(t *testing.T) {
 	for _, name := range processNames {
 		line := fmt.Sprintf("Jan 21 22:01:49 localhost kernel: [62279.421192] Killed process 1234 (%s) total-vm:1460016kB, anon-rss:1414008kB, file-rss:4kB", name)
 		oomInfo := &OomInstance{}
-		getProcessNamePid(line, oomInfo)
+		isPid, err := getProcessNamePid(line, oomInfo)
+		assert.True(t, isPid)
+		assert.NoError(t, err)
 		assert.Equal(t, 1234, oomInfo.Pid)
 		assert.Equal(t, name, oomInfo.ProcessName)
 	}

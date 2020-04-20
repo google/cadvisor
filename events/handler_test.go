@@ -121,8 +121,10 @@ func TestWatchEventsDetectsNewEvents(t *testing.T) {
 	returnEventChannel, err := myEventHolder.WatchEvents(myRequest)
 	assert.Nil(t, err)
 
-	myEventHolder.AddEvent(fakeEvent)
-	myEventHolder.AddEvent(fakeEvent2)
+	err = myEventHolder.AddEvent(fakeEvent)
+	assert.NoError(t, err)
+	err = myEventHolder.AddEvent(fakeEvent2)
+	assert.NoError(t, err)
 
 	startTime := time.Now()
 	go func() {
@@ -149,8 +151,9 @@ func TestWatchEventsDetectsNewEvents(t *testing.T) {
 func TestAddEventAddsEventsToEventManager(t *testing.T) {
 	myEventHolder, _, fakeEvent, _ := initializeScenario(t)
 
-	myEventHolder.AddEvent(fakeEvent)
+	err := myEventHolder.AddEvent(fakeEvent)
 
+	assert.NoError(t, err)
 	checkNumberOfEvents(t, 1, len(myEventHolder.eventStore))
 	ensureProperEventReturned(t, fakeEvent, myEventHolder.eventStore[info.EventOom].Get(0).(*info.Event))
 }
@@ -160,8 +163,10 @@ func TestGetEventsForOneEvent(t *testing.T) {
 	myRequest.MaxEventsReturned = 1
 	myRequest.EventType[info.EventOom] = true
 
-	myEventHolder.AddEvent(fakeEvent)
-	myEventHolder.AddEvent(fakeEvent2)
+	err := myEventHolder.AddEvent(fakeEvent)
+	assert.NoError(t, err)
+	err = myEventHolder.AddEvent(fakeEvent2)
+	assert.NoError(t, err)
 
 	receivedEvents, err := myEventHolder.GetEvents(myRequest)
 	assert.Nil(t, err)
@@ -175,8 +180,10 @@ func TestGetEventsForTimePeriod(t *testing.T) {
 	myRequest.EndTime = time.Now().Add(time.Second * 10)
 	myRequest.EventType[info.EventOom] = true
 
-	myEventHolder.AddEvent(fakeEvent)
-	myEventHolder.AddEvent(fakeEvent2)
+	err := myEventHolder.AddEvent(fakeEvent)
+	assert.NoError(t, err)
+	err = myEventHolder.AddEvent(fakeEvent2)
+	assert.NoError(t, err)
 
 	receivedEvents, err := myEventHolder.GetEvents(myRequest)
 	assert.Nil(t, err)
@@ -188,8 +195,10 @@ func TestGetEventsForTimePeriod(t *testing.T) {
 func TestGetEventsForNoTypeRequested(t *testing.T) {
 	myEventHolder, myRequest, fakeEvent, fakeEvent2 := initializeScenario(t)
 
-	myEventHolder.AddEvent(fakeEvent)
-	myEventHolder.AddEvent(fakeEvent2)
+	err := myEventHolder.AddEvent(fakeEvent)
+	assert.NoError(t, err)
+	err = myEventHolder.AddEvent(fakeEvent2)
+	assert.NoError(t, err)
 
 	receivedEvents, err := myEventHolder.GetEvents(myRequest)
 	assert.Nil(t, err)

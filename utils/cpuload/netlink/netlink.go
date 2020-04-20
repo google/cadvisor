@@ -66,7 +66,10 @@ func padding(size int, alignment int) int {
 // Get family id for taskstats subsystem.
 func getFamilyId(conn *Connection) (uint16, error) {
 	msg := prepareFamilyMessage()
-	conn.WriteMessage(msg.toRawMsg())
+	err := conn.WriteMessage(msg.toRawMsg())
+	if err != nil {
+		return 0, err
+	}
 
 	resp, err := conn.ReadMessage()
 	if err != nil {
@@ -203,7 +206,10 @@ func verifyHeader(msg syscall.NetlinkMessage) error {
 	case syscall.NLMSG_ERROR:
 		buf := bytes.NewBuffer(msg.Data)
 		var errno int32
-		binary.Read(buf, Endian, errno)
+		err := binary.Read(buf, Endian, errno)
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("netlink request failed with error %s", syscall.Errno(-errno))
 	}
 	return nil

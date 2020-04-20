@@ -135,7 +135,10 @@ func (w *ThinPoolWatcher) Refresh() error {
 
 	defer func() {
 		klog.V(5).Infof("releasing metadata snapshot for thin-pool %v", w.poolName)
-		w.dmsetup.Message(w.poolName, 0, releaseMetadataMessage)
+		_, err := w.dmsetup.Message(w.poolName, 0, releaseMetadataMessage)
+		if err != nil {
+			klog.Warningf("Unable to release metadata snapshot for thin-pool %v: %s", w.poolName, err)
+		}
 	}()
 
 	klog.V(5).Infof("running thin_ls on metadata device %v", w.metadataDevice)

@@ -200,8 +200,7 @@ func (self *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		}
 	} else if self.includedMetrics.Has(container.DiskUsageMetrics) || self.includedMetrics.Has(container.DiskIOMetrics) {
 		if len(self.externalMounts) > 0 {
-			var mountSet map[string]struct{}
-			mountSet = make(map[string]struct{})
+			mountSet := make(map[string]struct{})
 			for _, mount := range self.externalMounts {
 				mountSet[mount.HostDir] = struct{}{}
 			}

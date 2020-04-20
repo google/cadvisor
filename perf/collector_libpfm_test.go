@@ -38,26 +38,29 @@ func TestCollector_UpdateStats(t *testing.T) {
 	collector := collector{}
 	notScaledBuffer := buffer{bytes.NewBuffer([]byte{})}
 	scaledBuffer := buffer{bytes.NewBuffer([]byte{})}
-	binary.Write(notScaledBuffer, binary.LittleEndian, ReadFormat{
+	err := binary.Write(notScaledBuffer, binary.LittleEndian, ReadFormat{
 		Value:       123456789,
 		TimeEnabled: 100,
 		TimeRunning: 100,
 		ID:          1,
 	})
-	binary.Write(scaledBuffer, binary.LittleEndian, ReadFormat{
+	assert.NoError(t, err)
+	err = binary.Write(scaledBuffer, binary.LittleEndian, ReadFormat{
 		Value:       333333333,
 		TimeEnabled: 3,
 		TimeRunning: 1,
 		ID:          2,
 	})
+	assert.NoError(t, err)
 	collector.cpuFiles = map[string]map[int]readerCloser{
 		"instructions": {0: notScaledBuffer},
 		"cycles":       {11: scaledBuffer},
 	}
 
 	stats := &info.ContainerStats{}
-	collector.UpdateStats(stats)
+	err = collector.UpdateStats(stats)
 
+	assert.NoError(t, err)
 	assert.Len(t, stats.PerfStats, 2)
 
 	assert.Equal(t, uint64(123456789), stats.PerfStats[0].Value)

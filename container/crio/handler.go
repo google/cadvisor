@@ -17,7 +17,6 @@ package crio
 
 import (
 	"fmt"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -105,7 +104,6 @@ func newCrioContainerHandler(
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
-		storageDir = path.Join(rootFs, storageDir)
 	}
 
 	id := ContainerNameToCrioId(name)

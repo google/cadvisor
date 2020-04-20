@@ -29,8 +29,8 @@ import (
 
 var (
 	schedulerRegExp      = regexp.MustCompile(`.*\[(.*)\].*`)
-	nodeDirRegExp        = regexp.MustCompile("node/node(\\d*)")
-	cpuDirRegExp         = regexp.MustCompile("/cpu(\\d+)")
+	nodeDirRegExp        = regexp.MustCompile(`node/node(\d*)`)
+	cpuDirRegExp         = regexp.MustCompile(`/cpu(\d+)`)
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
 
 	cpusPath = "/sys/devices/system/cpu"
@@ -284,7 +284,7 @@ func getCPUTopology(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 }
 
 func getCpusByPhysicalPackageID(sysFs sysfs.SysFs, cpusPaths []string) (map[int][]string, error) {
-	cpuPathsByPhysicalPackageID := make(map[int][]string, 0)
+	cpuPathsByPhysicalPackageID := make(map[int][]string)
 	for _, cpuPath := range cpusPaths {
 
 		rawPhysicalPackageID, err := sysFs.GetCPUPhysicalPackageID(cpuPath)
