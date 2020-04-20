@@ -40,7 +40,7 @@ function run_tests() {
   docker run --rm \
     -w /go/src/github.com/google/cadvisor \
     -v ${PWD}:/go/src/github.com/google/cadvisor \
-    golang:1.13 \
+    golang:"$GOLANG_VERSION" \
     bash -c "$BUILD_CMD"
 
   EXTRA_DOCKER_OPTS="-e DOCKER_IN_DOCKER_ENABLED=true"
@@ -65,4 +65,5 @@ GO_FLAGS=${GO_FLAGS:-"-tags=netgo -race"}
 PACKAGES=${PACKAGES:-"sudo"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
 CADVISOR_ARGS=${CADVISOR_ARGS:-}
+GOLANG_VERSION=${GOLANG_VERSION:-"1.14"}
 run_tests "$GO_FLAGS" "$PACKAGES" "$BUILD_PACKAGES" "$CADVISOR_ARGS"

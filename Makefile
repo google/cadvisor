@@ -31,6 +31,11 @@ test:
 	@$(GO) test -short -race $(pkgs)
 	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
 
+docker-test:
+	@echo ">> runinng tests in docker"
+	@./build/unit-in-docker.sh
+
+
 test-integration:
 	GO_FLAGS="-race" ./build/build.sh
 	go test -c github.com/google/cadvisor/integration/tests/api
@@ -73,7 +78,7 @@ docker-%:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile$(Dockerfile_tag) .
 
 docker-build:
-	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.12 make build
+	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.14 make build
 
 presubmit: vet
 	@echo ">> checking go formatting"
