@@ -96,7 +96,7 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(
-		metrics.NewPrometheusCollector(resourceManager, f, includedMetrics),
+		metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, nil),
 		metrics.NewPrometheusMachineCollector(resourceManager),
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),

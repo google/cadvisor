@@ -17,6 +17,7 @@ package metrics
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
@@ -26,12 +27,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
+var now = time.Unix(1395066363, 0)
+
 func TestPrometheusCollector(t *testing.T) {
 	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics)
+	}, container.AllMetrics, &now)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
@@ -60,7 +63,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics)
+	}, container.AllMetrics, &now)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 

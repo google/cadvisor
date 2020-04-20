@@ -101,7 +101,7 @@ type PrometheusCollector struct {
 // ContainerLabelsFunc specifies which base labels will be attached to all
 // exported metrics. If left to nil, the DefaultContainerLabels function
 // will be used instead.
-func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet) *PrometheusCollector {
+func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, now *time.Time) *PrometheusCollector {
 	if f == nil {
 		f = DefaultContainerLabels
 	}
@@ -119,9 +119,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				help:      "Last time a container was seen by the exporter",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
+					if now == nil {
+						t := time.Now()
+						now = &t
+					}
 					return metricValues{{
-						value:     float64(time.Now().Unix()),
-						timestamp: time.Now(),
+						value:     float64(now.Unix()),
+						timestamp: *now,
 					}}
 				},
 			},
