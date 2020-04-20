@@ -869,35 +869,6 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 	return nil
 }
 
-// Enables overwriting an existing containerData/Handler object for a given containerName.
-// Can't use createContainer as it just returns if a given containerName has a handler already.
-// Ex: rkt handler will want to take priority over the raw handler, but the raw handler might be created first.
-
-// Only allow raw handler to be overridden
-func (m *manager) overrideContainer(containerName string, watchSource watcher.ContainerWatchSource) error {
-	m.containersLock.Lock()
-	defer m.containersLock.Unlock()
-
-	namespacedName := namespacedContainerName{
-		Name: containerName,
-	}
-
-	if _, ok := m.containers[namespacedName]; ok {
-		containerData := m.containers[namespacedName]
-
-		if containerData.handler.Type() != container.ContainerTypeRaw {
-			return nil
-		}
-
-		err := m.destroyContainerLocked(containerName)
-		if err != nil {
-			return fmt.Errorf("overrideContainer: failed to destroy containerData/handler for %v: %v", containerName, err)
-		}
-	}
-
-	return m.createContainerLocked(containerName, watchSource)
-}
-
 // Create a container.
 func (m *manager) createContainer(containerName string, watchSource watcher.ContainerWatchSource) error {
 	m.containersLock.Lock()

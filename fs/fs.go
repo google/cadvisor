@@ -727,14 +727,6 @@ func getZfstats(poolName string) (uint64, uint64, uint64, error) {
 	return total, dataset.Avail, dataset.Avail, nil
 }
 
-// Simple io.Writer implementation that counts how many bytes were written.
-type byteCounter struct{ bytesWritten uint64 }
-
-func (b *byteCounter) Write(p []byte) (int, error) {
-	b.bytesWritten += uint64(len(p))
-	return len(p), nil
-}
-
 // Get major and minor Ids for a mount point using btrfs as filesystem.
 func getBtrfsMajorMinorIds(mount *mount.MountInfo) (int, int, error) {
 	// btrfs fix: following workaround fixes wrong btrfs Major and Minor Ids reported in /proc/self/mountinfo.
