@@ -1584,15 +1584,25 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 	return c
 }
 
-var versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
+var (
+	versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
+	startTimeDesc = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
+	cpuPeriodDesc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
+	cpuQuotaDesc = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
+	cpuSharesDesc = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
+)
 
-// Describe describes all the metrics ever exported by cadvisor. It
+// Describe describes all the metrics evernilted by cadvisor. It
 // implements prometheus.PrometheusCollector.
 func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 	c.errors.Describe(ch)
 	for _, cm := range c.containerMetrics {
 		ch <- cm.desc([]string{})
 	}
+	ch <- startTimeDesc
+	ch <- cpuPeriodDesc
+	ch <- cpuQuotaDesc
+	ch <- cpuSharesDesc
 	ch <- versionInfoDesc
 }
 

@@ -15,24 +15,14 @@
 package metrics
 
 import (
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"regexp"
-	"strings"
+	"os"
 	"testing"
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stretchr/testify/assert"
-)
-
-var (
-	includeRe = regexp.MustCompile(`^(?:(?:# HELP |# TYPE )?container_|cadvisor_version_info\{)`)
-	ignoreRe  = regexp.MustCompile(`^container_last_seen\{`)
+	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 func TestPrometheusCollector(t *testing.T) {
@@ -41,35 +31,19 @@ func TestPrometheusCollector(t *testing.T) {
 		s["zone.name"] = "hello"
 		return s
 	}, container.AllMetrics)
-	prometheus.MustRegister(c)
-	defer prometheus.Unregister(c)
 
 	testPrometheusCollector(t, c, "testdata/prometheus_metrics")
 }
 
 func testPrometheusCollector(t *testing.T, c *PrometheusCollector, metricsFile string) {
-	rw := httptest.NewRecorder()
-	promhttp.Handler().ServeHTTP(rw, &http.Request{})
-
-	wantMetrics, err := ioutil.ReadFile(metricsFile)
+	wantMetrics, err := os.Open(metricsFile)
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", metricsFile)
 	}
 
-	wantLines := strings.Split(string(wantMetrics), "\n")
-	gotLines := strings.Split(string(rw.Body.String()), "\n")
-
-	// Until the Prometheus Go client library offers better testability
-	// (https://github.com/prometheus/client_golang/issues/58), we simply compare
-	// verbatim text-format metrics outputs, but ignore certain metric lines
-	// whose value depends on the current time or local circumstances.
-	for i, want := range wantLines {
-		if !includeRe.MatchString(want) || ignoreRe.MatchString(want) {
-			continue
-		}
-		if want != gotLines[i] {
-			t.Fatalf("unexpected metric line\nwant: %s\nhave: %s", want, gotLines[i])
-		}
+	err = testutil.CollectAndCompare(c, wantMetrics)
+	if err != nil {
+		t.Fatalf("Metric comparison failed: %s", err)
 	}
 }
 
@@ -84,8 +58,6 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s["zone.name"] = "hello"
 		return s
 	}, container.AllMetrics)
-	prometheus.MustRegister(c)
-	defer prometheus.Unregister(c)
 
 	testPrometheusCollector(t, c, "testdata/prometheus_metrics_failure")
 
