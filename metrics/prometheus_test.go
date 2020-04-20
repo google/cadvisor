@@ -24,8 +24,10 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -90,4 +92,35 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 	provider.shouldFail = false
 
 	testPrometheusCollector(t, c, "testdata/prometheus_metrics")
+}
+
+func TestNewPrometheusCollectorWithPerf(t *testing.T) {
+	c := NewPrometheusCollector(mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, nil)
+
+	assert.Len(t, c.containerMetrics, 3)
+	names := []string{}
+	for _, m := range c.containerMetrics {
+		names = append(names, m.name)
+	}
+	assert.Contains(t, names, "container_last_seen")
+	assert.Contains(t, names, "container_perf_metric")
+	assert.Contains(t, names, "container_perf_metric_scaling_ratio")
+}
+
+type mockInfoProvider struct{}
+
+func (m mockInfoProvider) SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
+	return nil, nil
+}
+
+func (m mockInfoProvider) GetVersionInfo() (*info.VersionInfo, error) {
+	return nil, nil
+}
+
+func (m mockInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
+	return nil, nil
+}
+
+func mockLabelFunc(*info.ContainerInfo) map[string]string {
+	return map[string]string{}
 }
