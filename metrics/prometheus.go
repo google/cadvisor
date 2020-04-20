@@ -1590,10 +1590,10 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 
 var (
 	versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
-	startTimeDesc = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
-	cpuPeriodDesc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
-	cpuQuotaDesc = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
-	cpuSharesDesc = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
+	startTimeDesc   = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
+	cpuPeriodDesc   = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
+	cpuQuotaDesc    = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
+	cpuSharesDesc   = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
 )
 
 // Describe describes all the metrics ever exported by cadvisor. It
