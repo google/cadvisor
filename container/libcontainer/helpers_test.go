@@ -90,7 +90,7 @@ func TestGetCgroupSubsystems(t *testing.T) {
 		},
 		{
 			// most subsystems not mounted
-			mounts: append(cgroupMountsAt("/sys/fs/cgroup", []string{"cpu"})),
+			mounts: cgroupMountsAt("/sys/fs/cgroup", []string{"cpu"}),
 			expected: CgroupSubsystems{
 				MountPoints: map[string]string{
 					"cpu": "/sys/fs/cgroup/cpu",

@@ -363,10 +363,10 @@ func (self *manager) globalHousekeeping(quit chan error) {
 		longHousekeeping = *globalHousekeepingInterval / 2
 	}
 
-	ticker := time.Tick(*globalHousekeepingInterval)
+	ticker := time.NewTicker(*globalHousekeepingInterval)
 	for {
 		select {
-		case t := <-ticker:
+		case t := <-ticker.C:
 			start := time.Now()
 
 			// Check for new containers.

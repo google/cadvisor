@@ -984,9 +984,9 @@ type EventType string
 
 const (
 	EventOom               EventType = "oom"
-	EventOomKill                     = "oomKill"
-	EventContainerCreation           = "containerCreation"
-	EventContainerDeletion           = "containerDeletion"
+	EventOomKill           EventType = "oomKill"
+	EventContainerCreation EventType = "containerCreation"
+	EventContainerDeletion EventType = "containerDeletion"
 )
 
 // Extra information about an event. Only one type will be set.
