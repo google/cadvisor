@@ -22,6 +22,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
@@ -31,17 +32,19 @@ func TestPrometheusCollector(t *testing.T) {
 		s["zone.name"] = "hello"
 		return s
 	}, container.AllMetrics)
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(c)
 
-	testPrometheusCollector(t, c, "testdata/prometheus_metrics")
+	testPrometheusCollector(t, reg, "testdata/prometheus_metrics")
 }
 
-func testPrometheusCollector(t *testing.T, c *PrometheusCollector, metricsFile string) {
+func testPrometheusCollector(t *testing.T, gatherer prometheus.Gatherer, metricsFile string) {
 	wantMetrics, err := os.Open(metricsFile)
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", metricsFile)
 	}
 
-	err = testutil.CollectAndCompare(c, wantMetrics)
+	err = testutil.GatherAndCompare(gatherer, wantMetrics)
 	if err != nil {
 		t.Fatalf("Metric comparison failed: %s", err)
 	}
@@ -58,12 +61,14 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s["zone.name"] = "hello"
 		return s
 	}, container.AllMetrics)
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(c)
 
-	testPrometheusCollector(t, c, "testdata/prometheus_metrics_failure")
+	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_failure")
 
 	provider.shouldFail = false
 
-	testPrometheusCollector(t, c, "testdata/prometheus_metrics")
+	testPrometheusCollector(t, reg, "testdata/prometheus_metrics")
 }
 
 func TestNewPrometheusCollectorWithPerf(t *testing.T) {
