@@ -60,15 +60,18 @@ func TestCollector_UpdateStats(t *testing.T) {
 
 	assert.Len(t, stats.PerfStats, 2)
 
-	assert.Equal(t, uint64(123456789), stats.PerfStats[0].Value)
-	assert.Equal(t, "instructions", stats.PerfStats[0].Name, "wrong value of instructions perf event; expected: 123456789, actual: %d", stats.PerfStats[0].Value)
-	assert.Equal(t, float64(1), stats.PerfStats[0].ScalingRatio)
-	assert.Equal(t, 0, stats.PerfStats[0].Cpu)
-
-	assert.Equal(t, uint64(999999999), stats.PerfStats[1].Value, "wrong value of cycles perf event; expected: 999999999, actual: %d", stats.PerfStats[1].Value)
-	assert.Equal(t, "cycles", stats.PerfStats[1].Name)
-	assert.InDelta(t, float64(0.333333333), stats.PerfStats[1].ScalingRatio, 0.0000000004)
-	assert.Equal(t, 11, stats.PerfStats[1].Cpu)
+	assert.Contains(t, stats.PerfStats, info.PerfStat{
+		ScalingRatio: 0.3333333333333333,
+		Value:        999999999,
+		Name:         "cycles",
+		Cpu:          11,
+	})
+	assert.Contains(t, stats.PerfStats, info.PerfStat{
+		ScalingRatio: 1,
+		Value:        123456789,
+		Name:         "instructions",
+		Cpu:          0,
+	})
 }
 
 func TestCreatePerfEventAttr(t *testing.T) {
