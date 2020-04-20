@@ -376,24 +376,3 @@ container_threads_max{container_env_foo_env="prod",container_label_foo_label="ba
 # HELP container_ulimits_soft Soft ulimit values for the container root process. Unlimited if -1, except priority and nice
 # TYPE container_ulimits_soft gauge
 container_ulimits_soft{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",ulimit="max_open_files",zone_name="hello"} 16384 1395066363000
-# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
-# TYPE process_cpu_seconds_total counter
-process_cpu_seconds_total 0
-# HELP process_goroutines Number of goroutines that currently exist.
-# TYPE process_goroutines gauge
-process_goroutines 16
-# HELP process_max_fds Maximum number of open file descriptors.
-# TYPE process_max_fds gauge
-process_max_fds 1024
-# HELP process_open_fds Number of open file descriptors.
-# TYPE process_open_fds gauge
-process_open_fds 4
-# HELP process_resident_memory_bytes Resident memory size in bytes.
-# TYPE process_resident_memory_bytes gauge
-process_resident_memory_bytes 7.74144e+06
-# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
-# TYPE process_start_time_seconds gauge
-process_start_time_seconds 1.42620369439e+09
-# HELP process_virtual_memory_bytes Virtual memory size in bytes.
-# TYPE process_virtual_memory_bytes gauge
-process_virtual_memory_bytes 1.16420608e+08
