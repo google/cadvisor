@@ -25,6 +25,16 @@ issues:
 #   integration/tests/api/event_test.go:66:6: func `waitForStaticEvent` is unused (unused)
 #   Flaky test skipped.
     - waitForStaticEvent
+#   There is plenty of snake_case identifiers:
+    - "don't use underscores in Go names"
+#   Initialism or acronyms for fields, vars and types:
+    - "(struct field|var|type|const) `[A-Z].*` should be `.*`"
+#   Initialism or acronyms - renaming exported methods and functions can be tricky:
+    - "(method|func) [A-Z].* should be .*"
+#   Stuttering affects exported names:
+    - "type name will be used as .*\\.[A-Z]{1}.* by other packages, and that stutters"
+#   We would have to change exported function return type:
+    - "exported func .* returns unexported type"
   exclude-rules:
 #   container/containerd/client.go:67:4: SA1019: grpc.WithDialer is deprecated: use WithContextDialer instead.  Will be supported throughout 1.x.  (staticcheck)
 #   There are more similar issues in following lines.
