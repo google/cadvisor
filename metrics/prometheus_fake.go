@@ -35,6 +35,7 @@ func (p testSubcontainersInfoProvider) GetVersionInfo() (*info.VersionInfo, erro
 
 func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
 	return &info.MachineInfo{
+		Timestamp:        time.Unix(1395066363, 0),
 		NumCores:         4,
 		NumPhysicalCores: 1,
 		NumSockets:       1,
@@ -50,6 +51,216 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 		MachineID:  "machine-id-test",
 		SystemUUID: "system-uuid-test",
 		BootID:     "boot-id-test",
+		Topology: []info.Node{
+			{
+				Id:     0,
+				Memory: 33604804608,
+				HugePages: []info.HugePagesInfo{
+					{
+						PageSize: uint64(1048576),
+						NumPages: uint64(0),
+					},
+					{
+						PageSize: uint64(2048),
+						NumPages: uint64(0),
+					},
+				},
+				Cores: []info.Core{
+					{
+						Id:      0,
+						Threads: []int{0, 1},
+						Caches: []info.Cache{
+							{
+								Size:  32768,
+								Type:  "Data",
+								Level: 1,
+							},
+							{
+								Size:  32768,
+								Type:  "Instruction",
+								Level: 1,
+							},
+							{
+								Size:  262144,
+								Type:  "Unified",
+								Level: 2,
+							},
+						},
+					},
+					{
+						Id:      1,
+						Threads: []int{2, 3},
+						Caches: []info.Cache{
+							{
+								Size:  32764,
+								Type:  "Data",
+								Level: 1,
+							},
+							{
+								Size:  32764,
+								Type:  "Instruction",
+								Level: 1,
+							},
+							{
+								Size:  262148,
+								Type:  "Unified",
+								Level: 2,
+							},
+						},
+					},
+
+					{
+						Id:      2,
+						Threads: []int{4, 5},
+						Caches: []info.Cache{
+							{
+								Size:  32768,
+								Type:  "Data",
+								Level: 1,
+							},
+							{
+								Size:  32768,
+								Type:  "Instruction",
+								Level: 1,
+							},
+							{
+								Size:  262144,
+								Type:  "Unified",
+								Level: 2,
+							},
+						},
+					},
+					{
+						Id:      3,
+						Threads: []int{6, 7},
+						Caches: []info.Cache{
+							{
+								Size:  32764,
+								Type:  "Data",
+								Level: 1,
+							},
+							{
+								Size:  32764,
+								Type:  "Instruction",
+								Level: 1,
+							},
+							{
+								Size:  262148,
+								Type:  "Unified",
+								Level: 2,
+							},
+						},
+					},
+				},
+			},
+			{
+				Id:     1,
+				Memory: 33604804606,
+				HugePages: []info.HugePagesInfo{
+					{
+						PageSize: uint64(1048576),
+						NumPages: uint64(2),
+					},
+					{
+						PageSize: uint64(2048),
+						NumPages: uint64(4),
+					},
+				},
+				Cores: []info.Core{
+					{
+						Id:      4,
+						Threads: []int{8, 9},
+						Caches: []info.Cache{
+							{
+								Size:  32768,
+								Type:  "Data",
+								Level: 1,
+							},
+							{
+								Size:  32768,
+								Type:  "Instruction",
+								Level: 1,
+							},
+							{
+								Size:  262144,
+								Type:  "Unified",
+								Level: 2,
+							},
+						},
+					},
+					{
+						Id:      5,
+						Threads: []int{10, 11},
+						Caches: []info.Cache{
+							{
+								Size:  32764,
+								Type:  "Data",
+								Level: 1,
+							},
+							{
+								Size:  32764,
+								Type:  "Instruction",
+								Level: 1,
+							},
+							{
+								Size:  262148,
+								Type:  "Unified",
+								Level: 2,
+							},
+						},
+					},
+					{
+						Id:      6,
+						Threads: []int{12, 13},
+						Caches: []info.Cache{
+							{
+								Size:  32768,
+								Type:  "Data",
+								Level: 1,
+							},
+							{
+								Size:  32768,
+								Type:  "Instruction",
+								Level: 1,
+							},
+							{
+								Size:  262144,
+								Type:  "Unified",
+								Level: 2,
+							},
+						},
+					},
+					{
+						Id:      7,
+						Threads: []int{14, 15},
+						Caches: []info.Cache{
+							{
+								Size:  32764,
+								Type:  "Data",
+								Level: 1,
+							},
+							{
+								Size:  32764,
+								Type:  "Instruction",
+								Level: 1,
+							},
+							{
+								Size:  262148,
+								Type:  "Unified",
+								Level: 2,
+							},
+						},
+					},
+				},
+				Caches: []info.Cache{
+					{
+						Size:  8388608,
+						Type:  "Unified",
+						Level: 3,
+					},
+				},
+			},
+		},
 	}, nil
 }
 

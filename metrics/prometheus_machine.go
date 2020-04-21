@@ -15,6 +15,8 @@
 package metrics
 
 import (
+	"strconv"
+
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -24,14 +26,21 @@ import (
 var baseLabelsNames = []string{"machine_id", "system_uuid", "boot_id"}
 
 const (
-	prometheusModeLabelName = "mode"
-	prometheusTypeLabelName = "type"
+	prometheusModeLabelName     = "mode"
+	prometheusTypeLabelName     = "type"
+	prometheusLevelLabelName    = "level"
+	prometheusNodeLabelName     = "node_id"
+	prometheusCoreLabelName     = "core_id"
+	prometheusThreadLabelName   = "thread_id"
+	prometheusPageSizeLabelName = "page_size"
 
 	nvmMemoryMode    = "memory_mode"
 	nvmAppDirectMode = "app_direct_mode"
 
 	memoryByTypeDimmCountKey    = "DimmCount"
 	memoryByTypeDimmCapacityKey = "Capacity"
+
+	emptyLabelValue = ""
 )
 
 // machineMetric describes a multi-dimensional metric used for exposing a
@@ -91,6 +100,42 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				},
 			},
 			{
+				name:        "machine_cpu_cache_capacity_bytes",
+				help:        "Cache size in bytes assigned to NUMA node and CPU core.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusCoreLabelName, prometheusTypeLabelName, prometheusLevelLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getCaches(machineInfo)
+				},
+			},
+			{
+				name:        "machine_thread_siblings_count",
+				help:        "Number of CPU thread siblings.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusCoreLabelName, prometheusThreadLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getThreadsSiblingsCount(machineInfo)
+				},
+			},
+			{
+				name:        "machine_node_memory_capacity_bytes",
+				help:        "Amount of memory assigned to NUMA node.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getNodeMemory(machineInfo)
+				},
+			},
+			{
+				name:        "machine_node_hugepages_count",
+				help:        "Numer of hugepages assigned to NUMA node.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusPageSizeLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getHugePagesCount(machineInfo)
+				},
+			},
+			{
 				name:      "machine_memory_bytes",
 				help:      "Amount of memory installed on the machine.",
 				valueType: prometheus.GaugeValue,
@@ -128,6 +173,14 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 						{value: float64(machineInfo.NVMInfo.MemoryModeCapacity), labels: []string{nvmMemoryMode}},
 						{value: float64(machineInfo.NVMInfo.AppDirectModeCapacity), labels: []string{nvmAppDirectMode}},
 					}
+				},
+			},
+			{
+				name:      "machine_nvm_avg_power_budget_watts",
+				help:      "NVM power budget.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return metricValues{{value: float64(machineInfo.NVMInfo.AvgPowerBudget)}}
 				},
 			},
 		},
@@ -173,8 +226,15 @@ func (collector *PrometheusMachineCollector) collectMachineInfo(ch chan<- promet
 			if len(metric.extraLabels) != 0 {
 				labelValues = append(labelValues, metricValue.labels...)
 			}
-			ch <- prometheus.MustNewConstMetric(metric.desc(baseLabelsNames),
+
+			prometheusMetric := prometheus.MustNewConstMetric(metric.desc(baseLabelsNames),
 				metric.valueType, metricValue.value, labelValues...)
+
+			if metricValue.timestamp.IsZero() {
+				ch <- prometheusMetric
+			} else {
+				ch <- prometheus.NewMetricWithTimestamp(metricValue.timestamp, prometheusMetric)
+			}
 		}
 
 	}
@@ -194,6 +254,85 @@ func getMemoryByType(machineInfo *info.MachineInfo, property string) metricValue
 			return metricValues{}
 		}
 		mValues = append(mValues, metricValue{value: propertyValue, labels: []string{memoryType}})
+	}
+	return mValues
+}
+
+func getThreadsSiblingsCount(machineInfo *info.MachineInfo) metricValues {
+	mValues := make(metricValues, 0, machineInfo.NumCores)
+	for _, node := range machineInfo.Topology {
+		nodeID := strconv.Itoa(node.Id)
+
+		for _, core := range node.Cores {
+			coreID := strconv.Itoa(core.Id)
+			siblingsCount := len(core.Threads)
+
+			for _, thread := range core.Threads {
+				mValues = append(mValues,
+					metricValue{
+						value:  float64(siblingsCount),
+						labels: []string{nodeID, coreID, strconv.Itoa(thread)},
+					})
+			}
+		}
+	}
+	return mValues
+}
+
+func getNodeMemory(machineInfo *info.MachineInfo) metricValues {
+	mValues := make(metricValues, 0, len(machineInfo.Topology))
+	for _, node := range machineInfo.Topology {
+		nodeID := strconv.Itoa(node.Id)
+		mValues = append(mValues,
+			metricValue{
+				value:  float64(node.Memory),
+				labels: []string{nodeID},
+			})
+	}
+	return mValues
+}
+
+func getHugePagesCount(machineInfo *info.MachineInfo) metricValues {
+	mValues := make(metricValues, 0)
+	for _, node := range machineInfo.Topology {
+		nodeID := strconv.Itoa(node.Id)
+
+		for _, hugePage := range node.HugePages {
+			mValues = append(mValues,
+				metricValue{
+					value:     float64(hugePage.NumPages),
+					labels:    []string{nodeID, strconv.FormatUint(hugePage.PageSize, 10)},
+					timestamp: machineInfo.Timestamp,
+				})
+		}
+	}
+	return mValues
+}
+
+func getCaches(machineInfo *info.MachineInfo) metricValues {
+	mValues := make(metricValues, 0)
+	for _, node := range machineInfo.Topology {
+		nodeID := strconv.Itoa(node.Id)
+
+		for _, core := range node.Cores {
+			coreID := strconv.Itoa(core.Id)
+
+			for _, cache := range core.Caches {
+				mValues = append(mValues,
+					metricValue{
+						value:  float64(cache.Size),
+						labels: []string{nodeID, coreID, cache.Type, strconv.Itoa(cache.Level)},
+					})
+			}
+		}
+
+		for _, cache := range node.Caches {
+			mValues = append(mValues,
+				metricValue{
+					value:  float64(cache.Size),
+					labels: []string{nodeID, emptyLabelValue, cache.Type, strconv.Itoa(cache.Level)},
+				})
+		}
 	}
 	return mValues
 }

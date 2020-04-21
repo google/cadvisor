@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -119,6 +120,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 	instanceID := realCloudInfo.GetInstanceID()
 
 	machineInfo := &info.MachineInfo{
+		Timestamp:        time.Now(),
 		NumCores:         numCores,
 		NumPhysicalCores: GetPhysicalCores(cpuinfo),
 		NumSockets:       GetSockets(cpuinfo),
