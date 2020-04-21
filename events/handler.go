@@ -268,11 +268,11 @@ func (self *events) WatchEvents(request *Request) (*EventChannel, error) {
 	}
 	self.watcherLock.Lock()
 	defer self.watcherLock.Unlock()
-	newId := self.lastID + 1
-	returnEventChannel := NewEventChannel(newId)
+	newID := self.lastID + 1
+	returnEventChannel := NewEventChannel(newID)
 	newWatcher := newWatch(request, returnEventChannel)
-	self.watchers[newId] = newWatcher
-	self.lastID = newId
+	self.watchers[newID] = newWatcher
+	self.lastID = newID
 	return returnEventChannel, nil
 }
 
