@@ -16,6 +16,7 @@ GO := go
 pkgs     = $(shell $(GO) list ./... | grep -v vendor)
 cmd_pkgs = $(shell cd cmd && $(GO) list ./... | grep -v vendor)
 arch ?= $(shell go env GOARCH)
+go_path = $(shell go env GOPATH)
 
 ifeq ($(arch), amd64)
   Dockerfile_tag := ''
@@ -88,7 +89,7 @@ presubmit: vet
 
 lint:
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
-	@$(go env GOPATH)/bin/golangci-lint run
+	@$(go_path)/bin/golangci-lint run
 
 clean:
 	@rm -f *.test cadvisor
