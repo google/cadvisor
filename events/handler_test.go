@@ -137,7 +137,7 @@ func TestWatchEventsDetectsNewEvents(t *testing.T) {
 	eventsFound := 0
 	go func() {
 		for event := range returnEventChannel.GetChannel() {
-			eventsFound += 1
+			eventsFound++
 			if eventsFound == 1 {
 				ensureProperEventReturned(t, fakeEvent, event)
 			} else if eventsFound == 2 {
