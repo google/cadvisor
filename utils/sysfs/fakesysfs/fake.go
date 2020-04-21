@@ -77,124 +77,124 @@ type FakeSysFs struct {
 	hugePagesNrErr error
 }
 
-func (self *FakeSysFs) GetNodesPaths() ([]string, error) {
-	return self.nodesPaths, self.nodePathErr
+func (f *FakeSysFs) GetNodesPaths() ([]string, error) {
+	return f.nodesPaths, f.nodePathErr
 }
 
-func (self *FakeSysFs) GetCPUsPaths(cpusPath string) ([]string, error) {
-	return self.cpusPaths[cpusPath], self.cpuPathErr
+func (f *FakeSysFs) GetCPUsPaths(cpusPath string) ([]string, error) {
+	return f.cpusPaths[cpusPath], f.cpuPathErr
 }
 
-func (self *FakeSysFs) GetCoreID(coreIDPath string) (string, error) {
-	return self.coreThread[coreIDPath], self.coreIDErr
+func (f *FakeSysFs) GetCoreID(coreIDPath string) (string, error) {
+	return f.coreThread[coreIDPath], f.coreIDErr
 }
 
-func (self *FakeSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
-	return self.physicalPackageIDs[cpuPath], self.physicalPackageIDErr
+func (f *FakeSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
+	return f.physicalPackageIDs[cpuPath], f.physicalPackageIDErr
 }
 
-func (self *FakeSysFs) GetMemInfo(nodePath string) (string, error) {
-	return self.memTotal, self.memErr
+func (f *FakeSysFs) GetMemInfo(nodePath string) (string, error) {
+	return f.memTotal, f.memErr
 }
 
-func (self *FakeSysFs) GetHugePagesInfo(hugepagesDirectory string) ([]os.FileInfo, error) {
-	return self.hugePages, self.hugePagesErr
+func (f *FakeSysFs) GetHugePagesInfo(hugepagesDirectory string) ([]os.FileInfo, error) {
+	return f.hugePages, f.hugePagesErr
 }
 
-func (self *FakeSysFs) GetHugePagesNr(hugepagesDirectory string, hugePageName string) (string, error) {
+func (f *FakeSysFs) GetHugePagesNr(hugepagesDirectory string, hugePageName string) (string, error) {
 	hugePageFile := fmt.Sprintf("%s%s/%s", hugepagesDirectory, hugePageName, sysfs.HugePagesNrFile)
-	return self.hugePagesNr[hugePageFile], self.hugePagesNrErr
+	return f.hugePagesNr[hugePageFile], f.hugePagesNrErr
 }
 
-func (self *FakeSysFs) GetBlockDevices() ([]os.FileInfo, error) {
-	self.info.EntryName = "sda"
-	return []os.FileInfo{&self.info}, nil
+func (f *FakeSysFs) GetBlockDevices() ([]os.FileInfo, error) {
+	f.info.EntryName = "sda"
+	return []os.FileInfo{&f.info}, nil
 }
 
-func (self *FakeSysFs) GetBlockDeviceSize(name string) (string, error) {
+func (f *FakeSysFs) GetBlockDeviceSize(name string) (string, error) {
 	return "1234567", nil
 }
 
-func (self *FakeSysFs) GetBlockDeviceScheduler(name string) (string, error) {
+func (f *FakeSysFs) GetBlockDeviceScheduler(name string) (string, error) {
 	return "noop deadline [cfq]", nil
 }
 
-func (self *FakeSysFs) GetBlockDeviceNumbers(name string) (string, error) {
+func (f *FakeSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 	return "8:0\n", nil
 }
 
-func (self *FakeSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
-	return []os.FileInfo{&self.info}, nil
+func (f *FakeSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
+	return []os.FileInfo{&f.info}, nil
 }
 
-func (self *FakeSysFs) GetNetworkAddress(name string) (string, error) {
+func (f *FakeSysFs) GetNetworkAddress(name string) (string, error) {
 	return "42:01:02:03:04:f4\n", nil
 }
 
-func (self *FakeSysFs) GetNetworkMtu(name string) (string, error) {
+func (f *FakeSysFs) GetNetworkMtu(name string) (string, error) {
 	return "1024\n", nil
 }
 
-func (self *FakeSysFs) GetNetworkSpeed(name string) (string, error) {
+func (f *FakeSysFs) GetNetworkSpeed(name string) (string, error) {
 	return "1000\n", nil
 }
 
-func (self *FakeSysFs) GetNetworkStatValue(name string, stat string) (uint64, error) {
+func (f *FakeSysFs) GetNetworkStatValue(name string, stat string) (uint64, error) {
 	return 1024, nil
 }
 
-func (self *FakeSysFs) GetCaches(id int) ([]os.FileInfo, error) {
-	self.info.EntryName = "index0"
-	return []os.FileInfo{&self.info}, nil
+func (f *FakeSysFs) GetCaches(id int) ([]os.FileInfo, error) {
+	f.info.EntryName = "index0"
+	return []os.FileInfo{&f.info}, nil
 }
 
-func (self *FakeSysFs) GetCacheInfo(cpu int, cache string) (sysfs.CacheInfo, error) {
-	return self.cache, nil
+func (f *FakeSysFs) GetCacheInfo(cpu int, cache string) (sysfs.CacheInfo, error) {
+	return f.cache, nil
 }
 
-func (self *FakeSysFs) SetCacheInfo(cache sysfs.CacheInfo) {
-	self.cache = cache
+func (f *FakeSysFs) SetCacheInfo(cache sysfs.CacheInfo) {
+	f.cache = cache
 }
 
-func (self *FakeSysFs) SetNodesPaths(paths []string, err error) {
-	self.nodesPaths = paths
-	self.nodePathErr = err
+func (f *FakeSysFs) SetNodesPaths(paths []string, err error) {
+	f.nodesPaths = paths
+	f.nodePathErr = err
 }
 
-func (self *FakeSysFs) SetCPUsPaths(paths map[string][]string, err error) {
-	self.cpusPaths = paths
-	self.cpuPathErr = err
+func (f *FakeSysFs) SetCPUsPaths(paths map[string][]string, err error) {
+	f.cpusPaths = paths
+	f.cpuPathErr = err
 }
 
-func (self *FakeSysFs) SetCoreThreads(coreThread map[string]string, err error) {
-	self.coreThread = coreThread
-	self.coreIDErr = err
+func (f *FakeSysFs) SetCoreThreads(coreThread map[string]string, err error) {
+	f.coreThread = coreThread
+	f.coreIDErr = err
 }
 
-func (self *FakeSysFs) SetPhysicalPackageIDs(physicalPackageIDs map[string]string, err error) {
-	self.physicalPackageIDs = physicalPackageIDs
-	self.physicalPackageIDErr = err
+func (f *FakeSysFs) SetPhysicalPackageIDs(physicalPackageIDs map[string]string, err error) {
+	f.physicalPackageIDs = physicalPackageIDs
+	f.physicalPackageIDErr = err
 }
 
-func (self *FakeSysFs) SetMemory(memTotal string, err error) {
-	self.memTotal = memTotal
-	self.memErr = err
+func (f *FakeSysFs) SetMemory(memTotal string, err error) {
+	f.memTotal = memTotal
+	f.memErr = err
 }
 
-func (self *FakeSysFs) SetHugePages(hugePages []os.FileInfo, err error) {
-	self.hugePages = hugePages
-	self.hugePagesErr = err
+func (f *FakeSysFs) SetHugePages(hugePages []os.FileInfo, err error) {
+	f.hugePages = hugePages
+	f.hugePagesErr = err
 }
 
-func (self *FakeSysFs) SetHugePagesNr(hugePagesNr map[string]string, err error) {
-	self.hugePagesNr = hugePagesNr
-	self.hugePagesNrErr = err
+func (f *FakeSysFs) SetHugePagesNr(hugePagesNr map[string]string, err error) {
+	f.hugePagesNr = hugePagesNr
+	f.hugePagesNrErr = err
 }
 
-func (self *FakeSysFs) SetEntryName(name string) {
-	self.info.EntryName = name
+func (f *FakeSysFs) SetEntryName(name string) {
+	f.info.EntryName = name
 }
 
-func (self *FakeSysFs) GetSystemUUID() (string, error) {
+func (f *FakeSysFs) GetSystemUUID() (string, error) {
 	return "1F862619-BA9F-4526-8F85-ECEAF0C97430", nil
 }
