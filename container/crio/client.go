@@ -77,8 +77,8 @@ func configureUnixTransport(tr *http.Transport, proto, addr string) error {
 	return nil
 }
 
-// Client returns a new configured CRI-O client
-func Client() (crioClient, error) {
+// newClient returns a new configured CRI-O client
+func newClient() (crioClient, error) {
 	crioClientOnce.Do(func() {
 		tr := new(http.Transport)
 		theClient = nil

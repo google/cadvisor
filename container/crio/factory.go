@@ -65,7 +65,7 @@ func (self *crioFactory) String() string {
 }
 
 func (self *crioFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.Handler, err error) {
-	client, err := Client()
+	client, err := newClient()
 	if err != nil {
 		return
 	}
@@ -129,7 +129,7 @@ func (self *crioFactory) DebugInfo() map[string][]string {
 
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
-	client, err := Client()
+	client, err := newClient()
 	if err != nil {
 		return err
 	}

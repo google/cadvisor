@@ -57,7 +57,7 @@ func (self *containerdFactory) String() string {
 }
 
 func (self *containerdFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.Handler, err error) {
-	client, err := Client(*ArgContainerdEndpoint, *ArgContainerdNamespace)
+	client, err := newClient(*ArgContainerdEndpoint, *ArgContainerdNamespace)
 	if err != nil {
 		return
 	}
@@ -119,7 +119,7 @@ func (self *containerdFactory) DebugInfo() map[string][]string {
 
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
-	client, err := Client(*ArgContainerdEndpoint, *ArgContainerdNamespace)
+	client, err := newClient(*ArgContainerdEndpoint, *ArgContainerdNamespace)
 	if err != nil {
 		return fmt.Errorf("unable to create containerd client: %v", err)
 	}

@@ -129,9 +129,8 @@ func (w *ThinPoolWatcher) Refresh() error {
 	if output, err := w.dmsetup.Message(w.poolName, 0, reserveMetadataMessage); err != nil {
 		err = fmt.Errorf("error reserving metadata for thin-pool %v: %v output: %v", w.poolName, err, string(output))
 		return err
-	} else {
-		klog.V(5).Infof("reserved metadata snapshot for thin-pool %v", w.poolName)
 	}
+	klog.V(5).Infof("reserved metadata snapshot for thin-pool %v", w.poolName)
 
 	defer func() {
 		klog.V(5).Infof("releasing metadata snapshot for thin-pool %v", w.poolName)

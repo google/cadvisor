@@ -119,7 +119,7 @@ func (self *resource) GetAllPercentiles() info.Percentiles {
 	return p
 }
 
-func NewResource(size int) *resource {
+func newResource(size int) *resource {
 	return &resource{
 		samples: make(Uint64Slice, 0, size),
 		mean:    mean{count: 0, Mean: 0},
@@ -128,8 +128,8 @@ func NewResource(size int) *resource {
 
 // Return aggregated percentiles from the provided percentile samples.
 func GetDerivedPercentiles(stats []*info.Usage) info.Usage {
-	cpu := NewResource(len(stats))
-	memory := NewResource(len(stats))
+	cpu := newResource(len(stats))
+	memory := newResource(len(stats))
 	for _, stat := range stats {
 		cpu.Add(stat.CPU)
 		memory.Add(stat.Memory)
@@ -171,8 +171,8 @@ func getCPURate(latest, previous secondSample) (uint64, error) {
 // Returns a percentile sample for a minute by aggregating seconds samples.
 func GetMinutePercentiles(stats []*secondSample) info.Usage {
 	lastSample := secondSample{}
-	cpu := NewResource(len(stats))
-	memory := NewResource(len(stats))
+	cpu := newResource(len(stats))
+	memory := newResource(len(stats))
 	for _, stat := range stats {
 		if !lastSample.Timestamp.IsZero() {
 			cpuRate, err := getCPURate(*stat, lastSample)

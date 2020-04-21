@@ -51,8 +51,8 @@ const (
 	connectionTimeout = 2 * time.Second
 )
 
-// Client creates a containerd client
-func Client(address, namespace string) (containerdClient, error) {
+// newClient creates a containerd client
+func newClient(address, namespace string) (containerdClient, error) {
 	var retErr error
 	once.Do(func() {
 		tryConn, err := net.DialTimeout("unix", address, connectionTimeout)
