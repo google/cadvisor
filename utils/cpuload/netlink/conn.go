@@ -55,26 +55,26 @@ func newConnection() (*Connection, error) {
 	return conn, err
 }
 
-func (self *Connection) Read(b []byte) (n int, err error) {
-	n, _, err = syscall.Recvfrom(self.fd, b, 0)
+func (c *Connection) Read(b []byte) (n int, err error) {
+	n, _, err = syscall.Recvfrom(c.fd, b, 0)
 	return n, err
 }
 
-func (self *Connection) Write(b []byte) (n int, err error) {
-	err = syscall.Sendto(self.fd, b, 0, &self.addr)
+func (c *Connection) Write(b []byte) (n int, err error) {
+	err = syscall.Sendto(c.fd, b, 0, &c.addr)
 	return len(b), err
 }
 
-func (self *Connection) Close() error {
-	return syscall.Close(self.fd)
+func (c *Connection) Close() error {
+	return syscall.Close(c.fd)
 }
 
-func (self *Connection) WriteMessage(msg syscall.NetlinkMessage) error {
+func (c *Connection) WriteMessage(msg syscall.NetlinkMessage) error {
 	w := bytes.NewBuffer(nil)
 	msg.Header.Len = uint32(syscall.NLMSG_HDRLEN + len(msg.Data))
-	msg.Header.Seq = self.seq
-	self.seq++
-	msg.Header.Pid = self.pid
+	msg.Header.Seq = c.seq
+	c.seq++
+	msg.Header.Pid = c.pid
 	err := binary.Write(w, binary.LittleEndian, msg.Header)
 	if err != nil {
 		return err
@@ -83,16 +83,16 @@ func (self *Connection) WriteMessage(msg syscall.NetlinkMessage) error {
 	if err != nil {
 		return err
 	}
-	_, err = self.Write(w.Bytes())
+	_, err = c.Write(w.Bytes())
 	return err
 }
 
-func (self *Connection) ReadMessage() (msg syscall.NetlinkMessage, err error) {
-	err = binary.Read(self.rbuf, binary.LittleEndian, &msg.Header)
+func (c *Connection) ReadMessage() (msg syscall.NetlinkMessage, err error) {
+	err = binary.Read(c.rbuf, binary.LittleEndian, &msg.Header)
 	if err != nil {
 		return msg, err
 	}
 	msg.Data = make([]byte, msg.Header.Len-syscall.NLMSG_HDRLEN)
-	_, err = self.rbuf.Read(msg.Data)
+	_, err = c.rbuf.Read(msg.Data)
 	return msg, err
 }

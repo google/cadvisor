@@ -103,17 +103,17 @@ func NewRealSysFs() SysFs {
 	return &realSysFs{}
 }
 
-func (self *realSysFs) GetNodesPaths() ([]string, error) {
+func (s *realSysFs) GetNodesPaths() ([]string, error) {
 	pathPattern := fmt.Sprintf("%s%s", nodeDir, nodeDirPattern)
 	return filepath.Glob(pathPattern)
 }
 
-func (self *realSysFs) GetCPUsPaths(cpusPath string) ([]string, error) {
+func (s *realSysFs) GetCPUsPaths(cpusPath string) ([]string, error) {
 	pathPattern := fmt.Sprintf("%s/%s", cpusPath, cpuDirPattern)
 	return filepath.Glob(pathPattern)
 }
 
-func (self *realSysFs) GetCoreID(cpuPath string) (string, error) {
+func (s *realSysFs) GetCoreID(cpuPath string) (string, error) {
 	coreIDFilePath := fmt.Sprintf("%s%s", cpuPath, coreIDFilePath)
 	coreID, err := ioutil.ReadFile(coreIDFilePath)
 	if err != nil {
@@ -122,7 +122,7 @@ func (self *realSysFs) GetCoreID(cpuPath string) (string, error) {
 	return strings.TrimSpace(string(coreID)), err
 }
 
-func (self *realSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
+func (s *realSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
 	packageIDFilePath := fmt.Sprintf("%s%s", cpuPath, packageIDFilePath)
 	packageID, err := ioutil.ReadFile(packageIDFilePath)
 	if err != nil {
@@ -131,7 +131,7 @@ func (self *realSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
 	return strings.TrimSpace(string(packageID)), err
 }
 
-func (self *realSysFs) GetMemInfo(nodePath string) (string, error) {
+func (s *realSysFs) GetMemInfo(nodePath string) (string, error) {
 	meminfoPath := fmt.Sprintf("%s/%s", nodePath, meminfoFile)
 	meminfo, err := ioutil.ReadFile(meminfoPath)
 	if err != nil {
@@ -140,11 +140,11 @@ func (self *realSysFs) GetMemInfo(nodePath string) (string, error) {
 	return strings.TrimSpace(string(meminfo)), err
 }
 
-func (self *realSysFs) GetHugePagesInfo(hugePagesDirectory string) ([]os.FileInfo, error) {
+func (s *realSysFs) GetHugePagesInfo(hugePagesDirectory string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(hugePagesDirectory)
 }
 
-func (self *realSysFs) GetHugePagesNr(hugepagesDirectory string, hugePageName string) (string, error) {
+func (s *realSysFs) GetHugePagesNr(hugepagesDirectory string, hugePageName string) (string, error) {
 	hugePageFilePath := fmt.Sprintf("%s%s/%s", hugepagesDirectory, hugePageName, HugePagesNrFile)
 	hugePageFile, err := ioutil.ReadFile(hugePageFilePath)
 	if err != nil {
@@ -153,11 +153,11 @@ func (self *realSysFs) GetHugePagesNr(hugepagesDirectory string, hugePageName st
 	return strings.TrimSpace(string(hugePageFile)), err
 }
 
-func (self *realSysFs) GetBlockDevices() ([]os.FileInfo, error) {
+func (s *realSysFs) GetBlockDevices() ([]os.FileInfo, error) {
 	return ioutil.ReadDir(blockDir)
 }
 
-func (self *realSysFs) GetBlockDeviceNumbers(name string) (string, error) {
+func (s *realSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 	dev, err := ioutil.ReadFile(path.Join(blockDir, name, "/dev"))
 	if err != nil {
 		return "", err
@@ -165,7 +165,7 @@ func (self *realSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 	return string(dev), nil
 }
 
-func (self *realSysFs) GetBlockDeviceScheduler(name string) (string, error) {
+func (s *realSysFs) GetBlockDeviceScheduler(name string) (string, error) {
 	sched, err := ioutil.ReadFile(path.Join(blockDir, name, "/queue/scheduler"))
 	if err != nil {
 		return "", err
@@ -173,7 +173,7 @@ func (self *realSysFs) GetBlockDeviceScheduler(name string) (string, error) {
 	return string(sched), nil
 }
 
-func (self *realSysFs) GetBlockDeviceSize(name string) (string, error) {
+func (s *realSysFs) GetBlockDeviceSize(name string) (string, error) {
 	size, err := ioutil.ReadFile(path.Join(blockDir, name, "/size"))
 	if err != nil {
 		return "", err
@@ -181,7 +181,7 @@ func (self *realSysFs) GetBlockDeviceSize(name string) (string, error) {
 	return string(size), nil
 }
 
-func (self *realSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
+func (s *realSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
 	files, err := ioutil.ReadDir(netDir)
 	if err != nil {
 		return nil, err
@@ -203,7 +203,7 @@ func (self *realSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
 	return dirs, nil
 }
 
-func (self *realSysFs) GetNetworkAddress(name string) (string, error) {
+func (s *realSysFs) GetNetworkAddress(name string) (string, error) {
 	address, err := ioutil.ReadFile(path.Join(netDir, name, "/address"))
 	if err != nil {
 		return "", err
@@ -211,7 +211,7 @@ func (self *realSysFs) GetNetworkAddress(name string) (string, error) {
 	return string(address), nil
 }
 
-func (self *realSysFs) GetNetworkMtu(name string) (string, error) {
+func (s *realSysFs) GetNetworkMtu(name string) (string, error) {
 	mtu, err := ioutil.ReadFile(path.Join(netDir, name, "/mtu"))
 	if err != nil {
 		return "", err
@@ -219,7 +219,7 @@ func (self *realSysFs) GetNetworkMtu(name string) (string, error) {
 	return string(mtu), nil
 }
 
-func (self *realSysFs) GetNetworkSpeed(name string) (string, error) {
+func (s *realSysFs) GetNetworkSpeed(name string) (string, error) {
 	speed, err := ioutil.ReadFile(path.Join(netDir, name, "/speed"))
 	if err != nil {
 		return "", err
@@ -227,21 +227,21 @@ func (self *realSysFs) GetNetworkSpeed(name string) (string, error) {
 	return string(speed), nil
 }
 
-func (self *realSysFs) GetNetworkStatValue(dev string, stat string) (uint64, error) {
+func (s *realSysFs) GetNetworkStatValue(dev string, stat string) (uint64, error) {
 	statPath := path.Join(netDir, dev, "/statistics", stat)
 	out, err := ioutil.ReadFile(statPath)
 	if err != nil {
 		return 0, fmt.Errorf("failed to read stat from %q for device %q", statPath, dev)
 	}
-	var s uint64
+	var value uint64
 	n, err := fmt.Sscanf(string(out), "%d", &s)
 	if err != nil || n != 1 {
 		return 0, fmt.Errorf("could not parse value from %q for file %s", string(out), statPath)
 	}
-	return s, nil
+	return value, nil
 }
 
-func (self *realSysFs) GetCaches(id int) ([]os.FileInfo, error) {
+func (s *realSysFs) GetCaches(id int) ([]os.FileInfo, error) {
 	cpuPath := fmt.Sprintf("%s%d/cache", cacheDir, id)
 	return ioutil.ReadDir(cpuPath)
 }
@@ -273,7 +273,7 @@ func getCPUCount(cache string) (count int, err error) {
 	return
 }
 
-func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
+func (s *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 	cachePath := fmt.Sprintf("%s%d/cache/%s", cacheDir, id, name)
 	out, err := ioutil.ReadFile(path.Join(cachePath, "/size"))
 	if err != nil {
@@ -313,7 +313,7 @@ func (self *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 	}, nil
 }
 
-func (self *realSysFs) GetSystemUUID() (string, error) {
+func (s *realSysFs) GetSystemUUID() (string, error) {
 	if id, err := ioutil.ReadFile(path.Join(dmiDir, "id", "product_uuid")); err == nil {
 		return strings.TrimSpace(string(id)), nil
 	} else if id, err = ioutil.ReadFile(path.Join(ppcDevTree, "system-id")); err == nil {

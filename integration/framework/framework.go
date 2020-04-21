@@ -155,70 +155,70 @@ type HostnameInfo struct {
 }
 
 // Returns: http://<host>:<port>/
-func (self HostnameInfo) FullHostname() string {
-	return fmt.Sprintf("http://%s:%d/", self.Host, self.Port)
+func (i HostnameInfo) FullHostname() string {
+	return fmt.Sprintf("http://%s:%d/", i.Host, i.Port)
 }
 
-func (self *realFramework) T() *testing.T {
-	return self.t
+func (f *realFramework) T() *testing.T {
+	return f.t
 }
 
-func (self *realFramework) Hostname() HostnameInfo {
-	return self.hostname
+func (f *realFramework) Hostname() HostnameInfo {
+	return f.hostname
 }
 
-func (self *realFramework) Shell() ShellActions {
-	return self.shellActions
+func (f *realFramework) Shell() ShellActions {
+	return f.shellActions
 }
 
-func (self *realFramework) Docker() DockerActions {
-	return self.dockerActions
+func (f *realFramework) Docker() DockerActions {
+	return f.dockerActions
 }
 
-func (self *realFramework) Cadvisor() CadvisorActions {
-	return self
+func (f *realFramework) Cadvisor() CadvisorActions {
+	return f
 }
 
 // Call all cleanup functions.
-func (self *realFramework) Cleanup() {
-	for _, cleanupFunc := range self.cleanups {
+func (f *realFramework) Cleanup() {
+	for _, cleanupFunc := range f.cleanups {
 		cleanupFunc()
 	}
 }
 
 // Gets a client to the cAdvisor being tested.
-func (self *realFramework) Client() *client.Client {
-	if self.cadvisorClient == nil {
-		cadvisorClient, err := client.NewClient(self.Hostname().FullHostname())
+func (f *realFramework) Client() *client.Client {
+	if f.cadvisorClient == nil {
+		cadvisorClient, err := client.NewClient(f.Hostname().FullHostname())
 		if err != nil {
-			self.t.Fatalf("Failed to instantiate the cAdvisor client: %v", err)
+			f.t.Fatalf("Failed to instantiate the cAdvisor client: %v", err)
 		}
-		self.cadvisorClient = cadvisorClient
+		f.cadvisorClient = cadvisorClient
 	}
-	return self.cadvisorClient
+	return f.cadvisorClient
 }
 
 // Gets a v2 client to the cAdvisor being tested.
-func (self *realFramework) ClientV2() *v2.Client {
-	if self.cadvisorClientV2 == nil {
-		cadvisorClientV2, err := v2.NewClient(self.Hostname().FullHostname())
+func (f *realFramework) ClientV2() *v2.Client {
+	if f.cadvisorClientV2 == nil {
+		cadvisorClientV2, err := v2.NewClient(f.Hostname().FullHostname())
 		if err != nil {
-			self.t.Fatalf("Failed to instantiate the cAdvisor client: %v", err)
+			f.t.Fatalf("Failed to instantiate the cAdvisor client: %v", err)
 		}
-		self.cadvisorClientV2 = cadvisorClientV2
+		f.cadvisorClientV2 = cadvisorClientV2
 	}
-	return self.cadvisorClientV2
+	return f.cadvisorClientV2
 }
 
-func (self dockerActions) RunPause() string {
-	return self.Run(DockerRunArgs{
+func (a dockerActions) RunPause() string {
+	return a.Run(DockerRunArgs{
 		Image: "kubernetes/pause",
 	})
 }
 
 // Run the specified command in a Docker busybox container.
-func (self dockerActions) RunBusybox(cmd ...string) string {
-	return self.Run(DockerRunArgs{
+func (a dockerActions) RunBusybox(cmd ...string) string {
+	return a.Run(DockerRunArgs{
 		Image: "busybox",
 	}, cmd...)
 }
@@ -240,36 +240,36 @@ type DockerRunArgs struct {
 // e.g.:
 // RunDockerContainer(DockerRunArgs{Image: "busybox"}, "ping", "www.google.com")
 //   -> docker run busybox ping www.google.com
-func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
+func (a dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 	dockerCommand := append(append([]string{"docker", "run", "-d"}, args.Args...), args.Image)
 	dockerCommand = append(dockerCommand, cmd...)
-	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
+	output, _ := a.fm.Shell().Run("sudo", dockerCommand...)
 
 	// The last line is the container ID.
 	elements := strings.Fields(output)
 	containerID := elements[len(elements)-1]
 
-	self.fm.cleanups = append(self.fm.cleanups, func() {
-		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerID)
+	a.fm.cleanups = append(a.fm.cleanups, func() {
+		a.fm.Shell().Run("sudo", "docker", "rm", "-f", containerID)
 	})
 	return containerID
 }
-func (self dockerActions) Version() []string {
+func (a dockerActions) Version() []string {
 	dockerCommand := []string{"docker", "version", "-f", "'{{.Server.Version}}'"}
-	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
+	output, _ := a.fm.Shell().Run("sudo", dockerCommand...)
 	output = strings.TrimSpace(output)
 	ret := strings.Split(output, ".")
 	if len(ret) != 3 {
-		self.fm.T().Fatalf("invalid version %v", output)
+		a.fm.T().Fatalf("invalid version %v", output)
 	}
 	return ret
 }
 
-func (self dockerActions) StorageDriver() string {
+func (a dockerActions) StorageDriver() string {
 	dockerCommand := []string{"docker", "info"}
-	output, _ := self.fm.Shell().Run("sudo", dockerCommand...)
+	output, _ := a.fm.Shell().Run("sudo", dockerCommand...)
 	if len(output) < 1 {
-		self.fm.T().Fatalf("failed to find docker storage driver - %v", output)
+		a.fm.T().Fatalf("failed to find docker storage driver - %v", output)
 	}
 	for _, line := range strings.Split(output, "\n") {
 		line = strings.TrimSpace(line)
@@ -284,30 +284,30 @@ func (self dockerActions) StorageDriver() string {
 			}
 		}
 	}
-	self.fm.T().Fatalf("failed to find docker storage driver from info - %v", output)
+	a.fm.T().Fatalf("failed to find docker storage driver from info - %v", output)
 	return Unknown
 }
 
-func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
+func (a dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
 	dockerCommand := append(append(append(append([]string{"docker", "run", "-m=4M", "-d", "-t", "-i"}, args.Args...), args.Image), args.InnerArgs...), cmd...)
 
-	output, _ := self.fm.Shell().RunStress("sudo", dockerCommand...)
+	output, _ := a.fm.Shell().RunStress("sudo", dockerCommand...)
 
 	// The last line is the container ID.
 	if len(output) < 1 {
-		self.fm.T().Fatalf("need 1 arguments in output %v to get the name but have %v", output, len(output))
+		a.fm.T().Fatalf("need 1 arguments in output %v to get the name but have %v", output, len(output))
 	}
 	elements := strings.Fields(output)
 	containerID := elements[len(elements)-1]
 
-	self.fm.cleanups = append(self.fm.cleanups, func() {
-		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerID)
+	a.fm.cleanups = append(a.fm.cleanups, func() {
+		a.fm.Shell().Run("sudo", "docker", "rm", "-f", containerID)
 	})
 	return containerID
 }
 
-func (self shellActions) wrapSsh(command string, args ...string) *exec.Cmd {
-	cmd := []string{self.fm.Hostname().Host, "--", "sh", "-c", "\"", command}
+func (a shellActions) wrapSsh(command string, args ...string) *exec.Cmd {
+	cmd := []string{a.fm.Hostname().Host, "--", "sh", "-c", "\"", command}
 	cmd = append(cmd, args...)
 	cmd = append(cmd, "\"")
 	if *sshOptions != "" {
@@ -316,14 +316,14 @@ func (self shellActions) wrapSsh(command string, args ...string) *exec.Cmd {
 	return exec.Command("ssh", cmd...)
 }
 
-func (self shellActions) Run(command string, args ...string) (string, string) {
+func (a shellActions) Run(command string, args ...string) (string, string) {
 	var cmd *exec.Cmd
-	if self.fm.Hostname().Host == "localhost" {
+	if a.fm.Hostname().Host == "localhost" {
 		// Just run locally.
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		cmd = self.wrapSsh(command, args...)
+		cmd = a.wrapSsh(command, args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -332,20 +332,20 @@ func (self shellActions) Run(command string, args ...string) (string, string) {
 	klog.Infof("About to run - %v", cmd.Args)
 	err := cmd.Run()
 	if err != nil {
-		self.fm.T().Fatalf("Failed to run %q %v in %q with error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())
+		a.fm.T().Fatalf("Failed to run %q %v in %q with error: %q. Stdout: %q, Stderr: %s", command, args, a.fm.Hostname().Host, err, stdout.String(), stderr.String())
 		return "", ""
 	}
 	return stdout.String(), stderr.String()
 }
 
-func (self shellActions) RunStress(command string, args ...string) (string, string) {
+func (a shellActions) RunStress(command string, args ...string) (string, string) {
 	var cmd *exec.Cmd
-	if self.fm.Hostname().Host == "localhost" {
+	if a.fm.Hostname().Host == "localhost" {
 		// Just run locally.
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		cmd = self.wrapSsh(command, args...)
+		cmd = a.wrapSsh(command, args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -353,7 +353,7 @@ func (self shellActions) RunStress(command string, args ...string) (string, stri
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	if err != nil {
-		self.fm.T().Logf("Ran %q %v in %q and received error: %q. Stdout: %q, Stderr: %s", command, args, self.fm.Hostname().Host, err, stdout.String(), stderr.String())
+		a.fm.T().Logf("Ran %q %v in %q and received error: %q. Stdout: %q, Stderr: %s", command, args, a.fm.Hostname().Host, err, stdout.String(), stderr.String())
 		return stdout.String(), stderr.String()
 	}
 	return stdout.String(), stderr.String()

@@ -36,68 +36,68 @@ func NewMockContainerHandler(containerName string) *MockContainerHandler {
 
 // If self.Name is not empty, then ContainerReference() will return self.Name and self.Aliases.
 // Otherwise, it will use the value provided by .On().Return().
-func (self *MockContainerHandler) ContainerReference() (info.ContainerReference, error) {
-	if len(self.Name) > 0 {
+func (h *MockContainerHandler) ContainerReference() (info.ContainerReference, error) {
+	if len(h.Name) > 0 {
 		var aliases []string
-		if len(self.Aliases) > 0 {
-			aliases = make([]string, len(self.Aliases))
-			copy(aliases, self.Aliases)
+		if len(h.Aliases) > 0 {
+			aliases = make([]string, len(h.Aliases))
+			copy(aliases, h.Aliases)
 		}
 		return info.ContainerReference{
-			Name:    self.Name,
+			Name:    h.Name,
 			Aliases: aliases,
 		}, nil
 	}
-	args := self.Called()
+	args := h.Called()
 	return args.Get(0).(info.ContainerReference), args.Error(1)
 }
 
-func (self *MockContainerHandler) Start() {}
+func (h *MockContainerHandler) Start() {}
 
-func (self *MockContainerHandler) Cleanup() {}
+func (h *MockContainerHandler) Cleanup() {}
 
-func (self *MockContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	args := self.Called()
+func (h *MockContainerHandler) GetSpec() (info.ContainerSpec, error) {
+	args := h.Called()
 	return args.Get(0).(info.ContainerSpec), args.Error(1)
 }
 
-func (self *MockContainerHandler) GetStats() (*info.ContainerStats, error) {
-	args := self.Called()
+func (h *MockContainerHandler) GetStats() (*info.ContainerStats, error) {
+	args := h.Called()
 	return args.Get(0).(*info.ContainerStats), args.Error(1)
 }
 
-func (self *MockContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	args := self.Called(listType)
+func (h *MockContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
+	args := h.Called(listType)
 	return args.Get(0).([]info.ContainerReference), args.Error(1)
 }
 
-func (self *MockContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	args := self.Called(listType)
+func (h *MockContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
+	args := h.Called(listType)
 	return args.Get(0).([]int), args.Error(1)
 }
 
-func (self *MockContainerHandler) Exists() bool {
-	args := self.Called()
+func (h *MockContainerHandler) Exists() bool {
+	args := h.Called()
 	return args.Get(0).(bool)
 }
 
-func (self *MockContainerHandler) GetCgroupPath(path string) (string, error) {
-	args := self.Called(path)
+func (h *MockContainerHandler) GetCgroupPath(path string) (string, error) {
+	args := h.Called(path)
 	return args.Get(0).(string), args.Error(1)
 }
 
-func (self *MockContainerHandler) GetContainerLabels() map[string]string {
-	args := self.Called()
+func (h *MockContainerHandler) GetContainerLabels() map[string]string {
+	args := h.Called()
 	return args.Get(0).(map[string]string)
 }
 
-func (self *MockContainerHandler) Type() container.Type {
-	args := self.Called()
+func (h *MockContainerHandler) Type() container.Type {
+	args := h.Called()
 	return args.Get(0).(container.Type)
 }
 
-func (self *MockContainerHandler) GetContainerIPAddress() string {
-	args := self.Called()
+func (h *MockContainerHandler) GetContainerIPAddress() string {
+	args := h.Called()
 	return args.Get(0).(string)
 }
 
@@ -106,18 +106,18 @@ type FactoryForMockContainerHandler struct {
 	PrepareContainerHandlerFunc func(name string, handler *MockContainerHandler)
 }
 
-func (self *FactoryForMockContainerHandler) String() string {
-	return self.Name
+func (f *FactoryForMockContainerHandler) String() string {
+	return f.Name
 }
 
-func (self *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (container.Handler, error) {
+func (f *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (container.Handler, error) {
 	handler := &MockContainerHandler{}
-	if self.PrepareContainerHandlerFunc != nil {
-		self.PrepareContainerHandlerFunc(name, handler)
+	if f.PrepareContainerHandlerFunc != nil {
+		f.PrepareContainerHandlerFunc(name, handler)
 	}
 	return handler, nil
 }
 
-func (self *FactoryForMockContainerHandler) CanHandle(name string) bool {
+func (f *FactoryForMockContainerHandler) CanHandle(name string) bool {
 	return true
 }

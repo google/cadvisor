@@ -60,11 +60,11 @@ type crioFactory struct {
 	client crioClient
 }
 
-func (self *crioFactory) String() string {
+func (f *crioFactory) String() string {
 	return CrioNamespace
 }
 
-func (self *crioFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.Handler, err error) {
+func (f *crioFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.Handler, err error) {
 	client, err := newClient()
 	if err != nil {
 		return
@@ -74,14 +74,14 @@ func (self *crioFactory) NewContainerHandler(name string, inHostNamespace bool) 
 	handler, err = newCrioContainerHandler(
 		client,
 		name,
-		self.machineInfoFactory,
-		self.fsInfo,
-		self.storageDriver,
-		self.storageDir,
-		&self.cgroupSubsystems,
+		f.machineInfoFactory,
+		f.fsInfo,
+		f.storageDriver,
+		f.storageDir,
+		&f.cgroupSubsystems,
 		inHostNamespace,
 		metadataEnvs,
-		self.includedMetrics,
+		f.includedMetrics,
 	)
 	return
 }
@@ -108,7 +108,7 @@ func isContainerName(name string) bool {
 }
 
 // crio handles all containers under /crio
-func (self *crioFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+func (f *crioFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	if strings.HasPrefix(path.Base(name), "crio-conmon") {
 		// TODO(runcom): should we include crio-conmon cgroups?
 		return false, false, nil
@@ -123,7 +123,7 @@ func (self *crioFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	return true, true, nil
 }
 
-func (self *crioFactory) DebugInfo() map[string][]string {
+func (f *crioFactory) DebugInfo() map[string][]string {
 	return map[string][]string{}
 }
 

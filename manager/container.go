@@ -429,30 +429,30 @@ func newContainerData(containerName string, memoryCache *memory.Cache, handler c
 }
 
 // Determine when the next housekeeping should occur.
-func (self *containerData) nextHousekeepingInterval() time.Duration {
-	if self.allowDynamicHousekeeping {
+func (c *containerData) nextHousekeepingInterval() time.Duration {
+	if c.allowDynamicHousekeeping {
 		var empty time.Time
-		stats, err := self.memoryCache.RecentStats(self.info.Name, empty, empty, 2)
+		stats, err := c.memoryCache.RecentStats(c.info.Name, empty, empty, 2)
 		if err != nil {
-			if self.allowErrorLogging() {
-				klog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", self.info.Name, err)
+			if c.allowErrorLogging() {
+				klog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", c.info.Name, err)
 			}
 		} else if len(stats) == 2 {
 			// TODO(vishnuk): Use no processes as a signal.
 			// Raise the interval if usage hasn't changed in the last housekeeping.
-			if stats[0].StatsEq(stats[1]) && (self.housekeepingInterval < self.maxHousekeepingInterval) {
-				self.housekeepingInterval *= 2
-				if self.housekeepingInterval > self.maxHousekeepingInterval {
-					self.housekeepingInterval = self.maxHousekeepingInterval
+			if stats[0].StatsEq(stats[1]) && (c.housekeepingInterval < c.maxHousekeepingInterval) {
+				c.housekeepingInterval *= 2
+				if c.housekeepingInterval > c.maxHousekeepingInterval {
+					c.housekeepingInterval = c.maxHousekeepingInterval
 				}
-			} else if self.housekeepingInterval != *HousekeepingInterval {
+			} else if c.housekeepingInterval != *HousekeepingInterval {
 				// Lower interval back to the baseline.
-				self.housekeepingInterval = *HousekeepingInterval
+				c.housekeepingInterval = *HousekeepingInterval
 			}
 		}
 	}
 
-	return jitter(self.housekeepingInterval, 1.0)
+	return jitter(c.housekeepingInterval, 1.0)
 }
 
 // TODO(vmarmol): Implement stats collecting as a custom collector.

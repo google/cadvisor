@@ -84,7 +84,7 @@ type EventManager interface {
 	GetEvents(request *Request) ([]*info.Event, error)
 	// AddEvent allows the caller to add an event to an EventManager
 	// object
-	AddEvent(e *info.Event) error
+	AddEvent(event *info.Event) error
 	// Cancels a previously requested watch event.
 	StopWatch(watchId int)
 }
@@ -173,12 +173,12 @@ func newWatch(request *Request, eventChannel *EventChannel) *watch {
 	}
 }
 
-func (self *EventChannel) GetChannel() chan *info.Event {
-	return self.channel
+func (ch *EventChannel) GetChannel() chan *info.Event {
+	return ch.channel
 }
 
-func (self *EventChannel) GetWatchId() int {
-	return self.watchID
+func (ch *EventChannel) GetWatchId() int {
+	return ch.watchID
 }
 
 // sorts and returns up to the last MaxEventsReturned chronological elements
@@ -231,15 +231,15 @@ func checkIfEventSatisfiesRequest(request *Request, event *info.Event) bool {
 // adds it to a slice of *Event objects that is returned. If both MaxEventsReturned
 // and StartTime/EndTime are specified in the request object, then only
 // up to the most recent MaxEventsReturned events in that time range are returned.
-func (self *events) GetEvents(request *Request) ([]*info.Event, error) {
+func (e *events) GetEvents(request *Request) ([]*info.Event, error) {
 	returnEventList := []*info.Event{}
-	self.eventsLock.RLock()
-	defer self.eventsLock.RUnlock()
+	e.eventsLock.RLock()
+	defer e.eventsLock.RUnlock()
 	for eventType, fetch := range request.EventType {
 		if !fetch {
 			continue
 		}
-		evs, ok := self.eventStore[eventType]
+		evs, ok := e.eventStore[eventType]
 		if !ok {
 			continue
 		}
@@ -261,50 +261,50 @@ func (self *events) GetEvents(request *Request) ([]*info.Event, error) {
 // Request object it is fed to the channel. The StartTime and EndTime of the watch
 // request should be uninitialized because the purpose is to watch indefinitely
 // for events that will happen in the future
-func (self *events) WatchEvents(request *Request) (*EventChannel, error) {
+func (e *events) WatchEvents(request *Request) (*EventChannel, error) {
 	if !request.StartTime.IsZero() || !request.EndTime.IsZero() {
 		return nil, errors.New(
 			"for a call to watch, request.StartTime and request.EndTime must be uninitialized")
 	}
-	self.watcherLock.Lock()
-	defer self.watcherLock.Unlock()
-	newID := self.lastID + 1
+	e.watcherLock.Lock()
+	defer e.watcherLock.Unlock()
+	newID := e.lastID + 1
 	returnEventChannel := NewEventChannel(newID)
 	newWatcher := newWatch(request, returnEventChannel)
-	self.watchers[newID] = newWatcher
-	self.lastID = newID
+	e.watchers[newID] = newWatcher
+	e.lastID = newID
 	return returnEventChannel, nil
 }
 
 // helper function to update the event manager's eventStore
-func (self *events) updateEventStore(e *info.Event) {
-	self.eventsLock.Lock()
-	defer self.eventsLock.Unlock()
-	if _, ok := self.eventStore[e.EventType]; !ok {
-		maxNumEvents := self.storagePolicy.DefaultMaxNumEvents
-		if numEvents, ok := self.storagePolicy.PerTypeMaxNumEvents[e.EventType]; ok {
+func (e *events) updateEventStore(event *info.Event) {
+	e.eventsLock.Lock()
+	defer e.eventsLock.Unlock()
+	if _, ok := e.eventStore[event.EventType]; !ok {
+		maxNumEvents := e.storagePolicy.DefaultMaxNumEvents
+		if numEvents, ok := e.storagePolicy.PerTypeMaxNumEvents[event.EventType]; ok {
 			maxNumEvents = numEvents
 		}
 		if maxNumEvents == 0 {
-			// Event storage is disabled for e.EventType
+			// Event storage is disabled for event.EventType
 			return
 		}
 
-		maxAge := self.storagePolicy.DefaultMaxAge
-		if age, ok := self.storagePolicy.PerTypeMaxAge[e.EventType]; ok {
+		maxAge := e.storagePolicy.DefaultMaxAge
+		if age, ok := e.storagePolicy.PerTypeMaxAge[event.EventType]; ok {
 			maxAge = age
 		}
 
-		self.eventStore[e.EventType] = utils.NewTimedStore(maxAge, maxNumEvents)
+		e.eventStore[event.EventType] = utils.NewTimedStore(maxAge, maxNumEvents)
 	}
-	self.eventStore[e.EventType].Add(e.Timestamp, e)
+	e.eventStore[event.EventType].Add(event.Timestamp, event)
 }
 
-func (self *events) findValidWatchers(e *info.Event) []*watch {
+func (e *events) findValidWatchers(event *info.Event) []*watch {
 	watchesToSend := make([]*watch, 0)
-	for _, watcher := range self.watchers {
+	for _, watcher := range e.watchers {
 		watchRequest := watcher.request
-		if checkIfEventSatisfiesRequest(watchRequest, e) {
+		if checkIfEventSatisfiesRequest(watchRequest, event) {
 			watchesToSend = append(watchesToSend, watcher)
 		}
 	}
@@ -314,26 +314,26 @@ func (self *events) findValidWatchers(e *info.Event) []*watch {
 // method of Events object that adds the argument Event object to the
 // eventStore. It also feeds the event to a set of watch channels
 // held by the manager if it satisfies the request keys of the channels
-func (self *events) AddEvent(e *info.Event) error {
-	self.updateEventStore(e)
-	self.watcherLock.RLock()
-	defer self.watcherLock.RUnlock()
-	watchesToSend := self.findValidWatchers(e)
+func (e *events) AddEvent(event *info.Event) error {
+	e.updateEventStore(event)
+	e.watcherLock.RLock()
+	defer e.watcherLock.RUnlock()
+	watchesToSend := e.findValidWatchers(event)
 	for _, watchObject := range watchesToSend {
-		watchObject.eventChannel.GetChannel() <- e
+		watchObject.eventChannel.GetChannel() <- event
 	}
-	klog.V(4).Infof("Added event %v", e)
+	klog.V(4).Infof("Added event %v", event)
 	return nil
 }
 
 // Removes a watch instance from the EventManager's watchers map
-func (self *events) StopWatch(watchId int) {
-	self.watcherLock.Lock()
-	defer self.watcherLock.Unlock()
-	_, ok := self.watchers[watchId]
+func (e *events) StopWatch(watchId int) {
+	e.watcherLock.Lock()
+	defer e.watcherLock.Unlock()
+	_, ok := e.watchers[watchId]
 	if !ok {
 		klog.Errorf("Could not find watcher instance %v", watchId)
 	}
-	close(self.watchers[watchId].eventChannel.GetChannel())
-	delete(self.watchers, watchId)
+	close(e.watchers[watchId].eventChannel.GetChannel())
+	delete(e.watchers, watchId)
 }

@@ -31,20 +31,20 @@ type mockContainerHandlerFactory struct {
 	CanAcceptValue bool
 }
 
-func (self *mockContainerHandlerFactory) String() string {
-	return self.Name
+func (f *mockContainerHandlerFactory) String() string {
+	return f.Name
 }
 
-func (self *mockContainerHandlerFactory) DebugInfo() map[string][]string {
+func (f *mockContainerHandlerFactory) DebugInfo() map[string][]string {
 	return map[string][]string{}
 }
 
-func (self *mockContainerHandlerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
-	return self.CanHandleValue, self.CanAcceptValue, nil
+func (f *mockContainerHandlerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+	return f.CanHandleValue, f.CanAcceptValue, nil
 }
 
-func (self *mockContainerHandlerFactory) NewContainerHandler(name string, isHostNamespace bool) (container.Handler, error) {
-	args := self.Called(name)
+func (f *mockContainerHandlerFactory) NewContainerHandler(name string, isHostNamespace bool) (container.Handler, error) {
+	args := f.Called(name)
 	return args.Get(0).(container.Handler), args.Error(1)
 }
 
