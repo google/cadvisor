@@ -1,0 +1,21 @@
+run:
+  linters-settings:
+    govet:
+      enable-all: true
+    golint:
+      min-confidence: 0
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - structcheck
+    - varcheck
+    - ineffassign
+    - deadcode
+    - typecheck
+    - golint
+max-issues-per-linter: 0
