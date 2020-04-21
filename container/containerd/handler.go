@@ -213,7 +213,7 @@ func (self *containerdContainerHandler) ListContainers(listType container.ListTy
 func (self *containerdContainerHandler) GetCgroupPath(resource string) (string, error) {
 	path, ok := self.cgroupPaths[resource]
 	if !ok {
-		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, self.reference.Name)
+		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, self.reference.Name)
 	}
 	return path, nil
 }
