@@ -86,6 +86,10 @@ presubmit: vet
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
 
+lint:
+	@echo ">> running golangci-lint using configuration at .golangci.yml"
+	golangci-lint run
+
 clean:
 	@rm -f *.test cadvisor
 
