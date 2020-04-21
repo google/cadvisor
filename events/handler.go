@@ -86,7 +86,7 @@ type EventManager interface {
 	// object
 	AddEvent(event *info.Event) error
 	// Cancels a previously requested watch event.
-	StopWatch(watchId int)
+	StopWatch(watchID int)
 }
 
 // events provides an implementation for the EventManager interface.
@@ -177,7 +177,7 @@ func (ch *EventChannel) GetChannel() chan *info.Event {
 	return ch.channel
 }
 
-func (ch *EventChannel) GetWatchId() int {
+func (ch *EventChannel) GetWatchID() int {
 	return ch.watchID
 }
 
@@ -327,13 +327,13 @@ func (e *events) AddEvent(event *info.Event) error {
 }
 
 // Removes a watch instance from the EventManager's watchers map
-func (e *events) StopWatch(watchId int) {
+func (e *events) StopWatch(watchID int) {
 	e.watcherLock.Lock()
 	defer e.watcherLock.Unlock()
-	_, ok := e.watchers[watchId]
+	_, ok := e.watchers[watchID]
 	if !ok {
-		klog.Errorf("Could not find watcher instance %v", watchId)
+		klog.Errorf("Could not find watcher instance %v", watchID)
 	}
-	close(e.watchers[watchId].eventChannel.GetChannel())
-	delete(e.watchers, watchId)
+	close(e.watchers[watchID].eventChannel.GetChannel())
+	delete(e.watchers, watchID)
 }

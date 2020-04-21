@@ -306,7 +306,7 @@ func (a dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
 	return containerID
 }
 
-func (a shellActions) wrapSsh(command string, args ...string) *exec.Cmd {
+func (a shellActions) wrapSSH(command string, args ...string) *exec.Cmd {
 	cmd := []string{a.fm.Hostname().Host, "--", "sh", "-c", "\"", command}
 	cmd = append(cmd, args...)
 	cmd = append(cmd, "\"")
@@ -323,7 +323,7 @@ func (a shellActions) Run(command string, args ...string) (string, string) {
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		cmd = a.wrapSsh(command, args...)
+		cmd = a.wrapSSH(command, args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -345,7 +345,7 @@ func (a shellActions) RunStress(command string, args ...string) (string, string)
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		cmd = a.wrapSsh(command, args...)
+		cmd = a.wrapSSH(command, args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

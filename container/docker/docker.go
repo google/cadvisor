@@ -171,15 +171,15 @@ func VersionString() (string, error) {
 }
 
 func APIVersionString() (string, error) {
-	dockerApiVersion := "Unknown"
+	dockerAPIVersion := "Unknown"
 	client, err := Client()
 	if err == nil {
 		version, err := client.ServerVersion(defaultContext())
 		if err == nil {
-			dockerApiVersion = version.APIVersion
+			dockerAPIVersion = version.APIVersion
 		}
 	}
-	return dockerApiVersion, err
+	return dockerAPIVersion, err
 }
 
 func parseVersion(versionString string, regex *regexp.Regexp, length int) ([]int, error) {

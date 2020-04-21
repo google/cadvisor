@@ -152,7 +152,7 @@ func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *
 	for {
 		select {
 		case <-cn.CloseNotify():
-			m.CloseEventChannel(eventChannel.GetWatchId())
+			m.CloseEventChannel(eventChannel.GetWatchID())
 			return nil
 		case ev := <-eventChannel.GetChannel():
 			err := enc.Encode(ev)

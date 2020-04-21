@@ -33,7 +33,7 @@ type LoadReader interface {
 	// Retrieve Cpu load for a given group.
 	// name is the full hierarchical name of the container.
 	// Path is an absolute filesystem path for a container under CPU cgroup hierarchy.
-	GetCpuLoad(name string, path string) (info.LoadStats, error)
+	GetCPULoad(name string, path string) (info.LoadStats, error)
 }
 
 func New() (LoadReader, error) {

@@ -60,7 +60,7 @@ func (r *Reader) Start() error {
 // Caller can use historical data to calculate cpu load.
 // path is an absolute filesystem path for a container under the CPU cgroup hierarchy.
 // NOTE: non-hierarchical load is returned. It does not include load for subcontainers.
-func (r *Reader) GetCpuLoad(name string, path string) (info.LoadStats, error) {
+func (r *Reader) GetCPULoad(name string, path string) (info.LoadStats, error) {
 	if len(path) == 0 {
 		return info.LoadStats{}, fmt.Errorf("cgroup path can not be empty")
 	}

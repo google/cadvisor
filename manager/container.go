@@ -602,7 +602,7 @@ func (c *containerData) updateStats() error {
 		// TODO(vmarmol): Cache this path.
 		path, err := c.handler.GetCgroupPath("cpu")
 		if err == nil {
-			loadStats, err := c.loadReader.GetCpuLoad(c.info.Name, path)
+			loadStats, err := c.loadReader.GetCPULoad(c.info.Name, path)
 			if err != nil {
 				return fmt.Errorf("failed to get load stat for %q - path %q, error %s", c.info.Name, path, err)
 			}
