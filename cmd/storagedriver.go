@@ -40,7 +40,7 @@ var (
 
 // NewMemoryStorage creates a memory storage with an optional backend storage option.
 func NewMemoryStorage() (*memory.InMemoryCache, error) {
-	backendStorages := []storage.StorageDriver{}
+	backendStorages := []storage.Driver{}
 	for _, driver := range strings.Split(*storageDriver, ",") {
 		if driver == "" {
 			continue

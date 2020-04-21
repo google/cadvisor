@@ -25,7 +25,7 @@ import (
 
 type TestStorageDriver interface {
 	StatsEq(a *info.ContainerStats, b *info.ContainerStats) bool
-	storage.StorageDriver
+	storage.Driver
 }
 
 func buildTrace(cpu, mem []uint64, duration time.Duration) []*info.ContainerStats {

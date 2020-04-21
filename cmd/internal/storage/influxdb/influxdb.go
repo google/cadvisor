@@ -74,7 +74,7 @@ const (
 	serFsUsage string = "fs_usage"
 )
 
-func new() (storage.StorageDriver, error) {
+func new() (storage.Driver, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, err

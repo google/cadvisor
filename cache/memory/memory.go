@@ -70,7 +70,7 @@ type InMemoryCache struct {
 	lock              sync.RWMutex
 	containerCacheMap map[string]*containerCache
 	maxAge            time.Duration
-	backend           []storage.StorageDriver
+	backend           []storage.Driver
 }
 
 func (self *InMemoryCache) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
@@ -131,7 +131,7 @@ func (self *InMemoryCache) RemoveContainer(containerName string) error {
 
 func New(
 	maxAge time.Duration,
-	backend []storage.StorageDriver,
+	backend []storage.Driver,
 ) *InMemoryCache {
 	ret := &InMemoryCache{
 		containerCacheMap: make(map[string]*containerCache, 32),

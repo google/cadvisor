@@ -95,7 +95,7 @@ func (self *kafkaStorage) Close() error {
 	return self.producer.Close()
 }
 
-func new() (storage.StorageDriver, error) {
+func new() (storage.Driver, error) {
 	machineName, err := os.Hostname()
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func generateTLSConfig() (*tls.Config, error) {
 	return nil, nil
 }
 
-func newStorage(machineName string) (storage.StorageDriver, error) {
+func newStorage(machineName string) (storage.Driver, error) {
 	config := kafka.NewConfig()
 
 	tlsConfig, err := generateTLSConfig()

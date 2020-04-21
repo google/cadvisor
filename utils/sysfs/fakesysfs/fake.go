@@ -27,27 +27,27 @@ type FileInfo struct {
 	EntryName string
 }
 
-func (self *FileInfo) Name() string {
-	return self.EntryName
+func (fi *FileInfo) Name() string {
+	return fi.EntryName
 }
 
-func (self *FileInfo) Size() int64 {
+func (fi *FileInfo) Size() int64 {
 	return 1234567
 }
 
-func (self *FileInfo) Mode() os.FileMode {
+func (fi *FileInfo) Mode() os.FileMode {
 	return 0
 }
 
-func (self *FileInfo) ModTime() time.Time {
+func (fi *FileInfo) ModTime() time.Time {
 	return time.Time{}
 }
 
-func (self *FileInfo) IsDir() bool {
+func (fi *FileInfo) IsDir() bool {
 	return true
 }
 
-func (self *FileInfo) Sys() interface{} {
+func (fi *FileInfo) Sys() interface{} {
 	return nil
 }
 

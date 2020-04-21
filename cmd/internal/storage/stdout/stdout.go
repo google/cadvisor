@@ -55,7 +55,7 @@ const (
 	colFsUsage = "fs_usage"
 )
 
-func new() (storage.StorageDriver, error) {
+func new() (storage.Driver, error) {
 	return newStorage(*storage.ArgDbHost)
 }
 

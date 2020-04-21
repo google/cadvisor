@@ -74,7 +74,7 @@ const (
 	colFsUsage = "fs_usage"
 )
 
-func new() (storage.StorageDriver, error) {
+func new() (storage.Driver, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, err
@@ -289,7 +289,7 @@ func (self *bigqueryStorage) Close() error {
 // machineName: A unique identifier to identify the host that current cAdvisor
 // instance is running on.
 // tableName: BigQuery table used for storing stats.
-func newStorage(machineName, datasetId, tableName string) (storage.StorageDriver, error) {
+func newStorage(machineName, datasetId, tableName string) (storage.Driver, error) {
 	bqClient, err := client.NewClient()
 	if err != nil {
 		return nil, err

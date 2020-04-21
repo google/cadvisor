@@ -53,7 +53,7 @@ var (
 	argEnableSniffer = flag.Bool("storage_driver_es_enable_sniffer", false, "ElasticSearch uses a sniffing process to find all nodes of your cluster by default, automatically")
 )
 
-func new() (storage.StorageDriver, error) {
+func new() (storage.Driver, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func newStorage(
 	typeName,
 	elasticHost string,
 	enableSniffer bool,
-) (storage.StorageDriver, error) {
+) (storage.Driver, error) {
 	// Obtain a client and connect to the default Elasticsearch installation
 	// on 127.0.0.1:9200. Of course you can configure your client to connect
 	// to other hosts and configure it in various other ways.

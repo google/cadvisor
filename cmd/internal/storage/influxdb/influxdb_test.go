@@ -40,7 +40,7 @@ const kCacheDuration = 1
 type influxDbTestStorageDriver struct {
 	count  int
 	buffer int
-	base   storage.StorageDriver
+	base   storage.Driver
 }
 
 func (self *influxDbTestStorageDriver) readyToFlush() bool {

@@ -47,7 +47,7 @@ type detailSpec struct {
 	ContainerStats *info.ContainerStats `json:"container_stats,omitempty"`
 }
 
-func new() (storage.StorageDriver, error) {
+func new() (storage.Driver, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func newStorage(
 	redisKey,
 	redisHost string,
 	bufferDuration time.Duration,
-) (storage.StorageDriver, error) {
+) (storage.Driver, error) {
 	conn, err := redis.Dial("tcp", redisHost)
 	if err != nil {
 		return nil, err

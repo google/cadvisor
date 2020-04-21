@@ -21,7 +21,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 )
 
-type StorageDriver interface {
+type Driver interface {
 	AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error
 
 	// Close will clear the state of the storage driver. The elements
@@ -30,7 +30,7 @@ type StorageDriver interface {
 	Close() error
 }
 
-type StorageDriverFunc func() (StorageDriver, error)
+type StorageDriverFunc func() (Driver, error)
 
 var registeredPlugins = map[string](StorageDriverFunc){}
 
@@ -38,7 +38,7 @@ func RegisterStorageDriver(name string, f StorageDriverFunc) {
 	registeredPlugins[name] = f
 }
 
-func New(name string) (StorageDriver, error) {
+func New(name string) (Driver, error) {
 	if name == "" {
 		return nil, nil
 	}
