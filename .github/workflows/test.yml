@@ -15,7 +15,7 @@ jobs:
       with:
         go-version: ${{ matrix.go-versions }}
     - name: Install golangci-lint
-      run: go install -i github.com/golangci/golangci-lint/cmd/golangci-lint
+      run: go get -d github.com/golangci/golangci-lint/cmd/golangci-lint && go install -i github.com/golangci/golangci-lint/cmd/golangci-lint
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run golangci-lint
