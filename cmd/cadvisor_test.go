@@ -23,21 +23,21 @@ import (
 )
 
 func TestTcpMetricsAreDisabledByDefault(t *testing.T) {
-	assert.True(t, ignoreMetrics.Has(container.NetworkTcpUsageMetrics))
+	assert.True(t, ignoreMetrics.Has(container.NetworkTCPUsageMetrics))
 	flag.Parse()
-	assert.True(t, ignoreMetrics.Has(container.NetworkTcpUsageMetrics))
+	assert.True(t, ignoreMetrics.Has(container.NetworkTCPUsageMetrics))
 }
 
 func TestAdvancedTcpMetricsAreDisabledByDefault(t *testing.T) {
-	assert.True(t, ignoreMetrics.Has(container.NetworkAdvancedTcpUsageMetrics))
+	assert.True(t, ignoreMetrics.Has(container.NetworkAdvancedTCPUsageMetrics))
 	flag.Parse()
-	assert.True(t, ignoreMetrics.Has(container.NetworkAdvancedTcpUsageMetrics))
+	assert.True(t, ignoreMetrics.Has(container.NetworkAdvancedTCPUsageMetrics))
 }
 
 func TestUdpMetricsAreDisabledByDefault(t *testing.T) {
-	assert.True(t, ignoreMetrics.Has(container.NetworkUdpUsageMetrics))
+	assert.True(t, ignoreMetrics.Has(container.NetworkUDPUsageMetrics))
 	flag.Parse()
-	assert.True(t, ignoreMetrics.Has(container.NetworkUdpUsageMetrics))
+	assert.True(t, ignoreMetrics.Has(container.NetworkUDPUsageMetrics))
 }
 
 func TestIgnoreMetrics(t *testing.T) {
@@ -47,7 +47,7 @@ func TestIgnoreMetrics(t *testing.T) {
 	}{
 		{"", []container.MetricKind{}},
 		{"disk", []container.MetricKind{container.DiskUsageMetrics}},
-		{"disk,tcp,network", []container.MetricKind{container.DiskUsageMetrics, container.NetworkTcpUsageMetrics, container.NetworkUsageMetrics}},
+		{"disk,tcp,network", []container.MetricKind{container.DiskUsageMetrics, container.NetworkTCPUsageMetrics, container.NetworkUsageMetrics}},
 	}
 
 	for _, test := range tests {
@@ -63,7 +63,7 @@ func TestIgnoreMetrics(t *testing.T) {
 func TestToIncludedMetrics(t *testing.T) {
 	ignores := []container.MetricSet{
 		{
-			container.CpuUsageMetrics: struct{}{},
+			container.CPUUsageMetrics: struct{}{},
 		},
 		{},
 		container.AllMetrics,
@@ -72,16 +72,16 @@ func TestToIncludedMetrics(t *testing.T) {
 	expected := []container.MetricSet{
 		{
 			container.ProcessSchedulerMetrics:        struct{}{},
-			container.PerCpuUsageMetrics:             struct{}{},
+			container.PerCPUUsageMetrics:             struct{}{},
 			container.MemoryUsageMetrics:             struct{}{},
-			container.CpuLoadMetrics:                 struct{}{},
+			container.CPULoadMetrics:                 struct{}{},
 			container.DiskIOMetrics:                  struct{}{},
 			container.AcceleratorUsageMetrics:        struct{}{},
 			container.DiskUsageMetrics:               struct{}{},
 			container.NetworkUsageMetrics:            struct{}{},
-			container.NetworkTcpUsageMetrics:         struct{}{},
-			container.NetworkAdvancedTcpUsageMetrics: struct{}{},
-			container.NetworkUdpUsageMetrics:         struct{}{},
+			container.NetworkTCPUsageMetrics:         struct{}{},
+			container.NetworkAdvancedTCPUsageMetrics: struct{}{},
+			container.NetworkUDPUsageMetrics:         struct{}{},
 			container.ProcessMetrics:                 struct{}{},
 			container.AppMetrics:                     struct{}{},
 			container.HugetlbUsageMetrics:            struct{}{},

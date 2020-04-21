@@ -247,12 +247,12 @@ func (self dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 
 	// The last line is the container ID.
 	elements := strings.Fields(output)
-	containerId := elements[len(elements)-1]
+	containerID := elements[len(elements)-1]
 
 	self.fm.cleanups = append(self.fm.cleanups, func() {
-		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
+		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerID)
 	})
-	return containerId
+	return containerID
 }
 func (self dockerActions) Version() []string {
 	dockerCommand := []string{"docker", "version", "-f", "'{{.Server.Version}}'"}
@@ -298,12 +298,12 @@ func (self dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
 		self.fm.T().Fatalf("need 1 arguments in output %v to get the name but have %v", output, len(output))
 	}
 	elements := strings.Fields(output)
-	containerId := elements[len(elements)-1]
+	containerID := elements[len(elements)-1]
 
 	self.fm.cleanups = append(self.fm.cleanups, func() {
-		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
+		self.fm.Shell().Run("sudo", "docker", "rm", "-f", containerID)
 	})
-	return containerId
+	return containerID
 }
 
 func (self shellActions) wrapSsh(command string, args ...string) *exec.Cmd {

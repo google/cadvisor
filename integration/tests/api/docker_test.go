@@ -68,18 +68,18 @@ func TestDockerContainerById(t *testing.T) {
 	fm := framework.New(t)
 	defer fm.Cleanup()
 
-	containerId := fm.Docker().RunPause()
+	containerID := fm.Docker().RunPause()
 
 	// Wait for the container to show up.
-	waitForContainer(containerId, fm)
+	waitForContainer(containerID, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
 	require.NoError(t, err)
 
-	sanityCheck(containerId, containerInfo, t)
+	sanityCheck(containerID, containerInfo, t)
 }
 
 // A Docker container in /docker/<name>
@@ -124,10 +124,10 @@ func TestGetAllDockerContainers(t *testing.T) {
 	defer fm.Cleanup()
 
 	// Wait for the containers to show up.
-	containerId1 := fm.Docker().RunPause()
-	containerId2 := fm.Docker().RunPause()
-	waitForContainer(containerId1, fm)
-	waitForContainer(containerId2, fm)
+	containerID1 := fm.Docker().RunPause()
+	containerID2 := fm.Docker().RunPause()
+	waitForContainer(containerID1, fm)
+	waitForContainer(containerID2, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
@@ -138,8 +138,8 @@ func TestGetAllDockerContainers(t *testing.T) {
 	if len(containersInfo) < 2 {
 		t.Fatalf("At least 2 Docker containers should exist, received %d: %+v", len(containersInfo), containersInfo)
 	}
-	sanityCheck(containerId1, findContainer(containerId1, containersInfo, t), t)
-	sanityCheck(containerId2, findContainer(containerId2, containersInfo, t), t)
+	sanityCheck(containerID1, findContainer(containerID1, containersInfo, t), t)
+	sanityCheck(containerID2, findContainer(containerID2, containersInfo, t), t)
 }
 
 // Check expected properties of a Docker container.
@@ -148,7 +148,7 @@ func TestBasicDockerContainer(t *testing.T) {
 	defer fm.Cleanup()
 
 	containerName := fmt.Sprintf("test-basic-docker-container-%d", os.Getpid())
-	containerId := fm.Docker().Run(framework.DockerRunArgs{
+	containerID := fm.Docker().Run(framework.DockerRunArgs{
 		Image: "kubernetes/pause",
 		Args: []string{
 			"--name", containerName,
@@ -156,16 +156,16 @@ func TestBasicDockerContainer(t *testing.T) {
 	})
 
 	// Wait for the container to show up.
-	waitForContainer(containerId, fm)
+	waitForContainer(containerID, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
 	require.NoError(t, err)
 
 	// Check that the contianer is known by both its name and ID.
-	sanityCheck(containerId, containerInfo, t)
+	sanityCheck(containerID, containerInfo, t)
 	sanityCheck(containerName, containerInfo, t)
 
 	assert.Empty(t, containerInfo.Subcontainers, "Should not have subcontainers")
@@ -187,7 +187,7 @@ func TestDockerContainerSpec(t *testing.T) {
 		labels      = map[string]string{"bar": "baz"}
 	)
 
-	containerId := fm.Docker().Run(framework.DockerRunArgs{
+	containerID := fm.Docker().Run(framework.DockerRunArgs{
 		Image: image,
 		Args: []string{
 			"--cpu-shares", strconv.FormatUint(cpuShares, 10),
@@ -199,20 +199,20 @@ func TestDockerContainerSpec(t *testing.T) {
 	})
 
 	// Wait for the container to show up.
-	waitForContainer(containerId, fm)
+	waitForContainer(containerID, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
 	require.NoError(t, err)
-	sanityCheck(containerId, containerInfo, t)
+	sanityCheck(containerID, containerInfo, t)
 
 	assert := assert.New(t)
 
-	assert.True(containerInfo.Spec.HasCpu, "CPU should be isolated")
-	assert.Equal(cpuShares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
-	assert.Equal(cpuMask, containerInfo.Spec.Cpu.Mask, "Cpu mask should be %q, but is %q", cpuMask, containerInfo.Spec.Cpu.Mask)
+	assert.True(containerInfo.Spec.HasCPU, "CPU should be isolated")
+	assert.Equal(cpuShares, containerInfo.Spec.CPU.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.CPU.Limit)
+	assert.Equal(cpuMask, containerInfo.Spec.CPU.Mask, "CPU mask should be %q, but is %q", cpuMask, containerInfo.Spec.CPU.Mask)
 	assert.True(containerInfo.Spec.HasMemory, "Memory should be isolated")
 	assert.Equal(memoryLimit, containerInfo.Spec.Memory.Limit, "Container should have memory limit of %d, has %d", memoryLimit, containerInfo.Spec.Memory.Limit)
 	assert.True(containerInfo.Spec.HasNetwork, "Network should be isolated")
@@ -229,20 +229,20 @@ func TestDockerContainerCpuStats(t *testing.T) {
 	defer fm.Cleanup()
 
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("ping", "www.google.com")
-	waitForContainer(containerId, fm)
+	containerID := fm.Docker().RunBusybox("ping", "www.google.com")
+	waitForContainer(containerID, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
 	if err != nil {
 		t.Fatal(err)
 	}
-	sanityCheck(containerId, containerInfo, t)
+	sanityCheck(containerID, containerInfo, t)
 
-	// Checks for CpuStats.
-	checkCpuStats(t, containerInfo.Stats[0].Cpu)
+	// Checks for CPUStats.
+	checkCPUStats(t, containerInfo.Stats[0].CPU)
 }
 
 // Check the memory ContainerStats.
@@ -251,15 +251,15 @@ func TestDockerContainerMemoryStats(t *testing.T) {
 	defer fm.Cleanup()
 
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("ping", "www.google.com")
-	waitForContainer(containerId, fm)
+	containerID := fm.Docker().RunBusybox("ping", "www.google.com")
+	waitForContainer(containerID, fm)
 
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
 	require.NoError(t, err)
-	sanityCheck(containerId, containerInfo, t)
+	sanityCheck(containerID, containerInfo, t)
 
 	// Checks for MemoryStats.
 	checkMemoryStats(t, containerInfo.Stats[0].Memory)
@@ -271,16 +271,16 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	defer fm.Cleanup()
 
 	// Wait for the container to show up.
-	containerId := fm.Docker().RunBusybox("watch", "-n1", "wget", "http://www.google.com/")
-	waitForContainer(containerId, fm)
+	containerID := fm.Docker().RunBusybox("watch", "-n1", "wget", "http://www.google.com/")
+	waitForContainer(containerID, fm)
 
 	time.Sleep(10 * time.Second)
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
-	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerId, request)
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
 	require.NoError(t, err)
-	sanityCheck(containerId, containerInfo, t)
+	sanityCheck(containerID, containerInfo, t)
 
 	stat := containerInfo.Stats[0]
 	ifaceStats := stat.Network.InterfaceStats
@@ -326,10 +326,10 @@ func TestDockerFilesystemStats(t *testing.T) {
 	if fm.Hostname().Host != "localhost" {
 		dockerCmd = fmt.Sprintf("'%s'", dockerCmd)
 	}
-	containerId := fm.Docker().RunBusybox("/bin/sh", "-c", dockerCmd)
-	waitForContainer(containerId, fm)
+	containerID := fm.Docker().RunBusybox("/bin/sh", "-c", dockerCmd)
+	waitForContainer(containerID, fm)
 	request := &v2.RequestOptions{
-		IdType: v2.TypeDocker,
+		IDType: v2.TypeDocker,
 		Count:  1,
 	}
 	needsBaseUsageCheck := false
@@ -340,7 +340,7 @@ func TestDockerFilesystemStats(t *testing.T) {
 	pass := false
 	// We need to wait for the `dd` operation to complete.
 	for i := 0; i < 10; i++ {
-		containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerId, request)
+		containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerID, request)
 		if err != nil {
 			t.Logf("%v stats unavailable - %v", time.Now().String(), err)
 			t.Logf("retrying after %s...", sleepDuration.String())
@@ -355,7 +355,7 @@ func TestDockerFilesystemStats(t *testing.T) {
 		for _, cInfo := range containerInfo {
 			info = cInfo
 		}
-		sanityCheckV2(containerId, info, t)
+		sanityCheckV2(containerID, info, t)
 
 		require.NotNil(t, info.Stats[0], "got info: %+v", info)
 		require.NotNil(t, info.Stats[0].Filesystem, "got info: %+v", info)

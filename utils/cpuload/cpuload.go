@@ -23,7 +23,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-type CpuLoadReader interface {
+type CPULoadReader interface {
 	// Start the reader.
 	Start() error
 
@@ -36,7 +36,7 @@ type CpuLoadReader interface {
 	GetCpuLoad(name string, path string) (info.LoadStats, error)
 }
 
-func New() (CpuLoadReader, error) {
+func New() (CPULoadReader, error) {
 	reader, err := netlink.New()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a netlink based cpuload reader: %v", err)

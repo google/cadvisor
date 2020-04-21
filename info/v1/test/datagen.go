@@ -38,11 +38,11 @@ func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info
 		for i := range perCoreUsages {
 			perCoreUsages[i] += uint64(rand.Int63n(1000))
 			percore[i] = perCoreUsages[i]
-			stats.Cpu.Usage.Total += percore[i]
+			stats.CPU.Usage.Total += percore[i]
 		}
-		stats.Cpu.Usage.PerCpu = percore
-		stats.Cpu.Usage.User = stats.Cpu.Usage.Total
-		stats.Cpu.Usage.System = 0
+		stats.CPU.Usage.PerCPU = percore
+		stats.CPU.Usage.User = stats.CPU.Usage.Total
+		stats.CPU.Usage.System = 0
 		stats.Memory.Usage = uint64(rand.Int63n(4096))
 		stats.Memory.Cache = uint64(rand.Int63n(4096))
 		stats.Memory.RSS = uint64(rand.Int63n(4096))
@@ -55,14 +55,14 @@ func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info
 func GenerateRandomContainerSpec(numCores int) info.ContainerSpec {
 	ret := info.ContainerSpec{
 		CreationTime: time.Now(),
-		HasCpu:       true,
-		Cpu:          info.CpuSpec{},
+		HasCPU:       true,
+		CPU:          info.CPUSpec{},
 		HasMemory:    true,
 		Memory:       info.MemorySpec{},
 	}
-	ret.Cpu.Limit = uint64(1000 + rand.Int63n(2000))
-	ret.Cpu.MaxLimit = uint64(1000 + rand.Int63n(2000))
-	ret.Cpu.Mask = fmt.Sprintf("0-%d", numCores-1)
+	ret.CPU.Limit = uint64(1000 + rand.Int63n(2000))
+	ret.CPU.MaxLimit = uint64(1000 + rand.Int63n(2000))
+	ret.CPU.Mask = fmt.Sprintf("0-%d", numCores-1)
 	ret.Memory.Limit = uint64(4096 + rand.Int63n(4096))
 	return ret
 }

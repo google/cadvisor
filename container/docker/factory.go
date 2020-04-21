@@ -164,7 +164,7 @@ func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool
 }
 
 // Returns the Docker ID from the full container name.
-func ContainerNameToDockerId(name string) string {
+func ContainerNameToDockerID(name string) string {
 	id := path.Base(name)
 
 	if matches := dockerCgroupRegexp.FindStringSubmatch(id); matches != nil {
@@ -192,7 +192,7 @@ func (self *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	}
 
 	// Check if the container is known to docker and it is active.
-	id := ContainerNameToDockerId(name)
+	id := ContainerNameToDockerID(name)
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := self.client.ContainerInspect(context.Background(), id)

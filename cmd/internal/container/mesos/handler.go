@@ -94,7 +94,7 @@ func newMesosContainerHandler(
 	libcontainerHandler := containerlibcontainer.NewHandler(cgroupManager, rootFs, pid, includedMetrics)
 
 	reference := info.ContainerReference{
-		Id:        id,
+		ID:        id,
 		Name:      name,
 		Namespace: MesosNamespace,
 		Aliases:   []string{id, name},

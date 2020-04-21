@@ -42,13 +42,13 @@ func inDelta(t *testing.T, expected, actual, delta uint64, description string) {
 }
 
 // Checks that CPU stats are valid.
-func checkCpuStats(t *testing.T, stat info.CpuStats) {
+func checkCPUStats(t *testing.T, stat info.CPUStats) {
 	assert := assert.New(t)
 
 	assert.NotEqual(0, stat.Usage.Total, "Total CPU usage should not be zero")
-	assert.NotEmpty(stat.Usage.PerCpu, "Per-core usage should not be empty")
+	assert.NotEmpty(stat.Usage.PerCPU, "Per-core usage should not be empty")
 	totalUsage := uint64(0)
-	for _, usage := range stat.Usage.PerCpu {
+	for _, usage := range stat.Usage.PerCPU {
 		totalUsage += usage
 	}
 	inDelta(t, stat.Usage.Total, totalUsage, uint64((5 * time.Millisecond).Nanoseconds()), "Per-core CPU usage")

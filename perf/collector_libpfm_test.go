@@ -67,13 +67,13 @@ func TestCollector_UpdateStats(t *testing.T) {
 		ScalingRatio: 0.3333333333333333,
 		Value:        999999999,
 		Name:         "cycles",
-		Cpu:          11,
+		CPU:          11,
 	})
 	assert.Contains(t, stats.PerfStats, info.PerfStat{
 		ScalingRatio: 1,
 		Value:        123456789,
 		Name:         "instructions",
-		Cpu:          0,
+		CPU:          0,
 	})
 }
 

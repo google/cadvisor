@@ -35,10 +35,10 @@ func TestMachineStatsIsReturned(t *testing.T) {
 	as := assert.New(t)
 	for _, stat := range machineStats {
 		as.NotEqual(stat.Timestamp, time.Time{})
-		as.True(stat.Cpu.Usage.Total > 0)
-		as.True(len(stat.Cpu.Usage.PerCpu) > 0)
-		if stat.CpuInst != nil {
-			as.True(stat.CpuInst.Usage.Total > 0)
+		as.True(stat.CPU.Usage.Total > 0)
+		as.True(len(stat.CPU.Usage.PerCPU) > 0)
+		if stat.CPUInst != nil {
+			as.True(stat.CPUInst.Usage.Total > 0)
 		}
 		as.True(stat.Memory.Usage > 0)
 		for _, nStat := range stat.Network.Interfaces {

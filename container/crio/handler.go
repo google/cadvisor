@@ -106,7 +106,7 @@ func newCrioContainerHandler(
 		rootFs = "/rootfs"
 	}
 
-	id := ContainerNameToCrioId(name)
+	id := ContainerNameToCrioID(name)
 	pidKnown := true
 
 	cInfo, err := client.ContainerInfo(id)
@@ -145,7 +145,7 @@ func newCrioContainerHandler(
 	}
 
 	containerReference := info.ContainerReference{
-		Id:        id,
+		ID:        id,
 		Name:      name,
 		Aliases:   []string{cInfo.Name, id},
 		Namespace: CrioNamespace,
@@ -289,7 +289,7 @@ func (self *crioContainerHandler) getLibcontainerHandler() *containerlibcontaine
 		return self.libcontainerHandler
 	}
 
-	id := ContainerNameToCrioId(self.name)
+	id := ContainerNameToCrioID(self.name)
 
 	cInfo, err := self.client.ContainerInfo(id)
 	if err != nil || cInfo.Pid == 0 {

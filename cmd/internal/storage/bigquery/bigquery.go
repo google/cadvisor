@@ -212,13 +212,13 @@ func (self *bigqueryStorage) containerStatsToRows(
 	row[colContainerName] = name
 
 	// Cumulative Cpu Usage
-	row[colCpuCumulativeUsage] = stats.Cpu.Usage.Total
+	row[colCpuCumulativeUsage] = stats.CPU.Usage.Total
 
 	// Cumulative Cpu Usage in system mode
-	row[colCpuCumulativeUsageSystem] = stats.Cpu.Usage.System
+	row[colCpuCumulativeUsageSystem] = stats.CPU.Usage.System
 
 	// Cumulative Cpu Usage in user mode
-	row[colCpuCumulativeUsageUser] = stats.Cpu.Usage.User
+	row[colCpuCumulativeUsageUser] = stats.CPU.Usage.User
 
 	// Memory Usage
 	row[colMemoryUsage] = stats.Memory.Usage

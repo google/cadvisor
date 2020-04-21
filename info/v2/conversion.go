@@ -66,13 +66,13 @@ func MachineStatsFromV1(cont *v1.ContainerInfo) []MachineStats {
 		stat := MachineStats{
 			Timestamp: val.Timestamp,
 		}
-		if cont.Spec.HasCpu {
-			stat.Cpu = &val.Cpu
-			cpuInst, err := InstCpuStats(last, val)
+		if cont.Spec.HasCPU {
+			stat.CPU = &val.CPU
+			cpuInst, err := InstCPUStats(last, val)
 			if err != nil {
 				klog.Warningf("Could not get instant cpu stats: %v", err)
 			} else {
-				stat.CpuInst = cpuInst
+				stat.CPUInst = cpuInst
 			}
 			last = val
 		}
@@ -82,8 +82,8 @@ func MachineStatsFromV1(cont *v1.ContainerInfo) []MachineStats {
 		if cont.Spec.HasNetwork {
 			stat.Network = &NetworkStats{
 				// FIXME: Use reflection instead.
-				Tcp:        TcpStat(val.Network.Tcp),
-				Tcp6:       TcpStat(val.Network.Tcp6),
+				TCP:        TCPStat(val.Network.TCP),
+				TCP6:       TCPStat(val.Network.TCP6),
 				Interfaces: val.Network.Interfaces,
 			}
 		}
@@ -103,13 +103,13 @@ func ContainerStatsFromV1(containerName string, spec *v1.ContainerSpec, stats []
 		stat := &ContainerStats{
 			Timestamp: val.Timestamp,
 		}
-		if spec.HasCpu {
-			stat.Cpu = &val.Cpu
-			cpuInst, err := InstCpuStats(last, val)
+		if spec.HasCPU {
+			stat.CPU = &val.CPU
+			cpuInst, err := InstCPUStats(last, val)
 			if err != nil {
 				klog.Warningf("Could not get instant cpu stats: %v", err)
 			} else {
-				stat.CpuInst = cpuInst
+				stat.CPUInst = cpuInst
 			}
 			last = val
 		}
@@ -122,8 +122,8 @@ func ContainerStatsFromV1(containerName string, spec *v1.ContainerSpec, stats []
 		if spec.HasNetwork {
 			// TODO: Handle TcpStats
 			stat.Network = &NetworkStats{
-				Tcp:        TcpStat(val.Network.Tcp),
-				Tcp6:       TcpStat(val.Network.Tcp6),
+				TCP:        TCPStat(val.Network.TCP),
+				TCP6:       TCPStat(val.Network.TCP6),
 				Interfaces: val.Network.Interfaces,
 			}
 		}
@@ -166,20 +166,20 @@ func DeprecatedStatsFromV1(cont *v1.ContainerInfo) []DeprecatedContainerStats {
 	for _, val := range cont.Stats {
 		stat := DeprecatedContainerStats{
 			Timestamp:        val.Timestamp,
-			HasCpu:           cont.Spec.HasCpu,
+			HasCPU:           cont.Spec.HasCPU,
 			HasMemory:        cont.Spec.HasMemory,
 			HasNetwork:       cont.Spec.HasNetwork,
 			HasFilesystem:    cont.Spec.HasFilesystem,
 			HasDiskIo:        cont.Spec.HasDiskIo,
 			HasCustomMetrics: cont.Spec.HasCustomMetrics,
 		}
-		if stat.HasCpu {
-			stat.Cpu = val.Cpu
-			cpuInst, err := InstCpuStats(last, val)
+		if stat.HasCPU {
+			stat.CPU = val.CPU
+			cpuInst, err := InstCPUStats(last, val)
 			if err != nil {
 				klog.Warningf("Could not get instant cpu stats: %v", err)
 			} else {
-				stat.CpuInst = cpuInst
+				stat.CPUInst = cpuInst
 			}
 			last = val
 		}
@@ -207,14 +207,14 @@ func DeprecatedStatsFromV1(cont *v1.ContainerInfo) []DeprecatedContainerStats {
 	return stats
 }
 
-func InstCpuStats(last, cur *v1.ContainerStats) (*CpuInstStats, error) {
+func InstCPUStats(last, cur *v1.ContainerStats) (*CPUInstStats, error) {
 	if last == nil {
 		return nil, nil
 	}
 	if !cur.Timestamp.After(last.Timestamp) {
 		return nil, fmt.Errorf("container stats move backwards in time")
 	}
-	if len(last.Cpu.Usage.PerCpu) != len(cur.Cpu.Usage.PerCpu) {
+	if len(last.CPU.Usage.PerCPU) != len(cur.CPU.Usage.PerCPU) {
 		return nil, fmt.Errorf("different number of cpus")
 	}
 	timeDelta := cur.Timestamp.Sub(last.Timestamp)
@@ -229,30 +229,30 @@ func InstCpuStats(last, cur *v1.ContainerStats) (*CpuInstStats, error) {
 		// Use float64 to keep precision
 		return uint64(float64(valueDelta) / float64(timeDeltaNs) * 1e9), nil
 	}
-	total, err := convertToRate(last.Cpu.Usage.Total, cur.Cpu.Usage.Total)
+	total, err := convertToRate(last.CPU.Usage.Total, cur.CPU.Usage.Total)
 	if err != nil {
 		return nil, err
 	}
-	percpu := make([]uint64, len(last.Cpu.Usage.PerCpu))
+	percpu := make([]uint64, len(last.CPU.Usage.PerCPU))
 	for i := range percpu {
 		var err error
-		percpu[i], err = convertToRate(last.Cpu.Usage.PerCpu[i], cur.Cpu.Usage.PerCpu[i])
+		percpu[i], err = convertToRate(last.CPU.Usage.PerCPU[i], cur.CPU.Usage.PerCPU[i])
 		if err != nil {
 			return nil, err
 		}
 	}
-	user, err := convertToRate(last.Cpu.Usage.User, cur.Cpu.Usage.User)
+	user, err := convertToRate(last.CPU.Usage.User, cur.CPU.Usage.User)
 	if err != nil {
 		return nil, err
 	}
-	system, err := convertToRate(last.Cpu.Usage.System, cur.Cpu.Usage.System)
+	system, err := convertToRate(last.CPU.Usage.System, cur.CPU.Usage.System)
 	if err != nil {
 		return nil, err
 	}
-	return &CpuInstStats{
-		Usage: CpuInstUsage{
+	return &CPUInstStats{
+		Usage: CPUInstUsage{
 			Total:  total,
-			PerCpu: percpu,
+			PerCPU: percpu,
 			User:   user,
 			System: system,
 		},
@@ -263,7 +263,7 @@ func InstCpuStats(last, cur *v1.ContainerStats) (*CpuInstStats, error) {
 func ContainerSpecFromV1(specV1 *v1.ContainerSpec, aliases []string, namespace string) ContainerSpec {
 	specV2 := ContainerSpec{
 		CreationTime:     specV1.CreationTime,
-		HasCpu:           specV1.HasCpu,
+		HasCPU:           specV1.HasCPU,
 		HasMemory:        specV1.HasMemory,
 		HasHugetlb:       specV1.HasHugetlb,
 		HasFilesystem:    specV1.HasFilesystem,
@@ -275,10 +275,10 @@ func ContainerSpecFromV1(specV1 *v1.ContainerSpec, aliases []string, namespace s
 		Labels:           specV1.Labels,
 		Envs:             specV1.Envs,
 	}
-	if specV1.HasCpu {
-		specV2.Cpu.Limit = specV1.Cpu.Limit
-		specV2.Cpu.MaxLimit = specV1.Cpu.MaxLimit
-		specV2.Cpu.Mask = specV1.Cpu.Mask
+	if specV1.HasCPU {
+		specV2.CPU.Limit = specV1.CPU.Limit
+		specV2.CPU.MaxLimit = specV1.CPU.MaxLimit
+		specV2.CPU.Mask = specV1.CPU.Mask
 	}
 	if specV1.HasMemory {
 		specV2.Memory.Limit = specV1.Memory.Limit

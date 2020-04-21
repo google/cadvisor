@@ -148,8 +148,8 @@ func TestMachineStats(t *testing.T) {
 	machineStats := []v2.MachineStats{
 		{
 			Timestamp: time.Now(),
-			Cpu: &v1.CpuStats{
-				Usage: v1.CpuUsage{
+			CPU: &v1.CPUStats{
+				Usage: v1.CPUUsage{
 					Total: 100000,
 				},
 				LoadAverage: 10,
@@ -171,7 +171,7 @@ func TestMachineStats(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Len(t, returned, len(machineStats))
-	if !reflect.DeepEqual(returned[0].Cpu, machineStats[0].Cpu) {
+	if !reflect.DeepEqual(returned[0].CPU, machineStats[0].CPU) {
 		t.Fatalf("received unexpected machine stats\nExp: %+v\nAct: %+v", machineStats, returned)
 	}
 	if !reflect.DeepEqual(returned[0].Filesystem, machineStats[0].Filesystem) {

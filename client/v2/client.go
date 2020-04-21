@@ -32,7 +32,7 @@ import (
 
 // Client represents the base URL for a cAdvisor client.
 type Client struct {
-	baseUrl string
+	baseURL string
 }
 
 // NewClient returns a new client with the specified base URL.
@@ -42,7 +42,7 @@ func NewClient(url string) (*Client, error) {
 	}
 
 	return &Client{
-		baseUrl: fmt.Sprintf("%sapi/v2.1/", url),
+		baseURL: fmt.Sprintf("%sapi/v2.1/", url),
 	}, nil
 }
 
@@ -92,7 +92,7 @@ func (self *Client) Stats(name string, request *v2.RequestOptions) (map[string]v
 	u := self.statsUrl(name)
 	ret := make(map[string]v2.ContainerInfo)
 	data := url.Values{
-		"type":      []string{request.IdType},
+		"type":      []string{request.IDType},
 		"count":     []string{strconv.Itoa(request.Count)},
 		"recursive": []string{strconv.FormatBool(request.Recursive)},
 	}
@@ -105,23 +105,23 @@ func (self *Client) Stats(name string, request *v2.RequestOptions) (map[string]v
 }
 
 func (self *Client) machineInfoUrl() string {
-	return self.baseUrl + path.Join("machine")
+	return self.baseURL + path.Join("machine")
 }
 
 func (self *Client) machineStatsUrl() string {
-	return self.baseUrl + path.Join("machinestats")
+	return self.baseURL + path.Join("machinestats")
 }
 
 func (self *Client) versionInfoUrl() string {
-	return self.baseUrl + path.Join("version")
+	return self.baseURL + path.Join("version")
 }
 
 func (self *Client) attributesUrl() string {
-	return self.baseUrl + path.Join("attributes")
+	return self.baseURL + path.Join("attributes")
 }
 
 func (self *Client) statsUrl(name string) string {
-	return self.baseUrl + path.Join("stats", name)
+	return self.baseURL + path.Join("stats", name)
 }
 
 func (self *Client) httpGetResponse(postData interface{}, urlPath, infoName string) ([]byte, error) {

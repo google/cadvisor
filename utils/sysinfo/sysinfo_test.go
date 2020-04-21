@@ -514,7 +514,7 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 	assert.Equal(t, 4, cores)
 
 	sort.Slice(nodes, func(i, j int) bool {
-		return nodes[i].Id < nodes[j].Id
+		return nodes[i].ID < nodes[j].ID
 	})
 
 	nodesJSON, err := json.Marshal(nodes)

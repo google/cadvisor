@@ -88,7 +88,7 @@ func TestContainerReference(t *testing.T) {
 			false,
 			"",
 			&info.ContainerReference{
-				Id:        "04e20821-67d3-4bf7-96b4-7d4495f50b28",
+				ID:        "04e20821-67d3-4bf7-96b4-7d4495f50b28",
 				Name:      "/mesos/04e20821-67d3-4bf7-96b4-7d4495f50b28",
 				Aliases:   []string{"04e20821-67d3-4bf7-96b4-7d4495f50b28", "/mesos/04e20821-67d3-4bf7-96b4-7d4495f50b28"},
 				Namespace: MesosNamespace,

@@ -149,7 +149,7 @@ func newDockerContainerHandler(
 		storageDir = path.Join(rootFs, storageDir)
 	}
 
-	id := ContainerNameToDockerId(name)
+	id := ContainerNameToDockerID(name)
 
 	// Add the Containers dir where the log files are stored.
 	// FIXME: Give `otherStorageDir` a more descriptive name.
@@ -214,7 +214,7 @@ func newDockerContainerHandler(
 
 	// Add the name and bare ID as aliases of the container.
 	handler.reference = info.ContainerReference{
-		Id:        id,
+		ID:        id,
 		Name:      name,
 		Aliases:   []string{strings.TrimPrefix(ctnr.Name, "/"), id},
 		Namespace: DockerNamespace,
@@ -232,8 +232,8 @@ func newDockerContainerHandler(
 	ipAddress := ctnr.NetworkSettings.IPAddress
 	networkMode := string(ctnr.HostConfig.NetworkMode)
 	if ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
-		containerId := strings.TrimPrefix(networkMode, "container:")
-		c, err := client.ContainerInspect(context.Background(), containerId)
+		containerID := strings.TrimPrefix(networkMode, "container:")
+		c, err := client.ContainerInspect(context.Background(), containerID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 		}

@@ -73,12 +73,12 @@ func TestScanUDPStats(t *testing.T) {
 		t.Errorf("failure opening %s: %v", udpStatsFile, err)
 	}
 
-	stats, err := scanUdpStats(r)
+	stats, err := scanUDPStats(r)
 	if err != nil {
 		t.Error(err)
 	}
 
-	var udpstats = info.UdpStat{
+	var udpstats = info.UDPStat{
 		Listen:   2,
 		Dropped:  4,
 		RxQueued: 10,
@@ -102,15 +102,15 @@ func TestMorePossibleCPUs(t *testing.T) {
 	}
 	possibleCPUs := uint32(31)
 
-	perCpuUsage := make([]uint64, possibleCPUs)
+	perCPUUsage := make([]uint64, possibleCPUs)
 	for i := uint32(0); i < realNumCPUs; i++ {
-		perCpuUsage[i] = 8562955455524
+		perCPUUsage[i] = 8562955455524
 	}
 
 	s := &cgroups.Stats{
 		CpuStats: cgroups.CpuStats{
 			CpuUsage: cgroups.CpuUsage{
-				PercpuUsage:       perCpuUsage,
+				PercpuUsage:       perCPUUsage,
 				TotalUsage:        33802947350272,
 				UsageInKernelmode: 734746 * nanosecondsInSeconds / clockTicks,
 				UsageInUsermode:   2767637 * nanosecondsInSeconds / clockTicks,
@@ -118,12 +118,12 @@ func TestMorePossibleCPUs(t *testing.T) {
 		},
 	}
 	var ret info.ContainerStats
-	setCpuStats(s, &ret, true)
+	setCPUStats(s, &ret, true)
 
 	expected := info.ContainerStats{
-		Cpu: info.CpuStats{
-			Usage: info.CpuUsage{
-				PerCpu: perCpuUsage[0:realNumCPUs],
+		CPU: info.CPUStats{
+			Usage: info.CPUUsage{
+				PerCPU: perCPUUsage[0:realNumCPUs],
 				User:   s.CpuStats.CpuUsage.UsageInUsermode,
 				System: s.CpuStats.CpuUsage.UsageInKernelmode,
 				Total:  33802947350272,

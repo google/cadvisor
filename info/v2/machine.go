@@ -41,7 +41,7 @@ type Attributes struct {
 	NumCores int `json:"num_cores"`
 
 	// Maximum clock speed for the cores, in KHz.
-	CpuFrequency uint64 `json:"cpu_frequency_khz"`
+	CPUFrequency uint64 `json:"cpu_frequency_khz"`
 
 	// The amount of memory (in bytes) in this machine
 	MemoryCapacity uint64 `json:"memory_capacity"`
@@ -83,7 +83,7 @@ func GetAttributes(mi *v1.MachineInfo, vi *v1.VersionInfo) Attributes {
 		DockerAPIVersion:   vi.DockerAPIVersion,
 		CadvisorVersion:    vi.CadvisorVersion,
 		NumCores:           mi.NumCores,
-		CpuFrequency:       mi.CpuFrequency,
+		CPUFrequency:       mi.CPUFrequency,
 		MemoryCapacity:     mi.MemoryCapacity,
 		MachineID:          mi.MachineID,
 		SystemUUID:         mi.SystemUUID,
@@ -101,9 +101,9 @@ type MachineStats struct {
 	// The time of this stat point.
 	Timestamp time.Time `json:"timestamp"`
 	// In nanoseconds (aggregated)
-	Cpu *v1.CpuStats `json:"cpu,omitempty"`
+	CPU *v1.CPUStats `json:"cpu,omitempty"`
 	// In nanocores per second (instantaneous)
-	CpuInst *CpuInstStats `json:"cpu_inst,omitempty"`
+	CPUInst *CPUInstStats `json:"cpu_inst,omitempty"`
 	// Memory statistics
 	Memory *v1.MemoryStats `json:"memory,omitempty"`
 	// Network statistics

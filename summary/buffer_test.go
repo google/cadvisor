@@ -24,7 +24,7 @@ import (
 func createSample(i uint64) info.Usage {
 	usage := info.Usage{}
 	usage.PercentComplete = 100
-	usage.Cpu = info.Percentiles{
+	usage.CPU = info.Percentiles{
 		Present: true,
 		Mean:    i * 50,
 		Max:     i * 100,

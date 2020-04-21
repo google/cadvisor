@@ -97,7 +97,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 				Value:        uint64(float64(perfData.Value) / scalingRatio),
 				Name:         name,
 				ScalingRatio: scalingRatio,
-				Cpu:          cpu,
+				CPU:          cpu,
 			}
 			stats.PerfStats = append(stats.PerfStats, stat)
 		}

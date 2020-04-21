@@ -532,7 +532,7 @@ func getRequestOptions(r *http.Request) (v2.RequestOptions, error) {
 	}
 	// fill in the defaults.
 	opt := v2.RequestOptions{
-		IdType:    v2.TypeName,
+		IDType:    v2.TypeName,
 		Count:     64,
 		Recursive: false,
 	}
@@ -541,7 +541,7 @@ func getRequestOptions(r *http.Request) (v2.RequestOptions, error) {
 		if !supportedTypes[idType] {
 			return opt, fmt.Errorf("unknown 'type' %q", idType)
 		}
-		opt.IdType = idType
+		opt.IDType = idType
 	}
 	count := r.URL.Query().Get("count")
 	if len(count) != 0 {

@@ -43,17 +43,17 @@ type ContainerHandlerFactory interface {
 type MetricKind string
 
 const (
-	CpuUsageMetrics                MetricKind = "cpu"
+	CPUUsageMetrics                MetricKind = "cpu"
 	ProcessSchedulerMetrics        MetricKind = "sched"
-	PerCpuUsageMetrics             MetricKind = "percpu"
+	PerCPUUsageMetrics             MetricKind = "percpu"
 	MemoryUsageMetrics             MetricKind = "memory"
-	CpuLoadMetrics                 MetricKind = "cpuLoad"
+	CPULoadMetrics                 MetricKind = "cpuLoad"
 	DiskIOMetrics                  MetricKind = "diskIO"
 	DiskUsageMetrics               MetricKind = "disk"
 	NetworkUsageMetrics            MetricKind = "network"
-	NetworkTcpUsageMetrics         MetricKind = "tcp"
-	NetworkAdvancedTcpUsageMetrics MetricKind = "advtcp"
-	NetworkUdpUsageMetrics         MetricKind = "udp"
+	NetworkTCPUsageMetrics         MetricKind = "tcp"
+	NetworkAdvancedTCPUsageMetrics MetricKind = "advtcp"
+	NetworkUDPUsageMetrics         MetricKind = "udp"
 	AcceleratorUsageMetrics        MetricKind = "accelerator"
 	AppMetrics                     MetricKind = "app"
 	ProcessMetrics                 MetricKind = "process"
@@ -63,18 +63,18 @@ const (
 
 // AllMetrics represents all kinds of metrics that cAdvisor supported.
 var AllMetrics = MetricSet{
-	CpuUsageMetrics:                struct{}{},
+	CPUUsageMetrics:                struct{}{},
 	ProcessSchedulerMetrics:        struct{}{},
-	PerCpuUsageMetrics:             struct{}{},
+	PerCPUUsageMetrics:             struct{}{},
 	MemoryUsageMetrics:             struct{}{},
-	CpuLoadMetrics:                 struct{}{},
+	CPULoadMetrics:                 struct{}{},
 	DiskIOMetrics:                  struct{}{},
 	AcceleratorUsageMetrics:        struct{}{},
 	DiskUsageMetrics:               struct{}{},
 	NetworkUsageMetrics:            struct{}{},
-	NetworkTcpUsageMetrics:         struct{}{},
-	NetworkAdvancedTcpUsageMetrics: struct{}{},
-	NetworkUdpUsageMetrics:         struct{}{},
+	NetworkTCPUsageMetrics:         struct{}{},
+	NetworkAdvancedTCPUsageMetrics: struct{}{},
+	NetworkUDPUsageMetrics:         struct{}{},
 	ProcessMetrics:                 struct{}{},
 	AppMetrics:                     struct{}{},
 	HugetlbUsageMetrics:            struct{}{},

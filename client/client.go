@@ -35,7 +35,7 @@ import (
 
 // Client represents the base URL for a cAdvisor client.
 type Client struct {
-	baseUrl    string
+	baseURL    string
 	httpClient *http.Client
 }
 
@@ -50,7 +50,7 @@ func newClient(url string, client *http.Client) (*Client, error) {
 	}
 
 	return &Client{
-		baseUrl:    fmt.Sprintf("%sapi/v1.3/", url),
+		baseURL:    fmt.Sprintf("%sapi/v1.3/", url),
 		httpClient: client,
 	}, nil
 }
@@ -146,23 +146,23 @@ func (self *Client) AllDockerContainers(query *v1.ContainerInfoRequest) (cinfo [
 }
 
 func (self *Client) machineInfoUrl() string {
-	return self.baseUrl + path.Join("machine")
+	return self.baseURL + path.Join("machine")
 }
 
 func (self *Client) containerInfoUrl(name string) string {
-	return self.baseUrl + path.Join("containers", name)
+	return self.baseURL + path.Join("containers", name)
 }
 
 func (self *Client) subcontainersInfoUrl(name string) string {
-	return self.baseUrl + path.Join("subcontainers", name)
+	return self.baseURL + path.Join("subcontainers", name)
 }
 
 func (self *Client) dockerInfoUrl(name string) string {
-	return self.baseUrl + path.Join("docker", name)
+	return self.baseURL + path.Join("docker", name)
 }
 
 func (self *Client) eventsInfoUrl(name string) string {
-	return self.baseUrl + path.Join("events", name)
+	return self.baseURL + path.Join("events", name)
 }
 
 func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName string) error {

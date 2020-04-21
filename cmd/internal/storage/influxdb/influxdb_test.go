@@ -61,7 +61,7 @@ func (self *influxDbTestStorageDriver) StatsEq(a, b *info.ContainerStats) bool {
 		return false
 	}
 	// Check only the stats populated in influxdb.
-	if !reflect.DeepEqual(a.Cpu.Usage, b.Cpu.Usage) {
+	if !reflect.DeepEqual(a.CPU.Usage, b.CPU.Usage) {
 		return false
 	}
 
@@ -224,20 +224,20 @@ func TestContainerStatsToPoints(t *testing.T) {
 
 	// Then
 	assert.NotEmpty(t, points)
-	assert.Len(t, points, 10+len(stats.Cpu.Usage.PerCpu))
+	assert.Len(t, points, 10+len(stats.CPU.Usage.PerCPU))
 
-	assertContainsPointWithValue(t, points, serCpuUsageTotal, stats.Cpu.Usage.Total)
-	assertContainsPointWithValue(t, points, serCpuUsageSystem, stats.Cpu.Usage.System)
-	assertContainsPointWithValue(t, points, serCpuUsageUser, stats.Cpu.Usage.User)
+	assertContainsPointWithValue(t, points, serCpuUsageTotal, stats.CPU.Usage.Total)
+	assertContainsPointWithValue(t, points, serCpuUsageSystem, stats.CPU.Usage.System)
+	assertContainsPointWithValue(t, points, serCpuUsageUser, stats.CPU.Usage.User)
 	assertContainsPointWithValue(t, points, serMemoryUsage, stats.Memory.Usage)
-	assertContainsPointWithValue(t, points, serLoadAverage, stats.Cpu.LoadAverage)
+	assertContainsPointWithValue(t, points, serLoadAverage, stats.CPU.LoadAverage)
 	assertContainsPointWithValue(t, points, serMemoryWorkingSet, stats.Memory.WorkingSet)
 	assertContainsPointWithValue(t, points, serRxBytes, stats.Network.RxBytes)
 	assertContainsPointWithValue(t, points, serRxErrors, stats.Network.RxErrors)
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxBytes)
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxErrors)
 
-	for _, cpu_usage := range stats.Cpu.Usage.PerCpu {
+	for _, cpu_usage := range stats.CPU.Usage.PerCPU {
 		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)
 	}
 }
@@ -280,16 +280,16 @@ func createTestStats() (*info.ContainerReference, *info.ContainerStats) {
 		Aliases: []string{"testContainerAlias1", "testContainerAlias2"},
 	}
 
-	cpuUsage := info.CpuUsage{
+	cpuUsage := info.CPUUsage{
 		Total:  uint64(rand.Intn(10000)),
-		PerCpu: []uint64{uint64(rand.Intn(1000)), uint64(rand.Intn(1000)), uint64(rand.Intn(1000))},
+		PerCPU: []uint64{uint64(rand.Intn(1000)), uint64(rand.Intn(1000)), uint64(rand.Intn(1000))},
 		User:   uint64(rand.Intn(10000)),
 		System: uint64(rand.Intn(10000)),
 	}
 
 	stats := &info.ContainerStats{
 		Timestamp: time.Now(),
-		Cpu: info.CpuStats{
+		CPU: info.CPUStats{
 			Usage:       cpuUsage,
 			LoadAverage: int32(rand.Intn(1000)),
 		},

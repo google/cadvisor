@@ -66,7 +66,7 @@ func (driver *stdoutStorage) containerStatsToValues(stats *info.ContainerStats) 
 	series[colTimestamp] = uint64(time.Now().UnixNano())
 
 	// Cumulative Cpu Usage
-	series[colCpuCumulativeUsage] = stats.Cpu.Usage.Total
+	series[colCpuCumulativeUsage] = stats.CPU.Usage.Total
 
 	// Memory Usage
 	series[colMemoryUsage] = stats.Memory.Usage

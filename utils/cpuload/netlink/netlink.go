@@ -64,7 +64,7 @@ func padding(size int, alignment int) int {
 }
 
 // Get family id for taskstats subsystem.
-func getFamilyId(conn *Connection) (uint16, error) {
+func getFamilyID(conn *Connection) (uint16, error) {
 	msg := prepareFamilyMessage()
 	err := conn.WriteMessage(msg.toRawMsg())
 	if err != nil {

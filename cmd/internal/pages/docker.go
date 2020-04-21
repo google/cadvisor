@@ -73,7 +73,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		for _, cont := range conts {
 			subcontainers = append(subcontainers, link{
 				Text: getContainerDisplayName(cont.ContainerReference),
-				Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerId(cont.ContainerReference.Name)),
+				Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerID(cont.ContainerReference.Name)),
 			})
 		}
 
@@ -126,7 +126,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		})
 		parentContainers = append(parentContainers, link{
 			Text: displayName,
-			Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerId(cont.Name)),
+			Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerID(cont.Name)),
 		})
 
 		// Get the MachineInfo
@@ -142,8 +142,8 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 			Spec:                   cont.Spec,
 			Stats:                  cont.Stats,
 			MachineInfo:            machineInfo,
-			ResourcesAvailable:     cont.Spec.HasCpu || cont.Spec.HasMemory || cont.Spec.HasNetwork,
-			CpuAvailable:           cont.Spec.HasCpu,
+			ResourcesAvailable:     cont.Spec.HasCPU || cont.Spec.HasMemory || cont.Spec.HasNetwork,
+			CpuAvailable:           cont.Spec.HasCPU,
 			MemoryAvailable:        cont.Spec.HasMemory,
 			NetworkAvailable:       cont.Spec.HasNetwork,
 			FsAvailable:            cont.Spec.HasFilesystem,

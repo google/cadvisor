@@ -79,11 +79,11 @@ var perfEvents = flag.String("perf_events_config", "", "Path to a JSON file cont
 
 var (
 	// Metrics to be ignored.
-	// Tcp metrics are ignored by default.
+	// TCP metrics are ignored by default.
 	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
-		container.NetworkTcpUsageMetrics:         struct{}{},
-		container.NetworkUdpUsageMetrics:         struct{}{},
-		container.NetworkAdvancedTcpUsageMetrics: struct{}{},
+		container.NetworkTCPUsageMetrics:         struct{}{},
+		container.NetworkUDPUsageMetrics:         struct{}{},
+		container.NetworkAdvancedTCPUsageMetrics: struct{}{},
 		container.ProcessSchedulerMetrics:        struct{}{},
 		container.ProcessMetrics:                 struct{}{},
 		container.HugetlbUsageMetrics:            struct{}{},
@@ -94,10 +94,10 @@ var (
 		container.DiskUsageMetrics:               struct{}{},
 		container.DiskIOMetrics:                  struct{}{},
 		container.NetworkUsageMetrics:            struct{}{},
-		container.NetworkTcpUsageMetrics:         struct{}{},
-		container.NetworkAdvancedTcpUsageMetrics: struct{}{},
-		container.NetworkUdpUsageMetrics:         struct{}{},
-		container.PerCpuUsageMetrics:             struct{}{},
+		container.NetworkTCPUsageMetrics:         struct{}{},
+		container.NetworkAdvancedTCPUsageMetrics: struct{}{},
+		container.NetworkUDPUsageMetrics:         struct{}{},
+		container.PerCPUUsageMetrics:             struct{}{},
 		container.ProcessSchedulerMetrics:        struct{}{},
 		container.ProcessMetrics:                 struct{}{},
 		container.HugetlbUsageMetrics:            struct{}{},

@@ -181,16 +181,16 @@ func TestTopology(t *testing.T) {
 		Level: 1,
 	}
 	for i := 0; i < numNodes; i++ {
-		node := info.Node{Id: i}
+		node := info.Node{ID: i}
 		// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
 		node.Memory = topology[i].Memory
 		// Copy over HugePagesInfo from result. TODO(ohsewon): Use HugePagesInfo from fake.
 		node.HugePages = topology[i].HugePages
 		for j := 0; j < numCoresPerNode; j++ {
-			core := info.Core{Id: i*numCoresPerNode + j}
+			core := info.Core{ID: i*numCoresPerNode + j}
 			core.Caches = append(core.Caches, cache)
 			for k := 0; k < numThreads; k++ {
-				core.Threads = append(core.Threads, k*numCoresPerNode*numNodes+core.Id)
+				core.Threads = append(core.Threads, k*numCoresPerNode*numNodes+core.ID)
 			}
 			node.Cores = append(node.Cores, core)
 		}

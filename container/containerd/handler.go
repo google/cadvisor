@@ -117,7 +117,7 @@ func newContainerdContainerHandler(
 	}
 
 	containerReference := info.ContainerReference{
-		Id:        id,
+		ID:        id,
 		Name:      name,
 		Namespace: k8sContainerdNamespace,
 		Aliases:   []string{id, name},

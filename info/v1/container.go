@@ -19,7 +19,7 @@ import (
 	"time"
 )
 
-type CpuSpec struct {
+type CPUSpec struct {
 	Limit    uint64 `json:"limit"`
 	MaxLimit uint64 `json:"max_limit"`
 	Mask     string `json:"mask,omitempty"`
@@ -54,8 +54,8 @@ type ContainerSpec struct {
 	// Metadata envs associated with this container. Only whitelisted envs are added.
 	Envs map[string]string `json:"envs,omitempty"`
 
-	HasCpu bool    `json:"has_cpu"`
-	Cpu    CpuSpec `json:"cpu,omitempty"`
+	HasCPU bool    `json:"has_cpu"`
+	CPU    CPUSpec `json:"cpu,omitempty"`
 
 	HasMemory bool       `json:"has_memory"`
 	Memory    MemorySpec `json:"memory,omitempty"`
@@ -82,7 +82,7 @@ type ContainerSpec struct {
 // Container reference contains enough information to uniquely identify a container
 type ContainerReference struct {
 	// The container id
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// The absolute name of the container. This is unique on the machine.
 	Name string `json:"name"`
@@ -190,10 +190,10 @@ func (self *ContainerSpec) Eq(b *ContainerSpec) bool {
 		return false
 	}
 
-	if self.HasCpu != b.HasCpu {
+	if self.HasCPU != b.HasCPU {
 		return false
 	}
-	if !reflect.DeepEqual(self.Cpu, b.Cpu) {
+	if !reflect.DeepEqual(self.CPU, b.CPU) {
 		return false
 	}
 	if self.HasMemory != b.HasMemory {
@@ -280,14 +280,14 @@ type LoadStats struct {
 }
 
 // CPU usage time statistics.
-type CpuUsage struct {
+type CPUUsage struct {
 	// Total CPU usage.
 	// Unit: nanoseconds.
 	Total uint64 `json:"total"`
 
 	// Per CPU/core usage of the container.
 	// Unit: nanoseconds.
-	PerCpu []uint64 `json:"per_cpu_usage,omitempty"`
+	PerCPU []uint64 `json:"per_cpu_usage,omitempty"`
 
 	// Time spent in user space.
 	// Unit: nanoseconds.
@@ -299,7 +299,7 @@ type CpuUsage struct {
 }
 
 // Cpu Completely Fair Scheduler statistics.
-type CpuCFS struct {
+type CPUCFS struct {
 	// Total number of elapsed enforcement intervals.
 	Periods uint64 `json:"periods"`
 
@@ -312,7 +312,7 @@ type CpuCFS struct {
 }
 
 // Cpu Aggregated scheduler statistics
-type CpuSchedstat struct {
+type CPUSchedstat struct {
 	// https://www.kernel.org/doc/Documentation/scheduler/sched-stats.txt
 
 	// time spent on the cpu
@@ -324,10 +324,10 @@ type CpuSchedstat struct {
 }
 
 // All CPU usage metrics are cumulative from the creation of the container
-type CpuStats struct {
-	Usage     CpuUsage     `json:"usage"`
-	CFS       CpuCFS       `json:"cfs"`
-	Schedstat CpuSchedstat `json:"schedstat"`
+type CPUStats struct {
+	Usage     CPUUsage     `json:"usage"`
+	CFS       CPUCFS       `json:"cfs"`
+	Schedstat CPUSchedstat `json:"schedstat"`
 	// Smoothed average of number of runnable threads x 1000.
 	// We multiply by thousand to avoid using floats, but preserving precision.
 	// Load is smoothed over the last 10 seconds. Instantaneous value can be read
@@ -429,18 +429,18 @@ type NetworkStats struct {
 	InterfaceStats `json:",inline"`
 	Interfaces     []InterfaceStats `json:"interfaces,omitempty"`
 	// TCP connection stats (Established, Listen...)
-	Tcp TcpStat `json:"tcp"`
+	TCP TCPStat `json:"tcp"`
 	// TCP6 connection stats (Established, Listen...)
-	Tcp6 TcpStat `json:"tcp6"`
+	TCP6 TCPStat `json:"tcp6"`
 	// UDP connection stats
-	Udp UdpStat `json:"udp"`
+	UDP UDPStat `json:"udp"`
 	// UDP6 connection stats
-	Udp6 UdpStat `json:"udp6"`
+	UPD6 UDPStat `json:"udp6"`
 	// TCP advanced stats
-	TcpAdvanced TcpAdvancedStat `json:"tcp_advanced"`
+	TCPAdvanced TCPAdvancedStat `json:"tcp_advanced"`
 }
 
-type TcpStat struct {
+type TCPStat struct {
 	// Count of TCP connections in state "Established"
 	Established uint64
 	// Count of TCP connections in state "Syn_Sent"
@@ -465,7 +465,7 @@ type TcpStat struct {
 	Closing uint64
 }
 
-type TcpAdvancedStat struct {
+type TCPAdvancedStat struct {
 	// The algorithm used to determine the timeout value used for
 	// retransmitting unacknowledged octets, ref: RFC2698, default 1
 	RtoAlgorithm uint64
@@ -704,7 +704,7 @@ type TcpAdvancedStat struct {
 	PAWSEstab uint64
 }
 
-type UdpStat struct {
+type UDPStat struct {
 	// Count of UDP sockets in state "Listen"
 	Listen uint64
 
@@ -845,7 +845,7 @@ type PerfStat struct {
 	Name string `json:"name"`
 
 	// CPU that perf event was measured on.
-	Cpu int `json:"cpu"`
+	CPU int `json:"cpu"`
 }
 
 type UlimitSpec struct {
@@ -877,7 +877,7 @@ type ProcessStats struct {
 type ContainerStats struct {
 	// The time of this stat point.
 	Timestamp time.Time               `json:"timestamp"`
-	Cpu       CpuStats                `json:"cpu,omitempty"`
+	CPU       CPUStats                `json:"cpu,omitempty"`
 	DiskIo    DiskIoStats             `json:"diskio,omitempty"`
 	Memory    MemoryStats             `json:"memory,omitempty"`
 	Hugetlb   map[string]HugetlbStats `json:"hugetlb,omitempty"`
@@ -927,7 +927,7 @@ func (a *ContainerStats) Eq(b *ContainerStats) bool {
 // Checks equality of the stats values.
 func (a *ContainerStats) StatsEq(b *ContainerStats) bool {
 	// TODO(vmarmol): Consider using this through reflection.
-	if !reflect.DeepEqual(a.Cpu, b.Cpu) {
+	if !reflect.DeepEqual(a.CPU, b.CPU) {
 		return false
 	}
 	if !reflect.DeepEqual(a.Memory, b.Memory) {

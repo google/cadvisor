@@ -64,7 +64,7 @@ type detailSpec struct {
 
 func (driver *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
 	timestamp := time.Now()
-	containerID := cInfo.ContainerReference.Id
+	containerID := cInfo.ContainerReference.ID
 	containerLabels := cInfo.Spec.Labels
 	containerName := container.GetPreferredName(cInfo.ContainerReference)
 

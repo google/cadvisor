@@ -142,7 +142,7 @@ type HouskeepingConfig = struct {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHttpClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, perfEventsFile string) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, perfEventsFile string) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -189,7 +189,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		includedMetrics:                       includedMetricsSet,
 		containerWatchers:                     []watcher.ContainerWatcher{},
 		eventsChannel:                         eventsChannel,
-		collectorHttpClient:                   collectorHttpClient,
+		collectorHTTPClient:                   collectorHTTPClient,
 		nvidiaManager:                         accelerators.NewNvidiaManager(),
 		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
 	}
@@ -243,7 +243,7 @@ type manager struct {
 	includedMetrics          container.MetricSet
 	containerWatchers        []watcher.ContainerWatcher
 	eventsChannel            chan watcher.ContainerEvent
-	collectorHttpClient      *http.Client
+	collectorHTTPClient      *http.Client
 	nvidiaManager            stats.Manager
 	perfManager              stats.Manager
 	// List of raw container cgroup path prefix whitelist.
@@ -680,7 +680,7 @@ func (self *manager) GetRequestedContainersInfo(containerName string, options v2
 
 func (self *manager) getRequestedContainers(containerName string, options v2.RequestOptions) (map[string]*containerData, error) {
 	containersMap := make(map[string]*containerData)
-	switch options.IdType {
+	switch options.IDType {
 	case v2.TypeName:
 		if !options.Recursive {
 			cont, err := self.getContainer(containerName)
@@ -709,7 +709,7 @@ func (self *manager) getRequestedContainers(containerName string, options v2.Req
 			containersMap = self.getAllDockerContainers()
 		}
 	default:
-		return containersMap, fmt.Errorf("invalid request type %q", options.IdType)
+		return containersMap, fmt.Errorf("invalid request type %q", options.IDType)
 	}
 	if options.MaxAge != nil {
 		// update stats for all containers in containersMap
@@ -847,7 +847,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 		klog.V(4).Infof("Got config from %q: %q", v, configFile)
 
 		if strings.HasPrefix(k, "prometheus") || strings.HasPrefix(k, "Prometheus") {
-			newCollector, err := collector.NewPrometheusCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
+			newCollector, err := collector.NewPrometheusCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHTTPClient)
 			if err != nil {
 				return fmt.Errorf("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
 			}
@@ -856,7 +856,7 @@ func (m *manager) registerCollectors(collectorConfigs map[string]string, cont *c
 				return fmt.Errorf("failed to register collector for container %q, config %q: %v", cont.info.Name, k, err)
 			}
 		} else {
-			newCollector, err := collector.NewCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHttpClient)
+			newCollector, err := collector.NewCollector(k, configFile, *applicationMetricsCountLimit, cont.handler, m.collectorHTTPClient)
 			if err != nil {
 				return fmt.Errorf("failed to create collector for container %q, config %q: %v", cont.info.Name, k, err)
 			}

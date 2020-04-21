@@ -62,8 +62,8 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 			},
 			Spec: info.ContainerSpec{
 				Image:  "test",
-				HasCpu: true,
-				Cpu: info.CpuSpec{
+				HasCPU: true,
+				CPU: info.CPUSpec{
 					Limit:  1000,
 					Period: 100000,
 					Quota:  10000,
@@ -89,19 +89,19 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 			Stats: []*info.ContainerStats{
 				{
 					Timestamp: time.Unix(1395066363, 0),
-					Cpu: info.CpuStats{
-						Usage: info.CpuUsage{
+					CPU: info.CPUStats{
+						Usage: info.CPUUsage{
 							Total:  1,
-							PerCpu: []uint64{2, 3, 4, 5},
+							PerCPU: []uint64{2, 3, 4, 5},
 							User:   6,
 							System: 7,
 						},
-						CFS: info.CpuCFS{
+						CFS: info.CPUCFS{
 							Periods:          723,
 							ThrottledPeriods: 18,
 							ThrottledTime:    1724314000,
 						},
-						Schedstat: info.CpuSchedstat{
+						Schedstat: info.CPUSchedstat{
 							RunTime:      53643567,
 							RunqueueTime: 479424566378,
 							RunPeriods:   984285,
@@ -162,7 +162,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 								TxDropped: 21,
 							},
 						},
-						Tcp: info.TcpStat{
+						TCP: info.TCPStat{
 							Established: 13,
 							SynSent:     0,
 							SynRecv:     0,
@@ -175,7 +175,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							Listen:      3,
 							Closing:     0,
 						},
-						Tcp6: info.TcpStat{
+						TCP6: info.TCPStat{
 							Established: 11,
 							SynSent:     0,
 							SynRecv:     0,
@@ -188,7 +188,7 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							Listen:      3,
 							Closing:     0,
 						},
-						TcpAdvanced: info.TcpAdvancedStat{
+						TCPAdvanced: info.TCPAdvancedStat{
 							TCPFullUndo:               2361,
 							TCPMD5NotFound:            0,
 							TCPDSACKRecv:              83680,
@@ -289,13 +289,13 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							TCPFastOpenActiveFail:     0,
 							PAWSEstab:                 0,
 						},
-						Udp: info.UdpStat{
+						UDP: info.UDPStat{
 							Listen:   0,
 							Dropped:  0,
 							RxQueued: 0,
 							TxQueued: 0,
 						},
-						Udp6: info.UdpStat{
+						UPD6: info.UDPStat{
 							Listen:   0,
 							Dropped:  0,
 							RxQueued: 0,
@@ -416,25 +416,25 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							ScalingRatio: 1.0,
 							Value:        123,
 							Name:         "instructions",
-							Cpu:          0,
+							CPU:          0,
 						},
 						{
 							ScalingRatio: 0.5,
 							Value:        456,
 							Name:         "instructions",
-							Cpu:          1,
+							CPU:          1,
 						},
 						{
 							ScalingRatio: 0.66666666666,
 							Value:        321,
 							Name:         "instructions_retired",
-							Cpu:          0,
+							CPU:          0,
 						},
 						{
 							ScalingRatio: 0.33333333333,
 							Value:        789,
 							Name:         "instructions_retired",
-							Cpu:          1,
+							CPU:          1,
 						},
 					},
 				},

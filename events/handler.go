@@ -44,7 +44,7 @@ func (e byTimestamp) Less(i, j int) bool {
 
 type EventChannel struct {
 	// Watch ID. Can be used by the caller to request cancellation of watch events.
-	watchId int
+	watchID int
 	// Channel on which the caller can receive watch events.
 	channel chan *info.Event
 }
@@ -100,7 +100,7 @@ type events struct {
 	// lock guarding watchers.
 	watcherLock sync.RWMutex
 	// last allocated watch id.
-	lastId int
+	lastID int
 	// Event storage policy.
 	storagePolicy StoragePolicy
 }
@@ -118,9 +118,9 @@ type watch struct {
 	eventChannel *EventChannel
 }
 
-func NewEventChannel(watchId int) *EventChannel {
+func NewEventChannel(watchID int) *EventChannel {
 	return &EventChannel{
-		watchId: watchId,
+		watchID: watchID,
 		channel: make(chan *info.Event, 10),
 	}
 }
@@ -178,7 +178,7 @@ func (self *EventChannel) GetChannel() chan *info.Event {
 }
 
 func (self *EventChannel) GetWatchId() int {
-	return self.watchId
+	return self.watchID
 }
 
 // sorts and returns up to the last MaxEventsReturned chronological elements
@@ -268,11 +268,11 @@ func (self *events) WatchEvents(request *Request) (*EventChannel, error) {
 	}
 	self.watcherLock.Lock()
 	defer self.watcherLock.Unlock()
-	new_id := self.lastId + 1
+	new_id := self.lastID + 1
 	returnEventChannel := NewEventChannel(new_id)
 	newWatcher := newWatch(request, returnEventChannel)
 	self.watchers[new_id] = newWatcher
-	self.lastId = new_id
+	self.lastID = new_id
 	return returnEventChannel, nil
 }
 

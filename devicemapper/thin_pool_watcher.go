@@ -85,13 +85,13 @@ func (w *ThinPoolWatcher) Stop() {
 }
 
 // GetUsage gets the cached usage value of the given device.
-func (w *ThinPoolWatcher) GetUsage(deviceId string) (uint64, error) {
+func (w *ThinPoolWatcher) GetUsage(deviceID string) (uint64, error) {
 	w.lock.RLock()
 	defer w.lock.RUnlock()
 
-	v, ok := w.cache[deviceId]
+	v, ok := w.cache[deviceID]
 	if !ok {
-		return 0, fmt.Errorf("no cached value for usage of device %v", deviceId)
+		return 0, fmt.Errorf("no cached value for usage of device %v", deviceID)
 	}
 
 	return v, nil

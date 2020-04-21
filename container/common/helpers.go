@@ -100,9 +100,9 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 	cpuRoot, ok := cgroupPaths["cpu"]
 	if ok {
 		if utils.FileExists(cpuRoot) {
-			spec.HasCpu = true
-			spec.Cpu.Limit = readUInt64(cpuRoot, "cpu.shares")
-			spec.Cpu.Period = readUInt64(cpuRoot, "cpu.cfs_period_us")
+			spec.HasCPU = true
+			spec.CPU.Limit = readUInt64(cpuRoot, "cpu.shares")
+			spec.CPU.Period = readUInt64(cpuRoot, "cpu.cfs_period_us")
 			quota := readString(cpuRoot, "cpu.cfs_quota_us")
 
 			if quota != "" && quota != "-1" {
@@ -110,7 +110,7 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 				if err != nil {
 					klog.Errorf("GetSpec: Failed to parse CPUQuota from %q: %s", path.Join(cpuRoot, "cpu.cfs_quota_us"), err)
 				} else {
-					spec.Cpu.Quota = val
+					spec.CPU.Quota = val
 				}
 			}
 		}
@@ -121,14 +121,14 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 	cpusetRoot, ok := cgroupPaths["cpuset"]
 	if ok {
 		if utils.FileExists(cpusetRoot) {
-			spec.HasCpu = true
+			spec.HasCPU = true
 			mask := ""
 			if cgroups.IsCgroup2UnifiedMode() {
 				mask = readString(cpusetRoot, "cpuset.cpus.effective")
 			} else {
 				mask = readString(cpusetRoot, "cpuset.cpus")
 			}
-			spec.Cpu.Mask = utils.FixCpuMask(mask, mi.NumCores)
+			spec.CPU.Mask = utils.FixCPUMask(mask, mi.NumCores)
 		}
 	}
 

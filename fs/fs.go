@@ -565,7 +565,7 @@ func GetDirUsage(dir string) (UsageInfo, error) {
 		return usage, fmt.Errorf("unsuported fileinfo for getting inode usage of %q", dir)
 	}
 
-	rootDevId := rootStat.Dev
+	rootDevID := rootStat.Dev
 
 	// dedupedInode stores inodes that could be duplicates (nlink > 1)
 	dedupedInodes := make(map[uint64]struct{})
@@ -589,7 +589,7 @@ func GetDirUsage(dir string) (UsageInfo, error) {
 			return fmt.Errorf("unsupported fileinfo; could not convert to stat_t")
 		}
 
-		if s.Dev != rootDevId {
+		if s.Dev != rootDevID {
 			// don't descend into directories on other devices
 			return filepath.SkipDir
 		}

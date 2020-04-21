@@ -69,7 +69,7 @@ func TestAggregates(t *testing.T) {
 		s := &secondSample{
 			Timestamp: ct.Add(time.Duration(i) * time.Second),
 			// cpu rate is 1 s/s
-			Cpu: i * Nanosecond,
+			CPU: i * Nanosecond,
 			// Memory grows by a KB every second.
 			Memory: i * 1024,
 		}
@@ -85,8 +85,8 @@ func TestAggregates(t *testing.T) {
 		Ninety:     1000,
 		NinetyFive: 1000,
 	}
-	if usage.Cpu != cpuExpected {
-		t.Errorf("cpu stats are %+v. Expected %+v", usage.Cpu, cpuExpected)
+	if usage.CPU != cpuExpected {
+		t.Errorf("cpu stats are %+v. Expected %+v", usage.CPU, cpuExpected)
 	}
 	memExpected := info.Percentiles{
 		Present:    true,
@@ -109,7 +109,7 @@ func TestSamplesCloseInTimeIgnored(t *testing.T) {
 		s1 := &secondSample{
 			Timestamp: ct.Add(time.Duration(i) * time.Second),
 			// cpu rate is 1 s/s
-			Cpu: i * Nanosecond,
+			CPU: i * Nanosecond,
 			// Memory grows by a KB every second.
 			Memory: i * 1024,
 		}
@@ -119,7 +119,7 @@ func TestSamplesCloseInTimeIgnored(t *testing.T) {
 		s2 := &secondSample{
 			// Add extra millisecond.
 			Timestamp: ct.Add(time.Duration(i) * time.Second).Add(time.Duration(1) * time.Millisecond),
-			Cpu:       i * 100 * Nanosecond,
+			CPU:       i * 100 * Nanosecond,
 			Memory:    i * 1024 * 1024,
 		}
 		stats = append(stats, s2)
@@ -134,8 +134,8 @@ func TestSamplesCloseInTimeIgnored(t *testing.T) {
 		Ninety:     1000,
 		NinetyFive: 1000,
 	}
-	if usage.Cpu != cpuExpected {
-		t.Errorf("cpu stats are %+v. Expected %+v", usage.Cpu, cpuExpected)
+	if usage.CPU != cpuExpected {
+		t.Errorf("cpu stats are %+v. Expected %+v", usage.CPU, cpuExpected)
 	}
 	memExpected := info.Percentiles{
 		Present:    true,
@@ -157,7 +157,7 @@ func TestDerivedStats(t *testing.T) {
 	for i = 1; i < N; i++ {
 		s := &info.Usage{
 			PercentComplete: 100,
-			Cpu: info.Percentiles{
+			CPU: info.Percentiles{
 				Present:    true,
 				Mean:       i * Nanosecond,
 				Max:        i * Nanosecond,
@@ -185,8 +185,8 @@ func TestDerivedStats(t *testing.T) {
 		Ninety:     90 * Nanosecond,
 		NinetyFive: 95 * Nanosecond,
 	}
-	if usage.Cpu != cpuExpected {
-		t.Errorf("cpu stats are %+v. Expected %+v", usage.Cpu, cpuExpected)
+	if usage.CPU != cpuExpected {
+		t.Errorf("cpu stats are %+v. Expected %+v", usage.CPU, cpuExpected)
 	}
 	memExpected := info.Percentiles{
 		Present:    true,

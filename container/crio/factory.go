@@ -87,7 +87,7 @@ func (self *crioFactory) NewContainerHandler(name string, inHostNamespace bool) 
 }
 
 // Returns the CRIO ID from the full container name.
-func ContainerNameToCrioId(name string) string {
+func ContainerNameToCrioID(name string) string {
 	id := path.Base(name)
 
 	if matches := crioCgroupRegexp.FindStringSubmatch(id); matches != nil {

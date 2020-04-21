@@ -32,12 +32,12 @@ import (
 // Usage fields we track for generating percentiles.
 type secondSample struct {
 	Timestamp time.Time // time when the sample was recorded.
-	Cpu       uint64    // cpu usage
+	CPU       uint64    // cpu usage
 	Memory    uint64    // memory usage
 }
 
 type availableResources struct {
-	Cpu    bool
+	CPU    bool
 	Memory bool
 }
 
@@ -60,8 +60,8 @@ type StatsSummary struct {
 func (s *StatsSummary) AddSample(stat v1.ContainerStats) error {
 	sample := secondSample{}
 	sample.Timestamp = stat.Timestamp
-	if s.available.Cpu {
-		sample.Cpu = stat.Cpu.Usage.Total
+	if s.available.CPU {
+		sample.CPU = stat.CPU.Usage.Total
 	}
 	if s.available.Memory {
 		sample.Memory = stat.Memory.WorkingSet
@@ -103,9 +103,9 @@ func (s *StatsSummary) updateLatestUsage() {
 	usage.Memory = latest.Memory
 	if numStats > 1 {
 		previous := s.secondSamples[numStats-2]
-		cpu, err := getCpuRate(*latest, *previous)
+		cpu, err := getCPURate(*latest, *previous)
 		if err == nil {
-			usage.Cpu = cpu
+			usage.CPU = cpu
 		}
 	}
 
@@ -170,13 +170,13 @@ func (s *StatsSummary) DerivedStats() (info.DerivedStats, error) {
 
 func New(spec v1.ContainerSpec) (*StatsSummary, error) {
 	summary := StatsSummary{}
-	if spec.HasCpu {
-		summary.available.Cpu = true
+	if spec.HasCPU {
+		summary.available.CPU = true
 	}
 	if spec.HasMemory {
 		summary.available.Memory = true
 	}
-	if !summary.available.Cpu && !summary.available.Memory {
+	if !summary.available.CPU && !summary.available.Memory {
 		return nil, fmt.Errorf("none of the resources are being tracked.")
 	}
 	summary.minuteSamples = NewSamplesBuffer(60 /* one hour */)

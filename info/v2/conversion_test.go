@@ -34,8 +34,8 @@ func TestContanierSpecFromV1(t *testing.T) {
 		CreationTime: timestamp,
 		Labels:       labels,
 		Envs:         envs,
-		HasCpu:       true,
-		Cpu: v1.CpuSpec{
+		HasCPU:       true,
+		CPU: v1.CPUSpec{
 			Limit:    2048,
 			MaxLimit: 4096,
 			Mask:     "cpu_mask",
@@ -68,8 +68,8 @@ func TestContanierSpecFromV1(t *testing.T) {
 		CreationTime: timestamp,
 		Labels:       labels,
 		Envs:         envs,
-		HasCpu:       true,
-		Cpu: CpuSpec{
+		HasCPU:       true,
+		CPU: CPUSpec{
 			Limit:    2048,
 			MaxLimit: 4096,
 			Mask:     "cpu_mask",
@@ -107,8 +107,8 @@ func TestContainerStatsFromV1(t *testing.T) {
 	v1Spec := v1.ContainerSpec{
 		CreationTime: timestamp,
 		Labels:       labels,
-		HasCpu:       true,
-		Cpu: v1.CpuSpec{
+		HasCPU:       true,
+		CPU: v1.CPUSpec{
 			Limit:    2048,
 			MaxLimit: 4096,
 			Mask:     "cpu_mask",
@@ -211,7 +211,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 	}
 	expectedV2Stats := ContainerStats{
 		Timestamp: timestamp,
-		Cpu:       &v1Stats.Cpu,
+		CPU:       &v1Stats.CPU,
 		DiskIo:    &v1Stats.DiskIo,
 		Memory:    &v1Stats.Memory,
 		Hugetlb:   &v1Stats.Hugetlb,
@@ -240,7 +240,7 @@ func TestInstCpuStats(t *testing.T) {
 	tests := []struct {
 		last *v1.ContainerStats
 		cur  *v1.ContainerStats
-		want *CpuInstStats
+		want *CPUInstStats
 	}{
 		// Last is missing
 		{
@@ -272,17 +272,17 @@ func TestInstCpuStats(t *testing.T) {
 		{
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0),
-				Cpu: v1.CpuStats{
-					Usage: v1.CpuUsage{
-						PerCpu: []uint64{100, 200},
+				CPU: v1.CPUStats{
+					Usage: v1.CPUUsage{
+						PerCPU: []uint64{100, 200},
 					},
 				},
 			},
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0).Add(time.Second),
-				Cpu: v1.CpuStats{
-					Usage: v1.CpuUsage{
-						PerCpu: []uint64{100, 200, 300},
+				CPU: v1.CPUStats{
+					Usage: v1.CPUUsage{
+						PerCPU: []uint64{100, 200, 300},
 					},
 				},
 			},
@@ -292,10 +292,10 @@ func TestInstCpuStats(t *testing.T) {
 		{
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0),
-				Cpu: v1.CpuStats{
-					Usage: v1.CpuUsage{
+				CPU: v1.CPUStats{
+					Usage: v1.CPUUsage{
 						Total:  300,
-						PerCpu: []uint64{100, 200},
+						PerCPU: []uint64{100, 200},
 						User:   250,
 						System: 50,
 					},
@@ -303,10 +303,10 @@ func TestInstCpuStats(t *testing.T) {
 			},
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0).Add(time.Second),
-				Cpu: v1.CpuStats{
-					Usage: v1.CpuUsage{
+				CPU: v1.CPUStats{
+					Usage: v1.CPUUsage{
 						Total:  200,
-						PerCpu: []uint64{100, 100},
+						PerCPU: []uint64{100, 100},
 						User:   150,
 						System: 50,
 					},
@@ -318,10 +318,10 @@ func TestInstCpuStats(t *testing.T) {
 		{
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0),
-				Cpu: v1.CpuStats{
-					Usage: v1.CpuUsage{
+				CPU: v1.CPUStats{
+					Usage: v1.CPUUsage{
 						Total:  300,
-						PerCpu: []uint64{100, 200},
+						PerCPU: []uint64{100, 200},
 						User:   250,
 						System: 50,
 					},
@@ -329,19 +329,19 @@ func TestInstCpuStats(t *testing.T) {
 			},
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0).Add(time.Second),
-				Cpu: v1.CpuStats{
-					Usage: v1.CpuUsage{
+				CPU: v1.CPUStats{
+					Usage: v1.CPUUsage{
 						Total:  500,
-						PerCpu: []uint64{200, 300},
+						PerCPU: []uint64{200, 300},
 						User:   400,
 						System: 100,
 					},
 				},
 			},
-			&CpuInstStats{
-				Usage: CpuInstUsage{
+			&CPUInstStats{
+				Usage: CPUInstUsage{
 					Total:  200,
-					PerCpu: []uint64{100, 100},
+					PerCPU: []uint64{100, 100},
 					User:   150,
 					System: 50,
 				},
@@ -351,10 +351,10 @@ func TestInstCpuStats(t *testing.T) {
 		{
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0),
-				Cpu: v1.CpuStats{
-					Usage: v1.CpuUsage{
+				CPU: v1.CPUStats{
+					Usage: v1.CPUUsage{
 						Total:  300,
-						PerCpu: []uint64{100, 200},
+						PerCPU: []uint64{100, 200},
 						User:   250,
 						System: 50,
 					},
@@ -362,19 +362,19 @@ func TestInstCpuStats(t *testing.T) {
 			},
 			&v1.ContainerStats{
 				Timestamp: time.Unix(100, 0).Add(2 * time.Second),
-				Cpu: v1.CpuStats{
-					Usage: v1.CpuUsage{
+				CPU: v1.CPUStats{
+					Usage: v1.CPUUsage{
 						Total:  500,
-						PerCpu: []uint64{200, 300},
+						PerCPU: []uint64{200, 300},
 						User:   400,
 						System: 100,
 					},
 				},
 			},
-			&CpuInstStats{
-				Usage: CpuInstUsage{
+			&CPUInstStats{
+				Usage: CPUInstUsage{
 					Total:  100,
-					PerCpu: []uint64{50, 50},
+					PerCPU: []uint64{50, 50},
 					User:   75,
 					System: 25,
 				},
@@ -382,7 +382,7 @@ func TestInstCpuStats(t *testing.T) {
 		},
 	}
 	for _, c := range tests {
-		got, err := InstCpuStats(c.last, c.cur)
+		got, err := InstCPUStats(c.last, c.cur)
 		if err != nil {
 			if c.want == nil {
 				continue

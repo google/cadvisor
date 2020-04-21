@@ -81,7 +81,7 @@ func RunCommand(cmd string, args ...string) error {
 	return nil
 }
 
-func RunSshCommand(cmd string, args ...string) error {
+func RunSSHCommand(cmd string, args ...string) error {
 	if *sshOptions != "" {
 		args = append(strings.Split(*sshOptions, " "), args...)
 	}
@@ -92,18 +92,18 @@ func PushAndRunTests(host, testDir string) (result error) {
 	// Push binary.
 	klog.Infof("Pushing cAdvisor binary to %q...", host)
 
-	err := RunSshCommand("ssh", host, "--", "mkdir", "-p", testDir)
+	err := RunSSHCommand("ssh", host, "--", "mkdir", "-p", testDir)
 	if err != nil {
 		return fmt.Errorf("failed to make remote testing directory: %v", err)
 	}
 	defer func() {
-		err = RunSshCommand("ssh", host, "--", "rm", "-rf", testDir)
+		err = RunSSHCommand("ssh", host, "--", "rm", "-rf", testDir)
 		if err != nil {
 			klog.Errorf("Failed to cleanup test directory: %v", err)
 		}
 	}()
 
-	err = RunSshCommand("scp", "-r", cadvisorBinary, fmt.Sprintf("%s:%s", host, testDir))
+	err = RunSSHCommand("scp", "-r", cadvisorBinary, fmt.Sprintf("%s:%s", host, testDir))
 	if err != nil {
 		return fmt.Errorf("failed to copy binary: %v", err)
 	}
@@ -113,13 +113,13 @@ func PushAndRunTests(host, testDir string) (result error) {
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error)
 	go func() {
-		err = RunSshCommand("ssh", host, "--", fmt.Sprintf("sudo GORACE='halt_on_error=1' %s --port %s --logtostderr --docker_env_metadata_whitelist=TEST_VAR  &> %s/log.txt", path.Join(testDir, cadvisorBinary), portStr, testDir))
+		err = RunSSHCommand("ssh", host, "--", fmt.Sprintf("sudo GORACE='halt_on_error=1' %s --port %s --logtostderr --docker_env_metadata_whitelist=TEST_VAR  &> %s/log.txt", path.Join(testDir, cadvisorBinary), portStr, testDir))
 		if err != nil {
 			errChan <- fmt.Errorf("error running cAdvisor: %v", err)
 		}
 	}()
 	defer func() {
-		err = RunSshCommand("ssh", host, "--", "sudo", "pkill", cadvisorBinary)
+		err = RunSSHCommand("ssh", host, "--", "sudo", "pkill", cadvisorBinary)
 		if err != nil {
 			klog.Errorf("Failed to cleanup: %v", err)
 		}
@@ -127,7 +127,7 @@ func PushAndRunTests(host, testDir string) (result error) {
 	defer func() {
 		if result != nil {
 			// Copy logs from the host
-			err := RunSshCommand("scp", fmt.Sprintf("%s:%s/log.txt", host, testDir), "./")
+			err := RunSSHCommand("scp", fmt.Sprintf("%s:%s/log.txt", host, testDir), "./")
 			if err != nil {
 				result = fmt.Errorf("error fetching logs: %v for %v", err, result)
 				return

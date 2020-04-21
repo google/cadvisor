@@ -43,7 +43,7 @@ type Handler struct {
 	rootFs          string
 	pid             int
 	includedMetrics container.MetricSet
-	pidMetricsCache map[int]*info.CpuSchedstat
+	pidMetricsCache map[int]*info.CPUSchedstat
 }
 
 var whitelistedUlimits = [...]string{"max_open_files"}
@@ -54,7 +54,7 @@ func NewHandler(cgroupManager cgroups.Manager, rootFs string, pid int, includedM
 		rootFs:          rootFs,
 		pid:             pid,
 		includedMetrics: includedMetrics,
-		pidMetricsCache: make(map[int]*info.CpuSchedstat),
+		pidMetricsCache: make(map[int]*info.CPUSchedstat),
 	}
 }
 
@@ -74,7 +74,7 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 		if err != nil {
 			klog.V(4).Infof("Could not get PIDs for container %d: %v", h.pid, err)
 		} else {
-			stats.Cpu.Schedstat, err = schedulerStatsFromProcs(h.rootFs, pids, h.pidMetricsCache)
+			stats.CPU.Schedstat, err = schedulerStatsFromProcs(h.rootFs, pids, h.pidMetricsCache)
 			if err != nil {
 				klog.V(4).Infof("Unable to get Process Scheduler Stats: %v", err)
 			}
@@ -93,43 +93,43 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 			stats.Network.Interfaces = append(stats.Network.Interfaces, netStats...)
 		}
 	}
-	if h.includedMetrics.Has(container.NetworkTcpUsageMetrics) {
+	if h.includedMetrics.Has(container.NetworkTCPUsageMetrics) {
 		t, err := tcpStatsFromProc(h.rootFs, h.pid, "net/tcp")
 		if err != nil {
 			klog.V(4).Infof("Unable to get tcp stats from pid %d: %v", h.pid, err)
 		} else {
-			stats.Network.Tcp = t
+			stats.Network.TCP = t
 		}
 
 		t6, err := tcpStatsFromProc(h.rootFs, h.pid, "net/tcp6")
 		if err != nil {
 			klog.V(4).Infof("Unable to get tcp6 stats from pid %d: %v", h.pid, err)
 		} else {
-			stats.Network.Tcp6 = t6
+			stats.Network.TCP6 = t6
 		}
 
 	}
-	if h.includedMetrics.Has(container.NetworkAdvancedTcpUsageMetrics) {
-		ta, err := advancedTcpStatsFromProc(h.rootFs, h.pid, "net/netstat", "net/snmp")
+	if h.includedMetrics.Has(container.NetworkAdvancedTCPUsageMetrics) {
+		ta, err := advancedTCPStatsFromProc(h.rootFs, h.pid, "net/netstat", "net/snmp")
 		if err != nil {
 			klog.V(4).Infof("Unable to get advanced tcp stats from pid %d: %v", h.pid, err)
 		} else {
-			stats.Network.TcpAdvanced = ta
+			stats.Network.TCPAdvanced = ta
 		}
 	}
-	if h.includedMetrics.Has(container.NetworkUdpUsageMetrics) {
+	if h.includedMetrics.Has(container.NetworkUDPUsageMetrics) {
 		u, err := udpStatsFromProc(h.rootFs, h.pid, "net/udp")
 		if err != nil {
 			klog.V(4).Infof("Unable to get udp stats from pid %d: %v", h.pid, err)
 		} else {
-			stats.Network.Udp = u
+			stats.Network.UDP = u
 		}
 
 		u6, err := udpStatsFromProc(h.rootFs, h.pid, "net/udp6")
 		if err != nil {
 			klog.V(4).Infof("Unable to get udp6 stats from pid %d: %v", h.pid, err)
 		} else {
-			stats.Network.Udp6 = u6
+			stats.Network.UPD6 = u6
 		}
 	}
 	if h.includedMetrics.Has(container.ProcessMetrics) {
@@ -274,30 +274,30 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 	return processStats, nil
 }
 
-func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]*info.CpuSchedstat) (info.CpuSchedstat, error) {
+func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]*info.CPUSchedstat) (info.CPUSchedstat, error) {
 	for _, pid := range pids {
 		f, err := os.Open(path.Join(rootFs, "proc", strconv.Itoa(pid), "schedstat"))
 		if err != nil {
-			return info.CpuSchedstat{}, fmt.Errorf("couldn't open scheduler statistics for process %d: %v", pid, err)
+			return info.CPUSchedstat{}, fmt.Errorf("couldn't open scheduler statistics for process %d: %v", pid, err)
 		}
 		defer f.Close()
 		contents, err := ioutil.ReadAll(f)
 		if err != nil {
-			return info.CpuSchedstat{}, fmt.Errorf("couldn't read scheduler statistics for process %d: %v", pid, err)
+			return info.CPUSchedstat{}, fmt.Errorf("couldn't read scheduler statistics for process %d: %v", pid, err)
 		}
 		rawMetrics := bytes.Split(bytes.TrimRight(contents, "\n"), []byte(" "))
 		if len(rawMetrics) != 3 {
-			return info.CpuSchedstat{}, fmt.Errorf("unexpected number of metrics in schedstat file for process %d", pid)
+			return info.CPUSchedstat{}, fmt.Errorf("unexpected number of metrics in schedstat file for process %d", pid)
 		}
 		cacheEntry, ok := pidMetricsCache[pid]
 		if !ok {
-			cacheEntry = &info.CpuSchedstat{}
+			cacheEntry = &info.CPUSchedstat{}
 			pidMetricsCache[pid] = cacheEntry
 		}
 		for i, rawMetric := range rawMetrics {
 			metric, err := strconv.ParseUint(string(rawMetric), 10, 64)
 			if err != nil {
-				return info.CpuSchedstat{}, fmt.Errorf("parsing error while reading scheduler statistics for process: %d: %v", pid, err)
+				return info.CPUSchedstat{}, fmt.Errorf("parsing error while reading scheduler statistics for process: %d: %v", pid, err)
 			}
 			switch i {
 			case 0:
@@ -309,7 +309,7 @@ func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]
 			}
 		}
 	}
-	schedstats := info.CpuSchedstat{}
+	schedstats := info.CPUSchedstat{}
 	for _, v := range pidMetricsCache {
 		schedstats.RunPeriods += v.RunPeriods
 		schedstats.RunqueueTime += v.RunqueueTime
@@ -407,10 +407,10 @@ func setInterfaceStatValues(fields []string, pointers []*uint64) error {
 	return nil
 }
 
-func tcpStatsFromProc(rootFs string, pid int, file string) (info.TcpStat, error) {
+func tcpStatsFromProc(rootFs string, pid int, file string) (info.TCPStat, error) {
 	tcpStatsFile := path.Join(rootFs, "proc", strconv.Itoa(pid), file)
 
-	tcpStats, err := scanTcpStats(tcpStatsFile)
+	tcpStats, err := scanTCPStats(tcpStatsFile)
 	if err != nil {
 		return tcpStats, fmt.Errorf("couldn't read tcp stats: %v", err)
 	}
@@ -418,18 +418,18 @@ func tcpStatsFromProc(rootFs string, pid int, file string) (info.TcpStat, error)
 	return tcpStats, nil
 }
 
-func advancedTcpStatsFromProc(rootFs string, pid int, file1, file2 string) (info.TcpAdvancedStat, error) {
-	var advancedStats info.TcpAdvancedStat
+func advancedTCPStatsFromProc(rootFs string, pid int, file1, file2 string) (info.TCPAdvancedStat, error) {
+	var advancedStats info.TCPAdvancedStat
 	var err error
 
 	netstatFile := path.Join(rootFs, "proc", strconv.Itoa(pid), file1)
-	err = scanAdvancedTcpStats(&advancedStats, netstatFile)
+	err = scanAdvancedTCPStats(&advancedStats, netstatFile)
 	if err != nil {
 		return advancedStats, err
 	}
 
 	snmpFile := path.Join(rootFs, "proc", strconv.Itoa(pid), file2)
-	err = scanAdvancedTcpStats(&advancedStats, snmpFile)
+	err = scanAdvancedTCPStats(&advancedStats, snmpFile)
 	if err != nil {
 		return advancedStats, err
 	}
@@ -437,17 +437,17 @@ func advancedTcpStatsFromProc(rootFs string, pid int, file1, file2 string) (info
 	return advancedStats, nil
 }
 
-func scanAdvancedTcpStats(advancedStats *info.TcpAdvancedStat, advancedTcpStatsFile string) error {
-	data, err := ioutil.ReadFile(advancedTcpStatsFile)
+func scanAdvancedTCPStats(advancedStats *info.TCPAdvancedStat, advancedTCPStatsFile string) error {
+	data, err := ioutil.ReadFile(advancedTCPStatsFile)
 	if err != nil {
-		return fmt.Errorf("failure opening %s: %v", advancedTcpStatsFile, err)
+		return fmt.Errorf("failure opening %s: %v", advancedTCPStatsFile, err)
 	}
 
 	reader := strings.NewReader(string(data))
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 
-	advancedTcpStats := make(map[string]interface{})
+	advancedTCPStats := make(map[string]interface{})
 	for scanner.Scan() {
 		nameParts := strings.Split(scanner.Text(), " ")
 		scanner.Scan()
@@ -459,7 +459,7 @@ func scanAdvancedTcpStats(advancedStats *info.TcpAdvancedStat, advancedTcpStatsF
 		}
 		if len(nameParts) != len(valueParts) {
 			return fmt.Errorf("mismatch field count mismatch in %s: %s",
-				advancedTcpStatsFile, protocol)
+				advancedTCPStatsFile, protocol)
 		}
 		for i := 1; i < len(nameParts); i++ {
 			if strings.Contains(valueParts[i], "-") {
@@ -467,18 +467,18 @@ func scanAdvancedTcpStats(advancedStats *info.TcpAdvancedStat, advancedTcpStatsF
 				if err != nil {
 					return fmt.Errorf("decode value: %s to int64 error: %s", valueParts[i], err)
 				}
-				advancedTcpStats[nameParts[i]] = vInt64
+				advancedTCPStats[nameParts[i]] = vInt64
 			} else {
 				vUint64, err := strconv.ParseUint(valueParts[i], 10, 64)
 				if err != nil {
 					return fmt.Errorf("decode value: %s to uint64 error: %s", valueParts[i], err)
 				}
-				advancedTcpStats[nameParts[i]] = vUint64
+				advancedTCPStats[nameParts[i]] = vUint64
 			}
 		}
 	}
 
-	b, err := json.Marshal(advancedTcpStats)
+	b, err := json.Marshal(advancedTCPStats)
 	if err != nil {
 		return err
 	}
@@ -492,9 +492,9 @@ func scanAdvancedTcpStats(advancedStats *info.TcpAdvancedStat, advancedTcpStatsF
 
 }
 
-func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
+func scanTCPStats(tcpStatsFile string) (info.TCPStat, error) {
 
-	var stats info.TcpStat
+	var stats info.TCPStat
 
 	data, err := ioutil.ReadFile(tcpStatsFile)
 	if err != nil {
@@ -539,7 +539,7 @@ func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 		tcpStateMap[tcpState]++
 	}
 
-	stats = info.TcpStat{
+	stats = info.TCPStat{
 		Established: tcpStateMap["01"],
 		SynSent:     tcpStateMap["02"],
 		SynRecv:     tcpStateMap["03"],
@@ -556,9 +556,9 @@ func scanTcpStats(tcpStatsFile string) (info.TcpStat, error) {
 	return stats, nil
 }
 
-func udpStatsFromProc(rootFs string, pid int, file string) (info.UdpStat, error) {
+func udpStatsFromProc(rootFs string, pid int, file string) (info.UDPStat, error) {
 	var err error
-	var udpStats info.UdpStat
+	var udpStats info.UDPStat
 
 	udpStatsFile := path.Join(rootFs, "proc", strconv.Itoa(pid), file)
 
@@ -567,7 +567,7 @@ func udpStatsFromProc(rootFs string, pid int, file string) (info.UdpStat, error)
 		return udpStats, fmt.Errorf("failure opening %s: %v", udpStatsFile, err)
 	}
 
-	udpStats, err = scanUdpStats(r)
+	udpStats, err = scanUDPStats(r)
 	if err != nil {
 		return udpStats, fmt.Errorf("couldn't read udp stats: %v", err)
 	}
@@ -575,8 +575,8 @@ func udpStatsFromProc(rootFs string, pid int, file string) (info.UdpStat, error)
 	return udpStats, nil
 }
 
-func scanUdpStats(r io.Reader) (info.UdpStat, error) {
-	var stats info.UdpStat
+func scanUDPStats(r io.Reader) (info.UDPStat, error) {
+	var stats info.UDPStat
 
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
@@ -614,7 +614,7 @@ func scanUdpStats(r io.Reader) (info.UdpStat, error) {
 		dropped += uint64(d)
 	}
 
-	stats = info.UdpStat{
+	stats = info.UDPStat{
 		Listen:   listening,
 		Dropped:  dropped,
 		RxQueued: rxQueued,
@@ -643,13 +643,13 @@ func minUint32(x, y uint32) uint32 {
 var numCpusFunc = getNumberOnlineCPUs
 
 // Convert libcontainer stats to info.ContainerStats.
-func setCpuStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
-	ret.Cpu.Usage.User = s.CpuStats.CpuUsage.UsageInUsermode
-	ret.Cpu.Usage.System = s.CpuStats.CpuUsage.UsageInKernelmode
-	ret.Cpu.Usage.Total = s.CpuStats.CpuUsage.TotalUsage
-	ret.Cpu.CFS.Periods = s.CpuStats.ThrottlingData.Periods
-	ret.Cpu.CFS.ThrottledPeriods = s.CpuStats.ThrottlingData.ThrottledPeriods
-	ret.Cpu.CFS.ThrottledTime = s.CpuStats.ThrottlingData.ThrottledTime
+func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
+	ret.CPU.Usage.User = s.CpuStats.CpuUsage.UsageInUsermode
+	ret.CPU.Usage.System = s.CpuStats.CpuUsage.UsageInKernelmode
+	ret.CPU.Usage.Total = s.CpuStats.CpuUsage.TotalUsage
+	ret.CPU.CFS.Periods = s.CpuStats.ThrottlingData.Periods
+	ret.CPU.CFS.ThrottledPeriods = s.CpuStats.ThrottlingData.ThrottledPeriods
+	ret.CPU.CFS.ThrottledTime = s.CpuStats.ThrottlingData.ThrottledTime
 
 	if !withPerCPU {
 		return
@@ -676,10 +676,10 @@ func setCpuStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 		klog.Errorf("PercpuUsage had %v cpus, but the actual number is %v; ignoring extra CPUs", numPossible, numActual)
 	}
 	numActual = minUint32(numPossible, numActual)
-	ret.Cpu.Usage.PerCpu = make([]uint64, numActual)
+	ret.CPU.Usage.PerCPU = make([]uint64, numActual)
 
 	for i := uint32(0); i < numActual; i++ {
-		ret.Cpu.Usage.PerCpu[i] = s.CpuStats.CpuUsage.PercpuUsage[i]
+		ret.CPU.Usage.PerCPU[i] = s.CpuStats.CpuUsage.PercpuUsage[i]
 	}
 
 }
@@ -787,7 +787,7 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics co
 	}
 
 	if s := libcontainerStats.CgroupStats; s != nil {
-		setCpuStats(s, ret, includedMetrics.Has(container.PerCpuUsageMetrics))
+		setCPUStats(s, ret, includedMetrics.Has(container.PerCPUUsageMetrics))
 		if includedMetrics.Has(container.DiskIOMetrics) {
 			setDiskIoStats(s, ret)
 		}

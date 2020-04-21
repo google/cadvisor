@@ -174,17 +174,17 @@ func (self *influxdbStorage) containerStatsToPoints(
 	stats *info.ContainerStats,
 ) (points []*influxdb.Point) {
 	// CPU usage: Total usage in nanoseconds
-	points = append(points, makePoint(serCpuUsageTotal, stats.Cpu.Usage.Total))
+	points = append(points, makePoint(serCpuUsageTotal, stats.CPU.Usage.Total))
 
 	// CPU usage: Time spend in system space (in nanoseconds)
-	points = append(points, makePoint(serCpuUsageSystem, stats.Cpu.Usage.System))
+	points = append(points, makePoint(serCpuUsageSystem, stats.CPU.Usage.System))
 
 	// CPU usage: Time spent in user space (in nanoseconds)
-	points = append(points, makePoint(serCpuUsageUser, stats.Cpu.Usage.User))
+	points = append(points, makePoint(serCpuUsageUser, stats.CPU.Usage.User))
 
 	// CPU usage per CPU
-	for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
-		point := makePoint(serCpuUsagePerCpu, stats.Cpu.Usage.PerCpu[i])
+	for i := 0; i < len(stats.CPU.Usage.PerCPU); i++ {
+		point := makePoint(serCpuUsagePerCpu, stats.CPU.Usage.PerCPU[i])
 		tags := map[string]string{"instance": fmt.Sprintf("%v", i)}
 		addTagsToPoint(point, tags)
 
@@ -192,7 +192,7 @@ func (self *influxdbStorage) containerStatsToPoints(
 	}
 
 	// Load Average
-	points = append(points, makePoint(serLoadAverage, stats.Cpu.LoadAverage))
+	points = append(points, makePoint(serLoadAverage, stats.CPU.LoadAverage))
 
 	// Memory Usage
 	points = append(points, makePoint(serMemoryUsage, stats.Memory.Usage))

@@ -131,11 +131,11 @@ func GetDerivedPercentiles(stats []*info.Usage) info.Usage {
 	cpu := NewResource(len(stats))
 	memory := NewResource(len(stats))
 	for _, stat := range stats {
-		cpu.Add(stat.Cpu)
+		cpu.Add(stat.CPU)
 		memory.Add(stat.Memory)
 	}
 	usage := info.Usage{}
-	usage.Cpu = cpu.GetAllPercentiles()
+	usage.CPU = cpu.GetAllPercentiles()
 	usage.Memory = memory.GetAllPercentiles()
 	return usage
 }
@@ -155,16 +155,16 @@ func getPercentComplete(stats []*secondSample) (percent int32) {
 }
 
 // Calculate cpurate from two consecutive total cpu usage samples.
-func getCpuRate(latest, previous secondSample) (uint64, error) {
+func getCPURate(latest, previous secondSample) (uint64, error) {
 	elapsed := latest.Timestamp.Sub(previous.Timestamp).Nanoseconds()
 	if elapsed < 10*milliSecondsToNanoSeconds {
 		return 0, fmt.Errorf("elapsed time too small: %d ns: time now %s last %s", elapsed, latest.Timestamp.String(), previous.Timestamp.String())
 	}
-	if latest.Cpu < previous.Cpu {
-		return 0, fmt.Errorf("bad sample: cumulative cpu usage dropped from %d to %d", latest.Cpu, previous.Cpu)
+	if latest.CPU < previous.CPU {
+		return 0, fmt.Errorf("bad sample: cumulative cpu usage dropped from %d to %d", latest.CPU, previous.CPU)
 	}
 	// Cpurate is calculated in cpu-milliseconds per second.
-	cpuRate := (latest.Cpu - previous.Cpu) * secondsToMilliSeconds / uint64(elapsed)
+	cpuRate := (latest.CPU - previous.CPU) * secondsToMilliSeconds / uint64(elapsed)
 	return cpuRate, nil
 }
 
@@ -175,7 +175,7 @@ func GetMinutePercentiles(stats []*secondSample) info.Usage {
 	memory := NewResource(len(stats))
 	for _, stat := range stats {
 		if !lastSample.Timestamp.IsZero() {
-			cpuRate, err := getCpuRate(*stat, lastSample)
+			cpuRate, err := getCPURate(*stat, lastSample)
 			if err != nil {
 				continue
 			}
@@ -189,7 +189,7 @@ func GetMinutePercentiles(stats []*secondSample) info.Usage {
 	percent := getPercentComplete(stats)
 	return info.Usage{
 		PercentComplete: percent,
-		Cpu:             cpu.GetAllPercentiles(),
+		CPU:             cpu.GetAllPercentiles(),
 		Memory:          memory.GetAllPercentiles(),
 	}
 }

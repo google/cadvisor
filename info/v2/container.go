@@ -27,7 +27,7 @@ const (
 	TypeDocker = "docker"
 )
 
-type CpuSpec struct {
+type CPUSpec struct {
 	// Requested cpu shares. Default is 1024.
 	Limit uint64 `json:"limit"`
 	// Requested cpu hard limit. Default is unlimited (0).
@@ -81,8 +81,8 @@ type ContainerSpec struct {
 	// Metadata envs associated with this container. Only whitelisted envs are added.
 	Envs map[string]string `json:"envs,omitempty"`
 
-	HasCpu bool    `json:"has_cpu"`
-	Cpu    CpuSpec `json:"cpu,omitempty"`
+	HasCPU bool    `json:"has_cpu"`
+	CPU    CPUSpec `json:"cpu,omitempty"`
 
 	HasMemory bool       `json:"has_memory"`
 	Memory    MemorySpec `json:"memory,omitempty"`
@@ -108,11 +108,11 @@ type DeprecatedContainerStats struct {
 	// The time of this stat point.
 	Timestamp time.Time `json:"timestamp"`
 	// CPU statistics
-	HasCpu bool `json:"has_cpu"`
+	HasCPU bool `json:"has_cpu"`
 	// In nanoseconds (aggregated)
-	Cpu v1.CpuStats `json:"cpu,omitempty"`
+	CPU v1.CPUStats `json:"cpu,omitempty"`
 	// In nanocores per second (instantaneous)
-	CpuInst *CpuInstStats `json:"cpu_inst,omitempty"`
+	CPUInst *CPUInstStats `json:"cpu_inst,omitempty"`
 	// Disk IO statistics
 	HasDiskIo bool           `json:"has_diskio"`
 	DiskIo    v1.DiskIoStats `json:"diskio,omitempty"`
@@ -143,9 +143,9 @@ type ContainerStats struct {
 	Timestamp time.Time `json:"timestamp"`
 	// CPU statistics
 	// In nanoseconds (aggregated)
-	Cpu *v1.CpuStats `json:"cpu,omitempty"`
+	CPU *v1.CPUStats `json:"cpu,omitempty"`
 	// In nanocores per second (instantaneous)
-	CpuInst *CpuInstStats `json:"cpu_inst,omitempty"`
+	CPUInst *CPUInstStats `json:"cpu_inst,omitempty"`
 	// Disk IO statistics
 	DiskIo *v1.DiskIoStats `json:"diskio,omitempty"`
 	// Memory statistics
@@ -190,7 +190,7 @@ type Usage struct {
 	// but set PercentComplete to 50.
 	PercentComplete int32 `json:"percent_complete"`
 	// Mean, Max, and 90p cpu rate value in milliCpus/seconds. Converted to milliCpus to avoid floats.
-	Cpu Percentiles `json:"cpu"`
+	CPU Percentiles `json:"cpu"`
 	// Mean, Max, and 90p memory size in bytes.
 	Memory Percentiles `json:"memory"`
 }
@@ -198,7 +198,7 @@ type Usage struct {
 // latest sample collected for a container.
 type InstantUsage struct {
 	// cpu rate in cpu milliseconds/second.
-	Cpu uint64 `json:"cpu"`
+	CPU uint64 `json:"cpu"`
 	// Memory usage in bytes.
 	Memory uint64 `json:"memory"`
 }
@@ -247,7 +247,7 @@ type FsInfo struct {
 
 type RequestOptions struct {
 	// Type of container identifier specified - "name", "dockerid", dockeralias"
-	IdType string `json:"type"`
+	IDType string `json:"type"`
 	// Number of stats to return
 	Count int `json:"count"`
 	// Whether to include stats for child subcontainers.
@@ -262,7 +262,7 @@ type ProcessInfo struct {
 	Pid           int     `json:"pid"`
 	Ppid          int     `json:"parent_pid"`
 	StartTime     string  `json:"start_time"`
-	PercentCpu    float32 `json:"percent_cpu"`
+	PercentCPU    float32 `json:"percent_cpu"`
 	PercentMemory float32 `json:"percent_mem"`
 	RSS           uint64  `json:"rss"`
 	VirtualSize   uint64  `json:"virtual_size"`
@@ -273,7 +273,7 @@ type ProcessInfo struct {
 	FdCount       int     `json:"fd_count"`
 }
 
-type TcpStat struct {
+type TCPStat struct {
 	Established uint64
 	SynSent     uint64
 	SynRecv     uint64
@@ -291,31 +291,31 @@ type NetworkStats struct {
 	// Network stats by interface.
 	Interfaces []v1.InterfaceStats `json:"interfaces,omitempty"`
 	// TCP connection stats (Established, Listen...)
-	Tcp TcpStat `json:"tcp"`
+	TCP TCPStat `json:"tcp"`
 	// TCP6 connection stats (Established, Listen...)
-	Tcp6 TcpStat `json:"tcp6"`
+	TCP6 TCPStat `json:"tcp6"`
 	// UDP connection stats
-	Udp v1.UdpStat `json:"udp"`
+	UDP v1.UDPStat `json:"udp"`
 	// UDP6 connection stats
-	Udp6 v1.UdpStat `json:"udp6"`
+	UDP6 v1.UDPStat `json:"udp6"`
 	// TCP advanced stats
-	TcpAdvanced v1.TcpAdvancedStat `json:"tcp_advanced"`
+	TCPAdvanced v1.TCPAdvancedStat `json:"tcp_advanced"`
 }
 
 // Instantaneous CPU stats
-type CpuInstStats struct {
-	Usage CpuInstUsage `json:"usage"`
+type CPUInstStats struct {
+	Usage CPUInstUsage `json:"usage"`
 }
 
 // CPU usage time statistics.
-type CpuInstUsage struct {
+type CPUInstUsage struct {
 	// Total CPU usage.
 	// Units: nanocores per second
 	Total uint64 `json:"total"`
 
 	// Per CPU/core usage of the container.
 	// Unit: nanocores per second
-	PerCpu []uint64 `json:"per_cpu_usage,omitempty"`
+	PerCPU []uint64 `json:"per_cpu_usage,omitempty"`
 
 	// Time spent in user space.
 	// Unit: nanocores per second

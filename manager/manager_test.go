@@ -223,7 +223,7 @@ func TestGetContainerInfoV2(t *testing.T) {
 	}
 
 	options := v2.RequestOptions{
-		IdType:    v2.TypeName,
+		IDType:    v2.TypeName,
 		Count:     1,
 		Recursive: true,
 	}
@@ -256,7 +256,7 @@ func TestGetContainerInfoV2Failure(t *testing.T) {
 	}
 
 	options := v2.RequestOptions{
-		IdType:    v2.TypeName,
+		IDType:    v2.TypeName,
 		Count:     1,
 		Recursive: true,
 	}

@@ -36,7 +36,7 @@ type FsInfo struct {
 }
 
 type Node struct {
-	Id int `json:"node_id"`
+	ID int `json:"node_id"`
 	// Per-node memory
 	Memory    uint64          `json:"memory"`
 	HugePages []HugePagesInfo `json:"hugepages"`
@@ -45,7 +45,7 @@ type Node struct {
 }
 
 type Core struct {
-	Id      int     `json:"core_id"`
+	ID      int     `json:"core_id"`
 	Threads []int   `json:"thread_ids"`
 	Caches  []Cache `json:"caches"`
 }
@@ -61,7 +61,7 @@ type Cache struct {
 
 func (self *Node) FindCore(id int) (bool, int) {
 	for i, n := range self.Cores {
-		if n.Id == id {
+		if n.ID == id {
 			return true, i
 		}
 	}
@@ -78,7 +78,7 @@ func (self *Node) AddThread(thread int, core int) {
 
 	if !ok {
 		// New core
-		core := Core{Id: core}
+		core := Core{ID: core}
 		self.Cores = append(self.Cores, core)
 		coreIdx = len(self.Cores) - 1
 	}
@@ -166,7 +166,7 @@ type MachineInfo struct {
 	NumSockets int `json:"num_sockets"`
 
 	// Maximum clock speed for the cores, in KHz.
-	CpuFrequency uint64 `json:"cpu_frequency_khz"`
+	CPUFrequency uint64 `json:"cpu_frequency_khz"`
 
 	// The amount of memory (in bytes) in this machine
 	MemoryCapacity uint64 `json:"memory_capacity"`
@@ -230,7 +230,7 @@ func (m *MachineInfo) Clone() *MachineInfo {
 		NumCores:         m.NumCores,
 		NumPhysicalCores: m.NumPhysicalCores,
 		NumSockets:       m.NumSockets,
-		CpuFrequency:     m.CpuFrequency,
+		CPUFrequency:     m.CPUFrequency,
 		MemoryCapacity:   m.MemoryCapacity,
 		MemoryByType:     memoryByType,
 		NVMInfo:          m.NVMInfo,

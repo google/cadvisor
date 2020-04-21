@@ -24,7 +24,7 @@ import (
 )
 
 type NetlinkReader struct {
-	familyId uint16
+	familyID uint16
 	conn     *Connection
 }
 
@@ -34,13 +34,13 @@ func New() (*NetlinkReader, error) {
 		return nil, fmt.Errorf("failed to create a new connection: %s", err)
 	}
 
-	id, err := getFamilyId(conn)
+	id, err := getFamilyID(conn)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get netlink family id for task stats: %s", err)
 	}
 	klog.V(4).Infof("Family id for taskstats: %d", id)
 	return &NetlinkReader{
-		familyId: id,
+		familyID: id,
 		conn:     conn,
 	}, nil
 }
@@ -71,7 +71,7 @@ func (self *NetlinkReader) GetCpuLoad(name string, path string) (info.LoadStats,
 	}
 	defer cfd.Close()
 
-	stats, err := getLoadStats(self.familyId, cfd, self.conn)
+	stats, err := getLoadStats(self.familyID, cfd, self.conn)
 	if err != nil {
 		return info.LoadStats{}, err
 	}

@@ -206,7 +206,7 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 
 	for _, nodeDir := range nodesDirs {
 		id, err := getMatchedInt(nodeDirRegExp, nodeDir)
-		node := info.Node{Id: id}
+		node := info.Node{ID: id}
 
 		cpuDirs, err := sysFs.GetCPUsPaths(nodeDir)
 		if len(cpuDirs) == 0 {
@@ -264,7 +264,7 @@ func getCPUTopology(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 	}
 
 	for physicalPackageID, cpus := range cpusByPhysicalPackageID {
-		node := info.Node{Id: physicalPackageID}
+		node := info.Node{ID: physicalPackageID}
 
 		cores, err := getCoresInfo(sysFs, cpus)
 		if err != nil {
@@ -385,7 +385,7 @@ func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 
 		coreIDx := -1
 		for id, core := range cores {
-			if core.Id == physicalID {
+			if core.ID == physicalID {
 				coreIDx = id
 			}
 		}
@@ -395,7 +395,7 @@ func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 		}
 		desiredCore := &cores[coreIDx]
 
-		desiredCore.Id = physicalID
+		desiredCore.ID = physicalID
 		if len(desiredCore.Threads) == 0 {
 			desiredCore.Threads = []int{cpuID}
 		} else {
