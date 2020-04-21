@@ -92,7 +92,7 @@ type RealFsInfo struct {
 	fsUUIDToDeviceName map[string]string
 }
 
-func NewFsInfo(context Context) (FsInfo, error) {
+func NewFsInfo(context Context) (Info, error) {
 	mounts, err := mount.ParseMountInfo("/proc/self/mountinfo")
 	if err != nil {
 		return nil, err

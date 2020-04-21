@@ -45,7 +45,7 @@ type realFsHandler struct {
 	minPeriod  time.Duration
 	rootfs     string
 	extraDir   string
-	fsInfo     fs.FsInfo
+	fsInfo     fs.Info
 	// Tells the container to stop.
 	stopChan chan struct{}
 }
@@ -58,7 +58,7 @@ const DefaultPeriod = time.Minute
 
 var _ FsHandler = &realFsHandler{}
 
-func NewFsHandler(period time.Duration, rootfs, extraDir string, fsInfo fs.FsInfo) FsHandler {
+func NewFsHandler(period time.Duration, rootfs, extraDir string, fsInfo fs.Info) FsHandler {
 	return &realFsHandler{
 		lastUpdate: time.Time{},
 		usage:      FsUsage{},

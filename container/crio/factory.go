@@ -53,7 +53,7 @@ type crioFactory struct {
 	cgroupSubsystems libcontainer.CgroupSubsystems
 
 	// Information about mounted filesystems.
-	fsInfo fs.FsInfo
+	fsInfo fs.Info
 
 	includedMetrics container.MetricSet
 
@@ -128,7 +128,7 @@ func (f *crioFactory) DebugInfo() map[string][]string {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.Info, includedMetrics container.MetricSet) error {
 	client, err := newClient()
 	if err != nil {
 		return err

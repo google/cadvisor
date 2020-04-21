@@ -39,7 +39,7 @@ type containerdContainerHandler struct {
 	// Absolute path to the cgroup hierarchies of this container.
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
 	cgroupPaths map[string]string
-	fsInfo      fs.FsInfo
+	fsInfo      fs.Info
 	// Metadata associated with the container.
 	reference info.ContainerReference
 	envs      map[string]string
@@ -59,7 +59,7 @@ func newContainerdContainerHandler(
 	client containerdClient,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
-	fsInfo fs.FsInfo,
+	fsInfo fs.Info,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
 	metadataEnvs []string,

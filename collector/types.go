@@ -38,7 +38,7 @@ type Collector interface {
 }
 
 // Manages and runs collectors.
-type CollectorManager interface {
+type Manager interface {
 	// Register a collector.
 	RegisterCollector(collector Collector) error
 

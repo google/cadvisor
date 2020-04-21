@@ -40,7 +40,7 @@ type rawFactory struct {
 	cgroupSubsystems *libcontainer.CgroupSubsystems
 
 	// Information about mounted filesystems.
-	fsInfo fs.FsInfo
+	fsInfo fs.Info
 
 	// Watcher for inotify events.
 	watcher *common.InotifyWatcher
@@ -84,7 +84,7 @@ func (f *rawFactory) DebugInfo() map[string][]string {
 	return common.DebugInfo(f.watcher.GetWatches())
 }
 
-func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics map[container.MetricKind]struct{}, rawPrefixWhiteList []string) error {
+func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.Info, includedMetrics map[container.MetricKind]struct{}, rawPrefixWhiteList []string) error {
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems(includedMetrics)
 	if err != nil {
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)

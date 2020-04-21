@@ -118,7 +118,7 @@ type dockerFactory struct {
 	cgroupSubsystems libcontainer.CgroupSubsystems
 
 	// Information about mounted filesystems.
-	fsInfo fs.FsInfo
+	fsInfo fs.Info
 
 	dockerVersion []int
 
@@ -323,7 +323,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.Info, includedMetrics container.MetricSet) error {
 	client, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)

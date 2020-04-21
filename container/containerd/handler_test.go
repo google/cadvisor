@@ -38,7 +38,7 @@ func TestHandler(t *testing.T) {
 		client             containerdClient
 		name               string
 		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
+		fsInfo             fs.Info
 		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
 		inHostNamespace    bool
 		metadataEnvs       []string

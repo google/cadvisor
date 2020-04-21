@@ -48,7 +48,7 @@ type containerdFactory struct {
 	// Information about the mounted cgroup subsystems.
 	cgroupSubsystems libcontainer.CgroupSubsystems
 	// Information about mounted filesystems.
-	fsInfo          fs.FsInfo
+	fsInfo          fs.Info
 	includedMetrics container.MetricSet
 }
 
@@ -118,7 +118,7 @@ func (f *containerdFactory) DebugInfo() map[string][]string {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.Info, includedMetrics container.MetricSet) error {
 	client, err := newClient(*ArgContainerdEndpoint, *ArgContainerdNamespace)
 	if err != nil {
 		return fmt.Errorf("unable to create containerd client: %v", err)

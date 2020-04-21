@@ -87,7 +87,7 @@ type containerData struct {
 	onDemandChan chan chan struct{}
 
 	// Runs custom metric collectors.
-	collectorManager collector.CollectorManager
+	collectorManager collector.Manager
 
 	// nvidiaCollector updates stats for Nvidia GPUs attached to the container.
 	nvidiaCollector stats.Collector
@@ -229,7 +229,7 @@ func (c *containerData) ReadFile(filepath string, inHostNamespace bool) ([]byte,
 		}
 	}
 	// No process paths could be found. Declare config non-existent.
-	return nil, fmt.Errorf("file %q does not exist.", filepath)
+	return nil, fmt.Errorf("file %q does not exist", filepath)
 }
 
 // Return output for ps command in host /proc with specified format
@@ -374,7 +374,7 @@ func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace
 	return processes, nil
 }
 
-func newContainerData(containerName string, memoryCache *memory.Cache, handler container.Handler, logUsage bool, collectorManager collector.CollectorManager, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, clock clock.Clock) (*containerData, error) {
+func newContainerData(containerName string, memoryCache *memory.Cache, handler container.Handler, logUsage bool, collectorManager collector.Manager, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, clock clock.Clock) (*containerData, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("nil memory storage")
 	}

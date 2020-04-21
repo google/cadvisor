@@ -39,7 +39,7 @@ type rawContainerHandler struct {
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
 	cgroupPaths map[string]string
 
-	fsInfo          fs.FsInfo
+	fsInfo          fs.Info
 	externalMounts  []common.Mount
 	includedMetrics container.MetricSet
 
@@ -50,7 +50,7 @@ func isRootCgroup(name string) bool {
 	return name == "/"
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet) (container.Handler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.Info, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet) (container.Handler, error) {
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
 	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)

@@ -229,7 +229,7 @@ type manager struct {
 	containers               map[namespacedContainerName]*containerData
 	containersLock           sync.RWMutex
 	memoryCache              *memory.Cache
-	fsInfo                   fs.FsInfo
+	fsInfo                   fs.Info
 	sysFs                    sysfs.SysFs
 	machineMu                sync.RWMutex // protects machineInfo
 	machineInfo              info.MachineInfo
@@ -1206,8 +1206,8 @@ func (m *manager) GetPastEvents(request *events.Request) ([]*info.Event, error) 
 }
 
 // called by the api when a client is no longer listening to the channel
-func (m *manager) CloseEventChannel(watch_id int) {
-	m.eventHandler.StopWatch(watch_id)
+func (m *manager) CloseEventChannel(watchID int) {
+	m.eventHandler.StopWatch(watchID)
 }
 
 // Parses the events StoragePolicy from the flags.

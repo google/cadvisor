@@ -43,7 +43,7 @@ type crioContainerHandler struct {
 
 	// the CRI-O storage driver
 	storageDriver    storageDriver
-	fsInfo           fs.FsInfo
+	fsInfo           fs.Info
 	rootfsStorageDir string
 
 	// Metadata associated with the container.
@@ -82,7 +82,7 @@ func newCrioContainerHandler(
 	client crioClient,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
-	fsInfo fs.FsInfo,
+	fsInfo fs.Info,
 	storageDriver storageDriver,
 	storageDir string,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,

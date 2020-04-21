@@ -62,7 +62,7 @@ func (r *Reader) Start() error {
 // NOTE: non-hierarchical load is returned. It does not include load for subcontainers.
 func (r *Reader) GetCpuLoad(name string, path string) (info.LoadStats, error) {
 	if len(path) == 0 {
-		return info.LoadStats{}, fmt.Errorf("cgroup path can not be empty!")
+		return info.LoadStats{}, fmt.Errorf("cgroup path can not be empty")
 	}
 
 	cfd, err := os.Open(path)

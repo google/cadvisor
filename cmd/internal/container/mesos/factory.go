@@ -48,7 +48,7 @@ type mesosFactory struct {
 	cgroupSubsystems libcontainer.CgroupSubsystems
 
 	// Information about mounted filesystems.
-	fsInfo fs.FsInfo
+	fsInfo fs.Info
 
 	includedMetrics map[container.MetricKind]struct{}
 
@@ -121,7 +121,7 @@ func (self *mesosFactory) DebugInfo() map[string][]string {
 
 func Register(
 	machineInfoFactory info.MachineInfoFactory,
-	fsInfo fs.FsInfo,
+	fsInfo fs.Info,
 	includedMetrics container.MetricSet,
 ) error {
 	client, err := Client()

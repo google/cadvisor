@@ -27,7 +27,8 @@ import (
 
 var (
 	// TODO(rjnagal): Verify and fix for other architectures.
-	Endian = binary.LittleEndian
+
+	endian = binary.LittleEndian
 )
 
 type genMsghdr struct {
@@ -45,7 +46,7 @@ type netlinkMessage struct {
 func (m netlinkMessage) toRawMsg() (rawmsg syscall.NetlinkMessage) {
 	rawmsg.Header = m.Header
 	w := bytes.NewBuffer([]byte{})
-	binary.Write(w, Endian, m.GenHeader)
+	binary.Write(w, endian, m.GenHeader)
 	w.Write(m.Data)
 	rawmsg.Data = w.Bytes()
 	return rawmsg
@@ -92,13 +93,13 @@ func addAttribute(buf *bytes.Buffer, attrType uint16, data interface{}, dataSize
 		Type: attrType,
 	}
 	attr.Len += uint16(dataSize)
-	binary.Write(buf, Endian, attr)
+	binary.Write(buf, endian, attr)
 	switch data := data.(type) {
 	case string:
-		binary.Write(buf, Endian, []byte(data))
+		binary.Write(buf, endian, []byte(data))
 		buf.WriteByte(0) // terminate
 	default:
-		binary.Write(buf, Endian, data)
+		binary.Write(buf, endian, data)
 	}
 	for i := 0; i < padding(int(attr.Len), syscall.NLMSG_ALIGNTO); i++ {
 		buf.WriteByte(0)
@@ -139,7 +140,7 @@ func parseFamilyResp(msg syscall.NetlinkMessage) (uint16, error) {
 	}
 	buf := bytes.NewBuffer(msg.Data)
 	// extract generic header from data.
-	err = binary.Read(buf, Endian, &m.GenHeader)
+	err = binary.Read(buf, endian, &m.GenHeader)
 	if err != nil {
 		return 0, err
 	}
@@ -148,12 +149,12 @@ func parseFamilyResp(msg syscall.NetlinkMessage) (uint16, error) {
 	// Scan till we find id.
 	for buf.Len() > syscall.SizeofRtAttr {
 		var attr syscall.RtAttr
-		err = binary.Read(buf, Endian, &attr)
+		err = binary.Read(buf, endian, &attr)
 		if err != nil {
 			return 0, err
 		}
 		if attr.Type == unix.CTRL_ATTR_FAMILY_ID {
-			err = binary.Read(buf, Endian, &id)
+			err = binary.Read(buf, endian, &id)
 			if err != nil {
 				return 0, err
 			}
@@ -162,12 +163,12 @@ func parseFamilyResp(msg syscall.NetlinkMessage) (uint16, error) {
 		payload := int(attr.Len) - syscall.SizeofRtAttr
 		skipLen := payload + padding(payload, syscall.SizeofRtAttr)
 		name := make([]byte, skipLen)
-		err = binary.Read(buf, Endian, name)
+		err = binary.Read(buf, endian, name)
 		if err != nil {
 			return 0, err
 		}
 	}
-	return 0, fmt.Errorf("family id not found in the response.")
+	return 0, fmt.Errorf("family id not found in the response")
 }
 
 // Extract task stats from response returned by kernel.
@@ -180,18 +181,18 @@ func parseLoadStatsResp(msg syscall.NetlinkMessage) (*loadStatsResp, error) {
 	}
 	buf := bytes.NewBuffer(msg.Data)
 	// Scan the general header.
-	err = binary.Read(buf, Endian, &m.GenHeader)
+	err = binary.Read(buf, endian, &m.GenHeader)
 	if err != nil {
 		return m, err
 	}
 	// cgroup stats response should have just one attribute.
 	// Read it directly into the stats structure.
 	var attr syscall.RtAttr
-	err = binary.Read(buf, Endian, &attr)
+	err = binary.Read(buf, endian, &attr)
 	if err != nil {
 		return m, err
 	}
-	err = binary.Read(buf, Endian, &m.Stats)
+	err = binary.Read(buf, endian, &m.Stats)
 	if err != nil {
 		return m, err
 	}
@@ -206,7 +207,7 @@ func verifyHeader(msg syscall.NetlinkMessage) error {
 	case syscall.NLMSG_ERROR:
 		buf := bytes.NewBuffer(msg.Data)
 		var errno int32
-		err := binary.Read(buf, Endian, errno)
+		err := binary.Read(buf, endian, errno)
 		if err != nil {
 			return err
 		}

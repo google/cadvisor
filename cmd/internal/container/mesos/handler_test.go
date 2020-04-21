@@ -40,7 +40,7 @@ func TestContainerReference(t *testing.T) {
 		client             mesosAgentClient
 		name               string
 		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
+		fsInfo             fs.Info
 		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
 		inHostNamespace    bool
 		includedMetrics    container.MetricSet

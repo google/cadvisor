@@ -31,7 +31,7 @@ func TestHandler(t *testing.T) {
 		client             crioClient
 		name               string
 		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
+		fsInfo             fs.Info
 		storageDriver      storageDriver
 		storageDir         string
 		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems

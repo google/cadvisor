@@ -34,8 +34,8 @@ type collectorData struct {
 	nextCollectionTime time.Time
 }
 
-// Returns a new CollectorManager that is thread-compatible.
-func NewCollectorManager() (CollectorManager, error) {
+// Returns a new collector.Manager that is thread-compatible.
+func NewCollectorManager() (Manager, error) {
 	return &GenericCollectorManager{
 		Collectors:         []*collectorData{},
 		NextCollectionTime: time.Now(),

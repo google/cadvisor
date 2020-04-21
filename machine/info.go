@@ -53,7 +53,7 @@ func getInfoFromFiles(filePaths string) string {
 	return ""
 }
 
-func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.MachineInfo, error) {
+func Info(sysFs sysfs.SysFs, fsInfo fs.Info, inHostNamespace bool) (*info.MachineInfo, error) {
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"

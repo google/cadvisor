@@ -40,7 +40,7 @@ type mesosContainerHandler struct {
 	cgroupPaths map[string]string
 
 	// File System Info
-	fsInfo fs.FsInfo
+	fsInfo fs.Info
 
 	// Metrics to be included.
 	includedMetrics container.MetricSet
@@ -57,7 +57,7 @@ func newMesosContainerHandler(
 	name string,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	machineInfoFactory info.MachineInfoFactory,
-	fsInfo fs.FsInfo,
+	fsInfo fs.Info,
 	includedMetrics container.MetricSet,
 	inHostNamespace bool,
 	client mesosAgentClient,

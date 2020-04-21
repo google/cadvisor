@@ -85,7 +85,7 @@ type UsageInfo struct {
 // ErrNoSuchDevice is the error indicating the requested device does not exist.
 var ErrNoSuchDevice = errors.New("cadvisor: no such device")
 
-type FsInfo interface {
+type Info interface {
 	// Returns capacity and free space, in bytes, of all the ext2, ext3, ext4 filesystems on the host.
 	GetGlobalFsInfo() ([]Fs, error)
 

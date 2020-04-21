@@ -60,7 +60,7 @@ type dockerContainerHandler struct {
 
 	// the docker storage driver
 	storageDriver    storageDriver
-	fsInfo           fs.FsInfo
+	fsInfo           fs.Info
 	rootfsStorageDir string
 
 	// Time at which this container was created.
@@ -120,7 +120,7 @@ func newDockerContainerHandler(
 	client *docker.Client,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
-	fsInfo fs.FsInfo,
+	fsInfo fs.Info,
 	storageDriver storageDriver,
 	storageDir string,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
@@ -453,7 +453,7 @@ func (h *dockerContainerHandler) ListContainers(listType container.ListType) ([]
 func (h *dockerContainerHandler) GetCgroupPath(resource string) (string, error) {
 	path, ok := h.cgroupPaths[resource]
 	if !ok {
-		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, h.reference.Name)
+		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.reference.Name)
 	}
 	return path, nil
 }
