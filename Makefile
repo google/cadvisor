@@ -88,7 +88,7 @@ presubmit: vet
 
 lint:
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
-	golangci-lint run
+	@$(go env GOPATH)/bin/golangci-lint run
 
 clean:
 	@rm -f *.test cadvisor
