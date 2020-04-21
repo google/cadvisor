@@ -59,8 +59,8 @@ type Cache struct {
 	Level int `json:"level"`
 }
 
-func (self *Node) FindCore(id int) (bool, int) {
-	for i, n := range self.Cores {
+func (n *Node) FindCore(id int) (bool, int) {
+	for i, n := range n.Cores {
 		if n.Id == id {
 			return true, i
 		}
@@ -68,30 +68,30 @@ func (self *Node) FindCore(id int) (bool, int) {
 	return false, -1
 }
 
-func (self *Node) AddThread(thread int, core int) {
+func (n *Node) AddThread(thread int, core int) {
 	var coreIdx int
 	if core == -1 {
 		// Assume one hyperthread per core when topology data is missing.
 		core = thread
 	}
-	ok, coreIdx := self.FindCore(core)
+	ok, coreIdx := n.FindCore(core)
 
 	if !ok {
 		// New core
 		core := Core{Id: core}
-		self.Cores = append(self.Cores, core)
-		coreIdx = len(self.Cores) - 1
+		n.Cores = append(n.Cores, core)
+		coreIdx = len(n.Cores) - 1
 	}
-	self.Cores[coreIdx].Threads = append(self.Cores[coreIdx].Threads, thread)
+	n.Cores[coreIdx].Threads = append(n.Cores[coreIdx].Threads, thread)
 }
 
-func (self *Node) AddNodeCache(c Cache) {
-	self.Caches = append(self.Caches, c)
+func (n *Node) AddNodeCache(c Cache) {
+	n.Caches = append(n.Caches, c)
 }
 
-func (self *Node) AddPerCoreCache(c Cache) {
-	for idx := range self.Cores {
-		self.Cores[idx].Caches = append(self.Cores[idx].Caches, c)
+func (n *Node) AddPerCoreCache(c Cache) {
+	for idx := range n.Cores {
+		n.Cores[idx].Caches = append(n.Cores[idx].Caches, c)
 	}
 }
 

@@ -65,7 +65,7 @@ func new() (storage.StorageDriver, error) {
 	return newStorage(*storage.ArgDbName, *storage.ArgDbHost)
 }
 
-func (self *statsdStorage) containerStatsToValues(
+func (s *statsdStorage) containerStatsToValues(
 	stats *info.ContainerStats,
 ) (series map[string]uint64) {
 	series = make(map[string]uint64)
@@ -99,7 +99,7 @@ func (self *statsdStorage) containerStatsToValues(
 	return series
 }
 
-func (self *statsdStorage) containerFsStatsToValues(
+func (s *statsdStorage) containerFsStatsToValues(
 	series *map[string]uint64,
 	stats *info.ContainerStats,
 ) {
@@ -115,7 +115,7 @@ func (self *statsdStorage) containerFsStatsToValues(
 }
 
 // Push the data into redis
-func (self *statsdStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+func (s *statsdStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
@@ -127,10 +127,10 @@ func (self *statsdStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Conta
 		containerName = cInfo.ContainerReference.Name
 	}
 
-	series := self.containerStatsToValues(stats)
-	self.containerFsStatsToValues(&series, stats)
+	series := s.containerStatsToValues(stats)
+	s.containerFsStatsToValues(&series, stats)
 	for key, value := range series {
-		err := self.client.Send(self.Namespace, containerName, key, value)
+		err := s.client.Send(s.Namespace, containerName, key, value)
 		if err != nil {
 			return err
 		}
@@ -138,9 +138,9 @@ func (self *statsdStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Conta
 	return nil
 }
 
-func (self *statsdStorage) Close() error {
-	self.client.Close()
-	self.client = nil
+func (s *statsdStorage) Close() error {
+	s.client.Close()
+	s.client = nil
 	return nil
 }
 

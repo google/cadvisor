@@ -67,7 +67,7 @@ func new() (storage.StorageDriver, error) {
 	)
 }
 
-func (self *elasticStorage) containerStatsAndDefaultValues(
+func (s *elasticStorage) containerStatsAndDefaultValues(
 	cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
 	timestamp := stats.Timestamp.UnixNano() / 1e3
 	var containerName string
@@ -78,27 +78,27 @@ func (self *elasticStorage) containerStatsAndDefaultValues(
 	}
 	detail := &detailSpec{
 		Timestamp:      timestamp,
-		MachineName:    self.machineName,
+		MachineName:    s.machineName,
 		ContainerName:  containerName,
 		ContainerStats: stats,
 	}
 	return detail
 }
 
-func (self *elasticStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+func (s *elasticStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
 	func() {
 		// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
-		self.lock.Lock()
-		defer self.lock.Unlock()
+		s.lock.Lock()
+		defer s.lock.Unlock()
 		// Add some default params based on ContainerStats
-		detail := self.containerStatsAndDefaultValues(cInfo, stats)
+		detail := s.containerStatsAndDefaultValues(cInfo, stats)
 		// Index a cadvisor (using JSON serialization)
-		_, err := self.client.Index().
-			Index(self.indexName).
-			Type(self.typeName).
+		_, err := s.client.Index().
+			Index(s.indexName).
+			Type(s.typeName).
 			BodyJson(detail).
 			Do()
 		if err != nil {
@@ -110,8 +110,8 @@ func (self *elasticStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Cont
 	return nil
 }
 
-func (self *elasticStorage) Close() error {
-	self.client = nil
+func (s *elasticStorage) Close() error {
+	s.client = nil
 	return nil
 }
 

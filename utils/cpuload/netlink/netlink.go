@@ -27,6 +27,7 @@ import (
 
 var (
 	// TODO(rjnagal): Verify and fix for other architectures.
+
 	Endian = binary.LittleEndian
 )
 
@@ -42,11 +43,11 @@ type netlinkMessage struct {
 	Data      []byte
 }
 
-func (self netlinkMessage) toRawMsg() (rawmsg syscall.NetlinkMessage) {
-	rawmsg.Header = self.Header
+func (m netlinkMessage) toRawMsg() (rawmsg syscall.NetlinkMessage) {
+	rawmsg.Header = m.Header
 	w := bytes.NewBuffer([]byte{})
-	binary.Write(w, Endian, self.GenHeader)
-	w.Write(self.Data)
+	binary.Write(w, Endian, m.GenHeader)
+	w.Write(m.Data)
 	rawmsg.Data = w.Bytes()
 	return rawmsg
 }

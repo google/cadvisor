@@ -27,27 +27,27 @@ type Client struct {
 	conn      net.Conn
 }
 
-func (self *Client) Open() error {
-	conn, err := net.Dial("udp", self.HostPort)
+func (c *Client) Open() error {
+	conn, err := net.Dial("udp", c.HostPort)
 	if err != nil {
-		klog.Errorf("failed to open udp connection to %q: %v", self.HostPort, err)
+		klog.Errorf("failed to open udp connection to %q: %v", c.HostPort, err)
 		return err
 	}
-	self.conn = conn
+	c.conn = conn
 	return nil
 }
 
-func (self *Client) Close() error {
-	self.conn.Close()
-	self.conn = nil
+func (c *Client) Close() error {
+	c.conn.Close()
+	c.conn = nil
 	return nil
 }
 
 // Simple send to statsd daemon without sampling.
-func (self *Client) Send(namespace, containerName, key string, value uint64) error {
+func (c *Client) Send(namespace, containerName, key string, value uint64) error {
 	// only send counter value
 	formatted := fmt.Sprintf("%s.%s.%s:%d|g", namespace, containerName, key, value)
-	_, err := fmt.Fprintf(self.conn, formatted)
+	_, err := fmt.Fprintf(c.conn, formatted)
 	if err != nil {
 		return fmt.Errorf("failed to send data %q: %v", formatted, err)
 	}

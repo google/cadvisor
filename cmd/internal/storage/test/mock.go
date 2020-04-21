@@ -25,14 +25,14 @@ type MockStorageDriver struct {
 	MockCloseMethod bool
 }
 
-func (self *MockStorageDriver) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
-	args := self.Called(cInfo.ContainerReference, stats)
+func (d *MockStorageDriver) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+	args := d.Called(cInfo.ContainerReference, stats)
 	return args.Error(0)
 }
 
-func (self *MockStorageDriver) Close() error {
-	if self.MockCloseMethod {
-		args := self.Called()
+func (d *MockStorageDriver) Close() error {
+	if d.MockCloseMethod {
+		args := d.Called()
 		return args.Error(0)
 	}
 	return nil

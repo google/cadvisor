@@ -114,9 +114,9 @@ func checkIfStartOfOomMessages(line string) bool {
 // StreamOoms writes to a provided a stream of OomInstance objects representing
 // OOM events that are found in the logs.
 // It will block and should be called from a goroutine.
-func (self *OomParser) StreamOoms(outStream chan<- *OomInstance) {
-	kmsgEntries := self.parser.Parse()
-	defer self.parser.Close()
+func (p *OomParser) StreamOoms(outStream chan<- *OomInstance) {
+	kmsgEntries := p.parser.Parse()
+	defer p.parser.Close()
 
 	for msg := range kmsgEntries {
 		in_oom_kernel_log := checkIfStartOfOomMessages(msg.Message)

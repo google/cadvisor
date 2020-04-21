@@ -75,14 +75,14 @@ func NewRealCloudInfo() CloudInfo {
 	}
 }
 
-func (self *realCloudInfo) GetCloudProvider() info.CloudProvider {
-	return self.cloudProvider
+func (i *realCloudInfo) GetCloudProvider() info.CloudProvider {
+	return i.cloudProvider
 }
 
-func (self *realCloudInfo) GetInstanceType() info.InstanceType {
-	return self.instanceType
+func (i *realCloudInfo) GetInstanceType() info.InstanceType {
+	return i.instanceType
 }
 
-func (self *realCloudInfo) GetInstanceID() info.InstanceID {
-	return self.instanceID
+func (i *realCloudInfo) GetInstanceID() info.InstanceID {
+	return i.instanceID
 }

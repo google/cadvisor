@@ -79,14 +79,14 @@ func Client() (mesosAgentClient, error) {
 }
 
 // ContainerInfo returns the container information of the given container id
-func (self *client) ContainerInfo(id string) (*containerInfo, error) {
-	c, err := self.getContainer(id)
+func (c *client) ContainerInfo(id string) (*containerInfo, error) {
+	c, err := c.getContainer(id)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get labels of the container
-	l, err := self.getLabels(c)
+	l, err := c.getLabels(c)
 	if err != nil {
 		return nil, err
 	}
@@ -98,12 +98,12 @@ func (self *client) ContainerInfo(id string) (*containerInfo, error) {
 }
 
 // Get the Pid of the container
-func (self *client) ContainerPid(id string) (int, error) {
+func (c *client) ContainerPid(id string) (int, error) {
 	var pid int
 	var err error
 	err = retry.Retry(
 		func(attempt uint) error {
-			c, err := self.ContainerInfo(id)
+			c, err := c.ContainerInfo(id)
 			if err != nil {
 				return err
 			}
@@ -123,9 +123,9 @@ func (self *client) ContainerPid(id string) (int, error) {
 	return pid, err
 }
 
-func (self *client) getContainer(id string) (*mContainer, error) {
+func (c *client) getContainer(id string) (*mContainer, error) {
 	// Get all containers
-	cntrs, err := self.getContainers()
+	cntrs, err := c.getContainers()
 	if err != nil {
 		return nil, err
 	}
@@ -139,9 +139,9 @@ func (self *client) getContainer(id string) (*mContainer, error) {
 	return nil, fmt.Errorf("can't locate container %s", id)
 }
 
-func (self *client) getVersion() (string, error) {
+func (c *client) getVersion() (string, error) {
 	req := calls.NonStreaming(calls.GetVersion())
-	result, err := self.fetchAndDecode(req)
+	result, err := c.fetchAndDecode(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to get mesos version: %v", err)
 	}
@@ -153,9 +153,9 @@ func (self *client) getVersion() (string, error) {
 	return version.VersionInfo.Version, nil
 }
 
-func (self *client) getContainers() (mContainers, error) {
+func (c *client) getContainers() (mContainers, error) {
 	req := calls.NonStreaming(calls.GetContainers())
-	result, err := self.fetchAndDecode(req)
+	result, err := c.fetchAndDecode(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get mesos containers: %v", err)
 	}
@@ -167,11 +167,11 @@ func (self *client) getContainers() (mContainers, error) {
 	return cntrs, nil
 }
 
-func (self *client) getLabels(c *mContainer) (map[string]string, error) {
+func (c *client) getLabels(c *mContainer) (map[string]string, error) {
 	// Get mesos agent state which contains all containers labels
 	var s state
 	req := calls.NonStreaming(calls.GetState())
-	result, err := self.fetchAndDecode(req)
+	result, err := c.fetchAndDecode(req)
 	if err != nil {
 		return map[string]string{}, fmt.Errorf("failed to get mesos agent state: %v", err)
 	}
@@ -186,7 +186,7 @@ func (self *client) getLabels(c *mContainer) (map[string]string, error) {
 	return labels, nil
 }
 
-func (self *client) fetchAndDecode(req calls.RequestFunc) (*agent.Response, error) {
+func (c *client) fetchAndDecode(req calls.RequestFunc) (*agent.Response, error) {
 	var res mesos.Response
 	var err error
 

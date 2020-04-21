@@ -45,13 +45,13 @@ func New() (*NetlinkReader, error) {
 	}, nil
 }
 
-func (self *NetlinkReader) Stop() {
-	if self.conn != nil {
-		self.conn.Close()
+func (r *NetlinkReader) Stop() {
+	if r.conn != nil {
+		r.conn.Close()
 	}
 }
 
-func (self *NetlinkReader) Start() error {
+func (r *NetlinkReader) Start() error {
 	// We do the start setup for netlink in New(). Nothing to do here.
 	return nil
 }
@@ -60,7 +60,7 @@ func (self *NetlinkReader) Start() error {
 // Caller can use historical data to calculate cpu load.
 // path is an absolute filesystem path for a container under the CPU cgroup hierarchy.
 // NOTE: non-hierarchical load is returned. It does not include load for subcontainers.
-func (self *NetlinkReader) GetCpuLoad(name string, path string) (info.LoadStats, error) {
+func (r *NetlinkReader) GetCpuLoad(name string, path string) (info.LoadStats, error) {
 	if len(path) == 0 {
 		return info.LoadStats{}, fmt.Errorf("cgroup path can not be empty!")
 	}
@@ -71,7 +71,7 @@ func (self *NetlinkReader) GetCpuLoad(name string, path string) (info.LoadStats,
 	}
 	defer cfd.Close()
 
-	stats, err := getLoadStats(self.familyId, cfd, self.conn)
+	stats, err := getLoadStats(r.familyId, cfd, r.conn)
 	if err != nil {
 		return info.LoadStats{}, err
 	}

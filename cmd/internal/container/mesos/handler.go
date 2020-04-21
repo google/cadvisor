@@ -114,56 +114,56 @@ func newMesosContainerHandler(
 	return handler, nil
 }
 
-func (self *mesosContainerHandler) ContainerReference() (info.ContainerReference, error) {
+func (h *mesosContainerHandler) ContainerReference() (info.ContainerReference, error) {
 	// We only know the container by its one name.
-	return self.reference, nil
+	return h.reference, nil
 }
 
 // Nothing to start up.
-func (self *mesosContainerHandler) Start() {}
+func (h *mesosContainerHandler) Start() {}
 
 // Nothing to clean up.
-func (self *mesosContainerHandler) Cleanup() {}
+func (h *mesosContainerHandler) Cleanup() {}
 
-func (self *mesosContainerHandler) GetSpec() (info.ContainerSpec, error) {
+func (h *mesosContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	// TODO: Since we dont collect disk usage and network stats for mesos containers, we set
 	// hasFilesystem and hasNetwork to false. Revisit when we support disk usage, network
 	// stats for mesos containers.
 	hasNetwork := false
 	hasFilesystem := false
 
-	spec, err := common.GetSpec(self.cgroupPaths, self.machineInfoFactory, hasNetwork, hasFilesystem)
+	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, hasNetwork, hasFilesystem)
 	if err != nil {
 		return spec, err
 	}
 
-	spec.Labels = self.labels
+	spec.Labels = h.labels
 
 	return spec, nil
 }
 
-func (self *mesosContainerHandler) getFsStats(stats *info.ContainerStats) error {
+func (h *mesosContainerHandler) getFsStats(stats *info.ContainerStats) error {
 
-	mi, err := self.machineInfoFactory.GetMachineInfo()
+	mi, err := h.machineInfoFactory.GetMachineInfo()
 	if err != nil {
 		return err
 	}
 
-	if self.includedMetrics.Has(container.DiskIOMetrics) {
+	if h.includedMetrics.Has(container.DiskIOMetrics) {
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
 	}
 
 	return nil
 }
 
-func (self *mesosContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := self.libcontainerHandler.GetStats()
+func (h *mesosContainerHandler) GetStats() (*info.ContainerStats, error) {
+	stats, err := h.libcontainerHandler.GetStats()
 	if err != nil {
 		return stats, err
 	}
 
 	// Get filesystem stats.
-	err = self.getFsStats(stats)
+	err = h.getFsStats(stats)
 	if err != nil {
 		return stats, err
 	}
@@ -171,35 +171,35 @@ func (self *mesosContainerHandler) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
-func (self *mesosContainerHandler) GetCgroupPath(resource string) (string, error) {
-	path, ok := self.cgroupPaths[resource]
+func (h *mesosContainerHandler) GetCgroupPath(resource string) (string, error) {
+	path, ok := h.cgroupPaths[resource]
 	if !ok {
-		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, self.name)
+		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, h.name)
 	}
 	return path, nil
 }
 
-func (self *mesosContainerHandler) GetContainerLabels() map[string]string {
-	return self.labels
+func (h *mesosContainerHandler) GetContainerLabels() map[string]string {
+	return h.labels
 }
 
-func (self *mesosContainerHandler) GetContainerIPAddress() string {
+func (h *mesosContainerHandler) GetContainerIPAddress() string {
 	// the IP address for the mesos container corresponds to the system ip address.
 	return "127.0.0.1"
 }
 
-func (self *mesosContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	return common.ListContainers(self.name, self.cgroupPaths, listType)
+func (h *mesosContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
+	return common.ListContainers(h.name, h.cgroupPaths, listType)
 }
 
-func (self *mesosContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	return self.libcontainerHandler.GetProcesses()
+func (h *mesosContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
+	return h.libcontainerHandler.GetProcesses()
 }
 
-func (self *mesosContainerHandler) Exists() bool {
-	return common.CgroupExists(self.cgroupPaths)
+func (h *mesosContainerHandler) Exists() bool {
+	return common.CgroupExists(h.cgroupPaths)
 }
 
-func (self *mesosContainerHandler) Type() container.ContainerType {
+func (h *mesosContainerHandler) Type() container.ContainerType {
 	return container.ContainerTypeMesos
 }
