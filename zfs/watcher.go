@@ -24,7 +24,7 @@ import (
 
 // zfsWatcher maintains a cache of filesystem -> usage stats for a
 // zfs filesystem
-type ZfsWatcher struct {
+type Watcher struct {
 	filesystem string
 	lock       *sync.RWMutex
 	cache      map[string]uint64
@@ -34,9 +34,9 @@ type ZfsWatcher struct {
 
 // NewThinPoolWatcher returns a new ThinPoolWatcher for the given devicemapper
 // thin pool name and metadata device or an error.
-func NewZfsWatcher(filesystem string) (*ZfsWatcher, error) {
+func NewZfsWatcher(filesystem string) (*Watcher, error) {
 
-	return &ZfsWatcher{
+	return &Watcher{
 		filesystem: filesystem,
 		lock:       &sync.RWMutex{},
 		cache:      make(map[string]uint64),
@@ -45,8 +45,8 @@ func NewZfsWatcher(filesystem string) (*ZfsWatcher, error) {
 	}, nil
 }
 
-// Start starts the ZfsWatcher.
-func (w *ZfsWatcher) Start() {
+// Start starts the Watcher.
+func (w *Watcher) Start() {
 	err := w.Refresh()
 	if err != nil {
 		klog.Errorf("encountered error refreshing zfs watcher: %v", err)
@@ -70,13 +70,13 @@ func (w *ZfsWatcher) Start() {
 	}
 }
 
-// Stop stops the ZfsWatcher.
-func (w *ZfsWatcher) Stop() {
+// Stop stops the Watcher.
+func (w *Watcher) Stop() {
 	close(w.stopChan)
 }
 
 // GetUsage gets the cached usage value of the given filesystem.
-func (w *ZfsWatcher) GetUsage(filesystem string) (uint64, error) {
+func (w *Watcher) GetUsage(filesystem string) (uint64, error) {
 	w.lock.RLock()
 	defer w.lock.RUnlock()
 
@@ -89,7 +89,7 @@ func (w *ZfsWatcher) GetUsage(filesystem string) (uint64, error) {
 }
 
 // Refresh performs a zfs get
-func (w *ZfsWatcher) Refresh() error {
+func (w *Watcher) Refresh() error {
 	w.lock.Lock()
 	defer w.lock.Unlock()
 	newCache := make(map[string]uint64)

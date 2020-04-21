@@ -55,7 +55,7 @@ type collectorInfo struct {
 }
 
 // Returns a new collector using the information extracted from the configfile
-func NewCollector(collectorName string, configFile []byte, metricCountLimit int, containerHandler container.ContainerHandler, httpClient *http.Client) (*GenericCollector, error) {
+func NewCollector(collectorName string, configFile []byte, metricCountLimit int, containerHandler container.Handler, httpClient *http.Client) (*GenericCollector, error) {
 	var configInJSON Config
 	err := json.Unmarshal(configFile, &configInJSON)
 	if err != nil {

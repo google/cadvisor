@@ -75,9 +75,9 @@ type crioContainerHandler struct {
 	pidKnown            bool
 }
 
-var _ container.ContainerHandler = &crioContainerHandler{}
+var _ container.Handler = &crioContainerHandler{}
 
-// newCrioContainerHandler returns a new container.ContainerHandler
+// newCrioContainerHandler returns a new container.Handler
 func newCrioContainerHandler(
 	client crioClient,
 	name string,
@@ -89,7 +89,7 @@ func newCrioContainerHandler(
 	inHostNamespace bool,
 	metadataEnvs []string,
 	includedMetrics container.MetricSet,
-) (container.ContainerHandler, error) {
+) (container.Handler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
@@ -354,6 +354,6 @@ func (self *crioContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
 
-func (self *crioContainerHandler) Type() container.ContainerType {
+func (self *crioContainerHandler) Type() container.Type {
 	return container.ContainerTypeCrio
 }

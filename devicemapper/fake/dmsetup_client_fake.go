@@ -24,37 +24,37 @@ type DmsetupCommand struct {
 }
 
 // NewFakeDmsetupClient returns a new fake DmsetupClient.
-func NewFakeDmsetupClient(t *testing.T, commands ...DmsetupCommand) *FakeDmsetupClient {
+func NewFakeDmsetupClient(t *testing.T, commands ...DmsetupCommand) *DmsetupClient {
 	if len(commands) == 0 {
 		commands = make([]DmsetupCommand, 0)
 	}
-	return &FakeDmsetupClient{t: t, commands: commands}
+	return &DmsetupClient{t: t, commands: commands}
 }
 
-// FakeDmsetupClient is a thread-unsafe fake implementation of the
+// DmsetupClient is a thread-unsafe fake implementation of the
 // DmsetupClient interface
-type FakeDmsetupClient struct {
+type DmsetupClient struct {
 	t        *testing.T
 	commands []DmsetupCommand
 }
 
-func (c *FakeDmsetupClient) Table(deviceName string) ([]byte, error) {
+func (c *DmsetupClient) Table(deviceName string) ([]byte, error) {
 	return c.dmsetup("table")
 }
 
-func (c *FakeDmsetupClient) Message(deviceName string, sector int, message string) ([]byte, error) {
+func (c *DmsetupClient) Message(deviceName string, sector int, message string) ([]byte, error) {
 	return c.dmsetup("message")
 }
 
-func (c *FakeDmsetupClient) Status(deviceName string) ([]byte, error) {
+func (c *DmsetupClient) Status(deviceName string) ([]byte, error) {
 	return c.dmsetup("status")
 }
 
-func (c *FakeDmsetupClient) AddCommand(name string, result string, err error) {
+func (c *DmsetupClient) AddCommand(name string, result string, err error) {
 	c.commands = append(c.commands, DmsetupCommand{name, result, err})
 }
 
-func (c *FakeDmsetupClient) dmsetup(inputCommand string) ([]byte, error) {
+func (c *DmsetupClient) dmsetup(inputCommand string) ([]byte, error) {
 	var nextCommand DmsetupCommand
 	nextCommand, c.commands = c.commands[0], c.commands[1:]
 	if nextCommand.Name != inputCommand {

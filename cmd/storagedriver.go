@@ -39,7 +39,7 @@ var (
 )
 
 // NewMemoryStorage creates a memory storage with an optional backend storage option.
-func NewMemoryStorage() (*memory.InMemoryCache, error) {
+func NewMemoryStorage() (*memory.Cache, error) {
 	backendStorages := []storage.Driver{}
 	for _, driver := range strings.Split(*storageDriver, ",") {
 		if driver == "" {

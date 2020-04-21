@@ -23,12 +23,12 @@ import (
 	"k8s.io/klog/v2"
 )
 
-type NetlinkReader struct {
+type Reader struct {
 	familyID uint16
 	conn     *Connection
 }
 
-func New() (*NetlinkReader, error) {
+func New() (*Reader, error) {
 	conn, err := newConnection()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new connection: %s", err)
@@ -39,19 +39,19 @@ func New() (*NetlinkReader, error) {
 		return nil, fmt.Errorf("failed to get netlink family id for task stats: %s", err)
 	}
 	klog.V(4).Infof("Family id for taskstats: %d", id)
-	return &NetlinkReader{
+	return &Reader{
 		familyID: id,
 		conn:     conn,
 	}, nil
 }
 
-func (self *NetlinkReader) Stop() {
+func (self *Reader) Stop() {
 	if self.conn != nil {
 		self.conn.Close()
 	}
 }
 
-func (self *NetlinkReader) Start() error {
+func (self *Reader) Start() error {
 	// We do the start setup for netlink in New(). Nothing to do here.
 	return nil
 }
@@ -60,7 +60,7 @@ func (self *NetlinkReader) Start() error {
 // Caller can use historical data to calculate cpu load.
 // path is an absolute filesystem path for a container under the CPU cgroup hierarchy.
 // NOTE: non-hierarchical load is returned. It does not include load for subcontainers.
-func (self *NetlinkReader) GetCpuLoad(name string, path string) (info.LoadStats, error) {
+func (self *Reader) GetCpuLoad(name string, path string) (info.LoadStats, error) {
 	if len(path) == 0 {
 		return info.LoadStats{}, fmt.Errorf("cgroup path can not be empty!")
 	}

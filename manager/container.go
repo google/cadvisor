@@ -58,11 +58,11 @@ type containerInfo struct {
 }
 
 type containerData struct {
-	handler                  container.ContainerHandler
+	handler                  container.Handler
 	info                     containerInfo
-	memoryCache              *memory.InMemoryCache
+	memoryCache              *memory.Cache
 	lock                     sync.Mutex
-	loadReader               cpuload.CPULoadReader
+	loadReader               cpuload.LoadReader
 	summaryReader            *summary.StatsSummary
 	loadAvg                  float64 // smoothed load average seen so far.
 	housekeepingInterval     time.Duration
@@ -374,7 +374,7 @@ func (c *containerData) GetProcessList(cadvisorContainer string, inHostNamespace
 	return processes, nil
 }
 
-func newContainerData(containerName string, memoryCache *memory.InMemoryCache, handler container.ContainerHandler, logUsage bool, collectorManager collector.CollectorManager, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, clock clock.Clock) (*containerData, error) {
+func newContainerData(containerName string, memoryCache *memory.Cache, handler container.Handler, logUsage bool, collectorManager collector.CollectorManager, maxHousekeepingInterval time.Duration, allowDynamicHousekeeping bool, clock clock.Clock) (*containerData, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("nil memory storage")
 	}

@@ -47,7 +47,7 @@ import (
 // TODO(vmarmol): Refactor these tests.
 
 func createManagerAndAddContainers(
-	memoryCache *memory.InMemoryCache,
+	memoryCache *memory.Cache,
 	sysfs *fakesysfs.FakeSysFs,
 	containers []string,
 	f func(*containertest.MockContainerHandler),

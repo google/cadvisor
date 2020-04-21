@@ -56,7 +56,7 @@ func (self *containerdFactory) String() string {
 	return k8sContainerdNamespace
 }
 
-func (self *containerdFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
+func (self *containerdFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.Handler, err error) {
 	client, err := Client(*ArgContainerdEndpoint, *ArgContainerdNamespace)
 	if err != nil {
 		return

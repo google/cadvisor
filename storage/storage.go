@@ -30,11 +30,11 @@ type Driver interface {
 	Close() error
 }
 
-type StorageDriverFunc func() (Driver, error)
+type DriverFunc func() (Driver, error)
 
-var registeredPlugins = map[string](StorageDriverFunc){}
+var registeredPlugins = map[string](DriverFunc){}
 
-func RegisterStorageDriver(name string, f StorageDriverFunc) {
+func RegisterStorageDriver(name string, f DriverFunc) {
 	registeredPlugins[name] = f
 }
 

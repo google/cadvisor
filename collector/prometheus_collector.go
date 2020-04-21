@@ -53,7 +53,7 @@ type PrometheusCollector struct {
 }
 
 // Returns a new collector using the information extracted from the configfile
-func NewPrometheusCollector(collectorName string, configFile []byte, metricCountLimit int, containerHandler container.ContainerHandler, httpClient *http.Client) (*PrometheusCollector, error) {
+func NewPrometheusCollector(collectorName string, configFile []byte, metricCountLimit int, containerHandler container.Handler, httpClient *http.Client) (*PrometheusCollector, error) {
 	var configInJSON Prometheus
 	err := json.Unmarshal(configFile, &configInJSON)
 	if err != nil {

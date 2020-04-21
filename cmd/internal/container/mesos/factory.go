@@ -40,7 +40,7 @@ const MesosNamespace = "mesos"
 // --cgroup-parent have another prefix than 'mesos'
 var mesosCgroupRegexp = regexp.MustCompile(`([a-z-0-9]{36})`)
 
-// mesosFactory implements the interface ContainerHandlerFactory
+// mesosFactory implements the interface container.HandlerFactory
 type mesosFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
@@ -59,7 +59,7 @@ func (self *mesosFactory) String() string {
 	return MesosNamespace
 }
 
-func (self *mesosFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (self *mesosFactory) NewContainerHandler(name string, inHostNamespace bool) (container.Handler, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, err

@@ -13,16 +13,16 @@
 // limitations under the License.
 package fake
 
-type FakeThinLsClient struct {
+type ThinLsClient struct {
 	result map[string]uint64
 	err    error
 }
 
 // NewFakeThinLsClient returns a new fake ThinLsClient.
-func NewFakeThinLsClient(result map[string]uint64, err error) *FakeThinLsClient {
-	return &FakeThinLsClient{result, err}
+func NewFakeThinLsClient(result map[string]uint64, err error) *ThinLsClient {
+	return &ThinLsClient{result, err}
 }
 
-func (c *FakeThinLsClient) ThinLs(deviceName string) (map[string]uint64, error) {
+func (c *ThinLsClient) ThinLs(deviceName string) (map[string]uint64, error) {
 	return c.result, c.err
 }

@@ -91,9 +91,9 @@ func (self *MockContainerHandler) GetContainerLabels() map[string]string {
 	return args.Get(0).(map[string]string)
 }
 
-func (self *MockContainerHandler) Type() container.ContainerType {
+func (self *MockContainerHandler) Type() container.Type {
 	args := self.Called()
-	return args.Get(0).(container.ContainerType)
+	return args.Get(0).(container.Type)
 }
 
 func (self *MockContainerHandler) GetContainerIPAddress() string {
@@ -110,7 +110,7 @@ func (self *FactoryForMockContainerHandler) String() string {
 	return self.Name
 }
 
-func (self *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (self *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (container.Handler, error) {
 	handler := &MockContainerHandler{}
 	if self.PrepareContainerHandlerFunc != nil {
 		self.PrepareContainerHandlerFunc(name, handler)

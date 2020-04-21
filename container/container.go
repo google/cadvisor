@@ -27,10 +27,10 @@ const (
 	ListRecursive
 )
 
-type ContainerType int
+type Type int
 
 const (
-	ContainerTypeRaw ContainerType = iota
+	ContainerTypeRaw Type = iota
 	ContainerTypeDocker
 	ContainerTypeCrio
 	ContainerTypeContainerd
@@ -38,7 +38,7 @@ const (
 )
 
 // Interface for container operation handlers.
-type ContainerHandler interface {
+type Handler interface {
 	// Returns the ContainerReference
 	ContainerReference() (info.ContainerReference, error)
 
@@ -74,5 +74,5 @@ type ContainerHandler interface {
 	Start()
 
 	// Type of handler
-	Type() ContainerType
+	Type() Type
 }

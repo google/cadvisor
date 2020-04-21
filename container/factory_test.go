@@ -43,9 +43,9 @@ func (self *mockContainerHandlerFactory) CanHandleAndAccept(name string) (bool, 
 	return self.CanHandleValue, self.CanAcceptValue, nil
 }
 
-func (self *mockContainerHandlerFactory) NewContainerHandler(name string, isHostNamespace bool) (container.ContainerHandler, error) {
+func (self *mockContainerHandlerFactory) NewContainerHandler(name string, isHostNamespace bool) (container.Handler, error) {
 	args := self.Called(name)
-	return args.Get(0).(container.ContainerHandler), args.Error(1)
+	return args.Get(0).(container.Handler), args.Error(1)
 }
 
 const testContainerName = "/test"
@@ -63,7 +63,7 @@ func TestNewContainerHandler_FirstMatches(t *testing.T) {
 	}
 	container.RegisterContainerHandlerFactory(allwaysYes, []watcher.ContainerWatchSource{watcher.Raw})
 
-	// The yes factory should be asked to create the ContainerHandler.
+	// The yes factory should be asked to create the Handler.
 	mockContainer, err := mockFactory.NewContainerHandler(testContainerName, true)
 	if err != nil {
 		t.Error(err)
@@ -96,7 +96,7 @@ func TestNewContainerHandler_SecondMatches(t *testing.T) {
 	}
 	container.RegisterContainerHandlerFactory(allwaysYes, []watcher.ContainerWatchSource{watcher.Raw})
 
-	// The yes factory should be asked to create the ContainerHandler.
+	// The yes factory should be asked to create the Handler.
 	mockContainer, err := mockFactory.NewContainerHandler(testContainerName, true)
 	if err != nil {
 		t.Error(err)

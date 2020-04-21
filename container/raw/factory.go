@@ -56,7 +56,7 @@ func (self *rawFactory) String() string {
 	return "raw"
 }
 
-func (self *rawFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (self *rawFactory) NewContainerHandler(name string, inHostNamespace bool) (container.Handler, error) {
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"

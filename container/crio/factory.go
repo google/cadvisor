@@ -64,7 +64,7 @@ func (self *crioFactory) String() string {
 	return CrioNamespace
 }
 
-func (self *crioFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
+func (self *crioFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.Handler, err error) {
 	client, err := Client()
 	if err != nil {
 		return

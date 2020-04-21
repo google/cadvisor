@@ -43,7 +43,7 @@ const (
 )
 
 // Create a containerData instance for a test.
-func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *containertest.MockContainerHandler, *memory.InMemoryCache, *clock.FakeClock) {
+func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, *containertest.MockContainerHandler, *memory.Cache, *clock.FakeClock) {
 	mockHandler := containertest.NewMockContainerHandler(containerName)
 	mockHandler.On("GetSpec").Return(
 		spec,
@@ -59,7 +59,7 @@ func setupContainerData(t *testing.T, spec info.ContainerSpec) (*containerData, 
 }
 
 // Create a containerData instance for a test and add a default GetSpec mock.
-func newTestContainerData(t *testing.T) (*containerData, *containertest.MockContainerHandler, *memory.InMemoryCache, *clock.FakeClock) {
+func newTestContainerData(t *testing.T) (*containerData, *containertest.MockContainerHandler, *memory.Cache, *clock.FakeClock) {
 	return setupContainerData(t, itest.GenerateRandomContainerSpec(4))
 }
 
@@ -124,7 +124,7 @@ func TestUpdateSubcontainersWithErrorOnDeadContainer(t *testing.T) {
 	mockHandler.AssertExpectations(t)
 }
 
-func checkNumStats(t *testing.T, memoryCache *memory.InMemoryCache, numStats int) {
+func checkNumStats(t *testing.T, memoryCache *memory.Cache, numStats int) {
 	var empty time.Time
 	stats, err := memoryCache.RecentStats(containerName, empty, empty, -1)
 	require.Nil(t, err)

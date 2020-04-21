@@ -129,14 +129,14 @@ type dockerFactory struct {
 	thinPoolName    string
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
 
-	zfsWatcher *zfs.ZfsWatcher
+	zfsWatcher *zfs.Watcher
 }
 
 func (self *dockerFactory) String() string {
 	return DockerNamespace
 }
 
-func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
+func (self *dockerFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.Handler, err error) {
 	client, err := Client()
 	if err != nil {
 		return
@@ -247,7 +247,7 @@ func startThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolW
 	return thinPoolWatcher, nil
 }
 
-func startZfsWatcher(dockerInfo *dockertypes.Info) (*zfs.ZfsWatcher, error) {
+func startZfsWatcher(dockerInfo *dockertypes.Info) (*zfs.Watcher, error) {
 	filesystem, err := dockerutil.DockerZfsFilesystem(*dockerInfo)
 	if err != nil {
 		return nil, err
@@ -359,7 +359,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		thinPoolName = status.DriverStatus[dockerutil.DriverStatusPoolName]
 	}
 
-	var zfsWatcher *zfs.ZfsWatcher
+	var zfsWatcher *zfs.Watcher
 	if storageDriver(dockerInfo.Driver) == zfsStorageDriver {
 		zfsWatcher, err = startZfsWatcher(dockerInfo)
 		if err != nil {

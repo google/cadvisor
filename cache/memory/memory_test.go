@@ -43,7 +43,7 @@ func makeStat(i int) *info.ContainerStats {
 	}
 }
 
-func getRecentStats(t *testing.T, memoryCache *InMemoryCache, numStats int) []*info.ContainerStats {
+func getRecentStats(t *testing.T, memoryCache *Cache, numStats int) []*info.ContainerStats {
 	stats, err := memoryCache.RecentStats(containerName, zero, zero, numStats)
 	require.Nil(t, err)
 	return stats
@@ -73,8 +73,8 @@ func TestRecentStatsNoRecentStats(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-// Make an instance of InMemoryCache with n stats.
-func makeWithStats(n int) *InMemoryCache {
+// Make an instance of Cache with n stats.
+func makeWithStats(n int) *Cache {
 	memoryCache := New(60*time.Second, nil)
 
 	for i := 0; i < n; i++ {

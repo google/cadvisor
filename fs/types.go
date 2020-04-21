@@ -40,21 +40,21 @@ type DeviceInfo struct {
 	Minor  uint
 }
 
-type FsType string
+type Type string
 
-func (ft FsType) String() string {
+func (ft Type) String() string {
 	return string(ft)
 }
 
 const (
-	ZFS          FsType = "zfs"
-	DeviceMapper FsType = "devicemapper"
-	VFS          FsType = "vfs"
+	ZFS          Type = "zfs"
+	DeviceMapper Type = "devicemapper"
+	VFS          Type = "vfs"
 )
 
 type Fs struct {
 	DeviceInfo
-	Type       FsType
+	Type       Type
 	Capacity   uint64
 	Free       uint64
 	Available  uint64

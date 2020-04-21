@@ -25,9 +25,9 @@ import (
 	"k8s.io/klog/v2"
 )
 
-type ContainerHandlerFactory interface {
-	// Create a new ContainerHandler using this factory. CanHandleAndAccept() must have returned true.
-	NewContainerHandler(name string, inHostNamespace bool) (c ContainerHandler, err error)
+type HandlerFactory interface {
+	// Create a new Handler using this factory. CanHandleAndAccept() must have returned true.
+	NewContainerHandler(name string, inHostNamespace bool) (c Handler, err error)
 
 	// Returns whether this factory can handle and accept the specified container.
 	CanHandleAndAccept(name string) (handle bool, accept bool, err error)
@@ -164,13 +164,13 @@ func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includ
 // TODO(vmarmol): Consider not making this global.
 // Global list of factories.
 var (
-	factories     = map[watcher.ContainerWatchSource][]ContainerHandlerFactory{}
+	factories     = map[watcher.ContainerWatchSource][]HandlerFactory{}
 	factoriesLock sync.RWMutex
 )
 
-// Register a ContainerHandlerFactory. These should be registered from least general to most general
+// Register a HandlerFactory. These should be registered from least general to most general
 // as they will be asked in order whether they can handle a particular container.
-func RegisterContainerHandlerFactory(factory ContainerHandlerFactory, watchTypes []watcher.ContainerWatchSource) {
+func RegisterContainerHandlerFactory(factory HandlerFactory, watchTypes []watcher.ContainerWatchSource) {
 	factoriesLock.Lock()
 	defer factoriesLock.Unlock()
 
@@ -187,12 +187,12 @@ func HasFactories() bool {
 	return len(factories) != 0
 }
 
-// Create a new ContainerHandler for the specified container.
-func NewContainerHandler(name string, watchType watcher.ContainerWatchSource, inHostNamespace bool) (ContainerHandler, bool, error) {
+// Create a new Handler for the specified container.
+func NewContainerHandler(name string, watchType watcher.ContainerWatchSource, inHostNamespace bool) (Handler, bool, error) {
 	factoriesLock.RLock()
 	defer factoriesLock.RUnlock()
 
-	// Create the ContainerHandler with the first factory that supports it.
+	// Create the Handler with the first factory that supports it.
 	for _, factory := range factories[watchType] {
 		canHandle, canAccept, err := factory.CanHandleAndAccept(name)
 		if err != nil {
@@ -219,7 +219,7 @@ func ClearContainerHandlerFactories() {
 	factoriesLock.Lock()
 	defer factoriesLock.Unlock()
 
-	factories = map[watcher.ContainerWatchSource][]ContainerHandlerFactory{}
+	factories = map[watcher.ContainerWatchSource][]HandlerFactory{}
 }
 
 func DebugInfo() map[string][]string {

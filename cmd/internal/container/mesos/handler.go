@@ -61,7 +61,7 @@ func newMesosContainerHandler(
 	includedMetrics container.MetricSet,
 	inHostNamespace bool,
 	client mesosAgentClient,
-) (container.ContainerHandler, error) {
+) (container.Handler, error) {
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
 	// Generate the equivalent cgroup manager for this container.
@@ -200,6 +200,6 @@ func (self *mesosContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
 
-func (self *mesosContainerHandler) Type() container.ContainerType {
+func (self *mesosContainerHandler) Type() container.Type {
 	return container.ContainerTypeMesos
 }

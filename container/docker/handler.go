@@ -96,7 +96,7 @@ type dockerContainerHandler struct {
 	libcontainerHandler *containerlibcontainer.Handler
 }
 
-var _ container.ContainerHandler = &dockerContainerHandler{}
+var _ container.Handler = &dockerContainerHandler{}
 
 func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersion []int) (string, error) {
 	const (
@@ -115,7 +115,7 @@ func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersio
 	return string(bytes), err
 }
 
-// newDockerContainerHandler returns a new container.ContainerHandler
+// newDockerContainerHandler returns a new container.Handler
 func newDockerContainerHandler(
 	client *docker.Client,
 	name string,
@@ -130,8 +130,8 @@ func newDockerContainerHandler(
 	includedMetrics container.MetricSet,
 	thinPoolName string,
 	thinPoolWatcher *devicemapper.ThinPoolWatcher,
-	zfsWatcher *zfs.ZfsWatcher,
-) (container.ContainerHandler, error) {
+	zfsWatcher *zfs.Watcher,
+) (container.Handler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
@@ -283,7 +283,7 @@ type dockerFsHandler struct {
 	deviceID string
 
 	// zfsWatcher is the zfs filesystem watcher
-	zfsWatcher *zfs.ZfsWatcher
+	zfsWatcher *zfs.Watcher
 	// zfsFilesystem is the docker zfs filesystem
 	zfsFilesystem string
 }
@@ -474,6 +474,6 @@ func (self *dockerContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
 
-func (self *dockerContainerHandler) Type() container.ContainerType {
+func (self *dockerContainerHandler) Type() container.Type {
 	return container.ContainerTypeDocker
 }

@@ -29,7 +29,7 @@ import (
 // ErrDataNotFound is the error resulting if failed to find a container in memory cache.
 var ErrDataNotFound = errors.New("unable to find data in memory cache")
 
-// TODO(vmarmol): See about refactoring this class, we have an unnecessary redirection of containerCache and InMemoryCache.
+// TODO(vmarmol): See about refactoring this class, we have an unnecessary redirection of containerCache and Cache.
 // containerCache is used to store per-container information
 type containerCache struct {
 	ref         info.ContainerReference
@@ -66,14 +66,14 @@ func newContainerStore(ref info.ContainerReference, maxAge time.Duration) *conta
 	}
 }
 
-type InMemoryCache struct {
+type Cache struct {
 	lock              sync.RWMutex
 	containerCacheMap map[string]*containerCache
 	maxAge            time.Duration
 	backend           []storage.Driver
 }
 
-func (self *InMemoryCache) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+func (self *Cache) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	var cstore *containerCache
 	var ok bool
 
@@ -97,7 +97,7 @@ func (self *InMemoryCache) AddStats(cInfo *info.ContainerInfo, stats *info.Conta
 	return cstore.AddStats(stats)
 }
 
-func (self *InMemoryCache) RecentStats(name string, start, end time.Time, maxStats int) ([]*info.ContainerStats, error) {
+func (self *Cache) RecentStats(name string, start, end time.Time, maxStats int) ([]*info.ContainerStats, error) {
 	var cstore *containerCache
 	var ok bool
 	err := func() error {
@@ -115,14 +115,14 @@ func (self *InMemoryCache) RecentStats(name string, start, end time.Time, maxSta
 	return cstore.RecentStats(start, end, maxStats)
 }
 
-func (self *InMemoryCache) Close() error {
+func (self *Cache) Close() error {
 	self.lock.Lock()
 	self.containerCacheMap = make(map[string]*containerCache, 32)
 	self.lock.Unlock()
 	return nil
 }
 
-func (self *InMemoryCache) RemoveContainer(containerName string) error {
+func (self *Cache) RemoveContainer(containerName string) error {
 	self.lock.Lock()
 	delete(self.containerCacheMap, containerName)
 	self.lock.Unlock()
@@ -132,8 +132,8 @@ func (self *InMemoryCache) RemoveContainer(containerName string) error {
 func New(
 	maxAge time.Duration,
 	backend []storage.Driver,
-) *InMemoryCache {
-	ret := &InMemoryCache{
+) *Cache {
+	ret := &Cache{
 		containerCacheMap: make(map[string]*containerCache, 32),
 		maxAge:            maxAge,
 		backend:           backend,

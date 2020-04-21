@@ -142,7 +142,7 @@ type HouskeepingConfig = struct {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, perfEventsFile string) (Manager, error) {
+func New(memoryCache *memory.Cache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, perfEventsFile string) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -228,7 +228,7 @@ type namespacedContainerName struct {
 type manager struct {
 	containers               map[namespacedContainerName]*containerData
 	containersLock           sync.RWMutex
-	memoryCache              *memory.InMemoryCache
+	memoryCache              *memory.Cache
 	fsInfo                   fs.FsInfo
 	sysFs                    sysfs.SysFs
 	machineMu                sync.RWMutex // protects machineInfo

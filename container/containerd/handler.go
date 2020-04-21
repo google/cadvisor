@@ -52,9 +52,9 @@ type containerdContainerHandler struct {
 	libcontainerHandler *containerlibcontainer.Handler
 }
 
-var _ container.ContainerHandler = &containerdContainerHandler{}
+var _ container.Handler = &containerdContainerHandler{}
 
-// newContainerdContainerHandler returns a new container.ContainerHandler
+// newContainerdContainerHandler returns a new container.Handler
 func newContainerdContainerHandler(
 	client containerdClient,
 	name string,
@@ -64,7 +64,7 @@ func newContainerdContainerHandler(
 	inHostNamespace bool,
 	metadataEnvs []string,
 	includedMetrics container.MetricSet,
-) (container.ContainerHandler, error) {
+) (container.Handler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
 
@@ -230,7 +230,7 @@ func (self *containerdContainerHandler) Exists() bool {
 	return common.CgroupExists(self.cgroupPaths)
 }
 
-func (self *containerdContainerHandler) Type() container.ContainerType {
+func (self *containerdContainerHandler) Type() container.Type {
 	return container.ContainerTypeContainerd
 }
 
