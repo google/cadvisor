@@ -134,8 +134,8 @@ func areCgroupsPresent(available map[string]int, desired []string) (bool, string
 	return true, ""
 }
 
-func validateCPUCfsBandwidth(available_cgroups map[string]int) string {
-	ok, _ := areCgroupsPresent(available_cgroups, []string{"cpu"})
+func validateCPUCfsBandwidth(availableCgroups map[string]int) string {
+	ok, _ := areCgroupsPresent(availableCgroups, []string{"cpu"})
 	if !ok {
 		return "\tCpu cfs bandwidth status unknown: cpu cgroup not enabled.\n"
 	}
@@ -151,8 +151,8 @@ func validateCPUCfsBandwidth(available_cgroups map[string]int) string {
 	return "\tCpu cfs bandwidth is enabled.\n"
 }
 
-func validateMemoryAccounting(available_cgroups map[string]int) string {
-	ok, _ := areCgroupsPresent(available_cgroups, []string{"memory"})
+func validateMemoryAccounting(availableCgroups map[string]int) string {
+	ok, _ := areCgroupsPresent(availableCgroups, []string{"memory"})
 	if !ok {
 		return "\tHierarchical memory accounting status unknown: memory cgroup not enabled.\n"
 	}
@@ -177,29 +177,29 @@ func validateMemoryAccounting(available_cgroups map[string]int) string {
 }
 
 func validateCgroups() (string, string) {
-	required_cgroups := []string{"cpu", "cpuacct"}
-	recommended_cgroups := []string{"memory", "blkio", "cpuset", "devices", "freezer"}
-	available_cgroups, err := getEnabledCgroups()
-	desc := fmt.Sprintf("\tFollowing cgroups are required: %v\n\tFollowing other cgroups are recommended: %v\n", required_cgroups, recommended_cgroups)
+	requiredCgroups := []string{"cpu", "cpuacct"}
+	recommendedCgroups := []string{"memory", "blkio", "cpuset", "devices", "freezer"}
+	enabledCgroups, err := getEnabledCgroups()
+	desc := fmt.Sprintf("\tFollowing cgroups are required: %v\n\tFollowing other cgroups are recommended: %v\n", requiredCgroups, recommendedCgroups)
 	if err != nil {
 		desc = fmt.Sprintf("Could not parse /proc/cgroups.\n%s", desc)
 		return Unknown, desc
 	}
-	ok, out := areCgroupsPresent(available_cgroups, required_cgroups)
+	ok, out := areCgroupsPresent(enabledCgroups, requiredCgroups)
 	if !ok {
 		out += desc
 		return Unsupported, out
 	}
-	ok, out = areCgroupsPresent(available_cgroups, recommended_cgroups)
+	ok, out = areCgroupsPresent(enabledCgroups, recommendedCgroups)
 	if !ok {
 		// supported, but not recommended.
 		out += desc
 		return Supported, out
 	}
-	out = fmt.Sprintf("Available cgroups: %v\n", available_cgroups)
+	out = fmt.Sprintf("Available cgroups: %v\n", enabledCgroups)
 	out += desc
-	out += validateMemoryAccounting(available_cgroups)
-	out += validateCPUCfsBandwidth(available_cgroups)
+	out += validateMemoryAccounting(enabledCgroups)
+	out += validateCPUCfsBandwidth(enabledCgroups)
 	return Recommended, out
 }
 

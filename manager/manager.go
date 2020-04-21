@@ -123,7 +123,7 @@ type Manager interface {
 	// Get past events that have been detected and that fit the request.
 	GetPastEvents(request *events.Request) ([]*info.Event, error)
 
-	CloseEventChannel(watch_id int)
+	CloseEventChannel(watchId int)
 
 	// Get status information about docker.
 	DockerInfo() (info.DockerStatus, error)
@@ -1318,23 +1318,22 @@ func (self *manager) getFsInfoByDeviceName(deviceName string) (v2.FsInfo, error)
 }
 
 func getVersionInfo() (*info.VersionInfo, error) {
-
-	kernel_version := machine.KernelVersion()
-	container_os := machine.ContainerOsVersion()
-	docker_version, err := docker.VersionString()
+	kernelVersion := machine.KernelVersion()
+	containerOS := machine.ContainerOsVersion()
+	dockerVersion, err := docker.VersionString()
 	if err != nil {
 		return nil, err
 	}
-	docker_api_version, err := docker.APIVersionString()
+	dockerApiVersion, err := docker.APIVersionString()
 	if err != nil {
 		return nil, err
 	}
 
 	return &info.VersionInfo{
-		KernelVersion:      kernel_version,
-		ContainerOsVersion: container_os,
-		DockerVersion:      docker_version,
-		DockerAPIVersion:   docker_api_version,
+		KernelVersion:      kernelVersion,
+		ContainerOsVersion: containerOS,
+		DockerVersion:      dockerVersion,
+		DockerAPIVersion:   dockerApiVersion,
 		CadvisorVersion:    version.Info["version"],
 		CadvisorRevision:   version.Info["revision"],
 	}, nil

@@ -86,7 +86,7 @@ type EventManager interface {
 	// object
 	AddEvent(e *info.Event) error
 	// Cancels a previously requested watch event.
-	StopWatch(watch_id int)
+	StopWatch(watchId int)
 }
 
 // events provides an implementation for the EventManager interface.
@@ -268,11 +268,11 @@ func (self *events) WatchEvents(request *Request) (*EventChannel, error) {
 	}
 	self.watcherLock.Lock()
 	defer self.watcherLock.Unlock()
-	new_id := self.lastID + 1
-	returnEventChannel := NewEventChannel(new_id)
+	newId := self.lastID + 1
+	returnEventChannel := NewEventChannel(newId)
 	newWatcher := newWatch(request, returnEventChannel)
-	self.watchers[new_id] = newWatcher
-	self.lastID = new_id
+	self.watchers[newId] = newWatcher
+	self.lastID = newId
 	return returnEventChannel, nil
 }
 

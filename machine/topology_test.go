@@ -171,7 +171,7 @@ func TestTopology(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 12, numCores)
 
-	expected_topology := []info.Node{}
+	expectedTopology := []info.Node{}
 	numNodes := 2
 	numCoresPerNode := 3
 	numThreads := 2
@@ -194,10 +194,10 @@ func TestTopology(t *testing.T) {
 			}
 			node.Cores = append(node.Cores, core)
 		}
-		expected_topology = append(expected_topology, node)
+		expectedTopology = append(expectedTopology, node)
 	}
 
-	assert.NotNil(t, reflect.DeepEqual(topology, expected_topology))
+	assert.NotNil(t, reflect.DeepEqual(topology, expectedTopology))
 }
 
 func TestTopologyEmptySysFs(t *testing.T) {

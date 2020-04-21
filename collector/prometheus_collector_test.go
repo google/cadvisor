@@ -87,17 +87,17 @@ metric_with_multiple_labels{label1="One", label2="Two", label3="Three"} 81
 
 	assert.NoError(errMetric)
 
-	go_gc_duration := metrics["go_gc_duration_seconds"]
-	assert.Equal(5.8348000000000004e-05, go_gc_duration[0].FloatValue)
-	assert.Equal("__name__=go_gc_duration_seconds\xffquantile=0", go_gc_duration[0].Label)
-	assert.Equal(0.000499764, go_gc_duration[1].FloatValue)
-	assert.Equal("__name__=go_gc_duration_seconds\xffquantile=1", go_gc_duration[1].Label)
-	go_gc_duration_sum := metrics["go_gc_duration_seconds_sum"]
-	assert.Equal(1.7560473e+07, go_gc_duration_sum[0].FloatValue)
-	assert.Equal("__name__=go_gc_duration_seconds_sum", go_gc_duration_sum[0].Label)
-	go_gc_duration_count := metrics["go_gc_duration_seconds_count"]
-	assert.Equal(float64(2693), go_gc_duration_count[0].FloatValue)
-	assert.Equal("__name__=go_gc_duration_seconds_count", go_gc_duration_count[0].Label)
+	goGCDuration := metrics["go_gc_duration_seconds"]
+	assert.Equal(5.8348000000000004e-05, goGCDuration[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds\xffquantile=0", goGCDuration[0].Label)
+	assert.Equal(0.000499764, goGCDuration[1].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds\xffquantile=1", goGCDuration[1].Label)
+	goGCDurationSum := metrics["go_gc_duration_seconds_sum"]
+	assert.Equal(1.7560473e+07, goGCDurationSum[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds_sum", goGCDurationSum[0].Label)
+	goGCDurationCount := metrics["go_gc_duration_seconds_count"]
+	assert.Equal(float64(2693), goGCDurationCount[0].FloatValue)
+	assert.Equal("__name__=go_gc_duration_seconds_count", goGCDurationCount[0].Label)
 
 	goRoutines := metrics["go_goroutines"]
 	assert.Equal(float64(16), goRoutines[0].FloatValue)

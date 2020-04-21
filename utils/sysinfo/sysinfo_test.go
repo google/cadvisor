@@ -712,7 +712,7 @@ func TestGetCacheInfo(t *testing.T) {
 }
 
 func TestGetNetworkStats(t *testing.T) {
-	expected_stats := info.InterfaceStats{
+	expectedStats := info.InterfaceStats{
 		Name:      "eth0",
 		RxBytes:   1024,
 		RxPackets: 1024,
@@ -728,7 +728,7 @@ func TestGetNetworkStats(t *testing.T) {
 	if err != nil {
 		t.Errorf("call to getNetworkStats() failed with %s", err)
 	}
-	if expected_stats != netStats {
-		t.Errorf("expected to get stats %+v, got %+v", expected_stats, netStats)
+	if expectedStats != netStats {
+		t.Errorf("expected to get stats %+v, got %+v", expectedStats, netStats)
 	}
 }
