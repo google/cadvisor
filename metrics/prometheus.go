@@ -1542,46 +1542,45 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 		}...)
-		if c.includedMetrics.Has(container.PerfMetrics) {
-			c.containerMetrics = append(c.containerMetrics, []containerMetric{
-				{
-					name:        "container_perf_metric",
-					help:        "Perf event metric",
-					valueType:   prometheus.CounterValue,
-					extraLabels: []string{"cpu", "event"},
-					getValues: func(s *info.ContainerStats) metricValues {
-						values := make(metricValues, 0, len(s.PerfStats))
-						for _, metric := range s.PerfStats {
-							values = append(values, metricValue{
-								value:     float64(metric.Value),
-								labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
-								timestamp: s.Timestamp,
-							})
-						}
-						return values
-					},
-				},
-				{
-					name:        "container_perf_metric_scaling_ratio",
-					help:        "Perf event metric scaling ratio",
-					valueType:   prometheus.GaugeValue,
-					extraLabels: []string{"cpu", "event"},
-					getValues: func(s *info.ContainerStats) metricValues {
-						values := make(metricValues, 0, len(s.PerfStats))
-						for _, metric := range s.PerfStats {
-							values = append(values, metricValue{
-								value:     metric.ScalingRatio,
-								labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
-								timestamp: s.Timestamp,
-							})
-						}
-						return values
-					},
-				},
-			}...)
-		}
 	}
-
+	if c.includedMetrics.Has(container.PerfMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_perf_metric",
+				help:        "Perf event metric",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"cpu", "event"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.PerfStats))
+					for _, metric := range s.PerfStats {
+						values = append(values, metricValue{
+							value:     float64(metric.Value),
+							labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			},
+			{
+				name:        "container_perf_metric_scaling_ratio",
+				help:        "Perf event metric scaling ratio",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"cpu", "event"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.PerfStats))
+					for _, metric := range s.PerfStats {
+						values = append(values, metricValue{
+							value:     metric.ScalingRatio,
+							labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			},
+		}...)
+	}
 	return c
 }
 
