@@ -48,7 +48,6 @@ var (
 	clearRefsFilePathPattern = "/proc/%d/clear_refs"
 
 	referencedRegexp = regexp.MustCompile(`Referenced:\s*([0-9]+)\s*kB`)
-	isDigitRegExp    = regexp.MustCompile("\\d+")
 )
 
 type Handler struct {
