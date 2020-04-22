@@ -899,6 +899,9 @@ type ContainerStats struct {
 
 	// Statistics originating from perf events
 	PerfStats []PerfStat `json:"perf_stats,omitempty"`
+
+	// Referenced memory
+	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

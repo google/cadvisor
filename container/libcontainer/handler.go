@@ -17,6 +17,7 @@ package libcontainer
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -38,15 +39,26 @@ import (
 	"k8s.io/klog/v2"
 )
 
+var (
+	whitelistedUlimits      = [...]string{"max_open_files"}
+	referencedResetInterval = flag.Uint64("referenced_reset_interval", 0,
+		"Reset interval for referenced bytes (container_referenced_bytes metric), number of measurement cycles after which referenced bytes are cleared, if set to 0 referenced bytes are never cleared (default: 0)")
+
+	smapsFilePathPattern     = "/proc/%d/smaps"
+	clearRefsFilePathPattern = "/proc/%d/clear_refs"
+
+	referencedRegexp = regexp.MustCompile(`Referenced:\s*([0-9]+)\s*kB`)
+	isDigitRegExp    = regexp.MustCompile("\\d+")
+)
+
 type Handler struct {
 	cgroupManager   cgroups.Manager
 	rootFs          string
 	pid             int
 	includedMetrics container.MetricSet
 	pidMetricsCache map[int]*info.CpuSchedstat
+	cycles          uint64
 }
-
-var whitelistedUlimits = [...]string{"max_open_files"}
 
 func NewHandler(cgroupManager cgroups.Manager, rootFs string, pid int, includedMetrics container.MetricSet) *Handler {
 	return &Handler{
@@ -77,6 +89,19 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 			stats.Cpu.Schedstat, err = schedulerStatsFromProcs(h.rootFs, pids, h.pidMetricsCache)
 			if err != nil {
 				klog.V(4).Infof("Unable to get Process Scheduler Stats: %v", err)
+			}
+		}
+	}
+
+	if h.includedMetrics.Has(container.ReferencedMemoryMetrics) {
+		h.cycles++
+		pids, err := h.cgroupManager.GetPids()
+		if err != nil {
+			klog.V(4).Infof("Could not get PIDs for container %d: %v", h.pid, err)
+		} else {
+			stats.ReferencedMemory, err = referencedBytesStat(pids, h.cycles, *referencedResetInterval)
+			if err != nil {
+				klog.V(4).Infof("Unable to get referenced bytes: %v", err)
 			}
 		}
 	}
@@ -316,6 +341,92 @@ func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]
 		schedstats.RunTime += v.RunTime
 	}
 	return schedstats, nil
+}
+
+// referencedBytesStat gets and clears referenced bytes
+// see: https://github.com/brendangregg/wss#wsspl-referenced-page-flag
+func referencedBytesStat(pids []int, cycles uint64, resetInterval uint64) (uint64, error) {
+	referencedKBytes, err := getReferencedKBytes(pids)
+	if err != nil {
+		return uint64(0), err
+	}
+
+	err = clearReferencedBytes(pids, cycles, resetInterval)
+	if err != nil {
+		return uint64(0), err
+	}
+	return referencedKBytes * 1024, nil
+}
+
+func getReferencedKBytes(pids []int) (uint64, error) {
+	referencedKBytes := uint64(0)
+	readSmapsContent := false
+	foundMatch := false
+	for _, pid := range pids {
+		smapsFilePath := fmt.Sprintf(smapsFilePathPattern, pid)
+		smapsContent, err := ioutil.ReadFile(smapsFilePath)
+		if err != nil {
+			klog.V(5).Infof("Cannot read %s file, err: %s", smapsFilePath, err)
+			if os.IsNotExist(err) {
+				continue //smaps file does not exists for all PIDs
+			}
+			return 0, err
+		}
+		readSmapsContent = true
+
+		allMatches := referencedRegexp.FindAllSubmatch(smapsContent, -1)
+		if len(allMatches) == 0 {
+			klog.V(5).Infof("Not found any information about referenced bytes in %s file", smapsFilePath)
+			continue // referenced bytes may not exist in smaps file
+		}
+
+		for _, matches := range allMatches {
+			if len(matches) != 2 {
+				return 0, fmt.Errorf("failed to match regexp in output: %s", string(smapsContent))
+			}
+			foundMatch = true
+			referenced, err := strconv.ParseUint(string(matches[1]), 10, 64)
+			if err != nil {
+				return 0, err
+			}
+			referencedKBytes += referenced
+		}
+	}
+
+	if len(pids) != 0 {
+		if !readSmapsContent {
+			klog.Warningf("Cannot read smaps files for any PID from %s", "CONTAINER")
+		} else if !foundMatch {
+			klog.Warningf("Not found any information about referenced bytes in smaps files for any PID from %s", "CONTAINER")
+		}
+	}
+	return referencedKBytes, nil
+}
+
+func clearReferencedBytes(pids []int, cycles uint64, resetInterval uint64) error {
+	if resetInterval == 0 {
+		return nil
+	}
+
+	if cycles%resetInterval == 0 {
+		for _, pid := range pids {
+			clearRefsFilePath := fmt.Sprintf(clearRefsFilePathPattern, pid)
+			clerRefsFile, err := os.OpenFile(clearRefsFilePath, os.O_WRONLY, 0644)
+			if err != nil {
+				// clear_refs file may not exist for all PIDs
+				continue
+			}
+			_, err = clerRefsFile.WriteString("1\n")
+			if err != nil {
+				return err
+			}
+			err = clerRefsFile.Close()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func networkStatsFromProc(rootFs string, pid int) ([]info.InterfaceStats, error) {

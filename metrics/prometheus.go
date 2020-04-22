@@ -1581,6 +1581,18 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.ReferencedMemoryMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:      "container_referenced_bytes",
+				help:      "Container referenced bytes during last measurements cycle",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.ReferencedMemory), timestamp: s.Timestamp}}
+				},
+			},
+		}...)
+	}
 	return c
 }
 

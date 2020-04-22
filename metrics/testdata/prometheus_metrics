@@ -342,6 +342,9 @@ container_perf_metric_scaling_ratio{container_env_foo_env="prod",container_label
 # HELP container_processes Number of processes running inside the container.
 # TYPE container_processes gauge
 container_processes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
+# HELP container_referenced_bytes Container referenced bytes during last measurements cycle
+# TYPE container_referenced_bytes gauge
+container_referenced_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1234 1395066363000
 # HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
 # TYPE container_scrape_error gauge
 container_scrape_error 0
