@@ -25,7 +25,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/utils/clock"
+	clock "k8s.io/utils/clock/testing"
 )
 
 var now = clock.NewFakeClock(time.Unix(1395066363, 0))
