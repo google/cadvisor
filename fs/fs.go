@@ -752,7 +752,6 @@ func getBtrfsMajorMinorIds(mount *mount.MountInfo) (int, int, error) {
 		klog.V(4).Infof("btrfs rdev major:minor %d:%d\n", int(major(uint64(buf.Rdev))), int(minor(uint64(buf.Rdev)))) // nolint: unconvert
 
 		return int(major(uint64(buf.Dev))), int(minor(uint64(buf.Dev))), nil // nolint: unconvert
-	} else {
-		return 0, 0, fmt.Errorf("%s is not a block device", mount.Source)
 	}
+	return 0, 0, fmt.Errorf("%s is not a block device", mount.Source)
 }
