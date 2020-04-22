@@ -21,7 +21,7 @@ jobs:
     - name: Install golangci-lint
       run: |
         go get -d github.com/golangci/golangci-lint/cmd/golangci-lint &&
-        cd /go/src/github.com/golangci/golangci-lint/cmd/golangci-lint &&
+        cd $(go env GOPATH)/go/src/github.com/golangci/golangci-lint/ &&
         git remote add iwankgb https://github.com/iwankgb/golangci-lint.git &&
         git reset --hard iwankgb/exclude-case-sensitive &&
         go install -i github.com/golangci/golangci-lint/cmd/golangci-lint
