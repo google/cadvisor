@@ -310,7 +310,7 @@ func (cd *containerData) GetProcessList(cadvisorContainer string, inHostNamespac
 		if err != nil {
 			return nil, fmt.Errorf("invalid ppid %q: %v", fields[2], err)
 		}
-		percentCpu, err := strconv.ParseFloat(fields[4], 32)
+		percentCPU, err := strconv.ParseFloat(fields[4], 32)
 		if err != nil {
 			return nil, fmt.Errorf("invalid cpu percent %q: %v", fields[4], err)
 		}
@@ -359,7 +359,7 @@ func (cd *containerData) GetProcessList(cadvisorContainer string, inHostNamespac
 				Pid:           pid,
 				Ppid:          ppid,
 				StartTime:     fields[3],
-				PercentCpu:    float32(percentCpu),
+				PercentCpu:    float32(percentCPU),
 				PercentMemory: float32(percentMem),
 				RSS:           rss,
 				VirtualSize:   vs,
@@ -503,16 +503,16 @@ func (cd *containerData) housekeeping() {
 			} else if len(stats) < numSamples {
 				// Ignore, not enough stats yet.
 			} else {
-				usageCpuNs := uint64(0)
+				usageCPUNs := uint64(0)
 				for i := range stats {
 					if i > 0 {
-						usageCpuNs += (stats[i].Cpu.Usage.Total - stats[i-1].Cpu.Usage.Total)
+						usageCPUNs += (stats[i].Cpu.Usage.Total - stats[i-1].Cpu.Usage.Total)
 					}
 				}
 				usageMemory := stats[numSamples-1].Memory.Usage
 
 				instantUsageInCores := float64(stats[numSamples-1].Cpu.Usage.Total-stats[numSamples-2].Cpu.Usage.Total) / float64(stats[numSamples-1].Timestamp.Sub(stats[numSamples-2].Timestamp).Nanoseconds())
-				usageInCores := float64(usageCpuNs) / float64(stats[numSamples-1].Timestamp.Sub(stats[0].Timestamp).Nanoseconds())
+				usageInCores := float64(usageCPUNs) / float64(stats[numSamples-1].Timestamp.Sub(stats[0].Timestamp).Nanoseconds())
 				usageInHuman := units.HumanSize(float64(usageMemory))
 				// Don't set verbosity since this is already protected by the logUsage flag.
 				klog.Infof("[%s] %.3f cores (average: %.3f cores), %s of memory", cd.info.Name, instantUsageInCores, usageInCores, usageInHuman)

@@ -134,7 +134,7 @@ func areCgroupsPresent(available map[string]int, desired []string) (bool, string
 	return true, ""
 }
 
-func validateCpuCfsBandwidth(available_cgroups map[string]int) string {
+func validateCPUCFSBandwidth(available_cgroups map[string]int) string {
 	ok, _ := areCgroupsPresent(available_cgroups, []string{"cpu"})
 	if !ok {
 		return "\tCpu cfs bandwidth status unknown: cpu cgroup not enabled.\n"
@@ -199,7 +199,7 @@ func validateCgroups() (string, string) {
 	out = fmt.Sprintf("Available cgroups: %v\n", available_cgroups)
 	out += desc
 	out += validateMemoryAccounting(available_cgroups)
-	out += validateCpuCfsBandwidth(available_cgroups)
+	out += validateCPUCFSBandwidth(available_cgroups)
 	return Recommended, out
 }
 

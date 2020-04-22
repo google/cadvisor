@@ -232,8 +232,8 @@ func newDockerContainerHandler(
 	ipAddress := ctnr.NetworkSettings.IPAddress
 	networkMode := string(ctnr.HostConfig.NetworkMode)
 	if ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
-		containerId := strings.TrimPrefix(networkMode, "container:")
-		c, err := client.ContainerInspect(context.Background(), containerId)
+		containerID := strings.TrimPrefix(networkMode, "container:")
+		c, err := client.ContainerInspect(context.Background(), containerID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 		}

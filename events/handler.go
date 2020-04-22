@@ -44,7 +44,7 @@ func (e byTimestamp) Less(i, j int) bool {
 
 type EventChannel struct {
 	// Watch ID. Can be used by the caller to request cancellation of watch events.
-	watchId int
+	watchID int
 	// Channel on which the caller can receive watch events.
 	channel chan *info.Event
 }
@@ -100,7 +100,7 @@ type events struct {
 	// lock guarding watchers.
 	watcherLock sync.RWMutex
 	// last allocated watch id.
-	lastId int
+	lastID int
 	// Event storage policy.
 	storagePolicy StoragePolicy
 }
@@ -118,9 +118,9 @@ type watch struct {
 	eventChannel *EventChannel
 }
 
-func NewEventChannel(watchId int) *EventChannel {
+func NewEventChannel(watchID int) *EventChannel {
 	return &EventChannel{
-		watchId: watchId,
+		watchID: watchID,
 		channel: make(chan *info.Event, 10),
 	}
 }
@@ -178,7 +178,7 @@ func (ch *EventChannel) GetChannel() chan *info.Event {
 }
 
 func (ch *EventChannel) GetWatchId() int {
-	return ch.watchId
+	return ch.watchID
 }
 
 // sorts and returns up to the last MaxEventsReturned chronological elements
@@ -268,11 +268,11 @@ func (e *events) WatchEvents(request *Request) (*EventChannel, error) {
 	}
 	e.watcherLock.Lock()
 	defer e.watcherLock.Unlock()
-	new_id := e.lastId + 1
+	new_id := e.lastID + 1
 	returnEventChannel := NewEventChannel(new_id)
 	newWatcher := newWatch(request, returnEventChannel)
 	e.watchers[new_id] = newWatcher
-	e.lastId = new_id
+	e.lastID = new_id
 	return returnEventChannel, nil
 }
 
@@ -327,13 +327,13 @@ func (e *events) AddEvent(event *info.Event) error {
 }
 
 // Removes a watch instance from the EventManager's watchers map
-func (e *events) StopWatch(watchId int) {
+func (e *events) StopWatch(watchID int) {
 	e.watcherLock.Lock()
 	defer e.watcherLock.Unlock()
-	_, ok := e.watchers[watchId]
+	_, ok := e.watchers[watchID]
 	if !ok {
-		klog.Errorf("Could not find watcher instance %v", watchId)
+		klog.Errorf("Could not find watcher instance %v", watchID)
 	}
-	close(e.watchers[watchId].eventChannel.GetChannel())
-	delete(e.watchers, watchId)
+	close(e.watchers[watchID].eventChannel.GetChannel())
+	delete(e.watchers, watchID)
 }

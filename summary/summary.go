@@ -103,7 +103,7 @@ func (s *StatsSummary) updateLatestUsage() {
 	usage.Memory = latest.Memory
 	if numStats > 1 {
 		previous := s.secondSamples[numStats-2]
-		cpu, err := getCpuRate(*latest, *previous)
+		cpu, err := getCPURate(*latest, *previous)
 		if err == nil {
 			usage.Cpu = cpu
 		}

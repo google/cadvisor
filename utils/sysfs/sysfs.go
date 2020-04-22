@@ -256,7 +256,7 @@ func bitCount(i uint64) (count int) {
 	return
 }
 
-func getCpuCount(cache string) (count int, err error) {
+func getCPUCount(cache string) (count int, err error) {
 	out, err := ioutil.ReadFile(path.Join(cache, "/shared_cpu_map"))
 	if err != nil {
 		return 0, err
@@ -301,7 +301,7 @@ func (fs *realSysFs) GetCacheInfo(id int, name string) (CacheInfo, error) {
 		return CacheInfo{}, err
 	}
 	cacheType := strings.TrimSpace(string(out))
-	cpuCount, err := getCpuCount(cachePath)
+	cpuCount, err := getCPUCount(cachePath)
 	if err != nil {
 		return CacheInfo{}, err
 	}

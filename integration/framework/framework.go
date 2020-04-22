@@ -247,12 +247,12 @@ func (a dockerActions) Run(args DockerRunArgs, cmd ...string) string {
 
 	// The last line is the container ID.
 	elements := strings.Fields(output)
-	containerId := elements[len(elements)-1]
+	containerID := elements[len(elements)-1]
 
 	a.fm.cleanups = append(a.fm.cleanups, func() {
-		a.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
+		a.fm.Shell().Run("sudo", "docker", "rm", "-f", containerID)
 	})
-	return containerId
+	return containerID
 }
 func (a dockerActions) Version() []string {
 	dockerCommand := []string{"docker", "version", "-f", "'{{.Server.Version}}'"}
@@ -298,15 +298,15 @@ func (a dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
 		a.fm.T().Fatalf("need 1 arguments in output %v to get the name but have %v", output, len(output))
 	}
 	elements := strings.Fields(output)
-	containerId := elements[len(elements)-1]
+	containerID := elements[len(elements)-1]
 
 	a.fm.cleanups = append(a.fm.cleanups, func() {
-		a.fm.Shell().Run("sudo", "docker", "rm", "-f", containerId)
+		a.fm.Shell().Run("sudo", "docker", "rm", "-f", containerID)
 	})
-	return containerId
+	return containerID
 }
 
-func (a shellActions) wrapSsh(command string, args ...string) *exec.Cmd {
+func (a shellActions) wrapSSH(command string, args ...string) *exec.Cmd {
 	cmd := []string{a.fm.Hostname().Host, "--", "sh", "-c", "\"", command}
 	cmd = append(cmd, args...)
 	cmd = append(cmd, "\"")
@@ -323,7 +323,7 @@ func (a shellActions) Run(command string, args ...string) (string, string) {
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		cmd = a.wrapSsh(command, args...)
+		cmd = a.wrapSSH(command, args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -345,7 +345,7 @@ func (a shellActions) RunStress(command string, args ...string) (string, string)
 		cmd = exec.Command(command, args...)
 	} else {
 		// We must SSH to the remote machine and run the command.
-		cmd = a.wrapSsh(command, args...)
+		cmd = a.wrapSSH(command, args...)
 	}
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
