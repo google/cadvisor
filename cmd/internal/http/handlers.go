@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"net/http"
 
-	auth "github.com/abbot/go-http-auth"
 	"github.com/google/cadvisor/cmd/internal/api"
 	"github.com/google/cadvisor/cmd/internal/healthz"
 	httpmux "github.com/google/cadvisor/cmd/internal/http/mux"
@@ -28,8 +27,11 @@ import (
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/validate"
+
+	auth "github.com/abbot/go-http-auth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/klog/v2"
 )
 
@@ -96,7 +98,7 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
 	r := prometheus.NewRegistry()
 	r.MustRegister(
-		metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, nil),
+		metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, clock.RealClock{}),
 		metrics.NewPrometheusMachineCollector(resourceManager),
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),

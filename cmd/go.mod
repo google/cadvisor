@@ -24,7 +24,6 @@ require (
 	github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
 	github.com/klauspost/crc32 v0.0.0-20151223135126-a3b15ae34567 // indirect
 	github.com/mesos/mesos-go v0.0.7-0.20180413204204-29de6ff97b48
-	github.com/onsi/ginkgo v1.10.3 // indirect
 	github.com/onsi/gomega v1.7.1 // indirect
 	github.com/opencontainers/runc v1.0.0-rc10
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
@@ -34,5 +33,6 @@ require (
 	google.golang.org/api v0.0.0-20150730141719-0c2979aeaa5b
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/olivere/elastic.v2 v2.0.12
+	k8s.io/apimachinery v0.18.2
 	k8s.io/klog/v2 v2.0.0
 )

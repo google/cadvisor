@@ -22,7 +22,9 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+
 	"github.com/prometheus/client_golang/prometheus"
+	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/klog/v2"
 )
 
@@ -101,7 +103,7 @@ type PrometheusCollector struct {
 // ContainerLabelsFunc specifies which base labels will be attached to all
 // exported metrics. If left to nil, the DefaultContainerLabels function
 // will be used instead.
-func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, now *time.Time) *PrometheusCollector {
+func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, now clock.PassiveClock) *PrometheusCollector {
 	if f == nil {
 		f = DefaultContainerLabels
 	}
@@ -119,13 +121,9 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				help:      "Last time a container was seen by the exporter",
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					if now == nil {
-						t := time.Now()
-						now = &t
-					}
 					return metricValues{{
-						value:     float64(now.Unix()),
-						timestamp: *now,
+						value:     float64(now.Now().Unix()),
+						timestamp: now.Now(),
 					}}
 				},
 			},

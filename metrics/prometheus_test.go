@@ -22,19 +22,20 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/util/clock"
 )
 
-var now = time.Unix(1395066363, 0)
+var now = clock.NewFakeClock(time.Unix(1395066363, 0))
 
 func TestPrometheusCollector(t *testing.T) {
 	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, &now)
+	}, container.AllMetrics, now)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
@@ -63,7 +64,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, &now)
+	}, container.AllMetrics, now)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
@@ -75,8 +76,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 }
 
 func TestNewPrometheusCollectorWithPerf(t *testing.T) {
-	c := NewPrometheusCollector(mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}})
-
+	c := NewPrometheusCollector(mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now)
 	assert.Len(t, c.containerMetrics, 3)
 	names := []string{}
 	for _, m := range c.containerMetrics {
