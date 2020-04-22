@@ -22,8 +22,10 @@ import (
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/clock"
 )
 
 // asFloat64 converts a uint64 into a float64.
@@ -101,7 +103,7 @@ type PrometheusCollector struct {
 // ContainerLabelsFunc specifies which base labels will be attached to all
 // exported metrics. If left to nil, the DefaultContainerLabels function
 // will be used instead.
-func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet) *PrometheusCollector {
+func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, now clock.Clock) *PrometheusCollector {
 	if f == nil {
 		f = DefaultContainerLabels
 	}
@@ -120,8 +122,8 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{
-						value:     float64(time.Now().Unix()),
-						timestamp: time.Now(),
+						value:     float64(now.Now().Unix()),
+						timestamp: now.Now(),
 					}}
 				},
 			},
@@ -1596,7 +1598,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 	return c
 }
 
-var versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
+var (
+	versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
+	startTimeDesc   = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
+	cpuPeriodDesc   = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
+	cpuQuotaDesc    = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
+	cpuSharesDesc   = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
+)
 
 // Describe describes all the metrics ever exported by cadvisor. It
 // implements prometheus.PrometheusCollector.
@@ -1605,6 +1613,10 @@ func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, cm := range c.containerMetrics {
 		ch <- cm.desc([]string{})
 	}
+	ch <- startTimeDesc
+	ch <- cpuPeriodDesc
+	ch <- cpuQuotaDesc
+	ch <- cpuSharesDesc
 	ch <- versionInfoDesc
 }
 
