@@ -105,7 +105,7 @@ const (
 	tagContainerName string = "container_name"
 )
 
-func (self *influxdbStorage) containerFilesystemStatsToPoints(
+func (s *influxdbStorage) containerFilesystemStatsToPoints(
 	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats) (points []*influxdb.Point) {
 	if len(stats.Filesystem) == 0 {
@@ -141,14 +141,14 @@ func (self *influxdbStorage) containerFilesystemStatsToPoints(
 		points = append(points, pointFsUsage, pointFsLimit)
 	}
 
-	self.tagPoints(cInfo, stats, points)
+	s.tagPoints(cInfo, stats, points)
 
 	return points
 }
 
 // Set tags and timestamp for all points of the batch.
 // Points should inherit the tags that are set for BatchPoints, but that does not seem to work.
-func (self *influxdbStorage) tagPoints(cInfo *info.ContainerInfo, stats *info.ContainerStats, points []*influxdb.Point) {
+func (s *influxdbStorage) tagPoints(cInfo *info.ContainerInfo, stats *info.ContainerStats, points []*influxdb.Point) {
 	// Use container alias if possible
 	var containerName string
 	if len(cInfo.ContainerReference.Aliases) > 0 {
@@ -158,7 +158,7 @@ func (self *influxdbStorage) tagPoints(cInfo *info.ContainerInfo, stats *info.Co
 	}
 
 	commonTags := map[string]string{
-		tagMachineName:   self.machineName,
+		tagMachineName:   s.machineName,
 		tagContainerName: containerName,
 	}
 	for i := 0; i < len(points); i++ {
@@ -169,7 +169,7 @@ func (self *influxdbStorage) tagPoints(cInfo *info.ContainerInfo, stats *info.Co
 	}
 }
 
-func (self *influxdbStorage) containerStatsToPoints(
+func (s *influxdbStorage) containerStatsToPoints(
 	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (points []*influxdb.Point) {
@@ -206,35 +206,35 @@ func (self *influxdbStorage) containerStatsToPoints(
 	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
 	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
 
-	self.tagPoints(cInfo, stats, points)
+	s.tagPoints(cInfo, stats, points)
 
 	return points
 }
 
-func (self *influxdbStorage) OverrideReadyToFlush(readyToFlush func() bool) {
-	self.readyToFlush = readyToFlush
+func (s *influxdbStorage) OverrideReadyToFlush(readyToFlush func() bool) {
+	s.readyToFlush = readyToFlush
 }
 
-func (self *influxdbStorage) defaultReadyToFlush() bool {
-	return time.Since(self.lastWrite) >= self.bufferDuration
+func (s *influxdbStorage) defaultReadyToFlush() bool {
+	return time.Since(s.lastWrite) >= s.bufferDuration
 }
 
-func (self *influxdbStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+func (s *influxdbStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
 	var pointsToFlush []*influxdb.Point
 	func() {
 		// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
-		self.lock.Lock()
-		defer self.lock.Unlock()
+		s.lock.Lock()
+		defer s.lock.Unlock()
 
-		self.points = append(self.points, self.containerStatsToPoints(cInfo, stats)...)
-		self.points = append(self.points, self.containerFilesystemStatsToPoints(cInfo, stats)...)
-		if self.readyToFlush() {
-			pointsToFlush = self.points
-			self.points = make([]*influxdb.Point, 0)
-			self.lastWrite = time.Now()
+		s.points = append(s.points, s.containerStatsToPoints(cInfo, stats)...)
+		s.points = append(s.points, s.containerFilesystemStatsToPoints(cInfo, stats)...)
+		if s.readyToFlush() {
+			pointsToFlush = s.points
+			s.points = make([]*influxdb.Point, 0)
+			s.lastWrite = time.Now()
 		}
 	}()
 	if len(pointsToFlush) > 0 {
@@ -243,15 +243,15 @@ func (self *influxdbStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Con
 			points[i] = *p
 		}
 
-		batchTags := map[string]string{tagMachineName: self.machineName}
+		batchTags := map[string]string{tagMachineName: s.machineName}
 		bp := influxdb.BatchPoints{
 			Points:          points,
-			Database:        self.database,
-			RetentionPolicy: self.retentionPolicy,
+			Database:        s.database,
+			RetentionPolicy: s.retentionPolicy,
 			Tags:            batchTags,
 			Time:            stats.Timestamp,
 		}
-		response, err := self.client.Write(bp)
+		response, err := s.client.Write(bp)
 		if err != nil || checkResponseForErrors(response) != nil {
 			return fmt.Errorf("failed to write stats to influxDb - %s", err)
 		}
@@ -259,8 +259,8 @@ func (self *influxdbStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Con
 	return nil
 }
 
-func (self *influxdbStorage) Close() error {
-	self.client = nil
+func (s *influxdbStorage) Close() error {
+	s.client = nil
 	return nil
 }
 

@@ -62,7 +62,7 @@ type detailSpec struct {
 	ContainerStats  *info.ContainerStats `json:"container_stats,omitempty"`
 }
 
-func (driver *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
+func (s *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
 	timestamp := time.Now()
 	containerID := cInfo.ContainerReference.Id
 	containerLabels := cInfo.Spec.Labels
@@ -70,7 +70,7 @@ func (driver *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *i
 
 	detail := &detailSpec{
 		Timestamp:       timestamp,
-		MachineName:     driver.machineName,
+		MachineName:     s.machineName,
 		ContainerName:   containerName,
 		ContainerID:     containerID,
 		ContainerLabels: containerLabels,
@@ -79,20 +79,20 @@ func (driver *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *i
 	return detail
 }
 
-func (driver *kafkaStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
-	detail := driver.infoToDetailSpec(cInfo, stats)
+func (s *kafkaStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+	detail := s.infoToDetailSpec(cInfo, stats)
 	b, err := json.Marshal(detail)
 
-	driver.producer.Input() <- &kafka.ProducerMessage{
-		Topic: driver.topic,
+	s.producer.Input() <- &kafka.ProducerMessage{
+		Topic: s.topic,
 		Value: kafka.StringEncoder(b),
 	}
 
 	return err
 }
 
-func (self *kafkaStorage) Close() error {
-	return self.producer.Close()
+func (s *kafkaStorage) Close() error {
+	return s.producer.Close()
 }
 
 func new() (storage.StorageDriver, error) {

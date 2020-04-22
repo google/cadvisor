@@ -55,11 +55,11 @@ type mesosFactory struct {
 	client mesosAgentClient
 }
 
-func (self *mesosFactory) String() string {
+func (f *mesosFactory) String() string {
 	return MesosNamespace
 }
 
-func (self *mesosFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (f *mesosFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, err
@@ -67,10 +67,10 @@ func (self *mesosFactory) NewContainerHandler(name string, inHostNamespace bool)
 
 	return newMesosContainerHandler(
 		name,
-		&self.cgroupSubsystems,
-		self.machineInfoFactory,
-		self.fsInfo,
-		self.includedMetrics,
+		&f.cgroupSubsystems,
+		f.machineInfoFactory,
+		f.fsInfo,
+		f.includedMetrics,
 		inHostNamespace,
 		client,
 	)
@@ -98,7 +98,7 @@ func isContainerName(name string) bool {
 }
 
 // The mesos factory can handle any container.
-func (self *mesosFactory) CanHandleAndAccept(name string) (handle bool, accept bool, err error) {
+func (f *mesosFactory) CanHandleAndAccept(name string) (handle bool, accept bool, err error) {
 	// if the container is not associated with mesos, we can't handle it or accept it.
 	if !isContainerName(name) {
 		return false, false, nil
@@ -107,7 +107,7 @@ func (self *mesosFactory) CanHandleAndAccept(name string) (handle bool, accept b
 	// Check if the container is known to mesos and it is active.
 	id := ContainerNameToMesosId(name)
 
-	_, err = self.client.ContainerInfo(id)
+	_, err = f.client.ContainerInfo(id)
 	if err != nil {
 		return false, true, fmt.Errorf("error getting running container: %v", err)
 	}
@@ -115,7 +115,7 @@ func (self *mesosFactory) CanHandleAndAccept(name string) (handle bool, accept b
 	return true, true, nil
 }
 
-func (self *mesosFactory) DebugInfo() map[string][]string {
+func (f *mesosFactory) DebugInfo() map[string][]string {
 	return map[string][]string{}
 }
 

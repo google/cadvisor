@@ -35,7 +35,7 @@ func TestRefresh(t *testing.T) {
 		thinLsOutput    map[string]uint64
 		thinLsErr       error
 		expectedError   bool
-		deviceId        string
+		deviceID        string
 		expectedUsage   uint64
 	}{
 		{
@@ -54,7 +54,7 @@ func TestRefresh(t *testing.T) {
 			},
 			thinLsOutput:  usage,
 			expectedError: false,
-			deviceId:      "2",
+			deviceID:      "2",
 			expectedUsage: 23456,
 		},
 		{
@@ -66,7 +66,7 @@ func TestRefresh(t *testing.T) {
 			},
 			thinLsOutput:  usage,
 			expectedError: false,
-			deviceId:      "2",
+			deviceID:      "2",
 			expectedUsage: 23456,
 		},
 		{
@@ -83,7 +83,7 @@ func TestRefresh(t *testing.T) {
 			},
 			thinLsOutput:  usage,
 			expectedError: false,
-			deviceId:      "3",
+			deviceID:      "3",
 			expectedUsage: 34567,
 		},
 		{
@@ -149,9 +149,9 @@ func TestRefresh(t *testing.T) {
 			continue
 		}
 
-		actualUsage, err := watcher.GetUsage(tc.deviceId)
+		actualUsage, err := watcher.GetUsage(tc.deviceID)
 		if err != nil {
-			t.Errorf("%v: device ID not found: %v", tc.deviceId, err)
+			t.Errorf("%v: device ID not found: %v", tc.deviceID, err)
 			continue
 		}
 

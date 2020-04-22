@@ -74,15 +74,15 @@ func getApiVersions() []ApiVersion {
 type version1_0 struct {
 }
 
-func (self *version1_0) Version() string {
+func (api *version1_0) Version() string {
 	return "v1.0"
 }
 
-func (self *version1_0) SupportedRequestTypes() []string {
+func (api *version1_0) SupportedRequestTypes() []string {
 	return []string{containersApi, machineApi}
 }
 
-func (self *version1_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+func (api *version1_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
 	case machineApi:
 		klog.V(4).Infof("Api - Machine")
@@ -137,15 +137,15 @@ func newVersion1_1(v *version1_0) *version1_1 {
 	}
 }
 
-func (self *version1_1) Version() string {
+func (api *version1_1) Version() string {
 	return "v1.1"
 }
 
-func (self *version1_1) SupportedRequestTypes() []string {
-	return append(self.baseVersion.SupportedRequestTypes(), subcontainersApi)
+func (api *version1_1) SupportedRequestTypes() []string {
+	return append(api.baseVersion.SupportedRequestTypes(), subcontainersApi)
 }
 
-func (self *version1_1) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+func (api *version1_1) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
 	case subcontainersApi:
 		containerName := getContainerName(request)
@@ -170,7 +170,7 @@ func (self *version1_1) HandleRequest(requestType string, request []string, m ma
 		}
 		return nil
 	default:
-		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
+		return api.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
 }
 
@@ -187,15 +187,15 @@ func newVersion1_2(v *version1_1) *version1_2 {
 	}
 }
 
-func (self *version1_2) Version() string {
+func (api *version1_2) Version() string {
 	return "v1.2"
 }
 
-func (self *version1_2) SupportedRequestTypes() []string {
-	return append(self.baseVersion.SupportedRequestTypes(), dockerApi)
+func (api *version1_2) SupportedRequestTypes() []string {
+	return append(api.baseVersion.SupportedRequestTypes(), dockerApi)
 }
 
-func (self *version1_2) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+func (api *version1_2) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
 	case dockerApi:
 		klog.V(4).Infof("Api - Docker(%v)", request)
@@ -239,7 +239,7 @@ func (self *version1_2) HandleRequest(requestType string, request []string, m ma
 		}
 		return nil
 	default:
-		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
+		return api.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
 }
 
@@ -256,20 +256,20 @@ func newVersion1_3(v *version1_2) *version1_3 {
 	}
 }
 
-func (self *version1_3) Version() string {
+func (api *version1_3) Version() string {
 	return "v1.3"
 }
 
-func (self *version1_3) SupportedRequestTypes() []string {
-	return append(self.baseVersion.SupportedRequestTypes(), eventsApi)
+func (api *version1_3) SupportedRequestTypes() []string {
+	return append(api.baseVersion.SupportedRequestTypes(), eventsApi)
 }
 
-func (self *version1_3) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+func (api *version1_3) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
 	case eventsApi:
 		return handleEventRequest(request, m, w, r)
 	default:
-		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
+		return api.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
 }
 
@@ -304,15 +304,15 @@ func newVersion2_0() *version2_0 {
 	return &version2_0{}
 }
 
-func (self *version2_0) Version() string {
+func (api *version2_0) Version() string {
 	return "v2.0"
 }
 
-func (self *version2_0) SupportedRequestTypes() []string {
+func (api *version2_0) SupportedRequestTypes() []string {
 	return []string{versionApi, attributesApi, eventsApi, machineApi, summaryApi, statsApi, specApi, storageApi, psApi, customMetricsApi}
 }
 
-func (self *version2_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+func (api *version2_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	opt, err := getRequestOptions(r)
 	if err != nil {
 		return err
@@ -472,15 +472,15 @@ func newVersion2_1(v *version2_0) *version2_1 {
 	}
 }
 
-func (self *version2_1) Version() string {
+func (api *version2_1) Version() string {
 	return "v2.1"
 }
 
-func (self *version2_1) SupportedRequestTypes() []string {
-	return append([]string{machineStatsApi}, self.baseVersion.SupportedRequestTypes()...)
+func (api *version2_1) SupportedRequestTypes() []string {
+	return append([]string{machineStatsApi}, api.baseVersion.SupportedRequestTypes()...)
 }
 
-func (self *version2_1) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+func (api *version2_1) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	// Get the query request.
 	opt, err := getRequestOptions(r)
 	if err != nil {
@@ -521,7 +521,7 @@ func (self *version2_1) HandleRequest(requestType string, request []string, m ma
 		}
 		return writeResult(contStats, w)
 	default:
-		return self.baseVersion.HandleRequest(requestType, request, m, w, r)
+		return api.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
 }
 

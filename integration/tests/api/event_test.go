@@ -39,7 +39,7 @@ func TestStreamingEventInformationIsReturned(t *testing.T) {
 	}()
 
 	// Create a short-lived container.
-	containerId := fm.Docker().RunBusybox("sleep", "2")
+	containerID := fm.Docker().RunBusybox("sleep", "2")
 
 	// Wait for the deletion event.
 	timeout := time.After(30 * time.Second)
@@ -48,28 +48,28 @@ func TestStreamingEventInformationIsReturned(t *testing.T) {
 		select {
 		case ev := <-einfo:
 			if ev.EventType == info.EventContainerDeletion {
-				if strings.Contains(ev.ContainerName, containerId) {
+				if strings.Contains(ev.ContainerName, containerID) {
 					done = true
 				}
 			}
 		case <-timeout:
 			t.Errorf(
-				"timeout happened before destruction event was detected for container %q", containerId)
+				"timeout happened before destruction event was detected for container %q", containerID)
 			done = true
 		}
 	}
 
 	// We should have already received a creation event.
-	waitForStaticEvent(containerId, "?creation_events=true&subcontainers=true", t, fm, info.EventContainerCreation)
+	waitForStaticEvent(containerID, "?creation_events=true&subcontainers=true", t, fm, info.EventContainerCreation)
 }
 
-func waitForStaticEvent(containerId string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {
+func waitForStaticEvent(containerID string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {
 	einfo, err := fm.Cadvisor().Client().EventStaticInfo(urlRequest)
 	require.NoError(t, err)
 	found := false
 	for _, ev := range einfo {
 		if ev.EventType == typeEvent {
-			if strings.Contains(ev.ContainerName, containerId) {
+			if strings.Contains(ev.ContainerName, containerID) {
 				found = true
 				break
 			}

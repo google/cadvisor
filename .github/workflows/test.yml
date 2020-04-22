@@ -1,6 +1,35 @@
 name: Test
 on: [push, pull_request]
 jobs:
+  lint:
+    strategy:
+      matrix:
+        go-versions: [1.14]
+        platform: [ubuntu-latest]
+        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 10
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go-versions }}
+#    This is not the most elegant way of installing golangci-lint but I have filed a PR
+#    and I will fix it as soon as it's merged: https://github.com/golangci/golangci-lint/pull/1036
+#    cAdvisor has existed for a while without golint and we need to figure out how to
+#    fix issues affecting exported identifiers that are part of public API. Let's avoid breaking Kubernetes.
+    - name: Install golangci-lint
+      run: |
+        go get -d github.com/golangci/golangci-lint/cmd/golangci-lint &&
+        cd $(go env GOPATH)/src/github.com/golangci/golangci-lint/ &&
+        git remote add iwankgb https://github.com/iwankgb/golangci-lint.git &&
+        git fetch iwankgb &&
+        git reset --hard iwankgb/exclude-case-sensitive &&
+        go install -i github.com/golangci/golangci-lint/cmd/golangci-lint
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Run golangci-lint
+      run: source ${{ matrix.environment-variables }} && make lint
   test:
     strategy:
       matrix:
@@ -31,19 +60,19 @@ jobs:
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
-          path: go/src/github.com/google/cadvisor
-      - name: Run integration tests
-        env:
-          GOLANG_VERSION: ${{ matrix.go-versions }}
-        run: |
-          cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor && source ${{ matrix.environment-variables }} && make docker-test-integration
-      - name: Upload cAdvisor log file
-        uses: actions/upload-artifact@v1
-        if: failure()
-        with:
-          name: cadvisor.log
-          path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 1
+        path: go/src/github.com/google/cadvisor
+    - name: Run integration tests
+      env:
+        GOLANG_VERSION: ${{ matrix.go-versions }}
+      run: |
+        cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor && source ${{ matrix.environment-variables }} && make docker-test-integration
+    - name: Upload cAdvisor log file
+      uses: actions/upload-artifact@v1
+      if: failure()
+      with:
+        name: cadvisor.log
+        path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log

@@ -46,7 +46,7 @@ type nvidiaManager struct {
 
 var sysFsPCIDevicesPath = "/sys/bus/pci/devices/"
 
-const nvidiaVendorId = "0x10de"
+const nvidiaVendorID = "0x10de"
 
 func NewNvidiaManager() stats.Manager {
 	manager := &nvidiaManager{}
@@ -61,8 +61,8 @@ func NewNvidiaManager() stats.Manager {
 
 // setup initializes NVML if nvidia devices are present on the node.
 func (nm *nvidiaManager) setup() error {
-	if !detectDevices(nvidiaVendorId) {
-		return fmt.Errorf("No NVIDIA devices found.")
+	if !detectDevices(nvidiaVendorID) {
+		return fmt.Errorf("no NVIDIA devices found")
 	}
 
 	nm.devicesPresent = true
@@ -71,7 +71,7 @@ func (nm *nvidiaManager) setup() error {
 }
 
 // detectDevices returns true if a device with given pci id is present on the node.
-func detectDevices(vendorId string) bool {
+func detectDevices(vendorID string) bool {
 	devices, err := ioutil.ReadDir(sysFsPCIDevicesPath)
 	if err != nil {
 		klog.Warningf("Error reading %q: %v", sysFsPCIDevicesPath, err)
@@ -85,8 +85,8 @@ func detectDevices(vendorId string) bool {
 			klog.V(4).Infof("Error while reading %q: %v", vendorPath, err)
 			continue
 		}
-		if strings.EqualFold(strings.TrimSpace(string(content)), vendorId) {
-			klog.V(3).Infof("Found device with vendorId %q", vendorId)
+		if strings.EqualFold(strings.TrimSpace(string(content)), vendorID) {
+			klog.V(3).Infof("Found device with vendorID %q", vendorID)
 			return true
 		}
 	}

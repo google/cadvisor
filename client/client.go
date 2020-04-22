@@ -35,7 +35,7 @@ import (
 
 // Client represents the base URL for a cAdvisor client.
 type Client struct {
-	baseUrl    string
+	baseURL    string
 	httpClient *http.Client
 }
 
@@ -50,16 +50,16 @@ func newClient(url string, client *http.Client) (*Client, error) {
 	}
 
 	return &Client{
-		baseUrl:    fmt.Sprintf("%sapi/v1.3/", url),
+		baseURL:    fmt.Sprintf("%sapi/v1.3/", url),
 		httpClient: client,
 	}, nil
 }
 
 // Returns all past events that satisfy the request
-func (self *Client) EventStaticInfo(name string) (einfo []*v1.Event, err error) {
-	u := self.eventsInfoUrl(name)
+func (c *Client) EventStaticInfo(name string) (einfo []*v1.Event, err error) {
+	u := c.eventsInfoURL(name)
 	ret := new([]*v1.Event)
-	if err = self.httpGetJsonData(ret, nil, u, "event info"); err != nil {
+	if err = c.httpGetJSONData(ret, nil, u, "event info"); err != nil {
 		return
 	}
 	einfo = *ret
@@ -68,9 +68,9 @@ func (self *Client) EventStaticInfo(name string) (einfo []*v1.Event, err error) 
 
 // Streams all events that occur that satisfy the request into the channel
 // that is passed
-func (self *Client) EventStreamingInfo(name string, einfo chan *v1.Event) (err error) {
-	u := self.eventsInfoUrl(name)
-	if err = self.getEventStreamingData(u, einfo); err != nil {
+func (c *Client) EventStreamingInfo(name string, einfo chan *v1.Event) (err error) {
+	u := c.eventsInfoURL(name)
+	if err = c.getEventStreamingData(u, einfo); err != nil {
 		return
 	}
 	return nil
@@ -79,10 +79,10 @@ func (self *Client) EventStreamingInfo(name string, einfo chan *v1.Event) (err e
 // MachineInfo returns the JSON machine information for this client.
 // A non-nil error result indicates a problem with obtaining
 // the JSON machine information data.
-func (self *Client) MachineInfo() (minfo *v1.MachineInfo, err error) {
-	u := self.machineInfoUrl()
+func (c *Client) MachineInfo() (minfo *v1.MachineInfo, err error) {
+	u := c.machineInfoURL()
 	ret := new(v1.MachineInfo)
-	if err = self.httpGetJsonData(ret, nil, u, "machine info"); err != nil {
+	if err = c.httpGetJSONData(ret, nil, u, "machine info"); err != nil {
 		return
 	}
 	minfo = ret
@@ -91,10 +91,10 @@ func (self *Client) MachineInfo() (minfo *v1.MachineInfo, err error) {
 
 // ContainerInfo returns the JSON container information for the specified
 // container and request.
-func (self *Client) ContainerInfo(name string, query *v1.ContainerInfoRequest) (cinfo *v1.ContainerInfo, err error) {
-	u := self.containerInfoUrl(name)
+func (c *Client) ContainerInfo(name string, query *v1.ContainerInfoRequest) (cinfo *v1.ContainerInfo, err error) {
+	u := c.containerInfoURL(name)
 	ret := new(v1.ContainerInfo)
-	if err = self.httpGetJsonData(ret, query, u, fmt.Sprintf("container info for %q", name)); err != nil {
+	if err = c.httpGetJSONData(ret, query, u, fmt.Sprintf("container info for %q", name)); err != nil {
 		return
 	}
 	cinfo = ret
@@ -102,10 +102,10 @@ func (self *Client) ContainerInfo(name string, query *v1.ContainerInfoRequest) (
 }
 
 // Returns the information about all subcontainers (recursive) of the specified container (including itself).
-func (self *Client) SubcontainersInfo(name string, query *v1.ContainerInfoRequest) ([]v1.ContainerInfo, error) {
+func (c *Client) SubcontainersInfo(name string, query *v1.ContainerInfoRequest) ([]v1.ContainerInfo, error) {
 	var response []v1.ContainerInfo
-	url := self.subcontainersInfoUrl(name)
-	err := self.httpGetJsonData(&response, query, url, fmt.Sprintf("subcontainers container info for %q", name))
+	url := c.subcontainersInfoURL(name)
+	err := c.httpGetJSONData(&response, query, url, fmt.Sprintf("subcontainers container info for %q", name))
 	if err != nil {
 		return []v1.ContainerInfo{}, err
 
@@ -115,10 +115,10 @@ func (self *Client) SubcontainersInfo(name string, query *v1.ContainerInfoReques
 
 // Returns the JSON container information for the specified
 // Docker container and request.
-func (self *Client) DockerContainer(name string, query *v1.ContainerInfoRequest) (cinfo v1.ContainerInfo, err error) {
-	u := self.dockerInfoUrl(name)
+func (c *Client) DockerContainer(name string, query *v1.ContainerInfoRequest) (cinfo v1.ContainerInfo, err error) {
+	u := c.dockerInfoURL(name)
 	ret := make(map[string]v1.ContainerInfo)
-	if err = self.httpGetJsonData(&ret, query, u, fmt.Sprintf("Docker container info for %q", name)); err != nil {
+	if err = c.httpGetJSONData(&ret, query, u, fmt.Sprintf("Docker container info for %q", name)); err != nil {
 		return
 	}
 	if len(ret) != 1 {
@@ -132,10 +132,10 @@ func (self *Client) DockerContainer(name string, query *v1.ContainerInfoRequest)
 }
 
 // Returns the JSON container information for all Docker containers.
-func (self *Client) AllDockerContainers(query *v1.ContainerInfoRequest) (cinfo []v1.ContainerInfo, err error) {
-	u := self.dockerInfoUrl("/")
+func (c *Client) AllDockerContainers(query *v1.ContainerInfoRequest) (cinfo []v1.ContainerInfo, err error) {
+	u := c.dockerInfoURL("/")
 	ret := make(map[string]v1.ContainerInfo)
-	if err = self.httpGetJsonData(&ret, query, u, "all Docker containers info"); err != nil {
+	if err = c.httpGetJSONData(&ret, query, u, "all Docker containers info"); err != nil {
 		return
 	}
 	cinfo = make([]v1.ContainerInfo, 0, len(ret))
@@ -145,27 +145,27 @@ func (self *Client) AllDockerContainers(query *v1.ContainerInfoRequest) (cinfo [
 	return
 }
 
-func (self *Client) machineInfoUrl() string {
-	return self.baseUrl + path.Join("machine")
+func (c *Client) machineInfoURL() string {
+	return c.baseURL + path.Join("machine")
 }
 
-func (self *Client) containerInfoUrl(name string) string {
-	return self.baseUrl + path.Join("containers", name)
+func (c *Client) containerInfoURL(name string) string {
+	return c.baseURL + path.Join("containers", name)
 }
 
-func (self *Client) subcontainersInfoUrl(name string) string {
-	return self.baseUrl + path.Join("subcontainers", name)
+func (c *Client) subcontainersInfoURL(name string) string {
+	return c.baseURL + path.Join("subcontainers", name)
 }
 
-func (self *Client) dockerInfoUrl(name string) string {
-	return self.baseUrl + path.Join("docker", name)
+func (c *Client) dockerInfoURL(name string) string {
+	return c.baseURL + path.Join("docker", name)
 }
 
-func (self *Client) eventsInfoUrl(name string) string {
-	return self.baseUrl + path.Join("events", name)
+func (c *Client) eventsInfoURL(name string) string {
+	return c.baseURL + path.Join("events", name)
 }
 
-func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName string) error {
+func (c *Client) httpGetJSONData(data, postData interface{}, url, infoName string) error {
 	var resp *http.Response
 	var err error
 
@@ -174,9 +174,9 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 		if marshalErr != nil {
 			return fmt.Errorf("unable to marshal data: %v", marshalErr)
 		}
-		resp, err = self.httpClient.Post(url, "application/json", bytes.NewBuffer(data))
+		resp, err = c.httpClient.Post(url, "application/json", bytes.NewBuffer(data))
 	} else {
-		resp, err = self.httpClient.Get(url)
+		resp, err = c.httpClient.Get(url)
 	}
 	if err != nil {
 		return fmt.Errorf("unable to get %q from %q: %v", infoName, url, err)
@@ -200,12 +200,12 @@ func (self *Client) httpGetJsonData(data, postData interface{}, url, infoName st
 	return nil
 }
 
-func (self *Client) getEventStreamingData(url string, einfo chan *v1.Event) error {
+func (c *Client) getEventStreamingData(url string, einfo chan *v1.Event) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := self.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
 	}

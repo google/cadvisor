@@ -99,9 +99,9 @@ type ContainerReference struct {
 // Sorts by container name.
 type ContainerReferenceSlice []ContainerReference
 
-func (self ContainerReferenceSlice) Len() int           { return len(self) }
-func (self ContainerReferenceSlice) Swap(i, j int)      { self[i], self[j] = self[j], self[i] }
-func (self ContainerReferenceSlice) Less(i, j int) bool { return self[i].Name < self[j].Name }
+func (s ContainerReferenceSlice) Len() int           { return len(s) }
+func (s ContainerReferenceSlice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s ContainerReferenceSlice) Less(i, j int) bool { return s[i].Name < s[j].Name }
 
 // ContainerInfoRequest is used when users check a container info from the REST API.
 // It specifies how much data users want to get about a container
@@ -126,10 +126,10 @@ func DefaultContainerInfoRequest() ContainerInfoRequest {
 	}
 }
 
-func (self *ContainerInfoRequest) Equals(other ContainerInfoRequest) bool {
-	return self.NumStats == other.NumStats &&
-		self.Start.Equal(other.Start) &&
-		self.End.Equal(other.End)
+func (r *ContainerInfoRequest) Equals(other ContainerInfoRequest) bool {
+	return r.NumStats == other.NumStats &&
+		r.Start.Equal(other.Start) &&
+		r.End.Equal(other.End)
 }
 
 type ContainerInfo struct {
@@ -151,30 +151,30 @@ type ContainerInfo struct {
 // en/decoded.  This will lead to small but acceptable differences between a
 // ContainerInfo and its encode-then-decode version.  Eq() is used to compare
 // two ContainerInfo accepting small difference (<10ms) of Time fields.
-func (self *ContainerInfo) Eq(b *ContainerInfo) bool {
+func (ci *ContainerInfo) Eq(b *ContainerInfo) bool {
 
-	// If both self and b are nil, then Eq() returns true
-	if self == nil {
+	// If both ci and b are nil, then Eq() returns true
+	if ci == nil {
 		return b == nil
 	}
 	if b == nil {
-		return self == nil
+		return ci == nil
 	}
 
 	// For fields other than time.Time, we will compare them precisely.
 	// This would require that any slice should have same order.
-	if !reflect.DeepEqual(self.ContainerReference, b.ContainerReference) {
+	if !reflect.DeepEqual(ci.ContainerReference, b.ContainerReference) {
 		return false
 	}
-	if !reflect.DeepEqual(self.Subcontainers, b.Subcontainers) {
+	if !reflect.DeepEqual(ci.Subcontainers, b.Subcontainers) {
 		return false
 	}
-	if !self.Spec.Eq(&b.Spec) {
+	if !ci.Spec.Eq(&b.Spec) {
 		return false
 	}
 
 	for i, expectedStats := range b.Stats {
-		selfStats := self.Stats[i]
+		selfStats := ci.Stats[i]
 		if !expectedStats.Eq(selfStats) {
 			return false
 		}
@@ -183,66 +183,66 @@ func (self *ContainerInfo) Eq(b *ContainerInfo) bool {
 	return true
 }
 
-func (self *ContainerSpec) Eq(b *ContainerSpec) bool {
+func (s *ContainerSpec) Eq(b *ContainerSpec) bool {
 	// Creation within 1s of each other.
-	diff := self.CreationTime.Sub(b.CreationTime)
+	diff := s.CreationTime.Sub(b.CreationTime)
 	if (diff > time.Second) || (diff < -time.Second) {
 		return false
 	}
 
-	if self.HasCpu != b.HasCpu {
+	if s.HasCpu != b.HasCpu {
 		return false
 	}
-	if !reflect.DeepEqual(self.Cpu, b.Cpu) {
+	if !reflect.DeepEqual(s.Cpu, b.Cpu) {
 		return false
 	}
-	if self.HasMemory != b.HasMemory {
+	if s.HasMemory != b.HasMemory {
 		return false
 	}
-	if !reflect.DeepEqual(self.Memory, b.Memory) {
+	if !reflect.DeepEqual(s.Memory, b.Memory) {
 		return false
 	}
-	if self.HasHugetlb != b.HasHugetlb {
+	if s.HasHugetlb != b.HasHugetlb {
 		return false
 	}
-	if self.HasNetwork != b.HasNetwork {
+	if s.HasNetwork != b.HasNetwork {
 		return false
 	}
-	if self.HasProcesses != b.HasProcesses {
+	if s.HasProcesses != b.HasProcesses {
 		return false
 	}
-	if self.HasFilesystem != b.HasFilesystem {
+	if s.HasFilesystem != b.HasFilesystem {
 		return false
 	}
-	if self.HasDiskIo != b.HasDiskIo {
+	if s.HasDiskIo != b.HasDiskIo {
 		return false
 	}
-	if self.HasCustomMetrics != b.HasCustomMetrics {
+	if s.HasCustomMetrics != b.HasCustomMetrics {
 		return false
 	}
-	if self.Image != b.Image {
+	if s.Image != b.Image {
 		return false
 	}
 	return true
 }
 
-func (self *ContainerInfo) StatsAfter(ref time.Time) []*ContainerStats {
-	n := len(self.Stats) + 1
-	for i, s := range self.Stats {
+func (ci *ContainerInfo) StatsAfter(ref time.Time) []*ContainerStats {
+	n := len(ci.Stats) + 1
+	for i, s := range ci.Stats {
 		if s.Timestamp.After(ref) {
 			n = i
 			break
 		}
 	}
-	if n > len(self.Stats) {
+	if n > len(ci.Stats) {
 		return nil
 	}
-	return self.Stats[n:]
+	return ci.Stats[n:]
 }
 
-func (self *ContainerInfo) StatsStartTime() time.Time {
+func (ci *ContainerInfo) StatsStartTime() time.Time {
 	var ret time.Time
-	for _, s := range self.Stats {
+	for _, s := range ci.Stats {
 		if s.Timestamp.Before(ret) || ret.IsZero() {
 			ret = s.Timestamp
 		}
@@ -250,10 +250,10 @@ func (self *ContainerInfo) StatsStartTime() time.Time {
 	return ret
 }
 
-func (self *ContainerInfo) StatsEndTime() time.Time {
+func (ci *ContainerInfo) StatsEndTime() time.Time {
 	var ret time.Time
-	for i := len(self.Stats) - 1; i >= 0; i-- {
-		s := self.Stats[i]
+	for i := len(ci.Stats) - 1; i >= 0; i-- {
+		s := ci.Stats[i]
 		if s.Timestamp.After(ret) {
 			ret = s.Timestamp
 		}

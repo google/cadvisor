@@ -60,12 +60,12 @@ func new() (storage.StorageDriver, error) {
 	)
 }
 
-func (self *redisStorage) defaultReadyToFlush() bool {
-	return time.Since(self.lastWrite) >= self.bufferDuration
+func (s *redisStorage) defaultReadyToFlush() bool {
+	return time.Since(s.lastWrite) >= s.bufferDuration
 }
 
 // We must add some default params (for example: MachineName,ContainerName...)because containerStats do not include them
-func (self *redisStorage) containerStatsAndDefaultValues(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
+func (s *redisStorage) containerStatsAndDefaultValues(cInfo *info.ContainerInfo, stats *info.ContainerStats) *detailSpec {
 	timestamp := stats.Timestamp.UnixNano() / 1e3
 	var containerName string
 	if len(cInfo.ContainerReference.Aliases) > 0 {
@@ -75,7 +75,7 @@ func (self *redisStorage) containerStatsAndDefaultValues(cInfo *info.ContainerIn
 	}
 	detail := &detailSpec{
 		Timestamp:      timestamp,
-		MachineName:    self.machineName,
+		MachineName:    s.machineName,
 		ContainerName:  containerName,
 		ContainerStats: stats,
 	}
@@ -83,33 +83,33 @@ func (self *redisStorage) containerStatsAndDefaultValues(cInfo *info.ContainerIn
 }
 
 // Push the data into redis
-func (self *redisStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+func (s *redisStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
 	var seriesToFlush []byte
 	func() {
 		// AddStats will be invoked simultaneously from multiple threads and only one of them will perform a write.
-		self.lock.Lock()
-		defer self.lock.Unlock()
+		s.lock.Lock()
+		defer s.lock.Unlock()
 		// Add some default params based on containerStats
-		detail := self.containerStatsAndDefaultValues(cInfo, stats)
+		detail := s.containerStatsAndDefaultValues(cInfo, stats)
 		// To json
 		b, _ := json.Marshal(detail)
-		if self.readyToFlush() {
+		if s.readyToFlush() {
 			seriesToFlush = b
-			self.lastWrite = time.Now()
+			s.lastWrite = time.Now()
 		}
 	}()
 	if len(seriesToFlush) > 0 {
 		// We use redis's "LPUSH" to push the data to the redis
-		self.conn.Send("LPUSH", self.redisKey, seriesToFlush)
+		s.conn.Send("LPUSH", s.redisKey, seriesToFlush)
 	}
 	return nil
 }
 
-func (self *redisStorage) Close() error {
-	return self.conn.Close()
+func (s *redisStorage) Close() error {
+	return s.conn.Close()
 }
 
 // Create a new redis storage driver.

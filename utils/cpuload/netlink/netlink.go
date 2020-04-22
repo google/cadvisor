@@ -27,6 +27,7 @@ import (
 
 var (
 	// TODO(rjnagal): Verify and fix for other architectures.
+
 	Endian = binary.LittleEndian
 )
 
@@ -42,11 +43,11 @@ type netlinkMessage struct {
 	Data      []byte
 }
 
-func (self netlinkMessage) toRawMsg() (rawmsg syscall.NetlinkMessage) {
-	rawmsg.Header = self.Header
+func (m netlinkMessage) toRawMsg() (rawmsg syscall.NetlinkMessage) {
+	rawmsg.Header = m.Header
 	w := bytes.NewBuffer([]byte{})
-	binary.Write(w, Endian, self.GenHeader)
-	w.Write(self.Data)
+	binary.Write(w, Endian, m.GenHeader)
+	w.Write(m.Data)
 	rawmsg.Data = w.Bytes()
 	return rawmsg
 }
@@ -64,7 +65,7 @@ func padding(size int, alignment int) int {
 }
 
 // Get family id for taskstats subsystem.
-func getFamilyId(conn *Connection) (uint16, error) {
+func getFamilyID(conn *Connection) (uint16, error) {
 	msg := prepareFamilyMessage()
 	err := conn.WriteMessage(msg.toRawMsg())
 	if err != nil {
@@ -167,7 +168,7 @@ func parseFamilyResp(msg syscall.NetlinkMessage) (uint16, error) {
 			return 0, err
 		}
 	}
-	return 0, fmt.Errorf("family id not found in the response.")
+	return 0, fmt.Errorf("family id not found in the response")
 }
 
 // Extract task stats from response returned by kernel.

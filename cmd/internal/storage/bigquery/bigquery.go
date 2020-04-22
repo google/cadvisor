@@ -87,7 +87,7 @@ func new() (storage.StorageDriver, error) {
 }
 
 // TODO(jnagal): Infer schema through reflection. (See bigquery/client/example)
-func (self *bigqueryStorage) GetSchema() *bigquery.TableSchema {
+func (s *bigqueryStorage) GetSchema() *bigquery.TableSchema {
 	fields := make([]*bigquery.TableFieldSchema, 19)
 	i := 0
 	fields[i] = &bigquery.TableFieldSchema{
@@ -192,7 +192,7 @@ func (self *bigqueryStorage) GetSchema() *bigquery.TableSchema {
 	}
 }
 
-func (self *bigqueryStorage) containerStatsToRows(
+func (s *bigqueryStorage) containerStatsToRows(
 	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (row map[string]interface{}) {
@@ -202,7 +202,7 @@ func (self *bigqueryStorage) containerStatsToRows(
 	row[colTimestamp] = stats.Timestamp
 
 	// Machine name
-	row[colMachineName] = self.machineName
+	row[colMachineName] = s.machineName
 
 	// Container name
 	name := cInfo.ContainerReference.Name
@@ -249,7 +249,7 @@ func (self *bigqueryStorage) containerStatsToRows(
 	return
 }
 
-func (self *bigqueryStorage) containerFilesystemStatsToRows(
+func (s *bigqueryStorage) containerFilesystemStatsToRows(
 	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (rows []map[string]interface{}) {
@@ -263,15 +263,15 @@ func (self *bigqueryStorage) containerFilesystemStatsToRows(
 	return rows
 }
 
-func (self *bigqueryStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
+func (s *bigqueryStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
 	}
 	rows := make([]map[string]interface{}, 0)
-	rows = append(rows, self.containerStatsToRows(cInfo, stats))
-	rows = append(rows, self.containerFilesystemStatsToRows(cInfo, stats)...)
+	rows = append(rows, s.containerStatsToRows(cInfo, stats))
+	rows = append(rows, s.containerFilesystemStatsToRows(cInfo, stats)...)
 	for _, row := range rows {
-		err := self.client.InsertRow(row)
+		err := s.client.InsertRow(row)
 		if err != nil {
 			return err
 		}
@@ -279,9 +279,9 @@ func (self *bigqueryStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Con
 	return nil
 }
 
-func (self *bigqueryStorage) Close() error {
-	self.client.Close()
-	self.client = nil
+func (s *bigqueryStorage) Close() error {
+	s.client.Close()
+	s.client = nil
 	return nil
 }
 
