@@ -29,10 +29,10 @@ import (
 	"github.com/google/cadvisor/validate"
 
 	auth "github.com/abbot/go-http-auth"
-	"github.com/kubernetes/utils/clock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/clock"
 )
 
 func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAuthFile, httpAuthRealm, httpDigestFile, httpDigestRealm string, urlBasePrefix string) error {

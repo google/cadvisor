@@ -25,6 +25,7 @@ require (
 	github.com/godbus/dbus v0.0.0-20190422162347-ade71ed3457e // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/google/go-cmp v0.3.1
+	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/karrick/godirwalk v1.7.5
@@ -57,4 +58,5 @@ require (
 	google.golang.org/grpc v1.26.0
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/klog/v2 v2.0.0
+	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66
 )

@@ -22,10 +22,10 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 
-	"github.com/kubernetes/utils/clock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/utils/clock"
 )
 
 var now = clock.NewFakeClock(time.Unix(1395066363, 0))
