@@ -26,8 +26,6 @@ issues:
 #   integration/tests/api/event_test.go:66:6: func `waitForStaticEvent` is unused (unused)
 #   Flaky test skipped.
     - waitForStaticEvent
-#   There is plenty of snake_case identifiers:
-    - "don't use underscores in Go names"
 #   Initialism or acronyms for fields, vars and types:
     - "(struct field|var|type|const) `[A-Z].*` should be `.*`"
 #   Initialism or acronyms - renaming exported methods and functions can be tricky:

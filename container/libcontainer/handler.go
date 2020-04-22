@@ -221,17 +221,17 @@ func processLimitsFile(fileData string) []info.UlimitSpec {
 			}
 
 			soft := strings.TrimSpace(fields[1])
-			soft_num, soft_err := parseUlimit(soft)
+			softNum, softErr := parseUlimit(soft)
 
 			hard := strings.TrimSpace(fields[2])
-			hard_num, hard_err := parseUlimit(hard)
+			hardNum, hardErr := parseUlimit(hard)
 
 			// Omit metric if there were any parsing errors
-			if soft_err == nil && hard_err == nil {
+			if softErr == nil && hardErr == nil {
 				ulimitSpec := info.UlimitSpec{
 					Name:      name,
-					SoftLimit: int64(soft_num),
-					HardLimit: int64(hard_num),
+					SoftLimit: int64(softNum),
+					HardLimit: int64(hardNum),
 				}
 				ulimits = append(ulimits, ulimitSpec)
 			}

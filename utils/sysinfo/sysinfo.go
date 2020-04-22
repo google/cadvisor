@@ -57,14 +57,14 @@ func GetBlockDeviceInfo(sysfs sysfs.SysFs) (map[string]info.DiskInfo, error) {
 		if strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "ram") || strings.HasPrefix(name, "sr") {
 			continue
 		}
-		disk_info := info.DiskInfo{
+		diskInfo := info.DiskInfo{
 			Name: name,
 		}
 		dev, err := sysfs.GetBlockDeviceNumbers(name)
 		if err != nil {
 			return nil, err
 		}
-		n, err := fmt.Sscanf(dev, "%d:%d", &disk_info.Major, &disk_info.Minor)
+		n, err := fmt.Sscanf(dev, "%d:%d", &diskInfo.Major, &diskInfo.Minor)
 		if err != nil || n != 2 {
 			return nil, fmt.Errorf("could not parse device numbers from %s for device %s", dev, name)
 		}
@@ -78,18 +78,18 @@ func GetBlockDeviceInfo(sysfs sysfs.SysFs) (map[string]info.DiskInfo, error) {
 			return nil, err
 		}
 		// size is in 512 bytes blocks.
-		disk_info.Size = size * 512
+		diskInfo.Size = size * 512
 
-		disk_info.Scheduler = "none"
+		diskInfo.Scheduler = "none"
 		blkSched, err := sysfs.GetBlockDeviceScheduler(name)
 		if err == nil {
 			matches := schedulerRegExp.FindSubmatch([]byte(blkSched))
 			if len(matches) >= 2 {
-				disk_info.Scheduler = string(matches[1])
+				diskInfo.Scheduler = string(matches[1])
 			}
 		}
-		device := fmt.Sprintf("%d:%d", disk_info.Major, disk_info.Minor)
-		diskMap[device] = disk_info
+		device := fmt.Sprintf("%d:%d", diskInfo.Major, diskInfo.Minor)
+		diskMap[device] = diskInfo
 	}
 	return diskMap, nil
 }

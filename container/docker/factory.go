@@ -208,10 +208,10 @@ func (f *dockerFactory) DebugInfo() map[string][]string {
 }
 
 var (
-	version_regexp_string    = `(\d+)\.(\d+)\.(\d+)`
-	version_re               = regexp.MustCompile(version_regexp_string)
-	apiversion_regexp_string = `(\d+)\.(\d+)`
-	apiversion_re            = regexp.MustCompile(apiversion_regexp_string)
+	versionRegexpString    = `(\d+)\.(\d+)\.(\d+)`
+	versionRe              = regexp.MustCompile(versionRegexpString)
+	apiVersionRegexpString = `(\d+)\.(\d+)`
+	apiVersionRe           = regexp.MustCompile(apiVersionRegexpString)
 )
 
 func startThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolWatcher, error) {
@@ -269,7 +269,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 	// thin_ls to work without corrupting the thin pool
 	minRhel7KernelVersion := semver.MustParse("3.10.0")
 
-	matches := version_re.FindStringSubmatch(kernelVersion)
+	matches := versionRe.FindStringSubmatch(kernelVersion)
 	if len(matches) < 4 {
 		return fmt.Errorf("error parsing kernel version: %q is not a semver", kernelVersion)
 	}
@@ -335,7 +335,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 	}
 
 	// Version already validated above, assume no error here.
-	dockerVersion, _ := parseVersion(dockerInfo.ServerVersion, version_re, 3)
+	dockerVersion, _ := parseVersion(dockerInfo.ServerVersion, versionRe, 3)
 
 	dockerAPIVersion, _ := APIVersion()
 

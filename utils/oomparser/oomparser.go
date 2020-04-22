@@ -119,8 +119,8 @@ func (p *OomParser) StreamOoms(outStream chan<- *OomInstance) {
 	defer p.parser.Close()
 
 	for msg := range kmsgEntries {
-		in_oom_kernel_log := checkIfStartOfOomMessages(msg.Message)
-		if in_oom_kernel_log {
+		isOomMessage := checkIfStartOfOomMessages(msg.Message)
+		if isOomMessage {
 			oomCurrentInstance := &OomInstance{
 				ContainerName:       "/",
 				VictimContainerName: "/",

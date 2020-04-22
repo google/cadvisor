@@ -130,38 +130,38 @@ type DiskKey struct {
 	Minor uint64
 }
 
-func DiskStatsCopy1(disk_stat map[DiskKey]*info.PerDiskStats) []info.PerDiskStats {
+func DiskStatsCopy1(diskStat map[DiskKey]*info.PerDiskStats) []info.PerDiskStats {
 	i := 0
-	stat := make([]info.PerDiskStats, len(disk_stat))
-	for _, disk := range disk_stat {
+	stat := make([]info.PerDiskStats, len(diskStat))
+	for _, disk := range diskStat {
 		stat[i] = *disk
 		i++
 	}
 	return stat
 }
 
-func DiskStatsCopy(blkio_stats []cgroups.BlkioStatEntry) (stat []info.PerDiskStats) {
-	if len(blkio_stats) == 0 {
+func DiskStatsCopy(blkioStats []cgroups.BlkioStatEntry) (stat []info.PerDiskStats) {
+	if len(blkioStats) == 0 {
 		return
 	}
-	disk_stat := make(map[DiskKey]*info.PerDiskStats)
-	for i := range blkio_stats {
-		major := blkio_stats[i].Major
-		minor := blkio_stats[i].Minor
-		disk_key := DiskKey{
+	diskStat := make(map[DiskKey]*info.PerDiskStats)
+	for i := range blkioStats {
+		major := blkioStats[i].Major
+		minor := blkioStats[i].Minor
+		key := DiskKey{
 			Major: major,
 			Minor: minor,
 		}
-		diskp, ok := disk_stat[disk_key]
+		diskp, ok := diskStat[key]
 		if !ok {
 			diskp = DiskStatsCopy0(major, minor)
-			disk_stat[disk_key] = diskp
+			diskStat[key] = diskp
 		}
-		op := blkio_stats[i].Op
+		op := blkioStats[i].Op
 		if op == "" {
 			op = "Count"
 		}
-		diskp.Stats[op] = blkio_stats[i].Value
+		diskp.Stats[op] = blkioStats[i].Value
 	}
-	return DiskStatsCopy1(disk_stat)
+	return DiskStatsCopy1(diskStat)
 }
