@@ -246,7 +246,7 @@ func (h *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 func (h *rawContainerHandler) GetCgroupPath(resource string) (string, error) {
 	path, ok := h.cgroupPaths[resource]
 	if !ok {
-		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, h.name)
+		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.name)
 	}
 	return path, nil
 }

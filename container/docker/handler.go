@@ -453,7 +453,7 @@ func (h *dockerContainerHandler) ListContainers(listType container.ListType) ([]
 func (h *dockerContainerHandler) GetCgroupPath(resource string) (string, error) {
 	path, ok := h.cgroupPaths[resource]
 	if !ok {
-		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, h.reference.Name)
+		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.reference.Name)
 	}
 	return path, nil
 }

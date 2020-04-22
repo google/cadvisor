@@ -62,7 +62,7 @@ func NewNvidiaManager() stats.Manager {
 // setup initializes NVML if nvidia devices are present on the node.
 func (nm *nvidiaManager) setup() error {
 	if !detectDevices(nvidiaVendorID) {
-		return fmt.Errorf("No NVIDIA devices found.")
+		return fmt.Errorf("no NVIDIA devices found")
 	}
 
 	nm.devicesPresent = true

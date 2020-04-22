@@ -229,7 +229,7 @@ func (cd *containerData) ReadFile(filepath string, inHostNamespace bool) ([]byte
 		}
 	}
 	// No process paths could be found. Declare config non-existent.
-	return nil, fmt.Errorf("file %q does not exist.", filepath)
+	return nil, fmt.Errorf("file %q does not exist", filepath)
 }
 
 // Return output for ps command in host /proc with specified format

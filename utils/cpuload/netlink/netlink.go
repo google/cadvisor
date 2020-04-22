@@ -168,7 +168,7 @@ func parseFamilyResp(msg syscall.NetlinkMessage) (uint16, error) {
 			return 0, err
 		}
 	}
-	return 0, fmt.Errorf("family id not found in the response.")
+	return 0, fmt.Errorf("family id not found in the response")
 }
 
 // Extract task stats from response returned by kernel.
