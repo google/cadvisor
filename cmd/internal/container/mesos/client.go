@@ -80,19 +80,19 @@ func Client() (mesosAgentClient, error) {
 
 // ContainerInfo returns the container information of the given container id
 func (c *client) ContainerInfo(id string) (*containerInfo, error) {
-	c, err := c.getContainer(id)
+	container, err := c.getContainer(id)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get labels of the container
-	l, err := c.getLabels(c)
+	l, err := c.getLabels(container)
 	if err != nil {
 		return nil, err
 	}
 
 	return &containerInfo{
-		cntr:   c,
+		cntr:   container,
 		labels: l,
 	}, nil
 }
@@ -167,7 +167,7 @@ func (c *client) getContainers() (mContainers, error) {
 	return cntrs, nil
 }
 
-func (c *client) getLabels(c *mContainer) (map[string]string, error) {
+func (c *client) getLabels(container *mContainer) (map[string]string, error) {
 	// Get mesos agent state which contains all containers labels
 	var s state
 	req := calls.NonStreaming(calls.GetState())
@@ -178,7 +178,7 @@ func (c *client) getLabels(c *mContainer) (map[string]string, error) {
 	s.st = result.GetState
 
 	// Fetch labels from state object
-	labels, err := s.FetchLabels(c.FrameworkID.Value, c.ExecutorID.Value)
+	labels, err := s.FetchLabels(container.FrameworkID.Value, container.ExecutorID.Value)
 	if err != nil {
 		return labels, fmt.Errorf("error while fetching labels from executor: %v", err)
 	}
