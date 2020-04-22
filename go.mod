@@ -56,7 +56,5 @@ require (
 	google.golang.org/genproto v0.0.0-20191230161307-f3c370f40bfb // indirect
 	google.golang.org/grpc v1.26.0
 	gotest.tools v2.2.0+incompatible // indirect
-	k8s.io/apimachinery v0.18.2
 	k8s.io/klog/v2 v2.0.0
-	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 )

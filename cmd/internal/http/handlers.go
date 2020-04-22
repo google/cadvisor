@@ -29,9 +29,9 @@ import (
 	"github.com/google/cadvisor/validate"
 
 	auth "github.com/abbot/go-http-auth"
+	"github.com/kubernetes/utils/clock"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/klog/v2"
 )
 
