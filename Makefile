@@ -32,10 +32,12 @@ test:
 	@$(GO) test -short -race $(pkgs)
 	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
 
-docker-test:
-	@echo ">> runinng tests in docker"
-	@./build/unit-in-docker.sh
+container-test:
+	@echo ">> runinng tests in a container"
+	@./build/unit-in-container.sh
 
+docker-test: container-test
+	@echo "docker-test target is deprecated, use container-test instead"
 
 test-integration:
 	GO_FLAGS="-race" ./build/build.sh
