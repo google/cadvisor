@@ -148,7 +148,7 @@ func DefaultStoragePolicy() StoragePolicy {
 }
 
 // returns a pointer to an initialized Events object.
-func NewEventManager(storagePolicy StoragePolicy) *events {
+func NewEventManager(storagePolicy StoragePolicy) EventManager {
 	return &events{
 		eventStore:    make(map[info.EventType]*utils.TimedStore),
 		watchers:      make(map[int]*watch),
