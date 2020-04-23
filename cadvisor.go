@@ -212,6 +212,7 @@ func main() {
 	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, muxHandle))
 
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
+	klog.V(1).Infof("listen %s",addr)
 	klog.Fatal(http.ListenAndServe(addr, rootMux))
 }
 
