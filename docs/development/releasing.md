@@ -70,7 +70,7 @@ Go to the following link in your browser:
     https://accounts.google.com/o/oauth2/auth?<redacted>
 
 Enter verification code: ****
-$ gcloud docker push gcr.io/google_containers/cadvisor:$VERSION
+$ gcloud docker push gcr.io/cadvisor/cadvisor:$VERSION
 $ gcloud auth revoke # Log out of shared account
 ```
 
