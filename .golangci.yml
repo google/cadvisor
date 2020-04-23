@@ -32,8 +32,6 @@ issues:
     - "(method|func) [A-Z].* should be .*"
 #   Stuttering affects exported names:
     - "type name will be used as .*\\.[A-Z]{1}.* by other packages, and that stutters"
-#   We would have to change exported function return type:
-    - "exported func .* returns unexported type"
   exclude-rules:
 #   container/containerd/client.go:67:4: SA1019: grpc.WithDialer is deprecated: use WithContextDialer instead.  Will be supported throughout 1.x.  (staticcheck)
 #   There are more similar issues in following lines.
@@ -46,9 +44,6 @@ issues:
 #   utils/cloudinfo/aws/aws.go:60:28: SA1019: session.New is deprecated: Use NewSession functions to create sessions instead. NewSession has the same functionality as New except an error can be returned when the func is called instead of waiting to receive an error until a request is made.  (staticcheck)
     - path: utils/cloudinfo/aws/aws.go
       text: "SA1019:"
-#   events/handler.go:151:51: exported func NewEventManager returns unexported type *github.com/google/cadvisor/events.events, which can be annoying to use (golint)
-    - path: events/handler.go
-      text: "exported func NewEventManager returns unexported type .{1}github.com/google/cadvisor/events.events, which can be annoying to use"
 #   manager/manager_test.go:277:29: Error return value of `(*github.com/google/cadvisor/container/testing.MockContainerHandler).GetSpec` is not checked (errcheck)
     - path: manager/manager_test.go
       text: "Error return value of `.{2}github.com/google/cadvisor/container/testing.MockContainerHandler.{1}.GetSpec` is not checked"
