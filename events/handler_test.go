@@ -142,7 +142,7 @@ func TestAddEventAddsEventsToEventManager(t *testing.T) {
 	assert.NoError(t, err)
 
 	events, err := myEventHolder.GetEvents(&Request{
-		EventType:     map[info.EventType]bool{info.EventOom: true},
+		EventType:         map[info.EventType]bool{info.EventOom: true},
 		MaxEventsReturned: -1,
 	})
 
