@@ -9,8 +9,7 @@ require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/Rican7/retry v0.1.1-0.20160712041035-272ad122d6e5
 	github.com/SeanDolphin/bqschema v0.0.0-20150424181127-f92a08f515e1
-	github.com/Shopify/sarama v1.8.0
-	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
+	github.com/Shopify/sarama v1.19.0
 	github.com/abbot/go-http-auth v0.0.0-20140618235127-c0ef4539dfab
 	github.com/aws/aws-sdk-go v1.6.10
 	github.com/beorn7/perks v0.0.0-20150223135152-b965b613227f // indirect
@@ -28,18 +27,14 @@ require (
 	github.com/docker/go-connections v0.3.0
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
 	github.com/docker/go-units v0.4.0
-	github.com/eapache/go-resiliency v1.0.1-0.20160104191539-b86b1ec0dd42 // indirect
-	github.com/eapache/queue v1.0.2 // indirect
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7
 	github.com/go-ini/ini v1.9.0 // indirect
 	github.com/gogo/googleapis v1.3.1 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7 // indirect
-	github.com/golang/snappy v0.0.0-20150730031844-723cc1e459b8 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/google/uuid v1.1.1 // indirect
-	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
@@ -62,6 +57,10 @@ require (
 	github.com/opencontainers/runc v1.0.0-rc10
 	github.com/opencontainers/runtime-spec v1.0.1
 	github.com/opencontainers/selinux v1.3.3 // indirect
+	github.com/opentracing-contrib/go-stdlib v0.0.0-20190519235532-cf7a6c988dc9
+	github.com/opentracing/opentracing-go v1.1.0
+	github.com/openzipkin-contrib/zipkin-go-opentracing v0.4.5
+	github.com/openzipkin/zipkin-go v0.2.2
 	github.com/pborman/uuid v0.0.0-20150824212802-cccd189d45f7 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
