@@ -18,6 +18,13 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	opentracing "github.com/opentracing/opentracing-go"
+	zipkinot "github.com/openzipkin-contrib/zipkin-go-opentracing"
+	"github.com/openzipkin/zipkin-go"
+	"github.com/openzipkin/zipkin-go/reporter"
+	zipkinhttp "github.com/openzipkin/zipkin-go/reporter/http"
+	"github.com/pkg/errors"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -137,6 +144,10 @@ func main() {
 	defer klog.Flush()
 	flag.Parse()
 
+	if os.Getenv("ZIPKIN") != "" {
+		reporter := initZipKin()
+		defer reporter.Close()
+	}
 	if *versionFlag {
 		fmt.Printf("cAdvisor version %s (%s)\n", version.Info["version"], version.Info["revision"])
 		os.Exit(0)
@@ -183,6 +194,10 @@ func main() {
 
 	cadvisorhttp.RegisterPrometheusHandler(mux, containerManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)
 
+	muxHandle := nethttp.Middleware(opentracing.GlobalTracer(), mux, nethttp.OperationNameFunc(func(r *http.Request) string {
+		return "cadvisor"
+	}))
+
 	// Start the manager.
 	if err := containerManager.Start(); err != nil {
 		klog.Fatalf("Failed to start container manager: %v", err)
@@ -194,10 +209,41 @@ func main() {
 	klog.V(1).Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
 
 	rootMux := http.NewServeMux()
-	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, mux))
+	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, muxHandle))
 
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
 	klog.Fatal(http.ListenAndServe(addr, rootMux))
+}
+
+func initZipKin() reporter.Reporter {
+	serviceName := os.Getenv("ZIPKIN_SERVICE")
+	if serviceName == "" {
+		serviceName = "cadvisor"
+	}
+	endPointAddr := fmt.Sprintf("%s/api/v2/spans", os.Getenv("ZIPKIN"))
+	reporter := zipkinhttp.NewReporter(endPointAddr)
+	endpoint, err := zipkin.NewEndpoint(serviceName, fmt.Sprintf("%s:%d", *argIp ,*argPort))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "unable to create local endpoint:"))
+		os.Exit(2)
+	}
+
+	// initialize our tracer
+	nativeTracer, err := zipkin.NewTracer(reporter, zipkin.WithLocalEndpoint(endpoint),
+													zipkin.WithSampler(zipkin.AlwaysSample),
+													zipkin.WithSharedSpans(true),
+													zipkin.WithTraceID128Bit(true))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "unable to create tracer:"))
+		os.Exit(2)
+	}
+
+	// use zipkin-go-opentracing to wrap our tracer
+	tracer := zipkinot.Wrap(nativeTracer)
+
+	// optionally set as Global OpenTracing tracer instance
+	opentracing.SetGlobalTracer(tracer)
+	return reporter
 }
 
 func setMaxProcs() {
