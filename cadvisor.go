@@ -232,7 +232,8 @@ func initZipKin() reporter.Reporter {
 	// initialize our tracer
 	nativeTracer, err := zipkin.NewTracer(reporter, zipkin.WithLocalEndpoint(endpoint),
 													zipkin.WithSampler(zipkin.AlwaysSample),
-													zipkin.WithSharedSpans(true),
+	//													zipkin.WithSharedSpans(true),
+													zipkin.WithSharedSpans(false),
 													zipkin.WithTraceID128Bit(true))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "unable to create tracer:"))
