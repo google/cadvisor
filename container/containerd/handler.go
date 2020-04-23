@@ -56,7 +56,7 @@ var _ container.ContainerHandler = &containerdContainerHandler{}
 
 // newContainerdContainerHandler returns a new container.ContainerHandler
 func newContainerdContainerHandler(
-	client containerdClient,
+	client ContainerdClient,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,

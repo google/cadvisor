@@ -37,14 +37,14 @@ type client struct {
 	versionService   versionapi.VersionClient
 }
 
-type containerdClient interface {
+type ContainerdClient interface {
 	LoadContainer(ctx context.Context, id string) (*containers.Container, error)
 	TaskPid(ctx context.Context, id string) (uint32, error)
 	Version(ctx context.Context) (string, error)
 }
 
 var once sync.Once
-var ctrdClient containerdClient = nil
+var ctrdClient ContainerdClient = nil
 
 const (
 	maxBackoffDelay   = 3 * time.Second
@@ -52,7 +52,7 @@ const (
 )
 
 // Client creates a containerd client
-func Client(address, namespace string) (containerdClient, error) {
+func Client(address, namespace string) (ContainerdClient, error) {
 	var retErr error
 	once.Do(func() {
 		tryConn, err := net.DialTimeout("unix", address, connectionTimeout)

@@ -43,7 +43,7 @@ var containerdCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
 
 type containerdFactory struct {
 	machineInfoFactory info.MachineInfoFactory
-	client             containerdClient
+	client             ContainerdClient
 	version            string
 	// Information about the mounted cgroup subsystems.
 	cgroupSubsystems libcontainer.CgroupSubsystems
