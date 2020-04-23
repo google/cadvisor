@@ -41,7 +41,7 @@ build/build.sh
 # Build the docker image
 echo ">> building cadvisor docker image"
 docker_tag="google/cadvisor:$VERSION"
-gcr_tag="gcr.io/google_containers/cadvisor:$VERSION"
+gcr_tag="gcr.io/cadvisor/cadvisor:$VERSION"
 docker build -t $docker_tag -t $gcr_tag -f deploy/Dockerfile .
 
 echo
