@@ -16,6 +16,15 @@
 
 set -e
 
+CONTAINER_ENGINE=$(command -v docker || true)
+if [ "$CONTAINER_ENGINE" == "" ]; then
+  CONTAINER_ENGINE=$(command -v podman || true)
+fi
+if [ "$CONTAINER_ENGINE" == "" ]; then
+  echo "Unable to find docker and podman. Exiting."
+  exit 1
+fi
+
 function run_tests() {
   BUILD_CMD="go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v 'vendor\|integration' | tr '\n' ' ') && \
     cd cmd && go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v 'vendor\|integration' | tr '\n' ' ')"
@@ -24,7 +33,7 @@ function run_tests() {
     $BUILD_CMD"
   fi
 
-  docker run --rm \
+  $CONTAINER_ENGINE run --rm \
     -w /go/src/github.com/google/cadvisor \
     -v ${PWD}:/go/src/github.com/google/cadvisor \
     golang:${GOLANG_VERSION} \
