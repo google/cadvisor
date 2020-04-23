@@ -72,6 +72,12 @@ func (m *mean) Add(value uint64) {
 	m.Mean = (m.Mean*(c-1) + v) / c
 }
 
+type Percentile interface {
+	Add(info.Percentiles)
+	AddSample(uint64)
+	GetAllPercentiles() info.Percentiles
+}
+
 type resource struct {
 	// list of samples being tracked.
 	samples Uint64Slice
@@ -119,7 +125,7 @@ func (r *resource) GetAllPercentiles() info.Percentiles {
 	return p
 }
 
-func NewResource(size int) *resource {
+func NewResource(size int) Percentile {
 	return &resource{
 		samples: make(Uint64Slice, 0, size),
 		mean:    mean{count: 0, Mean: 0},
