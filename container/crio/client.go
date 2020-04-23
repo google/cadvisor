@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	theClient      crioClient
+	theClient      CrioClient
 	clientErr      error
 	crioClientOnce sync.Once
 )
@@ -56,7 +56,7 @@ type ContainerInfo struct {
 	IPs         []string          `json:"ip_addresses"`
 }
 
-type crioClient interface {
+type CrioClient interface {
 	Info() (Info, error)
 	ContainerInfo(string) (*ContainerInfo, error)
 }
@@ -78,7 +78,7 @@ func configureUnixTransport(tr *http.Transport, proto, addr string) error {
 }
 
 // Client returns a new configured CRI-O client
-func Client() (crioClient, error) {
+func Client() (CrioClient, error) {
 	crioClientOnce.Do(func() {
 		tr := new(http.Transport)
 		theClient = nil

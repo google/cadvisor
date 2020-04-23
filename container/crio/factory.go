@@ -57,7 +57,7 @@ type crioFactory struct {
 
 	includedMetrics container.MetricSet
 
-	client crioClient
+	client CrioClient
 }
 
 func (f *crioFactory) String() string {

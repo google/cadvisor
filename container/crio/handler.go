@@ -32,7 +32,7 @@ import (
 )
 
 type crioContainerHandler struct {
-	client crioClient
+	client CrioClient
 	name   string
 
 	machineInfoFactory info.MachineInfoFactory
@@ -79,7 +79,7 @@ var _ container.ContainerHandler = &crioContainerHandler{}
 
 // newCrioContainerHandler returns a new container.ContainerHandler
 func newCrioContainerHandler(
-	client crioClient,
+	client CrioClient,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,

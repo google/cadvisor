@@ -40,7 +40,7 @@ func (c *crioClientMock) ContainerInfo(id string) (*ContainerInfo, error) {
 	return cInfo, nil
 }
 
-func mockCrioClient(info Info, containersInfo map[string]*ContainerInfo, err error) crioClient {
+func mockCrioClient(info Info, containersInfo map[string]*ContainerInfo, err error) CrioClient {
 	return &crioClientMock{
 		err:            err,
 		info:           info,
