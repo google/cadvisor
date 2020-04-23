@@ -28,7 +28,7 @@ import (
 func TestHandler(t *testing.T) {
 	as := assert.New(t)
 	type testCase struct {
-		client             crioClient
+		client             CrioClient
 		name               string
 		machineInfoFactory info.MachineInfoFactory
 		fsInfo             fs.FsInfo
