@@ -249,8 +249,8 @@ func initZipKin() reporter.Reporter {
 }
 
 func getZipKinSampler() zipkin.Sampler {
-	sampler := os.Getenv("ZIPKIN_SAMPLER")
-	param := os.Getenv("ZIPKIN_SAMPLER_PARAM")
+	sampler := strings.TrimSpace(os.Getenv("ZIPKIN_SAMPLER"))
+	param := strings.TrimSpace(os.Getenv("ZIPKIN_SAMPLER_PARAM"))
 
 	klog.V(1).Infof("Zipkin sampler=%s\tparam=%s", sampler, param)
 
