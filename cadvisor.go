@@ -25,11 +25,13 @@ import (
 	"github.com/openzipkin/zipkin-go/reporter"
 	zipkinhttp "github.com/openzipkin/zipkin-go/reporter/http"
 	"github.com/pkg/errors"
+	"math/rand"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -212,7 +214,7 @@ func main() {
 	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, muxHandle))
 
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
-	klog.V(1).Infof("listen %s",addr)
+	klog.V(1).Infof("listen %s", addr)
 	klog.Fatal(http.ListenAndServe(addr, rootMux))
 }
 
@@ -223,7 +225,7 @@ func initZipKin() reporter.Reporter {
 	}
 	endPointAddr := fmt.Sprintf("%s/api/v2/spans", os.Getenv("ZIPKIN"))
 	reporter := zipkinhttp.NewReporter(endPointAddr)
-	endpoint, err := zipkin.NewEndpoint(serviceName, fmt.Sprintf("%s:%d", *argIp ,*argPort))
+	endpoint, err := zipkin.NewEndpoint(serviceName, fmt.Sprintf("%s:%d", *argIp, *argPort))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "unable to create local endpoint:"))
 		os.Exit(2)
@@ -231,9 +233,7 @@ func initZipKin() reporter.Reporter {
 
 	// initialize our tracer
 	nativeTracer, err := zipkin.NewTracer(reporter, zipkin.WithLocalEndpoint(endpoint),
-													zipkin.WithSampler(zipkin.AlwaysSample),
-	//													zipkin.WithSharedSpans(true),
-													zipkin.WithSharedSpans(false),
+													zipkin.WithSampler(getZipKinSampler()),
 													zipkin.WithTraceID128Bit(true))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "unable to create tracer:"))
@@ -246,6 +246,43 @@ func initZipKin() reporter.Reporter {
 	// optionally set as Global OpenTracing tracer instance
 	opentracing.SetGlobalTracer(tracer)
 	return reporter
+}
+
+func getZipKinSampler() zipkin.Sampler {
+	sampler := os.Getenv("ZIPKIN_SAMPLER")
+	param := os.Getenv("ZIPKIN_SAMPLER_PARAM")
+
+	if sampler == "" || strings.EqualFold(sampler, "always") {
+		return zipkin.AlwaysSample
+	} else if strings.EqualFold(sampler, "never") {
+		goto failed
+	} else if strings.EqualFold(sampler, "modulo") {
+		if modulo, err := strconv.ParseInt(param, 64, 64); err != nil {
+			goto failed
+		} else {
+			return zipkin.NewModuloSampler(uint64(modulo))
+		}
+	} else if strings.EqualFold(sampler, "counting") {
+		if rate, err := strconv.ParseFloat(param, 64); err != nil {
+			goto failed
+		} else if sampler, err := zipkin.NewCountingSampler(rate); err != nil {
+			goto failed
+		} else {
+			return sampler
+		}
+	} else if strings.EqualFold(sampler, "boundary") {
+		if rate, err := strconv.ParseFloat(param, 64); err != nil {
+			goto failed
+		} else if sampler, err := zipkin.NewBoundarySampler(rate, rand.Int63n(int64(rate))); err != nil {
+			goto failed
+		}else {
+			return sampler
+		}
+	}
+failed:
+	{
+		return zipkin.NeverSample
+	}
 }
 
 func setMaxProcs() {
