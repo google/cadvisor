@@ -14,18 +14,8 @@ jobs:
       uses: actions/setup-go@v1
       with:
         go-version: ${{ matrix.go-versions }}
-#    This is not the most elegant way of installing golangci-lint but I have filed a PR
-#    and I will fix it as soon as it's merged: https://github.com/golangci/golangci-lint/pull/1036
-#    cAdvisor has existed for a while without golint and we need to figure out how to
-#    fix issues affecting exported identifiers that are part of public API. Let's avoid breaking Kubernetes.
     - name: Install golangci-lint
-      run: |
-        go get -d github.com/golangci/golangci-lint/cmd/golangci-lint &&
-        cd $(go env GOPATH)/src/github.com/golangci/golangci-lint/ &&
-        git remote add iwankgb https://github.com/iwankgb/golangci-lint.git &&
-        git fetch iwankgb &&
-        git reset --hard iwankgb/exclude-case-sensitive &&
-        go install -i github.com/golangci/golangci-lint/cmd/golangci-lint
+      run: go get github.com/golangci/golangci-lint/cmd/golangci-lint@e2b927f0292371be798fe65268d1fd2e8c0e3087
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run golangci-lint
