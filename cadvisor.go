@@ -260,27 +260,32 @@ func getZipKinSampler() zipkin.Sampler {
 		return zipkin.NeverSample
 	} else if strings.EqualFold(sampler, "modulo") {
 		if modulo, err := strconv.ParseInt(param, 64, 64); err != nil {
+			klog.Error(err.Error())
 			goto failed
 		} else {
 			return zipkin.NewModuloSampler(uint64(modulo))
 		}
 	} else if strings.EqualFold(sampler, "counting") {
 		if rate, err := strconv.ParseFloat(param, 64); err != nil {
+			klog.Error(err.Error())
 			goto failed
 		} else if sampler, err := zipkin.NewCountingSampler(rate); err != nil {
+			klog.Error(err.Error())
 			goto failed
 		} else {
 			return sampler
 		}
 	} else if strings.EqualFold(sampler, "boundary") {
 		if rate, err := strconv.ParseFloat(param, 64); err != nil {
+			klog.Error(err.Error())
 			goto failed
 		} else if sampler, err := zipkin.NewBoundarySampler(rate, rand.Int63n(int64(rate))); err != nil {
+			klog.Error(err.Error())
 			goto failed
 		} else {
 			return sampler
 		}
-	} 
+	}
 failed:
 	{
 		klog.Errorf("unknown sampler=%s or invalid parm=%s", sampler, param)
