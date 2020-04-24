@@ -255,7 +255,7 @@ func getZipKinSampler() zipkin.Sampler {
 	klog.V(1).Infof("Zipkin sampler=%s\tparam=%s", sampler, param)
 
 failed: {
-		klog.Errorf("unknown sampler %s", sampler)
+		klog.Errorf("unknown sampler=%s or invalid parm=%s", sampler, param)
 		return zipkin.NeverSample
 	}
 
