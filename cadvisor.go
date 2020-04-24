@@ -224,11 +224,12 @@ func initZipKin() reporter.Reporter {
 		serviceName = "cadvisor"
 	}
 	endPointAddr := fmt.Sprintf("%s/api/v2/spans", os.Getenv("ZIPKIN"))
+	
+	klog.V(2).Infof("Zipkin service=%s\tendpoint=%s", serviceName, endPointAddr)
 	reporter := zipkinhttp.NewReporter(endPointAddr)
 	endpoint, err := zipkin.NewEndpoint(serviceName, fmt.Sprintf("%s:%d", *argIp, *argPort))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "unable to create local endpoint:"))
-		os.Exit(2)
+		klog.Exit(errors.Wrapf(err, "unable to create local endpoint:").Error())
 	}
 
 	// initialize our tracer
@@ -236,8 +237,7 @@ func initZipKin() reporter.Reporter {
 													zipkin.WithSampler(getZipKinSampler()),
 													zipkin.WithTraceID128Bit(true))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "unable to create tracer:"))
-		os.Exit(2)
+		klog.Exit(errors.Wrapf(err, "unable to create tracer:"))
 	}
 
 	// use zipkin-go-opentracing to wrap our tracer
@@ -251,6 +251,8 @@ func initZipKin() reporter.Reporter {
 func getZipKinSampler() zipkin.Sampler {
 	sampler := os.Getenv("ZIPKIN_SAMPLER")
 	param := os.Getenv("ZIPKIN_SAMPLER_PARAM")
+
+	klog.V(1).Infof("Zipkin sampler=%s\tparam=%s", sampler, param)
 
 	if sampler == "" || strings.EqualFold(sampler, "always") {
 		return zipkin.AlwaysSample
