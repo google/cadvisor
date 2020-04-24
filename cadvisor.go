@@ -243,7 +243,7 @@ func initZipKin() reporter.Reporter {
 	// use zipkin-go-opentracing to wrap our tracer
 	tracer := zipkinot.Wrap(nativeTracer)
 
-	// optionally set as Global OpenTracing tracer instance
+	// optionally set as Global OpenTracing tracer instancegolan
 	opentracing.SetGlobalTracer(tracer)
 	return reporter
 }
@@ -254,10 +254,15 @@ func getZipKinSampler() zipkin.Sampler {
 
 	klog.V(1).Infof("Zipkin sampler=%s\tparam=%s", sampler, param)
 
+failed: {
+		klog.Errorf("unknown sampler %s", sampler)
+		return zipkin.NeverSample
+	}
+
 	if sampler == "" || strings.EqualFold(sampler, "always") {
 		return zipkin.AlwaysSample
 	} else if strings.EqualFold(sampler, "never") {
-		goto failed
+		return zipkin.NeverSample
 	} else if strings.EqualFold(sampler, "modulo") {
 		if modulo, err := strconv.ParseInt(param, 64, 64); err != nil {
 			goto failed
@@ -280,10 +285,8 @@ func getZipKinSampler() zipkin.Sampler {
 		}else {
 			return sampler
 		}
-	}
-failed:
-	{
-		return zipkin.NeverSample
+	}else{
+		goto failed
 	}
 }
 
