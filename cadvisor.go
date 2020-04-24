@@ -224,7 +224,7 @@ func initZipKin() reporter.Reporter {
 		serviceName = "cadvisor"
 	}
 	endPointAddr := fmt.Sprintf("%s/api/v2/spans", os.Getenv("ZIPKIN"))
-	
+
 	klog.V(2).Infof("Zipkin service=%s\tendpoint=%s", serviceName, endPointAddr)
 	reporter := zipkinhttp.NewReporter(endPointAddr)
 	endpoint, err := zipkin.NewEndpoint(serviceName, fmt.Sprintf("%s:%d", *argIp, *argPort))
@@ -234,8 +234,8 @@ func initZipKin() reporter.Reporter {
 
 	// initialize our tracer
 	nativeTracer, err := zipkin.NewTracer(reporter, zipkin.WithLocalEndpoint(endpoint),
-													zipkin.WithSampler(getZipKinSampler()),
-													zipkin.WithTraceID128Bit(true))
+		zipkin.WithSampler(getZipKinSampler()),
+		zipkin.WithTraceID128Bit(true))
 	if err != nil {
 		klog.Exit(errors.Wrapf(err, "unable to create tracer:"))
 	}
@@ -253,11 +253,6 @@ func getZipKinSampler() zipkin.Sampler {
 	param := os.Getenv("ZIPKIN_SAMPLER_PARAM")
 
 	klog.V(1).Infof("Zipkin sampler=%s\tparam=%s", sampler, param)
-
-failed: {
-		klog.Errorf("unknown sampler=%s or invalid parm=%s", sampler, param)
-		return zipkin.NeverSample
-	}
 
 	if sampler == "" || strings.EqualFold(sampler, "always") {
 		return zipkin.AlwaysSample
@@ -282,11 +277,14 @@ failed: {
 			goto failed
 		} else if sampler, err := zipkin.NewBoundarySampler(rate, rand.Int63n(int64(rate))); err != nil {
 			goto failed
-		}else {
+		} else {
 			return sampler
 		}
-	}else{
-		goto failed
+	} 
+failed:
+	{
+		klog.Errorf("unknown sampler=%s or invalid parm=%s", sampler, param)
+		return zipkin.NeverSample
 	}
 }
 
