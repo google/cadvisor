@@ -35,7 +35,7 @@ func (r *OffsetCommitResponse) encode(pe packetEncoder) error {
 	return nil
 }
 
-func (r *OffsetCommitResponse) decode(pd packetDecoder) (err error) {
+func (r *OffsetCommitResponse) decode(pd packetDecoder, version int16) (err error) {
 	numTopics, err := pd.getArrayLength()
 	if err != nil || numTopics == 0 {
 		return err
@@ -70,4 +70,16 @@ func (r *OffsetCommitResponse) decode(pd packetDecoder) (err error) {
 	}
 
 	return nil
+}
+
+func (r *OffsetCommitResponse) key() int16 {
+	return 8
+}
+
+func (r *OffsetCommitResponse) version() int16 {
+	return 0
+}
+
+func (r *OffsetCommitResponse) requiredVersion() KafkaVersion {
+	return MinVersion
 }

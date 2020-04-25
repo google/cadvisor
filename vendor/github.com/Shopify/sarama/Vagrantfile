@@ -4,6 +4,7 @@
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
+# We have 5 * 192MB ZK processes and 5 * 320MB Kafka processes => 2560MB
 MEMORY = 3072
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|

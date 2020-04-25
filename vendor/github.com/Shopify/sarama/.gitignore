@@ -22,3 +22,6 @@ _cgo_export.*
 _testmain.go
 
 *.exe
+
+coverage.txt
+profile.out

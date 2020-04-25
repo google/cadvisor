@@ -16,7 +16,7 @@ func (r *LeaveGroupRequest) encode(pe packetEncoder) error {
 	return nil
 }
 
-func (r *LeaveGroupRequest) decode(pd packetDecoder) (err error) {
+func (r *LeaveGroupRequest) decode(pd packetDecoder, version int16) (err error) {
 	if r.GroupId, err = pd.getString(); err != nil {
 		return
 	}
@@ -33,4 +33,8 @@ func (r *LeaveGroupRequest) key() int16 {
 
 func (r *LeaveGroupRequest) version() int16 {
 	return 0
+}
+
+func (r *LeaveGroupRequest) requiredVersion() KafkaVersion {
+	return V0_9_0_0
 }

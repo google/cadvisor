@@ -1,5 +1,7 @@
 package sarama
 
+import "errors"
+
 // ReceiveTime is a special value for the timestamp field of Offset Commit Requests which
 // tells the broker to set the timestamp to the time at which the request was received.
 // The timestamp is only used if message version 1 is used, which requires kafka 0.8.2.
@@ -16,27 +18,27 @@ type offsetCommitRequestBlock struct {
 	metadata  string
 }
 
-func (r *offsetCommitRequestBlock) encode(pe packetEncoder, version int16) error {
-	pe.putInt64(r.offset)
+func (b *offsetCommitRequestBlock) encode(pe packetEncoder, version int16) error {
+	pe.putInt64(b.offset)
 	if version == 1 {
-		pe.putInt64(r.timestamp)
-	} else if r.timestamp != 0 {
+		pe.putInt64(b.timestamp)
+	} else if b.timestamp != 0 {
 		Logger.Println("Non-zero timestamp specified for OffsetCommitRequest not v1, it will be ignored")
 	}
 
-	return pe.putString(r.metadata)
+	return pe.putString(b.metadata)
 }
 
-func (r *offsetCommitRequestBlock) decode(pd packetDecoder, version int16) (err error) {
-	if r.offset, err = pd.getInt64(); err != nil {
+func (b *offsetCommitRequestBlock) decode(pd packetDecoder, version int16) (err error) {
+	if b.offset, err = pd.getInt64(); err != nil {
 		return err
 	}
 	if version == 1 {
-		if r.timestamp, err = pd.getInt64(); err != nil {
+		if b.timestamp, err = pd.getInt64(); err != nil {
 			return err
 		}
 	}
-	r.metadata, err = pd.getString()
+	b.metadata, err = pd.getString()
 	return err
 }
 
@@ -49,7 +51,7 @@ type OffsetCommitRequest struct {
 	// Version can be:
 	// - 0 (kafka 0.8.1 and later)
 	// - 1 (kafka 0.8.2 and later)
-	// - 2 (kafka 0.8.3 and later)
+	// - 2 (kafka 0.9.0 and later)
 	Version int16
 	blocks  map[string]map[int32]*offsetCommitRequestBlock
 }
@@ -103,7 +105,9 @@ func (r *OffsetCommitRequest) encode(pe packetEncoder) error {
 	return nil
 }
 
-func (r *OffsetCommitRequest) decode(pd packetDecoder) (err error) {
+func (r *OffsetCommitRequest) decode(pd packetDecoder, version int16) (err error) {
+	r.Version = version
+
 	if r.ConsumerGroup, err = pd.getString(); err != nil {
 		return err
 	}
@@ -164,6 +168,17 @@ func (r *OffsetCommitRequest) version() int16 {
 	return r.Version
 }
 
+func (r *OffsetCommitRequest) requiredVersion() KafkaVersion {
+	switch r.Version {
+	case 1:
+		return V0_8_2_0
+	case 2:
+		return V0_9_0_0
+	default:
+		return MinVersion
+	}
+}
+
 func (r *OffsetCommitRequest) AddBlock(topic string, partitionID int32, offset int64, timestamp int64, metadata string) {
 	if r.blocks == nil {
 		r.blocks = make(map[string]map[int32]*offsetCommitRequestBlock)
@@ -174,4 +189,16 @@ func (r *OffsetCommitRequest) AddBlock(topic string, partitionID int32, offset i
 	}
 
 	r.blocks[topic][partitionID] = &offsetCommitRequestBlock{offset, timestamp, metadata}
+}
+
+func (r *OffsetCommitRequest) Offset(topic string, partitionID int32) (int64, string, error) {
+	partitions := r.blocks[topic]
+	if partitions == nil {
+		return 0, "", errors.New("No such offset")
+	}
+	block := partitions[partitionID]
+	if block == nil {
+		return 0, "", errors.New("No such offset")
+	}
+	return block.offset, block.metadata, nil
 }

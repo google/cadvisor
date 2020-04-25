@@ -28,6 +28,7 @@ require (
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c // indirect
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7
 	github.com/go-ini/ini v1.9.0 // indirect
 	github.com/gogo/googleapis v1.3.1 // indirect

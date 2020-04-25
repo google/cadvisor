@@ -20,7 +20,7 @@ func (r *HeartbeatRequest) encode(pe packetEncoder) error {
 	return nil
 }
 
-func (r *HeartbeatRequest) decode(pd packetDecoder) (err error) {
+func (r *HeartbeatRequest) decode(pd packetDecoder, version int16) (err error) {
 	if r.GroupId, err = pd.getString(); err != nil {
 		return
 	}
@@ -40,4 +40,8 @@ func (r *HeartbeatRequest) key() int16 {
 
 func (r *HeartbeatRequest) version() int16 {
 	return 0
+}
+
+func (r *HeartbeatRequest) requiredVersion() KafkaVersion {
+	return V0_9_0_0
 }

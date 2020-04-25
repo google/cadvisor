@@ -28,7 +28,8 @@ func (r *OffsetFetchRequest) encode(pe packetEncoder) (err error) {
 	return nil
 }
 
-func (r *OffsetFetchRequest) decode(pd packetDecoder) (err error) {
+func (r *OffsetFetchRequest) decode(pd packetDecoder, version int16) (err error) {
+	r.Version = version
 	if r.ConsumerGroup, err = pd.getString(); err != nil {
 		return err
 	}
@@ -60,6 +61,15 @@ func (r *OffsetFetchRequest) key() int16 {
 
 func (r *OffsetFetchRequest) version() int16 {
 	return r.Version
+}
+
+func (r *OffsetFetchRequest) requiredVersion() KafkaVersion {
+	switch r.Version {
+	case 1:
+		return V0_8_2_0
+	default:
+		return MinVersion
+	}
 }
 
 func (r *OffsetFetchRequest) AddPartition(topic string, partitionID int32) {

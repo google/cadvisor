@@ -1,7 +1,8 @@
 language: go
 go:
-- 1.4.3
-- 1.5.3
+- 1.9.7
+- 1.10.4
+- 1.11
 
 env:
   global:
@@ -11,8 +12,9 @@ env:
   - KAFKA_HOSTNAME=localhost
   - DEBUG=true
   matrix:
-  - KAFKA_VERSION=0.8.2.2
-  - KAFKA_VERSION=0.9.0.0
+  - KAFKA_VERSION=1.0.0
+  - KAFKA_VERSION=1.1.0
+  - KAFKA_VERSION=2.0.0
 
 before_install:
 - export REPOSITORY_ROOT=${TRAVIS_BUILD_DIR}
@@ -20,13 +22,15 @@ before_install:
 - vagrant/boot_cluster.sh
 - vagrant/create_topics.sh
 
-install:
-- make install_dependencies
+install: make install_dependencies
 
 script:
 - make test
 - make vet
 - make errcheck
-- make fmt
+- if [ "$TRAVIS_GO_VERSION" = "1.11" ]; then make fmt; fi
 
-sudo: false
+after_success:
+- bash <(curl -s https://codecov.io/bash)
+
+after_script: vagrant/halt_cluster.sh

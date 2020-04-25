@@ -1,6 +1,10 @@
 package sarama
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/rcrowley/go-metrics"
+)
 
 // Encoder is the interface that wraps the basic Encode method.
 // Anything implementing Encoder can be turned into bytes using Kafka's encoding rules.
@@ -8,8 +12,8 @@ type encoder interface {
 	encode(pe packetEncoder) error
 }
 
-// Encode takes an Encoder and turns it into bytes.
-func encode(e encoder) ([]byte, error) {
+// Encode takes an Encoder and turns it into bytes while potentially recording metrics.
+func encode(e encoder, metricRegistry metrics.Registry) ([]byte, error) {
 	if e == nil {
 		return nil, nil
 	}
@@ -27,6 +31,7 @@ func encode(e encoder) ([]byte, error) {
 	}
 
 	realEnc.raw = make([]byte, prepEnc.length)
+	realEnc.registry = metricRegistry
 	err = e.encode(&realEnc)
 	if err != nil {
 		return nil, err
@@ -41,6 +46,10 @@ type decoder interface {
 	decode(pd packetDecoder) error
 }
 
+type versionedDecoder interface {
+	decode(pd packetDecoder, version int16) error
+}
+
 // Decode takes bytes and a Decoder and fills the fields of the decoder from the bytes,
 // interpreted using Kafka's encoding rules.
 func decode(buf []byte, in decoder) error {
@@ -50,6 +59,24 @@ func decode(buf []byte, in decoder) error {
 
 	helper := realDecoder{raw: buf}
 	err := in.decode(&helper)
+	if err != nil {
+		return err
+	}
+
+	if helper.off != len(buf) {
+		return PacketDecodingError{"invalid length"}
+	}
+
+	return nil
+}
+
+func versionedDecode(buf []byte, in versionedDecoder, version int16) error {
+	if buf == nil {
+		return nil
+	}
+
+	helper := realDecoder{raw: buf}
+	err := in.decode(&helper, version)
 	if err != nil {
 		return err
 	}

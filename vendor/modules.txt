@@ -10,7 +10,7 @@ github.com/Rican7/retry/jitter
 github.com/Rican7/retry/strategy
 # github.com/SeanDolphin/bqschema v0.0.0-20150424181127-f92a08f515e1
 github.com/SeanDolphin/bqschema
-# github.com/Shopify/sarama v1.8.0
+# github.com/Shopify/sarama v1.19.0
 github.com/Shopify/sarama
 # github.com/abbot/go-http-auth v0.0.0-20140618235127-c0ef4539dfab
 github.com/abbot/go-http-auth
@@ -100,9 +100,11 @@ github.com/docker/go-connections/sockets
 github.com/docker/go-connections/tlsconfig
 # github.com/docker/go-units v0.4.0
 github.com/docker/go-units
-# github.com/eapache/go-resiliency v1.0.1-0.20160104191539-b86b1ec0dd42
+# github.com/eapache/go-resiliency v1.1.0
 github.com/eapache/go-resiliency/breaker
-# github.com/eapache/queue v1.0.2
+# github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21
+github.com/eapache/go-xerial-snappy
+# github.com/eapache/queue v1.1.0
 github.com/eapache/queue
 # github.com/euank/go-kmsg-parser v2.0.0+incompatible
 github.com/euank/go-kmsg-parser/kmsgparser
@@ -125,7 +127,7 @@ github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
-# github.com/golang/snappy v0.0.0-20150730031844-723cc1e459b8
+# github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
 github.com/golang/snappy
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
@@ -137,8 +139,6 @@ github.com/influxdb/influxdb/pkg/escape
 github.com/jmespath/go-jmespath
 # github.com/karrick/godirwalk v1.7.5
 github.com/karrick/godirwalk
-# github.com/klauspost/crc32 v0.0.0-20151223135126-a3b15ae34567
-github.com/klauspost/crc32
 # github.com/konsorten/go-windows-terminal-sequences v1.0.2
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/kr/pretty v0.0.0-20140723054909-088c856450c0
@@ -202,6 +202,27 @@ github.com/opencontainers/runtime-spec/specs-go
 # github.com/opencontainers/selinux v1.3.3
 github.com/opencontainers/selinux/go-selinux
 github.com/opencontainers/selinux/go-selinux/label
+# github.com/opentracing-contrib/go-observer v0.0.0-20170622124052-a52f23424492
+github.com/opentracing-contrib/go-observer
+# github.com/opentracing-contrib/go-stdlib v0.0.0-20190519235532-cf7a6c988dc9
+github.com/opentracing-contrib/go-stdlib/nethttp
+# github.com/opentracing/opentracing-go v1.1.0
+github.com/opentracing/opentracing-go
+github.com/opentracing/opentracing-go/ext
+github.com/opentracing/opentracing-go/log
+# github.com/openzipkin-contrib/zipkin-go-opentracing v0.4.5
+github.com/openzipkin-contrib/zipkin-go-opentracing
+# github.com/openzipkin/zipkin-go v0.2.2
+github.com/openzipkin/zipkin-go
+github.com/openzipkin/zipkin-go/idgenerator
+github.com/openzipkin/zipkin-go/model
+github.com/openzipkin/zipkin-go/propagation
+github.com/openzipkin/zipkin-go/propagation/b3
+github.com/openzipkin/zipkin-go/reporter
+github.com/openzipkin/zipkin-go/reporter/http
+# github.com/pierrec/lz4 v1.0.2-0.20190131084431-473cd7ce01a1
+github.com/pierrec/lz4
+github.com/pierrec/lz4/internal/xxh32
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
@@ -223,6 +244,8 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
+# github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
+github.com/rcrowley/go-metrics
 # github.com/seccomp/libseccomp-golang v0.0.0-20150813023252-1b506fc7c24e
 github.com/seccomp/libseccomp-golang
 # github.com/sirupsen/logrus v1.4.2

@@ -18,7 +18,7 @@ func (r *DescribeGroupsResponse) encode(pe packetEncoder) error {
 	return nil
 }
 
-func (r *DescribeGroupsResponse) decode(pd packetDecoder) (err error) {
+func (r *DescribeGroupsResponse) decode(pd packetDecoder, version int16) (err error) {
 	n, err := pd.getArrayLength()
 	if err != nil {
 		return err
@@ -33,6 +33,18 @@ func (r *DescribeGroupsResponse) decode(pd packetDecoder) (err error) {
 	}
 
 	return nil
+}
+
+func (r *DescribeGroupsResponse) key() int16 {
+	return 15
+}
+
+func (r *DescribeGroupsResponse) version() int16 {
+	return 0
+}
+
+func (r *DescribeGroupsResponse) requiredVersion() KafkaVersion {
+	return V0_9_0_0
 }
 
 type GroupDescription struct {
@@ -77,11 +89,12 @@ func (gd *GroupDescription) encode(pe packetEncoder) error {
 }
 
 func (gd *GroupDescription) decode(pd packetDecoder) (err error) {
-	if kerr, err := pd.getInt16(); err != nil {
+	kerr, err := pd.getInt16()
+	if err != nil {
 		return err
-	} else {
-		gd.Err = KError(kerr)
 	}
+
+	gd.Err = KError(kerr)
 
 	if gd.GroupId, err = pd.getString(); err != nil {
 		return
@@ -159,4 +172,16 @@ func (gmd *GroupMemberDescription) decode(pd packetDecoder) (err error) {
 	}
 
 	return nil
+}
+
+func (gmd *GroupMemberDescription) GetMemberAssignment() (*ConsumerGroupMemberAssignment, error) {
+	assignment := new(ConsumerGroupMemberAssignment)
+	err := decode(gmd.MemberAssignment, assignment)
+	return assignment, err
+}
+
+func (gmd *GroupMemberDescription) GetMemberMetadata() (*ConsumerGroupMemberMetadata, error) {
+	metadata := new(ConsumerGroupMemberMetadata)
+	err := decode(gmd.MemberMetadata, metadata)
+	return metadata, err
 }

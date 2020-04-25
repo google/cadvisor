@@ -1,0 +1,16 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/openzipkin/zipkin-go
+    parallelism: 1
+    docker:
+      - image: circleci/golang
+    steps:
+      - checkout
+      - run: echo 'deb http://www.rabbitmq.com/debian/ testing main' | sudo tee /etc/apt/sources.list.d/rabbitmq.list
+      - run: wget -O- https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | sudo apt-key add -
+      - run: sudo apt-get update
+      - run: sudo apt-get install rabbitmq-server
+      - run: sudo service rabbitmq-server start
+      - run: go get -t -v -d ./...
+      - run: make vet test bench

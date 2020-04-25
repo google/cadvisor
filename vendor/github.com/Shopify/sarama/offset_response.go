@@ -1,33 +1,60 @@
 package sarama
 
 type OffsetResponseBlock struct {
-	Err     KError
-	Offsets []int64
+	Err       KError
+	Offsets   []int64 // Version 0
+	Offset    int64   // Version 1
+	Timestamp int64   // Version 1
 }
 
-func (r *OffsetResponseBlock) decode(pd packetDecoder) (err error) {
+func (b *OffsetResponseBlock) decode(pd packetDecoder, version int16) (err error) {
 	tmp, err := pd.getInt16()
 	if err != nil {
 		return err
 	}
-	r.Err = KError(tmp)
+	b.Err = KError(tmp)
 
-	r.Offsets, err = pd.getInt64Array()
+	if version == 0 {
+		b.Offsets, err = pd.getInt64Array()
 
-	return err
+		return err
+	}
+
+	b.Timestamp, err = pd.getInt64()
+	if err != nil {
+		return err
+	}
+
+	b.Offset, err = pd.getInt64()
+	if err != nil {
+		return err
+	}
+
+	// For backwards compatibility put the offset in the offsets array too
+	b.Offsets = []int64{b.Offset}
+
+	return nil
 }
 
-func (r *OffsetResponseBlock) encode(pe packetEncoder) (err error) {
-	pe.putInt16(int16(r.Err))
+func (b *OffsetResponseBlock) encode(pe packetEncoder, version int16) (err error) {
+	pe.putInt16(int16(b.Err))
 
-	return pe.putInt64Array(r.Offsets)
+	if version == 0 {
+		return pe.putInt64Array(b.Offsets)
+	}
+
+	pe.putInt64(b.Timestamp)
+	pe.putInt64(b.Offset)
+
+	return nil
 }
 
 type OffsetResponse struct {
-	Blocks map[string]map[int32]*OffsetResponseBlock
+	Version int16
+	Blocks  map[string]map[int32]*OffsetResponseBlock
 }
 
-func (r *OffsetResponse) decode(pd packetDecoder) (err error) {
+func (r *OffsetResponse) decode(pd packetDecoder, version int16) (err error) {
 	numTopics, err := pd.getArrayLength()
 	if err != nil {
 		return err
@@ -54,7 +81,7 @@ func (r *OffsetResponse) decode(pd packetDecoder) (err error) {
 			}
 
 			block := new(OffsetResponseBlock)
-			err = block.decode(pd)
+			err = block.decode(pd, version)
 			if err != nil {
 				return err
 			}
@@ -106,13 +133,30 @@ func (r *OffsetResponse) encode(pe packetEncoder) (err error) {
 		}
 		for partition, block := range partitions {
 			pe.putInt32(partition)
-			if err = block.encode(pe); err != nil {
+			if err = block.encode(pe, r.version()); err != nil {
 				return err
 			}
 		}
 	}
 
 	return nil
+}
+
+func (r *OffsetResponse) key() int16 {
+	return 2
+}
+
+func (r *OffsetResponse) version() int16 {
+	return r.Version
+}
+
+func (r *OffsetResponse) requiredVersion() KafkaVersion {
+	switch r.Version {
+	case 1:
+		return V0_10_1_0
+	default:
+		return MinVersion
+	}
 }
 
 // testing API
@@ -126,5 +170,5 @@ func (r *OffsetResponse) AddTopicPartition(topic string, partition int32, offset
 		byTopic = make(map[int32]*OffsetResponseBlock)
 		r.Blocks[topic] = byTopic
 	}
-	byTopic[partition] = &OffsetResponseBlock{Offsets: []int64{offset}}
+	byTopic[partition] = &OffsetResponseBlock{Offsets: []int64{offset}, Offset: offset}
 }

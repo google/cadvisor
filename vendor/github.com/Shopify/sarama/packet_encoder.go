@@ -1,5 +1,7 @@
 package sarama
 
+import "github.com/rcrowley/go-metrics"
+
 // PacketEncoder is the interface providing helpers for writing with Kafka's encoding rules.
 // Types implementing Encoder only need to worry about calling methods like PutString,
 // not about how a string is represented in Kafka.
@@ -9,19 +11,29 @@ type packetEncoder interface {
 	putInt16(in int16)
 	putInt32(in int32)
 	putInt64(in int64)
+	putVarint(in int64)
 	putArrayLength(in int) error
+	putBool(in bool)
 
 	// Collections
 	putBytes(in []byte) error
+	putVarintBytes(in []byte) error
 	putRawBytes(in []byte) error
 	putString(in string) error
+	putNullableString(in *string) error
 	putStringArray(in []string) error
 	putInt32Array(in []int32) error
 	putInt64Array(in []int64) error
 
+	// Provide the current offset to record the batch size metric
+	offset() int
+
 	// Stacks, see PushEncoder
 	push(in pushEncoder)
 	pop() error
+
+	// To record metrics when provided
+	metricRegistry() metrics.Registry
 }
 
 // PushEncoder is the interface for encoding fields like CRCs and lengths where the value
@@ -39,4 +51,15 @@ type pushEncoder interface {
 	// SaveOffset is guaranteed to have been called first. The implementation should write ReserveLength() bytes
 	// of data to the saved offset, based on the data between the saved offset and curOffset.
 	run(curOffset int, buf []byte) error
+}
+
+// dynamicPushEncoder extends the interface of pushEncoder for uses cases where the length of the
+// fields itself is unknown until its value was computed (for instance varint encoded length
+// fields).
+type dynamicPushEncoder interface {
+	pushEncoder
+
+	// Called during pop() to adjust the length of the field.
+	// It should return the difference in bytes between the last computed length and current length.
+	adjustLength(currOffset int) int
 }

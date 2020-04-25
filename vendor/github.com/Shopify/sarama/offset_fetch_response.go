@@ -6,13 +6,13 @@ type OffsetFetchResponseBlock struct {
 	Err      KError
 }
 
-func (r *OffsetFetchResponseBlock) decode(pd packetDecoder) (err error) {
-	r.Offset, err = pd.getInt64()
+func (b *OffsetFetchResponseBlock) decode(pd packetDecoder) (err error) {
+	b.Offset, err = pd.getInt64()
 	if err != nil {
 		return err
 	}
 
-	r.Metadata, err = pd.getString()
+	b.Metadata, err = pd.getString()
 	if err != nil {
 		return err
 	}
@@ -21,20 +21,20 @@ func (r *OffsetFetchResponseBlock) decode(pd packetDecoder) (err error) {
 	if err != nil {
 		return err
 	}
-	r.Err = KError(tmp)
+	b.Err = KError(tmp)
 
 	return nil
 }
 
-func (r *OffsetFetchResponseBlock) encode(pe packetEncoder) (err error) {
-	pe.putInt64(r.Offset)
+func (b *OffsetFetchResponseBlock) encode(pe packetEncoder) (err error) {
+	pe.putInt64(b.Offset)
 
-	err = pe.putString(r.Metadata)
+	err = pe.putString(b.Metadata)
 	if err != nil {
 		return err
 	}
 
-	pe.putInt16(int16(r.Err))
+	pe.putInt16(int16(b.Err))
 
 	return nil
 }
@@ -64,7 +64,7 @@ func (r *OffsetFetchResponse) encode(pe packetEncoder) error {
 	return nil
 }
 
-func (r *OffsetFetchResponse) decode(pd packetDecoder) (err error) {
+func (r *OffsetFetchResponse) decode(pd packetDecoder, version int16) (err error) {
 	numTopics, err := pd.getArrayLength()
 	if err != nil || numTopics == 0 {
 		return err
@@ -104,6 +104,18 @@ func (r *OffsetFetchResponse) decode(pd packetDecoder) (err error) {
 	}
 
 	return nil
+}
+
+func (r *OffsetFetchResponse) key() int16 {
+	return 9
+}
+
+func (r *OffsetFetchResponse) version() int16 {
+	return 0
+}
+
+func (r *OffsetFetchResponse) requiredVersion() KafkaVersion {
+	return MinVersion
 }
 
 func (r *OffsetFetchResponse) GetBlock(topic string, partition int32) *OffsetFetchResponseBlock {
