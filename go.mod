@@ -5,7 +5,12 @@ go 1.13
 require (
 	cloud.google.com/go v0.26.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
-	github.com/Microsoft/go-winio v0.4.15-0.20190919025122-fc70bd9a86b5 // indirect
+	github.com/Microsoft/hcsshim v0.8.7 // indirect
+	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/Rican7/retry v0.1.1-0.20160712041035-272ad122d6e5
+	github.com/SeanDolphin/bqschema v0.0.0-20150424181127-f92a08f515e1
+	github.com/Shopify/sarama v1.19.0
+	github.com/abbot/go-http-auth v0.0.0-20140618235127-c0ef4539dfab
 	github.com/aws/aws-sdk-go v1.6.10
 	github.com/blang/semver v3.1.0+incompatible
 	github.com/checkpoint-restore/go-criu v0.0.0-20190109184317-bdb7599cd87b // indirect
@@ -14,19 +19,21 @@ require (
 	github.com/containerd/containerd v1.3.3
 	github.com/containerd/ttrpc v1.0.0 // indirect
 	github.com/containerd/typeurl v1.0.0
-	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/cyphar/filepath-securejoin v0.2.2-0.20170720062807-ae69057f2299 // indirect
 	github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible // indirect
 	github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0
 	github.com/docker/go-connections v0.3.0
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
+	github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7
 	github.com/go-ini/ini v1.9.0 // indirect
-	github.com/godbus/dbus v0.0.0-20190422162347-ade71ed3457e // indirect
 	github.com/gogo/protobuf v1.3.1
+	github.com/golang/groupcache v0.0.0-20191227052852-215e87163ea7 // indirect
 	github.com/google/go-cmp v0.3.1
 	github.com/google/uuid v1.1.1 // indirect
-	github.com/gorilla/mux v1.7.3 // indirect
+	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
+	github.com/hashicorp/golang-lru v0.5.3 // indirect
+	github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/karrick/godirwalk v1.7.5
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
@@ -40,11 +47,15 @@ require (
 	github.com/opencontainers/runc v1.0.0-rc10
 	github.com/opencontainers/runtime-spec v1.0.2
 	github.com/opencontainers/selinux v1.3.3 // indirect
+	github.com/opentracing-contrib/go-stdlib v0.0.0-20190519235532-cf7a6c988dc9
+	github.com/opentracing/opentracing-go v1.1.0
+	github.com/openzipkin-contrib/zipkin-go-opentracing v0.4.5
+	github.com/openzipkin/zipkin-go v0.2.2
+	github.com/pborman/uuid v0.0.0-20150824212802-cccd189d45f7 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.0.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.4.1
-	github.com/prometheus/procfs v0.0.5 // indirect
 	github.com/seccomp/libseccomp-golang v0.0.0-20150813023252-1b506fc7c24e // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.4.0
@@ -56,7 +67,6 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/genproto v0.0.0-20191230161307-f3c370f40bfb // indirect
 	google.golang.org/grpc v1.26.0
-	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/klog/v2 v2.0.0
 	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66
 )

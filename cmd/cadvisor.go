@@ -18,11 +18,21 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/opentracing-contrib/go-stdlib/nethttp"
+	opentracing "github.com/opentracing/opentracing-go"
+	zipkinot "github.com/openzipkin-contrib/zipkin-go-opentracing"
+	"github.com/openzipkin/zipkin-go"
+	"github.com/openzipkin/zipkin-go/reporter"
+	zipkinhttp "github.com/openzipkin/zipkin-go/reporter/http"
+	"github.com/pkg/errors"
+	"k8s.io/klog"
+	"math/rand"
 	"net/http"
 	"net/http/pprof"
 	"os"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -145,6 +155,10 @@ func main() {
 	defer klog.Flush()
 	flag.Parse()
 
+	if os.Getenv("ZIPKIN") != "" {
+		reporter := initZipKin()
+		defer reporter.Close()
+	}
 	if *versionFlag {
 		fmt.Printf("cAdvisor version %s (%s)\n", version.Info["version"], version.Info["revision"])
 		os.Exit(0)
@@ -192,6 +206,10 @@ func main() {
 	// Register Prometheus collector to gather information about containers, Go runtime, processes, and machine
 	cadvisorhttp.RegisterPrometheusHandler(mux, resourceManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)
 
+	muxHandle := nethttp.Middleware(opentracing.GlobalTracer(), mux, nethttp.OperationNameFunc(func(r *http.Request) string {
+		return "cadvisor"
+	}))
+
 	// Start the manager.
 	if err := resourceManager.Start(); err != nil {
 		klog.Fatalf("Failed to start manager: %v", err)
@@ -203,10 +221,86 @@ func main() {
 	klog.V(1).Infof("Starting cAdvisor version: %s-%s on port %d", version.Info["version"], version.Info["revision"], *argPort)
 
 	rootMux := http.NewServeMux()
-	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, mux))
+	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, muxHandle))
 
 	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
+	klog.V(1).Infof("listen %s", addr)
 	klog.Fatal(http.ListenAndServe(addr, rootMux))
+}
+
+func initZipKin() reporter.Reporter {
+	serviceName := os.Getenv("ZIPKIN_SERVICE")
+	if serviceName == "" {
+		serviceName = "cadvisor"
+	}
+	endPointAddr := fmt.Sprintf("%s/api/v2/spans", os.Getenv("ZIPKIN"))
+
+	klog.V(2).Infof("Zipkin service=%s\tendpoint=%s", serviceName, endPointAddr)
+	reporter := zipkinhttp.NewReporter(endPointAddr)
+	endpoint, err := zipkin.NewEndpoint(serviceName, fmt.Sprintf("%s:%d", *argIp, *argPort))
+	if err != nil {
+		klog.Exit(errors.Wrapf(err, "unable to create local endpoint:").Error())
+	}
+
+	// initialize our tracer
+	nativeTracer, err := zipkin.NewTracer(reporter, zipkin.WithLocalEndpoint(endpoint),
+		zipkin.WithSampler(getZipKinSampler()),
+		zipkin.WithTraceID128Bit(true))
+	if err != nil {
+		klog.Exit(errors.Wrapf(err, "unable to create tracer:"))
+	}
+
+	// use zipkin-go-opentracing to wrap our tracer
+	tracer := zipkinot.Wrap(nativeTracer)
+
+	// optionally set as Global OpenTracing tracer instancegolan
+	opentracing.SetGlobalTracer(tracer)
+	return reporter
+}
+
+func getZipKinSampler() zipkin.Sampler {
+	sampler := strings.TrimSpace(os.Getenv("ZIPKIN_SAMPLER"))
+	param := strings.TrimSpace(os.Getenv("ZIPKIN_SAMPLER_PARAM"))
+
+	klog.V(1).Infof("Zipkin sampler=%s\tparam=%s", sampler, param)
+
+	if sampler == "" || strings.EqualFold(sampler, "always") {
+		return zipkin.AlwaysSample
+	} else if strings.EqualFold(sampler, "never") {
+		return zipkin.NeverSample
+	} else if strings.EqualFold(sampler, "modulo") {
+		if modulo, err := strconv.ParseInt(param, 64, 64); err != nil {
+			klog.Error(err.Error())
+			goto failed
+		} else {
+			return zipkin.NewModuloSampler(uint64(modulo))
+		}
+	} else if strings.EqualFold(sampler, "counting") {
+		if rate, err := strconv.ParseFloat(param, 64); err != nil {
+			klog.Error(err.Error())
+			goto failed
+		} else if sampler, err := zipkin.NewCountingSampler(rate); err != nil {
+			klog.Error(err.Error())
+			goto failed
+		} else {
+			return sampler
+		}
+	} else if strings.EqualFold(sampler, "boundary") {
+		if rate, err := strconv.ParseFloat(param, 64); err != nil {
+			klog.Error(err.Error())
+			goto failed
+		} else if sampler, err := zipkin.NewBoundarySampler(rate, rand.Int63n(int64(rate))); err != nil {
+			klog.Error(err.Error())
+			goto failed
+		} else {
+			return sampler
+		}
+	}
+failed:
+	{
+		klog.Errorf("unknown sampler=%s or invalid parm=%s", sampler, param)
+		return zipkin.NeverSample
+	}
 }
 
 func setMaxProcs() {
