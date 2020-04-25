@@ -25,7 +25,7 @@ import (
 	"github.com/openzipkin/zipkin-go/reporter"
 	zipkinhttp "github.com/openzipkin/zipkin-go/reporter/http"
 	"github.com/pkg/errors"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	"math/rand"
 	"net/http"
 	"net/http/pprof"
@@ -51,8 +51,6 @@ import (
 	_ "github.com/google/cadvisor/utils/cloudinfo/aws"
 	_ "github.com/google/cadvisor/utils/cloudinfo/azure"
 	_ "github.com/google/cadvisor/utils/cloudinfo/gce"
-
-	"k8s.io/klog/v2"
 )
 
 var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
