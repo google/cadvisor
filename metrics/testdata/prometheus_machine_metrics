@@ -1,50 +1,50 @@
 # HELP machine_cpu_cache_capacity_bytes Cache size in bytes assigned to NUMA node and CPU core.
 # TYPE machine_cpu_cache_capacity_bytes gauge
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="",level="3",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 8.388608e+06
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="0",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Data"} 32768
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="0",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Instruction"} 32768
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="0",level="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Unified"} 262144
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="1",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Data"} 32764
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="1",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Instruction"} 32764
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="1",level="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Unified"} 262148
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="2",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Data"} 32768
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="2",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Instruction"} 32768
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="2",level="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Unified"} 262144
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="3",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Data"} 32764
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="3",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Instruction"} 32764
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="3",level="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Unified"} 262148
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="4",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Data"} 32768
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="4",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Instruction"} 32768
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="4",level="2",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 262144
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="5",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Data"} 32764
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="5",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Instruction"} 32764
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="5",level="2",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 262148
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="6",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Data"} 32768
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="6",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Instruction"} 32768
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="6",level="2",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 262144
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="7",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Data"} 32764
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="7",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Instruction"} 32764
-machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="7",level="2",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 262148
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="",level="3",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 8.388608e+06 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="0",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Data"} 32768 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="0",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Instruction"} 32768 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="0",level="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Unified"} 262144 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="1",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Data"} 32764 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="1",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Instruction"} 32764 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="1",level="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Unified"} 262148 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="2",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Data"} 32768 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="2",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Instruction"} 32768 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="2",level="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Unified"} 262144 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="3",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Data"} 32764 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="3",level="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Instruction"} 32764 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="3",level="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",type="Unified"} 262148 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="4",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Data"} 32768 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="4",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Instruction"} 32768 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="4",level="2",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 262144 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="5",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Data"} 32764 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="5",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Instruction"} 32764 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="5",level="2",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 262148 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="6",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Data"} 32768 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="6",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Instruction"} 32768 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="6",level="2",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 262144 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="7",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Data"} 32764 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="7",level="1",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Instruction"} 32764 1395066363000
+machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="7",level="2",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",type="Unified"} 262148 1395066363000
 # HELP machine_cpu_cores Number of logical CPU cores.
 # TYPE machine_cpu_cores gauge
-machine_cpu_cores{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 4
+machine_cpu_cores{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 4 1395066363000
 # HELP machine_cpu_physical_cores Number of physical CPU cores.
 # TYPE machine_cpu_physical_cores gauge
-machine_cpu_physical_cores{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1
+machine_cpu_physical_cores{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1 1395066363000
 # HELP machine_cpu_sockets Number of CPU sockets.
 # TYPE machine_cpu_sockets gauge
-machine_cpu_sockets{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1
+machine_cpu_sockets{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1 1395066363000
 # HELP machine_dimm_capacity_bytes Total RAM DIMM capacity (all types memory modules) value labeled by dimm type.
 # TYPE machine_dimm_capacity_bytes gauge
-machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Non-volatile-RAM"} 2.168421613568e+12
-machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Unbuffered-DDR4"} 4.12316860416e+11
+machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Non-volatile-RAM"} 2.168421613568e+12 1395066363000
+machine_dimm_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Unbuffered-DDR4"} 4.12316860416e+11 1395066363000
 # HELP machine_dimm_count Number of RAM DIMM (all types memory modules) value labeled by dimm type.
 # TYPE machine_dimm_count gauge
-machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Non-volatile-RAM"} 8
-machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Unbuffered-DDR4"} 12
+machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Non-volatile-RAM"} 8 1395066363000
+machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test",type="Unbuffered-DDR4"} 12 1395066363000
 # HELP machine_memory_bytes Amount of memory installed on the machine.
 # TYPE machine_memory_bytes gauge
-machine_memory_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1024
+machine_memory_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1024 1395066363000
 # HELP machine_node_hugepages_count Numer of hugepages assigned to NUMA node.
 # TYPE machine_node_hugepages_count gauge
 machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",page_size="1048576",system_uuid="system-uuid-test"} 0 1395066363000
@@ -53,33 +53,33 @@ machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test"
 machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",page_size="2048",system_uuid="system-uuid-test"} 4 1395066363000
 # HELP machine_node_memory_capacity_bytes Amount of memory assigned to NUMA node.
 # TYPE machine_node_memory_capacity_bytes gauge
-machine_node_memory_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test"} 3.3604804608e+10
-machine_node_memory_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test"} 3.3604804606e+10
+machine_node_memory_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test"} 3.3604804608e+10 1395066363000
+machine_node_memory_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test"} 3.3604804606e+10 1395066363000
 # HELP machine_nvm_avg_power_budget_watts NVM power budget.
 # TYPE machine_nvm_avg_power_budget_watts gauge
-machine_nvm_avg_power_budget_watts{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 0
+machine_nvm_avg_power_budget_watts{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 0 1395066363000
 # HELP machine_nvm_capacity NVM capacity value labeled by NVM mode (memory mode or app direct mode).
 # TYPE machine_nvm_capacity gauge
-machine_nvm_capacity{boot_id="boot-id-test",machine_id="machine-id-test",mode="app_direct_mode",system_uuid="system-uuid-test"} 1.735166787584e+12
-machine_nvm_capacity{boot_id="boot-id-test",machine_id="machine-id-test",mode="memory_mode",system_uuid="system-uuid-test"} 4.294967296e+11
+machine_nvm_capacity{boot_id="boot-id-test",machine_id="machine-id-test",mode="app_direct_mode",system_uuid="system-uuid-test"} 1.735166787584e+12 1395066363000
+machine_nvm_capacity{boot_id="boot-id-test",machine_id="machine-id-test",mode="memory_mode",system_uuid="system-uuid-test"} 4.294967296e+11 1395066363000
 # HELP machine_scrape_error 1 if there was an error while getting machine metrics, 0 otherwise.
 # TYPE machine_scrape_error gauge
 machine_scrape_error 0
 # HELP machine_thread_siblings_count Number of CPU thread siblings.
 # TYPE machine_thread_siblings_count gauge
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="0",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="0"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="0",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="1"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="2"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="3"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="4"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="5"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="3",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="6"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="3",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="7"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="4",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="8"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="4",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="9"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="5",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="10"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="5",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="11"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="6",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="12"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="6",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="13"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="7",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="14"} 2
-machine_thread_siblings_count{boot_id="boot-id-test",core_id="7",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="15"} 2
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="0",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="0"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="0",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="1"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="2"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="1",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="3"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="4"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="2",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="5"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="3",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="6"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="3",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="7"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="4",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="8"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="4",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="9"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="5",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="10"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="5",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="11"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="6",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="12"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="6",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="13"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="7",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="14"} 2 1395066363000
+machine_thread_siblings_count{boot_id="boot-id-test",core_id="7",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",thread_id="15"} 2 1395066363000

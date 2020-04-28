@@ -80,7 +80,7 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				help:      "Number of physical CPU cores.",
 				valueType: prometheus.GaugeValue,
 				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return metricValues{{value: float64(machineInfo.NumPhysicalCores)}}
+					return metricValues{{value: float64(machineInfo.NumPhysicalCores), timestamp: machineInfo.Timestamp}}
 				},
 			},
 			{
@@ -88,7 +88,7 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				help:      "Number of logical CPU cores.",
 				valueType: prometheus.GaugeValue,
 				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return metricValues{{value: float64(machineInfo.NumCores)}}
+					return metricValues{{value: float64(machineInfo.NumCores), timestamp: machineInfo.Timestamp}}
 				},
 			},
 			{
@@ -96,7 +96,7 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				help:      "Number of CPU sockets.",
 				valueType: prometheus.GaugeValue,
 				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return metricValues{{value: float64(machineInfo.NumSockets)}}
+					return metricValues{{value: float64(machineInfo.NumSockets), timestamp: machineInfo.Timestamp}}
 				},
 			},
 			{
@@ -140,7 +140,7 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				help:      "Amount of memory installed on the machine.",
 				valueType: prometheus.GaugeValue,
 				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return metricValues{{value: float64(machineInfo.MemoryCapacity)}}
+					return metricValues{{value: float64(machineInfo.MemoryCapacity), timestamp: machineInfo.Timestamp}}
 				},
 			},
 			{
@@ -170,8 +170,8 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				extraLabels: []string{prometheusModeLabelName},
 				getValues: func(machineInfo *info.MachineInfo) metricValues {
 					return metricValues{
-						{value: float64(machineInfo.NVMInfo.MemoryModeCapacity), labels: []string{nvmMemoryMode}},
-						{value: float64(machineInfo.NVMInfo.AppDirectModeCapacity), labels: []string{nvmAppDirectMode}},
+						{value: float64(machineInfo.NVMInfo.MemoryModeCapacity), labels: []string{nvmMemoryMode}, timestamp: machineInfo.Timestamp},
+						{value: float64(machineInfo.NVMInfo.AppDirectModeCapacity), labels: []string{nvmAppDirectMode}, timestamp: machineInfo.Timestamp},
 					}
 				},
 			},
@@ -180,7 +180,7 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				help:      "NVM power budget.",
 				valueType: prometheus.GaugeValue,
 				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return metricValues{{value: float64(machineInfo.NVMInfo.AvgPowerBudget)}}
+					return metricValues{{value: float64(machineInfo.NVMInfo.AvgPowerBudget), timestamp: machineInfo.Timestamp}}
 				},
 			},
 		},
@@ -253,7 +253,7 @@ func getMemoryByType(machineInfo *info.MachineInfo, property string) metricValue
 			klog.Warningf("Incorrect propery name for MemoryByType, property %s", property)
 			return metricValues{}
 		}
-		mValues = append(mValues, metricValue{value: propertyValue, labels: []string{memoryType}})
+		mValues = append(mValues, metricValue{value: propertyValue, labels: []string{memoryType}, timestamp: machineInfo.Timestamp})
 	}
 	return mValues
 }
@@ -270,8 +270,9 @@ func getThreadsSiblingsCount(machineInfo *info.MachineInfo) metricValues {
 			for _, thread := range core.Threads {
 				mValues = append(mValues,
 					metricValue{
-						value:  float64(siblingsCount),
-						labels: []string{nodeID, coreID, strconv.Itoa(thread)},
+						value:     float64(siblingsCount),
+						labels:    []string{nodeID, coreID, strconv.Itoa(thread)},
+						timestamp: machineInfo.Timestamp,
 					})
 			}
 		}
@@ -285,8 +286,9 @@ func getNodeMemory(machineInfo *info.MachineInfo) metricValues {
 		nodeID := strconv.Itoa(node.Id)
 		mValues = append(mValues,
 			metricValue{
-				value:  float64(node.Memory),
-				labels: []string{nodeID},
+				value:     float64(node.Memory),
+				labels:    []string{nodeID},
+				timestamp: machineInfo.Timestamp,
 			})
 	}
 	return mValues
@@ -320,8 +322,9 @@ func getCaches(machineInfo *info.MachineInfo) metricValues {
 			for _, cache := range core.Caches {
 				mValues = append(mValues,
 					metricValue{
-						value:  float64(cache.Size),
-						labels: []string{nodeID, coreID, cache.Type, strconv.Itoa(cache.Level)},
+						value:     float64(cache.Size),
+						labels:    []string{nodeID, coreID, cache.Type, strconv.Itoa(cache.Level)},
+						timestamp: machineInfo.Timestamp,
 					})
 			}
 		}
@@ -329,8 +332,9 @@ func getCaches(machineInfo *info.MachineInfo) metricValues {
 		for _, cache := range node.Caches {
 			mValues = append(mValues,
 				metricValue{
-					value:  float64(cache.Size),
-					labels: []string{nodeID, emptyLabelValue, cache.Type, strconv.Itoa(cache.Level)},
+					value:     float64(cache.Size),
+					labels:    []string{nodeID, emptyLabelValue, cache.Type, strconv.Itoa(cache.Level)},
+					timestamp: machineInfo.Timestamp,
 				})
 		}
 	}

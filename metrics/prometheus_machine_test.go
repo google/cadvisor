@@ -99,31 +99,31 @@ func TestGetCaches(t *testing.T) {
 
 	assert.Equal(t, 25, len(metricVals))
 	expectedMetricVals := []metricValue{
-		{value: 32768, labels: []string{"0", "0", "Data", "1"}},
-		{value: 32768, labels: []string{"0", "0", "Instruction", "1"}},
-		{value: 262144, labels: []string{"0", "0", "Unified", "2"}},
-		{value: 32764, labels: []string{"0", "1", "Data", "1"}},
-		{value: 32764, labels: []string{"0", "1", "Instruction", "1"}},
-		{value: 262148, labels: []string{"0", "1", "Unified", "2"}},
-		{value: 32768, labels: []string{"0", "2", "Data", "1"}},
-		{value: 32768, labels: []string{"0", "2", "Instruction", "1"}},
-		{value: 262144, labels: []string{"0", "2", "Unified", "2"}},
-		{value: 32764, labels: []string{"0", "3", "Data", "1"}},
-		{value: 32764, labels: []string{"0", "3", "Instruction", "1"}},
-		{value: 262148, labels: []string{"0", "3", "Unified", "2"}},
-		{value: 32768, labels: []string{"1", "4", "Data", "1"}},
-		{value: 32768, labels: []string{"1", "4", "Instruction", "1"}},
-		{value: 262144, labels: []string{"1", "4", "Unified", "2"}},
-		{value: 32764, labels: []string{"1", "5", "Data", "1"}},
-		{value: 32764, labels: []string{"1", "5", "Instruction", "1"}},
-		{value: 262148, labels: []string{"1", "5", "Unified", "2"}},
-		{value: 32768, labels: []string{"1", "6", "Data", "1"}},
-		{value: 32768, labels: []string{"1", "6", "Instruction", "1"}},
-		{value: 262144, labels: []string{"1", "6", "Unified", "2"}},
-		{value: 32764, labels: []string{"1", "7", "Data", "1"}},
-		{value: 32764, labels: []string{"1", "7", "Instruction", "1"}},
-		{value: 262148, labels: []string{"1", "7", "Unified", "2"}},
-		{value: 8388608, labels: []string{"1", "", "Unified", "3"}},
+		{value: 32768, labels: []string{"0", "0", "Data", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32768, labels: []string{"0", "0", "Instruction", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 262144, labels: []string{"0", "0", "Unified", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32764, labels: []string{"0", "1", "Data", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32764, labels: []string{"0", "1", "Instruction", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 262148, labels: []string{"0", "1", "Unified", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32768, labels: []string{"0", "2", "Data", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32768, labels: []string{"0", "2", "Instruction", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 262144, labels: []string{"0", "2", "Unified", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32764, labels: []string{"0", "3", "Data", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32764, labels: []string{"0", "3", "Instruction", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 262148, labels: []string{"0", "3", "Unified", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32768, labels: []string{"1", "4", "Data", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32768, labels: []string{"1", "4", "Instruction", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 262144, labels: []string{"1", "4", "Unified", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32764, labels: []string{"1", "5", "Data", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32764, labels: []string{"1", "5", "Instruction", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 262148, labels: []string{"1", "5", "Unified", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32768, labels: []string{"1", "6", "Data", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32768, labels: []string{"1", "6", "Instruction", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 262144, labels: []string{"1", "6", "Unified", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32764, labels: []string{"1", "7", "Data", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 32764, labels: []string{"1", "7", "Instruction", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 262148, labels: []string{"1", "7", "Unified", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 8388608, labels: []string{"1", "", "Unified", "3"}, timestamp: time.Unix(1395066363, 0)},
 	}
 	assertMetricValues(t, expectedMetricVals, metricVals, "Unexpected information about Node memory")
 }
@@ -136,22 +136,22 @@ func TestGetThreadsSiblingsCount(t *testing.T) {
 
 	assert.Equal(t, 16, len(metricVals))
 	expectedMetricVals := []metricValue{
-		{value: 2, labels: []string{"0", "0", "0"}},
-		{value: 2, labels: []string{"0", "0", "1"}},
-		{value: 2, labels: []string{"0", "1", "2"}},
-		{value: 2, labels: []string{"0", "1", "3"}},
-		{value: 2, labels: []string{"0", "2", "4"}},
-		{value: 2, labels: []string{"0", "2", "5"}},
-		{value: 2, labels: []string{"0", "3", "6"}},
-		{value: 2, labels: []string{"0", "3", "7"}},
-		{value: 2, labels: []string{"1", "4", "8"}},
-		{value: 2, labels: []string{"1", "4", "9"}},
-		{value: 2, labels: []string{"1", "5", "10"}},
-		{value: 2, labels: []string{"1", "5", "11"}},
-		{value: 2, labels: []string{"1", "6", "12"}},
-		{value: 2, labels: []string{"1", "6", "13"}},
-		{value: 2, labels: []string{"1", "7", "14"}},
-		{value: 2, labels: []string{"1", "7", "15"}},
+		{value: 2, labels: []string{"0", "0", "0"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"0", "0", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"0", "1", "2"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"0", "1", "3"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"0", "2", "4"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"0", "2", "5"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"0", "3", "6"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"0", "3", "7"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"1", "4", "8"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"1", "4", "9"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"1", "5", "10"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"1", "5", "11"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"1", "6", "12"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"1", "6", "13"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"1", "7", "14"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 2, labels: []string{"1", "7", "15"}, timestamp: time.Unix(1395066363, 0)},
 	}
 	assertMetricValues(t, expectedMetricVals, metricVals, "Unexpected information about CPU threads")
 }
@@ -164,8 +164,8 @@ func TestGetNodeMemory(t *testing.T) {
 
 	assert.Equal(t, 2, len(metricVals))
 	expectedMetricVals := []metricValue{
-		{value: 33604804608, labels: []string{"0"}},
-		{value: 33604804606, labels: []string{"1"}},
+		{value: 33604804608, labels: []string{"0"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 33604804606, labels: []string{"1"}, timestamp: time.Unix(1395066363, 0)},
 	}
 	assertMetricValues(t, expectedMetricVals, metricVals, "Unexpected information about Node memory")
 }
