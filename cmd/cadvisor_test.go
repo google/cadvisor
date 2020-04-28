@@ -46,6 +46,12 @@ func TestReferencedMemoryMetricsIsDisabledByDefault(t *testing.T) {
 	assert.True(t, ignoreMetrics.Has(container.ReferencedMemoryMetrics))
 }
 
+func TestCPUTopologyMetricsAreDisabledByDefault(t *testing.T) {
+	assert.True(t, ignoreMetrics.Has(container.CPUTopologyMetrics))
+	flag.Parse()
+	assert.True(t, ignoreMetrics.Has(container.CPUTopologyMetrics))
+}
+
 func TestIgnoreMetrics(t *testing.T) {
 	tests := []struct {
 		value    string
@@ -93,6 +99,7 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.HugetlbUsageMetrics:            struct{}{},
 			container.PerfMetrics:                    struct{}{},
 			container.ReferencedMemoryMetrics:        struct{}{},
+			container.CPUTopologyMetrics:             struct{}{},
 		},
 		container.AllMetrics,
 		{},

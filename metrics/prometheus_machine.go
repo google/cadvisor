@@ -17,6 +17,7 @@ package metrics
 import (
 	"strconv"
 
+	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -66,8 +67,9 @@ type PrometheusMachineCollector struct {
 }
 
 // NewPrometheusMachineCollector returns a new PrometheusCollector.
-func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
+func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.MetricSet) *PrometheusMachineCollector {
 	c := &PrometheusMachineCollector{
+
 		infoProvider: i,
 		errors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: "machine",
@@ -97,42 +99,6 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				valueType: prometheus.GaugeValue,
 				getValues: func(machineInfo *info.MachineInfo) metricValues {
 					return metricValues{{value: float64(machineInfo.NumSockets), timestamp: machineInfo.Timestamp}}
-				},
-			},
-			{
-				name:        "machine_cpu_cache_capacity_bytes",
-				help:        "Cache size in bytes assigned to NUMA node and CPU core.",
-				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{prometheusNodeLabelName, prometheusCoreLabelName, prometheusTypeLabelName, prometheusLevelLabelName},
-				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return getCaches(machineInfo)
-				},
-			},
-			{
-				name:        "machine_thread_siblings_count",
-				help:        "Number of CPU thread siblings.",
-				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{prometheusNodeLabelName, prometheusCoreLabelName, prometheusThreadLabelName},
-				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return getThreadsSiblingsCount(machineInfo)
-				},
-			},
-			{
-				name:        "machine_node_memory_capacity_bytes",
-				help:        "Amount of memory assigned to NUMA node.",
-				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{prometheusNodeLabelName},
-				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return getNodeMemory(machineInfo)
-				},
-			},
-			{
-				name:        "machine_node_hugepages_count",
-				help:        "Numer of hugepages assigned to NUMA node.",
-				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{prometheusNodeLabelName, prometheusPageSizeLabelName},
-				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return getHugePagesCount(machineInfo)
 				},
 			},
 			{
@@ -184,6 +150,47 @@ func NewPrometheusMachineCollector(i infoProvider) *PrometheusMachineCollector {
 				},
 			},
 		},
+	}
+
+	if includedMetrics.Has(container.CPUTopologyMetrics) {
+		c.machineMetrics = append(c.machineMetrics, []machineMetric{
+			{
+				name:        "machine_cpu_cache_capacity_bytes",
+				help:        "Cache size in bytes assigned to NUMA node and CPU core.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusCoreLabelName, prometheusTypeLabelName, prometheusLevelLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getCaches(machineInfo)
+				},
+			},
+			{
+				name:        "machine_thread_siblings_count",
+				help:        "Number of CPU thread siblings.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusCoreLabelName, prometheusThreadLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getThreadsSiblingsCount(machineInfo)
+				},
+			},
+			{
+				name:        "machine_node_memory_capacity_bytes",
+				help:        "Amount of memory assigned to NUMA node.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getNodeMemory(machineInfo)
+				},
+			},
+			{
+				name:        "machine_node_hugepages_count",
+				help:        "Numer of hugepages assigned to NUMA node.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusPageSizeLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getHugePagesCount(machineInfo)
+				},
+			},
+		}...)
 	}
 	return c
 }

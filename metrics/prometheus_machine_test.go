@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/cadvisor/container"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ const machineMetricsFile = "testdata/prometheus_machine_metrics"
 const machineMetricsFailureFile = "testdata/prometheus_machine_metrics_failure"
 
 func TestPrometheusMachineCollector(t *testing.T) {
-	collector := NewPrometheusMachineCollector(testSubcontainersInfoProvider{})
+	collector := NewPrometheusMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics)
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collector)
 
@@ -54,7 +55,7 @@ func TestPrometheusMachineCollectorWithFailure(t *testing.T) {
 		successfulProvider: testSubcontainersInfoProvider{},
 		shouldFail:         true,
 	}
-	collector := NewPrometheusMachineCollector(provider)
+	collector := NewPrometheusMachineCollector(provider, container.AllMetrics)
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collector)
 
