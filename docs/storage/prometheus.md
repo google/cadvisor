@@ -47,6 +47,9 @@ Metric name | Type | Description | Unit (where applicable)
 `container_fs_writes_bytes_total` | Counter | Cumulative count of bytes written | bytes
 `container_fs_writes_merged_total` | Counter | Cumulative count of writes merged |
 `container_fs_writes_total` | Counter | Cumulative count of writes completed |
+`container_hugetlb_failcnt` | Counter | Number of hugepage usage hits limits |
+`container_hugetlb_max_usage_bytes` | Gauge | Maximum hugepage usages recorded | bytes
+`container_hugetlb_usage_bytes` | Gauge | Current hugepage usage | bytes
 `container_last_seen` | Gauge | Last time a container was seen by the exporter | timestamp
 `container_memory_cache` | Gauge | Total page cache memory | bytes
 `container_memory_failcnt` | Counter | Number of memory usage hits limits |
