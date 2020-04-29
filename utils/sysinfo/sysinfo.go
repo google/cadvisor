@@ -22,7 +22,6 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/sysfs"
-	"github.com/google/go-cmp/cmp"
 
 	"k8s.io/klog/v2"
 )
@@ -328,7 +327,7 @@ func addCacheInfo(sysFs sysfs.SysFs, node *info.Node) error {
 				// Add a node-level cache.
 				cacheFound := false
 				for _, nodeCache := range node.Caches {
-					if cmp.Equal(nodeCache, c) {
+					if nodeCache == c {
 						cacheFound = true
 					}
 				}
