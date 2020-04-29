@@ -14,6 +14,8 @@
 
 package v1
 
+import "time"
+
 type FsInfo struct {
 	// Block device associated with the filesystem.
 	Device string `json:"device"`
@@ -156,6 +158,9 @@ const (
 )
 
 type MachineInfo struct {
+	// The time of this information point.
+	Timestamp time.Time `json:"timestamp"`
+
 	// The number of cores in this machine.
 	NumCores int `json:"num_cores"`
 
@@ -227,6 +232,7 @@ func (m *MachineInfo) Clone() *MachineInfo {
 		}
 	}
 	copy := MachineInfo{
+		Timestamp:        m.Timestamp,
 		NumCores:         m.NumCores,
 		NumPhysicalCores: m.NumPhysicalCores,
 		NumSockets:       m.NumSockets,
