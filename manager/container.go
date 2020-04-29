@@ -174,14 +174,7 @@ func (cd *containerData) GetInfo(shouldUpdateSubcontainers bool) (*containerInfo
 	}
 	cd.lock.Lock()
 	defer cd.lock.Unlock()
-	cInfo := containerInfo{
-		Subcontainers: cd.info.Subcontainers,
-		Spec:          cd.info.Spec,
-	}
-	cInfo.Id = cd.info.Id
-	cInfo.Name = cd.info.Name
-	cInfo.Aliases = cd.info.Aliases
-	cInfo.Namespace = cd.info.Namespace
+	cInfo := cd.info
 	return &cInfo, nil
 }
 

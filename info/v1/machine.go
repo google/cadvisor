@@ -217,41 +217,7 @@ type MachineInfo struct {
 }
 
 func (m *MachineInfo) Clone() *MachineInfo {
-	memoryByType := m.MemoryByType
-	if len(m.MemoryByType) > 0 {
-		memoryByType = make(map[string]*MemoryInfo)
-		for memoryType, memoryInfo := range m.MemoryByType {
-			memoryByType[memoryType] = memoryInfo
-		}
-	}
-	diskMap := m.DiskMap
-	if len(m.DiskMap) > 0 {
-		diskMap = make(map[string]DiskInfo)
-		for k, info := range m.DiskMap {
-			diskMap[k] = info
-		}
-	}
-	copy := MachineInfo{
-		Timestamp:        m.Timestamp,
-		NumCores:         m.NumCores,
-		NumPhysicalCores: m.NumPhysicalCores,
-		NumSockets:       m.NumSockets,
-		CpuFrequency:     m.CpuFrequency,
-		MemoryCapacity:   m.MemoryCapacity,
-		MemoryByType:     memoryByType,
-		NVMInfo:          m.NVMInfo,
-		HugePages:        m.HugePages,
-		MachineID:        m.MachineID,
-		SystemUUID:       m.SystemUUID,
-		BootID:           m.BootID,
-		Filesystems:      m.Filesystems,
-		DiskMap:          diskMap,
-		NetworkDevices:   m.NetworkDevices,
-		Topology:         m.Topology,
-		CloudProvider:    m.CloudProvider,
-		InstanceType:     m.InstanceType,
-		InstanceID:       m.InstanceID,
-	}
+	copy := *m
 	return &copy
 }
 
