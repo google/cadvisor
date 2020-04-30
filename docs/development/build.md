@@ -44,10 +44,42 @@ To enable `libimpctl` support `GO_FLAGS` variable must be set:
 $GOPATH/src/github.com/google/cadvisor $ GO_FLAGS="-tags=libipmctl,netgo" make build
 ```
 
+### Perf Support
+
+cAdvisor can be linked against [libpfm4](http://perfmon2.sourceforge.net/) library that allows to gather information about performance monitoring events.
+If you want to build cAdvisor with libpfm4 support you must meet following requirements:
+* `libpfm4-dev` must be installed on build system.
+* `libpfm4` must be installed on all systems where cAdvisor is running.
+
+libpfm4 packages are available in Debian- and RHEL-derivatives distributions.
+
+libpfm4 can be installed using apt package manager:
+```
+apt-get install libpfm4 libpfm4-dev
+```
+or yum package manager:
+```
+yum install libpfm libpfm-devel
+```
+
+To enable `libpfm4` support `GO_FLAGS` variable must be set:
+
+```
+$GOPATH/src/github.com/google/cadvisor $ GO_FLAGS="-tags=libpfm,netgo" make build
+```
+
 ## Running Built Binary
 
 Now you can run the built binary:
 
 ```
 $GOPATH/src/github.com/google/cadvisor $ sudo ./cadvisor
+```
+
+### Perf Support
+
+It is required to include perf config (examplary config is available [here](../../perf/testing/perf-non-hardware.json)) to run cAdvisor with performance monitoring events:
+```
+$GOPATH/src/github.com/google/cadvisor $ sudo ./cadvisor -perf_events_config=perf/testing/perf-non-hardware.json
+
 ```
