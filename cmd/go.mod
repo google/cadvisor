@@ -23,7 +23,6 @@ require (
 	github.com/golang/snappy v0.0.0-20150730031844-723cc1e459b8 // indirect
 	github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
 	github.com/klauspost/crc32 v0.0.0-20151223135126-a3b15ae34567 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/mesos/mesos-go v0.0.7-0.20180413204204-29de6ff97b48
 	github.com/onsi/ginkgo v1.11.0 // indirect
 	github.com/onsi/gomega v1.7.1 // indirect
@@ -31,10 +30,12 @@ require (
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
 	github.com/prometheus/client_golang v1.0.0
 	github.com/stretchr/testify v1.4.0
+	go.opentelemetry.io/otel v0.4.3
+	go.opentelemetry.io/otel/exporters/otlp v0.4.3
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	google.golang.org/api v0.0.0-20150730141719-0c2979aeaa5b
 	google.golang.org/appengine v1.6.5 // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
+	google.golang.org/grpc v1.27.1
 	gopkg.in/olivere/elastic.v2 v2.0.12
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 	k8s.io/klog/v2 v2.0.0

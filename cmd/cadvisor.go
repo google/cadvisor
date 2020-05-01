@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/google/cadvisor/cmd/internal/opentelemetry"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -76,6 +77,8 @@ var urlBasePrefix = flag.String("url_base_prefix", "", "prefix path that will be
 var rawCgroupPrefixWhiteList = flag.String("raw_cgroup_prefix_whitelist", "", "A comma-separated list of cgroup path prefix that needs to be collected even when -docker_only is specified")
 
 var perfEvents = flag.String("perf_events_config", "", "Path to a JSON file containing configuration of perf events to measure. Empty value disabled perf events measuring.")
+
+var traceEndpoint = flag.String("trace_endpoint", "", "Url host:port to the OTLP collector")
 
 var (
 	// Metrics to be ignored.
@@ -170,7 +173,12 @@ func main() {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
 
-	mux := http.NewServeMux()
+	// setup open telemetry
+	if *traceEndpoint != "" {
+		defer opentelemetry.InitTrace(*traceEndpoint, *collectorCert).Stop()
+	}
+
+	mux := opentelemetry.WrapperServerMux(http.NewServeMux())
 
 	if *enableProfiling {
 		mux.HandleFunc("/debug/pprof/", pprof.Index)
