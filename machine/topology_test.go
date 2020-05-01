@@ -391,3 +391,31 @@ func TestMemoryInfoOnArchThatDoNotExposeMemoryController(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Len(t, memory, 0)
 }
+
+func TestClockSpeedOnCpuUpperCase(t *testing.T) {
+	machineArch = ""                            // overwrite package variable
+	testfile := "./testdata/cpuinfo_upper_case" // mock cpuinfo with CPU MHz
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	clockSpeed, err := GetClockSpeed(testcpuinfo)
+	assert.Nil(t, err)
+	assert.NotNil(t, clockSpeed)
+	assert.Equal(t, uint64(1800*1000), clockSpeed)
+}
+
+func TestClockSpeedOnCpuLowerCase(t *testing.T) {
+	machineArch = ""                            // overwrite package variable
+	testfile := "./testdata/cpuinfo_lower_case" // mock cpuinfo with cpu MHz
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	clockSpeed, err := GetClockSpeed(testcpuinfo)
+	assert.Nil(t, err)
+	assert.NotNil(t, clockSpeed)
+	assert.Equal(t, uint64(1450*1000), clockSpeed)
+}

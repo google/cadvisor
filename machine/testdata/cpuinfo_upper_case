@@ -1,0 +1,160 @@
+processor       : 0
+cpu model       : ICT Loongson-3 V0.4  FPU V0.1
+model name      : Loongson-3A R4 (Loongson-3B4000)
+CPU MHz         : 1800.00
+BogoMIPS        : 12730.64
+wait instruction    : yes
+microsecond timers  : yes
+tlb_entries     : 2112
+extra interrupt vector  : yes
+hardware watchpoint : yes, count: 0, address/irw mask: []
+isa         : mips1 mips2 mips3 mips4 mips5 mips32r1 mips32r2 mips64r1 mips64r2
+ASEs implemented    : vz msa
+Loongson Features   : csr lasx lamo cam vz gft lft msi256 extioi csripi
+shadow register sets    : 1
+kscratch registers  : 6
+package         : 0
+core            : 0
+VCED exceptions     : not available
+VCEI exceptions     : not available
+
+processor       : 1
+cpu model       : ICT Loongson-3 V0.4  FPU V0.1
+model name      : Loongson-3A R4 (Loongson-3B4000)
+CPU MHz         : 1800.00
+BogoMIPS        : 12711.24
+wait instruction    : yes
+microsecond timers  : yes
+tlb_entries     : 2112
+extra interrupt vector  : yes
+hardware watchpoint : yes, count: 0, address/irw mask: []
+isa         : mips1 mips2 mips3 mips4 mips5 mips32r1 mips32r2 mips64r1 mips64r2
+ASEs implemented    : vz msa
+Loongson Features   : csr lasx lamo cam vz gft lft msi256 extioi csripi
+shadow register sets    : 1
+kscratch registers  : 6
+package         : 0
+core            : 1
+VCED exceptions     : not available
+VCEI exceptions     : not available
+
+processor       : 2
+cpu model       : ICT Loongson-3 V0.4  FPU V0.1
+model name      : Loongson-3A R4 (Loongson-3B4000)
+CPU MHz         : 1800.00
+BogoMIPS        : 12730.64
+wait instruction    : yes
+microsecond timers  : yes
+tlb_entries     : 2112
+extra interrupt vector  : yes
+hardware watchpoint : yes, count: 0, address/irw mask: []
+isa         : mips1 mips2 mips3 mips4 mips5 mips32r1 mips32r2 mips64r1 mips64r2
+ASEs implemented    : vz msa
+Loongson Features   : csr lasx lamo cam vz gft lft msi256 extioi csripi
+shadow register sets    : 1
+kscratch registers  : 6
+package         : 0
+core            : 2
+VCED exceptions     : not available
+VCEI exceptions     : not available
+
+processor       : 3
+cpu model       : ICT Loongson-3 V0.4  FPU V0.1
+model name      : Loongson-3A R4 (Loongson-3B4000)
+CPU MHz         : 1800.00
+BogoMIPS        : 12730.64
+wait instruction    : yes
+microsecond timers  : yes
+tlb_entries     : 2112
+extra interrupt vector  : yes
+hardware watchpoint : yes, count: 0, address/irw mask: []
+isa         : mips1 mips2 mips3 mips4 mips5 mips32r1 mips32r2 mips64r1 mips64r2
+ASEs implemented    : vz msa
+Loongson Features   : csr lasx lamo cam vz gft lft msi256 extioi csripi
+shadow register sets    : 1
+kscratch registers  : 6
+package         : 0
+core            : 3
+VCED exceptions     : not available
+VCEI exceptions     : not available
+
+processor       : 4
+cpu model       : ICT Loongson-3 V0.4  FPU V0.1
+model name      : Loongson-3A R4 (Loongson-3B4000)
+CPU MHz         : 1800.00
+BogoMIPS        : 12730.64
+wait instruction    : yes
+microsecond timers  : yes
+tlb_entries     : 2112
+extra interrupt vector  : yes
+hardware watchpoint : yes, count: 0, address/irw mask: []
+isa         : mips1 mips2 mips3 mips4 mips5 mips32r1 mips32r2 mips64r1 mips64r2
+ASEs implemented    : vz msa
+Loongson Features   : csr lasx lamo cam vz gft lft msi256 extioi csripi
+shadow register sets    : 1
+kscratch registers  : 6
+package         : 1
+core            : 0
+VCED exceptions     : not available
+VCEI exceptions     : not available
+
+processor       : 5
+cpu model       : ICT Loongson-3 V0.4  FPU V0.1
+model name      : Loongson-3A R4 (Loongson-3B4000)
+CPU MHz         : 1800.00
+BogoMIPS        : 12730.64
+wait instruction    : yes
+microsecond timers  : yes
+tlb_entries     : 2112
+extra interrupt vector  : yes
+hardware watchpoint : yes, count: 0, address/irw mask: []
+isa         : mips1 mips2 mips3 mips4 mips5 mips32r1 mips32r2 mips64r1 mips64r2
+ASEs implemented    : vz msa
+Loongson Features   : csr lasx lamo cam vz gft lft msi256 extioi csripi
+shadow register sets    : 1
+kscratch registers  : 6
+package         : 1
+core            : 1
+VCED exceptions     : not available
+VCEI exceptions     : not available
+
+processor       : 6
+cpu model       : ICT Loongson-3 V0.4  FPU V0.1
+model name      : Loongson-3A R4 (Loongson-3B4000)
+CPU MHz         : 1800.00
+BogoMIPS        : 12730.64
+wait instruction    : yes
+microsecond timers  : yes
+tlb_entries     : 2112
+extra interrupt vector  : yes
+hardware watchpoint : yes, count: 0, address/irw mask: []
+isa         : mips1 mips2 mips3 mips4 mips5 mips32r1 mips32r2 mips64r1 mips64r2
+ASEs implemented    : vz msa
+Loongson Features   : csr lasx lamo cam vz gft lft msi256 extioi csripi
+shadow register sets    : 1
+kscratch registers  : 6
+package         : 1
+core            : 2
+VCED exceptions     : not available
+VCEI exceptions     : not available
+
+processor       : 7
+cpu model       : ICT Loongson-3 V0.4  FPU V0.1
+model name      : Loongson-3A R4 (Loongson-3B4000)
+CPU MHz         : 1800.00
+BogoMIPS        : 12730.64
+wait instruction    : yes
+microsecond timers  : yes
+tlb_entries     : 2112
+extra interrupt vector  : yes
+hardware watchpoint : yes, count: 0, address/irw mask: []
+isa         : mips1 mips2 mips3 mips4 mips5 mips32r1 mips32r2 mips64r1 mips64r2
+ASEs implemented    : vz msa
+Loongson Features   : csr lasx lamo cam vz gft lft msi256 extioi csripi
+shadow register sets    : 1
+kscratch registers  : 6
+package         : 1
+core            : 3
+VCED exceptions     : not available
+VCEI exceptions     : not available
+
