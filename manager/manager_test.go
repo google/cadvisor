@@ -274,7 +274,8 @@ func TestGetContainerInfoV2Failure(t *testing.T) {
 
 	// Make GetSpec fail on /c2
 	mockErr := fmt.Errorf("intentional GetSpec failure")
-	handlerMap[failing].GetSpec() // Use up default GetSpec call, and replace below
+	_, err = handlerMap[failing].GetSpec()
+	assert.NoError(t, err) // Use up default GetSpec call, and replace below
 	handlerMap[failing].On("GetSpec").Return(info.ContainerSpec{}, mockErr)
 	handlerMap[failing].On("Exists").Return(true)
 	m.containers[namespacedContainerName{Name: failing}].infoLastUpdatedTime = time.Time{} // Force GetSpec.

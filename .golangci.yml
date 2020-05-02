@@ -42,6 +42,3 @@ issues:
 #   There are more similar issues in this file
     - path: utils/cpuload/netlink/netlink.go
       text: "Error return value of `binary.Write` is not checked"
-#   manager/manager_test.go:277:29: Error return value of `(*github.com/google/cadvisor/container/testing.MockContainerHandler).GetSpec` is not checked (errcheck)
-    - path: manager/manager_test.go
-      text: "Error return value of `.{2}github.com/google/cadvisor/container/testing.MockContainerHandler.{1}.GetSpec` is not checked"
