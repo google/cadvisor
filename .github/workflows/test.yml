@@ -4,28 +4,22 @@ jobs:
   lint:
     strategy:
       matrix:
-        go-versions: [1.14]
-        platform: [ubuntu-latest]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
     - name: Install Go
       uses: actions/setup-go@v1
       with:
-        go-version: ${{ matrix.go-versions }}
-#    This is not the most elegant way of installing golangci-lint but I have filed a PR
-#    and I will fix it as soon as it's merged: https://github.com/golangci/golangci-lint/pull/1036
-#    cAdvisor has existed for a while without golint and we need to figure out how to
-#    fix issues affecting exported identifiers that are part of public API. Let's avoid breaking Kubernetes.
+        go-version: 1.14
     - name: Install golangci-lint
-      run: |
-        go get -d github.com/golangci/golangci-lint/cmd/golangci-lint &&
-        cd $(go env GOPATH)/src/github.com/golangci/golangci-lint/ &&
-        git remote add iwankgb https://github.com/iwankgb/golangci-lint.git &&
-        git fetch iwankgb &&
-        git reset --hard iwankgb/exclude-case-sensitive &&
-        go install -i github.com/golangci/golangci-lint/cmd/golangci-lint
+      run: >
+        cd /tmp &&
+        mkdir -p $(go env GOPATH)/bin &&
+        wget -q https://github.com/golangci/golangci-lint/releases/download/v1.26.0/golangci-lint-1.26.0-linux-amd64.tar.gz &&
+        tar xf golangci-lint-1.26.0-linux-amd64.tar.gz &&
+        mv golangci-lint-1.26.0-linux-amd64/golangci-lint $(go env GOPATH)/bin &&
+        rm -fr golangci-lint-1.26.0-linux-amd64.tar.gz golangci-lint-1.26.0-linux-amd64
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run golangci-lint
