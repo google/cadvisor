@@ -33,7 +33,7 @@ func TestMachineInformationIsReturned(t *testing.T) {
 	if machineInfo.NumCores <= 0 || machineInfo.NumCores >= 1000000 {
 		t.Errorf("Machine info has unexpected number of cores: %v", machineInfo.NumCores)
 	}
-	if machineInfo.MemoryCapacity <= 0 || machineInfo.MemoryCapacity >= (1<<50 /* 1PB */) {
+	if machineInfo.MemoryCapacity == 0 || machineInfo.MemoryCapacity >= (1<<50 /* 1PB */) {
 		t.Errorf("Machine info has unexpected amount of memory: %v", machineInfo.MemoryCapacity)
 	}
 	if len(machineInfo.Filesystems) == 0 {
