@@ -2,6 +2,8 @@ name: Test
 on: [push, pull_request]
 jobs:
   lint:
+    env:
+      GOLANGCI_LINT_V: 1.26.0
     strategy:
       matrix:
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
@@ -16,10 +18,10 @@ jobs:
       run: >
         cd /tmp &&
         mkdir -p $(go env GOPATH)/bin &&
-        wget -q https://github.com/golangci/golangci-lint/releases/download/v1.26.0/golangci-lint-1.26.0-linux-amd64.tar.gz &&
-        tar xf golangci-lint-1.26.0-linux-amd64.tar.gz &&
-        mv golangci-lint-1.26.0-linux-amd64/golangci-lint $(go env GOPATH)/bin &&
-        rm -fr golangci-lint-1.26.0-linux-amd64.tar.gz golangci-lint-1.26.0-linux-amd64
+        wget -q https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_V}/golangci-lint-${GOLANGCI_LINT_V}-linux-amd64.tar.gz &&
+        tar xf golangci-lint-${GOLANGCI_LINT_V}-linux-amd64.tar.gz &&
+        mv golangci-lint-${GOLANGCI_LINT_V}-linux-amd64/golangci-lint $(go env GOPATH)/bin &&
+        rm -fr golangci-lint-*
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run golangci-lint
