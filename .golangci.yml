@@ -42,15 +42,3 @@ issues:
 #   There are more similar issues in this file
     - path: utils/cpuload/netlink/netlink.go
       text: "Error return value of `binary.Write` is not checked"
-#   utils/cloudinfo/aws/aws.go:60:28: SA1019: session.New is deprecated: Use NewSession functions to create sessions instead. NewSession has the same functionality as New except an error can be returned when the func is called instead of waiting to receive an error until a request is made.  (staticcheck)
-    - path: utils/cloudinfo/aws/aws.go
-      text: "SA1019:"
-#   manager/manager_test.go:277:29: Error return value of `(*github.com/google/cadvisor/container/testing.MockContainerHandler).GetSpec` is not checked (errcheck)
-    - path: manager/manager_test.go
-      text: "Error return value of `.{2}github.com/google/cadvisor/container/testing.MockContainerHandler.{1}.GetSpec` is not checked"
-#   utils/sysinfo/sysinfo.go:208:7: ineffectual assignment to `err` (ineffassign)
-    - path: utils/sysinfo/sysinfo.go
-      text: "ineffectual assignment to `err`|SA4006:"
-#   cache/memory/memory_test.go:81:23: Error return value of `memoryCache.AddStats` is not checked (errcheck)
-    - path: cache/memory/memory_test.go
-      text: "Error return value of `memoryCache.AddStats` is not checked"

@@ -205,6 +205,9 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 
 	for _, nodeDir := range nodesDirs {
 		id, err := getMatchedInt(nodeDirRegExp, nodeDir)
+		if err != nil {
+			return nil, 0, err
+		}
 		node := info.Node{Id: id}
 
 		cpuDirs, err := sysFs.GetCPUsPaths(nodeDir)

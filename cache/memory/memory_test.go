@@ -67,36 +67,36 @@ func TestAddStats(t *testing.T) {
 }
 
 func TestRecentStatsNoRecentStats(t *testing.T) {
-	memoryCache := makeWithStats(0)
+	memoryCache := makeWithStats(t, 0)
 
 	_, err := memoryCache.RecentStats(containerName, zero, zero, 60)
 	assert.NotNil(t, err)
 }
 
 // Make an instance of InMemoryCache with n stats.
-func makeWithStats(n int) *InMemoryCache {
+func makeWithStats(t *testing.T, n int) *InMemoryCache {
 	memoryCache := New(60*time.Second, nil)
 
 	for i := 0; i < n; i++ {
-		memoryCache.AddStats(&cInfo, makeStat(i))
+		assert.NoError(t, memoryCache.AddStats(&cInfo, makeStat(i)))
 	}
 	return memoryCache
 }
 
 func TestRecentStatsGetZeroStats(t *testing.T) {
-	memoryCache := makeWithStats(10)
+	memoryCache := makeWithStats(t, 10)
 
 	assert.Len(t, getRecentStats(t, memoryCache, 0), 0)
 }
 
 func TestRecentStatsGetSomeStats(t *testing.T) {
-	memoryCache := makeWithStats(10)
+	memoryCache := makeWithStats(t, 10)
 
 	assert.Len(t, getRecentStats(t, memoryCache, 5), 5)
 }
 
 func TestRecentStatsGetAllStats(t *testing.T) {
-	memoryCache := makeWithStats(10)
+	memoryCache := makeWithStats(t, 10)
 
 	assert.Len(t, getRecentStats(t, memoryCache, -1), 10)
 }
