@@ -24,6 +24,36 @@ To apply the daemonset to your cluster with example patches applied:
 kustomize build deploy/kubernetes/overlays/examples | kubectl apply -f -
 ```
 
+### cAdvisor with perf support on Kubernetes
+
+Example of modifications needed to deploy cAdvisor with perf support is provided in [overlays/examples_perf](overlays/examples_perf) directory (modification to daemonset and configmap with perf events configuration).
+
+To test example deployment from the cadvisor/ directory build binary with perf support
+```
+GO_FLAGS="-tags=libpfm,netgo" make build
+```
+
+Build cAdvisor docker image with perf support
+```
+docker build  --no-cache --pull -t cadvisor:$(git rev-parse --short HEAD) -f deploy/Dockerfile_perf .
+```
+
+Add tag and push to registry:
+```
+docker tag cadvisor:$(git rev-parse --short HEAD) <your_docker_registry_address>/cadvisor:$(git rev-parse --short HEAD)
+docker push <your_docker_registry_address>/cadvisor:$(git rev-parse --short HEAD)
+```
+
+Modify image name in [cadvisor-perf.yaml](overlays/examples_perf/cadvisor-perf.yaml), change this line:
+```
+image: "<cadvisor_image>"
+```
+
+Generate and apply the daemonset with patches:
+```
+kustomize build deploy/kubernetes/overlays/examples_perf | kubectl apply -f -
+```
+
 ## Kustomization
 
 On your own fork of cAdvisor, create your own overlay directoy with your patches.  Copy patches from the example folder if you intend to use them, but don't modify the originals.  Commit your changes in your local branch, and use git to manage them the same way you would any other piece of code.
