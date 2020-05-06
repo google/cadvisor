@@ -50,9 +50,9 @@ var (
 	isMemoryController = regexp.MustCompile("mc[0-9]+")
 	isDimm             = regexp.MustCompile("dimm[0-9]+")
 	machineArch        = getMachineArch()
+	maxFreqFile        = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 )
 
-const maxFreqFile = "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"
 const sysFsCPUCoreID = "core_id"
 const sysFsCPUPhysicalPackageID = "physical_package_id"
 const sysFsCPUTopology = "topology"

@@ -393,6 +393,7 @@ func TestMemoryInfoOnArchThatDoNotExposeMemoryController(t *testing.T) {
 }
 
 func TestClockSpeedOnCpuUpperCase(t *testing.T) {
+	maxFreqFile = ""                            // do not read the system max frequency
 	machineArch = ""                            // overwrite package variable
 	testfile := "./testdata/cpuinfo_upper_case" // mock cpuinfo with CPU MHz
 
@@ -407,6 +408,7 @@ func TestClockSpeedOnCpuUpperCase(t *testing.T) {
 }
 
 func TestClockSpeedOnCpuLowerCase(t *testing.T) {
+	maxFreqFile = ""                            // do not read the system max frequency
 	machineArch = ""                            // overwrite package variable
 	testfile := "./testdata/cpuinfo_lower_case" // mock cpuinfo with cpu MHz
 
