@@ -72,3 +72,42 @@ jobs:
       with:
         name: cadvisor.log
         path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log
+  test-integration-s390x:
+    runs-on: ubuntu-18.04
+    name: Build on s390x
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+          path: go/src/github.com/google/cadvisor
+      - uses: uraimo/run-on-arch-action@v1.0.9
+        with:
+          architecture: s390x
+          distribution: ubuntu18.04
+          run: |
+            set -euo pipefail
+            apt-get update
+            apt-get install -y --no-install-recommends \
+            apt-transport-https \
+            ca-certificates \
+            socat \
+            curl \
+            gnupg2 \
+            software-properties-common \
+            lsb-release \
+            build-essential \
+            git \
+            sudo
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+            add-apt-repository \
+               "deb [arch=s390x] https://download.docker.com/linux/ubuntu \
+               $(lsb_release -cs) stable"
+            apt-get update
+            apt-cache madison docker-ce
+            apt-get install -y --no-install-recommends docker-ce=18.06.*
+            curl https://dl.google.com/go/go1.13.8.linux-s390x.tar.gz -o /tmp/go.tar.gz
+            tar -C /usr/local -xzf /tmp/go.tar.gz
+            export PATH="$PATH":/usr/local/go/bin
+            set -x
+            cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor && source build/config/plain.sh && make test-integration
