@@ -89,7 +89,7 @@ func TestDockerContainerByName(t *testing.T) {
 
 	containerName := fmt.Sprintf("test-docker-container-by-name-%d", os.Getpid())
 	fm.Docker().Run(framework.DockerRunArgs{
-		Image: "kubernetes/pause",
+		Image: "k8s.gcr.io/pause:3.2",
 		Args:  []string{"--name", containerName},
 	})
 
@@ -149,7 +149,7 @@ func TestBasicDockerContainer(t *testing.T) {
 
 	containerName := fmt.Sprintf("test-basic-docker-container-%d", os.Getpid())
 	containerID := fm.Docker().Run(framework.DockerRunArgs{
-		Image: "kubernetes/pause",
+		Image: "k8s.gcr.io/pause:3.2",
 		Args: []string{
 			"--name", containerName,
 		},
@@ -182,7 +182,7 @@ func TestDockerContainerSpec(t *testing.T) {
 		cpuShares   = uint64(2048)
 		cpuMask     = "0"
 		memoryLimit = uint64(1 << 30) // 1GB
-		image       = "kubernetes/pause"
+		image       = "k8s.gcr.io/pause:3.2"
 		env         = map[string]string{"test_var": "FOO"}
 		labels      = map[string]string{"bar": "baz"}
 	)
