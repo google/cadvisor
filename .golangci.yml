@@ -34,10 +34,6 @@ issues:
 #   Stuttering affects exported names:
     - "type name will be used as .*\\.[A-Z]{1}.* by other packages, and that stutters"
   exclude-rules:
-#   container/containerd/client.go:67:4: SA1019: grpc.WithDialer is deprecated: use WithContextDialer instead.  Will be supported throughout 1.x.  (staticcheck)
-#   There are more similar issues in following lines.
-    - path: container/containerd/client.go
-      text: "SA1019:"
 #   utils/cpuload/netlink/netlink.go:102:15: Error return value of `binary.Write` is not checked (errcheck)
 #   There are more similar issues in this file
     - path: utils/cpuload/netlink/netlink.go

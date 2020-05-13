@@ -29,6 +29,7 @@ import (
 	"github.com/containerd/containerd/pkg/dialer"
 	ptypes "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/backoff"
 )
 
 type client struct {
@@ -48,6 +49,7 @@ var ctrdClient ContainerdClient = nil
 
 const (
 	maxBackoffDelay   = 3 * time.Second
+	baseBackoffDelay  = 100 * time.Millisecond
 	connectionTimeout = 2 * time.Second
 )
 
@@ -62,12 +64,17 @@ func Client(address, namespace string) (ContainerdClient, error) {
 		}
 		tryConn.Close()
 
+		connParams := grpc.ConnectParams{
+			Backoff: backoff.Config{
+				BaseDelay: baseBackoffDelay,
+				MaxDelay:  maxBackoffDelay,
+			},
+		}
 		gopts := []grpc.DialOption{
 			grpc.WithInsecure(),
-			grpc.WithDialer(dialer.Dialer),
+			grpc.WithContextDialer(dialer.ContextDialer),
 			grpc.WithBlock(),
-			grpc.WithBackoffMaxDelay(maxBackoffDelay),
-			grpc.WithTimeout(connectionTimeout),
+			grpc.WithConnectParams(connParams),
 		}
 		unary, stream := newNSInterceptors(namespace)
 		gopts = append(gopts,
@@ -75,7 +82,9 @@ func Client(address, namespace string) (ContainerdClient, error) {
 			grpc.WithStreamInterceptor(stream),
 		)
 
-		conn, err := grpc.Dial(dialer.DialAddress(address), gopts...)
+		ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+		defer cancel()
+		conn, err := grpc.DialContext(ctx, dialer.DialAddress(address), gopts...)
 		if err != nil {
 			retErr = err
 			return
