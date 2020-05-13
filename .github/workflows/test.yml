@@ -104,6 +104,10 @@ jobs:
                "deb [arch=s390x] https://download.docker.com/linux/ubuntu \
                $(lsb_release -cs) stable"
             apt-get update
+            apt-cache madison docker-ce
+            cat /usr/sbin/policy-rc.d 
+            printf '#!/bin/sh\nexit 0' > /usr/sbin/policy-rc.d
+            cat /usr/sbin/policy-rc.d 
             apt-get install -y --no-install-recommends docker-ce=18.06.*
             curl https://dl.google.com/go/go1.13.8.linux-s390x.tar.gz -o /tmp/go.tar.gz
             tar -C /usr/local -xzf /tmp/go.tar.gz
