@@ -81,6 +81,9 @@ jobs:
         with:
           fetch-depth: 1
           path: go/src/github.com/google/cadvisor
+      - name: Enable running multiple architectures
+        run: |
+          sudo docker run --rm --privileged linuxkit/binfmt:4ea3b9b0938cbd19834c096aa31ff475cc75d281
       - uses: uraimo/run-on-arch-action@v1.0.9
         with:
           architecture: s390x
