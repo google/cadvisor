@@ -19,10 +19,11 @@ import (
 	"flag"
 	"fmt"
 	"github.com/google/cadvisor/version"
-	"go.opentelemetry.io/otel/api/core"
+	"os"
+
 	"go.opentelemetry.io/otel/api/correlation"
 	"go.opentelemetry.io/otel/api/global"
-	"go.opentelemetry.io/otel/api/key"
+	"go.opentelemetry.io/otel/api/kv"
 	"go.opentelemetry.io/otel/api/propagation"
 	apiTrace "go.opentelemetry.io/otel/api/trace"
 	"go.opentelemetry.io/otel/exporters/otlp"
@@ -35,15 +36,9 @@ import (
 	"strings"
 )
 
-var (
-	traceProbability = flag.Float64("trace_probability", 1, "used for sampler (0=never, 1=always and probability is 0.1 to 0.99)")
-	traceServiceName = flag.String("trace_name", "cadvisor", "use localEndpoint service name")
-	traceTags        tracingTags
-)
+const traceServiceName = "cadvisor"
 
-func init() {
-	flag.Var(&traceTags, "trace_tags", "additional tags for tracing (eg. foo=bar)")
-}
+var traceProbability = flag.Float64("trace_probability", 1, "used for sampler (0=never, 1=always and probability is 0.1 to 0.99)")
 
 func InitTrace(traceEndpoint, collectorCert string) *otlp.Exporter {
 	klog.Infof("write telemetry to %s", traceEndpoint)
@@ -77,8 +72,8 @@ func InitTrace(traceEndpoint, collectorCert string) *otlp.Exporter {
 	}
 	global.SetTraceProvider(traceProvider)
 
-	apiB3, traceCtx, corrCtx := apiTrace.B3{SingleHeader: false}, apiTrace.DefaultHTTPPropagator(), correlation.DefaultHTTPPropagator()
-	extractor := extractorFilter{[]propagation.HTTPExtractor{apiB3, traceCtx, corrCtx}}
+	apiB3Single, apiB3, traceCtx, corrCtx := apiTrace.B3{SingleHeader: false}, apiTrace.B3{SingleHeader: false}, apiTrace.DefaultHTTPPropagator(), correlation.DefaultHTTPPropagator()
+	extractor := extractorFilter{[]propagation.HTTPExtractor{apiB3Single, apiB3, traceCtx, corrCtx}}
 	global.SetPropagators(propagation.New(propagation.WithInjectors(apiB3, traceCtx, corrCtx), propagation.WithExtractors(extractor)))
 	return exporter
 }
@@ -89,7 +84,7 @@ type extractorFilter struct {
 
 func (e extractorFilter) Extract(orgCtx context.Context, supplier propagation.HTTPSupplier) context.Context {
 	for _, extractor := range e.extractors {
-		if newCtx := extractor.Extract(orgCtx, supplier); apiTrace.RemoteSpanContextFromContext(newCtx) != core.EmptySpanContext() {
+		if newCtx := extractor.Extract(orgCtx, supplier); apiTrace.RemoteSpanContextFromContext(newCtx).IsValid() {
 			return newCtx
 		}
 	}
@@ -127,20 +122,16 @@ func (m *wrapperMux) ServeHTTP(writer http.ResponseWriter, request *http.Request
 
 func (m *wrapperMux) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	wH := wrapperHandler{callback: handler}
-	m.mux.Handle(pattern, newOtHttpHandler(&wH, pattern))
+	m.mux.Handle(pattern, othttp.NewHandler(&wH, pattern))
 }
 
 func (m *wrapperMux) Handler(r *http.Request) (http.Handler, string) {
 	h, p := m.mux.Handler(r)
-	return newOtHttpHandler(h, p), p
+	return othttp.NewHandler(h, p), p
 }
 
 func (m *wrapperMux) Handle(pattern string, handler http.Handler) {
-	m.mux.Handle(pattern, newOtHttpHandler(handler, pattern))
-}
-
-func newOtHttpHandler(h http.Handler, operation string) http.Handler {
-	return othttp.NewHandler(h, operation, othttp.WithFilter(modifyHeader))
+	m.mux.Handle(pattern, othttp.NewHandler(handler, pattern))
 }
 
 type wrapperHandler struct {
@@ -155,26 +146,15 @@ func (w *wrapperHandler) ServeHTTP(writer http.ResponseWriter, request *http.Req
 	}
 }
 
-func modifyHeader(request *http.Request) bool {
-	header := request.Header
-	for headerKey := range header {
-		if strings.EqualFold(headerKey, apiTrace.B3TraceIDHeader) {
-			value := header.Get(apiTrace.B3TraceIDHeader)
-			if l := len(value); l < 32 {
-				value = strings.Repeat("0", 32-l) + value
-			}
-			header.Set(apiTrace.B3TraceIDHeader, value)
-		}
-	}
-	return true
-}
-
-func getTraceTags(tags []string) []core.KeyValue {
-	keyValue := []core.KeyValue{
-		key.String("service.name", *traceServiceName),
-		key.String("service.version", fmt.Sprintf("semver: %s git:%s", version.Info["version"], version.Info["revision"])),
+func getTraceTags(tags []string) []kv.KeyValue {
+	keyValue := []kv.KeyValue{
+		kv.String("service.name", traceServiceName),
+		kv.String("service.version", fmt.Sprintf("semver: %s git:%s", version.Info["version"], version.Info["revision"])),
 	}
 
+	if hostname, err := os.Hostname(); err != nil {
+		keyValue = append(keyValue, kv.String("host.hostname", hostname))
+	}
 	for _, tag := range tags {
 		if strings.Contains(tag, "=") {
 			continue
@@ -182,25 +162,25 @@ func getTraceTags(tags []string) []core.KeyValue {
 		parts := strings.Split(tag, "=")
 		tKey, val := parts[0], parts[1]
 		if b, e := strconv.ParseBool(val); e != nil {
-			keyValue = append(keyValue, key.Bool(tKey, b))
+			keyValue = append(keyValue, kv.Bool(tKey, b))
 		} else if f32, e := strconv.ParseFloat(val, 32); e != nil {
-			keyValue = append(keyValue, key.Float32(tKey, float32(f32)))
+			keyValue = append(keyValue, kv.Float32(tKey, float32(f32)))
 		} else if f64, e := strconv.ParseFloat(val, 64); e != nil {
-			keyValue = append(keyValue, key.Float64(tKey, f64))
+			keyValue = append(keyValue, kv.Float64(tKey, f64))
 		} else if ui32, e := strconv.ParseUint(val, 0, 32); e != nil {
-			keyValue = append(keyValue, key.Uint32(tKey, uint32(ui32)))
+			keyValue = append(keyValue, kv.Uint32(tKey, uint32(ui32)))
 		} else if ui64, e := strconv.ParseUint(val, 0, 64); e != nil {
-			keyValue = append(keyValue, key.Uint64(tKey, ui64))
+			keyValue = append(keyValue, kv.Uint64(tKey, ui64))
 		} else if ui00, e := strconv.ParseUint(val, 0, 0); e != nil {
-			keyValue = append(keyValue, key.Uint(tKey, uint(ui00)))
+			keyValue = append(keyValue, kv.Uint(tKey, uint(ui00)))
 		} else if i32, e := strconv.ParseInt(val, 0, 32); e != nil {
-			keyValue = append(keyValue, key.Int32(tKey, int32(i32)))
+			keyValue = append(keyValue, kv.Int32(tKey, int32(i32)))
 		} else if i64, e := strconv.ParseInt(val, 0, 64); e != nil {
-			keyValue = append(keyValue, key.Int64(tKey, i64))
+			keyValue = append(keyValue, kv.Int64(tKey, i64))
 		} else if i00, e := strconv.ParseInt(val, 0, 0); e != nil {
-			keyValue = append(keyValue, key.Int(tKey, int(i00)))
+			keyValue = append(keyValue, kv.Int(tKey, int(i00)))
 		} else {
-			keyValue = append(keyValue, key.String(tKey, val))
+			keyValue = append(keyValue, kv.String(tKey, val))
 		}
 	}
 
@@ -208,7 +188,7 @@ func getTraceTags(tags []string) []core.KeyValue {
 	return keyValue
 }
 
-func ToString(keyValues []core.KeyValue) string {
+func ToString(keyValues []kv.KeyValue) string {
 	result := ""
 	for _, keyValue := range keyValues {
 		if result != "" {

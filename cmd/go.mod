@@ -30,8 +30,8 @@ require (
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
 	github.com/prometheus/client_golang v1.0.0
 	github.com/stretchr/testify v1.4.0
-	go.opentelemetry.io/otel v0.4.3
-	go.opentelemetry.io/otel/exporters/otlp v0.4.3
+	go.opentelemetry.io/otel v0.5.0
+	go.opentelemetry.io/otel/exporters/otlp v0.5.0
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	google.golang.org/api v0.0.0-20150730141719-0c2979aeaa5b
 	google.golang.org/appengine v1.6.5 // indirect
