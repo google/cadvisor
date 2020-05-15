@@ -21,6 +21,7 @@ sudo docker run \
   --publish=8080:8080 \
   --detach=true \
   --name=cadvisor \
+  --privileged \
   gcr.io/google-containers/cadvisor:$VERSION
 ```
 
