@@ -63,7 +63,6 @@ func InitTrace(traceEndpoint, collectorCert string) *otlp.Exporter {
 	providerOpts := []trace.ProviderOption{
 		trace.WithBatcher(exporter),
 		trace.WithConfig(trace.Config{DefaultSampler: sampler}),
-		trace.WithResourceAttributes(getTraceTags(traceTags)...),
 	}
 
 	traceProvider, err := trace.NewProvider(providerOpts...)
