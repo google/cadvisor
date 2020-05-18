@@ -274,7 +274,8 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	containerID := fm.Docker().RunBusybox("watch", "-n1", "wget", "http://www.google.com/")
 	waitForContainer(containerID, fm)
 
-	time.Sleep(10 * time.Second)
+	// Wait for at least one additional housekeeping interval
+	time.Sleep(20 * time.Second)
 	request := &info.ContainerInfoRequest{
 		NumStats: 1,
 	}
@@ -300,8 +301,8 @@ func TestDockerContainerNetworkStats(t *testing.T) {
 	assert.NotEqual(0, ifaceStats.TxPackets, "Network tx packets should not be zero")
 	assert.NotEqual(0, ifaceStats.RxBytes, "Network rx bytes should not be zero")
 	assert.NotEqual(0, ifaceStats.RxPackets, "Network rx packets should not be zero")
-	assert.NotEqual(ifaceStats.RxBytes, ifaceStats.TxBytes, "Network tx and rx bytes should not be equal")
-	assert.NotEqual(ifaceStats.RxPackets, ifaceStats.TxPackets, "Network tx and rx packets should not be equal")
+	assert.NotEqual(ifaceStats.RxBytes, ifaceStats.TxBytes, fmt.Sprintf("Network tx (%d) and rx (%d) bytes should not be equal", ifaceStats.TxBytes, ifaceStats.RxBytes))
+	assert.NotEqual(ifaceStats.RxPackets, ifaceStats.TxPackets, fmt.Sprintf("Network tx (%d) and rx (%d) packets should not be equal", ifaceStats.TxPackets, ifaceStats.RxPackets))
 }
 
 func TestDockerFilesystemStats(t *testing.T) {
