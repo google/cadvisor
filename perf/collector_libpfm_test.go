@@ -20,10 +20,12 @@ package perf
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/stats"
 )
 
 type buffer struct {
@@ -35,7 +37,7 @@ func (b buffer) Close() error {
 }
 
 func TestCollector_UpdateStats(t *testing.T) {
-	collector := collector{}
+	collector := collector{uncore: &stats.NoopCollector{}}
 	notScaledBuffer := buffer{bytes.NewBuffer([]byte{})}
 	scaledBuffer := buffer{bytes.NewBuffer([]byte{})}
 	err := binary.Write(notScaledBuffer, binary.LittleEndian, ReadFormat{
@@ -96,15 +98,17 @@ func TestCreatePerfEventAttr(t *testing.T) {
 }
 
 func TestNewCollector(t *testing.T) {
-	perfCollector := newCollector("cgroup", Events{
-		Events: [][]Event{{"event_1"}, {"event_2"}},
-		CustomEvents: []CustomEvent{{
-			Type:   0,
-			Config: []uint64{1, 2, 3},
-			Name:   "event_2",
-		}},
-	}, 1)
+	perfCollector := newCollector("cgroup", PerfEvents{
+		Core: Events{
+			Events: [][]Event{{"event_1"}, {"event_2"}},
+			CustomEvents: []CustomEvent{{
+				Type:   0,
+				Config: []uint64{1, 2, 3},
+				Name:   "event_2",
+			}},
+		},
+	}, 1, []info.Node{})
 	assert.Len(t, perfCollector.eventToCustomEvent, 1)
 	assert.Nil(t, perfCollector.eventToCustomEvent[Event("event_1")])
-	assert.Same(t, &perfCollector.events.CustomEvents[0], perfCollector.eventToCustomEvent[Event("event_2")])
+	assert.Same(t, &perfCollector.events.Core.CustomEvents[0], perfCollector.eventToCustomEvent[Event("event_2")])
 }

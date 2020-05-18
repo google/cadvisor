@@ -139,6 +139,9 @@ type DeprecatedContainerStats struct {
 	CustomMetrics    map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
 	// Perf events counters
 	PerfStats []v1.PerfStat `json:"perf_stats,omitempty"`
+	// Statistics originating from perf uncore events.
+	// Applies only for root container.
+	PerfUncoreStats []v1.PerfUncoreStat `json:"perf_uncore_stats,omitempty"`
 	// Referenced memory
 	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
 	// Resource Control (resctrl) statistics
@@ -173,6 +176,9 @@ type ContainerStats struct {
 	CustomMetrics map[string][]v1.MetricVal `json:"custom_metrics,omitempty"`
 	// Perf events counters
 	PerfStats []v1.PerfStat `json:"perf_stats,omitempty"`
+	// Statistics originating from perf uncore events.
+	// Applies only for root container.
+	PerfUncoreStats []v1.PerfUncoreStat `json:"perf_uncore_stats,omitempty"`
 	// Referenced memory
 	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
 	// Resource Control (resctrl) statistics

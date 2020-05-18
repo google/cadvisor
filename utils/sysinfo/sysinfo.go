@@ -512,3 +512,14 @@ func getMatchedInt(rgx *regexp.Regexp, str string) (int, error) {
 	}
 	return valInt, nil
 }
+
+// GetSocketFromCPU returns Socket ID of passed CPU. If is not present, returns -1.
+func GetSocketFromCPU(topology []info.Node, cpu int) int {
+	for _, node := range topology {
+		found, coreID := node.FindCoreByThread(cpu)
+		if found {
+			return node.Cores[coreID].SocketID
+		}
+	}
+	return -1
+}

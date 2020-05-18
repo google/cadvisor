@@ -15,9 +15,10 @@
 package perf
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConfigParsing(t *testing.T) {
@@ -28,14 +29,25 @@ func TestConfigParsing(t *testing.T) {
 	events, err := parseConfig(file)
 
 	assert.Nil(t, err)
-	assert.Len(t, events.Events, 2)
-	assert.Len(t, events.Events[0], 1)
-	assert.Equal(t, Event("instructions"), events.Events[0][0])
-	assert.Len(t, events.Events[1], 1)
-	assert.Equal(t, Event("instructions_retired"), events.Events[1][0])
+	assert.Len(t, events.Core.Events, 2)
+	assert.Len(t, events.Core.Events[0], 1)
+	assert.Equal(t, Event("instructions"), events.Core.Events[0][0])
+	assert.Len(t, events.Core.Events[1], 1)
+	assert.Equal(t, Event("instructions_retired"), events.Core.Events[1][0])
 
-	assert.Len(t, events.CustomEvents, 1)
-	assert.Equal(t, Config{5439680}, events.CustomEvents[0].Config)
-	assert.Equal(t, uint32(4), events.CustomEvents[0].Type)
-	assert.Equal(t, Event("instructions_retired"), events.CustomEvents[0].Name)
+	assert.Len(t, events.Core.CustomEvents, 1)
+	assert.Equal(t, Config{0x5300c0}, events.Core.CustomEvents[0].Config)
+	assert.Equal(t, uint32(0x04), events.Core.CustomEvents[0].Type)
+	assert.Equal(t, Event("instructions_retired"), events.Core.CustomEvents[0].Name)
+
+	assert.Len(t, events.Uncore.Events, 3)
+	assert.Equal(t, Event("cas_count_write"), events.Uncore.Events[0][0])
+	assert.Equal(t, Event("uncore_imc_0/UNC_M_CAS_COUNT:RD"), events.Uncore.Events[1][0])
+	assert.Equal(t, Event("uncore_ubox/UNC_U_EVENT_MSG"), events.Uncore.Events[2][0])
+
+	assert.Len(t, events.Uncore.CustomEvents, 1)
+	assert.Equal(t, Config{0x5300}, events.Uncore.CustomEvents[0].Config)
+	assert.Equal(t, uint32(0x12), events.Uncore.CustomEvents[0].Type)
+	assert.Equal(t, Event("cas_count_write"), events.Uncore.CustomEvents[0].Name)
+
 }

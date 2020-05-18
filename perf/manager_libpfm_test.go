@@ -18,13 +18,16 @@
 package perf
 
 import (
-	"github.com/google/cadvisor/stats"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/stats"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNoConfigFilePassed(t *testing.T) {
-	manager, err := NewManager("", 1)
+	manager, err := NewManager("", 1, []info.Node{})
 
 	assert.Nil(t, err)
 	_, ok := manager.(*stats.NoopManager)
@@ -32,28 +35,28 @@ func TestNoConfigFilePassed(t *testing.T) {
 }
 
 func TestNonExistentFile(t *testing.T) {
-	manager, err := NewManager("this-file-is-so-non-existent", 1)
+	manager, err := NewManager("this-file-is-so-non-existent", 1, []info.Node{})
 
 	assert.NotNil(t, err)
 	assert.Nil(t, manager)
 }
 
 func TestMalformedJsonFile(t *testing.T) {
-	manager, err := NewManager("testing/this-is-some-random.json", 1)
+	manager, err := NewManager("testing/this-is-some-random.json", 1, []info.Node{})
 
 	assert.NotNil(t, err)
 	assert.Nil(t, manager)
 }
 
 func TestGroupedEvents(t *testing.T) {
-	manager, err := NewManager("testing/grouped.json", 1)
+	manager, err := NewManager("testing/grouped.json", 1, []info.Node{})
 
 	assert.NotNil(t, err)
 	assert.Nil(t, manager)
 }
 
 func TestNewManager(t *testing.T) {
-	managerInstance, err := NewManager("testing/perf.json", 1)
+	managerInstance, err := NewManager("testing/perf.json", 1, []info.Node{})
 
 	assert.Nil(t, err)
 	_, ok := managerInstance.(*manager)
