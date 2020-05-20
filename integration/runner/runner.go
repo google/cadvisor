@@ -111,7 +111,7 @@ func PushAndRunTests(host, testDir string) (result error) {
 	// Start cAdvisor.
 	klog.Infof("Running cAdvisor on %q...", host)
 	portStr := strconv.Itoa(*port)
-	errChan := make(chan error)
+	errChan := make(chan error, 1)
 	go func() {
 		err = RunSshCommand("ssh", host, "--", fmt.Sprintf("sudo GORACE='halt_on_error=1' %s --port %s --logtostderr --docker_env_metadata_whitelist=TEST_VAR  &> %s/log.txt", path.Join(testDir, cadvisorBinary), portStr, testDir))
 		if err != nil {
