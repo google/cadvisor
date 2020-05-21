@@ -148,11 +148,18 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 	}
 
 	// Detect the container we are running on.
-	selfContainer, err := cgroups.GetOwnCgroupPath("cpu")
-	if err != nil {
-		return nil, err
+	selfContainer := "/"
+	var err error
+	// Avoid using GetOwnCgroupPath on cgroup v2 as it is not supported by libcontainer
+	if cgroups.IsCgroup2UnifiedMode() {
+		klog.Warningf("Cannot detect current cgroup on cgroup v2")
+	} else {
+		selfContainer, err := cgroups.GetOwnCgroupPath("cpu")
+		if err != nil {
+			return nil, err
+		}
+		klog.V(2).Infof("cAdvisor running in container: %q", selfContainer)
 	}
-	klog.V(2).Infof("cAdvisor running in container: %q", selfContainer)
 
 	context := fs.Context{}
 

@@ -21,7 +21,6 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	"github.com/opencontainers/runc/libcontainer/system"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -94,7 +93,8 @@ func TestScanUDPStats(t *testing.T) {
 // https://github.com/docker/libcontainer/blob/v2.2.1/cgroups/fs/cpuacct.go#L19
 const nanosecondsInSeconds = 1000000000
 
-var clockTicks = uint64(system.GetClockTicks())
+// https://github.com/containerd/cgroups/pull/12
+const clockTicks = 100
 
 func TestMorePossibleCPUs(t *testing.T) {
 	realNumCPUs := uint32(8)
