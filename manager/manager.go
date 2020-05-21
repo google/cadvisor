@@ -552,6 +552,9 @@ func (m *manager) getSubcontainers(containerName string) map[string]*containerDa
 	// Get all the unique subcontainers of the specified container
 	matchedName := path.Join(containerName, "/")
 	for i := range m.containers {
+		if m.containers[i] == nil {
+			continue
+		}
 		name := m.containers[i].info.Name
 		if name == containerName || strings.HasPrefix(name, matchedName) {
 			containersMap[m.containers[i].info.Name] = m.containers[i]
