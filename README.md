@@ -22,6 +22,7 @@ sudo docker run \
   --detach=true \
   --name=cadvisor \
   --privileged \
+  --device=/dev/kmsg \
   gcr.io/google-containers/cadvisor:$VERSION
 ```
 
