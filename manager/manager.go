@@ -650,6 +650,7 @@ func (m *manager) containerDataSliceToContainerInfoSlice(containers []*container
 		cinfo, err := m.containerDataToContainerInfo(containers[i], query)
 		if err != nil {
 			// Skip containers with errors, we try to degrade gracefully.
+			klog.V(4).Infof("convert container data to container info failed with error %s", err.Error())
 			continue
 		}
 		output = append(output, cinfo)

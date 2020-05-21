@@ -159,7 +159,7 @@ func (cd *containerData) notifyOnDemand() {
 
 func (cd *containerData) GetInfo(shouldUpdateSubcontainers bool) (*containerInfo, error) {
 	// Get spec and subcontainers.
-	if cd.clock.Since(cd.infoLastUpdatedTime) > 5*time.Second {
+	if cd.clock.Since(cd.infoLastUpdatedTime) > 5*time.Second || shouldUpdateSubcontainers {
 		err := cd.updateSpec()
 		if err != nil {
 			return nil, err
