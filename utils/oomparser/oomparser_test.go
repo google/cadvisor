@@ -450,11 +450,11 @@ func TestStreamOOMs(t *testing.T) {
 	}
 
 	for _, pair := range testPairs {
-		go func() {
+		go func(pair interface{}) {
 			for _, x := range pair.in {
 				writeAll(x.msgs, x.time)
 			}
-		}()
+		}(pair)
 		for _, expected := range pair.out {
 			oom := <-oomsOut
 			assert.Equal(t, expected, oom)
