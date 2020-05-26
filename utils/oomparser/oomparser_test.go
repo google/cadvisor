@@ -450,6 +450,7 @@ func TestStreamOOMs(t *testing.T) {
 	}
 
 	for _, pair := range testPairs {
+		pair := pair
 		go func() {
 			for _, x := range pair.in {
 				writeAll(x.msgs, x.time)
