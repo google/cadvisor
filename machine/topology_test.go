@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"sort"
 	"testing"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -263,6 +264,9 @@ func TestTopologyWithoutNodes(t *testing.T) {
 	sysFs.SetPhysicalPackageIDs(physicalPackageIDs, nil)
 
 	topology, numCores, err := GetTopology(sysFs)
+	sort.SliceStable(topology, func(i, j int) bool {
+		return topology[i].Id < topology[j].Id
+	})
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(topology))
 	assert.Equal(t, 4, numCores)
