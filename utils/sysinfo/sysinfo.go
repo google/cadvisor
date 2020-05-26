@@ -403,6 +403,17 @@ func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 		} else {
 			desiredCore.Threads = append(desiredCore.Threads, cpuID)
 		}
+
+		rawPhysicalPackageID, err := sysFs.GetCPUPhysicalPackageID(cpuDir)
+		if err != nil {
+			return nil, err
+		}
+
+		physicalPackageID, err := strconv.Atoi(rawPhysicalPackageID)
+		if err != nil {
+			return nil, err
+		}
+		desiredCore.SocketID = physicalPackageID
 	}
 	return cores, nil
 }

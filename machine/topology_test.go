@@ -167,6 +167,21 @@ func TestTopology(t *testing.T) {
 	}
 	sysFs.SetHugePagesNr(hugePageNr, nil)
 
+	physicalPackageIDs := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0":  "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1":  "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2":  "0",
+		"/fakeSysfs/devices/system/node/node0/cpu3":  "0",
+		"/fakeSysfs/devices/system/node/node0/cpu4":  "0",
+		"/fakeSysfs/devices/system/node/node0/cpu5":  "0",
+		"/fakeSysfs/devices/system/node/node0/cpu6":  "1",
+		"/fakeSysfs/devices/system/node/node0/cpu7":  "1",
+		"/fakeSysfs/devices/system/node/node0/cpu8":  "1",
+		"/fakeSysfs/devices/system/node/node0/cpu9":  "1",
+		"/fakeSysfs/devices/system/node/node0/cpu10": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu11": "1",
+	}
+	sysFs.SetPhysicalPackageIDs(physicalPackageIDs, nil)
 	topology, numCores, err := GetTopology(sysFs)
 	assert.Nil(t, err)
 	assert.Equal(t, 12, numCores)
@@ -257,7 +272,7 @@ func TestTopologyWithoutNodes(t *testing.T) {
 	topologyJSON2, err := json.Marshal(topology[1])
 	assert.Nil(t, err)
 
-	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"size":32768,"type":"unified","level":0}]}],"caches":null}`
+	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"size":32768,"type":"unified","level":0}], "socket_id": 0}],"caches":null}`
 	expectedTopology2 := `
 		{
 			"node_id":1,
@@ -276,7 +291,8 @@ func TestTopologyWithoutNodes(t *testing.T) {
 						"type":"unified",
 						"level":0
 					}
-					]
+					],
+					"socket_id": 1
 				}
 			],
 			"caches":null
@@ -284,12 +300,9 @@ func TestTopologyWithoutNodes(t *testing.T) {
 
 	json1 := string(topologyJSON1)
 	json2 := string(topologyJSON2)
-	if expectedTopology1 == json1 {
-		assert.JSONEq(t, expectedTopology2, json2)
-	} else {
-		assert.JSONEq(t, expectedTopology2, json1)
-		assert.JSONEq(t, expectedTopology1, json2)
-	}
+
+	assert.JSONEq(t, expectedTopology1, json1)
+	assert.JSONEq(t, expectedTopology2, json2)
 }
 
 func TestTopologyWithNodesWithoutCPU(t *testing.T) {
