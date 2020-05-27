@@ -203,6 +203,9 @@ func DeprecatedStatsFromV1(cont *v1.ContainerInfo) []DeprecatedContainerStats {
 		if stat.HasCustomMetrics {
 			stat.CustomMetrics = val.CustomMetrics
 		}
+		if len(val.PerfStats) > 0 {
+			stat.PerfStats = val.PerfStats
+		}
 		// TODO(rjnagal): Handle load stats.
 		stats = append(stats, stat)
 	}
