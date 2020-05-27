@@ -227,7 +227,7 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 		// So, we should ignore error here.
 		err = addCacheInfo(sysFs, &node)
 		if err != nil {
-			klog.Warningf("Found node without cache information, nodeDir: %s", nodeDir)
+			klog.V(1).Infof("Found node without cache information, nodeDir: %s", nodeDir)
 		}
 
 		node.Memory, err = getNodeMemInfo(sysFs, nodeDir)
@@ -278,7 +278,7 @@ func getCPUTopology(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 		// So, we should ignore error here.
 		err = addCacheInfo(sysFs, &node)
 		if err != nil {
-			klog.Warningf("Found cpu without cache information, cpuPath: %s", cpus)
+			klog.V(1).Infof("Found cpu without cache information, cpuPath: %s", cpus)
 		}
 		nodes = append(nodes, node)
 	}
