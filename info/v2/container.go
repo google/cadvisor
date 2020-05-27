@@ -278,6 +278,7 @@ type ProcessInfo struct {
 	CgroupPath    string  `json:"cgroup_path"`
 	Cmd           string  `json:"cmd"`
 	FdCount       int     `json:"fd_count"`
+	Psr           int     `json:"psr"`
 }
 
 type TcpStat struct {
