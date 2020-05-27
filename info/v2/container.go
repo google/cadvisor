@@ -120,7 +120,8 @@ type DeprecatedContainerStats struct {
 	HasMemory bool           `json:"has_memory"`
 	Memory    v1.MemoryStats `json:"memory,omitempty"`
 	// Hugepage statistics
-	HasHugetlb bool `json:"has_hugetlb"`
+	HasHugetlb bool                       `json:"has_hugetlb"`
+	Hugetlb    map[string]v1.HugetlbStats `json:"hugetlb,omitempty"`
 	// Network statistics
 	HasNetwork bool         `json:"has_network"`
 	Network    NetworkStats `json:"network,omitempty"`
