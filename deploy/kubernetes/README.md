@@ -35,7 +35,7 @@ GO_FLAGS="-tags=libpfm,netgo" make build
 
 Build cAdvisor docker image with perf support
 ```
-docker build  --no-cache --pull -t cadvisor:$(git rev-parse --short HEAD) -f deploy/Dockerfile_perf .
+docker build  --no-cache --pull -t cadvisor:$(git rev-parse --short HEAD) -f deploy/Dockerfile .
 ```
 
 Add tag and push to registry:

@@ -1,10 +1,18 @@
 FROM alpine:3.10
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
-RUN apk --no-cache add libc6-compat device-mapper findutils zfs && \
-    apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
+RUN apk --no-cache add libc6-compat=1.1.22-r3 device-mapper==2.02.184-r0 findutils=4.6.0-r1 zfs=0.8.2-r0  build-base=0.5-r1 linux-headers=4.19.36-r0 && \
+    apk --no-cache add thin-provisioning-tools=0.7.1-r3 --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
+
+RUN wget https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.10.1.tar.gz && \
+  tar -xzf libpfm-4.10.1.tar.gz && \
+  rm libpfm-4.10.1.tar.gz
+
+RUN export DBG="-g -Wall" && \
+  make -e -C libpfm-4.10.1 && \
+  make install -C libpfm-4.10.1
 
 # Grab cadvisor from the staging directory.
 ADD cadvisor /usr/bin/cadvisor
