@@ -649,6 +649,26 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 						},
 					},
 					ReferencedMemory: 1234,
+					Resctrl: info.ResctrlStats{
+						MemoryBandwidthMonitoring: []info.MemoryBandwidthMonitoringStats{
+							{
+								TotalBytes: 4512312,
+								LocalBytes: 2390393,
+							},
+							{
+								TotalBytes: 2173713,
+								LocalBytes: 1231233,
+							},
+						},
+						CacheMonitoringTechnology: []info.CacheMonitoringTechnologyStats{
+							{
+								LLCOccupancy: 162626,
+							},
+							{
+								LLCOccupancy: 213777,
+							},
+						},
+					},
 				},
 			},
 		},

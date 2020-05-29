@@ -94,6 +94,9 @@ type containerData struct {
 
 	// perfCollector updates stats for perf_event cgroup controller.
 	perfCollector stats.Collector
+
+	// resctrlCollector updates stats for resctrl controller.
+	resctrlCollector stats.Collector
 }
 
 // jitter returns a time.Duration between duration and duration + maxFactor * duration,
@@ -400,6 +403,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 		clock:                    clock,
 		perfCollector:            &stats.NoopCollector{},
 		nvidiaCollector:          &stats.NoopCollector{},
+		resctrlCollector:         &stats.NoopCollector{},
 	}
 	cont.info.ContainerReference = ref
 
@@ -641,6 +645,8 @@ func (cd *containerData) updateStats() error {
 
 	perfStatsErr := cd.perfCollector.UpdateStats(stats)
 
+	resctrlStatsErr := cd.resctrlCollector.UpdateStats(stats)
+
 	ref, err := cd.handler.ContainerReference()
 	if err != nil {
 		// Ignore errors if the container is dead.
@@ -668,6 +674,10 @@ func (cd *containerData) updateStats() error {
 	if perfStatsErr != nil {
 		klog.Errorf("error occurred while collecting perf stats for container %s: %s", cInfo.Name, err)
 		return perfStatsErr
+	}
+	if resctrlStatsErr != nil {
+		klog.Errorf("error occurred while collecting resctrl stats for container %s: %s", cInfo.Name, err)
+		return resctrlStatsErr
 	}
 	return customStatsErr
 }

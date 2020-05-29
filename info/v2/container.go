@@ -170,6 +170,8 @@ type ContainerStats struct {
 	PerfStats []v1.PerfStat `json:"perf_stats,omitempty"`
 	// Referenced memory
 	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
+	// Resource Control (resctrl) statistics.
+	Resctrl v1.ResctrlStats `json:"resctrl,omitempty"`
 }
 
 type Percentiles struct {

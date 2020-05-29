@@ -848,6 +848,25 @@ type PerfStat struct {
 	Cpu int `json:"cpu"`
 }
 
+type MemoryBandwidthMonitoringStats struct {
+	// The 'mbm_total_bytes'.
+	TotalBytes uint64 `json:"mbm_total_bytes,omitempty"`
+
+	// The 'mbm_local_bytes'.
+	LocalBytes uint64 `json:"mbm_local_bytes,omitempty"`
+}
+
+type CacheMonitoringTechnologyStats struct {
+	// The 'llc_occupancy'.
+	LLCOccupancy uint64 `json:"llc_occupancy,omitempty"`
+}
+
+type ResctrlStats struct {
+	// Each NUMA Node statistics corresponds to one element in the array.
+	MemoryBandwidthMonitoring []MemoryBandwidthMonitoringStats `json:"memory_bandwidth_monitoring,omitempty"`
+	CacheMonitoringTechnology []CacheMonitoringTechnologyStats `json:"cache_monitoring_technology,omitempty"`
+}
+
 type UlimitSpec struct {
 	Name      string `json:"name"`
 	SoftLimit int64  `json:"soft_limit"`
@@ -902,6 +921,9 @@ type ContainerStats struct {
 
 	// Referenced memory
 	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
+
+	// Resource Control (resctrl) statistics.
+	Resctrl ResctrlStats `json:"resctrl,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

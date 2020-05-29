@@ -155,6 +155,9 @@ func ContainerStatsFromV1(containerName string, spec *v1.ContainerSpec, stats []
 		if len(val.PerfStats) > 0 {
 			stat.PerfStats = val.PerfStats
 		}
+		if len(val.Resctrl.MemoryBandwidthMonitoring) > 0 || len(val.Resctrl.CacheMonitoringTechnology) > 0 {
+			stat.Resctrl = val.Resctrl
+		}
 		// TODO(rjnagal): Handle load stats.
 		newStats = append(newStats, stat)
 	}
