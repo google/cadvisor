@@ -187,13 +187,18 @@ func fsToFsStats(fs *fs.Fs) info.FsStats {
 func (h *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 	var filesystems []fs.Fs
 	var err error
+	// Early exist if no disk metrics are to be collected.
+	if !h.includedMetrics.Has(container.DiskUsageMetrics) && !h.includedMetrics.Has(container.DiskIOMetrics) {
+		return nil
+	}
+
 	// Get Filesystem information only for the root cgroup.
 	if isRootCgroup(h.name) {
 		filesystems, err = h.fsInfo.GetGlobalFsInfo()
 		if err != nil {
 			return err
 		}
-	} else if h.includedMetrics.Has(container.DiskUsageMetrics) || h.includedMetrics.Has(container.DiskIOMetrics) {
+	} else {
 		if len(h.externalMounts) > 0 {
 			mountSet := make(map[string]struct{})
 			for _, mount := range h.externalMounts {
@@ -206,14 +211,14 @@ func (h *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 		}
 	}
 
-	if isRootCgroup(h.name) || h.includedMetrics.Has(container.DiskUsageMetrics) {
+	if h.includedMetrics.Has(container.DiskUsageMetrics) {
 		for i := range filesystems {
 			fs := filesystems[i]
 			stats.Filesystem = append(stats.Filesystem, fsToFsStats(&fs))
 		}
 	}
 
-	if isRootCgroup(h.name) || h.includedMetrics.Has(container.DiskIOMetrics) {
+	if h.includedMetrics.Has(container.DiskIOMetrics) {
 		common.AssignDeviceNamesToDiskStats(&fsNamer{fs: filesystems, factory: h.machineInfoFactory}, &stats.DiskIo)
 
 	}
