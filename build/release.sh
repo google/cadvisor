@@ -32,10 +32,12 @@ if ! git_user="$(git config --get user.email)"; then
   exit 1
 fi
 
-# Build the release.
 export BUILD_USER="$git_user"
 export BUILD_DATE=$( date +%Y%m%d ) # Release date is only to day-granularity
 export VERBOSE=true
+
+# Build the release binary with libpfm4 for docker container
+export GO_FLAGS="-tags=libpfm,netgo"
 build/build.sh
 
 # Build the docker image
@@ -43,6 +45,10 @@ echo ">> building cadvisor docker image"
 docker_tag="google/cadvisor:$VERSION"
 gcr_tag="gcr.io/cadvisor/cadvisor:$VERSION"
 docker build -t $docker_tag -t $gcr_tag -f deploy/Dockerfile .
+
+# Build the release binary without libpfm4 to not require libpfm4 in runtime environment
+unset GO_FLAGS
+build/build.sh
 
 echo
 echo "Release info:"
