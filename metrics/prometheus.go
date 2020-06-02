@@ -1601,7 +1601,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_memory_bandwidth_bytes_total",
 				help:        "Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"numa_node"},
+				extraLabels: []string{prometheusNodeLabelName},
 				getValues: func(s *info.ContainerStats) metricValues {
 					numberOfNUMANodes := len(s.Resctrl.MemoryBandwidthMonitoring)
 					metrics := make(metricValues, numberOfNUMANodes)
@@ -1619,7 +1619,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_memory_bandwidth_local_bytes_total",
 				help:        "Total local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"numa_node"},
+				extraLabels: []string{prometheusNodeLabelName},
 				getValues: func(s *info.ContainerStats) metricValues {
 					numberOfNUMANodes := len(s.Resctrl.MemoryBandwidthMonitoring)
 					metrics := make(metricValues, numberOfNUMANodes)
@@ -1637,7 +1637,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_llc_occupancy_bytes_total",
 				help:        "Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"numa_node"},
+				extraLabels: []string{prometheusNodeLabelName},
 				getValues: func(s *info.ContainerStats) metricValues {
 					numberOfNUMANodes := len(s.Resctrl.CacheMonitoringTechnology)
 					metrics := make(metricValues, numberOfNUMANodes)
