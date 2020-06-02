@@ -848,6 +848,7 @@ type PerfStat struct {
 	Cpu int `json:"cpu"`
 }
 
+// See: https://www.kernel.org/doc/Documentation/x86/intel_rdt_ui.txt
 type MemoryBandwidthMonitoringStats struct {
 	// The 'mbm_total_bytes'.
 	TotalBytes uint64 `json:"mbm_total_bytes,omitempty"`
