@@ -40,8 +40,8 @@ github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible
 github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0 h1:w3NnFcKR5241cfmQU5ZZAsf0xcpId6mWOupTvJlUX2U=
 github.com/docker/docker v0.7.3-0.20190327010347-be7ac8be2ae0/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
-github.com/docker/go-connections v0.3.0 h1:3lOnM9cSzgGwx8VfK/NGOW5fLQ0GjIlCkaktF+n1M6o=
-github.com/docker/go-connections v0.3.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
+github.com/docker/go-connections v0.4.0 h1:El9xVISelRB7BuFusrZozjnkIM5YnzCViNKohAFqRJQ=
+github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
 github.com/docker/go-units v0.4.0 h1:3uh0PgVws3nIA0Q+MwDC8yjEPf9zjRfZZWXZYDct3Tw=
 github.com/docker/go-units v0.4.0/go.mod h1:fgPhTUdO+D/Jk86RDLlptpiXQzgHJF7gydDDbaIK4Dk=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
@@ -113,10 +113,6 @@ github.com/opencontainers/go-digest v1.0.0-rc1 h1:WzifXhOVOEOuFYOJAW6aQqW0TooG2i
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/opencontainers/image-spec v1.0.1 h1:JMemWkRwHx4Zj+fVxWoMCFm/8sYGGrUVojFA6h/TRcI=
 github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
-github.com/opencontainers/runc v1.0.0-rc9.0.20200513004834-df3d7f673aff h1:1Qq3ntSzW1obJk2QQveq90NlQsE03pCK6qUdVga/Szk=
-github.com/opencontainers/runc v1.0.0-rc9.0.20200513004834-df3d7f673aff/go.mod h1:qRKjcTQ1a9/OUHefjSParrF8mgd/MW0OiVIAAKxJiIM=
-github.com/opencontainers/runc v1.0.0-rc9.0.20200514005706-3f1e88699199 h1:VM4aRR8bdSHKH/SDOXKKbo1mPM0p9+a4DFXCZ9gzH7E=
-github.com/opencontainers/runc v1.0.0-rc9.0.20200514005706-3f1e88699199/go.mod h1:qRKjcTQ1a9/OUHefjSParrF8mgd/MW0OiVIAAKxJiIM=
 github.com/opencontainers/runc v1.0.0-rc9.0.20200519182809-b207d578ec2d h1:lu5nmuaJIE2k4quliZGmd8ve6SOQAgFJXAeSc8B35I8=
 github.com/opencontainers/runc v1.0.0-rc9.0.20200519182809-b207d578ec2d/go.mod h1:qRKjcTQ1a9/OUHefjSParrF8mgd/MW0OiVIAAKxJiIM=
 github.com/opencontainers/runtime-spec v1.0.2 h1:UfAcuLBJB9Coz72x1hgl8O5RVzTdNiaglX6v2DM6FI0=
