@@ -9,7 +9,6 @@ spec:
     spec:
       containers:
       - name: cadvisor
-        image: "<cadvisor_image>"
         args:
           - --perf_events_config=/etc/config/perf-non-hardware.json
         securityContext:

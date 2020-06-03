@@ -28,28 +28,7 @@ kustomize build deploy/kubernetes/overlays/examples | kubectl apply -f -
 
 Example of modifications needed to deploy cAdvisor with perf support is provided in [overlays/examples_perf](overlays/examples_perf) directory (modification to daemonset and configmap with perf events configuration).
 
-To test example deployment from the cadvisor/ directory build binary with perf support
-```
-GO_FLAGS="-tags=libpfm,netgo" make build
-```
-
-Build cAdvisor docker image with perf support
-```
-docker build  --no-cache --pull -t cadvisor:$(git rev-parse --short HEAD) -f deploy/Dockerfile .
-```
-
-Add tag and push to registry:
-```
-docker tag cadvisor:$(git rev-parse --short HEAD) <your_docker_registry_address>/cadvisor:$(git rev-parse --short HEAD)
-docker push <your_docker_registry_address>/cadvisor:$(git rev-parse --short HEAD)
-```
-
-Modify image name in [cadvisor-perf.yaml](overlays/examples_perf/cadvisor-perf.yaml), change this line:
-```
-image: "<cadvisor_image>"
-```
-
-Generate and apply the daemonset with patches:
+To generate and apply the daemonset with patches for cAdvisor with perf support:
 ```
 kustomize build deploy/kubernetes/overlays/examples_perf | kubectl apply -f -
 ```
