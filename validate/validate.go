@@ -156,18 +156,22 @@ func validateMemoryAccounting(availableCgroups map[string]int) string {
 	if !ok {
 		return "\tHierarchical memory accounting status unknown: memory cgroup not enabled.\n"
 	}
-	mnt, err := cgroups.FindCgroupMountpoint("/", "memory")
-	if err != nil {
-		return "\tHierarchical memory accounting status unknown: memory cgroup not mounted.\n"
-	}
-	hier, err := ioutil.ReadFile(path.Join(mnt, "memory.use_hierarchy"))
-	if err != nil {
-		return "\tHierarchical memory accounting status unknown: hierarchy interface unavailable.\n"
-	}
 	var enabled int
-	n, err := fmt.Sscanf(string(hier), "%d", &enabled)
-	if err != nil || n != 1 {
-		return "\tHierarchical memory accounting status unknown: hierarchy interface unreadable.\n"
+	if cgroups.IsCgroup2UnifiedMode() {
+		enabled = 1
+	} else {
+		mnt, err := cgroups.FindCgroupMountpoint("/", "memory")
+		if err != nil {
+			return "\tHierarchical memory accounting status unknown: memory cgroup not mounted.\n"
+		}
+		hier, err := ioutil.ReadFile(path.Join(mnt, "memory.use_hierarchy"))
+		if err != nil {
+			return "\tHierarchical memory accounting status unknown: hierarchy interface unavailable.\n"
+		}
+		n, err := fmt.Sscanf(string(hier), "%d", &enabled)
+		if err != nil || n != 1 {
+			return "\tHierarchical memory accounting status unknown: hierarchy interface unreadable.\n"
+		}
 	}
 	if enabled == 1 {
 		return "\tHierarchical memory accounting enabled. Reported memory usage includes memory used by child containers.\n"
