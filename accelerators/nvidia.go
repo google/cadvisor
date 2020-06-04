@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/stats"
 
@@ -48,7 +49,12 @@ var sysFsPCIDevicesPath = "/sys/bus/pci/devices/"
 
 const nvidiaVendorID = "0x10de"
 
-func NewNvidiaManager() stats.Manager {
+func NewNvidiaManager(includedMetrics container.MetricSet) stats.Manager {
+	if !includedMetrics.Has(container.AcceleratorUsageMetrics) {
+		klog.V(2).Info("NVIDIA GPU metrics disabled")
+		return &stats.NoopManager{}
+	}
+
 	manager := &nvidiaManager{}
 	err := manager.setup()
 	if err != nil {
