@@ -549,7 +549,6 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 
 	nodesJSON, err := json.Marshal(nodes)
 	assert.Nil(t, err)
-	fmt.Println(string(nodesJSON))
 
 	expectedNodes := `[
 		{
@@ -599,6 +598,306 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 			"caches":null
 		 }
 	]`
+	assert.JSONEq(t, expectedNodes, string(nodesJSON))
+}
+
+func TestGetNodesInfoWithoutNodesWhenPhysicalPackageIDMissingForOneCPU(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+
+	nodesPaths := []string{}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		cpusPath: {
+			cpusPath + "/cpu0",
+			cpusPath + "/cpu1",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		cpusPath + "/cpu0": "0",
+		cpusPath + "/cpu1": "0",
+	}
+
+	coreThreadErrors := map[string]error{
+		cpusPath + "/cpu0": nil,
+		cpusPath + "/cpu1": nil,
+	}
+	fakeSys.SetCoreThreads(coreThread, coreThreadErrors)
+
+	physicalPackageIDs := map[string]string{
+		cpusPath + "/cpu0": "0",
+		cpusPath + "/cpu1": "0",
+	}
+
+	physicalPackageIDErrors := map[string]error{
+		cpusPath + "/cpu0": nil,
+		cpusPath + "/cpu1": os.ErrNotExist,
+	}
+	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, physicalPackageIDErrors)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(nodes))
+	assert.Equal(t, 2, cores)
+
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Id < nodes[j].Id
+	})
+
+	nodesJSON, err := json.Marshal(nodes)
+	assert.Nil(t, err)
+
+	fmt.Println(string(nodesJSON))
+
+	expectedNodes := `[
+		{
+			"node_id":0,
+			"memory":0,
+			"hugepages":null,
+			"cores":[
+			   {
+				  "core_id":0,
+				  "thread_ids":[
+					 0
+				  ],
+				  "caches": null,
+				  "socket_id": 0
+			   }
+			],
+			"caches":null
+		}
+	]`
+	assert.JSONEq(t, expectedNodes, string(nodesJSON))
+}
+
+func TestGetNodesInfoWithoutNodesWhenPhysicalPackageIDMissing(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+
+	nodesPaths := []string{}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		cpusPath: {
+			cpusPath + "/cpu0",
+			cpusPath + "/cpu1",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		cpusPath + "/cpu0": "0",
+		cpusPath + "/cpu1": "0",
+	}
+
+	coreThreadErrors := map[string]error{
+		cpusPath + "/cpu0": nil,
+		cpusPath + "/cpu1": nil,
+	}
+	fakeSys.SetCoreThreads(coreThread, coreThreadErrors)
+
+	physicalPackageIDs := map[string]string{
+		cpusPath + "/cpu0": "0",
+		cpusPath + "/cpu1": "0",
+	}
+
+	physicalPackageIDErrors := map[string]error{
+		cpusPath + "/cpu0": os.ErrNotExist,
+		cpusPath + "/cpu1": os.ErrNotExist,
+	}
+	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, physicalPackageIDErrors)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(nodes))
+	assert.Equal(t, 2, cores)
+}
+
+func TestGetNodesWhenTopologyDirMissingForOneCPU(t *testing.T) {
+	/*
+		Unit test for case in which:
+		- there are two cpus (cpu0 and cpu1) in /sys/devices/system/node/node0/ and /sys/devices/system/cpu
+		- topology directory is missing for cpu1 but it exists for cpu0
+	*/
+	fakeSys := &fakesysfs.FakeSysFs{}
+
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+	}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+	}
+
+	coreThreadErrors := map[string]error{
+		"/fakeSysfs/devices/system/node/node0/cpu0": nil,
+		"/fakeSysfs/devices/system/node/node0/cpu1": os.ErrNotExist,
+	}
+	fakeSys.SetCoreThreads(coreThread, coreThreadErrors)
+
+	memTotal := "MemTotal:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, nil)
+
+	physicalPackageIDs := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+	}
+
+	physicalPackageIDErrors := map[string]error{
+		"/fakeSysfs/devices/system/node/node0/cpu0": nil,
+		"/fakeSysfs/devices/system/node/node0/cpu1": os.ErrNotExist,
+	}
+
+	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, physicalPackageIDErrors)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+
+	assert.Equal(t, 1, len(nodes))
+	assert.Equal(t, 2, cores)
+
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Id < nodes[j].Id
+	})
+
+	nodesJSON, err := json.Marshal(nodes)
+	assert.Nil(t, err)
+
+	expectedNodes := `[
+		{
+		   "node_id":0,
+		   "memory":33604804608,
+		   "hugepages":[
+			  {
+				 "page_size":2048,
+				 "num_pages":1
+			  }
+		   ],
+		   "cores":[
+			  {
+				 "core_id":0,
+				 "thread_ids":[
+					0
+				 ],
+				 "caches":null,
+				 "socket_id":0
+			  }
+		   ],
+		   "caches": null
+		}
+	 ]`
+	assert.JSONEq(t, expectedNodes, string(nodesJSON))
+}
+
+func TestGetNodesWhenPhysicalPackageIDMissingForOneCPU(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+	}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+	}
+
+	coreThreadErrors := map[string]error{
+		"/fakeSysfs/devices/system/node/node0/cpu0": nil,
+		"/fakeSysfs/devices/system/node/node0/cpu1": nil,
+	}
+	fakeSys.SetCoreThreads(coreThread, coreThreadErrors)
+
+	memTotal := "MemTotal:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, nil)
+
+	physicalPackageIDs := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+	}
+
+	physicalPackageIDErrors := map[string]error{
+		"/fakeSysfs/devices/system/node/node0/cpu0": nil,
+		"/fakeSysfs/devices/system/node/node0/cpu1": os.ErrNotExist,
+	}
+
+	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, physicalPackageIDErrors)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+
+	assert.Equal(t, 1, len(nodes))
+	assert.Equal(t, 2, cores)
+
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].Id < nodes[j].Id
+	})
+
+	nodesJSON, err := json.Marshal(nodes)
+	assert.Nil(t, err)
+
+	expectedNodes := `[
+		{
+		   "node_id":0,
+		   "memory":33604804608,
+		   "hugepages":[
+			  {
+				 "page_size":2048,
+				 "num_pages":1
+			  }
+		   ],
+		   "cores":[
+			  {
+				 "core_id":0,
+				 "thread_ids":[
+					0, 1
+				 ],
+				 "caches":null,
+				 "socket_id":0
+			  }
+		   ],
+		   "caches": null
+		}
+	 ]`
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
 }
 

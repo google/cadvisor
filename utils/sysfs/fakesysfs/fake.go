@@ -62,10 +62,10 @@ type FakeSysFs struct {
 	cpuPathErr error
 
 	coreThread map[string]string
-	coreIDErr  error
+	coreIDErr  map[string]error
 
 	physicalPackageIDs   map[string]string
-	physicalPackageIDErr error
+	physicalPackageIDErr map[string]error
 
 	memTotal string
 	memErr   error
@@ -86,11 +86,11 @@ func (fs *FakeSysFs) GetCPUsPaths(cpusPath string) ([]string, error) {
 }
 
 func (fs *FakeSysFs) GetCoreID(coreIDPath string) (string, error) {
-	return fs.coreThread[coreIDPath], fs.coreIDErr
+	return fs.coreThread[coreIDPath], fs.coreIDErr[coreIDPath]
 }
 
 func (fs *FakeSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
-	return fs.physicalPackageIDs[cpuPath], fs.physicalPackageIDErr
+	return fs.physicalPackageIDs[cpuPath], fs.physicalPackageIDErr[cpuPath]
 }
 
 func (fs *FakeSysFs) GetMemInfo(nodePath string) (string, error) {
@@ -166,14 +166,14 @@ func (fs *FakeSysFs) SetCPUsPaths(paths map[string][]string, err error) {
 	fs.cpuPathErr = err
 }
 
-func (fs *FakeSysFs) SetCoreThreads(coreThread map[string]string, err error) {
+func (fs *FakeSysFs) SetCoreThreads(coreThread map[string]string, coreThreadErrors map[string]error) {
 	fs.coreThread = coreThread
-	fs.coreIDErr = err
+	fs.coreIDErr = coreThreadErrors
 }
 
-func (fs *FakeSysFs) SetPhysicalPackageIDs(physicalPackageIDs map[string]string, err error) {
+func (fs *FakeSysFs) SetPhysicalPackageIDs(physicalPackageIDs map[string]string, physicalPackageIDErrors map[string]error) {
 	fs.physicalPackageIDs = physicalPackageIDs
-	fs.physicalPackageIDErr = err
+	fs.physicalPackageIDErr = physicalPackageIDErrors
 }
 
 func (fs *FakeSysFs) SetMemory(memTotal string, err error) {

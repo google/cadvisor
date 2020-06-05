@@ -16,6 +16,7 @@ package sysinfo
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -265,6 +266,11 @@ func getCPUTopology(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 		return nil, 0, err
 	}
 
+	if len(cpusByPhysicalPackageID) == 0 {
+		klog.Warningf("Cannot read any physical package id for any CPU")
+		return nil, cpusCount, nil
+	}
+
 	for physicalPackageID, cpus := range cpusByPhysicalPackageID {
 		node := info.Node{Id: physicalPackageID}
 
@@ -290,7 +296,10 @@ func getCpusByPhysicalPackageID(sysFs sysfs.SysFs, cpusPaths []string) (map[int]
 	for _, cpuPath := range cpusPaths {
 
 		rawPhysicalPackageID, err := sysFs.GetCPUPhysicalPackageID(cpuPath)
-		if err != nil {
+		if os.IsNotExist(err) {
+			klog.Warningf("Cannot read physical package id for %s, physical_package_id file does not exist, err: %s", cpuPath, err)
+			continue
+		} else if err != nil {
 			return nil, err
 		}
 
@@ -377,7 +386,10 @@ func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 		}
 
 		rawPhysicalID, err := sysFs.GetCoreID(cpuDir)
-		if err != nil {
+		if os.IsNotExist(err) {
+			klog.Warningf("Cannot read core id for %s, core_id file does not exist, err: %s", cpuDir, err)
+			continue
+		} else if err != nil {
 			return nil, err
 		}
 		physicalID, err := strconv.Atoi(rawPhysicalID)
@@ -405,7 +417,10 @@ func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 		}
 
 		rawPhysicalPackageID, err := sysFs.GetCPUPhysicalPackageID(cpuDir)
-		if err != nil {
+		if os.IsNotExist(err) {
+			klog.Warningf("Cannot read physical package id for %s, physical_package_id file does not exist, err: %s", cpuDir, err)
+			continue
+		} else if err != nil {
 			return nil, err
 		}
 
