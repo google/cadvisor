@@ -24,6 +24,15 @@ To apply the daemonset to your cluster with example patches applied:
 kustomize build deploy/kubernetes/overlays/examples | kubectl apply -f -
 ```
 
+### cAdvisor with perf support on Kubernetes
+
+Example of modifications needed to deploy cAdvisor with perf support is provided in [overlays/examples_perf](overlays/examples_perf) directory (modification to daemonset and configmap with perf events configuration).
+
+To generate and apply the daemonset with patches for cAdvisor with perf support:
+```
+kustomize build deploy/kubernetes/overlays/examples_perf | kubectl apply -f -
+```
+
 ## Kustomization
 
 On your own fork of cAdvisor, create your own overlay directoy with your patches.  Copy patches from the example folder if you intend to use them, but don't modify the originals.  Commit your changes in your local branch, and use git to manage them the same way you would any other piece of code.

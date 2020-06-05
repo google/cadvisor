@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: perf-config
+  namespace: cadvisor
+data:
+  perf-non-hardware.json: |
+    {
+    "events": [
+      ["context-switches"],
+      ["cpu-migrations-custom"]
+    ],
+    "custom_events": [
+        {
+          "type": 1,
+          "config": [
+            "0x4"
+          ],
+          "name": "cpu-migrations-custom"
+        }
+      ]
+    }

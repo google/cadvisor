@@ -1,0 +1,6 @@
+bases:
+- ../../base
+resources:
+- configmap.yaml
+patches:
+- cadvisor-perf.yaml
