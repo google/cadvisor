@@ -79,6 +79,22 @@ func TestGetDiskStatsMap(t *testing.T) {
 	}
 }
 
+func TestGetDiskStatsMapMajorMinorNum(t *testing.T) {
+	diskStatsMap, err := getDiskStatsMap("test_resources/diskstats")
+	if err != nil {
+		t.Errorf("Error calling getDiskStatMap %s", err)
+	}
+	if len(diskStatsMap) != 30 {
+		t.Errorf("diskStatsMap %+v not valid", diskStatsMap)
+	}
+
+	if stat, ok := diskStatsMap["/dev/dm-0"]; ok {
+		if stat.MajorNum != 252 && stat.MinorNum != 1 {
+			t.Fatalf("getDiskStatsMap did not return correct major (%d) and minor (%d) numbers", stat.MajorNum, stat.MinorNum)
+		}
+	}
+}
+
 func TestFileNotExist(t *testing.T) {
 	_, err := getDiskStatsMap("/file_does_not_exist")
 	if err != nil {
