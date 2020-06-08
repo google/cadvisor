@@ -1,0 +1,22 @@
+# This patch is an example of setting arguments for the cAdvisor container to collect perf metrics 
+apiVersion: apps/v1 # for Kubernetes versions before 1.9.0 use apps/v1beta2
+kind: DaemonSet
+metadata:
+  name: cadvisor
+  namespace: cadvisor
+spec:
+  template:
+    spec:
+      containers:
+      - name: cadvisor
+        args:
+          - --perf_events_config=/etc/config/perf-non-hardware.json
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: perf-volume
+          mountPath: /etc/config/
+      volumes:
+        - name: perf-volume
+          configMap:
+            name: perf-config
