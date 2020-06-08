@@ -1,7 +1,6 @@
-FROM alpine:3.10
-MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
+FROM alpine:3.12 AS build
 
-RUN apk --no-cache add libc6-compat device-mapper findutils zfs  build-base linux-headers && \
+RUN apk --no-cache add libc6-compat device-mapper findutils zfs  build-base linux-headers go bash git && \
     apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
@@ -14,8 +13,30 @@ RUN export DBG="-g -Wall" && \
   make -e -C libpfm-4.10.1 && \
   make install -C libpfm-4.10.1
 
-# Grab cadvisor from the staging directory.
-ADD cadvisor /usr/bin/cadvisor
+RUN export DBG="-g -Wall" && \
+  make -e -C libpfm-4.10.1 && \
+  make install -C libpfm-4.10.1
+
+ADD . /go/src/github.com/google/cadvisor
+WORKDIR /go/src/github.com/google/cadvisor
+
+ENV GOROOT /usr/lib/go
+ENV GOPATH /go
+ENV GO_FLAGS="-tags=libpfm,netgo"
+RUN ./build/build.sh
+
+
+FROM alpine:3.12
+MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
+
+RUN apk --no-cache add libc6-compat device-mapper findutils zfs && \
+    apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
+    echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
+    rm -rf /var/cache/apk/*
+
+# Grab cadvisor and libpfm4 from "build" container.
+COPY --from=build /usr/local/lib/libpfm.so* /usr/local/lib/
+COPY --from=build /go/src/github.com/google/cadvisor/cadvisor /usr/bin/cadvisor
 
 EXPOSE 8080
 
