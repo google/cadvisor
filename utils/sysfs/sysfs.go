@@ -15,6 +15,7 @@
 package sysfs
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -22,6 +23,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -95,6 +97,9 @@ type SysFs interface {
 	GetCacheInfo(cpu int, cache string) (CacheInfo, error)
 
 	GetSystemUUID() (string, error)
+	// IsCPUOnline determines if CPU status from kernel hotplug machanism standpoint.
+	// See: https://www.kernel.org/doc/html/latest/core-api/cpu_hotplug.html
+	IsCPUOnline(dir string) bool
 }
 
 type realSysFs struct{}
@@ -325,4 +330,15 @@ func (fs *realSysFs) GetSystemUUID() (string, error) {
 	} else {
 		return "", err
 	}
+}
+
+func (fs *realSysFs) IsCPUOnline(dir string) bool {
+	cpuPath := fmt.Sprintf("%s/online", dir)
+	content, err := ioutil.ReadFile(cpuPath)
+	if err != nil {
+		klog.Warningf("unable to read %s: %s", cpuPath, err.Error())
+		return false
+	}
+	trimmed := bytes.TrimSpace(content)
+	return len(trimmed) == 1 && trimmed[0] == 49
 }

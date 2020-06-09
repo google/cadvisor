@@ -75,6 +75,8 @@ type FakeSysFs struct {
 
 	hugePagesNr    map[string]string
 	hugePagesNrErr error
+
+	onlineCPUs map[string]interface{}
 }
 
 func (fs *FakeSysFs) GetNodesPaths() ([]string, error) {
@@ -197,4 +199,16 @@ func (fs *FakeSysFs) SetEntryName(name string) {
 
 func (fs *FakeSysFs) GetSystemUUID() (string, error) {
 	return "1F862619-BA9F-4526-8F85-ECEAF0C97430", nil
+}
+
+func (fs *FakeSysFs) IsCPUOnline(dir string) bool {
+	if fs.onlineCPUs == nil {
+		return true
+	}
+	_, ok := fs.onlineCPUs[dir]
+	return ok
+}
+
+func (fs *FakeSysFs) SetOnlineCPUs(online map[string]interface{}) {
+	fs.onlineCPUs = online
 }

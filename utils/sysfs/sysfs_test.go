@@ -122,3 +122,13 @@ func TestGetHugePagesNrWhenFileIsMissing(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "", rawHugePageNr)
 }
+
+
+func TestIsCPUOnline(t *testing.T) {
+	sysFs := NewRealSysFs()
+	online := sysFs.IsCPUOnline("./testdata/node0/cpu0")
+	assert.True(t, online)
+
+	online = sysFs.IsCPUOnline("./testdata/node0/cpu1")
+	assert.False(t, online)
+}

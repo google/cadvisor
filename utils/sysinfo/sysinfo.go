@@ -220,9 +220,11 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 				return nil, 0, err
 			}
 			node.Cores = cores
+			for _, core := range cores {
+				allLogicalCoresCount += len(core.Threads)
+			}
 		}
 
-		allLogicalCoresCount += len(cpuDirs)
 
 		// On some Linux platforms(such as Arm64 guest kernel), cache info may not exist.
 		// So, we should ignore error here.
@@ -383,6 +385,9 @@ func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 		cpuID, err := getMatchedInt(cpuDirRegExp, cpuDir)
 		if err != nil {
 			return nil, fmt.Errorf("Unexpected format of CPU directory, cpuDirRegExp %s, cpuDir: %s", cpuDirRegExp, cpuDir)
+		}
+		if !sysFs.IsCPUOnline(cpuDir) {
+			continue
 		}
 
 		rawPhysicalID, err := sysFs.GetCoreID(cpuDir)
