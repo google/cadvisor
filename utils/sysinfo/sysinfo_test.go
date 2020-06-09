@@ -231,7 +231,6 @@ func TestGetNodesInfo(t *testing.T) {
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
 }
 
-
 func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{

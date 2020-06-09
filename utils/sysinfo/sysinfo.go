@@ -225,7 +225,6 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 			}
 		}
 
-
 		// On some Linux platforms(such as Arm64 guest kernel), cache info may not exist.
 		// So, we should ignore error here.
 		err = addCacheInfo(sysFs, &node)

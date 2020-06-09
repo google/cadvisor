@@ -15,10 +15,11 @@
 package sysfs
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetNodes(t *testing.T) {
@@ -122,7 +123,6 @@ func TestGetHugePagesNrWhenFileIsMissing(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, "", rawHugePageNr)
 }
-
 
 func TestIsCPUOnline(t *testing.T) {
 	sysFs := NewRealSysFs()
