@@ -40,30 +40,77 @@ func TestCollector_UpdateStats(t *testing.T) {
 	collector := collector{uncore: &stats.NoopCollector{}}
 	notScaledBuffer := buffer{bytes.NewBuffer([]byte{})}
 	scaledBuffer := buffer{bytes.NewBuffer([]byte{})}
-	err := binary.Write(notScaledBuffer, binary.LittleEndian, ReadFormat{
-		Value:       123456789,
+	groupedBuffer := buffer{bytes.NewBuffer([]byte{})}
+	err := binary.Write(notScaledBuffer, binary.LittleEndian, GroupReadFormat{
+		Nr:          1,
 		TimeEnabled: 100,
 		TimeRunning: 100,
-		ID:          1,
 	})
 	assert.NoError(t, err)
-	err = binary.Write(scaledBuffer, binary.LittleEndian, ReadFormat{
-		Value:       333333333,
+	err = binary.Write(notScaledBuffer, binary.LittleEndian, Values{
+		Value: 123456789,
+		ID:    0,
+	})
+	assert.NoError(t, err)
+	err = binary.Write(scaledBuffer, binary.LittleEndian, GroupReadFormat{
+		Nr:          1,
 		TimeEnabled: 3,
 		TimeRunning: 1,
-		ID:          2,
 	})
 	assert.NoError(t, err)
-	collector.cpuFiles = map[string]map[int]readerCloser{
-		"instructions": {0: notScaledBuffer},
-		"cycles":       {11: scaledBuffer},
+	err = binary.Write(scaledBuffer, binary.LittleEndian, Values{
+		Value: 333333333,
+		ID:    2,
+	})
+	assert.NoError(t, err)
+	err = binary.Write(groupedBuffer, binary.LittleEndian, GroupReadFormat{
+		Nr:          2,
+		TimeEnabled: 100,
+		TimeRunning: 100,
+	})
+	assert.NoError(t, err)
+	err = binary.Write(groupedBuffer, binary.LittleEndian, Values{
+		Value: 123456,
+		ID:    0,
+	})
+	assert.NoError(t, err)
+	err = binary.Write(groupedBuffer, binary.LittleEndian, Values{
+		Value: 654321,
+		ID:    1,
+	})
+	assert.NoError(t, err)
+
+	collector.cpuFiles = map[int]group{
+		1: {
+			cpuFiles: map[string]map[int]readerCloser{
+				"instructions": {0: notScaledBuffer},
+			},
+			names:      []string{"instructions"},
+			leaderName: "instructions",
+		},
+		2: {
+			cpuFiles: map[string]map[int]readerCloser{
+				"cycles": {11: scaledBuffer},
+			},
+			names:      []string{"cycles"},
+			leaderName: "cycles",
+		},
+		3: {
+			cpuFiles: map[string]map[int]readerCloser{
+				"cache-misses": {
+					0: groupedBuffer,
+				},
+			},
+			names:      []string{"cache-misses", "cache-references"},
+			leaderName: "cache-misses",
+		},
 	}
 
 	stats := &info.ContainerStats{}
 	err = collector.UpdateStats(stats)
 
 	assert.NoError(t, err)
-	assert.Len(t, stats.PerfStats, 2)
+	assert.Len(t, stats.PerfStats, 4)
 
 	assert.Contains(t, stats.PerfStats, info.PerfStat{
 		PerfValue: info.PerfValue{
@@ -78,6 +125,22 @@ func TestCollector_UpdateStats(t *testing.T) {
 			ScalingRatio: 1,
 			Value:        123456789,
 			Name:         "instructions",
+		},
+		Cpu: 0,
+	})
+	assert.Contains(t, stats.PerfStats, info.PerfStat{
+		PerfValue: info.PerfValue{
+			ScalingRatio: 1.0,
+			Value:        123456,
+			Name:         "cache-misses",
+		},
+		Cpu: 0,
+	})
+	assert.Contains(t, stats.PerfStats, info.PerfStat{
+		PerfValue: info.PerfValue{
+			ScalingRatio: 1.0,
+			Value:        654321,
+			Name:         "cache-references",
 		},
 		Cpu: 0,
 	})
@@ -96,185 +159,230 @@ func TestCreatePerfEventAttr(t *testing.T) {
 	assert.Equal(t, uint64(2), attributes.Config)
 	assert.Equal(t, uint64(3), attributes.Ext1)
 	assert.Equal(t, uint64(4), attributes.Ext2)
+}
+
+func TestSetGroupAttributes(t *testing.T) {
+	event := CustomEvent{
+		Type:   0x1,
+		Config: Config{uint64(0x2), uint64(0x3), uint64(0x4)},
+		Name:   "fake_event",
+	}
+
+	attributes := createPerfEventAttr(event)
+	setAttributes(attributes, true)
 	assert.Equal(t, uint64(65536), attributes.Sample_type)
-	assert.Equal(t, uint64(7), attributes.Read_format)
-	assert.Equal(t, uint64(1048578), attributes.Bits)
+	assert.Equal(t, uint64(0xf), attributes.Read_format)
+	assert.Equal(t, uint64(0x100003), attributes.Bits)
+
+	attributes = createPerfEventAttr(event)
+	setAttributes(attributes, false)
+	assert.Equal(t, uint64(65536), attributes.Sample_type)
+	assert.Equal(t, uint64(0xf), attributes.Read_format)
+	assert.Equal(t, uint64(0x100002), attributes.Bits)
 }
 
 func TestNewCollector(t *testing.T) {
 	perfCollector := newCollector("cgroup", PerfEvents{
 		Core: Events{
-			Events: [][]Event{{"event_1"}, {"event_2"}},
+			Events: []Group{{[]Event{"event_1"}, false}, {[]Event{"event_2"}, false}},
 			CustomEvents: []CustomEvent{{
 				Type:   0,
 				Config: []uint64{1, 2, 3},
 				Name:   "event_2",
 			}},
 		},
-	}, 1, []info.Node{})
+	}, []int{0, 1, 2, 3}, map[int]int{})
 	assert.Len(t, perfCollector.eventToCustomEvent, 1)
 	assert.Nil(t, perfCollector.eventToCustomEvent[Event("event_1")])
 	assert.Same(t, &perfCollector.events.Core.CustomEvents[0], perfCollector.eventToCustomEvent[Event("event_2")])
 }
 
-var readPerfStatCases = []struct {
-	test     string
-	file     ReadFormat
-	name     string
-	cpu      int
-	perfStat info.PerfStat
-	err      error
+var readGroupPerfStatCases = []struct {
+	test       string
+	file       GroupReadFormat
+	valuesFile Values
+	name       string
+	cpu        int
+	perfStat   []info.PerfStat
+	err        error
 }{
 	{
 		test: "no scaling",
-		file: ReadFormat{
-			Value:       5,
+		file: GroupReadFormat{
 			TimeEnabled: 0,
 			TimeRunning: 0,
-			ID:          0,
+			Nr:          1,
+		},
+		valuesFile: Values{
+			Value: 5,
+			ID:    0,
 		},
 		name: "some metric",
 		cpu:  1,
-		perfStat: info.PerfStat{
+		perfStat: []info.PerfStat{{
 			PerfValue: info.PerfValue{
 				ScalingRatio: 1,
 				Value:        5,
 				Name:         "some metric",
 			},
 			Cpu: 1,
-		},
+		}},
 		err: nil,
 	},
 	{
 		test: "no scaling - TimeEnabled = 0",
-		file: ReadFormat{
-			Value:       5,
+		file: GroupReadFormat{
 			TimeEnabled: 0,
 			TimeRunning: 1,
-			ID:          0,
+			Nr:          1,
+		},
+		valuesFile: Values{
+			Value: 5,
+			ID:    0,
 		},
 		name: "some metric",
 		cpu:  1,
-		perfStat: info.PerfStat{
+		perfStat: []info.PerfStat{{
 			PerfValue: info.PerfValue{
 				ScalingRatio: 1,
 				Value:        5,
 				Name:         "some metric",
 			},
 			Cpu: 1,
-		},
+		}},
 		err: nil,
 	},
 	{
 		test: "scaling - 0.5",
-		file: ReadFormat{
-			Value:       4,
+		file: GroupReadFormat{
 			TimeEnabled: 4,
 			TimeRunning: 2,
-			ID:          0,
+			Nr:          1,
+		},
+		valuesFile: Values{
+			Value: 4,
+			ID:    0,
 		},
 		name: "some metric",
 		cpu:  2,
-		perfStat: info.PerfStat{
+		perfStat: []info.PerfStat{{
 			PerfValue: info.PerfValue{
 				ScalingRatio: 0.5,
 				Value:        8,
 				Name:         "some metric",
 			},
 			Cpu: 2,
-		},
+		}},
 		err: nil,
 	},
 	{
 		test: "scaling - 0 (TimeEnabled = 1, TimeRunning = 0)",
-		file: ReadFormat{
-			Value:       4,
+		file: GroupReadFormat{
 			TimeEnabled: 1,
 			TimeRunning: 0,
-			ID:          0,
+			Nr:          1,
+		},
+		valuesFile: Values{
+			Value: 4,
+			ID:    0,
 		},
 		name: "some metric",
 		cpu:  3,
-		perfStat: info.PerfStat{
+		perfStat: []info.PerfStat{{
 			PerfValue: info.PerfValue{
 				ScalingRatio: 1.0,
 				Value:        4,
 				Name:         "some metric",
 			},
 			Cpu: 3,
-		},
+		}},
 		err: nil,
 	},
 	{
 		test: "scaling - 0 (TimeEnabled = 0, TimeRunning = 1)",
-		file: ReadFormat{
-			Value:       4,
+		file: GroupReadFormat{
 			TimeEnabled: 0,
 			TimeRunning: 1,
-			ID:          0,
+			Nr:          1,
+		},
+		valuesFile: Values{
+			Value: 4,
+			ID:    0,
 		},
 		name: "some metric",
 		cpu:  3,
-		perfStat: info.PerfStat{
+		perfStat: []info.PerfStat{{
 			PerfValue: info.PerfValue{
 				ScalingRatio: 1.0,
 				Value:        4,
 				Name:         "some metric",
 			},
 			Cpu: 3,
-		},
+		}},
 		err: nil,
 	},
 	{
 		test: "zeros, zeros everywhere",
-		file: ReadFormat{
-			Value:       0,
+		file: GroupReadFormat{
 			TimeEnabled: 0,
 			TimeRunning: 0,
-			ID:          0,
+			Nr:          1,
+		},
+		valuesFile: Values{
+			Value: 0,
+			ID:    0,
 		},
 		name: "some metric",
 		cpu:  4,
-		perfStat: info.PerfStat{
+		perfStat: []info.PerfStat{{
 			PerfValue: info.PerfValue{
 				ScalingRatio: 1.0,
 				Value:        0,
 				Name:         "some metric",
 			},
 			Cpu: 4,
-		},
+		}},
 		err: nil,
 	},
 	{
 		test: "non-zero TimeRunning",
-		file: ReadFormat{
-			Value:       0,
+		file: GroupReadFormat{
 			TimeEnabled: 0,
 			TimeRunning: 3,
-			ID:          0,
+			Nr:          1,
+		},
+		valuesFile: Values{
+			Value: 0,
+			ID:    0,
 		},
 		name: "some metric",
 		cpu:  4,
-		perfStat: info.PerfStat{
+		perfStat: []info.PerfStat{{
 			PerfValue: info.PerfValue{
 				ScalingRatio: 1.0,
 				Value:        0,
 				Name:         "some metric",
 			},
 			Cpu: 4,
-		},
+		}},
 		err: nil,
 	},
 }
 
 func TestReadPerfStat(t *testing.T) {
-	for _, test := range readPerfStatCases {
+	for _, test := range readGroupPerfStatCases {
 		t.Run(test.test, func(tt *testing.T) {
 			buf := &buffer{bytes.NewBuffer([]byte{})}
 			err := binary.Write(buf, binary.LittleEndian, test.file)
 			assert.NoError(tt, err)
-			stat, err := readPerfStat(buf, test.name, test.cpu)
-			assert.Equal(tt, test.perfStat, *stat)
+			err = binary.Write(buf, binary.LittleEndian, test.valuesFile)
+			assert.NoError(tt, err)
+			stat, err := readGroupPerfStat(buf, group{
+				cpuFiles:   nil,
+				names:      []string{test.name},
+				leaderName: test.name,
+			}, test.cpu, "/")
+			assert.Equal(tt, test.perfStat, stat)
 			assert.Equal(tt, test.err, err)
 		})
 	}

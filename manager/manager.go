@@ -212,7 +212,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 	newManager.machineInfo = *machineInfo
 	klog.V(1).Infof("Machine: %+v", newManager.machineInfo)
 
-	newManager.perfManager, err = perf.NewManager(perfEventsFile, machineInfo.NumCores, machineInfo.Topology)
+	newManager.perfManager, err = perf.NewManager(perfEventsFile, machineInfo.Topology)
 	if err != nil {
 		return nil, err
 	}
