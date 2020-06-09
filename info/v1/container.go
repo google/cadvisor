@@ -929,7 +929,7 @@ type ContainerStats struct {
 	// Referenced memory
 	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
 
-	// Resource Control (resctrl) statistics.
+	// Resource Control (resctrl) statistics
 	Resctrl ResctrlStats `json:"resctrl,omitempty"`
 }
 
