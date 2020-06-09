@@ -848,6 +848,8 @@ type PerfStat struct {
 	Cpu int `json:"cpu"`
 }
 
+// MemoryBandwidthMonitoringStats corresponds to MBM (Memory Bandwidth Monitoring).
+// See: https://01.org/cache-monitoring-technology
 // See: https://www.kernel.org/doc/Documentation/x86/intel_rdt_ui.txt
 type MemoryBandwidthMonitoringStats struct {
 	// The 'mbm_total_bytes'.
@@ -857,11 +859,15 @@ type MemoryBandwidthMonitoringStats struct {
 	LocalBytes uint64 `json:"mbm_local_bytes,omitempty"`
 }
 
+// CacheMonitoringTechnologyStats corresponds to CMT (Cache Monitoring Technology).
+// See: https://01.org/cache-monitoring-technology
+// See: https://www.kernel.org/doc/Documentation/x86/intel_rdt_ui.txt
 type CacheMonitoringTechnologyStats struct {
 	// The 'llc_occupancy'.
 	LLCOccupancy uint64 `json:"llc_occupancy,omitempty"`
 }
 
+// ResctrlStats corresponds to statistics from Resource Control.
 type ResctrlStats struct {
 	// Each NUMA Node statistics corresponds to one element in the array.
 	MemoryBandwidthMonitoring []MemoryBandwidthMonitoringStats `json:"memory_bandwidth_monitoring,omitempty"`

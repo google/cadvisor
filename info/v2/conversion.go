@@ -213,6 +213,9 @@ func DeprecatedStatsFromV1(cont *v1.ContainerInfo) []DeprecatedContainerStats {
 		if len(val.PerfStats) > 0 {
 			stat.PerfStats = val.PerfStats
 		}
+		if len(val.Resctrl.MemoryBandwidthMonitoring) > 0 || len(val.Resctrl.CacheMonitoringTechnology) > 0 {
+			stat.Resctrl = val.Resctrl
+		}
 		// TODO(rjnagal): Handle load stats.
 		stats = append(stats, stat)
 	}
