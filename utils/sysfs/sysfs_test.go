@@ -132,3 +132,12 @@ func TestIsCPUOnline(t *testing.T) {
 	online = sysFs.IsCPUOnline("./testdata/node0/cpu1")
 	assert.False(t, online)
 }
+
+func TestIsCPUOnlineNoFileAndCPU0MustBeOnline(t *testing.T) {
+	sysFs := NewRealSysFs()
+	online := sysFs.IsCPUOnline("./testdata/missing_online/node0/cpu0")
+	assert.True(t, online)
+
+	online = sysFs.IsCPUOnline("./testdata/missing_online/node0/cpu33")
+	assert.False(t, online)
+}

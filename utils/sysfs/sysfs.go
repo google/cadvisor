@@ -16,11 +16,13 @@ package sysfs
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -337,9 +339,21 @@ func (fs *realSysFs) IsCPUOnline(dir string) bool {
 	cpuPath := fmt.Sprintf("%s/online", dir)
 	content, err := ioutil.ReadFile(cpuPath)
 	if err != nil {
+		pathErr, ok := err.(*os.PathError)
+		if ok {
+			if errors.Is(pathErr.Unwrap(), os.ErrNotExist) && isZeroCPU(dir) {
+				return true
+			}
+		}
 		klog.Warningf("unable to read %s: %s", cpuPath, err.Error())
 		return false
 	}
 	trimmed := bytes.TrimSpace(content)
 	return len(trimmed) == 1 && trimmed[0] == 49
+}
+
+func isZeroCPU(dir string) bool {
+	regex := regexp.MustCompile("cpu([0-9]*)")
+	matches := regex.FindStringSubmatch(dir)
+	return len(matches) == 2 && matches[1] == "0"
 }
