@@ -1598,7 +1598,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 	if includedMetrics.Has(container.ResctrlMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
-				name:        "container_memory_bandwidth_bytes_total",
+				name:        "container_memory_bandwidth_bytes",
 				help:        "Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
 				valueType:   prometheus.GaugeValue,
 				extraLabels: []string{prometheusNodeLabelName},
@@ -1616,8 +1616,8 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 			{
-				name:        "container_memory_bandwidth_local_bytes_total",
-				help:        "Total local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
+				name:        "container_memory_bandwidth_local_bytes",
+				help:        "Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
 				valueType:   prometheus.GaugeValue,
 				extraLabels: []string{prometheusNodeLabelName},
 				getValues: func(s *info.ContainerStats) metricValues {
@@ -1634,7 +1634,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 			{
-				name:        "container_llc_occupancy_bytes_total",
+				name:        "container_llc_occupancy_bytes",
 				help:        "Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
 				valueType:   prometheus.GaugeValue,
 				extraLabels: []string{prometheusNodeLabelName},
