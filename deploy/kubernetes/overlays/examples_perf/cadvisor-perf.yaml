@@ -1,4 +1,4 @@
-# This patch is an example of setting arguments for the cAdvisor container to collect perf metrics 
+# This patch is an example of setting arguments for the cAdvisor container to collect perf metrics
 apiVersion: apps/v1 # for Kubernetes versions before 1.9.0 use apps/v1beta2
 kind: DaemonSet
 metadata:
@@ -9,8 +9,14 @@ spec:
     spec:
       containers:
       - name: cadvisor
+        # If the stats take too long to gather, try increasing CPU limits.
+        resources:
+          requests:
+            cpu: 1
+          limits:
+            cpu: 1
         args:
-          - --perf_events_config=/etc/config/perf-non-hardware.json
+          - --perf_events_config=/etc/config/perf-non-hardware.json --v=5
         securityContext:
           privileged: true
         volumeMounts:
