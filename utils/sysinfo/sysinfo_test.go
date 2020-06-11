@@ -231,6 +231,136 @@ func TestGetNodesInfo(t *testing.T) {
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
 }
 
+func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	c := sysfs.CacheInfo{
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 3,
+		Cpus:  1,
+	}
+	fakeSys.SetCacheInfo(c)
+
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+		"/fakeSysfs/devices/system/node/node1",
+	}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+		"/fakeSysfs/devices/system/node/node1": {
+			"/fakeSysfs/devices/system/node/node0/cpu2",
+			"/fakeSysfs/devices/system/node/node0/cpu3",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu3": "1",
+	}
+	fakeSys.SetCoreThreads(coreThread, nil)
+	fakeSys.SetOnlineCPUs(map[string]interface{}{
+		"/fakeSysfs/devices/system/node/node0/cpu0": nil,
+		"/fakeSysfs/devices/system/node/node0/cpu2": nil,
+	})
+
+	memTotal := "MemTotal:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	hugePages := []os.FileInfo{
+		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
+	}
+	fakeSys.SetHugePages(hugePages, nil)
+
+	hugePageNr := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages": "1",
+		"/fakeSysfs/devices/system/node/node1/hugepages/hugepages-2048kB/nr_hugepages": "1",
+	}
+	fakeSys.SetHugePagesNr(hugePageNr, nil)
+
+	physicalPackageIDs := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu3": "1",
+	}
+	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, nil)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(nodes))
+	assert.Equal(t, 2, cores)
+
+	nodesJSON, err := json.Marshal(nodes)
+	assert.Nil(t, err)
+	expectedNodes := `
+	[
+      {
+        "node_id": 0,
+        "memory": 33604804608,
+        "hugepages": [
+          {
+            "page_size": 2048,
+            "num_pages": 1
+          }
+        ],
+        "cores": [
+          {
+            "core_id": 0,
+            "thread_ids": [
+              0
+            ],
+            "caches": null,
+	    "socket_id": 0
+          }
+        ],
+        "caches": [
+          {
+            "size": 32768,
+            "type": "unified",
+            "level": 3
+          }
+        ]
+      },
+      {
+        "node_id": 1,
+        "memory": 33604804608,
+        "hugepages": [
+          {
+            "page_size": 2048,
+            "num_pages": 1
+          }
+        ],
+        "cores": [
+          {
+            "core_id": 1,
+            "thread_ids": [
+              2
+            ],
+            "caches": null,
+	    "socket_id": 1
+          }
+        ],
+        "caches": [
+          {
+            "size": 32768,
+            "type": "unified",
+            "level": 3
+          }
+        ]
+      }
+    ]
+    `
+	assert.JSONEq(t, expectedNodes, string(nodesJSON))
+}
+
 func TestGetNodesWithoutMemoryInfo(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{
@@ -775,7 +905,7 @@ func TestGetNodesWhenTopologyDirMissingForOneCPU(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, 1, len(nodes))
-	assert.Equal(t, 2, cores)
+	assert.Equal(t, 1, cores)
 
 	sort.Slice(nodes, func(i, j int) bool {
 		return nodes[i].Id < nodes[j].Id
@@ -953,6 +1083,48 @@ func TestGetCoresInfoWhenCoreIDIsNotDigit(t *testing.T) {
 	cores, err := getCoresInfo(sysFs, []string{"/fakeSysfs/devices/system/node/node0/cpu0"})
 	assert.NotNil(t, err)
 	assert.Equal(t, []info.Core(nil), cores)
+}
+
+func TestGetCoresInfoWithOnlineOfflineFile(t *testing.T) {
+	sysFs := &fakesysfs.FakeSysFs{}
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+	}
+	sysFs.SetNodesPaths(nodesPaths, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+	}
+	sysFs.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+	}
+	sysFs.SetCoreThreads(coreThread, nil)
+	sysFs.SetOnlineCPUs(map[string]interface{}{"/fakeSysfs/devices/system/node/node0/cpu0": nil})
+	sysFs.SetPhysicalPackageIDs(map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+	}, nil)
+
+	cores, err := getCoresInfo(
+		sysFs,
+		[]string{"/fakeSysfs/devices/system/node/node0/cpu0", "/fakeSysfs/devices/system/node/node0/cpu1"},
+	)
+	assert.NoError(t, err)
+	expected := []info.Core{
+		{
+			Id:       0,
+			Threads:  []int{0},
+			Caches:   nil,
+			SocketID: 0,
+		},
+	}
+	assert.Equal(t, expected, cores)
 }
 
 func TestGetBlockDeviceInfo(t *testing.T) {

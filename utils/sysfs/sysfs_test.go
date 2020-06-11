@@ -15,10 +15,11 @@
 package sysfs
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetNodes(t *testing.T) {
@@ -121,4 +122,22 @@ func TestGetHugePagesNrWhenFileIsMissing(t *testing.T) {
 	rawHugePageNr, err := sysFs.GetHugePagesNr("./testdata/node1/hugepages/", "hugepages-1048576kB")
 	assert.NotNil(t, err)
 	assert.Equal(t, "", rawHugePageNr)
+}
+
+func TestIsCPUOnline(t *testing.T) {
+	sysFs := NewRealSysFs()
+	online := sysFs.IsCPUOnline("./testdata/node0/cpu0")
+	assert.True(t, online)
+
+	online = sysFs.IsCPUOnline("./testdata/node0/cpu1")
+	assert.False(t, online)
+}
+
+func TestIsCPUOnlineNoFileAndCPU0MustBeOnline(t *testing.T) {
+	sysFs := NewRealSysFs()
+	online := sysFs.IsCPUOnline("./testdata/missing_online/node0/cpu0")
+	assert.True(t, online)
+
+	online = sysFs.IsCPUOnline("./testdata/missing_online/node0/cpu33")
+	assert.False(t, online)
 }
