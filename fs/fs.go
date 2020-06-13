@@ -329,7 +329,8 @@ func (i *RealFsInfo) updateContainerImagesPath(label string, mounts []mount.Moun
 	for _, m := range mounts {
 		if _, ok := containerImagePaths[m.MountPoint]; ok {
 			if useMount == nil || (len(useMount.MountPoint) < len(m.MountPoint)) {
-				useMount = &m
+				useMount = new(mount.MountInfo)
+				*useMount = m
 			}
 		}
 	}

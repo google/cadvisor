@@ -361,6 +361,22 @@ func TestAddDockerImagesLabel(t *testing.T) {
 		expectedPartition              *partition
 	}{
 		{
+			name: "single partition, no dedicated image fs",
+			mounts: []mount.MountInfo{
+				{
+					Source:     "/dev/root",
+					MountPoint: "/",
+					FsType:     "ext4",
+				},
+				{
+					Source:     "/sys/fs/cgroup",
+					MountPoint: "/sys/fs/cgroup",
+					FsType:     "tmpfs",
+				},
+			},
+			expectedDockerDevice: "/dev/root",
+		},
+		{
 			name:         "devicemapper, not loopback",
 			driver:       "devicemapper",
 			driverStatus: map[string]string{"Pool Name": "vg_vagrant-docker--pool"},
