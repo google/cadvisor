@@ -18,6 +18,7 @@ package manager
 import (
 	"flag"
 	"fmt"
+	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 	"net/http"
 	"os"
 	"path"
@@ -917,7 +918,14 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 	if err != nil {
 		return err
 	}
-	if !cgroups.IsCgroup2UnifiedMode() {
+
+	if cgroups.IsCgroup2UnifiedMode() {
+		perfCgroupPath := path.Join(fs2.UnifiedMountpoint, containerName)
+		cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
+		if err != nil {
+			klog.Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
+		}
+	} else {
 		devicesCgroupPath, err := handler.GetCgroupPath("devices")
 		if err != nil {
 			klog.Warningf("Error getting devices cgroup path: %v", err)
@@ -927,14 +935,13 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 				klog.V(4).Infof("GPU metrics may be unavailable/incomplete for container %s: %s", cont.info.Name, err)
 			}
 		}
-
 		perfCgroupPath, err := handler.GetCgroupPath("perf_event")
 		if err != nil {
 			klog.Warningf("Error getting perf_event cgroup path: %q", err)
 		} else {
 			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
 			if err != nil {
-				klog.Infof("perf_event metrics will not be available for container %s: %s", cont.info.Name, err)
+				klog.Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
 			}
 		}
 	}
