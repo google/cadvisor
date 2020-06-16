@@ -51,6 +51,9 @@ Metric name | Type | Description | Unit (where applicable)
 `container_hugetlb_max_usage_bytes` | Gauge | Maximum hugepage usages recorded | bytes
 `container_hugetlb_usage_bytes` | Gauge | Current hugepage usage | bytes
 `container_last_seen` | Gauge | Last time a container was seen by the exporter | timestamp
+`container_llc_occupancy_bytes` | Gauge | Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes
+`container_memory_bandwidth_bytes` | Gauge | Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes
+`container_memory_bandwidth_local_bytes` | Gauge | Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes
 `container_memory_cache` | Gauge | Total page cache memory | bytes
 `container_memory_failcnt` | Counter | Number of memory usage hits limits |
 `container_memory_failures_total` | Counter | Cumulative count of memory allocation failures |
