@@ -32,7 +32,7 @@ require (
 	github.com/mrunalp/fileutils v0.0.0-20200520151820-abd8a0e76976 // indirect
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
-	github.com/opencontainers/runc v1.0.0-rc90.0.20200602184820-0853956d235d
+	github.com/opencontainers/runc v1.0.0-rc90.0.20200616040943-82d2fa4eb069
 	github.com/opencontainers/runtime-spec v1.0.3-0.20200520003142-237cc4f519e2
 	github.com/opencontainers/selinux v1.5.2 // indirect
 	github.com/pkg/errors v0.9.1
