@@ -1603,9 +1603,9 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				valueType:   prometheus.GaugeValue,
 				extraLabels: []string{prometheusNodeLabelName},
 				getValues: func(s *info.ContainerStats) metricValues {
-					numberOfNUMANodes := len(s.Resctrl.MemoryBandwidthMonitoring)
+					numberOfNUMANodes := len(s.Resctrl.MemoryBandwidth)
 					metrics := make(metricValues, numberOfNUMANodes)
-					for numaNode, stats := range s.Resctrl.MemoryBandwidthMonitoring {
+					for numaNode, stats := range s.Resctrl.MemoryBandwidth {
 						metrics[numaNode] = metricValue{
 							value:     float64(stats.TotalBytes),
 							timestamp: s.Timestamp,
@@ -1621,9 +1621,9 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				valueType:   prometheus.GaugeValue,
 				extraLabels: []string{prometheusNodeLabelName},
 				getValues: func(s *info.ContainerStats) metricValues {
-					numberOfNUMANodes := len(s.Resctrl.MemoryBandwidthMonitoring)
+					numberOfNUMANodes := len(s.Resctrl.MemoryBandwidth)
 					metrics := make(metricValues, numberOfNUMANodes)
-					for numaNode, stats := range s.Resctrl.MemoryBandwidthMonitoring {
+					for numaNode, stats := range s.Resctrl.MemoryBandwidth {
 						metrics[numaNode] = metricValue{
 							value:     float64(stats.LocalBytes),
 							timestamp: s.Timestamp,
@@ -1639,9 +1639,9 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				valueType:   prometheus.GaugeValue,
 				extraLabels: []string{prometheusNodeLabelName},
 				getValues: func(s *info.ContainerStats) metricValues {
-					numberOfNUMANodes := len(s.Resctrl.CacheMonitoringTechnology)
+					numberOfNUMANodes := len(s.Resctrl.Cache)
 					metrics := make(metricValues, numberOfNUMANodes)
-					for numaNode, stats := range s.Resctrl.CacheMonitoringTechnology {
+					for numaNode, stats := range s.Resctrl.Cache {
 						metrics[numaNode] = metricValue{
 							value:     float64(stats.LLCOccupancy),
 							timestamp: s.Timestamp,

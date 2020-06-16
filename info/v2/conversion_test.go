@@ -210,7 +210,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 		},
 		ReferencedMemory: uint64(1234),
 		Resctrl: v1.ResctrlStats{
-			MemoryBandwidthMonitoring: []v1.MemoryBandwidthMonitoringStats{
+			MemoryBandwidth: []v1.MemoryBandwidthStats{
 				{
 					TotalBytes: 72312331,
 					LocalBytes: 1233311,
@@ -220,7 +220,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 					LocalBytes: 2233311,
 				},
 			},
-			CacheMonitoringTechnology: []v1.CacheMonitoringTechnologyStats{
+			Cache: []v1.CacheStats{
 				{
 					LLCOccupancy: 123123441,
 				},
