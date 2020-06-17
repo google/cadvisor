@@ -58,8 +58,22 @@ const (
 	serLoadAverage string = "load_average"
 	// Memory Usage
 	serMemoryUsage string = "memory_usage"
+	// Maximum memory usage recorded
+	serMemoryMaxUsage string = "memory_max_usage"
+	// //Number of bytes of page cache memory
+	serMemoryCache string = "memory_cache"
+	// Size of RSS
+	serMemoryRss string = "memory_rss"
+	// Container swap usage
+	serMemorySwap string = "memory_swap"
+	// Size of memory mapped files in bytes
+	serMemoryMappedFile string = "memory_mapped_file"
 	// Working set size
 	serMemoryWorkingSet string = "memory_working_set"
+	// Number of memory usage hits limits
+	serMemoryFailcnt string = "memory_failcnt"
+	// Cumulative count of memory allocation failures
+	serMemoryFailure string = "memory_failure"
 	// Cumulative count of bytes received.
 	serRxBytes string = "rx_bytes"
 	// Cumulative count of receive errors encountered.
@@ -72,6 +86,22 @@ const (
 	serFsLimit string = "fs_limit"
 	// Filesystem usage.
 	serFsUsage string = "fs_usage"
+	// Hugetlb stat - current res_counter usage for hugetlb
+	setHugetlbUsage = "hugetlb_usage"
+	// Hugetlb stat - maximum usage ever recorded
+	setHugetlbMaxUsage = "hugetlb_max_usage"
+	// Hugetlb stat - number of times hugetlb usage allocation failure
+	setHugetlbFailcnt = "hugetlb_failcnt"
+	// Perf statistics
+	serPerfStat = "perf_stat"
+	// Referenced memory
+	serReferencedMemory = "referenced_memory"
+	// Resctrl - Total memory bandwidth
+	serResctrlMemoryBandwidthTotal = "resctrl_memory_bandwidth_total"
+	// Resctrl - Local memory bandwidth
+	serResctrlMemoryBandwidthLocal = "resctrl_memory_bandwidth_local"
+	// Resctrl - Last level cache usage
+	serResctrlLLCOccupancy = "resctrl_llc_occupancy"
 )
 
 func new() (storage.StorageDriver, error) {
@@ -196,15 +226,112 @@ func (s *influxdbStorage) containerStatsToPoints(
 
 	// Memory Usage
 	points = append(points, makePoint(serMemoryUsage, stats.Memory.Usage))
-
+	// Maximum memory usage recorded
+	points = append(points, makePoint(serMemoryMaxUsage, stats.Memory.MaxUsage))
+	//Number of bytes of page cache memory
+	points = append(points, makePoint(serMemoryCache, stats.Memory.Cache))
+	// Size of RSS
+	points = append(points, makePoint(serMemoryRss, stats.Memory.RSS))
+	// Container swap usage
+	points = append(points, makePoint(serMemorySwap, stats.Memory.Swap))
+	// Size of memory mapped files in bytes
+	points = append(points, makePoint(serMemoryMappedFile, stats.Memory.MappedFile))
 	// Working Set Size
 	points = append(points, makePoint(serMemoryWorkingSet, stats.Memory.WorkingSet))
+	// Number of memory usage hits limits
+	points = append(points, makePoint(serMemoryFailcnt, stats.Memory.Failcnt))
+
+	// Cumulative count of memory allocation failures
+	memoryFailuresTags := map[string]string{
+		"failure_type": "pgfault",
+		"scope":        "container",
+	}
+	memoryFailurePoint := makePoint(serMemoryFailure, stats.Memory.ContainerData.Pgfault)
+	addTagsToPoint(memoryFailurePoint, memoryFailuresTags)
+	points = append(points, memoryFailurePoint)
+
+	memoryFailuresTags["failure_type"] = "pgmajfault"
+	memoryFailurePoint = makePoint(serMemoryFailure, stats.Memory.ContainerData.Pgmajfault)
+	addTagsToPoint(memoryFailurePoint, memoryFailuresTags)
+	points = append(points, memoryFailurePoint)
+
+	memoryFailuresTags["failure_type"] = "pgfault"
+	memoryFailuresTags["scope"] = "hierarchical"
+	memoryFailurePoint = makePoint(serMemoryFailure, stats.Memory.HierarchicalData.Pgfault)
+	addTagsToPoint(memoryFailurePoint, memoryFailuresTags)
+	points = append(points, memoryFailurePoint)
+
+	memoryFailuresTags["failure_type"] = "pgmajfault"
+	memoryFailurePoint = makePoint(serMemoryFailure, stats.Memory.HierarchicalData.Pgmajfault)
+	addTagsToPoint(memoryFailurePoint, memoryFailuresTags)
+	points = append(points, memoryFailurePoint)
+
+	// Hugetlb Stats
+	for pageSize, hugetlbStat := range stats.Hugetlb {
+		tags := map[string]string{
+			"page_size": pageSize,
+		}
+
+		// Hugepage usage
+		point := makePoint(setHugetlbUsage, hugetlbStat.Usage)
+		addTagsToPoint(point, tags)
+		points = append(points, point)
+
+		//Maximum hugepage usage recorded
+		point = makePoint(setHugetlbMaxUsage, hugetlbStat.MaxUsage)
+		addTagsToPoint(point, tags)
+		points = append(points, point)
+
+		// Number of hugepage usage hits limits
+		point = makePoint(setHugetlbFailcnt, hugetlbStat.Failcnt)
+		addTagsToPoint(point, tags)
+		points = append(points, point)
+	}
 
 	// Network Stats
 	points = append(points, makePoint(serRxBytes, stats.Network.RxBytes))
 	points = append(points, makePoint(serRxErrors, stats.Network.RxErrors))
 	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
 	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
+
+	// Perf Stats
+	for _, perfStat := range stats.PerfStats {
+		point := makePoint(serPerfStat, perfStat.Value)
+		tags := map[string]string{
+			"cpu":           fmt.Sprintf("%v", perfStat.Cpu),
+			"name":          perfStat.Name,
+			"scaling_ratio": fmt.Sprintf("%v", perfStat.ScalingRatio),
+		}
+		addTagsToPoint(point, tags)
+		points = append(points, point)
+	}
+
+	// Referenced Memory
+	points = append(points, makePoint(serReferencedMemory, stats.ReferencedMemory))
+
+	// Resource Control stats - memory bandwidth
+	for node_id, rdtMemoryBandwidth := range stats.Resctrl.MemoryBandwidth {
+		tags := map[string]string{
+			"node_id": fmt.Sprintf("%v", node_id),
+		}
+		point := makePoint(serResctrlMemoryBandwidthTotal, rdtMemoryBandwidth.TotalBytes)
+		addTagsToPoint(point, tags)
+		points = append(points, point)
+
+		point = makePoint(serResctrlMemoryBandwidthLocal, rdtMemoryBandwidth.LocalBytes)
+		addTagsToPoint(point, tags)
+		points = append(points, point)
+	}
+
+	// Resource Control stats - cache
+	for node_id, rdtCache := range stats.Resctrl.Cache {
+		tags := map[string]string{
+			"node_id": fmt.Sprintf("%v", node_id),
+		}
+		point := makePoint(serResctrlLLCOccupancy, rdtCache.LLCOccupancy)
+		addTagsToPoint(point, tags)
+		points = append(points, point)
+	}
 
 	s.tagPoints(cInfo, stats, points)
 

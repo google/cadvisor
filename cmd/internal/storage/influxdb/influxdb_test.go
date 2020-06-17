@@ -227,21 +227,62 @@ func TestContainerStatsToPoints(t *testing.T) {
 
 	// Then
 	assert.NotEmpty(t, points)
-	assert.Len(t, points, 10+len(stats.Cpu.Usage.PerCpu))
+	assert.Len(t, points, 34+len(stats.Cpu.Usage.PerCpu))
 
+	// CPU stats
 	assertContainsPointWithValue(t, points, serCpuUsageTotal, stats.Cpu.Usage.Total)
 	assertContainsPointWithValue(t, points, serCpuUsageSystem, stats.Cpu.Usage.System)
 	assertContainsPointWithValue(t, points, serCpuUsageUser, stats.Cpu.Usage.User)
-	assertContainsPointWithValue(t, points, serMemoryUsage, stats.Memory.Usage)
 	assertContainsPointWithValue(t, points, serLoadAverage, stats.Cpu.LoadAverage)
+	for _, cpu_usage := range stats.Cpu.Usage.PerCpu {
+		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)
+	}
+
+	// Memory stats
+	assertContainsPointWithValue(t, points, serMemoryUsage, stats.Memory.Usage)
+	assertContainsPointWithValue(t, points, serMemoryMaxUsage, stats.Memory.MaxUsage)
+	assertContainsPointWithValue(t, points, serMemoryCache, stats.Memory.Cache)
+	assertContainsPointWithValue(t, points, serMemoryRss, stats.Memory.RSS)
+	assertContainsPointWithValue(t, points, serMemorySwap, stats.Memory.Swap)
+	assertContainsPointWithValue(t, points, serMemoryMappedFile, stats.Memory.MappedFile)
+	assertContainsPointWithValue(t, points, serMemoryUsage, stats.Memory.Usage)
 	assertContainsPointWithValue(t, points, serMemoryWorkingSet, stats.Memory.WorkingSet)
+	assertContainsPointWithValue(t, points, serMemoryFailcnt, stats.Memory.Failcnt)
+	assertContainsPointWithValue(t, points, serMemoryFailure, stats.Memory.ContainerData.Pgfault)
+	assertContainsPointWithValue(t, points, serMemoryFailure, stats.Memory.ContainerData.Pgmajfault)
+	assertContainsPointWithValue(t, points, serMemoryFailure, stats.Memory.HierarchicalData.Pgfault)
+	assertContainsPointWithValue(t, points, serMemoryFailure, stats.Memory.HierarchicalData.Pgmajfault)
+
+	// Hugetlb stats
+	for _, hugetlbStat := range stats.Hugetlb {
+		assertContainsPointWithValue(t, points, setHugetlbUsage, hugetlbStat.Usage)
+		assertContainsPointWithValue(t, points, setHugetlbMaxUsage, hugetlbStat.MaxUsage)
+		assertContainsPointWithValue(t, points, setHugetlbFailcnt, hugetlbStat.Failcnt)
+	}
+
+	// Network stats
 	assertContainsPointWithValue(t, points, serRxBytes, stats.Network.RxBytes)
 	assertContainsPointWithValue(t, points, serRxErrors, stats.Network.RxErrors)
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxBytes)
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxErrors)
 
-	for _, cpu_usage := range stats.Cpu.Usage.PerCpu {
-		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)
+	// Perf stats
+	for _, perfStat := range stats.PerfStats {
+		assertContainsPointWithValue(t, points, serPerfStat, perfStat.Value)
+	}
+
+	// Reference memory
+	assertContainsPointWithValue(t, points, serReferencedMemory, stats.ReferencedMemory)
+
+	// Resource Control stats - memory bandwidth
+	for _, rdtMemoryBandwidth := range stats.Resctrl.MemoryBandwidth {
+		assertContainsPointWithValue(t, points, serResctrlMemoryBandwidthTotal, rdtMemoryBandwidth.TotalBytes)
+		assertContainsPointWithValue(t, points, serResctrlMemoryBandwidthLocal, rdtMemoryBandwidth.LocalBytes)
+	}
+
+	// Resource Control stats - cache
+	for _, rdtCache := range stats.Resctrl.Cache {
+		assertContainsPointWithValue(t, points, serResctrlLLCOccupancy, rdtCache.LLCOccupancy)
 	}
 }
 
@@ -297,6 +338,34 @@ func createTestStats() (*info.ContainerInfo, *info.ContainerStats) {
 		Cpu: info.CpuStats{
 			Usage:       cpuUsage,
 			LoadAverage: int32(rand.Intn(1000)),
+		},
+		Memory: info.MemoryStats{
+			Usage:            26767396864,
+			MaxUsage:         30429605888,
+			Cache:            7837376512,
+			RSS:              18930020352,
+			Swap:             1024,
+			MappedFile:       1025327104,
+			WorkingSet:       23630012416,
+			Failcnt:          1,
+			ContainerData:    info.MemoryStatsMemoryData{Pgfault: 100328455, Pgmajfault: 97},
+			HierarchicalData: info.MemoryStatsMemoryData{Pgfault: 100328454, Pgmajfault: 96},
+		},
+		Hugetlb: map[string]info.HugetlbStats{
+			"1GB": {Usage: 1234, MaxUsage: 5678, Failcnt: 9},
+			"2GB": {Usage: 9876, MaxUsage: 5432, Failcnt: 1},
+		},
+		ReferencedMemory: 12345,
+		PerfStats:        []info.PerfStat{{Cpu: 1, Name: "cycles", ScalingRatio: 1.5, Value: 4589}},
+		Resctrl: info.ResctrlStats{
+			MemoryBandwidth: []info.MemoryBandwidthStats{
+				{TotalBytes: 11234, LocalBytes: 4567},
+				{TotalBytes: 55678, LocalBytes: 9876},
+			},
+			Cache: []info.CacheStats{
+				{LLCOccupancy: 3},
+				{LLCOccupancy: 5},
+			},
 		},
 	}
 	return cInfo, stats
