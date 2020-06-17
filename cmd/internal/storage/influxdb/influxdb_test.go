@@ -199,11 +199,14 @@ func TestContainerFileSystemStatsToPoints(t *testing.T) {
 		false, 2*time.Minute)
 	assert.Nil(err)
 
-	ref := info.ContainerReference{
-		Name: "containerName",
+	cInfo := &info.ContainerInfo{
+		ContainerReference: info.ContainerReference{
+			Name: "containerName",
+		},
 	}
+
 	stats := &info.ContainerStats{}
-	points := storage.containerFilesystemStatsToPoints(ref, stats)
+	points := storage.containerFilesystemStatsToPoints(cInfo, stats)
 
 	// stats.Filesystem is always nil, not sure why
 	assert.Nil(points)
@@ -215,12 +218,12 @@ func TestContainerStatsToPoints(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, storage)
 
-	ref, stats := createTestStats()
+	cInfo, stats := createTestStats()
 	require.Nil(t, err)
 	require.NotNil(t, stats)
 
 	// When
-	points := storage.containerStatsToPoints(*ref, stats)
+	points := storage.containerStatsToPoints(cInfo, stats)
 
 	// Then
 	assert.NotEmpty(t, points)
@@ -274,10 +277,12 @@ func createTestStorage() (*influxdbStorage, error) {
 	return storage, err
 }
 
-func createTestStats() (*info.ContainerReference, *info.ContainerStats) {
-	ref := &info.ContainerReference{
-		Name:    "testContainername",
-		Aliases: []string{"testContainerAlias1", "testContainerAlias2"},
+func createTestStats() (*info.ContainerInfo, *info.ContainerStats) {
+	cInfo := &info.ContainerInfo{
+		ContainerReference: info.ContainerReference{
+			Name:    "testContainername",
+			Aliases: []string{"testContainerAlias1", "testContainerAlias2"},
+		},
 	}
 
 	cpuUsage := info.CpuUsage{
@@ -294,5 +299,5 @@ func createTestStats() (*info.ContainerReference, *info.ContainerStats) {
 			LoadAverage: int32(rand.Intn(1000)),
 		},
 	}
-	return ref, stats
+	return cInfo, stats
 }
