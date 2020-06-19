@@ -379,3 +379,15 @@ container_threads_max{container_env_foo_env="prod",container_label_foo_label="ba
 # HELP container_ulimits_soft Soft ulimit values for the container root process. Unlimited if -1, except priority and nice
 # TYPE container_ulimits_soft gauge
 container_ulimits_soft{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",ulimit="max_open_files",zone_name="hello"} 16384 1395066363000
+# HELP container_llc_occupancy_bytes Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
+# TYPE container_llc_occupancy_bytes gauge
+container_llc_occupancy_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 162626 1395066363000
+container_llc_occupancy_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 213777 1395066363000
+# HELP container_memory_bandwidth_bytes Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
+# TYPE container_memory_bandwidth_bytes gauge
+container_memory_bandwidth_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 4.512312e+06 1395066363000
+container_memory_bandwidth_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 2.173713e+06 1395066363000
+# HELP container_memory_bandwidth_local_bytes Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
+# TYPE container_memory_bandwidth_local_bytes gauge
+container_memory_bandwidth_local_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 2.390393e+06 1395066363000
+container_memory_bandwidth_local_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 1.231233e+06 1395066363000

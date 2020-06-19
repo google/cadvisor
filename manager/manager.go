@@ -40,6 +40,7 @@ import (
 	"github.com/google/cadvisor/machine"
 	"github.com/google/cadvisor/nvm"
 	"github.com/google/cadvisor/perf"
+	"github.com/google/cadvisor/resctrl"
 	"github.com/google/cadvisor/stats"
 	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs"
@@ -47,6 +48,8 @@ import (
 	"github.com/google/cadvisor/watcher"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/runc/libcontainer/intelrdt"
+
 	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
 )
@@ -214,6 +217,11 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		return nil, err
 	}
 
+	newManager.resctrlManager, err = resctrl.NewManager(selfContainer)
+	if err != nil {
+		klog.V(4).Infof("Cannot gather resctrl metrics: %v", err)
+	}
+
 	versionInfo, err := getVersionInfo()
 	if err != nil {
 		return nil, err
@@ -254,6 +262,7 @@ type manager struct {
 	collectorHTTPClient      *http.Client
 	nvidiaManager            stats.Manager
 	perfManager              stats.Manager
+	resctrlManager           stats.Manager
 	// List of raw container cgroup path prefix whitelist.
 	rawContainerCgroupPathPrefixWhiteList []string
 }
@@ -943,6 +952,16 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 			if err != nil {
 				klog.Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
 			}
+		}
+	}
+
+	resctrlPath, err := intelrdt.GetIntelRdtPath(containerName)
+	if err != nil {
+		klog.Warningf("Error getting resctrl path: %q", err)
+	} else {
+		cont.resctrlCollector, err = m.resctrlManager.GetCollector(resctrlPath)
+		if err != nil {
+			klog.Infof("resctrl metrics will not be available for container %s: %s", cont.info.Name, err)
 		}
 	}
 

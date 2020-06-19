@@ -1595,6 +1595,64 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.ResctrlMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_memory_bandwidth_bytes",
+				help:        "Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName},
+				getValues: func(s *info.ContainerStats) metricValues {
+					numberOfNUMANodes := len(s.Resctrl.MemoryBandwidth)
+					metrics := make(metricValues, numberOfNUMANodes)
+					for numaNode, stats := range s.Resctrl.MemoryBandwidth {
+						metrics[numaNode] = metricValue{
+							value:     float64(stats.TotalBytes),
+							timestamp: s.Timestamp,
+							labels:    []string{strconv.Itoa(numaNode)},
+						}
+					}
+					return metrics
+				},
+			},
+			{
+				name:        "container_memory_bandwidth_local_bytes",
+				help:        "Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName},
+				getValues: func(s *info.ContainerStats) metricValues {
+					numberOfNUMANodes := len(s.Resctrl.MemoryBandwidth)
+					metrics := make(metricValues, numberOfNUMANodes)
+					for numaNode, stats := range s.Resctrl.MemoryBandwidth {
+						metrics[numaNode] = metricValue{
+							value:     float64(stats.LocalBytes),
+							timestamp: s.Timestamp,
+							labels:    []string{strconv.Itoa(numaNode)},
+						}
+					}
+					return metrics
+				},
+			},
+			{
+				name:        "container_llc_occupancy_bytes",
+				help:        "Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName},
+				getValues: func(s *info.ContainerStats) metricValues {
+					numberOfNUMANodes := len(s.Resctrl.Cache)
+					metrics := make(metricValues, numberOfNUMANodes)
+					for numaNode, stats := range s.Resctrl.Cache {
+						metrics[numaNode] = metricValue{
+							value:     float64(stats.LLCOccupancy),
+							timestamp: s.Timestamp,
+							labels:    []string{strconv.Itoa(numaNode)},
+						}
+					}
+					return metrics
+				},
+			},
+		}...)
+	}
 	return c
 }
 
