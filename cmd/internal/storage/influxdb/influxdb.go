@@ -224,6 +224,24 @@ func (s *influxdbStorage) containerStatsToPoints(
 	// Load Average
 	points = append(points, makePoint(serLoadAverage, stats.Cpu.LoadAverage))
 
+	// Network Stats
+	points = append(points, makePoint(serRxBytes, stats.Network.RxBytes))
+	points = append(points, makePoint(serRxErrors, stats.Network.RxErrors))
+	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
+	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
+
+	// Referenced Memory
+	points = append(points, makePoint(serReferencedMemory, stats.ReferencedMemory))
+
+	s.tagPoints(cInfo, stats, points)
+
+	return points
+}
+
+func (s *influxdbStorage) memoryStatsToPoints(
+	cInfo *info.ContainerInfo,
+	stats *info.ContainerStats,
+) (points []*influxdb.Point) {
 	// Memory Usage
 	points = append(points, makePoint(serMemoryUsage, stats.Memory.Usage))
 	// Maximum memory usage recorded
@@ -266,7 +284,16 @@ func (s *influxdbStorage) containerStatsToPoints(
 	addTagsToPoint(memoryFailurePoint, memoryFailuresTags)
 	points = append(points, memoryFailurePoint)
 
-	// Hugetlb Stats
+	s.tagPoints(cInfo, stats, points)
+
+	return points
+}
+
+func (s *influxdbStorage) hugetlbStatsToPoints(
+	cInfo *info.ContainerInfo,
+	stats *info.ContainerStats,
+) (points []*influxdb.Point) {
+
 	for pageSize, hugetlbStat := range stats.Hugetlb {
 		tags := map[string]string{
 			"page_size": pageSize,
@@ -288,13 +315,16 @@ func (s *influxdbStorage) containerStatsToPoints(
 		points = append(points, point)
 	}
 
-	// Network Stats
-	points = append(points, makePoint(serRxBytes, stats.Network.RxBytes))
-	points = append(points, makePoint(serRxErrors, stats.Network.RxErrors))
-	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
-	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
+	s.tagPoints(cInfo, stats, points)
 
-	// Perf Stats
+	return points
+}
+
+func (s *influxdbStorage) perfStatsToPoints(
+	cInfo *info.ContainerInfo,
+	stats *info.ContainerStats,
+) (points []*influxdb.Point) {
+
 	for _, perfStat := range stats.PerfStats {
 		point := makePoint(serPerfStat, perfStat.Value)
 		tags := map[string]string{
@@ -306,13 +336,20 @@ func (s *influxdbStorage) containerStatsToPoints(
 		points = append(points, point)
 	}
 
-	// Referenced Memory
-	points = append(points, makePoint(serReferencedMemory, stats.ReferencedMemory))
+	s.tagPoints(cInfo, stats, points)
 
-	// Resource Control stats - memory bandwidth
-	for node_id, rdtMemoryBandwidth := range stats.Resctrl.MemoryBandwidth {
+	return points
+}
+
+func (s *influxdbStorage) resctrlStatsToPoints(
+	cInfo *info.ContainerInfo,
+	stats *info.ContainerStats,
+) (points []*influxdb.Point) {
+
+	// Memory bandwidth
+	for nodeID, rdtMemoryBandwidth := range stats.Resctrl.MemoryBandwidth {
 		tags := map[string]string{
-			"node_id": fmt.Sprintf("%v", node_id),
+			"node_id": fmt.Sprintf("%v", nodeID),
 		}
 		point := makePoint(serResctrlMemoryBandwidthTotal, rdtMemoryBandwidth.TotalBytes)
 		addTagsToPoint(point, tags)
@@ -323,10 +360,10 @@ func (s *influxdbStorage) containerStatsToPoints(
 		points = append(points, point)
 	}
 
-	// Resource Control stats - cache
-	for node_id, rdtCache := range stats.Resctrl.Cache {
+	// Cache
+	for nodeID, rdtCache := range stats.Resctrl.Cache {
 		tags := map[string]string{
-			"node_id": fmt.Sprintf("%v", node_id),
+			"node_id": fmt.Sprintf("%v", nodeID),
 		}
 		point := makePoint(serResctrlLLCOccupancy, rdtCache.LLCOccupancy)
 		addTagsToPoint(point, tags)
@@ -357,6 +394,10 @@ func (s *influxdbStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Contai
 		defer s.lock.Unlock()
 
 		s.points = append(s.points, s.containerStatsToPoints(cInfo, stats)...)
+		s.points = append(s.points, s.memoryStatsToPoints(cInfo, stats)...)
+		s.points = append(s.points, s.hugetlbStatsToPoints(cInfo, stats)...)
+		s.points = append(s.points, s.perfStatsToPoints(cInfo, stats)...)
+		s.points = append(s.points, s.resctrlStatsToPoints(cInfo, stats)...)
 		s.points = append(s.points, s.containerFilesystemStatsToPoints(cInfo, stats)...)
 		if s.readyToFlush() {
 			pointsToFlush = s.points

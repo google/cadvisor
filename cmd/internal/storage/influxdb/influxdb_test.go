@@ -224,6 +224,10 @@ func TestContainerStatsToPoints(t *testing.T) {
 
 	// When
 	points := storage.containerStatsToPoints(cInfo, stats)
+	points = append(points, storage.memoryStatsToPoints(cInfo, stats)...)
+	points = append(points, storage.hugetlbStatsToPoints(cInfo, stats)...)
+	points = append(points, storage.perfStatsToPoints(cInfo, stats)...)
+	points = append(points, storage.resctrlStatsToPoints(cInfo, stats)...)
 
 	// Then
 	assert.NotEmpty(t, points)
