@@ -874,6 +874,32 @@ type ResctrlStats struct {
 	Cache           []CacheStats           `json:"cache,omitempty"`
 }
 
+// PerfUncoreStat represents value of a single monitored perf uncore event.
+type PerfUncoreStat struct {
+	// Indicates scaling ratio for an event: time_running/time_enabled
+	// (amount of time that event was being measured divided by
+	// amount of time that event was enabled for).
+	// value 1.0 indicates that no multiplexing occurred. Value close
+	// to 0 indicates that event was measured for short time and event's
+	// value might be inaccurate.
+	// See: https://lwn.net/Articles/324756/
+	ScalingRatio float64 `json:"scaling_ratio"`
+
+	// Value represents value of perf event retrieved from OS. It is
+	// normalized against ScalingRatio and takes multiplexing into
+	// consideration.
+	Value uint64 `json:"value"`
+
+	// Name is human readable name of an event.
+	Name string `json:"name"`
+
+	// Socket that perf event was measured on.
+	Socket int `json:"socket"`
+
+	// PMU is Performance Monitoring Unit which collected these stats.
+	PMU string `json:"pmu"`
+}
+
 type UlimitSpec struct {
 	Name      string `json:"name"`
 	SoftLimit int64  `json:"soft_limit"`
@@ -925,6 +951,10 @@ type ContainerStats struct {
 
 	// Statistics originating from perf events
 	PerfStats []PerfStat `json:"perf_stats,omitempty"`
+
+	// Statistics originating from perf uncore events.
+	// Applies only for root container.
+	PerfUncoreStats []PerfUncoreStat `json:"perf_uncore_stats,omitempty"`
 
 	// Referenced memory
 	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`

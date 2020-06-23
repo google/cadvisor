@@ -1235,3 +1235,54 @@ func TestGetNetworkStats(t *testing.T) {
 		t.Errorf("expected to get stats %+v, got %+v", expectedStats, netStats)
 	}
 }
+
+func TestGetSocketFromCPU(t *testing.T) {
+	topology := []info.Node{
+		{
+			Id:        0,
+			Memory:    0,
+			HugePages: nil,
+			Cores: []info.Core{
+				{
+					Id:       0,
+					Threads:  []int{0, 1},
+					Caches:   nil,
+					SocketID: 0,
+				},
+				{
+					Id:       1,
+					Threads:  []int{2, 3},
+					Caches:   nil,
+					SocketID: 0,
+				},
+			},
+			Caches: nil,
+		},
+		{
+			Id:        1,
+			Memory:    0,
+			HugePages: nil,
+			Cores: []info.Core{
+				{
+					Id:       0,
+					Threads:  []int{4, 5},
+					Caches:   nil,
+					SocketID: 1,
+				},
+				{
+					Id:       1,
+					Threads:  []int{6, 7},
+					Caches:   nil,
+					SocketID: 1,
+				},
+			},
+			Caches: nil,
+		},
+	}
+	socket := GetSocketFromCPU(topology, 6)
+	assert.Equal(t, socket, 1)
+
+	// Check if return "-1" when there is no data about passed CPU.
+	socket = GetSocketFromCPU(topology, 8)
+	assert.Equal(t, socket, -1)
+}

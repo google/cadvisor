@@ -158,6 +158,106 @@ automatically.
 * `grouping` - in scenario when accounted for events are used to calculate derivative metrics, it is reasonable to
 measure them in transactional manner: all the events in a group must be accounted for in the same period of time. Keep
 in mind that it is impossible to group more events that there are counters available.
+* `uncore events` - events which can be counted by PMUs outside core.
+* `PMU` - Performance Monitoring Unit
+
+#### Getting config values
+Using perf tools:
+* Identify the event in `perf list` output. 
+* Execute command: `perf stat -I 5000 -vvv -e EVENT_NAME`
+* Find `perf_event_attr` section on `perf stat` output, copy config and type field to configuration file.
+
+```
+------------------------------------------------------------
+perf_event_attr:
+  type                             18
+  size                             112
+  config                           0x304
+  sample_type                      IDENTIFIER
+  read_format                      TOTAL_TIME_ENABLED|TOTAL_TIME_RUNNING
+  disabled                         1
+  inherit                          1
+  exclude_guest                    1
+------------------------------------------------------------
+```
+* Configuration file should look like: 
+```json
+{
+  "core": {
+    "events": [
+      ["EVENT_NAME"]
+    ],
+    "custom_events": [
+      {
+        "type": 18,
+        "config": [
+          "0x304"
+        ],
+        "name": "EVENT_NAME"
+      }
+    ]
+  },
+  "uncore": {
+    "events": [
+      ["EVENT_NAME"]
+    ],
+    "custom_events": [
+      {
+        "type": 18,
+        "config": [
+          "0x304"
+        ],
+        "name": "EVENT_NAME"
+      }
+    ]
+  }
+}
+```
+
+Config values can be also obtain from: 
+* [Intel® 64 and IA32 Architectures Performance Monitoring Events](https://software.intel.com/content/www/us/en/develop/download/intel-64-and-ia32-architectures-performance-monitoring-events.html)
+
+
+##### Uncore Events configuration
+Uncore Event name should be in form `PMU_PREFIX/event_name` where **PMU_PREFIX** mean
+that statistics would be counted on all PMUs with that prefix in name.
+
+Let's explain this by example: 
+
+```json
+{
+  "uncore": {
+    "events": [
+      ["uncore_imc/cas_count_read"],
+      ["uncore_imc_0/cas_count_write"],
+      ["cas_count_all"]
+    ],
+    "custom_events": [ 
+      {
+        "config": [
+          "0x304"
+        ],
+        "name": "uncore_imc_0/cas_count_write"
+      },
+      {
+        "type": 19,
+        "config": [
+          "0x304"
+        ],
+        "name": "cas_count_all"
+      }
+    ]
+  }
+}
+```
+
+- `uncore_imc/cas_count_read` - because of `uncore_imc` type and no entry in custom events,
+    it would be counted by **all** Integrated Memory Controller PMUs with config provided from libpfm package.
+    (using this function: https://man7.org/linux/man-pages/man3/pfm_get_os_event_encoding.3.html)
+
+- `uncore_imc_0/cas_count_write` - because of `uncore_imc_0` type and entry in custom events it would be counted by `uncore_imc_0` PMU with provided config.
+
+- `uncore_imc_1/cas_count_all` - because of entry in custom events with type field, event would be counted by PMU with **19** type and provided config.
 
 ### Further reading
 
@@ -165,16 +265,17 @@ in mind that it is impossible to group more events that there are counters avail
 * [Kernel Perf Wiki](https://perf.wiki.kernel.org/index.php/Main_Page)
 * `man perf_event_open`
 * [perf subsystem](https://github.com/torvalds/linux/tree/v5.6/kernel/events) in Linux kernel
+* [Uncore Performance Monitoring Reference Manuals](https://software.intel.com/content/www/us/en/develop/articles/intel-sdm.html#uncore)
 
 See example configuration below:
 ```json
 {
-  "events": [
-    ["instructions"],
-    ["instructions_retired"]
-  ],
-  "custom_events": [
-    [
+  "core": {
+    "events": [
+      ["instructions"],
+      ["instructions_retired"]
+    ],
+    "custom_events": [
       {
         "type": 4,
         "config": [
@@ -183,7 +284,20 @@ See example configuration below:
         "name": "instructions_retired"
       }
     ]
-  ]
+  },
+  "uncore": {
+    "events": [
+      ["uncore_imc/cas_count_read"]
+    ],
+    "custom_events": [
+      {
+        "config": [
+          "0xc04"
+        ],
+        "name": "uncore_imc/cas_count_read"
+      }
+    ]
+  }
 }
 ```
 
@@ -194,6 +308,9 @@ interface that majority of users will rely on.
 * `instructions_retired` will be measured as non-grouped event and is specified using an advanced API that allows
 to specify any perf event available (some of them are not named and can't be specified with plain string). Event name 
 should be a human readable string that will become a metric name.
+* `cas_count_read` will be measured as uncore non-grouped event on all Integrated Memory Controllers Performance Monitoring Units because of unset `type` field and
+`uncore_imc` prefix.
+
 
 ## Storage driver specific instructions:
 

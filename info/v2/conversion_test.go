@@ -208,6 +208,22 @@ func TestContainerStatsFromV1(t *testing.T) {
 				Name:         "cycles",
 			},
 		},
+		PerfUncoreStats: []v1.PerfUncoreStat{
+			{
+				ScalingRatio: 1.0,
+				Value:        123456,
+				Name:         "uncore_imc_0/cas_count_write",
+				Socket:       0,
+				PMU:          "17",
+			},
+			{
+				ScalingRatio: 1.0,
+				Value:        654321,
+				Name:         "uncore_imc_0/cas_count_write",
+				Socket:       1,
+				PMU:          "17",
+			},
+		},
 		ReferencedMemory: uint64(1234),
 		Resctrl: v1.ResctrlStats{
 			MemoryBandwidth: []v1.MemoryBandwidthStats{
@@ -247,6 +263,7 @@ func TestContainerStatsFromV1(t *testing.T) {
 		},
 		Accelerators:     v1Stats.Accelerators,
 		PerfStats:        v1Stats.PerfStats,
+		PerfUncoreStats:  v1Stats.PerfUncoreStats,
 		ReferencedMemory: v1Stats.ReferencedMemory,
 		Resctrl:          v1Stats.Resctrl,
 	}

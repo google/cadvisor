@@ -648,6 +648,22 @@ func (p testSubcontainersInfoProvider) SubcontainersInfo(string, *info.Container
 							Cpu:          1,
 						},
 					},
+					PerfUncoreStats: []info.PerfUncoreStat{
+						{
+							ScalingRatio: 1.0,
+							Value:        1231231512.0,
+							Name:         "cas_count_read",
+							Socket:       0,
+							PMU:          "uncore_imc_0",
+						},
+						{
+							ScalingRatio: 1.0,
+							Value:        1111231331.0,
+							Name:         "cas_count_read",
+							Socket:       1,
+							PMU:          "uncore_imc_0",
+						},
+					},
 					ReferencedMemory: 1234,
 					Resctrl: info.ResctrlStats{
 						MemoryBandwidth: []info.MemoryBandwidthStats{
