@@ -18,7 +18,6 @@ package manager
 import (
 	"flag"
 	"fmt"
-	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 	"net/http"
 	"os"
 	"path"
@@ -46,6 +45,7 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 	"github.com/google/cadvisor/watcher"
+	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/intelrdt"
@@ -957,11 +957,11 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 
 	resctrlPath, err := intelrdt.GetIntelRdtPath(containerName)
 	if err != nil {
-		klog.Warningf("Error getting resctrl path: %q", err)
+		klog.V(4).Infof("Error getting resctrl path: %q", err)
 	} else {
 		cont.resctrlCollector, err = m.resctrlManager.GetCollector(resctrlPath)
 		if err != nil {
-			klog.Infof("resctrl metrics will not be available for container %s: %s", cont.info.Name, err)
+			klog.V(4).Infof("resctrl metrics will not be available for container %s: %s", cont.info.Name, err)
 		}
 	}
 
