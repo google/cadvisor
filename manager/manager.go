@@ -45,9 +45,9 @@ import (
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/version"
 	"github.com/google/cadvisor/watcher"
-	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 	"github.com/opencontainers/runc/libcontainer/intelrdt"
 
 	"k8s.io/klog/v2"
@@ -932,7 +932,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		perfCgroupPath := path.Join(fs2.UnifiedMountpoint, containerName)
 		cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
 		if err != nil {
-			klog.Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
+			klog.V(4).Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
 		}
 	} else {
 		devicesCgroupPath, err := handler.GetCgroupPath("devices")
@@ -950,7 +950,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		} else {
 			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
 			if err != nil {
-				klog.Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
+				klog.V(4).Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
 			}
 		}
 	}
