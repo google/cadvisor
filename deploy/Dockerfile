@@ -13,10 +13,6 @@ RUN export DBG="-g -Wall" && \
   make -e -C libpfm-4.10.1 && \
   make install -C libpfm-4.10.1
 
-RUN export DBG="-g -Wall" && \
-  make -e -C libpfm-4.10.1 && \
-  make install -C libpfm-4.10.1
-
 ADD . /go/src/github.com/google/cadvisor
 WORKDIR /go/src/github.com/google/cadvisor
 
