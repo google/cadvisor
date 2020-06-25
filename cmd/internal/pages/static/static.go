@@ -33,7 +33,7 @@ var bootstrapJs, _ = Asset("cmd/internal/pages/assets/js/bootstrap-4.0.0-beta.2.
 var containersJs, _ = Asset("cmd/internal/pages/assets/js/containers.js")
 var gchartsJs, _ = Asset("cmd/internal/pages/assets/js/gcharts.js")
 var googleJsapiJs, _ = Asset("cmd/internal/pages/assets/js/google-jsapi.js")
-var jqueryJs, _ = Asset("cmd/internal/pages/assets/js/jquery-3.0.0.min.js")
+var jqueryJs, _ = Asset("cmd/internal/pages/assets/js/jquery-3.5.1.min.js")
 
 var bootstrapCss, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-4.0.0-beta.2.min.css")
 var bootstrapThemeCss, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-theme-3.1.1.min.css")
@@ -48,7 +48,7 @@ var staticFiles = map[string][]byte{
 	"containers.js":                  containersJs,
 	"gcharts.js":                     gchartsJs,
 	"google-jsapi.js":                googleJsapiJs,
-	"jquery-3.0.0.min.js":            jqueryJs,
+	"jquery-3.5.1.min.js":            jqueryJs,
 }
 
 func HandleRequest(w http.ResponseWriter, u *url.URL) {
