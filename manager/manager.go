@@ -955,13 +955,15 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		}
 	}
 
-	resctrlPath, err := intelrdt.GetIntelRdtPath(containerName)
-	if err != nil {
-		klog.V(4).Infof("Error getting resctrl path: %q", err)
-	} else {
-		cont.resctrlCollector, err = m.resctrlManager.GetCollector(resctrlPath)
+	if m.includedMetrics.Has(container.ResctrlMetrics) {
+		resctrlPath, err := intelrdt.GetIntelRdtPath(containerName)
 		if err != nil {
-			klog.V(4).Infof("resctrl metrics will not be available for container %s: %s", cont.info.Name, err)
+			klog.V(4).Infof("Error getting resctrl path: %q", err)
+		} else {
+			cont.resctrlCollector, err = m.resctrlManager.GetCollector(resctrlPath)
+			if err != nil {
+				klog.V(4).Infof("resctrl metrics will not be available for container %s: %s", cont.info.Name, err)
+			}
 		}
 	}
 
