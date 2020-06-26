@@ -96,14 +96,28 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 // the provided HTTP mux to handle the given Prometheus endpoint.
 func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager, prometheusEndpoint string,
 	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
-	r := prometheus.NewRegistry()
-	r.MustRegister(
-		metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, clock.RealClock{}),
-		metrics.NewPrometheusMachineCollector(resourceManager, includedMetrics),
-		prometheus.NewGoCollector(),
-		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
-	)
-	mux.Handle(prometheusEndpoint, promhttp.HandlerFor(r, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
+	goCollector := prometheus.NewGoCollector()
+	processCollector := prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{})
+	machineCollector := metrics.NewPrometheusMachineCollector(resourceManager, includedMetrics)
+
+	mux.Handle(prometheusEndpoint, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		opts, err := api.GetRequestOptions(req)
+		if err != nil {
+			http.Error(w, "No metrics gathered, last error:\n\n"+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		opts.Count = 1        // we only want the latest datapoint
+		opts.Recursive = true // get all child containers
+
+		r := prometheus.NewRegistry()
+		r.MustRegister(
+			metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, clock.RealClock{}, opts),
+			machineCollector,
+			goCollector,
+			processCollector,
+		)
+		promhttp.HandlerFor(r, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
+	}))
 }
 
 func staticHandlerNoAuth(w http.ResponseWriter, r *http.Request) {

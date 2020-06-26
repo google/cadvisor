@@ -15,12 +15,14 @@
 package metrics
 
 import (
+	"errors"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
+	v2 "github.com/google/cadvisor/info/v2"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -35,7 +37,7 @@ func TestPrometheusCollector(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now)
+	}, container.AllMetrics, now, v2.RequestOptions{})
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
@@ -64,7 +66,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now)
+	}, container.AllMetrics, now, v2.RequestOptions{})
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
@@ -76,7 +78,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 }
 
 func TestNewPrometheusCollectorWithPerf(t *testing.T) {
-	c := NewPrometheusCollector(mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now)
+	c := NewPrometheusCollector(&mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now, v2.RequestOptions{})
 	assert.Len(t, c.containerMetrics, 5)
 	names := []string{}
 	for _, m := range c.containerMetrics {
@@ -89,18 +91,32 @@ func TestNewPrometheusCollectorWithPerf(t *testing.T) {
 	assert.Contains(t, names, "container_perf_uncore_events_scaling_ratio")
 }
 
-type mockInfoProvider struct{}
-
-func (m mockInfoProvider) SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
-	return nil, nil
+func TestNewPrometheusCollectorWithRequestOptions(t *testing.T) {
+	p := mockInfoProvider{}
+	opts := v2.RequestOptions{
+		IdType: "docker",
+	}
+	c := NewPrometheusCollector(&p, mockLabelFunc, container.AllMetrics, now, opts)
+	ch := make(chan prometheus.Metric, 10)
+	c.Collect(ch)
+	assert.Equal(t, p.options, opts)
 }
 
-func (m mockInfoProvider) GetVersionInfo() (*info.VersionInfo, error) {
-	return nil, nil
+type mockInfoProvider struct {
+	options v2.RequestOptions
 }
 
-func (m mockInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
-	return nil, nil
+func (m *mockInfoProvider) GetRequestedContainersInfo(containerName string, options v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
+	m.options = options
+	return map[string]*info.ContainerInfo{}, nil
+}
+
+func (m *mockInfoProvider) GetVersionInfo() (*info.VersionInfo, error) {
+	return nil, errors.New("not supported")
+}
+
+func (m *mockInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
+	return nil, errors.New("not supported")
 }
 
 func mockLabelFunc(*info.ContainerInfo) map[string]string {

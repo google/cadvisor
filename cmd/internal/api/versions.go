@@ -19,9 +19,10 @@ import (
 	"net/http"
 	"path"
 	"strconv"
+	"time"
 
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/info/v2"
+	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/manager"
 
 	"k8s.io/klog/v2"
@@ -313,7 +314,7 @@ func (api *version2_0) SupportedRequestTypes() []string {
 }
 
 func (api *version2_0) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
-	opt, err := getRequestOptions(r)
+	opt, err := GetRequestOptions(r)
 	if err != nil {
 		return err
 	}
@@ -482,7 +483,7 @@ func (api *version2_1) SupportedRequestTypes() []string {
 
 func (api *version2_1) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	// Get the query request.
-	opt, err := getRequestOptions(r)
+	opt, err := GetRequestOptions(r)
 	if err != nil {
 		return err
 	}
@@ -525,7 +526,8 @@ func (api *version2_1) HandleRequest(requestType string, request []string, m man
 	}
 }
 
-func getRequestOptions(r *http.Request) (v2.RequestOptions, error) {
+// GetRequestOptions returns the metrics request options from a HTTP request.
+func GetRequestOptions(r *http.Request) (v2.RequestOptions, error) {
 	supportedTypes := map[string]bool{
 		v2.TypeName:   true,
 		v2.TypeDocker: true,
@@ -554,6 +556,13 @@ func getRequestOptions(r *http.Request) (v2.RequestOptions, error) {
 	recursive := r.URL.Query().Get("recursive")
 	if recursive == "true" {
 		opt.Recursive = true
+	}
+	if maxAgeString := r.URL.Query().Get("max_age"); len(maxAgeString) > 0 {
+		maxAge, err := time.ParseDuration(maxAgeString)
+		if err != nil {
+			return opt, fmt.Errorf("failed to parse 'max_age' option: %v", err)
+		}
+		opt.MaxAge = &maxAge
 	}
 	return opt, nil
 }
