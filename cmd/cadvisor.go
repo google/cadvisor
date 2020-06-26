@@ -89,6 +89,7 @@ var (
 		container.HugetlbUsageMetrics:            struct{}{},
 		container.ReferencedMemoryMetrics:        struct{}{},
 		container.CPUTopologyMetrics:             struct{}{},
+		container.ResctrlMetrics:                 struct{}{},
 	}}
 
 	// List of metrics that can be ignored.
