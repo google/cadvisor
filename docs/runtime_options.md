@@ -259,6 +259,76 @@ Let's explain this by example:
 
 - `uncore_imc_1/cas_count_all` - because of entry in custom events with type field, event would be counted by PMU with **19** type and provided config.
 
+#### Configuring perf events by name
+
+It is possible to configure perf events by names using events supported in [libpfm4](http://perfmon2.sourceforge.net/), for detailed information please see [libpfm4 documentation](http://perfmon2.sourceforge.net/docs_v4.html).
+
+Discovery of perf events supported on platform can be made using python script - [pmu.py](https://sourceforge.net/p/perfmon2/libpfm4/ci/master/tree/python/src/pmu.py) provided with libpfm4, please see [script reqirements](https://sourceforge.net/p/perfmon2/libpfm4/ci/master/tree/python/README).
+
+##### Example configuration of perf events using event names supported in libpfm4
+
+Example output of `pmu.py`:
+```
+$ python pmu.py
+INSTRUCTIONS 1
+		 u 0
+		 k 1
+		 period 3
+		 freq 4
+		 precise 5
+		 excl 6
+		 mg 7
+		 mh 8
+		 cpu 9
+		 pinned 10
+INSTRUCTION_RETIRED 192
+		 e 2
+		 i 3
+		 c 4
+		 t 5
+		 intx 7
+		 intxcp 8
+		 u 0
+		 k 1
+		 period 3
+		 freq 4
+		 excl 6
+		 mg 7
+		 mh 8
+		 cpu 9
+		 pinned 10
+UNC_M_CAS_COUNT 4
+		 RD 3
+		 WR 12
+		 e 0
+		 i 1
+		 t 2
+		 period 3
+		 freq 4
+		 excl 6
+		 cpu 9
+		 pinned 10
+```
+and perf events configuration for listed events:
+```json
+{
+  "core": {
+    "events": [
+      ["INSTRUCTIONS"],
+      ["INSTRUCTION_RETIRED"]
+    ]
+  },
+  "uncore": {
+    "events": [
+      ["uncore_imc/UNC_M_CAS_COUNT:RD"],
+      ["uncore_imc/UNC_M_CAS_COUNT:WR"]
+    ]
+  }
+}
+```
+
+Notice: PMU_PREFIX is provided in the same way as for configuration with config values.
+
 ### Further reading
 
 * [perf Examples](http://www.brendangregg.com/perf.html) on Brendan Gregg's blog
