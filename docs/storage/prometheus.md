@@ -75,6 +75,8 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `container_network_tcp6_usage_total` | Gauge | tcp6 connection usage statistic for container | | tcp
 `container_network_udp_usage_total` | Gauge | udp connection usage statistic for container | | udp
 `container_network_udp6_usage_total` | Gauge | udp6 connection usage statistic for container | | udp
+`container_perf_events_total` | Counter | Scaled counter of perf core event (event can be identified by `event` label and `cpu` indicates the core for which event was measured). See [perf event configuration](../runtime_options.md#perf-events). | |
+`container_perf_metric_scaling_ratio` | Gauge | Scaling ratio for perf event counter (event can be identified by `event` label and `cpu` indicates the core for which event was measured). See [perf event configuration](../runtime_options.md#perf-events). | |
 `container_processes` | Gauge | Number of processes running inside the container | | process
 `container_referenced_bytes` | Gauge |  Container referenced bytes during last measurements cycle based on Referenced field in /proc/smaps file, with /proc/PIDs/clear_refs set to 1 after defined number of cycles configured through `referenced_reset_interval` cAdvisor parameter.</br>Warning: this is intrusive collection because can influence kernel page reclaim policy and add latency. Refer to https://github.com/brendangregg/wss#wsspl-referenced-page-flag for more details. | bytes | referenced_memory 
 `container_spec_cpu_period` | Gauge | CPU period of the container |
@@ -84,9 +86,9 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `container_spec_memory_swap_limit_bytes` | Gauge | Memory swap limit for the container | bytes
 `container_spec_memory_reservation_limit_bytes` | Gauge | Memory reservation limit for the container | bytes
 `container_start_time_seconds` | Gauge | Start time of the container since unix epoch | seconds
-`container_tasks_state` | Gauge | Number of tasks in given state (`sleeping`, `running`, `stopped`, `uninterruptible`, or `ioawaiting`) | | 
-`container_perf_metric` | Counter | Scaled counter of perf event (event can be identified by `event` label and `cpu` indicates the core where event was measured). See [perf event configuration](docs/runtime_options.md#perf-events) | | 
-`container_perf_metric_scaling_ratio` | Gauge | Scaling ratio for perf event counter (event can be identified by `event` label and `cpu` indicates the core where event was measured). See [perf event configuration](docs/runtime_options.md#perf-events) | | 
+`container_tasks_state` | Gauge | Number of tasks in given state (`sleeping`, `running`, `stopped`, `uninterruptible`, or `ioawaiting`) | |
+`container_perf_uncore_events_total` | Counter | Scaled counter of perf uncore event (event can be identified by `event` label, `pmu` and `socket` lables indicate the PMU and the CPU socket for which event was measured). See [perf event configuration](../runtime_options.md#perf-events)). Metric exists only for main cgroup (id="/").| |
+`container_perf_uncore_events_scaling_ratio` | Gauge | Scaling ratio for perf uncore event counter (event can be identified by `event` label, `pmu` and `socket` lables indicate the PMU and the CPU socket for which event was measured). See [perf event configuration](../runtime_options.md#perf-events). Metric exists only for main cgroup (id="/"). | |
 
 ## Prometheus hardware metrics
 
