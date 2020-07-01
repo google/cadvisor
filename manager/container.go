@@ -289,12 +289,12 @@ func (cd *containerData) GetProcessList(cadvisorContainer string, inHostNamespac
 	if !inHostNamespace {
 		rootfs = "/rootfs"
 	}
-	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm,psr,cgroup"
+	format := "user,pid,ppid,stime,pcpu,pmem,rss,vsz,stat,time,comm,psr,cgroup:10000,cmd"
 	out, err := cd.getPsOutput(inHostNamespace, format)
 	if err != nil {
 		return nil, err
 	}
-	expectedFields := 13
+	expectedFields := 14
 	processes := []v2.ProcessInfo{}
 	lines := strings.Split(string(out), "\n")
 	for _, line := range lines[1:] {
@@ -335,7 +335,7 @@ func (cd *containerData) GetProcessList(cadvisorContainer string, inHostNamespac
 		vs *= 1024
 		psr, err := strconv.Atoi(fields[11])
 		if err != nil {
-			return nil, fmt.Errorf("invalid pid %q: %v", fields[1], err)
+			return nil, fmt.Errorf("invalid psr %q: %v", fields[11], err)
 		}
 
 		cgroup, err := cd.getCgroupPath(fields[12])
@@ -360,6 +360,7 @@ func (cd *containerData) GetProcessList(cadvisorContainer string, inHostNamespac
 			continue
 		}
 		fdCount = len(fds)
+		cmd := strings.Join(fields[13:], " ")
 
 		if isRoot || cd.info.Name == cgroup {
 			processes = append(processes, v2.ProcessInfo{
@@ -373,10 +374,11 @@ func (cd *containerData) GetProcessList(cadvisorContainer string, inHostNamespac
 				VirtualSize:   vs,
 				Status:        fields[8],
 				RunningTime:   fields[9],
-				Cmd:           fields[10],
+				Comm:          fields[10],
 				CgroupPath:    cgroupPath,
 				FdCount:       fdCount,
 				Psr:           psr,
+				Cmd:           cmd,
 			})
 		}
 	}

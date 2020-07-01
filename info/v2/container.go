@@ -286,9 +286,10 @@ type ProcessInfo struct {
 	Status        string  `json:"status"`
 	RunningTime   string  `json:"running_time"`
 	CgroupPath    string  `json:"cgroup_path"`
-	Cmd           string  `json:"cmd"`
+	Comm          string  `json:"comm"`
 	FdCount       int     `json:"fd_count"`
 	Psr           int     `json:"psr"`
+	Cmd           string  `json:"cmd"`
 }
 
 type TcpStat struct {
