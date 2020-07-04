@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   lint:
     env:
-      GOLANGCI_LINT_V: 1.26.0
+      GOLANGCI_LINT_V: 1.28.0
     strategy:
       matrix:
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
