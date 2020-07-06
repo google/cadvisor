@@ -1,0 +1,37 @@
+# HELP cadvisor_version_info A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.
+# TYPE cadvisor_version_info gauge
+cadvisor_version_info{cadvisorRevision="abcdef",cadvisorVersion="0.16.0",dockerVersion="1.8.1",kernelVersion="4.1.6-200.fc22.x86_64",osVersion="Fedora 22 (Twenty Two)"} 1
+# HELP container_last_seen Last time a container was seen by the exporter
+# TYPE container_last_seen gauge
+container_last_seen{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.395066363e+09 1395066363000
+# HELP container_perf_events_scaling_ratio Perf event metric scaling ratio.
+# TYPE container_perf_events_scaling_ratio gauge
+container_perf_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.5 1395066363000
+container_perf_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.33333333333 1395066363000
+# HELP container_perf_events_total Perf event metric.
+# TYPE container_perf_events_total counter
+container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 579 1395066363000
+container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1110 1395066363000
+# HELP container_perf_uncore_events_scaling_ratio Perf uncore event metric scaling ratio.
+# TYPE container_perf_uncore_events_scaling_ratio gauge
+container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="0",zone_name="hello"} 1 1395066363000
+container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="1",zone_name="hello"} 1 1395066363000
+# HELP container_perf_uncore_events_total Perf uncore event metric.
+# TYPE container_perf_uncore_events_total counter
+container_perf_uncore_events_total{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="0",zone_name="hello"} 1.231231512e+09 1395066363000
+container_perf_uncore_events_total{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="1",zone_name="hello"} 1.111231331e+09 1395066363000
+# HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
+# TYPE container_scrape_error gauge
+container_scrape_error 0
+# HELP container_spec_cpu_period CPU period of the container.
+# TYPE container_spec_cpu_period gauge
+container_spec_cpu_period{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 100000
+# HELP container_spec_cpu_quota CPU quota of the container.
+# TYPE container_spec_cpu_quota gauge
+container_spec_cpu_quota{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 10000
+# HELP container_spec_cpu_shares CPU share of the container.
+# TYPE container_spec_cpu_shares gauge
+container_spec_cpu_shares{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1000
+# HELP container_start_time_seconds Start time of the container since unix epoch in seconds.
+# TYPE container_start_time_seconds gauge
+container_start_time_seconds{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.257894e+09

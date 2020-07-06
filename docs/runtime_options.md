@@ -140,6 +140,12 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --perf_events_config="" Path to a JSON file containing configuration of perf events to measure. Empty value disables perf events measuring.
 ```
 
+Core perf events can be exposed on Prometheus endpoint per CPU or aggregated by event. It is controlled through `--disable_metrics` parameter with option `percpu`, e.g.:
+- `--disable_metrics="percpu"` - core perf events are aggregated
+- `--disable_metrics=""` - core perf events are exposed per CPU.
+
+Aggregated form of core perf events significantly decrease volume of data. For aggregated form of core perf events scaling ratio (`container_perf_metric_scaling ratio`) indicates the lowest value of scaling ratio for specific event to show the worst precision.
+
 ### Perf subsystem introduction
 
 One of the goals of kernel perf subsystem is to instrument CPU performance counters that allow to profile applications.
