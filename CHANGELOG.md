@@ -1,5 +1,19 @@
 # Changelog
 
+### 0.37.0 (2020-07-07)
+- Add on-demand collection for prometheus metrics
+- Fix detection of image filesystem
+- Fix disk metrics for devicemapper devices
+- Add NVM Power and NVM, Dimm, memory information to machine info
+- Fix detection of OOM Kills on 5.0 linux kernels
+- Add support for perf core and uncore event monitoring
+- Add hugetlb container metrics
+- Split into multiple go modules
+- Add referenced memory metrics
+- Publish images to gcr.io/cadvisor instead of gcr.io/google_containers
+- Add socket id to numa topology in machine info
+- Add resource control (Resctlr) metrics
+
 ### 0.36.0 (2020-02-28)
 - Add support for risc and mips CPUs
 - Add advanced TCP stats
