@@ -422,7 +422,8 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.WorkingSet), timestamp: s.Timestamp}}
 				},
-			}, {
+			},
+			{
 				name:        "container_memory_failures_total",
 				help:        "Cumulative count of memory allocation failures.",
 				valueType:   prometheus.CounterValue,
@@ -450,6 +451,38 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 							timestamp: s.Timestamp,
 						},
 					}
+				},
+			},
+		}...)
+	}
+	if includedMetrics.Has(container.MemoryNumaMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_memory_numa_pages",
+				help:        "Memory usage per numa node",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"type", "scope", "node"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0)
+
+					values = append(values, getNumaStatsPerNode(s.Memory.ContainerData.NumaStats.Total,
+						[]string{"total", "container"}, s.Timestamp)...)
+					values = append(values, getNumaStatsPerNode(s.Memory.ContainerData.NumaStats.File,
+						[]string{"file", "container"}, s.Timestamp)...)
+					values = append(values, getNumaStatsPerNode(s.Memory.ContainerData.NumaStats.Anon,
+						[]string{"anon", "container"}, s.Timestamp)...)
+					values = append(values, getNumaStatsPerNode(s.Memory.ContainerData.NumaStats.Unevictable,
+						[]string{"unevictable", "container"}, s.Timestamp)...)
+
+					values = append(values, getNumaStatsPerNode(s.Memory.HierarchicalData.NumaStats.Total,
+						[]string{"total", "hierarchy"}, s.Timestamp)...)
+					values = append(values, getNumaStatsPerNode(s.Memory.HierarchicalData.NumaStats.File,
+						[]string{"file", "hierarchy"}, s.Timestamp)...)
+					values = append(values, getNumaStatsPerNode(s.Memory.HierarchicalData.NumaStats.Anon,
+						[]string{"anon", "hierarchy"}, s.Timestamp)...)
+					values = append(values, getNumaStatsPerNode(s.Memory.HierarchicalData.NumaStats.Unevictable,
+						[]string{"unevictable", "hierarchy"}, s.Timestamp)...)
+					return values
 				},
 			},
 		}...)
@@ -1902,4 +1935,13 @@ var invalidNameCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 // client_label.LabelNameRE with an underscore.
 func sanitizeLabelName(name string) string {
 	return invalidNameCharRE.ReplaceAllString(name, "_")
+}
+
+func getNumaStatsPerNode(nodeStats map[uint8]uint64, labels []string, timestamp time.Time) metricValues {
+	mValues := make(metricValues, 0, len(nodeStats))
+	for node, stat := range nodeStats {
+		nodeLabels := append(labels, strconv.FormatUint(uint64(node), 10))
+		mValues = append(mValues, metricValue{value: float64(stat), labels: nodeLabels, timestamp: timestamp})
+	}
+	return mValues
 }
