@@ -829,6 +829,14 @@ func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.DiskIo.IoTime = DiskStatsCopy(s.BlkioStats.IoTimeRecursive)
 }
 
+func getMemoryNumaStatsPerNode(memoryStats map[uint8]uint64) map[uint8]uint64 {
+	stats := make(map[uint8]uint64, len(memoryStats))
+	for node, usage := range memoryStats {
+		stats[node] = usage
+	}
+	return stats
+}
+
 func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Memory.Usage = s.MemoryStats.Usage.Usage
 	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
@@ -868,6 +876,30 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		}
 	}
 	ret.Memory.WorkingSet = workingSet
+
+	ret.Memory.ConatainerUsageByNUMA.Total.Total = s.MemoryStats.PageUsageByNUMA.Total.Total
+	ret.Memory.ConatainerUsageByNUMA.Total.Nodes = getMemoryNumaStatsPerNode(s.MemoryStats.PageUsageByNUMA.Total.Nodes)
+
+	ret.Memory.ConatainerUsageByNUMA.File.Total = s.MemoryStats.PageUsageByNUMA.File.Total
+	ret.Memory.ConatainerUsageByNUMA.File.Nodes = getMemoryNumaStatsPerNode(s.MemoryStats.PageUsageByNUMA.File.Nodes)
+
+	ret.Memory.ConatainerUsageByNUMA.Anon.Total = s.MemoryStats.PageUsageByNUMA.Anon.Total
+	ret.Memory.ConatainerUsageByNUMA.Anon.Nodes = getMemoryNumaStatsPerNode(s.MemoryStats.PageUsageByNUMA.Anon.Nodes)
+
+	ret.Memory.ConatainerUsageByNUMA.Unevictable.Total = s.MemoryStats.PageUsageByNUMA.Unevictable.Total
+	ret.Memory.ConatainerUsageByNUMA.Unevictable.Nodes = getMemoryNumaStatsPerNode(s.MemoryStats.PageUsageByNUMA.Unevictable.Nodes)
+
+	ret.Memory.HierarchicalUsageByNUMA.Total.Total = s.MemoryStats.PageUsageByNUMA.Hierarchical.Total.Total
+	ret.Memory.HierarchicalUsageByNUMA.Total.Nodes = getMemoryNumaStatsPerNode(s.MemoryStats.PageUsageByNUMA.Hierarchical.Total.Nodes)
+
+	ret.Memory.HierarchicalUsageByNUMA.File.Total = s.MemoryStats.PageUsageByNUMA.Hierarchical.File.Total
+	ret.Memory.HierarchicalUsageByNUMA.File.Nodes = getMemoryNumaStatsPerNode(s.MemoryStats.PageUsageByNUMA.Hierarchical.File.Nodes)
+
+	ret.Memory.HierarchicalUsageByNUMA.Anon.Total = s.MemoryStats.PageUsageByNUMA.Hierarchical.Anon.Total
+	ret.Memory.HierarchicalUsageByNUMA.Anon.Nodes = getMemoryNumaStatsPerNode(s.MemoryStats.PageUsageByNUMA.Hierarchical.Anon.Nodes)
+
+	ret.Memory.HierarchicalUsageByNUMA.Unevictable.Total = s.MemoryStats.PageUsageByNUMA.Hierarchical.Unevictable.Total
+	ret.Memory.HierarchicalUsageByNUMA.Unevictable.Nodes = getMemoryNumaStatsPerNode(s.MemoryStats.PageUsageByNUMA.Hierarchical.Unevictable.Nodes)
 }
 
 func setHugepageStats(s *cgroups.Stats, ret *info.ContainerStats) {

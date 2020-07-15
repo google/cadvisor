@@ -397,6 +397,21 @@ type MemoryStats struct {
 
 	ContainerData    MemoryStatsMemoryData `json:"container_data,omitempty"`
 	HierarchicalData MemoryStatsMemoryData `json:"hierarchical_data,omitempty"`
+
+	ConatainerUsageByNUMA   MemoryNumaStats `json:"container_numa_stats,omitempty"`
+	HierarchicalUsageByNUMA MemoryNumaStats `json:"hierarchical_numa_stats,omitempty"`
+}
+
+type PageStats struct {
+	Total uint64           `json:"total,omitempty"`
+	Nodes map[uint8]uint64 `json:"nodes,omitempty"`
+}
+
+type MemoryNumaStats struct {
+	Total       PageStats `json:"total,omitempty"`
+	File        PageStats `json:"file,omitempty"`
+	Anon        PageStats `json:"anon,omitempty"`
+	Unevictable PageStats `json:"unevictable,omitempty"`
 }
 
 type MemoryStatsMemoryData struct {
