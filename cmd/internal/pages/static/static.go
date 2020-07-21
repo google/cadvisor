@@ -31,8 +31,7 @@ const StaticResource = "/static/"
 var popper, _ = Asset("cmd/internal/pages/assets/js/popper.min.js")
 var bootstrapJs, _ = Asset("cmd/internal/pages/assets/js/bootstrap-4.0.0-beta.2.min.js")
 var containersJs, _ = Asset("cmd/internal/pages/assets/js/containers.js")
-var gchartsJs, _ = Asset("cmd/internal/pages/assets/js/gcharts.js")
-var googleJsapiJs, _ = Asset("cmd/internal/pages/assets/js/google-jsapi.js")
+var loaderJs, _ = Asset("cmd/internal/pages/assets/js/loader.js")
 var jqueryJs, _ = Asset("cmd/internal/pages/assets/js/jquery-3.5.1.min.js")
 
 var bootstrapCss, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-4.0.0-beta.2.min.css")
@@ -46,8 +45,7 @@ var staticFiles = map[string][]byte{
 	"bootstrap-theme-3.1.1.min.css":  bootstrapThemeCss,
 	"containers.css":                 containersCss,
 	"containers.js":                  containersJs,
-	"gcharts.js":                     gchartsJs,
-	"google-jsapi.js":                googleJsapiJs,
+	"loader.js":                      loaderJs,
 	"jquery-3.5.1.min.js":            jqueryJs,
 }
 
