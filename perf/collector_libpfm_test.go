@@ -112,3 +112,134 @@ func TestNewCollector(t *testing.T) {
 	assert.Nil(t, perfCollector.eventToCustomEvent[Event("event_1")])
 	assert.Same(t, &perfCollector.events.Core.CustomEvents[0], perfCollector.eventToCustomEvent[Event("event_2")])
 }
+
+var readPerfStatCases = []struct {
+	test     string
+	file     ReadFormat
+	name     string
+	cpu      int
+	perfStat info.PerfStat
+	err      error
+}{
+	{
+		test: "no scaling",
+		file: ReadFormat{
+			Value:       5,
+			TimeEnabled: 0,
+			TimeRunning: 0,
+			ID:          0,
+		},
+		name: "some metric",
+		cpu:  1,
+		perfStat: info.PerfStat{
+			ScalingRatio: 1,
+			Value:        5,
+			Name:         "some metric",
+			Cpu:          1,
+		},
+		err: nil,
+	},
+	{
+		test: "no scaling - TimeEnabled = 0",
+		file: ReadFormat{
+			Value:       5,
+			TimeEnabled: 0,
+			TimeRunning: 1,
+			ID:          0,
+		},
+		name: "some metric",
+		cpu:  1,
+		perfStat: info.PerfStat{
+			ScalingRatio: 1,
+			Value:        5,
+			Name:         "some metric",
+			Cpu:          1,
+		},
+		err: nil,
+	},
+	{
+		test: "scaling - 0.5",
+		file: ReadFormat{
+			Value:       4,
+			TimeEnabled: 4,
+			TimeRunning: 2,
+			ID:          0,
+		},
+		name: "some metric",
+		cpu:  2,
+		perfStat: info.PerfStat{
+			ScalingRatio: 0.5,
+			Value:        8,
+			Name:         "some metric",
+			Cpu:          2,
+		},
+		err: nil,
+	},
+	{
+		test: "scaling - 0 (TimeEnabled = 1, TimeRunning = 0)",
+		file: ReadFormat{
+			Value:       4,
+			TimeEnabled: 1,
+			TimeRunning: 0,
+			ID:          0,
+		},
+		name: "some metric",
+		cpu:  3,
+		perfStat: info.PerfStat{
+			ScalingRatio: 1.0,
+			Value:        4,
+			Name:         "some metric",
+			Cpu:          3,
+		},
+		err: nil,
+	},
+	{
+		test: "scaling - 0 (TimeEnabled = 0, TimeRunning = 1)",
+		file: ReadFormat{
+			Value:       4,
+			TimeEnabled: 0,
+			TimeRunning: 1,
+			ID:          0,
+		},
+		name: "some metric",
+		cpu:  3,
+		perfStat: info.PerfStat{
+			ScalingRatio: 1.0,
+			Value:        4,
+			Name:         "some metric",
+			Cpu:          3,
+		},
+		err: nil,
+	},
+	{
+		test: "zeros, zeros everywhere",
+		file: ReadFormat{
+			Value:       0,
+			TimeEnabled: 0,
+			TimeRunning: 0,
+			ID:          0,
+		},
+		name: "some metric",
+		cpu:  4,
+		perfStat: info.PerfStat{
+			ScalingRatio: 1.0,
+			Value:        0,
+			Name:         "some metric",
+			Cpu:          4,
+		},
+		err: nil,
+	},
+}
+
+func TestReadPerfStat(t *testing.T) {
+	for _, test := range readPerfStatCases {
+		t.Run(test.test, func(tt *testing.T) {
+			buf := &buffer{bytes.NewBuffer([]byte{})}
+			err := binary.Write(buf, binary.LittleEndian, test.file)
+			assert.NoError(tt, err)
+			stat, err := readPerfStat(buf, test.name, test.cpu)
+			assert.Equal(tt, test.perfStat, *stat)
+			assert.Equal(tt, test.err, err)
+		})
+	}
+}

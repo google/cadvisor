@@ -112,12 +112,17 @@ func readPerfStat(file readerCloser, name string, cpu int) (*info.PerfStat, erro
 	}
 
 	scalingRatio := 1.0
-	if perfData.TimeEnabled != 0 {
+	if perfData.TimeRunning != 0 && perfData.TimeEnabled != 0 {
 		scalingRatio = float64(perfData.TimeRunning) / float64(perfData.TimeEnabled)
 	}
 
+	value := perfData.Value
+	if scalingRatio != float64(0) {
+		value = uint64(float64(value) / scalingRatio)
+	}
+
 	stat := info.PerfStat{
-		Value:        uint64(float64(perfData.Value) / scalingRatio),
+		Value:        value,
 		Name:         name,
 		ScalingRatio: scalingRatio,
 		Cpu:          cpu,
