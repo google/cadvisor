@@ -47,11 +47,12 @@ func TestPerfEvents(t *testing.T) {
 }
 
 func waitForContainerInfo(fm framework.Framework, containerID string) {
-	framework.RetryForDuration(func() error {
+	err := framework.RetryForDuration(func() error {
 		_, err := fm.Cadvisor().Client().DockerContainer(containerID, &v1.ContainerInfoRequest{NumStats: 1})
 		if err != nil {
 			return err
 		}
 		return nil
 	}, 5*time.Second)
+	assert.NoError(fm.T(), err)
 }

@@ -40,11 +40,11 @@ func mockSystemDevices() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(firstPMUPath, "cpumask"), []byte("0-1"), 777)
+	err = ioutil.WriteFile(filepath.Join(firstPMUPath, "cpumask"), []byte("0-1"), 0777)
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(firstPMUPath, "type"), []byte("18"), 777)
+	err = ioutil.WriteFile(filepath.Join(firstPMUPath, "type"), []byte("18"), 0777)
 	if err != nil {
 		return "", err
 	}
@@ -55,11 +55,11 @@ func mockSystemDevices() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(secondPMUPath, "cpumask"), []byte("0,1"), 777)
+	err = ioutil.WriteFile(filepath.Join(secondPMUPath, "cpumask"), []byte("0,1"), 0777)
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(secondPMUPath, "type"), []byte("19"), 777)
+	err = ioutil.WriteFile(filepath.Join(secondPMUPath, "type"), []byte("19"), 0777)
 	if err != nil {
 		return "", err
 	}

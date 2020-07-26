@@ -98,7 +98,7 @@ func readUncorePMU(path string, name string, cpumaskRegexp *regexp.Regexp) (*pmu
 }
 
 func getUncorePMUs(devicesPath string) (uncorePMUs, error) {
-	pmus := make(uncorePMUs, 0)
+	pmus := make(uncorePMUs)
 
 	// Depends on platform, cpu mask could be for example in form "0-1" or "0,1".
 	cpumaskRegexp := regexp.MustCompile("[-,\n]")
@@ -299,15 +299,14 @@ func (c *uncoreCollector) setupRawNonGroupedUncore(event *CustomEvent, pmus []pm
 			}
 		}
 		return nil
-	} else {
-		// Register event for the PMU.
-		config := createPerfEventAttr(*event)
-		pmu, err := getPMU(pmus, event.Type)
-		if err != nil {
-			return err
-		}
-		return c.registerUncoreEvent(config, string(event.Name), pmu.cpus, pmu.name)
 	}
+	// Register event for the PMU.
+	config := createPerfEventAttr(*event)
+	pmu, err := getPMU(pmus, event.Type)
+	if err != nil {
+		return err
+	}
+	return c.registerUncoreEvent(config, string(event.Name), pmu.cpus, pmu.name)
 }
 
 func (c *uncoreCollector) setupNonGroupedUncore(name string, pmus []pmu) error {
