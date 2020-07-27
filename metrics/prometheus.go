@@ -459,14 +459,11 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
 				name:        "container_memory_numa_pages",
-				help:        "Memory usage per numa node",
+				help:        "Number of used pages per NUMA node",
 				valueType:   prometheus.GaugeValue,
 				extraLabels: []string{"type", "scope", "node"},
 				getValues: func(s *info.ContainerStats) metricValues {
 					values := make(metricValues, 0)
-
-					values = append(values, getNumaStatsPerNode(s.Memory.ContainerData.NumaStats.Total,
-						[]string{"total", "container"}, s.Timestamp)...)
 					values = append(values, getNumaStatsPerNode(s.Memory.ContainerData.NumaStats.File,
 						[]string{"file", "container"}, s.Timestamp)...)
 					values = append(values, getNumaStatsPerNode(s.Memory.ContainerData.NumaStats.Anon,
@@ -474,8 +471,6 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					values = append(values, getNumaStatsPerNode(s.Memory.ContainerData.NumaStats.Unevictable,
 						[]string{"unevictable", "container"}, s.Timestamp)...)
 
-					values = append(values, getNumaStatsPerNode(s.Memory.HierarchicalData.NumaStats.Total,
-						[]string{"total", "hierarchy"}, s.Timestamp)...)
 					values = append(values, getNumaStatsPerNode(s.Memory.HierarchicalData.NumaStats.File,
 						[]string{"file", "hierarchy"}, s.Timestamp)...)
 					values = append(values, getNumaStatsPerNode(s.Memory.HierarchicalData.NumaStats.Anon,

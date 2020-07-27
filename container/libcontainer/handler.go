@@ -879,12 +879,10 @@ func getNumaStats(memoryStats map[uint8]uint64) map[uint8]uint64 {
 }
 
 func setMemoryNumaStats(s *cgroups.Stats, ret *info.ContainerStats) {
-	ret.Memory.ContainerData.NumaStats.Total = getNumaStats(s.MemoryStats.PageUsageByNUMA.Total.Nodes)
 	ret.Memory.ContainerData.NumaStats.File = getNumaStats(s.MemoryStats.PageUsageByNUMA.File.Nodes)
 	ret.Memory.ContainerData.NumaStats.Anon = getNumaStats(s.MemoryStats.PageUsageByNUMA.Anon.Nodes)
 	ret.Memory.ContainerData.NumaStats.Unevictable = getNumaStats(s.MemoryStats.PageUsageByNUMA.Unevictable.Nodes)
 
-	ret.Memory.HierarchicalData.NumaStats.Total = getNumaStats(s.MemoryStats.PageUsageByNUMA.Hierarchical.Total.Nodes)
 	ret.Memory.HierarchicalData.NumaStats.File = getNumaStats(s.MemoryStats.PageUsageByNUMA.Hierarchical.File.Nodes)
 	ret.Memory.HierarchicalData.NumaStats.Anon = getNumaStats(s.MemoryStats.PageUsageByNUMA.Hierarchical.Anon.Nodes)
 	ret.Memory.HierarchicalData.NumaStats.Unevictable = getNumaStats(s.MemoryStats.PageUsageByNUMA.Hierarchical.Unevictable.Nodes)

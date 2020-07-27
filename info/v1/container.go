@@ -400,7 +400,6 @@ type MemoryStats struct {
 }
 
 type MemoryNumaStats struct {
-	Total       map[uint8]uint64 `json:"total,omitempty"`
 	File        map[uint8]uint64 `json:"file,omitempty"`
 	Anon        map[uint8]uint64 `json:"anon,omitempty"`
 	Unevictable map[uint8]uint64 `json:"unevictable,omitempty"`

@@ -328,7 +328,6 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							Pgfault:    10,
 							Pgmajfault: 11,
 							NumaStats: info.MemoryNumaStats{
-								Total:       map[uint8]uint64{0: 23758, 1: 20000},
 								File:        map[uint8]uint64{0: 16649, 1: 10000},
 								Anon:        map[uint8]uint64{0: 10000, 1: 7109},
 								Unevictable: map[uint8]uint64{0: 8900, 1: 10000},
@@ -338,7 +337,6 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							Pgfault:    12,
 							Pgmajfault: 13,
 							NumaStats: info.MemoryNumaStats{
-								Total:       map[uint8]uint64{0: 33758, 1: 20000},
 								File:        map[uint8]uint64{0: 36649, 1: 10000},
 								Anon:        map[uint8]uint64{0: 20000, 1: 7109},
 								Unevictable: map[uint8]uint64{0: 8900, 1: 20000},

@@ -59,7 +59,7 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `container_memory_cache` | Gauge | Total page cache memory | bytes | |
 `container_memory_failcnt` | Counter | Number of memory usage hits limits | | |
 `container_memory_failures_total` | Counter | Cumulative count of memory allocation failures | | |
-`container_memory_numa_pages` | Gauge | Memory usage per numa node | pages | memory_numa |
+`container_memory_numa_pages` | Gauge | Number of used pages per NUMA node | | memory_numa |
 `container_memory_max_usage_bytes` | Gauge | Maximum memory usage recorded | bytes | |
 `container_memory_rss` | Gauge | Size of RSS | bytes | |
 `container_memory_swap` | Gauge | Container swap usage | bytes | |
