@@ -366,8 +366,8 @@ func readPerfUncoreStat(file readerCloser, name string, cpu int, pmu string, top
 	}
 	stat := info.PerfUncoreStat{
 		PerfValue: value,
-		Socket:       sysinfo.GetSocketFromCPU(topology, cpu),
-		PMU:          pmu,
+		Socket:    sysinfo.GetSocketFromCPU(topology, cpu),
+		PMU:       pmu,
 	}
 
 	return &stat, nil

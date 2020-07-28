@@ -106,7 +106,7 @@ func readPerfStat(file readerCloser, name string, cpu int) (*info.PerfStat, erro
 
 	stat := info.PerfStat{
 		PerfValue: value,
-		Cpu:          cpu,
+		Cpu:       cpu,
 	}
 
 	return &stat, nil
