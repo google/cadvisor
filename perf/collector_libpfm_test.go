@@ -245,6 +245,26 @@ var readPerfStatCases = []struct {
 		},
 		err: nil,
 	},
+	{
+		test: "non-zero TimeRunning",
+		file: ReadFormat{
+			Value:       0,
+			TimeEnabled: 0,
+			TimeRunning: 3,
+			ID:          0,
+		},
+		name: "some metric",
+		cpu:  4,
+		perfStat: info.PerfStat{
+			PerfValue: info.PerfValue{
+				ScalingRatio: 1.0,
+				Value:        0,
+				Name:         "some metric",
+			},
+			Cpu: 4,
+		},
+		err: nil,
+	},
 }
 
 func TestReadPerfStat(t *testing.T) {
