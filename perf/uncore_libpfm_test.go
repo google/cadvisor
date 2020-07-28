@@ -18,6 +18,8 @@
 package perf
 
 import (
+	"bytes"
+	"encoding/binary"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -198,4 +200,39 @@ func TestUncoreParseEventName(t *testing.T) {
 	eventName, pmuPrefix = parseEventName("some_pmu/some_event/first_slash/second_slash")
 	assert.Equal(t, "some_pmu", pmuPrefix)
 	assert.Equal(t, "some_event/first_slash/second_slash", eventName)
+}
+
+func TestReadPerfUncoreStat(t *testing.T) {
+	file := ReadFormat{
+		Value:       4,
+		TimeEnabled: 0,
+		TimeRunning: 1,
+		ID:          0,
+	}
+	expectedStat := v1.PerfUncoreStat{
+		PerfValue: v1.PerfValue{
+			ScalingRatio: 1,
+			Value:        4,
+			Name:         "foo",
+		},
+		Socket: 0,
+		PMU:    "bar",
+	}
+	topology := []v1.Node{{
+		Id:        0,
+		HugePages: nil,
+		Cores: []v1.Core{{
+			Id:       1,
+			Threads:  []int{1, 2},
+			SocketID: 0,
+		}},
+	}}
+
+	buf := &buffer{bytes.NewBuffer([]byte{})}
+	err := binary.Write(buf, binary.LittleEndian, file)
+	assert.NoError(t, err)
+
+	stat, err := readPerfUncoreStat(buf, "foo", 1, "bar", topology)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedStat, *stat)
 }

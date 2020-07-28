@@ -23,8 +23,6 @@ package perf
 // #include <stdlib.h>
 import "C"
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -362,27 +360,12 @@ func (c *uncoreCollector) addEventFile(name string, pmu string, cpu int, perfFil
 }
 
 func readPerfUncoreStat(file readerCloser, name string, cpu int, pmu string, topology []info.Node) (*info.PerfUncoreStat, error) {
-	buf := make([]byte, 32)
-	_, err := file.Read(buf)
+	value, err := getPerfValue(file, name)
 	if err != nil {
 		return nil, err
 	}
-	perfData := &ReadFormat{}
-	reader := bytes.NewReader(buf)
-	err = binary.Read(reader, binary.LittleEndian, perfData)
-	if err != nil {
-		return nil, err
-	}
-
-	scalingRatio := 1.0
-	if perfData.TimeEnabled != 0 {
-		scalingRatio = float64(perfData.TimeRunning) / float64(perfData.TimeEnabled)
-	}
-
 	stat := info.PerfUncoreStat{
-		Value:        uint64(float64(perfData.Value) / scalingRatio),
-		Name:         name,
-		ScalingRatio: scalingRatio,
+		PerfValue: value,
 		Socket:       sysinfo.GetSocketFromCPU(topology, cpu),
 		PMU:          pmu,
 	}

@@ -19,8 +19,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/cadvisor/info/v1"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/google/cadvisor/info/v1"
 )
 
 var (
@@ -198,30 +199,38 @@ func TestContainerStatsFromV1(t *testing.T) {
 		}},
 		PerfStats: []v1.PerfStat{
 			{
-				ScalingRatio: 1,
-				Value:        123,
-				Name:         "instructions",
+				PerfValue: v1.PerfValue{
+					ScalingRatio: 1,
+					Value:        123,
+					Name:         "instructions",
+				},
 			},
 			{
-				ScalingRatio: 0.3333333,
-				Value:        123456,
-				Name:         "cycles",
+				PerfValue: v1.PerfValue{
+					ScalingRatio: 0.3333333,
+					Value:        123456,
+					Name:         "cycles",
+				},
 			},
 		},
 		PerfUncoreStats: []v1.PerfUncoreStat{
 			{
-				ScalingRatio: 1.0,
-				Value:        123456,
-				Name:         "uncore_imc_0/cas_count_write",
-				Socket:       0,
-				PMU:          "17",
+				PerfValue: v1.PerfValue{
+					ScalingRatio: 1.0,
+					Value:        123456,
+					Name:         "uncore_imc_0/cas_count_write",
+				},
+				Socket: 0,
+				PMU:    "17",
 			},
 			{
-				ScalingRatio: 1.0,
-				Value:        654321,
-				Name:         "uncore_imc_0/cas_count_write",
-				Socket:       1,
-				PMU:          "17",
+				PerfValue: v1.PerfValue{
+					ScalingRatio: 1.0,
+					Value:        654321,
+					Name:         "uncore_imc_0/cas_count_write",
+				},
+				Socket: 1,
+				PMU:    "17",
 			},
 		},
 		ReferencedMemory: uint64(1234),

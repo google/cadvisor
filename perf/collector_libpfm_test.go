@@ -66,16 +66,20 @@ func TestCollector_UpdateStats(t *testing.T) {
 	assert.Len(t, stats.PerfStats, 2)
 
 	assert.Contains(t, stats.PerfStats, info.PerfStat{
-		ScalingRatio: 0.3333333333333333,
-		Value:        999999999,
-		Name:         "cycles",
-		Cpu:          11,
+		PerfValue: info.PerfValue{
+			ScalingRatio: 0.3333333333333333,
+			Value:        999999999,
+			Name:         "cycles",
+		},
+		Cpu: 11,
 	})
 	assert.Contains(t, stats.PerfStats, info.PerfStat{
-		ScalingRatio: 1,
-		Value:        123456789,
-		Name:         "instructions",
-		Cpu:          0,
+		PerfValue: info.PerfValue{
+			ScalingRatio: 1,
+			Value:        123456789,
+			Name:         "instructions",
+		},
+		Cpu: 0,
 	})
 }
 
@@ -132,10 +136,12 @@ var readPerfStatCases = []struct {
 		name: "some metric",
 		cpu:  1,
 		perfStat: info.PerfStat{
-			ScalingRatio: 1,
-			Value:        5,
-			Name:         "some metric",
-			Cpu:          1,
+			PerfValue: info.PerfValue{
+				ScalingRatio: 1,
+				Value:        5,
+				Name:         "some metric",
+			},
+			Cpu: 1,
 		},
 		err: nil,
 	},
@@ -150,10 +156,12 @@ var readPerfStatCases = []struct {
 		name: "some metric",
 		cpu:  1,
 		perfStat: info.PerfStat{
-			ScalingRatio: 1,
-			Value:        5,
-			Name:         "some metric",
-			Cpu:          1,
+			PerfValue: info.PerfValue{
+				ScalingRatio: 1,
+				Value:        5,
+				Name:         "some metric",
+			},
+			Cpu: 1,
 		},
 		err: nil,
 	},
@@ -168,10 +176,12 @@ var readPerfStatCases = []struct {
 		name: "some metric",
 		cpu:  2,
 		perfStat: info.PerfStat{
-			ScalingRatio: 0.5,
-			Value:        8,
-			Name:         "some metric",
-			Cpu:          2,
+			PerfValue: info.PerfValue{
+				ScalingRatio: 0.5,
+				Value:        8,
+				Name:         "some metric",
+			},
+			Cpu: 2,
 		},
 		err: nil,
 	},
@@ -186,10 +196,12 @@ var readPerfStatCases = []struct {
 		name: "some metric",
 		cpu:  3,
 		perfStat: info.PerfStat{
-			ScalingRatio: 1.0,
-			Value:        4,
-			Name:         "some metric",
-			Cpu:          3,
+			PerfValue: info.PerfValue{
+				ScalingRatio: 1.0,
+				Value:        4,
+				Name:         "some metric",
+			},
+			Cpu: 3,
 		},
 		err: nil,
 	},
@@ -204,10 +216,12 @@ var readPerfStatCases = []struct {
 		name: "some metric",
 		cpu:  3,
 		perfStat: info.PerfStat{
-			ScalingRatio: 1.0,
-			Value:        4,
-			Name:         "some metric",
-			Cpu:          3,
+			PerfValue: info.PerfValue{
+				ScalingRatio: 1.0,
+				Value:        4,
+				Name:         "some metric",
+			},
+			Cpu: 3,
 		},
 		err: nil,
 	},
@@ -222,10 +236,12 @@ var readPerfStatCases = []struct {
 		name: "some metric",
 		cpu:  4,
 		perfStat: info.PerfStat{
-			ScalingRatio: 1.0,
-			Value:        0,
-			Name:         "some metric",
-			Cpu:          4,
+			PerfValue: info.PerfValue{
+				ScalingRatio: 1.0,
+				Value:        0,
+				Name:         "some metric",
+			},
+			Cpu: 4,
 		},
 		err: nil,
 	},
