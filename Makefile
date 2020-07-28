@@ -32,6 +32,11 @@ test:
 	@$(GO) test -short -race $(pkgs)
 	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
 
+test-with-libpfm:
+	@echo ">> running tests"
+	@$(GO) test -short -race -tags="libpfm" $(pkgs)
+	@cd cmd && $(GO) test -short -race -tags="libpfm" $(cmd_pkgs)
+
 container-test:
 	@echo ">> runinng tests in a container"
 	@./build/unit-in-container.sh
