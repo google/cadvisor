@@ -28,6 +28,8 @@ import (
 	"golang.org/x/sys/unix"
 
 	"github.com/stretchr/testify/assert"
+
+	v1 "github.com/google/cadvisor/info/v1"
 )
 
 func mockSystemDevices() (string, error) {
