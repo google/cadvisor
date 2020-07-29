@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+google.charts.load('current', {packages: ['corechart', 'gauge', 'default', 'format', 'ui', 'table']});
+
 function humanize(num, size, units) {
   var unit;
   for (unit = units.pop(); units.length && num >= size; unit = units.pop()) {
