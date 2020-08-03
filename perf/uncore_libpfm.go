@@ -23,8 +23,6 @@ package perf
 // #include <stdlib.h>
 import "C"
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -98,7 +96,7 @@ func readUncorePMU(path string, name string, cpumaskRegexp *regexp.Regexp) (*pmu
 }
 
 func getUncorePMUs(devicesPath string) (uncorePMUs, error) {
-	pmus := make(uncorePMUs, 0)
+	pmus := make(uncorePMUs)
 
 	// Depends on platform, cpu mask could be for example in form "0-1" or "0,1".
 	cpumaskRegexp := regexp.MustCompile("[-,\n]")
@@ -299,15 +297,14 @@ func (c *uncoreCollector) setupRawNonGroupedUncore(event *CustomEvent, pmus []pm
 			}
 		}
 		return nil
-	} else {
-		// Register event for the PMU.
-		config := createPerfEventAttr(*event)
-		pmu, err := getPMU(pmus, event.Type)
-		if err != nil {
-			return err
-		}
-		return c.registerUncoreEvent(config, string(event.Name), pmu.cpus, pmu.name)
 	}
+	// Register event for the PMU.
+	config := createPerfEventAttr(*event)
+	pmu, err := getPMU(pmus, event.Type)
+	if err != nil {
+		return err
+	}
+	return c.registerUncoreEvent(config, string(event.Name), pmu.cpus, pmu.name)
 }
 
 func (c *uncoreCollector) setupNonGroupedUncore(name string, pmus []pmu) error {
@@ -363,29 +360,14 @@ func (c *uncoreCollector) addEventFile(name string, pmu string, cpu int, perfFil
 }
 
 func readPerfUncoreStat(file readerCloser, name string, cpu int, pmu string, topology []info.Node) (*info.PerfUncoreStat, error) {
-	buf := make([]byte, 32)
-	_, err := file.Read(buf)
+	value, err := getPerfValue(file, name)
 	if err != nil {
 		return nil, err
 	}
-	perfData := &ReadFormat{}
-	reader := bytes.NewReader(buf)
-	err = binary.Read(reader, binary.LittleEndian, perfData)
-	if err != nil {
-		return nil, err
-	}
-
-	scalingRatio := 1.0
-	if perfData.TimeEnabled != 0 {
-		scalingRatio = float64(perfData.TimeRunning) / float64(perfData.TimeEnabled)
-	}
-
 	stat := info.PerfUncoreStat{
-		Value:        uint64(float64(perfData.Value) / scalingRatio),
-		Name:         name,
-		ScalingRatio: scalingRatio,
-		Socket:       sysinfo.GetSocketFromCPU(topology, cpu),
-		PMU:          pmu,
+		PerfValue: value,
+		Socket:    sysinfo.GetSocketFromCPU(topology, cpu),
+		PMU:       pmu,
 	}
 
 	return &stat, nil

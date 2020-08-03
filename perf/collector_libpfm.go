@@ -99,31 +99,47 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 }
 
 func readPerfStat(file readerCloser, name string, cpu int) (*info.PerfStat, error) {
+	value, err := getPerfValue(file, name)
+	if err != nil {
+		return nil, err
+	}
+
+	stat := info.PerfStat{
+		PerfValue: value,
+		Cpu:       cpu,
+	}
+
+	return &stat, nil
+}
+
+func getPerfValue(file readerCloser, name string) (info.PerfValue, error) {
 	buf := make([]byte, 32)
 	_, err := file.Read(buf)
 	if err != nil {
-		return nil, err
+		return info.PerfValue{}, err
 	}
 	perfData := &ReadFormat{}
 	reader := bytes.NewReader(buf)
 	err = binary.Read(reader, binary.LittleEndian, perfData)
 	if err != nil {
-		return nil, err
+		return info.PerfValue{}, err
 	}
 
 	scalingRatio := 1.0
-	if perfData.TimeEnabled != 0 {
+	if perfData.TimeRunning != 0 && perfData.TimeEnabled != 0 {
 		scalingRatio = float64(perfData.TimeRunning) / float64(perfData.TimeEnabled)
 	}
 
-	stat := info.PerfStat{
-		Value:        uint64(float64(perfData.Value) / scalingRatio),
-		Name:         name,
-		ScalingRatio: scalingRatio,
-		Cpu:          cpu,
+	value := perfData.Value
+	if scalingRatio != float64(0) {
+		value = uint64(float64(value) / scalingRatio)
 	}
 
-	return &stat, nil
+	return info.PerfValue{
+		Value:        value,
+		Name:         name,
+		ScalingRatio: scalingRatio,
+	}, nil
 }
 
 func (c *collector) setup() error {
