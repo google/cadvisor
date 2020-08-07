@@ -335,7 +335,10 @@ func (cd *containerData) GetProcessList(cadvisorContainer string, inHostNamespac
 		vs *= 1024
 		psr, err := strconv.Atoi(fields[11])
 		if err != nil {
-			return nil, fmt.Errorf("invalid psr %q: %v", fields[11], err)
+			// to avoid defunct processes
+			//return nil, fmt.Errorf("invalid psr %q: %v", fields[11], err)
+			klog.V(4).Infof("invalid psr for pid %q: %q: %v", pid, fields[11], err)
+			psr = -1
 		}
 
 		cgroup, err := cd.getCgroupPath(fields[12])

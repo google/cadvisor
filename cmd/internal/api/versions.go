@@ -454,6 +454,7 @@ func (api *version2_0) HandleRequest(requestType string, request []string, m man
 		klog.V(4).Infof("Api - Spec for container %q, options %+v", name, opt)
 		ps, err := m.GetProcessList(name, opt)
 		if err != nil {
+			klog.V(4).Infof("process listing failed: %v", err)
 			return fmt.Errorf("process listing failed: %v", err)
 		}
 		return writeResult(ps, w)
