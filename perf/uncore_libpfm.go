@@ -182,14 +182,21 @@ func (c *uncoreCollector) setup(events PerfEvents, devicesPath string) error {
 		customEvent, ok := c.eventToCustomEvent[group[0]]
 		if ok {
 			if customEvent.Type != 0 {
-				pmus := obtainPMUs("uncore", readUncorePMUs)
-				err = c.setupRawNonGroupedUncore(customEvent, pmus)
-			} else {
-				pmus := obtainPMUs(pmuPrefix, readUncorePMUs)
-				err = c.setupRawNonGroupedUncore(customEvent, pmus)
+				pmuPrefix = uncorePMUPrefix
 			}
+
+			pmus := obtainPMUs(pmuPrefix, readUncorePMUs)
+			if len(pmus) == 0 {
+				klog.Warningf("Cannot obtain any PMU matching prefix, pmu_prefix: %s, eventName: %s", pmuPrefix, eventName)
+				continue
+			}
+			err = c.setupRawNonGroupedUncore(customEvent, pmus)
 		} else {
 			pmus := obtainPMUs(pmuPrefix, readUncorePMUs)
+			if len(pmus) == 0 {
+				klog.Warningf("Cannot obtain any PMU matching prefix, pmu_prefix: %s, eventName: %s", pmuPrefix, eventName)
+				continue
+			}
 			err = c.setupNonGroupedUncore(eventName, pmus)
 		}
 		if err != nil {
