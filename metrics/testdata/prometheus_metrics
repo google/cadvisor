@@ -152,6 +152,20 @@ container_memory_mapped_file{container_env_foo_env="prod",container_label_foo_la
 # HELP container_memory_max_usage_bytes Maximum memory usage recorded in bytes
 # TYPE container_memory_max_usage_bytes gauge
 container_memory_max_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8 1395066363000
+# HELP container_memory_numa_pages Number of used pages per NUMA node
+# TYPE container_memory_numa_pages gauge
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="0",scope="container",type="anon",zone_name="hello"} 10000 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="0",scope="container",type="file",zone_name="hello"} 16649 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="0",scope="container",type="unevictable",zone_name="hello"} 8900 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="0",scope="hierarchy",type="anon",zone_name="hello"} 20000 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="0",scope="hierarchy",type="file",zone_name="hello"} 36649 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="0",scope="hierarchy",type="unevictable",zone_name="hello"} 8900 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="1",scope="container",type="anon",zone_name="hello"} 7109 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="1",scope="container",type="file",zone_name="hello"} 10000 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="1",scope="container",type="unevictable",zone_name="hello"} 10000 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="1",scope="hierarchy",type="anon",zone_name="hello"} 7109 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="1",scope="hierarchy",type="file",zone_name="hello"} 10000 1395066363000
+container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="1",scope="hierarchy",type="unevictable",zone_name="hello"} 20000 1395066363000
 # HELP container_memory_rss Size of RSS in bytes.
 # TYPE container_memory_rss gauge
 container_memory_rss{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 15 1395066363000

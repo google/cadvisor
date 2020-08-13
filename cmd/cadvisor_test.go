@@ -52,6 +52,12 @@ func TestCPUTopologyMetricsAreDisabledByDefault(t *testing.T) {
 	assert.True(t, ignoreMetrics.Has(container.CPUTopologyMetrics))
 }
 
+func TestMemoryNumaMetricsAreDisabledByDefault(t *testing.T) {
+	assert.True(t, ignoreMetrics.Has(container.MemoryNumaMetrics))
+	flag.Parse()
+	assert.True(t, ignoreMetrics.Has(container.MemoryNumaMetrics))
+}
+
 func TestIgnoreMetrics(t *testing.T) {
 	tests := []struct {
 		value    string
@@ -86,6 +92,7 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.ProcessSchedulerMetrics:        struct{}{},
 			container.PerCpuUsageMetrics:             struct{}{},
 			container.MemoryUsageMetrics:             struct{}{},
+			container.MemoryNumaMetrics:              struct{}{},
 			container.CpuLoadMetrics:                 struct{}{},
 			container.DiskIOMetrics:                  struct{}{},
 			container.AcceleratorUsageMetrics:        struct{}{},

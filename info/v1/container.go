@@ -399,9 +399,16 @@ type MemoryStats struct {
 	HierarchicalData MemoryStatsMemoryData `json:"hierarchical_data,omitempty"`
 }
 
+type MemoryNumaStats struct {
+	File        map[uint8]uint64 `json:"file,omitempty"`
+	Anon        map[uint8]uint64 `json:"anon,omitempty"`
+	Unevictable map[uint8]uint64 `json:"unevictable,omitempty"`
+}
+
 type MemoryStatsMemoryData struct {
-	Pgfault    uint64 `json:"pgfault"`
-	Pgmajfault uint64 `json:"pgmajfault"`
+	Pgfault    uint64          `json:"pgfault"`
+	Pgmajfault uint64          `json:"pgmajfault"`
+	NumaStats  MemoryNumaStats `json:"numa_stats,omitempty"`
 }
 
 type InterfaceStats struct {
