@@ -187,6 +187,38 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return values
 				},
 			}, {
+				name:        "container_cpu_user_seconds",
+				help:        "Per core time spent in user mode",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"cpu"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuUser))
+					for i, value := range s.Cpu.Usage.PerCpuUser {
+						values = append(values, metricValue{
+							value:     float64(value) / float64(time.Second),
+							labels:    []string{strconv.Itoa(i)},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			}, {
+				name:        "container_cpu_kernel_seconds",
+				help:        "Per core time spent in kernel mode",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"cpu"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuKernel))
+					for i, value := range s.Cpu.Usage.PerCpuKernel {
+						values = append(values, metricValue{
+							value:     float64(value) / float64(time.Second),
+							labels:    []string{strconv.Itoa(i)},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			}, {
 				name:      "container_cpu_cfs_periods_total",
 				help:      "Number of elapsed enforcement period intervals.",
 				valueType: prometheus.CounterValue,

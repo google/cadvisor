@@ -342,6 +342,14 @@ type CpuInstUsage struct {
 	// Time spent in kernel space.
 	// Unit: nanocores per second
 	System uint64 `json:"system"`
+
+	// CPU time consumed per core in kernel mode
+	// Units: nanoseconds.
+	PerCpuKernel []uint64 `json:"percpu_usage_kernel"`
+
+	// CPU time consumed per core in user mode
+	// Units: nanoseconds.
+	PerCpuUser []uint64 `json:"percpu_usage_user"`
 }
 
 // Filesystem usage statistics.
