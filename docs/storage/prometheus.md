@@ -88,7 +88,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_perf_uncore_events_total` | Counter | Scaled counter of perf uncore event (event can be identified by `event` label, `pmu` and `socket` lables indicate the PMU and the CPU socket for which event was measured). See [perf event configuration](../runtime_options.md#perf-events)). Metric exists only for main cgroup (id="/").| | perf_event | libpfm
 `container_processes` | Gauge | Number of processes running inside the container | | process |
 `container_referenced_bytes` | Gauge |  Container referenced bytes during last measurements cycle based on Referenced field in /proc/smaps file, with /proc/PIDs/clear_refs set to 1 after defined number of cycles configured through `referenced_reset_interval` cAdvisor parameter.</br>Warning: this is intrusive collection because can influence kernel page reclaim policy and add latency. Refer to https://github.com/brendangregg/wss#wsspl-referenced-page-flag for more details. | bytes | referenced_memory |
-`container_sockets` | Gauge | Number of open sockets for the container | | process |
+`container_sockets` | Gauge | Number of open sockets for the container | | process,process_socket_count |
 `container_spec_cpu_period` | Gauge | CPU period of the container | | - |
 `container_spec_cpu_quota` | Gauge | CPU quota of the container | | - |
 `container_spec_cpu_shares` | Gauge | CPU share of the container | | - |

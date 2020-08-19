@@ -85,6 +85,7 @@ var (
 		container.NetworkAdvancedTcpUsageMetrics: struct{}{},
 		container.ProcessSchedulerMetrics:        struct{}{},
 		container.ProcessMetrics:                 struct{}{},
+		container.ProcessSocketCountMetrics:      struct{}{},
 		container.HugetlbUsageMetrics:            struct{}{},
 		container.ReferencedMemoryMetrics:        struct{}{},
 		container.CPUTopologyMetrics:             struct{}{},

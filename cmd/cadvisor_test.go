@@ -104,6 +104,7 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.NetworkAdvancedTcpUsageMetrics: struct{}{},
 			container.NetworkUdpUsageMetrics:         struct{}{},
 			container.ProcessMetrics:                 struct{}{},
+			container.ProcessSocketCountMetrics:      struct{}{},
 			container.AppMetrics:                     struct{}{},
 			container.HugetlbUsageMetrics:            struct{}{},
 			container.PerfMetrics:                    struct{}{},
