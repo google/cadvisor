@@ -91,6 +91,7 @@ var (
 		container.ReferencedMemoryMetrics:        struct{}{},
 		container.CPUTopologyMetrics:             struct{}{},
 		container.ResctrlMetrics:                 struct{}{},
+		container.VmStatMetrics:                  struct{}{},
 	}}
 
 	// List of metrics that can be ignored.
@@ -110,6 +111,7 @@ var (
 		container.ReferencedMemoryMetrics:        struct{}{},
 		container.CPUTopologyMetrics:             struct{}{},
 		container.ResctrlMetrics:                 struct{}{},
+		container.VmStatMetrics:                  struct{}{},
 	}
 )
 
@@ -141,7 +143,7 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'referenced_memory', 'resctrl'.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'referenced_memory', 'resctrl', 'vmstat'.")
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")

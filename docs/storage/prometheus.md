@@ -111,3 +111,4 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `machine_nvm_avg_power_budget_watts` | Gauge |  NVM power budget | watts | | libipmctl
 `machine_nvm_capacity` | Gauge | NVM capacity value labeled by NVM mode (memory mode or app direct mode) | bytes | | libipmctl
 `machine_thread_siblings_count` | Gauge | Number of CPU thread siblings | | cpu_topology |
+`machine_vmstat` | Untyped | Virtual memory statistics | | vmstat | |

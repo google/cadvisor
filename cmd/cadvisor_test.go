@@ -108,6 +108,7 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.ReferencedMemoryMetrics:        struct{}{},
 			container.CPUTopologyMetrics:             struct{}{},
 			container.ResctrlMetrics:                 struct{}{},
+			container.VmStatMetrics:                  struct{}{},
 		},
 		container.AllMetrics,
 		{},

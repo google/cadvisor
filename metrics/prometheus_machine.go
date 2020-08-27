@@ -192,7 +192,28 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.VmStatMetrics) {
+		c.machineMetrics = append(c.machineMetrics, []machineMetric{{
+			name:        "machine_vmstat",
+			help:        "Virtual memory statistics",
+			valueType:   prometheus.UntypedValue,
+			extraLabels: []string{"stat"},
+			getValues: func(machineInfo *info.MachineInfo) metricValues {
+				values := metricValues{}
+				for key, value := range machineInfo.VMStats {
+					values = append(values, metricValue{
+						value:  float64(value),
+						labels: []string{key},
+						timestamp: machineInfo.Timestamp,
+					})
+				}
+				return values
+			},
+		},
+		}...)
+	}
 	return c
+
 }
 
 // Describe describes all the machine metrics ever exported by cadvisor. It

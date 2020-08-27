@@ -117,9 +117,18 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --application_metrics_count_limit=100: Max number of application metrics to store (per container) (default 100)
 --collector_cert="": Collector's certificate, exposed to endpoints for certificate based authentication.
 --collector_key="": Key for the collector's certificate
---disable_metrics=tcp,advtcp,udp,sched,process,hugetlb: comma-separated list of metrics to be disabled. Options are 'disk', 'network', 'tcp', 'advtcp', 'udp', 'sched', 'process', 'hugetlb'. Note: tcp and udp are disabled by default due to high CPU usage. (default tcp,advtcp,udp,sched,process,hugetlb)
+--disable_metrics=tcp,advtcp,udp,sched,process,hugetlb: comma-separated list of metrics to be disabled. Options are 'disk', 'network', 'tcp', 'advtcp', 'udp', 'sched', 'process', 'hugetlb', 'vmstat'. Note: tcp and udp are disabled by default due to high CPU usage. (default tcp,advtcp,udp,sched,process,hugetlb,vmstat)
 --prometheus_endpoint="/metrics": Endpoint to expose Prometheus metrics on (default "/metrics")
 ```
+### Vmstat Metrics
+Regular expression can be applied to choose which metrics expose: 
+```
+-vmstats_metrics: Regular expression to filter /proc/vmstat metrics. (default ".*")
+```
+I.e. `-vmstat_metrics="numa.*"` will show only metrics starting with numa word.
+`.*` will show all of them.
+
+Metrics will be exposed in prometheus as `machine_vmstat`
 
 ## Storage Drivers
 
