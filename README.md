@@ -64,4 +64,4 @@ cAdvisor aims to improve the resource usage and performance characteristics of r
 
 ## Community
 
-Contributions, questions, and comments are all welcomed and encouraged! cAdvisor developers hang out on [Slack](https://kubernetes.slack.com) in the #sig-node channel (get an invitation [here](http://slack.kubernetes.io/)). We also have the [kubernetes-users Google Groups mailing list](https://groups.google.com/forum/#!forum/kubernetes-users).
+Contributions, questions, and comments are all welcomed and encouraged! cAdvisor developers hang out on [Slack](https://kubernetes.slack.com) in the #sig-node channel (get an invitation [here](http://slack.kubernetes.io/)). We also have [discuss.kubernetes.io](https://discuss.kubernetes.io/).
