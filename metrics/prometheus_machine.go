@@ -202,8 +202,8 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 				values := metricValues{}
 				for key, value := range machineInfo.VMStats {
 					values = append(values, metricValue{
-						value:  float64(value),
-						labels: []string{key},
+						value:     float64(value),
+						labels:    []string{key},
 						timestamp: machineInfo.Timestamp,
 					})
 				}

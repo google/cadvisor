@@ -140,7 +140,7 @@ func GetVMStats(vmStatMetrics *string) (map[string]int, error) {
 	for scanner.Scan() {
 		splittedLine := strings.SplitN(scanner.Text(), " ", 3)
 		if len(splittedLine) < 2 {
-			klog.Info("cannot parse vmstat's metric: %s. Skipping", scanner.Text())
+			klog.Infof("cannot parse vmstat's metric: %s. Skipping", scanner.Text())
 			continue
 		}
 		match := vmstatRegexp.MatchString(splittedLine[0])
