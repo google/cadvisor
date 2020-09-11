@@ -1,8 +1,8 @@
 {
   "core": {
     "events": [
-      ["instructions"],
-      ["instructions_retired"]
+      ["instructions", "instructions_retired"],
+      "cycles"
     ],
     "custom_events": [
       {
@@ -16,9 +16,9 @@
   },
   "uncore": {
     "events": [
-      ["cas_count_write"],
-      ["uncore_imc_0/UNC_M_CAS_COUNT:RD"],
-      ["uncore_ubox/UNC_U_EVENT_MSG"]
+      "cas_count_write",
+      "uncore_imc_0/UNC_M_CAS_COUNT:RD",
+      "uncore_ubox/UNC_U_EVENT_MSG"
     ],
     "custom_events": [
       {

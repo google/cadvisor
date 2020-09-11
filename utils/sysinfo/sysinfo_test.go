@@ -1286,3 +1286,50 @@ func TestGetSocketFromCPU(t *testing.T) {
 	socket = GetSocketFromCPU(topology, 8)
 	assert.Equal(t, socket, -1)
 }
+
+func TestGetOnlineCPUs(t *testing.T) {
+	topology := []info.Node{
+		{
+			Id:        0,
+			Memory:    0,
+			HugePages: nil,
+			Cores: []info.Core{
+				{
+					Id:       0,
+					Threads:  []int{0, 1},
+					Caches:   nil,
+					SocketID: 0,
+				},
+				{
+					Id:       1,
+					Threads:  []int{2, 3},
+					Caches:   nil,
+					SocketID: 0,
+				},
+			},
+			Caches: nil,
+		},
+		{
+			Id:        1,
+			Memory:    0,
+			HugePages: nil,
+			Cores: []info.Core{
+				{
+					Id:       0,
+					Threads:  []int{4, 5},
+					Caches:   nil,
+					SocketID: 1,
+				},
+				{
+					Id:       1,
+					Threads:  []int{6, 7},
+					Caches:   nil,
+					SocketID: 1,
+				},
+			},
+			Caches: nil,
+		},
+	}
+	onlineCPUs := GetOnlineCPUs(topology)
+	assert.Equal(t, onlineCPUs, []int{0, 1, 2, 3, 4, 5, 6, 7})
+}

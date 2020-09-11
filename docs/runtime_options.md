@@ -191,7 +191,7 @@ perf_event_attr:
 {
   "core": {
     "events": [
-      ["EVENT_NAME"]
+      "event_name"
     ],
     "custom_events": [
       {
@@ -199,13 +199,13 @@ perf_event_attr:
         "config": [
           "0x304"
         ],
-        "name": "EVENT_NAME"
+        "name": "event_name"
       }
     ]
   },
   "uncore": {
     "events": [
-      ["EVENT_NAME"]
+      "event_name"
     ],
     "custom_events": [
       {
@@ -213,7 +213,7 @@ perf_event_attr:
         "config": [
           "0x304"
         ],
-        "name": "EVENT_NAME"
+        "name": "event_name"
       }
     ]
   }
@@ -234,9 +234,9 @@ Let's explain this by example:
 {
   "uncore": {
     "events": [
-      ["uncore_imc/cas_count_read"],
-      ["uncore_imc_0/cas_count_write"],
-      ["cas_count_all"]
+      "uncore_imc/cas_count_read",
+      "uncore_imc_0/cas_count_write",
+      "cas_count_all"
     ],
     "custom_events": [ 
       {
@@ -320,20 +320,39 @@ and perf events configuration for listed events:
 {
   "core": {
     "events": [
-      ["INSTRUCTIONS"],
-      ["INSTRUCTION_RETIRED"]
+      "instructions",
+      "instruction_retired"
     ]
   },
   "uncore": {
     "events": [
-      ["uncore_imc/UNC_M_CAS_COUNT:RD"],
-      ["uncore_imc/UNC_M_CAS_COUNT:WR"]
+      "uncore_imc/unc_m_cas_count:rd",
+      "uncore_imc/unc_m_cas_count:wr"
     ]
   }
 }
 ```
 
 Notice: PMU_PREFIX is provided in the same way as for configuration with config values.
+
+#### Grouping
+
+```json
+{
+  "core": {
+    "events": [
+      ["instructions", "instruction_retired"]
+    ]
+  },
+  "uncore": {
+    "events": [
+      ["uncore_imc_0/unc_m_cas_count:rd", "uncore_imc_0/unc_m_cas_count:wr"],
+      ["uncore_imc_1/unc_m_cas_count:rd", "uncore_imc_1/unc_m_cas_count:wr"]
+    ]
+  }
+}
+```
+
 
 ### Further reading
 
@@ -348,8 +367,8 @@ See example configuration below:
 {
   "core": {
     "events": [
-      ["instructions"],
-      ["instructions_retired"]
+      "instructions",
+      "instructions_retired"
     ],
     "custom_events": [
       {
@@ -363,7 +382,7 @@ See example configuration below:
   },
   "uncore": {
     "events": [
-      ["uncore_imc/cas_count_read"]
+      "uncore_imc/cas_count_read"
     ],
     "custom_events": [
       {

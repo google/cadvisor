@@ -1,8 +1,8 @@
 {
   "core": {
     "events": [
-      ["context-switches"],
-      ["cpu-migrations-custom"]
+      "context-switches",
+      "cpu-migrations-custom"
     ],
     "custom_events": [
       {
