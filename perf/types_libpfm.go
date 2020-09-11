@@ -23,12 +23,6 @@ import (
 	"unsafe"
 )
 
-const (
-	perfSampleIdentifier     = 1 << 16
-	perfAttrBitsInherit      = 1 << 1
-	perfAttrBitsExcludeGuest = 1 << 20
-)
-
 // GroupReadFormat allows to read perf event's values for grouped events.
 // See https://man7.org/linux/man-pages/man2/perf_event_open.2.html section "Reading results" with PERF_FORMAT_GROUP specified.
 type GroupReadFormat struct {

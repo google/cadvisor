@@ -343,9 +343,9 @@ func createPerfEventAttr(event CustomEvent) *unix.PerfEventAttr {
 }
 
 func setAttributes(config *unix.PerfEventAttr, leader bool) {
-	config.Sample_type = perfSampleIdentifier
+	config.Sample_type = unix.PERF_SAMPLE_IDENTIFIER
 	config.Read_format = unix.PERF_FORMAT_TOTAL_TIME_ENABLED | unix.PERF_FORMAT_TOTAL_TIME_RUNNING | unix.PERF_FORMAT_GROUP | unix.PERF_FORMAT_ID
-	config.Bits = perfAttrBitsInherit | perfAttrBitsExcludeGuest
+	config.Bits = unix.PerfBitInherit | unix.PerfBitExcludeGuest
 
 	// Group leader should have this flag set to disable counting until all group would be prepared.
 	if leader {
