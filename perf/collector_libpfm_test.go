@@ -172,13 +172,13 @@ func TestSetGroupAttributes(t *testing.T) {
 	setAttributes(attributes, true)
 	assert.Equal(t, uint64(65536), attributes.Sample_type)
 	assert.Equal(t, uint64(0xf), attributes.Read_format)
-	assert.Equal(t, uint64(0x100003), attributes.Bits)
+	assert.Equal(t, uint64(0x3), attributes.Bits)
 
 	attributes = createPerfEventAttr(event)
 	setAttributes(attributes, false)
 	assert.Equal(t, uint64(65536), attributes.Sample_type)
 	assert.Equal(t, uint64(0xf), attributes.Read_format)
-	assert.Equal(t, uint64(0x100002), attributes.Bits)
+	assert.Equal(t, uint64(0x2), attributes.Bits)
 }
 
 func TestNewCollector(t *testing.T) {
