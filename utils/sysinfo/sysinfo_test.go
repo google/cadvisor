@@ -142,6 +142,16 @@ func TestGetNodesInfo(t *testing.T) {
 	memTotal := "MemTotal:       32817192 kB"
 	fakeSys.SetMemory(memTotal, nil)
 
+	numaStats := []string{
+		"numa_hit 244575078",
+		"numa_miss 0",
+		"numa_foreign 0",
+		"interleave_hit 23001",
+		"local_node 244575078",
+		"other_node 0",
+	}
+	fakeSys.SetNumaStats(numaStats, nil)
+
 	hugePages := []os.FileInfo{
 		&fakesysfs.FileInfo{EntryName: "hugepages-2048kB"},
 	}
@@ -196,7 +206,23 @@ func TestGetNodesInfo(t *testing.T) {
             "type": "unified",
             "level": 3
           }
-        ]
+        ],
+	    "numastat":{
+	        "numa_hit": 244575078,
+	        "numa_miss": 0,
+			"numa_foreign": 0,
+	        "interleave_hit": 23001,
+	        "local_node": 244575078,
+	        "other_node": 0
+	      },
+	    "vmstat":{
+	        "numa_hit": 244575078,
+	        "numa_miss": 0,
+			"numa_foreign": 0,
+	        "interleave_hit": 23001,
+	        "local_node": 244575078,
+	        "other_node": 0
+	      }
       },
       {
         "node_id": 1,
@@ -224,7 +250,23 @@ func TestGetNodesInfo(t *testing.T) {
             "type": "unified",
             "level": 3
           }
-        ]
+        ],
+	    "numastat":{
+	        "numa_hit": 244575078,
+	        "numa_miss": 0,
+			"numa_foreign": 0,
+	        "interleave_hit": 23001,
+	        "local_node": 244575078,
+	        "other_node": 0
+	      },
+	    "vmstat":{
+	        "numa_hit": 244575078,
+	        "numa_miss": 0,
+			"numa_foreign": 0,
+	        "interleave_hit": 23001,
+	        "local_node": 244575078,
+	        "other_node": 0
+	      }
       }
     ]
     `
@@ -327,7 +369,9 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
             "type": "unified",
             "level": 3
           }
-        ]
+        ],
+		"numastat": null,
+		"vmstat": null
       },
       {
         "node_id": 1,
@@ -354,7 +398,9 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
             "type": "unified",
             "level": 3
           }
-        ]
+        ],
+		"numastat": null,
+		"vmstat": null
       }
     ]
     `
@@ -494,7 +540,9 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
 	    "socket_id": 0
           }
         ],
-        "caches": null
+        "caches": null,
+		"numastat": null,
+		"vmstat": null
       },
       {
         "node_id": 1,
@@ -516,7 +564,9 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
 	    "socket_id": 1
           }
         ],
-        "caches": null
+        "caches": null,
+		"numastat": null,
+		"vmstat": null
       }
     ]`
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
@@ -599,7 +649,9 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
 	    "socket_id": 0
           }
         ],
-        "caches": null
+        "caches": null,
+		"numastat": null,
+		"vmstat": null
       },
       {
         "node_id": 1,
@@ -622,7 +674,9 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
 	    "socket_id": 1
           }
         ],
-        "caches": null
+        "caches": null,
+		"numastat": null,
+		"vmstat": null
       }
     ]`
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
@@ -702,7 +756,9 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 				  "socket_id": 0
 			   }
 			],
-			"caches":null
+			"caches": null,
+			"numastat": null,
+			"vmstat": null
 		 },
 		 {
 			"node_id":1,
@@ -725,7 +781,9 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 				  "socket_id": 1
 			   }
 			],
-			"caches":null
+			"caches": null,
+			"numastat": null,
+			"vmstat": null
 		 }
 	]`
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
@@ -796,7 +854,9 @@ func TestGetNodesInfoWithoutNodesWhenPhysicalPackageIDMissingForOneCPU(t *testin
 				  "socket_id": 0
 			   }
 			],
-			"caches":null
+			"caches":null,
+			"numastat": null,
+            "vmstat": null
 		}
 	]`
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
@@ -934,7 +994,9 @@ func TestGetNodesWhenTopologyDirMissingForOneCPU(t *testing.T) {
 				 "socket_id":0
 			  }
 		   ],
-		   "caches": null
+		   "caches": null,
+		   "numastat": null,
+           "vmstat": null
 		}
 	 ]`
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
@@ -1025,7 +1087,9 @@ func TestGetNodesWhenPhysicalPackageIDMissingForOneCPU(t *testing.T) {
 				 "socket_id":0
 			  }
 		   ],
-		   "caches": null
+		   "caches": null,
+		   "numastat": null,
+           "vmstat": null
 		}
 	 ]`
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
@@ -1059,6 +1123,25 @@ func TestGetNodeMemInfoWhenMemInfoMissing(t *testing.T) {
 	mem, err := getNodeMemInfo(fakeSys, "/fakeSysfs/devices/system/node/node0")
 	assert.Nil(t, err)
 	assert.Equal(t, uint64(0), mem)
+}
+
+func TestGetNodeStats(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	fakeSys.SetNumaStats([]string{"numa_hit 12345"}, nil)
+
+	stats, err := getNodeStats(fakeSys, "/path/to", "file")
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]int{"numa_hit": 12345}, stats)
+}
+
+func TestGetNodeStatsWrongFileContent(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	fakeSys.SetNumaStats([]string{"different line"}, nil)
+
+	stats, err := getNodeStats(fakeSys, "/path/to", "wrong_file")
+	assert.NotNil(t, err)
+	assert.Equal(t, "cannot obtain NUMA node stats from \"/path/to/wrong_file\"", err.Error())
+	assert.Equal(t, map[string]int(nil), stats)
 }
 
 func TestGetCoresInfoWhenCoreIDIsNotDigit(t *testing.T) {

@@ -63,6 +63,8 @@ const (
 	ReferencedMemoryMetrics        MetricKind = "referenced_memory"
 	CPUTopologyMetrics             MetricKind = "cpu_topology"
 	ResctrlMetrics                 MetricKind = "resctrl"
+	NodesNumaStatMetrics           MetricKind = "node_numastat"
+	NodesVmStatMetrics             MetricKind = "node_vmstat"
 )
 
 // AllMetrics represents all kinds of metrics that cAdvisor supported.
@@ -87,6 +89,8 @@ var AllMetrics = MetricSet{
 	ReferencedMemoryMetrics:        struct{}{},
 	CPUTopologyMetrics:             struct{}{},
 	ResctrlMetrics:                 struct{}{},
+	NodesNumaStatMetrics:           struct{}{},
+	NodesVmStatMetrics:             struct{}{},
 }
 
 func (mk MetricKind) String() string {

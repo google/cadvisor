@@ -14,7 +14,10 @@
 
 package v1
 
-import "time"
+import (
+	"regexp"
+	"time"
+)
 
 type FsInfo struct {
 	// Block device associated with the filesystem.
@@ -44,6 +47,8 @@ type Node struct {
 	HugePages []HugePagesInfo `json:"hugepages"`
 	Cores     []Core          `json:"cores"`
 	Caches    []Cache         `json:"caches"`
+	NUMAStat  map[string]int  `json:"numastat"`
+	VMStat    map[string]int  `json:"vmstat"`
 }
 
 type Core struct {
@@ -228,6 +233,9 @@ type MachineInfo struct {
 
 	// ID of cloud instance (e.g. instance-1) given to it by the cloud provider.
 	InstanceID InstanceID `json:"instance_id"`
+
+	// Regular expression to filter vmstat metrics.
+	VMStatRegExp *regexp.Regexp `json:"vmstat_regexp"`
 }
 
 func (m *MachineInfo) Clone() *MachineInfo {
@@ -265,6 +273,7 @@ func (m *MachineInfo) Clone() *MachineInfo {
 		CloudProvider:    m.CloudProvider,
 		InstanceType:     m.InstanceType,
 		InstanceID:       m.InstanceID,
+		VMStatRegExp:     m.VMStatRegExp,
 	}
 	return &copy
 }

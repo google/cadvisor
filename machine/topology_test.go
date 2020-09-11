@@ -276,7 +276,7 @@ func TestTopologyWithoutNodes(t *testing.T) {
 	topologyJSON2, err := json.Marshal(topology[1])
 	assert.Nil(t, err)
 
-	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"size":32768,"type":"unified","level":0}], "socket_id": 0}],"caches":null}`
+	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"size":32768,"type":"unified","level":0}], "socket_id": 0}],"caches":null,"numastat":null,"vmstat":null}`
 	expectedTopology2 := `
 		{
 			"node_id":1,
@@ -299,7 +299,9 @@ func TestTopologyWithoutNodes(t *testing.T) {
 					"socket_id": 1
 				}
 			],
-			"caches":null
+			"caches":null,
+			"numastat":null,
+			"vmstat": null
 		}`
 
 	json1 := string(topologyJSON1)
@@ -347,6 +349,8 @@ func TestTopologyWithNodesWithoutCPU(t *testing.T) {
      {
       "caches": null,
       "cores": null,
+	  "numastat": null,
+      "vmstat": null,
       "hugepages": [
        {
         "num_pages": 1,
@@ -363,6 +367,8 @@ func TestTopologyWithNodesWithoutCPU(t *testing.T) {
      {
       "caches": null,
       "cores": null,
+      "numastat": null,
+      "vmstat": null,
       "hugepages": [
        {
         "num_pages": 1,

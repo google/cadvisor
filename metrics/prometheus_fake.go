@@ -16,6 +16,7 @@ package metrics
 
 import (
 	"errors"
+	"regexp"
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -153,6 +154,15 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 						},
 					},
 				},
+				NUMAStat: map[string]int{
+					"numa_hit":  244575078,
+					"numa_miss": 0,
+				},
+				VMStat: map[string]int{
+					"numa_hit":              244575070,
+					"numa_miss":             0,
+					"something_uneccessary": 12345,
+				},
 			},
 			{
 				Id:     1,
@@ -262,6 +272,7 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 				},
 			},
 		},
+		VMStatRegExp: regexp.MustCompile("numa_*."),
 	}, nil
 }
 

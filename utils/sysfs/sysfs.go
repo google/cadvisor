@@ -63,6 +63,11 @@ type CacheInfo struct {
 	Cpus int
 }
 
+type Stat struct {
+	Name  string
+	Value int
+}
+
 // Abstracts the lowest level calls to sysfs.
 type SysFs interface {
 	// Get NUMA nodes paths
@@ -75,6 +80,8 @@ type SysFs interface {
 	GetCPUPhysicalPackageID(cpuPath string) (string, error)
 	// Get total memory for specified NUMA node
 	GetMemInfo(nodeDir string) (string, error)
+	// Get stats for specified NUMA node
+	GetNUMAStats(nodeDir string) ([]string, error)
 	// Get hugepages from specified directory
 	GetHugePagesInfo(hugePagesDirectory string) ([]os.FileInfo, error)
 	// Get hugepage_nr from specified directory
@@ -146,6 +153,23 @@ func (fs *realSysFs) GetMemInfo(nodePath string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(meminfo)), err
+}
+
+func (fs *realSysFs) GetNUMAStats(nodePath string) ([]string, error) {
+	file, err := os.Open(nodePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	statsBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	statsLines := strings.Split(string(statsBytes), "\n")
+
+	return statsLines[:len(statsLines)-1], nil
 }
 
 func (fs *realSysFs) GetHugePagesInfo(hugePagesDirectory string) ([]os.FileInfo, error) {

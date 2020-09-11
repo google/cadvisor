@@ -17,6 +17,7 @@ package sysinfo
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -32,13 +33,16 @@ var (
 	nodeDirRegExp        = regexp.MustCompile(`node/node(\d*)`)
 	cpuDirRegExp         = regexp.MustCompile(`/cpu(\d+)`)
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
+	nodeStatRegExp       = regexp.MustCompile(`([a-z])\w+ \d+`)
 
 	cpusPath = "/sys/devices/system/cpu"
 )
 
 const (
-	cacheLevel2  = 2
-	hugepagesDir = "hugepages/"
+	cacheLevel2      = 2
+	hugepagesDir     = "hugepages/"
+	numaStatFileName = "numastat"
+	vmStatFileName   = "vmstat"
 )
 
 // Get information about block devices present on the system.
@@ -239,6 +243,16 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 
 		hugepagesDirectory := fmt.Sprintf("%s/%s", nodeDir, hugepagesDir)
 		node.HugePages, err = GetHugePagesInfo(sysFs, hugepagesDirectory)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		node.NUMAStat, err = getNodeStats(sysFs, nodeDir, numaStatFileName)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		node.VMStat, err = getNodeStats(sysFs, nodeDir, vmStatFileName)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -533,4 +547,32 @@ func GetOnlineCPUs(topology []info.Node) []int {
 		}
 	}
 	return onlineCPUs
+}
+
+func getNodeStats(sysFs sysfs.SysFs, nodeDir string, statType string) (map[string]int, error) {
+	nodeStatPath := filepath.Join(nodeDir, statType)
+	statsLines, err := sysFs.GetNUMAStats(nodeStatPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(statsLines) == 0 {
+		return nil, nil
+	}
+
+	stats := make(map[string]int)
+	for _, line := range statsLines {
+		if nodeStatRegExp.Match([]byte(line)) {
+			words := strings.Split(line, " ")
+			value, err := strconv.Atoi(words[1])
+			if err != nil {
+				return nil, err
+			}
+			stats[words[0]] = value
+		} else {
+			return nil, fmt.Errorf("cannot obtain NUMA node stats from %q", nodeStatPath)
+		}
+	}
+
+	return stats, nil
 }

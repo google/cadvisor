@@ -70,6 +70,9 @@ type FakeSysFs struct {
 	memTotal string
 	memErr   error
 
+	numaStats    []string
+	numaStatsErr error
+
 	hugePages    []os.FileInfo
 	hugePagesErr error
 
@@ -97,6 +100,9 @@ func (fs *FakeSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
 
 func (fs *FakeSysFs) GetMemInfo(nodePath string) (string, error) {
 	return fs.memTotal, fs.memErr
+}
+func (fs *FakeSysFs) GetNUMAStats(nodePath string) ([]string, error) {
+	return fs.numaStats, fs.numaStatsErr
 }
 
 func (fs *FakeSysFs) GetHugePagesInfo(hugepagesDirectory string) ([]os.FileInfo, error) {
@@ -181,6 +187,11 @@ func (fs *FakeSysFs) SetPhysicalPackageIDs(physicalPackageIDs map[string]string,
 func (fs *FakeSysFs) SetMemory(memTotal string, err error) {
 	fs.memTotal = memTotal
 	fs.memErr = err
+}
+
+func (fs *FakeSysFs) SetNumaStats(numaStats []string, err error) {
+	fs.numaStats = numaStats
+	fs.numaStatsErr = err
 }
 
 func (fs *FakeSysFs) SetHugePages(hugePages []os.FileInfo, err error) {

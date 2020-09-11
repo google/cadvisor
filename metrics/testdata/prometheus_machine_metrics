@@ -55,6 +55,14 @@ machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test"
 # TYPE machine_node_memory_capacity_bytes gauge
 machine_node_memory_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test"} 3.3604804608e+10 1395066363000
 machine_node_memory_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test"} 3.3604804606e+10 1395066363000
+# HELP machine_node_numastat_pages Number of memory hit/miss statistics per NUMA node.
+# TYPE machine_node_numastat_pages gauge
+machine_node_numastat_pages{boot_id="boot-id-test",machine_id="machine-id-test",name="numa_hit",node_id="0",system_uuid="system-uuid-test"} 2.44575078e+08 1395066363000
+machine_node_numastat_pages{boot_id="boot-id-test",machine_id="machine-id-test",name="numa_miss",node_id="0",system_uuid="system-uuid-test"} 0 1395066363000
+# HELP machine_node_vmstat_pages Number of virtual memory hit/miss statistics per NUMA node.
+# TYPE machine_node_vmstat_pages gauge
+machine_node_vmstat_pages{boot_id="boot-id-test",machine_id="machine-id-test",name="numa_hit",node_id="0",system_uuid="system-uuid-test"} 2.4457507e+08 1395066363000
+machine_node_vmstat_pages{boot_id="boot-id-test",machine_id="machine-id-test",name="numa_miss",node_id="0",system_uuid="system-uuid-test"} 0 1395066363000
 # HELP machine_nvm_avg_power_budget_watts NVM power budget.
 # TYPE machine_nvm_avg_power_budget_watts gauge
 machine_nvm_avg_power_budget_watts{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 0 1395066363000

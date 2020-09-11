@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 
@@ -192,4 +193,42 @@ func assertMetricValues(t *testing.T, expected metricValues, actual metricValues
 		assert.Truef(t, reflect.DeepEqual(expected[i], actual[i]),
 			"%s expected %#v but found %#v\n", message, expected[i], actual[i])
 	}
+}
+
+func TestGetMemoryNUMAPages(t *testing.T) {
+	machineInfo, err := testSubcontainersInfoProvider{}.GetMachineInfo()
+	assert.Nil(t, err)
+
+	metrics := getMemoryNUMAPages(machineInfo)
+	// Returned metrics have random sequence so we need to sort it.
+	sort.Slice(metrics, func(i, j int) bool {
+		return metrics[i].value > metrics[j].value
+	})
+
+	assert.Equal(t, 2, len(metrics))
+	expectedMetrics := []metricValue{
+		{value: 244575078, labels: []string{"0", "numa_hit"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 0, labels: []string{"0", "numa_miss"}, timestamp: time.Unix(1395066363, 0)},
+	}
+
+	assertMetricValues(t, expectedMetrics, metrics, "Unexpected information about Node memory numa stat")
+}
+
+func TestGetVirtualMemoryNUMAPages(t *testing.T) {
+	machineInfo, err := testSubcontainersInfoProvider{}.GetMachineInfo()
+	assert.Nil(t, err)
+
+	metrics := getVirtualMemoryNUMAPages(machineInfo)
+	// Returned metrics have random sequence so we need to sort it.
+	sort.Slice(metrics, func(i, j int) bool {
+		return metrics[i].value > metrics[j].value
+	})
+
+	assert.Equal(t, 2, len(metrics))
+	expectedMetrics := []metricValue{
+		{value: 244575070, labels: []string{"0", "numa_hit"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 0, labels: []string{"0", "numa_miss"}, timestamp: time.Unix(1395066363, 0)},
+	}
+
+	assertMetricValues(t, expectedMetrics, metrics, "Unexpected information about Node virtual memory numa stat")
 }

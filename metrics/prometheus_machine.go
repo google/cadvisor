@@ -34,6 +34,7 @@ const (
 	prometheusCoreLabelName     = "core_id"
 	prometheusThreadLabelName   = "thread_id"
 	prometheusPageSizeLabelName = "page_size"
+	prometheusNameLabelName     = "name"
 
 	nvmMemoryMode    = "memory_mode"
 	nvmAppDirectMode = "app_direct_mode"
@@ -192,6 +193,35 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 			},
 		}...)
 	}
+
+	if includedMetrics.Has(container.NodesNumaStatMetrics) {
+		c.machineMetrics = append(c.machineMetrics, []machineMetric{
+			{
+				name:        "machine_node_numastat_pages",
+				help:        "Number of memory hit/miss statistics per NUMA node.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusNameLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getMemoryNUMAPages(machineInfo)
+				},
+			},
+		}...)
+	}
+
+	if includedMetrics.Has(container.NodesVmStatMetrics) {
+		c.machineMetrics = append(c.machineMetrics, []machineMetric{
+			{
+				name:        "machine_node_vmstat_pages",
+				help:        "Number of virtual memory hit/miss statistics per NUMA node.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusNameLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getVirtualMemoryNUMAPages(machineInfo)
+				},
+			},
+		}...)
+	}
+
 	return c
 }
 
@@ -346,4 +376,44 @@ func getCaches(machineInfo *info.MachineInfo) metricValues {
 		}
 	}
 	return mValues
+}
+
+func getMemoryNUMAPages(machineInfo *info.MachineInfo) metricValues {
+	values := make(metricValues, 0)
+
+	for _, node := range machineInfo.Topology {
+		nodeID := strconv.Itoa(node.Id)
+
+		for name, value := range node.NUMAStat {
+			values = append(values,
+				metricValue{
+					value:     float64(value),
+					labels:    []string{nodeID, name},
+					timestamp: machineInfo.Timestamp,
+				})
+		}
+	}
+
+	return values
+}
+
+func getVirtualMemoryNUMAPages(machineInfo *info.MachineInfo) metricValues {
+	values := make(metricValues, 0)
+
+	for _, node := range machineInfo.Topology {
+		nodeID := strconv.Itoa(node.Id)
+
+		for name, value := range node.VMStat {
+			if machineInfo.VMStatRegExp.MatchString(name) {
+				values = append(values,
+					metricValue{
+						value:     float64(value),
+						labels:    []string{nodeID, name},
+						timestamp: machineInfo.Timestamp,
+					})
+			}
+		}
+	}
+
+	return values
 }

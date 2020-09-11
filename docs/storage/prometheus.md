@@ -97,7 +97,7 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 
 The table below lists the Prometheus hardware metrics exposed by cAdvisor (in alphabetical order by metric name):
 
-Metric name | Type | Description | Unit (where applicable) | -disable_metrics parameter | addional build flag |
+Metric name | Type | Description | Unit (where applicable) | -disable_metrics parameter | additional build flag |
 :-----------|:-----|:------------|:------------------------|:---------------------------|:--------------------
 `machine_cpu_cache_capacity_bytes` | Gauge |  Cache size in bytes assigned to NUMA node and CPU core | bytes | cpu_topology |
 `machine_cpu_cores` | Gauge | Number of logical CPU cores | | |
@@ -106,8 +106,10 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `machine_dimm_capacity_bytes` | Gauge | Total RAM DIMM capacity (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 | bytes | | |
 `machine_dimm_count` | Gauge | Number of RAM DIMM (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 | | |
 `machine_memory_bytes` | Gauge | Amount of memory installed on the machine | bytes | |
-`machine_node_hugepages_count` | Gauge |  Numer of hugepages assigned to NUMA node | | cpu_topology |
+`machine_node_hugepages_count` | Gauge |  Number of hugepages assigned to NUMA node | | cpu_topology |
 `machine_node_memory_capacity_bytes` | Gauge |  Amount of memory assigned to NUMA node | bytes | cpu_topology |
+`machine_node_numastat_pages` | Gauge | Number of memory hit/miss statistics per NUMA node. | | node_numastat |  
+`machine_node_vmstat_pages` | Gauge | Number of virtual memory hit/miss statistics per NUMA node. | | node_vmstat |  
 `machine_nvm_avg_power_budget_watts` | Gauge |  NVM power budget | watts | | libipmctl
 `machine_nvm_capacity` | Gauge | NVM capacity value labeled by NVM mode (memory mode or app direct mode) | bytes | | libipmctl
 `machine_thread_siblings_count` | Gauge | Number of CPU thread siblings | | cpu_topology |

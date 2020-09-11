@@ -91,6 +91,27 @@ func TestGetMemInfoWhenFileIsMissing(t *testing.T) {
 	assert.Equal(t, "", memInfo)
 }
 
+func TestGetNUMAStats(t *testing.T) {
+	sysFs := NewRealSysFs()
+	numaStats, err := sysFs.GetNUMAStats("./testdata/node0/numastat")
+	assert.Nil(t, err)
+	assert.Equal(t, []string{"numa_hit 244575078", "numa_miss 0", "numa_foreign 0", "interleave_hit 23001", "local_node 244575078", "other_node 0"}, numaStats)
+}
+
+func TestGetNUMAStatsEmptyFile(t *testing.T) {
+	sysFs := NewRealSysFs()
+	numaStats, err := sysFs.GetNUMAStats("./testdata/node1/numastat")
+	assert.Nil(t, err)
+	assert.Equal(t, []string{}, numaStats)
+}
+
+func TestGetNUMAStatsFileIsMissing(t *testing.T) {
+	sysFs := NewRealSysFs()
+	numaStats, err := sysFs.GetNUMAStats("./testdata/node0/missing_file")
+	assert.NotNil(t, err)
+	assert.Equal(t, []string(nil), numaStats)
+}
+
 func TestGetHugePagesInfo(t *testing.T) {
 	sysFs := NewRealSysFs()
 	hugePages, err := sysFs.GetHugePagesInfo("./testdata/node0/hugepages")
