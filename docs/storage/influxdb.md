@@ -21,6 +21,8 @@ Specify what InfluxDB instance to push data to:
  -storage_driver_password
  # Use secure connection with database. False by default
  -storage_driver_secure
+ # Writes will be buffered for this duration, and committed to the non memory backends as a single transaction. Default is '60s'
+ -storage_driver_buffer_duration
  # retention policy. Default is '' which corresponds to the default retention policy of the influxdb database
 -storage_driver_influxdb_retention_policy
 ```
