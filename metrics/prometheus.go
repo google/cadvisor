@@ -134,6 +134,87 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		opts:            opts,
 	}
 	if includedMetrics.Has(container.CpuUsageMetrics) {
+		if includedMetrics.Has(container.PerCpuUsageMetrics) {
+			c.containerMetrics = append(c.containerMetrics, []containerMetric{
+				{
+					name:        "container_cpu_user_seconds",
+					help:        "Container time spent in user mode",
+					valueType:   prometheus.CounterValue,
+					extraLabels: []string{"cpu"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuUser))
+						for i, value := range s.Cpu.Usage.PerCpuUser {
+							values = append(values, metricValue{
+								value:     float64(value) / float64(time.Second),
+								labels:    []string{strconv.Itoa(i)},
+								timestamp: s.Timestamp,
+							})
+						}
+						return values
+					},
+				}, {
+					name:        "container_cpu_kernel_seconds",
+					help:        "Container time spent in kernel mode",
+					valueType:   prometheus.CounterValue,
+					extraLabels: []string{"cpu"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuKernel))
+						for i, value := range s.Cpu.Usage.PerCpuKernel {
+							values = append(values, metricValue{
+								value:     float64(value) / float64(time.Second),
+								labels:    []string{strconv.Itoa(i)},
+								timestamp: s.Timestamp,
+							})
+						}
+						return values
+					},
+				},
+			}...)
+		} else {
+			c.containerMetrics = append(c.containerMetrics, []containerMetric{
+				{
+					name:        "container_cpu_user_seconds",
+					help:        "Container time spent in user mode",
+					valueType:   prometheus.CounterValue,
+					extraLabels: []string{"cpu"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, 1)
+						var totalValue float64
+						totalValue = 0
+						for _, value := range s.Cpu.Usage.PerCpuUser {
+							totalValue += float64(value) / float64(time.Second)
+						}
+						values = append(values, metricValue{
+							value:     totalValue,
+							labels:    []string{""},
+							timestamp: s.Timestamp,
+						})
+
+						return values
+					},
+				}, {
+					name:        "container_cpu_kernel_seconds",
+					help:        "Container time spent in kernel mode",
+					valueType:   prometheus.CounterValue,
+					extraLabels: []string{"cpu"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, 1)
+						var totalValue float64
+						totalValue = 0
+						for _, value := range s.Cpu.Usage.PerCpuKernel {
+							totalValue += float64(value) / float64(time.Second)
+						}
+						values = append(values, metricValue{
+							value:     totalValue,
+							labels:    []string{""},
+							timestamp: s.Timestamp,
+						})
+
+						return values
+					},
+				},
+			}...)
+		}
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
 				name:      "container_cpu_user_seconds_total",
@@ -183,38 +264,6 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 								timestamp: s.Timestamp,
 							})
 						}
-					}
-					return values
-				},
-			}, {
-				name:        "container_cpu_user_seconds",
-				help:        "Per core time spent in user mode",
-				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"cpu"},
-				getValues: func(s *info.ContainerStats) metricValues {
-					values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuUser))
-					for i, value := range s.Cpu.Usage.PerCpuUser {
-						values = append(values, metricValue{
-							value:     float64(value) / float64(time.Second),
-							labels:    []string{strconv.Itoa(i)},
-							timestamp: s.Timestamp,
-						})
-					}
-					return values
-				},
-			}, {
-				name:        "container_cpu_kernel_seconds",
-				help:        "Per core time spent in kernel mode",
-				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"cpu"},
-				getValues: func(s *info.ContainerStats) metricValues {
-					values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuKernel))
-					for i, value := range s.Cpu.Usage.PerCpuKernel {
-						values = append(values, metricValue{
-							value:     float64(value) / float64(time.Second),
-							labels:    []string{strconv.Itoa(i)},
-							timestamp: s.Timestamp,
-						})
 					}
 					return values
 				},
