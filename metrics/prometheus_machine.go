@@ -257,7 +257,7 @@ func getMemoryByType(machineInfo *info.MachineInfo, property string) metricValue
 		case memoryByTypeDimmCountKey:
 			propertyValue = float64(memoryInfo.DimmCount)
 		default:
-			klog.Warningf("Incorrect propery name for MemoryByType, property %s", property)
+			klog.Warningf("Incorrect property name for MemoryByType, property %s", property)
 			return metricValues{}
 		}
 		mValues = append(mValues, metricValue{value: propertyValue, labels: []string{memoryType}, timestamp: machineInfo.Timestamp})

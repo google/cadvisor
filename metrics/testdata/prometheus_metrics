@@ -43,9 +43,13 @@ container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_f
 container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="cpu01",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3e-09 1395066363000
 container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="cpu02",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4e-09 1395066363000
 container_cpu_usage_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="cpu03",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5e-09 1395066363000
-# HELP container_cpu_user_seconds_total Cumulative user cpu time consumed in seconds.
+# HELP container_cpu_user_seconds_total Container time spent in user mode
 # TYPE container_cpu_user_seconds_total counter
-container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 6e-09 1395066363000
+container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="",id="testcontainer",image="test",name="testcontaineralias",namespace="total",zone_name="hello"} 6e-09 1395066363000
+container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",id="testcontainer",image="test",name="testcontaineralias",namespace="user",zone_name="hello"} 2e-09 1395066363000
+container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",id="testcontainer",image="test",name="testcontaineralias",namespace="user",zone_name="hello"} 3e-09 1395066363000
+container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="2",id="testcontainer",image="test",name="testcontaineralias",namespace="user",zone_name="hello"} 4e-09 1395066363000
+container_cpu_user_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="3",id="testcontainer",image="test",name="testcontaineralias",namespace="user",zone_name="hello"} 5e-09 1395066363000
 # HELP container_custom_app_metric_1 Custom application metric.
 # TYPE container_custom_app_metric_1 gauge
 container_custom_app_metric_1{app_test_label="1_1",app_test_label_2="2_1",container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.1
@@ -134,18 +138,12 @@ container_hugetlb_usage_bytes{container_env_foo_env="prod",container_label_foo_l
 # HELP container_last_seen Last time a container was seen by the exporter
 # TYPE container_last_seen gauge
 container_last_seen{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.395066363e+09 1395066363000
-# HELP container_cpu_user_seconds Container time spent in user mode
-# TYPE container_cpu_user_seconds counter
-container_cpu_user_seconds{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2e-09 1395066363000
-container_cpu_user_seconds{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3e-09 1395066363000
-container_cpu_user_seconds{container_env_foo_env="prod",container_label_foo_label="bar",cpu="2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4e-09 1395066363000
-container_cpu_user_seconds{container_env_foo_env="prod",container_label_foo_label="bar",cpu="3",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5e-09 1395066363000
-# HELP container_cpu_kernel_seconds Container time spent in kernel mode
-# TYPE container_cpu_kernel_seconds counter
-container_cpu_kernel_seconds{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2e-09 1395066363000
-container_cpu_kernel_seconds{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3e-09 1395066363000
-container_cpu_kernel_seconds{container_env_foo_env="prod",container_label_foo_label="bar",cpu="2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4e-09 1395066363000
-container_cpu_kernel_seconds{container_env_foo_env="prod",container_label_foo_label="bar",cpu="3",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5e-09 1395066363000
+# HELP container_cpu_kernel_seconds_total Container time spent in kernel mode
+# TYPE container_cpu_kernel_seconds_total counter
+container_cpu_kernel_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2e-09 1395066363000
+container_cpu_kernel_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3e-09 1395066363000
+container_cpu_kernel_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4e-09 1395066363000
+container_cpu_kernel_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="3",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5e-09 1395066363000
 # HELP container_memory_cache Number of bytes of page cache memory.
 # TYPE container_memory_cache gauge
 container_memory_cache{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 14 1395066363000

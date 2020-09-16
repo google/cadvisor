@@ -137,23 +137,23 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		if includedMetrics.Has(container.PerCpuUsageMetrics) {
 			c.containerMetrics = append(c.containerMetrics, []containerMetric{
 				{
-					name:        "container_cpu_user_seconds",
+					name:        "container_cpu_user_seconds_total",
 					help:        "Container time spent in user mode",
 					valueType:   prometheus.CounterValue,
-					extraLabels: []string{"cpu"},
+					extraLabels: []string{"cpu", "namespace"},
 					getValues: func(s *info.ContainerStats) metricValues {
 						values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuUser))
 						for i, value := range s.Cpu.Usage.PerCpuUser {
 							values = append(values, metricValue{
 								value:     float64(value) / float64(time.Second),
-								labels:    []string{strconv.Itoa(i)},
+								labels:    []string{strconv.Itoa(i), "user"},
 								timestamp: s.Timestamp,
 							})
 						}
 						return values
 					},
 				}, {
-					name:        "container_cpu_kernel_seconds",
+					name:        "container_cpu_kernel_seconds_total",
 					help:        "Container time spent in kernel mode",
 					valueType:   prometheus.CounterValue,
 					extraLabels: []string{"cpu"},
@@ -161,7 +161,8 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 						values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuKernel))
 						for i, value := range s.Cpu.Usage.PerCpuKernel {
 							values = append(values, metricValue{
-								value:     float64(value) / float64(time.Second),
+								value: float64(value) / float64(time.Second),
+								// labels:    []string{strconv.Itoa(i), "kernel"},
 								labels:    []string{strconv.Itoa(i)},
 								timestamp: s.Timestamp,
 							})
@@ -217,13 +218,15 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		}
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
-				name:      "container_cpu_user_seconds_total",
-				help:      "Cumulative user cpu time consumed in seconds.",
-				valueType: prometheus.CounterValue,
+				name:        "container_cpu_user_seconds_total",
+				help:        "Container time spent in user mode",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"cpu", "namespace"},
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{
 						{
 							value:     float64(s.Cpu.Usage.User) / float64(time.Second),
+							labels:    []string{"", "total"},
 							timestamp: s.Timestamp,
 						},
 					}
