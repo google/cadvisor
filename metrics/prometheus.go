@@ -455,6 +455,16 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.CPUSetMetrics) {
+		c.containerMetrics = append(c.containerMetrics, containerMetric{
+			name:      "container_memory_migrate",
+			help:      "Memory migrate status.",
+			valueType: prometheus.GaugeValue,
+			getValues: func(s *info.ContainerStats) metricValues {
+				return metricValues{{value: float64(s.CpuSet.MemoryMigrate), timestamp: s.Timestamp}}
+			},
+		})
+	}
 	if includedMetrics.Has(container.MemoryNumaMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{

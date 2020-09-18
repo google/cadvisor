@@ -152,6 +152,9 @@ container_memory_mapped_file{container_env_foo_env="prod",container_label_foo_la
 # HELP container_memory_max_usage_bytes Maximum memory usage recorded in bytes
 # TYPE container_memory_max_usage_bytes gauge
 container_memory_max_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8 1395066363000
+# HELP container_memory_migrate Memory migrate status.
+# TYPE container_memory_migrate gauge
+container_memory_migrate{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
 # HELP container_memory_numa_pages Number of used pages per NUMA node
 # TYPE container_memory_numa_pages gauge
 container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node="0",scope="container",type="anon",zone_name="hello"} 10000 1395066363000

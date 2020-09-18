@@ -870,6 +870,10 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Memory.WorkingSet = workingSet
 }
 
+func setCPUSetStats(s *cgroups.Stats, ret *info.ContainerStats) {
+	ret.CpuSet.MemoryMigrate = s.CPUSetStats.MemoryMigrate
+}
+
 func getNumaStats(memoryStats map[uint8]uint64) map[uint8]uint64 {
 	stats := make(map[uint8]uint64, len(memoryStats))
 	for node, usage := range memoryStats {
@@ -946,6 +950,9 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics co
 		}
 		if includedMetrics.Has(container.HugetlbUsageMetrics) {
 			setHugepageStats(s, ret)
+		}
+		if includedMetrics.Has(container.CPUSetMetrics) {
+			setCPUSetStats(s, ret)
 		}
 	}
 	if len(libcontainerStats.Interfaces) > 0 {
