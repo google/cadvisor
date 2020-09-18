@@ -21,6 +21,7 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `container_accelerator_duty_cycle` | Gauge | Percent of time over the past sample period during which the accelerator was actively processing | percentage | accelerator |
 `container_accelerator_memory_total_bytes` | Gauge | Total accelerator memory | bytes | accelerator |
 `container_accelerator_memory_used_bytes` | Gauge | Total accelerator memory allocated | bytes | accelerator |
+`container_blkio_device_usage_total` | Counter | Blkio device bytes usage | bytes | diskIO | 
 `container_cpu_cfs_periods_total` | Counter | Number of elapsed enforcement period intervals | | |
 `container_cpu_cfs_throttled_periods_total` | Counter | Number of throttled period intervals | | |
 `container_cpu_cfs_throttled_seconds_total` | Counter | Total time duration the container has been throttled | seconds | |
