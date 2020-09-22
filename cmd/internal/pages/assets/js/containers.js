@@ -642,6 +642,7 @@ function drawProcesses(isRoot, rootDir, processInfo) {
     elements.push(processInfo[i].status);
     elements.push(processInfo[i].running_time);
     elements.push(processInfo[i].cmd);
+    elements.push(processInfo[i].psr);
     if (isRoot) {
       var cgroup = processInfo[i].cgroup_path;
       // Use the raw cgroup link as it works for all containers.
@@ -649,7 +650,6 @@ function drawProcesses(isRoot, rootDir, processInfo) {
           cgroup.substr(0, 30) + ' </a>';
       elements.push({v: cgroup, f: cgroupLink});
     }
-    elements.push(processInfo[i].psr);
     data.push(elements);
   }
   drawTable(titles, titleTypes, data, 'processes-top', 25, sortIndex);

@@ -42,19 +42,25 @@ build/build.sh
 
 # Build the docker image
 echo ">> building cadvisor docker image"
-docker_tag="google/cadvisor:$VERSION"
 gcr_tag="gcr.io/cadvisor/cadvisor:$VERSION"
-docker build -t $docker_tag -t $gcr_tag -f deploy/Dockerfile .
+docker build -t $gcr_tag -f deploy/Dockerfile .
 
 # Build the release binary without libpfm4 to not require libpfm4 in runtime environment
 unset GO_FLAGS
 build/build.sh
 
 echo
-echo "Release info:"
+echo "double-check the version below:"
 echo "VERSION=$VERSION"
+echo
+echo "To push docker image to gcr:"
+echo "docker push $gcr_tag"
+echo
+echo "Release info (copy to the release page):"
+echo
+echo "Docker Image: N/A"
+echo "gcr.io Image: $gcr_tag"
+echo
 sha256sum --tag cadvisor
-echo "docker image: $docker_tag"
-echo "gcr.io image: $gcr_tag"
 
 exit 0
