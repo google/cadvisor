@@ -48,7 +48,7 @@ func TestPhysicalCoresReadingFromCpuBus(t *testing.T) {
 	assert.NotNil(t, testcpuinfo)
 
 	numPhysicalCores := GetPhysicalCores(testcpuinfo)
-	assert.Equal(t, 2, numPhysicalCores)
+	assert.Equal(t, 3, numPhysicalCores)
 }
 
 func TestPhysicalCoresFromWrongSysFs(t *testing.T) {

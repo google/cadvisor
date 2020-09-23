@@ -249,19 +249,21 @@ func getUniqueCPUPropertyCount(cpuBusPath string, propertyName string) int {
 	for _, sysCPUPath := range sysCPUPaths {
 		onlinePath := filepath.Join(sysCPUPath, "online")
 		onlineVal, err := ioutil.ReadFile(onlinePath)
-		if err != nil {
+		// If linux is compiled with CONFIG_HOTPLUG_CPU=n the online/offline file does not exist
+		if err != nil && !os.IsNotExist(err) {
 			klog.Warningf("Cannot determine CPU %s online state, skipping", sysCPUPath)
 			continue
-		}
-		onlineVal = bytes.TrimSpace(onlineVal)
-		if len(onlineVal) == 0 || onlineVal[0] != 49 {
-			klog.Warningf("CPU %s is offline, skipping", sysCPUPath)
-			continue
+		} else if err == nil {
+			onlineVal = bytes.TrimSpace(onlineVal)
+			if len(onlineVal) == 0 || onlineVal[0] != byte('1') {
+				klog.Warningf("CPU %s is offline, skipping", sysCPUPath)
+				continue
+			}
 		}
 		propertyPath := filepath.Join(sysCPUPath, sysFsCPUTopology, propertyName)
 		propertyVal, err := ioutil.ReadFile(propertyPath)
 		if err != nil {
-			klog.Errorf("Cannot open %s, number of unique %s  set to 0", propertyPath, propertyName)
+			klog.Errorf("Cannot open %s, number of unique %s set to 0", propertyPath, propertyName)
 			return 0
 		}
 		uniques[string(propertyVal)] = true
