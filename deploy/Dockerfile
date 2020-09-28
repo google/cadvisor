@@ -6,6 +6,7 @@ RUN apk --no-cache add libc6-compat device-mapper findutils zfs  build-base linu
     rm -rf /var/cache/apk/*
 
 RUN wget https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.10.1.tar.gz && \
+  echo "78599e1668142f48c24afb1f79ca00a89df51b65  libpfm-4.10.1.tar.gz" | sha1sum -c  && \
   tar -xzf libpfm-4.10.1.tar.gz && \
   rm libpfm-4.10.1.tar.gz
 
