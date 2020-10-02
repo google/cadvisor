@@ -151,8 +151,7 @@ func NewUncoreCollector(cgroupPath string, events PerfEvents, cpuToSocket map[in
 
 	err := collector.setup(events, systemDevicesPath)
 	if err != nil {
-		formatedError := fmt.Errorf("unable to setup uncore perf event collector: %v", err)
-		klog.V(5).Infof("Perf uncore metrics will not be available: %s", formatedError)
+		klog.Errorf("Perf uncore metrics will not be available: unable to setup uncore perf event collector: %v", err)
 		return &stats.NoopCollector{}
 	}
 
