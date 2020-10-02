@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"k8s.io/utils/mount"
+	"k8s.io/mount-utils"
 )
 
 func TestGetDiskStatsMap(t *testing.T) {
