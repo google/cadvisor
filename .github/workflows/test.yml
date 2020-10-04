@@ -25,12 +25,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run golangci-lint
-      run: >
-        source ${{ matrix.environment-variables }} &&
-        env &&
-        echo "packages: $(DEV_PACKAGES)" &&
+      run: |
+        set -ex
+        source ${{ matrix.environment-variables }}
+        env
+        echo "packages: $(DEV_PACKAGES)"
         if [[ "$(DEV_PACKAGES)" != "" ]]; then apt-get update; apt-get install "$(DEV_PACKAGES)"; fi
-        && make -e lint
+        make -e lint
   test:
     strategy:
       matrix:
