@@ -288,9 +288,8 @@ func (c *collector) registerEvent(event eventInfo, leaderFileDescriptors map[int
 
 	if event.isGroupLeader {
 		return newLeaderFileDescriptors, nil
-	} else {
-		return leaderFileDescriptors, nil
 	}
+	return leaderFileDescriptors, nil
 }
 
 func (c *collector) addEventFile(index int, name string, cpu int, perfFile *os.File) {
