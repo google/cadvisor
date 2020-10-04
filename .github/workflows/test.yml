@@ -29,8 +29,8 @@ jobs:
         set -ex
         source ${{ matrix.environment-variables }}
         env
-        echo "packages: $(DEV_PACKAGES)"
-        if [[ "$(DEV_PACKAGES)" != "" ]]; then apt-get update; apt-get install "$(DEV_PACKAGES)"; fi
+        echo "packages: ${DEV_PACKAGES}"
+        if [[ "${DEV_PACKAGES}" != "" ]]; then apt-get update; apt-get install "${DEV_PACKAGES}"; fi
         make -e lint
   test:
     strategy:
