@@ -4,6 +4,8 @@ run:
       enable-all: true
     golint:
       min-confidence: 0
+    gofmt:
+      simplify: true
 linters:
   disable-all: true
   enable:
