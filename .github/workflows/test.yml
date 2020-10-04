@@ -69,7 +69,10 @@ jobs:
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
       run: |
-        cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor && source ${{ matrix.environment-variables }} && make docker-test-integration
+        set -ex
+        cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor
+        source ${{ matrix.environment-variables }}
+        make docker-test-integration
     - name: Upload cAdvisor log file
       uses: actions/upload-artifact@v1
       if: failure()
