@@ -6,7 +6,7 @@ jobs:
       GOLANGCI_LINT_V: 1.31.0
     strategy:
       matrix:
-        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
+        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -35,7 +35,7 @@ jobs:
       matrix:
         go-versions: [1.13, 1.14]
         platform: [ubuntu-latest]
-        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
+        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
     steps:
@@ -56,7 +56,7 @@ jobs:
       matrix:
         go-versions: [1.13, 1.14]
         platform: [ubuntu-latest]
-        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
+        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
     steps:
