@@ -12,4 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Nothing happens here, this is just default config.
+# Unsetting all the important variables.
+unset GO_FLAGS
+unset PACKAGES
+unset BUILD_PACKAGES
+unset CADVISOR_ARGS
