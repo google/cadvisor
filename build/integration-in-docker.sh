@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE}")/.." && pwd -P)"
 TMPDIR=$(mktemp -d)
@@ -34,7 +34,9 @@ function run_tests() {
     env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/healthz"
 
   if [ "$BUILD_PACKAGES" != "" ]; then
-    BUILD_CMD="apt-get update && apt-get install $BUILD_PACKAGES && \
+    BUILD_CMD="echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
+    apt update && \
+    apt -t buster-backports install $BUILD_PACKAGES && \
     $BUILD_CMD"
   fi
   docker run --rm \
@@ -59,7 +61,7 @@ function run_tests() {
     gcr.io/k8s-testimages/bootstrap \
     bash -c "echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
     cat /etc/apt/sources.list.d/buster.list && \
-    apt update -t buster-backports && \
+    apt update && \
     apt install -t buster-backports $PACKAGES && \
     CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
 }
