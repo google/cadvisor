@@ -30,7 +30,7 @@ jobs:
         source ${{ matrix.environment-variables }}
         env
         echo "packages: ${DEV_PACKAGES}"
-        if [[ "${DEV_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install "${DEV_PACKAGES}"; fi
+        if [[ "${DEV_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${DEV_PACKAGES}; fi
         make -e lint
   test:
     strategy:
