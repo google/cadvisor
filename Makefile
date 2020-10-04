@@ -45,7 +45,7 @@ docker-test: container-test
 	@echo "docker-test target is deprecated, use container-test instead"
 
 test-integration:
-	GO_FLAGS="-race" ./build/build.sh
+	@GO_FLAGS=${$GO_FLAGS:-"-race"} ./build/build.sh
 	go test -c github.com/google/cadvisor/integration/tests/api
 	go test -c github.com/google/cadvisor/integration/tests/healthz
 	@./build/integration.sh
