@@ -57,7 +57,7 @@ function run_tests() {
     --cap-add="sys_admin" \
     --entrypoint="" \
     gcr.io/k8s-testimages/bootstrap \
-    bash -c "apt update && apt install $PACKAGES && \
+    bash -c "echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list && apt update && apt install $PACKAGES && \
 CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
 }
 
