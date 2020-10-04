@@ -6,7 +6,7 @@ jobs:
       GOLANGCI_LINT_V: 1.31.0
     strategy:
       matrix:
-        environment-variables: [{}, {GO_FLAGS: "-tags=libpfm,netgo -race"}]
+        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -25,7 +25,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run golangci-lint
-      run: GO_FLAGS="${{ matrix.environment-variables.GO_FLAGS }}" make -e lint
+      run: source ${{ matrix.environment-variables }} && make -e lint
   test:
     strategy:
       matrix:
