@@ -28,7 +28,7 @@ jobs:
       run: |
         set -e
         source ${{ matrix.environment-variables }}
-        if [[ "${BUILD_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${DEV_PACKAGES}; fi
+        if [[ "${BUILD_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${BUILD_PACKAGES}; fi
         make -e lint
   test:
     strategy:
