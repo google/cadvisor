@@ -96,7 +96,7 @@ presubmit: vet
 
 lint:
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
-	GOFLAGS="$GO_FLAGS" @$(go_path)/bin/golangci-lint run
+	@GOFLAGS="$(GO_FLAGS)" $(go_path)/bin/golangci-lint run
 
 clean:
 	@rm -f *.test cadvisor
