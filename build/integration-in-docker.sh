@@ -58,7 +58,7 @@ function run_tests() {
     --entrypoint="" \
     gcr.io/k8s-testimages/bootstrap \
     bash -c "echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
-    apt update && \
+    apt update -t buster-backports && \
     apt install -t buster-backports $PACKAGES && \
     CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
 }
