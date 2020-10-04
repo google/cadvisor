@@ -25,7 +25,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run golangci-lint
-      run: GO_FLAGS=matrix.environment-variables.GO_FLAGS make -e lint
+      run: GO_FLAGS=${{ matrix.environment-variables.GO_FLAGS }} make -e lint
   test:
     strategy:
       matrix:
