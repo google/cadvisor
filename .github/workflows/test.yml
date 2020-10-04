@@ -25,7 +25,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run golangci-lint
-      run: source ${{ matrix.environment-variables }} && if [[ $(BUILD_PACKAGES) != "" ]]; then echo $(BUILD_PACKAGES); apt-get update; apt-get install $(BUILD_PACKAGES); fi && make -e lint
+      run: source ${{ matrix.environment-variables }} && echo "packages: $(BUILD_PACKAGES)" && if [[ "$(BUILD_PACKAGES)" != "" ]]; then echo $(BUILD_PACKAGES); apt-get update; apt-get install $(BUILD_PACKAGES); fi && make -e lint
   test:
     strategy:
       matrix:
