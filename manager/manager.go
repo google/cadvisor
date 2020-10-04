@@ -772,7 +772,8 @@ func (m *manager) GetMachineInfo() (*info.MachineInfo, error) {
 	m.machineMu.RLock()
 	defer m.machineMu.RUnlock()
 	// Copy and return the MachineInfo.
-	return &m.machineInfo, nil
+	machineInfoCopy := m.machineInfo
+	return &machineInfoCopy, nil
 }
 
 func (m *manager) GetVersionInfo() (*info.VersionInfo, error) {
