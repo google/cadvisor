@@ -7,7 +7,7 @@ jobs:
     strategy:
       matrix:
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 10
     steps:
     - name: Install Go
@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         go-versions: [1.13, 1.14]
-        platform: [ubuntu-latest]
+        platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
@@ -55,7 +55,7 @@ jobs:
     strategy:
       matrix:
         go-versions: [1.13, 1.14]
-        platform: [ubuntu-latest]
+        platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
