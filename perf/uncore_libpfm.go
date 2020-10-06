@@ -23,6 +23,7 @@ package perf
 // #include <stdlib.h>
 import "C"
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -55,6 +56,8 @@ const (
 	rootPerfEventPath  = "/sys/fs/cgroup/perf_event"
 	uncorePID          = -1
 )
+
+var libpfmPMURegExp = regexp.MustCompile(`\w+::\S+`)
 
 func getPMU(pmus uncorePMUs, gotType uint32) (*pmu, error) {
 	for _, pmu := range pmus {
@@ -280,19 +283,52 @@ func parseEventName(eventName string) (string, string) {
 func parsePMUs(group Group, pmus uncorePMUs, customEvents map[Event]*CustomEvent) (map[Event]uncorePMUs, error) {
 	eventPMUs := make(map[Event]uncorePMUs)
 	for _, event := range group.events {
-		_, prefix := parseEventName(string(event))
-		custom, ok := customEvents[event]
-		if ok {
-			if custom.Type != 0 {
-				pmu, err := getPMU(pmus, custom.Type)
-				if err != nil {
-					return nil, err
+		// Check if event have libpfm convention.
+		if libpfmPMURegExp.MatchString(string(event)) {
+			splittedEvent := strings.SplitN(string(event), "::", 2)
+			pmu := splittedEvent[0]
+			var pmuInfo C.pfm_pmu_info_t
+			for i := C.PFM_PMU_NONE; i < C.PFM_PMU_MAX; i++ {
+				err := C.pfm_get_pmu_info(C.pfm_pmu_t(i), &pmuInfo)
+				if err != 0 {
+					continue
 				}
-				eventPMUs[event] = uncorePMUs{pmu.name: *pmu}
-				continue
+				gotPMU := C.GoString(pmuInfo.name)
+				if gotPMU == pmu {
+					/*
+						isPresent := pmuInfo.anon0 >> 1
+						isDefault := pmuInfo.anon0 >> 2
+						reservedBits := pmuInfo.anon0 >> 30
+						print(isPresent)
+						print(isDefault)
+						print(reservedBits)
+
+					*/
+					pmu, err := getPMU(pmus, uint32(pmuInfo._type))
+					if err != nil {
+						return nil, err
+					}
+					eventPMUs[event] = uncorePMUs{pmu.name: *pmu}
+					break
+				}
 			}
+
+			return nil, errors.New("not implemented")
+		} else {
+			_, prefix := parseEventName(string(event))
+			custom, ok := customEvents[event]
+			if ok {
+				if custom.Type != 0 {
+					pmu, err := getPMU(pmus, custom.Type)
+					if err != nil {
+						return nil, err
+					}
+					eventPMUs[event] = uncorePMUs{pmu.name: *pmu}
+					continue
+				}
+			}
+			eventPMUs[event] = obtainPMUs(prefix, pmus)
 		}
-		eventPMUs[event] = obtainPMUs(prefix, pmus)
 	}
 
 	return eventPMUs, nil
