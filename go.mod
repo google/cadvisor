@@ -47,8 +47,8 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	google.golang.org/grpc v1.27.0
 	google.golang.org/protobuf v1.24.0 // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/klog/v2 v2.2.0
-	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66
+	k8s.io/mount-utils v0.20.0-alpha.1
+	k8s.io/utils v0.0.0-20200729134348-d5654de09c73
 )

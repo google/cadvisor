@@ -34,6 +34,6 @@ require (
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/olivere/elastic.v2 v2.0.12
 	gopkg.in/yaml.v2 v2.2.8 // indirect
-	k8s.io/klog/v2 v2.0.0
-	k8s.io/utils v0.0.0-20200414100711-2df71ebbae66
+	k8s.io/klog/v2 v2.2.0
+	k8s.io/utils v0.0.0-20200729134348-d5654de09c73
 )
