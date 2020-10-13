@@ -129,11 +129,19 @@ func GetMachineMemoryCapacity() (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	memoryCapacity, err := parseCapacity(out, memoryCapacityRegexp)
 	if err != nil {
 		return 0, err
 	}
+	out2, err2 := ioutil.ReadFile("/sys/fs/cgroup/memory/memory.limit_in_bytes")
+	if err2 == nil && len(out2) > 0 {
+		lines := strings.Split(string(out2), "\n")
+		cgroupMemoryLimitInBytes, err2 := strconv.ParseUint(string(lines[0]), 10, 64)
+		if err2 == nil && cgroupMemoryLimitInBytes < memoryCapacity {
+			return cgroupMemoryLimitInBytes, err2
+		}
+	}
+
 	return memoryCapacity, err
 }
 
