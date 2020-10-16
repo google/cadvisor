@@ -36,7 +36,7 @@ function run_tests() {
   if [ "$BUILD_PACKAGES" != "" ]; then
     BUILD_CMD="echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
     apt update && \
-    apt -t buster-backports install $BUILD_PACKAGES && \
+    apt install -y -t buster-backports $BUILD_PACKAGES && \
     $BUILD_CMD"
   fi
   docker run --rm \
@@ -62,7 +62,7 @@ function run_tests() {
     bash -c "echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
     cat /etc/apt/sources.list.d/buster.list && \
     apt update && \
-    apt install -t buster-backports $PACKAGES && \
+    apt install -y -t buster-backports $PACKAGES && \
     CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
 }
 
