@@ -1,4 +1,5 @@
 run:
+  timeout: 5m
   linters-settings:
     govet:
       enable-all: true
