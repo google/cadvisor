@@ -102,7 +102,7 @@ func GetInfo() (info.NVMInfo, error) {
 
 	nvmInfo := info.NVMInfo{}
 	if !isNVMLibInitialized {
-		klog.V(1).Info("libimpctl has not been initialized. NVM information will not be available")
+		klog.V(1).Info("libipmctl has not been initialized. NVM information will not be available")
 		return nvmInfo, nil
 	}
 
