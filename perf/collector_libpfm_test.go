@@ -21,6 +21,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"testing"
+	"unsafe"
+
+	"golang.org/x/sys/unix"
 
 	"github.com/stretchr/testify/assert"
 
@@ -385,5 +388,44 @@ func TestReadPerfStat(t *testing.T) {
 			assert.Equal(tt, test.perfStat, stat)
 			assert.Equal(tt, test.err, err)
 		})
+	}
+}
+
+func TestReadPerfEventAttr(t *testing.T) {
+	var testCases = []struct {
+		expected      *unix.PerfEventAttr
+		pfmMockedFunc func(string, unsafe.Pointer) error
+	}{
+		{
+			&unix.PerfEventAttr{
+				Type:               0,
+				Size:               0,
+				Config:             0,
+				Sample:             0,
+				Sample_type:        0,
+				Read_format:        0,
+				Bits:               0,
+				Wakeup:             0,
+				Bp_type:            0,
+				Ext1:               0,
+				Ext2:               0,
+				Branch_sample_type: 0,
+				Sample_regs_user:   0,
+				Sample_stack_user:  0,
+				Clockid:            0,
+				Sample_regs_intr:   0,
+				Aux_watermark:      0,
+				Sample_max_stack:   0,
+			},
+			func(s string, pointer unsafe.Pointer) error {
+				return nil
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		got, err := readPerfEventAttr("event_name", test.pfmMockedFunc)
+		assert.NoError(t, err)
+		assert.Equal(t, test.expected, got)
 	}
 }
