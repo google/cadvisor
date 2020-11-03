@@ -327,7 +327,7 @@ func (c *uncoreCollector) Destroy() {
 	c.cpuFilesLock.Lock()
 	defer c.cpuFilesLock.Unlock()
 
-	for groupIndex, _ := range c.cpuFiles {
+	for groupIndex := range c.cpuFiles {
 		c.deleteGroup(groupIndex)
 		delete(c.cpuFiles, groupIndex)
 	}
@@ -471,7 +471,7 @@ func (c *uncoreCollector) setupRawEvent(event *CustomEvent, pmus uncorePMUs, gro
 
 	return nil
 }
-func (c *uncoreCollector) deleteGroup (groupIndex int) {
+func (c *uncoreCollector) deleteGroup(groupIndex int) {
 	groupPMUs := c.cpuFiles[groupIndex]
 	for pmu, group := range groupPMUs {
 		for name, cpus := range group.cpuFiles {
