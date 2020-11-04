@@ -39,6 +39,9 @@ import (
 	"time"
 )
 
+
+const Foo = true
+
 func bindataRead(data []byte, name string) ([]byte, error) {
 	gz, err := gzip.NewReader(bytes.NewBuffer(data))
 	if err != nil {
