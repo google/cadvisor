@@ -23,7 +23,7 @@ sudo docker run \
   --name=cadvisor \
   --privileged \
   --device=/dev/kmsg \
-  gcr.io/cadvisor/cadvisor:$VERSION
+  gcr.io/google_containers/cadvisor:$VERSION
 ```
 
 cAdvisor is now running (in the background) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
