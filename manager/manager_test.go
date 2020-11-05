@@ -177,6 +177,35 @@ func expectManagerWithContainersV2(containers []string, query *info.ContainerInf
 	return m, infosMap, handlerMap
 }
 
+func TestMachineInfoReturnValue(t *testing.T) {
+	containers := []string{
+		"/c1",
+		"/c2",
+	}
+
+	query := &info.ContainerInfoRequest{
+		NumStats: 256,
+	}
+
+	m, _, _ := expectManagerWithContainers(containers, query, t)
+
+	firstMachineInfo, err := m.GetMachineInfo()
+	if err != nil {
+		t.Fatalf("Unable to get machine info: %v", err)
+	}
+
+	secondMachineInfo, err := m.GetMachineInfo()
+	if err != nil {
+		t.Fatalf("Unable to get machine info: %v", err)
+	}
+
+	// Since the manager updates machine info in the background it should always return a copy
+	// to avoid race conditions at a later stage.
+	if firstMachineInfo == secondMachineInfo {
+		t.Fatalf("machineInfo should return a copy on each call")
+	}
+
+}
 func TestGetContainerInfo(t *testing.T) {
 	containers := []string{
 		"/c1",
