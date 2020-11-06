@@ -1,4 +1,4 @@
-FROM golang:1.14
+FROM golang:1.15
 MAINTAINER dashpole@google.com
 
 RUN apt-get update && apt-get install -y git dmsetup && apt-get clean
