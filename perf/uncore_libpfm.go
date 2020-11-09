@@ -365,7 +365,7 @@ func (c *uncoreCollector) setupEvent(name string, pmus uncorePMUs, groupIndex in
 
 	klog.V(5).Infof("Setting up uncore perf event %s", name)
 
-	config, err := readPerfEventAttr(name)
+	config, err := readPerfEventAttr(name, pfmGetOsEventEncoding)
 	if err != nil {
 		C.free((unsafe.Pointer)(config))
 		return err

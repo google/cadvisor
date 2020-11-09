@@ -21,6 +21,7 @@ package perf
 // #cgo LDFLAGS: -lpfm
 // #include <perfmon/pfmlib.h>
 // #include <stdlib.h>
+// #include <string.h>
 import "C"
 
 import (
@@ -231,8 +232,18 @@ func (c *collector) setup() error {
 	return nil
 }
 
-func readPerfEventAttr(name string) (*unix.PerfEventAttr, error) {
+func readPerfEventAttr(name string, pfmGetOsEventEncoding func(string, unsafe.Pointer) error) (*unix.PerfEventAttr, error) {
 	perfEventAttrMemory := C.malloc(C.ulong(unsafe.Sizeof(unix.PerfEventAttr{})))
+	// Fill memory with 0 values.
+	C.memset(perfEventAttrMemory, 0, C.ulong(unsafe.Sizeof(unix.PerfEventAttr{})))
+	err := pfmGetOsEventEncoding(name, unsafe.Pointer(perfEventAttrMemory))
+	if err != nil {
+		return nil, err
+	}
+	return (*unix.PerfEventAttr)(perfEventAttrMemory), nil
+}
+
+func pfmGetOsEventEncoding(name string, perfEventAttrMemory unsafe.Pointer) error {
 	event := pfmPerfEncodeArgT{}
 	fstr := C.CString("")
 	event.fstr = unsafe.Pointer(fstr)
@@ -241,10 +252,9 @@ func readPerfEventAttr(name string) (*unix.PerfEventAttr, error) {
 	cSafeName := C.CString(name)
 	pErr := C.pfm_get_os_event_encoding(cSafeName, C.PFM_PLM0|C.PFM_PLM3, C.PFM_OS_PERF_EVENT, unsafe.Pointer(&event))
 	if pErr != C.PFM_SUCCESS {
-		return nil, fmt.Errorf("unable to transform event name %s to perf_event_attr: %d", name, int(pErr))
+		return fmt.Errorf("unable to transform event name %s to perf_event_attr: %d", name, int(pErr))
 	}
-
-	return (*unix.PerfEventAttr)(perfEventAttrMemory), nil
+	return nil
 }
 
 type eventInfo struct {
@@ -408,7 +418,7 @@ func (c *collector) createConfigFromRawEvent(event *CustomEvent) *unix.PerfEvent
 func (c *collector) createConfigFromEvent(event Event) (*unix.PerfEventAttr, error) {
 	klog.V(5).Infof("Setting up perf event %s", string(event))
 
-	config, err := readPerfEventAttr(string(event))
+	config, err := readPerfEventAttr(string(event), pfmGetOsEventEncoding)
 	if err != nil {
 		C.free((unsafe.Pointer)(config))
 		return nil, err
