@@ -932,7 +932,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		perfCgroupPath := path.Join(fs2.UnifiedMountpoint, containerName)
 		cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
 		if err != nil {
-			klog.V(4).Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
+			klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
 		}
 	} else {
 		devicesCgroupPath, err := handler.GetCgroupPath("devices")
@@ -950,7 +950,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		} else {
 			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
 			if err != nil {
-				klog.V(4).Infof("perf_event metrics will not be available for container %s: %s", containerName, err)
+				klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
 			}
 		}
 	}
