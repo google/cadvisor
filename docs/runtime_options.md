@@ -179,9 +179,42 @@ in mind that it is impossible to group more events that there are counters avail
 * `uncore events` - events which can be counted by PMUs outside core.
 * `PMU` - Performance Monitoring Unit
 
+## Referenced bytes
+
+This requires to change disable_metrics from the default value so that referenced_memory is not excluded
+
+- `--referenced_read_interval` duration Read interval for referenced bytes (container_referenced_bytes metric), number of seconds after which referenced bytes are read, if set to 0 referenced bytes are never read (default: 0s)
+- `--referenced_reset_interval` duration Reset interval for referenced bytes (container_referenced_bytes metric), number of seconds after which referenced bytes are cleared, if set to 0 referenced bytes are never cleared (default: 0s)
+
+The referenced memory value is based on one of two files in `/sys/<PID>`: smaps or smaps_rollup. If the latter exists it reports the same value as the first one, but in aggregated form. This is only implementation flavoring and there is no difference whether smaps_rollup exists or not.
+*NOTE*: To avoid CPU starvation, reads are distributed over time. Keeping frequency, each reading loop gets a random offset from range <0, `referenced_read_interval`> before starting.
+
+Example command how to run cAdvisor container with referenced bytes measurement:
+
+``` bash
+sudo docker run \
+--volume=/:/rootfs:ro \
+--volume=/var/run:/var/run:ro \
+--volume=/sys:/sys:ro \
+--volume=/var/lib/docker/:/var/lib/docker:ro \
+--volume=/dev/disk/:/dev/disk:ro \
+--publish=8080:8080 \
+--device=/dev/kmsg \
+--pid=host \
+--privileged \
+--name=cadvisor \
+cadvisor:$CADVISOR_TAG
+--disable_metrics="cpu_topology,resctrl,udp,sched,hugetlb,node_vmstat,memory_numa,tcp,advtcp,percpu,process" \
+--referenced_read_interval=15s
+```
+
+*NOTE*: `--pid=host` is a crucial parameter that allows to identify container outside cAdvisor container.
+
 #### Getting config values
+
 Using perf tools:
-* Identify the event in `perf list` output. 
+
+* Identify the event in `perf list` output.
 * Execute command: `perf stat -I 5000 -vvv -e EVENT_NAME`
 * Find `perf_event_attr` section on `perf stat` output, copy config and type field to configuration file.
 
@@ -198,7 +231,7 @@ perf_event_attr:
   exclude_guest                    1
 ------------------------------------------------------------
 ```
-* Configuration file should look like: 
+* Configuration file should look like:
 ```json
 {
   "core": {
@@ -232,7 +265,7 @@ perf_event_attr:
 }
 ```
 
-Config values can be also obtain from: 
+Config values can be also obtain from:
 * [Intel® 64 and IA32 Architectures Performance Monitoring Events](https://software.intel.com/content/www/us/en/develop/download/intel-64-and-ia32-architectures-performance-monitoring-events.html)
 
 
@@ -240,7 +273,7 @@ Config values can be also obtain from:
 Uncore Event name should be in form `PMU_PREFIX/event_name` where **PMU_PREFIX** mean
 that statistics would be counted on all PMUs with that prefix in name.
 
-Let's explain this by example: 
+Let's explain this by example:
 
 ```json
 {
@@ -250,7 +283,7 @@ Let's explain this by example:
       "uncore_imc_0/cas_count_write",
       "cas_count_all"
     ],
-    "custom_events": [ 
+    "custom_events": [
       {
         "config": [
           "0x304"
@@ -409,11 +442,11 @@ See example configuration below:
 ```
 
 In the example above:
-* `instructions` will be measured as a non-grouped event and is specified using human friendly interface that can be 
-obtained by calling `perf list`. You can use any name that appears in the output of `perf list` command. This is 
+* `instructions` will be measured as a non-grouped event and is specified using human friendly interface that can be
+obtained by calling `perf list`. You can use any name that appears in the output of `perf list` command. This is
 interface that majority of users will rely on.
 * `instructions_retired` will be measured as non-grouped event and is specified using an advanced API that allows
-to specify any perf event available (some of them are not named and can't be specified with plain string). Event name 
+to specify any perf event available (some of them are not named and can't be specified with plain string). Event name
 should be a human readable string that will become a metric name.
 * `cas_count_read` will be measured as uncore non-grouped event on all Integrated Memory Controllers Performance Monitoring Units because of unset `type` field and
 `uncore_imc` prefix.

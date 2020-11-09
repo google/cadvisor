@@ -217,58 +217,34 @@ func TestParseLimitsFile(t *testing.T) {
 	}
 }
 
-func TestReferencedBytesStat(t *testing.T) {
+func TestGetReferencedKBytes(t *testing.T) {
 	//overwrite package variables
 	smapsFilePathPattern = "testdata/smaps%d"
-	clearRefsFilePathPattern = "testdata/clear_refs%d"
+	smaps_rollupFilePattern = "testdata/overwrite%d"
 
 	pids := []int{4, 6, 8}
-	stat, err := referencedBytesStat(pids, 1, 3)
+	stat, err := getReferencedKBytes(pids)
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(416*1024), stat)
-
-	clearRefsFiles := []string{
-		"testdata/clear_refs4",
-		"testdata/clear_refs6",
-		"testdata/clear_refs8"}
-
-	//check if clear_refs files have proper values
-	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[0]))
-	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[1]))
-	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[2]))
+	assert.Equal(t, uint64(416), stat)
 }
 
-func TestReferencedBytesStatWhenNeverCleared(t *testing.T) {
+func TestGetReferencedKBytesWithSmapsRollup(t *testing.T) {
 	//overwrite package variables
-	smapsFilePathPattern = "testdata/smaps%d"
-	clearRefsFilePathPattern = "testdata/clear_refs%d"
+	smapsFilePathPattern = "testdata/overwrite%d"
+	smaps_rollupFilePattern = "testdata/smaps%d_rollup"
 
 	pids := []int{4, 6, 8}
-	stat, err := referencedBytesStat(pids, 1, 0)
+	stat, err := getReferencedKBytes(pids)
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(416*1024), stat)
-
-	clearRefsFiles := []string{
-		"testdata/clear_refs4",
-		"testdata/clear_refs6",
-		"testdata/clear_refs8"}
-
-	//check if clear_refs files have proper values
-	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[0]))
-	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[1]))
-	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[2]))
+	assert.Equal(t, uint64(416), stat)
 }
 
-func TestReferencedBytesStatWhenResetIsNeeded(t *testing.T) {
+func TestClearReferencedBytes(t *testing.T) {
 	//overwrite package variables
-	smapsFilePathPattern = "testdata/smaps%d"
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
 	pids := []int{4, 6, 8}
-	stat, err := referencedBytesStat(pids, 1, 1)
-	assert.Nil(t, err)
-	assert.Equal(t, uint64(416*1024), stat)
-
+	clearReferencedBytes(pids)
 	clearRefsFiles := []string{
 		"testdata/clear_refs4",
 		"testdata/clear_refs6",
@@ -282,9 +258,10 @@ func TestReferencedBytesStatWhenResetIsNeeded(t *testing.T) {
 	clearTestData(t, clearRefsFiles)
 }
 
-func TestGetReferencedKBytesWhenSmapsMissing(t *testing.T) {
+func TestGetReferencedKBytesWhenSmapsAndRollupsMissing(t *testing.T) {
 	//overwrite package variable
 	smapsFilePathPattern = "testdata/smaps%d"
+	smaps_rollupFilePattern = "testdata/smaps%d_rollup"
 
 	pids := []int{10}
 	referenced, err := getReferencedKBytes(pids)
@@ -297,6 +274,6 @@ func TestClearReferencedBytesWhenClearRefsMissing(t *testing.T) {
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
 	pids := []int{10}
-	err := clearReferencedBytes(pids, 0, 1)
+	err := clearReferencedBytes(pids)
 	assert.Nil(t, err)
 }

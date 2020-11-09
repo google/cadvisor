@@ -22,11 +22,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/cadvisor/container"
@@ -41,31 +43,38 @@ import (
 
 var (
 	whitelistedUlimits      = [...]string{"max_open_files"}
-	referencedResetInterval = flag.Uint64("referenced_reset_interval", 0,
-		"Reset interval for referenced bytes (container_referenced_bytes metric), number of measurement cycles after which referenced bytes are cleared, if set to 0 referenced bytes are never cleared (default: 0)")
+	referencedResetInterval = flag.Duration("referenced_reset_interval", time.Duration(0), "Reset interval for referenced bytes (container_referenced_bytes metric), number of seconds after which referenced bytes are cleared, if set to 0 referenced bytes are never cleared (default: 0s)")
+	referencedReadInterval  = flag.Duration("referenced_read_interval", time.Duration(0), "Read interval for referenced bytes (container_referenced_bytes metric), number of seconds after which referenced bytes are read, if set to 0 referenced bytes are never read (default: 0s)")
 
 	smapsFilePathPattern     = "/proc/%d/smaps"
+	smaps_rollupFilePattern  = "/proc/%d/smaps_rollup"
 	clearRefsFilePathPattern = "/proc/%d/clear_refs"
 
 	referencedRegexp = regexp.MustCompile(`Referenced:\s*([0-9]+)\s*kB`)
 )
 
 type Handler struct {
-	cgroupManager   cgroups.Manager
-	rootFs          string
-	pid             int
-	includedMetrics container.MetricSet
-	pidMetricsCache map[int]*info.CpuSchedstat
-	cycles          uint64
+	cgroupManager           cgroups.Manager
+	rootFs                  string
+	pid                     int
+	includedMetrics         container.MetricSet
+	pidMetricsCache         map[int]*info.CpuSchedstat
+	cycles                  uint64
+	referencedMemory        uint64
+	referencedMemoryMutex   sync.Mutex
+	ReferencedMemoryStopper chan bool
+	ReferencedResetStopper  chan bool
 }
 
 func NewHandler(cgroupManager cgroups.Manager, rootFs string, pid int, includedMetrics container.MetricSet) *Handler {
 	return &Handler{
-		cgroupManager:   cgroupManager,
-		rootFs:          rootFs,
-		pid:             pid,
-		includedMetrics: includedMetrics,
-		pidMetricsCache: make(map[int]*info.CpuSchedstat),
+		cgroupManager:           cgroupManager,
+		rootFs:                  rootFs,
+		pid:                     pid,
+		includedMetrics:         includedMetrics,
+		pidMetricsCache:         make(map[int]*info.CpuSchedstat),
+		ReferencedMemoryStopper: make(chan bool, 1),
+		ReferencedResetStopper:  make(chan bool, 1),
 	}
 }
 
@@ -106,11 +115,10 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 
 	if h.includedMetrics.Has(container.ReferencedMemoryMetrics) {
 		h.cycles++
-		pids, err := h.cgroupManager.GetPids()
 		if err != nil {
 			klog.V(4).Infof("Could not get PIDs for container %d: %v", h.pid, err)
 		} else {
-			stats.ReferencedMemory, err = referencedBytesStat(pids, h.cycles, *referencedResetInterval)
+			stats.ReferencedMemory = h.referencedMemory * 1024
 			if err != nil {
 				klog.V(4).Infof("Unable to get referenced bytes: %v", err)
 			}
@@ -360,25 +368,19 @@ func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]
 
 // referencedBytesStat gets and clears referenced bytes
 // see: https://github.com/brendangregg/wss#wsspl-referenced-page-flag
-func referencedBytesStat(pids []int, cycles uint64, resetInterval uint64) (uint64, error) {
-	referencedKBytes, err := getReferencedKBytes(pids)
-	if err != nil {
-		return uint64(0), err
-	}
-
-	err = clearReferencedBytes(pids, cycles, resetInterval)
-	if err != nil {
-		return uint64(0), err
-	}
-	return referencedKBytes * 1024, nil
-}
 
 func getReferencedKBytes(pids []int) (uint64, error) {
 	referencedKBytes := uint64(0)
 	readSmapsContent := false
 	foundMatch := false
+	smapsFilePath := ""
 	for _, pid := range pids {
-		smapsFilePath := fmt.Sprintf(smapsFilePathPattern, pid)
+		smapsFilePath = fmt.Sprintf(smaps_rollupFilePattern, pid)
+		if _, err := os.Stat(smapsFilePath); err == nil {
+			klog.V(6).Infof("Using smaps_rollup for pid %d instead of smaps", pid)
+		} else {
+			smapsFilePath = fmt.Sprintf(smapsFilePathPattern, pid)
+		}
 		smapsContent, err := ioutil.ReadFile(smapsFilePath)
 		if err != nil {
 			klog.V(5).Infof("Cannot read %s file, err: %s", smapsFilePath, err)
@@ -418,29 +420,25 @@ func getReferencedKBytes(pids []int) (uint64, error) {
 	return referencedKBytes, nil
 }
 
-func clearReferencedBytes(pids []int, cycles uint64, resetInterval uint64) error {
-	if resetInterval == 0 {
-		return nil
-	}
+func clearReferencedBytes(pids []int) error {
 
-	if cycles%resetInterval == 0 {
-		for _, pid := range pids {
-			clearRefsFilePath := fmt.Sprintf(clearRefsFilePathPattern, pid)
-			clerRefsFile, err := os.OpenFile(clearRefsFilePath, os.O_WRONLY, 0644)
-			if err != nil {
-				// clear_refs file may not exist for all PIDs
-				continue
-			}
-			_, err = clerRefsFile.WriteString("1\n")
-			if err != nil {
-				return err
-			}
-			err = clerRefsFile.Close()
-			if err != nil {
-				return err
-			}
+	for _, pid := range pids {
+		clearRefsFilePath := fmt.Sprintf(clearRefsFilePathPattern, pid)
+		clerRefsFile, err := os.OpenFile(clearRefsFilePath, os.O_WRONLY, 0644)
+		if err != nil {
+			// clear_refs file may not exist for all PIDs
+			continue
+		}
+		_, err = clerRefsFile.WriteString("1\n")
+		if err != nil {
+			return err
+		}
+		err = clerRefsFile.Close()
+		if err != nil {
+			return err
 		}
 	}
+
 	return nil
 }
 
@@ -756,6 +754,85 @@ func (h *Handler) GetProcesses() ([]int, error) {
 		return nil, err
 	}
 	return pids, nil
+}
+
+// ResetWss to be run as gorutine for non blocking referenced bytes reset
+func (h *Handler) ResetWss(containerName string) error {
+	var err error = nil
+	if *referencedResetInterval == time.Duration(0) {
+		return err
+	}
+	castResetInterval := *referencedResetInterval
+	time.Sleep(time.Duration(rand.Intn(int(castResetInterval.Seconds()))))
+
+	for {
+		select {
+		case <-h.ReferencedResetStopper:
+			klog.V(5).Infof("Finished reseting wss for %s", containerName)
+			return err
+
+		default:
+			pids, err := h.cgroupManager.GetPids()
+			if err != nil {
+				klog.V(5).Infof("Reset failed to collect pids for handler %s", containerName)
+
+			}
+			if len(pids) == 0 && err == nil {
+				klog.V(5).Infof("Tried to reset wss for container without PIDs %s", containerName)
+
+			}
+			start := time.Now()
+			h.referencedMemoryMutex.Lock()
+			clearReferencedBytes(pids)
+			h.referencedMemoryMutex.Unlock()
+			elapsed := time.Since(start)
+			if elapsed > *referencedResetInterval {
+				klog.Warningf("Exceeded referenced reset interval for %s", containerName)
+				elapsed = elapsed % *referencedResetInterval
+			}
+			toSleep := *referencedResetInterval - elapsed
+			time.Sleep(toSleep)
+		}
+	}
+}
+
+// ReadSmaps to be run as gorutine for non blocking referenced bytes read
+func (h *Handler) ReadSmaps(containerName string) error {
+	var err error = nil
+	klog.V(5).Infof("Starting WSS collection for %s", containerName)
+	if *referencedReadInterval == 0 {
+		return err
+	}
+	castReadInterval := *referencedReadInterval
+	time.Sleep(time.Duration(rand.Intn(int(castReadInterval.Seconds()))))
+	for {
+		select {
+		case <-h.ReferencedMemoryStopper:
+			klog.V(5).Infof("Finished collecting wss for %s", containerName)
+			return err
+
+		default:
+			pids, err := h.cgroupManager.GetPids()
+			if err != nil {
+				klog.V(5).Infof("Failed to collect pids for handler %s", containerName)
+
+			}
+			if len(pids) == 0 && err == nil {
+				klog.V(5).Infof("Tried to read a container with no PIDs %s", containerName)
+			}
+			start := time.Now()
+			h.referencedMemoryMutex.Lock()
+			h.referencedMemory, err = getReferencedKBytes(pids)
+			h.referencedMemoryMutex.Unlock()
+			elapsed := time.Since(start)
+			if elapsed > *referencedReadInterval {
+				klog.Warningf("Exceeded referenced read interval for %s", containerName)
+				elapsed = elapsed % *referencedReadInterval
+			}
+			toSleep := *referencedReadInterval - elapsed
+			time.Sleep(toSleep)
+		}
+	}
 }
 
 func minUint32(x, y uint32) uint32 {
