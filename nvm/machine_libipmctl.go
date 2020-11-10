@@ -40,6 +40,7 @@ func init() {
 		// Unfortunately klog does not seem to work here. I believe it's better to
 		// output information using fmt rather then let it disappear silently.
 		fmt.Printf("libipmctl initialization failed with status %d", cErr)
+		return
 	}
 	isNVMLibInitialized = true
 }
