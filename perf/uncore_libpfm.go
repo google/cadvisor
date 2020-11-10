@@ -97,7 +97,7 @@ func readUncorePMU(path string, name string, cpumaskRegexp *regexp.Regexp) (*pmu
 }
 
 func getUncorePMUs(devicesPath string) (uncorePMUs, error) {
-	pmus := make(uncorePMUs, 0)
+	pmus := make(uncorePMUs)
 
 	// Depends on platform, cpu mask could be for example in form "0-1" or "0,1".
 	cpumaskRegexp := regexp.MustCompile("[-,\n]")
@@ -151,8 +151,7 @@ func NewUncoreCollector(cgroupPath string, events PerfEvents, cpuToSocket map[in
 
 	err := collector.setup(events, systemDevicesPath)
 	if err != nil {
-		formatedError := fmt.Errorf("unable to setup uncore perf event collector: %v", err)
-		klog.V(5).Infof("Perf uncore metrics will not be available: %s", formatedError)
+		klog.Errorf("Perf uncore metrics will not be available: unable to setup uncore perf event collector: %v", err)
 		return &stats.NoopCollector{}
 	}
 
@@ -252,10 +251,9 @@ func checkGroup(group Group, eventPMUs map[Event]uncorePMUs) error {
 			}
 		}
 		return nil
-	} else {
-		if len(eventPMUs[group.events[0]]) < 1 {
-			return fmt.Errorf("the event %q don't have any PMU to count with", group.events[0])
-		}
+	}
+	if len(eventPMUs[group.events[0]]) < 1 {
+		return fmt.Errorf("the event %q don't have any PMU to count with", group.events[0])
 	}
 	return nil
 }
@@ -360,7 +358,7 @@ func (c *uncoreCollector) setupEvent(name string, pmus uncorePMUs, groupIndex in
 
 	klog.V(5).Infof("Setting up uncore perf event %s", name)
 
-	config, err := readPerfEventAttr(name)
+	config, err := readPerfEventAttr(name, pfmGetOsEventEncoding)
 	if err != nil {
 		C.free((unsafe.Pointer)(config))
 		return err
@@ -408,10 +406,8 @@ func (c *uncoreCollector) registerEvent(eventInfo eventInfo, pmu pmu, leaderFile
 
 	if isGroupLeader {
 		return newLeaderFileDescriptors, nil
-	} else {
-		return leaderFileDescriptors, nil
 	}
-
+	return leaderFileDescriptors, nil
 }
 
 func (c *uncoreCollector) addEventFile(index int, name string, pmu string, cpu int, perfFile *os.File) {

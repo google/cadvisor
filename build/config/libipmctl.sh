@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Unsetting all the important variables.
-unset GO_FLAGS
-unset PACKAGES
-unset BUILD_PACKAGES
-unset CADVISOR_ARGS
+export GO_FLAGS="-tags=libipmctl,cgo -race"
+export PACKAGES="sudo libipmctl4"
+export BUILD_PACKAGES="libipmctl4 libipmctl-dev"
+export CADVISOR_ARGS="-perf_events_config=perf/testing/perf-non-hardware.json"

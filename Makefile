@@ -45,7 +45,7 @@ docker-test: container-test
 	@echo "docker-test target is deprecated, use container-test instead"
 
 test-integration:
-	GO_FLAGS="-race" ./build/build.sh
+	@GO_FLAGS=${$GO_FLAGS:-"-race"} ./build/build.sh
 	go test -c github.com/google/cadvisor/integration/tests/api
 	go test -c github.com/google/cadvisor/integration/tests/healthz
 	@./build/integration.sh
@@ -86,7 +86,7 @@ docker-%:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile$(Dockerfile_tag) .
 
 docker-build:
-	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.14 make build
+	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.15 make build
 
 presubmit: vet
 	@echo ">> checking go formatting"
@@ -96,7 +96,7 @@ presubmit: vet
 
 lint:
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
-	@$(go_path)/bin/golangci-lint run
+	@GOFLAGS="$(GO_FLAGS)" $(go_path)/bin/golangci-lint run
 
 clean:
 	@rm -f *.test cadvisor
