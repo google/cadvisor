@@ -220,7 +220,7 @@ func TestParseLimitsFile(t *testing.T) {
 func TestGetReferencedKBytes(t *testing.T) {
 	//overwrite package variables
 	smapsFilePathPattern = "testdata/smaps%d"
-	smaps_rollupFilePattern = "testdata/overwrite%d"
+	smapsRollupFilePattern = "testdata/overwrite%d"
 
 	pids := []int{4, 6, 8}
 	stat, err := getReferencedKBytes(pids)
@@ -231,7 +231,7 @@ func TestGetReferencedKBytes(t *testing.T) {
 func TestGetReferencedKBytesWithSmapsRollup(t *testing.T) {
 	//overwrite package variables
 	smapsFilePathPattern = "testdata/overwrite%d"
-	smaps_rollupFilePattern = "testdata/smaps%d_rollup"
+	smapsRollupFilePattern = "testdata/smaps%d_rollup"
 
 	pids := []int{4, 6, 8}
 	stat, err := getReferencedKBytes(pids)
@@ -244,7 +244,10 @@ func TestClearReferencedBytes(t *testing.T) {
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
 	pids := []int{4, 6, 8}
-	clearReferencedBytes(pids)
+	err := clearReferencedBytes(pids)
+	if err != nil {
+		t.Fatal("Failed to test clear referenced bytes")
+	}
 	clearRefsFiles := []string{
 		"testdata/clear_refs4",
 		"testdata/clear_refs6",
@@ -261,7 +264,7 @@ func TestClearReferencedBytes(t *testing.T) {
 func TestGetReferencedKBytesWhenSmapsAndRollupsMissing(t *testing.T) {
 	//overwrite package variable
 	smapsFilePathPattern = "testdata/smaps%d"
-	smaps_rollupFilePattern = "testdata/smaps%d_rollup"
+	smapsRollupFilePattern = "testdata/smaps%d_rollup"
 
 	pids := []int{10}
 	referenced, err := getReferencedKBytes(pids)
