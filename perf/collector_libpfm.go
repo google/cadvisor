@@ -199,7 +199,7 @@ func (c *collector) setup() error {
 
 		leaderFileDescriptors, err := c.createLeaderFileDescriptors(group.events, cgroupFd, groupIndex, leaderFileDescriptors)
 		if err != nil {
-			klog.Error(err)
+			klog.Errorf("Cannot count perf event group %v: %v", group.events, err)
 			c.deleteGroup(groupIndex)
 			continue
 		} else {
@@ -232,7 +232,7 @@ func (c *collector) createLeaderFileDescriptors(events []Event, cgroupFd int, gr
 			config := c.createConfigFromRawEvent(customEvent)
 			leaderFileDescriptors, err = c.registerEvent(eventInfo{string(customEvent.Name), config, cgroupFd, groupIndex, isGroupLeader}, leaderFileDescriptors)
 			if err != nil {
-				return nil, fmt.Errorf("cannot to register perf event: %v", err)
+				return nil, fmt.Errorf("cannot register perf event: %v", err)
 			}
 		} else {
 			config, err := c.createConfigFromEvent(event)
@@ -242,7 +242,7 @@ func (c *collector) createLeaderFileDescriptors(events []Event, cgroupFd int, gr
 			}
 			leaderFileDescriptors, err = c.registerEvent(eventInfo{string(event), config, cgroupFd, groupIndex, isGroupLeader}, leaderFileDescriptors)
 			if err != nil {
-				return nil, fmt.Errorf("cannot to register perf event: %v", err)
+				return nil, fmt.Errorf("cannot register perf event: %v", err)
 			}
 			// Clean memory allocated by C code.
 			C.free(unsafe.Pointer(config))
@@ -355,10 +355,10 @@ func (c *collector) addEventFile(index int, name string, cpu int, perfFile *os.F
 func (c *collector) deleteGroup(index int) {
 	for name, files := range c.cpuFiles[index].cpuFiles {
 		for cpu, file := range files {
-			klog.V(5).Infof("Closing perf_event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
+			klog.V(5).Infof("Closing perf event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
 			err := file.Close()
 			if err != nil {
-				klog.Warningf("Unable to close perf_event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
+				klog.Warningf("Unable to close perf event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
 			}
 		}
 	}

@@ -158,6 +158,30 @@ func NewUncoreCollector(cgroupPath string, events PerfEvents, cpuToSocket map[in
 	return collector
 }
 
+func (c *uncoreCollector) createLeaderFileDescriptors(events []Event, groupIndex int, groupPMUs map[Event]uncorePMUs,
+	leaderFileDescriptors map[string]map[uint32]int) (map[string]map[uint32]int, error) {
+	var err error
+	for _, event := range events {
+		eventName, _ := parseEventName(string(event))
+		customEvent, ok := c.eventToCustomEvent[event]
+		if ok {
+			err = c.setupRawEvent(customEvent, groupPMUs[event], groupIndex, leaderFileDescriptors)
+		} else {
+			err = c.setupEvent(eventName, groupPMUs[event], groupIndex, leaderFileDescriptors)
+		}
+
+		if err != nil {
+			klog.Errorf("cannot create config from perf event: %v", err)
+			break
+		}
+	}
+	if err != nil {
+		c.deleteGroup(groupIndex)
+		return nil, fmt.Errorf("cannot create config from perf event: %v", err)
+	}
+	return leaderFileDescriptors, nil
+}
+
 func (c *uncoreCollector) setup(events PerfEvents, devicesPath string) error {
 	readUncorePMUs, err := getUncorePMUs(devicesPath)
 	if err != nil {
@@ -190,26 +214,11 @@ func (c *uncoreCollector) setup(events PerfEvents, devicesPath string) error {
 				leaderFileDescriptors[pmu.name][cpu] = groupLeaderFileDescriptor
 			}
 		}
-
-		for _, event := range group.events {
-			eventName, _ := parseEventName(string(event))
-			customEvent, ok := c.eventToCustomEvent[event]
-			if ok {
-				err = c.setupRawEvent(customEvent, groupPMUs[event], i, leaderFileDescriptors)
-			} else {
-				err = c.setupEvent(eventName, groupPMUs[event], i, leaderFileDescriptors)
-			}
-
-			if err != nil {
-				klog.Errorf("cannot create config from perf event: %v", err)
-				break
-			}
-		}
+		leaderFileDescriptors, err = c.createLeaderFileDescriptors(group.events, i, groupPMUs, leaderFileDescriptors)
 		if err != nil {
-			c.deleteGroup(i)
+			klog.Error(err)
 			continue
 		}
-
 		// Group is prepared so we should reset and enable counting.
 		for _, pmuCPUs := range leaderFileDescriptors {
 			for _, fd := range pmuCPUs {
@@ -467,15 +476,16 @@ func (c *uncoreCollector) setupRawEvent(event *CustomEvent, pmus uncorePMUs, gro
 
 	return nil
 }
+
 func (c *uncoreCollector) deleteGroup(groupIndex int) {
 	groupPMUs := c.cpuFiles[groupIndex]
 	for pmu, group := range groupPMUs {
 		for name, cpus := range group.cpuFiles {
 			for cpu, file := range cpus {
-				klog.V(5).Infof("Closing uncore perf_event file descriptor for event %q, PMU %s and CPU %d", name, pmu, cpu)
+				klog.V(5).Infof("Closing uncore perf event file descriptor for event %q, PMU %s and CPU %d", name, pmu, cpu)
 				err := file.Close()
 				if err != nil {
-					klog.Warningf("Unable to close perf_event file descriptor for event %q, PMU %s and CPU %d", name, pmu, cpu)
+					klog.Warningf("Unable to close perf event file descriptor for event %q, PMU %s and CPU %d", name, pmu, cpu)
 				}
 			}
 			delete(group.cpuFiles, name)

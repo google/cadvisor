@@ -27,8 +27,6 @@ import (
 
 	"golang.org/x/sys/unix"
 
-	"golang.org/x/sys/unix"
-
 	"github.com/stretchr/testify/assert"
 
 	info "github.com/google/cadvisor/info/v1"
