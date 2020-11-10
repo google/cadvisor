@@ -3,11 +3,11 @@ module github.com/google/cadvisor
 go 1.13
 
 require (
-	cloud.google.com/go v0.51.0
+	cloud.google.com/go v0.71.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
-	github.com/Microsoft/go-winio v0.4.15-0.20200908182639-5b44b70ab3ab // indirect
-	github.com/aws/aws-sdk-go v1.35.5
-	github.com/blang/semver v3.5.0+incompatible
+	github.com/Microsoft/go-winio v0.4.15 // indirect
+	github.com/aws/aws-sdk-go v1.35.24
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.4.1
 	github.com/containerd/ttrpc v1.0.2 // indirect
 	github.com/containerd/typeurl v1.0.1
@@ -17,9 +17,8 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/gogo/protobuf v1.3.1
-	github.com/google/uuid v1.1.1 // indirect
-	github.com/gorilla/mux v1.7.3 // indirect
-	github.com/karrick/godirwalk v1.7.5
+	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/karrick/godirwalk v1.16.1
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mindprince/gonvml v0.0.0-20190828220739-9ebdce4bb989
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
@@ -29,17 +28,16 @@ require (
 	github.com/opencontainers/runc v1.0.0-rc92
 	github.com/opencontainers/runtime-spec v1.0.3-0.20200728170252-4d89ac9fbff6
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/client_golang v1.8.0
 	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.10.0
-	github.com/stretchr/testify v1.4.0
-	github.com/vishvananda/netns v0.0.0-20200520041808-52d707b772fe // indirect
-	golang.org/x/net v0.0.0-20200707034311-ab3426394381
-	golang.org/x/sys v0.0.0-20201013081832-0aaa2718063a
-	golang.org/x/text v0.3.3 // indirect
-	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	google.golang.org/grpc v1.27.1
-	google.golang.org/protobuf v1.24.0 // indirect
+	github.com/prometheus/common v0.15.0
+	github.com/stretchr/testify v1.6.1
+	github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae // indirect
+	golang.org/x/net v0.0.0-20201109172640-a11eb1b685be
+	golang.org/x/sys v0.0.0-20201109165425-215b40eba54c
+	golang.org/x/text v0.3.4 // indirect
+	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
+	google.golang.org/grpc v1.33.2
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/klog/v2 v2.2.0
 	k8s.io/mount-utils v0.20.0-alpha.3
