@@ -30,5 +30,5 @@ require (
 	google.golang.org/api v0.34.0
 	gopkg.in/olivere/elastic.v2 v2.0.12
 	k8s.io/klog/v2 v2.2.0
-	k8s.io/utils v0.0.0-20200729134348-d5654de09c73
+	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 )
