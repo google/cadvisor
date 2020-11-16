@@ -104,7 +104,6 @@ func TestMorePossibleCPUs(t *testing.T) {
 	possibleCPUs := uint32(31)
 
 	perCPUUsage := make([]uint64, possibleCPUs)
-	PercpuUsageInKernelmode := make([]uint64, possibleCPUs)
 	PercpuUsageInUsermode := make([]uint64, possibleCPUs)
 	for i := uint32(0); i < realNumCPUs; i++ {
 		perCPUUsage[i] = 8562955455524
@@ -113,12 +112,11 @@ func TestMorePossibleCPUs(t *testing.T) {
 	s := &cgroups.Stats{
 		CpuStats: cgroups.CpuStats{
 			CpuUsage: cgroups.CpuUsage{
-				PercpuUsage:             perCPUUsage,
-				PercpuUsageInKernelmode: PercpuUsageInKernelmode,
-				PercpuUsageInUsermode:   PercpuUsageInUsermode,
-				TotalUsage:              33802947350272,
-				UsageInKernelmode:       734746 * nanosecondsInSeconds / clockTicks,
-				UsageInUsermode:         2767637 * nanosecondsInSeconds / clockTicks,
+				PercpuUsage:           perCPUUsage,
+				PercpuUsageInUsermode: PercpuUsageInUsermode,
+				TotalUsage:            33802947350272,
+				UsageInKernelmode:     734746 * nanosecondsInSeconds / clockTicks,
+				UsageInUsermode:       2767637 * nanosecondsInSeconds / clockTicks,
 			},
 		},
 	}
@@ -128,12 +126,11 @@ func TestMorePossibleCPUs(t *testing.T) {
 	expected := info.ContainerStats{
 		Cpu: info.CpuStats{
 			Usage: info.CpuUsage{
-				PerCpu:       perCPUUsage[0:realNumCPUs],
-				PerCpuKernel: PercpuUsageInKernelmode[0:realNumCPUs],
-				PerCpuUser:   PercpuUsageInUsermode[0:realNumCPUs],
-				User:         s.CpuStats.CpuUsage.UsageInUsermode,
-				System:       s.CpuStats.CpuUsage.UsageInKernelmode,
-				Total:        33802947350272,
+				PerCpu:     perCPUUsage[0:realNumCPUs],
+				PerCpuUser: PercpuUsageInUsermode[0:realNumCPUs],
+				User:       s.CpuStats.CpuUsage.UsageInUsermode,
+				System:     s.CpuStats.CpuUsage.UsageInKernelmode,
+				Total:      33802947350272,
 			},
 		},
 	}

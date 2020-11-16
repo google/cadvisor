@@ -303,12 +303,11 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 					Timestamp: time.Unix(1395066363, 0),
 					Cpu: info.CpuStats{
 						Usage: info.CpuUsage{
-							Total:        1,
-							PerCpu:       []uint64{2, 3, 4, 5},
-							User:         6,
-							System:       7,
-							PerCpuKernel: []uint64{2, 3, 4, 5},
-							PerCpuUser:   []uint64{2, 3, 4, 5},
+							Total:      1,
+							PerCpu:     []uint64{2, 3, 4, 5},
+							User:       6,
+							System:     7,
+							PerCpuUser: []uint64{2, 3, 4, 5},
 						},
 						CFS: info.CpuCFS{
 							Periods:          723,

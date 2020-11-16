@@ -31,8 +31,6 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `container_cpu_system_seconds_total` | Counter | Cumulative system cpu time consumed | seconds | |
 `container_cpu_usage_seconds_total` | Counter | Cumulative cpu time consumed | seconds | |
 `container_cpu_user_seconds_total` | Counter | Cumulative user cpu time consumed | seconds | |
-`container_cpu_user_seconds` | Counter | Time spent in userspace per CPU per container | seconds | |
-`container_cpu_kernel_seconds` | Counter | Time spent in kernelspace per CPU per container | seconds | |
 `container_file_descriptors` | Gauge | Number of open file descriptors for the container | | process |
 `container_fs_inodes_free` | Gauge | Number of available Inodes | | disk |
 `container_fs_inodes_total` | Gauge | Total number of Inodes | | disk |

@@ -803,10 +803,11 @@ func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 	}
 	numActual = minUint32(numPossible, numActual)
 	ret.Cpu.Usage.PerCpu = make([]uint64, numActual)
-	ret.Cpu.Usage.PerCpuKernel = make([]uint64, numActual)
 	ret.Cpu.Usage.PerCpuUser = make([]uint64, numActual)
 	perSpaceEqualSize := false
-	if uint32(len(s.CpuStats.CpuUsage.PercpuUsageInKernelmode)) == numActual && uint32(len(s.CpuStats.CpuUsage.PercpuUsageInUsermode)) == numActual {
+	numWantedUserMode := uint32(len(s.CpuStats.CpuUsage.PercpuUsageInUsermode))
+
+	if numWantedUserMode == numActual {
 		perSpaceEqualSize = true
 	} else {
 		klog.Error("Unable to get percpu stats in kernel and user mode")
@@ -815,7 +816,6 @@ func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 	for i := uint32(0); i < numActual; i++ {
 		ret.Cpu.Usage.PerCpu[i] = s.CpuStats.CpuUsage.PercpuUsage[i]
 		if perSpaceEqualSize {
-			ret.Cpu.Usage.PerCpuKernel[i] = s.CpuStats.CpuUsage.PercpuUsageInKernelmode[i]
 			ret.Cpu.Usage.PerCpuUser[i] = s.CpuStats.CpuUsage.PercpuUsageInUsermode[i]
 		}
 	}
