@@ -3,13 +3,13 @@
 This document describes a set of runtime flags available in cAdvisor.
 
 ## Container labels
---store_container_labels=false: Do not convert container labels and environment variables into labels on prometheus metrics for each container.
---whitelisted_container_labels: comma separated list of container labels to be converted to labels on prometheus metrics for each container. store_container_labels must be set to false for this to take effect.
+* `--store_container_labels=false` - do not convert container labels and environment variables into labels on prometheus metrics for each container.
+* `--whitelisted_container_labels` - comma separated list of container labels to be converted to labels on prometheus metrics for each container. `store_container_labels` must be set to false for this to take effect.
 
 ## Limiting which containers are monitored 
---docker_only=false: Do not report raw cgroup metrics, except the root cgroup.
---raw_cgroup_prefix_whitelist: A comma-separated list of cgroup path prefix that needs to be collected even when -docker_only is specified
---disable_root_cgroup_stats=false: Disable collecting root Cgroup stats.
+* `--docker_only=false` - do not report raw cgroup metrics, except the root cgroup.
+* `--raw_cgroup_prefix_whitelist` - a comma-separated list of cgroup path prefix that needs to be collected even when `--docker_only` is specified
+* `--disable_root_cgroup_stats=false` - disable collecting root Cgroup stats.
 
 ## Container Hints
 
