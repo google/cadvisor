@@ -91,6 +91,8 @@ docker-build:
 presubmit: vet
 	@echo ">> checking go formatting"
 	@./build/check_gofmt.sh
+	@echo ">> checking go mod tidy"
+	@./build/check_gotidy.sh
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
 
