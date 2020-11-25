@@ -22,6 +22,7 @@ require (
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/karrick/godirwalk v1.16.1
+	github.com/konsorten/go-windows-terminal-sequences v1.0.3 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mindprince/gonvml v0.0.0-20190828220739-9ebdce4bb989
@@ -29,8 +30,8 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
-	github.com/opencontainers/runc v1.0.0-rc92
-	github.com/opencontainers/runtime-spec v1.0.3-0.20200728170252-4d89ac9fbff6
+	github.com/opencontainers/runc v1.0.0-rc92.0.20201124050251-06b737bb156b
+	github.com/opencontainers/runtime-spec v1.0.3-0.20200929063507-e6143ca7d51d
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
 	github.com/prometheus/client_model v0.2.0
