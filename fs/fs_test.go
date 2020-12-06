@@ -27,6 +27,20 @@ import (
 	"k8s.io/utils/mount"
 )
 
+func TestMountInfoFromDir(t *testing.T) {
+	as := assert.New(t)
+	fsInfo := &RealFsInfo{
+		mounts: map[string]mount.MountInfo{
+			"/": {},
+		},
+	}
+	testDirs := []string{"/var/lib/kubelet", "/var/lib/rancher"}
+	for _, testDir := range testDirs {
+		_, found := fsInfo.mountInfoFromDir(testDir)
+		as.True(found, "failed to find MountInfo %s from FsInfo %s", testDir, fsInfo)
+	}
+}
+
 func TestGetDiskStatsMap(t *testing.T) {
 	diskStatsMap, err := getDiskStatsMap("test_resources/diskstats")
 	if err != nil {
