@@ -139,7 +139,7 @@ func (cd *containerData) allowErrorLogging() bool {
 // can have serious performance costs.
 func (cd *containerData) OnDemandHousekeeping(maxAge time.Duration) {
 	cd.lock.Lock()
-	timeSinceStatsLastUpdate := cd.clock.Since(statsLastUpdatedTime)
+	timeSinceStatsLastUpdate := cd.clock.Since(cd.statsLastUpdatedTime)
 	cd.lock.Unlock()
 	if timeSinceStatsLastUpdate > maxAge {
 		housekeepingFinishedChan := make(chan struct{})
