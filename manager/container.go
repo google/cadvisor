@@ -138,7 +138,10 @@ func (cd *containerData) allowErrorLogging() bool {
 // periodic housekeeping to reset.  This should be used sparingly, as calling OnDemandHousekeeping frequently
 // can have serious performance costs.
 func (cd *containerData) OnDemandHousekeeping(maxAge time.Duration) {
-	if cd.clock.Since(cd.statsLastUpdatedTime) > maxAge {
+	cd.lock.Lock()
+	timeSinceStatsLastUpdate := cd.clock.Since(statsLastUpdatedTime)
+	cd.lock.Unock()
+	if timeSinceStatsLastUpdate > maxAge {
 		housekeepingFinishedChan := make(chan struct{})
 		cd.onDemandChan <- housekeepingFinishedChan
 		select {
@@ -555,6 +558,8 @@ func (cd *containerData) housekeepingTick(timer <-chan time.Time, longHousekeepi
 		klog.V(3).Infof("[%s] Housekeeping took %s", cd.info.Name, duration)
 	}
 	cd.notifyOnDemand()
+	cd.lock.Lock()
+	defer cd.lock.Unock()
 	cd.statsLastUpdatedTime = cd.clock.Now()
 	return true
 }
