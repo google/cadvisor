@@ -140,7 +140,7 @@ func (cd *containerData) allowErrorLogging() bool {
 func (cd *containerData) OnDemandHousekeeping(maxAge time.Duration) {
 	cd.lock.Lock()
 	timeSinceStatsLastUpdate := cd.clock.Since(statsLastUpdatedTime)
-	cd.lock.Unock()
+	cd.lock.Unlock()
 	if timeSinceStatsLastUpdate > maxAge {
 		housekeepingFinishedChan := make(chan struct{})
 		cd.onDemandChan <- housekeepingFinishedChan
@@ -559,7 +559,7 @@ func (cd *containerData) housekeepingTick(timer <-chan time.Time, longHousekeepi
 	}
 	cd.notifyOnDemand()
 	cd.lock.Lock()
-	defer cd.lock.Unock()
+	defer cd.lock.Unlock()
 	cd.statsLastUpdatedTime = cd.clock.Now()
 	return true
 }
