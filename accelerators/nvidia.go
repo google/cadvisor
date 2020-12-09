@@ -29,6 +29,8 @@ import (
 	"github.com/google/cadvisor/stats"
 
 	"github.com/mindprince/gonvml"
+	"github.com/pkg/errors"
+
 	"k8s.io/klog/v2"
 )
 
@@ -45,7 +47,11 @@ type nvidiaManager struct {
 	nvidiaDevices map[int]gonvml.Device
 }
 
-var sysFsPCIDevicesPath = "/sys/bus/pci/devices/"
+var (
+	sysFsPCIDevicesPath = "/sys/bus/pci/devices/"
+	// noNVIDIADevicesFound is returned when no NVIDIA devices found
+	noNVIDIADevicesFound = errors.New("no NVIDIA devices found")
+)
 
 const nvidiaVendorID = "0x10de"
 
@@ -66,7 +72,8 @@ func NewNvidiaManager(includedMetrics container.MetricSet) stats.Manager {
 // setup initializes NVML if NVIDIA devices are present on the node.
 func (nm *nvidiaManager) setup() error {
 	if !detectDevices(nvidiaVendorID) {
-		return fmt.Errorf("no NVIDIA devices found")
+		klog.V(4).Infof(noNVIDIADevicesFound)
+		return noNVIDIADevicesFound
 	}
 
 	nm.devicesPresent = true
