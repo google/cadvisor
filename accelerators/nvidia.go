@@ -72,7 +72,6 @@ func NewNvidiaManager(includedMetrics container.MetricSet) stats.Manager {
 // setup initializes NVML if NVIDIA devices are present on the node.
 func (nm *nvidiaManager) setup() error {
 	if !detectDevices(nvidiaVendorID) {
-		klog.V(4).Infof(noNVIDIADevicesFound)
 		return noNVIDIADevicesFound
 	}
 
