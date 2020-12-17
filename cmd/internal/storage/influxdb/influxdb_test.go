@@ -231,7 +231,7 @@ func TestContainerStatsToPoints(t *testing.T) {
 
 	// Then
 	assert.NotEmpty(t, points)
-	assert.Len(t, points, 34+len(stats.Cpu.Usage.PerCpu))
+	assert.Len(t, points, 52+len(stats.Cpu.Usage.PerCpu))
 
 	// CPU stats
 	assertContainsPointWithValue(t, points, serCpuUsageTotal, stats.Cpu.Usage.Total)
@@ -276,7 +276,9 @@ func TestContainerStatsToPoints(t *testing.T) {
 	}
 
 	// Reference memory
-	assertContainsPointWithValue(t, points, serReferencedMemory, stats.ReferencedMemory)
+	for k, v := range stats.SmapsMemory {
+		assertContainsPointWithValue(t, points, serSmapsPrefix+k, v)
+	}
 
 	// Resource Control stats - memory bandwidth
 	for _, rdtMemoryBandwidth := range stats.Resctrl.MemoryBandwidth {
@@ -359,8 +361,28 @@ func createTestStats() (*info.ContainerInfo, *info.ContainerStats) {
 			"1GB": {Usage: 1234, MaxUsage: 5678, Failcnt: 9},
 			"2GB": {Usage: 9876, MaxUsage: 5432, Failcnt: 1},
 		},
-		ReferencedMemory: 12345,
-		PerfStats:        []info.PerfStat{{Cpu: 1, Name: "cycles", ScalingRatio: 1.5, Value: 4589}},
+		SmapsMemory: map[string]uint64{
+			"AnonHugePages":   1,
+			"Anonymous":       2,
+			"KernelPageSize":  3,
+			"LazyFree":        4,
+			"Locked":          5,
+			"MMUPageSize":     6,
+			"Private_Clean":   7,
+			"Private_Dirty":   8,
+			"Private_Hugetlb": 9,
+			"Pss":             10,
+			"Referenced":      11,
+			"Rss":             12,
+			"Shared_Clean":    13,
+			"Shared_Dirty":    14,
+			"Shared_Hugetlb":  15,
+			"ShmemPmdMapped":  16,
+			"Size":            17,
+			"Swap":            18,
+			"SwapPss":         19,
+		},
+		PerfStats: []info.PerfStat{{Cpu: 1, PerfValue: info.PerfValue{Name: "cycles", ScalingRatio: 1.5, Value: 4589}}},
 		Resctrl: info.ResctrlStats{
 			MemoryBandwidth: []info.MemoryBandwidthStats{
 				{TotalBytes: 11234, LocalBytes: 4567},

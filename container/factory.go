@@ -60,7 +60,7 @@ const (
 	ProcessMetrics                 MetricKind = "process"
 	HugetlbUsageMetrics            MetricKind = "hugetlb"
 	PerfMetrics                    MetricKind = "perf_event"
-	ReferencedMemoryMetrics        MetricKind = "referenced_memory"
+	SmapsMemoryMetrics             MetricKind = "smaps_memory"
 	CPUTopologyMetrics             MetricKind = "cpu_topology"
 	ResctrlMetrics                 MetricKind = "resctrl"
 )
@@ -84,7 +84,7 @@ var AllMetrics = MetricSet{
 	AppMetrics:                     struct{}{},
 	HugetlbUsageMetrics:            struct{}{},
 	PerfMetrics:                    struct{}{},
-	ReferencedMemoryMetrics:        struct{}{},
+	SmapsMemoryMetrics:             struct{}{},
 	CPUTopologyMetrics:             struct{}{},
 	ResctrlMetrics:                 struct{}{},
 }

@@ -88,7 +88,7 @@ var (
 		container.ProcessSchedulerMetrics:        struct{}{},
 		container.ProcessMetrics:                 struct{}{},
 		container.HugetlbUsageMetrics:            struct{}{},
-		container.ReferencedMemoryMetrics:        struct{}{},
+		container.SmapsMemoryMetrics:             struct{}{},
 		container.CPUTopologyMetrics:             struct{}{},
 		container.ResctrlMetrics:                 struct{}{},
 	}}
@@ -107,7 +107,7 @@ var (
 		container.ProcessSchedulerMetrics:        struct{}{},
 		container.ProcessMetrics:                 struct{}{},
 		container.HugetlbUsageMetrics:            struct{}{},
-		container.ReferencedMemoryMetrics:        struct{}{},
+		container.SmapsMemoryMetrics:             struct{}{},
 		container.CPUTopologyMetrics:             struct{}{},
 		container.ResctrlMetrics:                 struct{}{},
 	}
@@ -141,7 +141,7 @@ func (ml *metricSetValue) Set(value string) error {
 }
 
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'referenced_memory', 'resctrl'.")
+	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'resctrl', 'smaps_memory'.")
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")

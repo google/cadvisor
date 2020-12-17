@@ -85,14 +85,14 @@ const (
 	setHugetlbFailcnt string = "hugetlb_failcnt"
 	// Perf statistics
 	serPerfStat string = "perf_stat"
-	// Referenced memory
-	serReferencedMemory string = "referenced_memory"
 	// Resctrl - Total memory bandwidth
 	serResctrlMemoryBandwidthTotal string = "resctrl_memory_bandwidth_total"
 	// Resctrl - Local memory bandwidth
 	serResctrlMemoryBandwidthLocal string = "resctrl_memory_bandwidth_local"
 	// Resctrl - Last level cache usage
 	serResctrlLLCOccupancy string = "resctrl_llc_occupancy"
+	// Smaps series
+	serSmapsPrefix string = "smaps_"
 )
 
 func new() (storage.StorageDriver, error) {
@@ -131,8 +131,10 @@ func (driver *stdoutStorage) containerStatsToValues(stats *info.ContainerStats) 
 	series[serTxBytes] = stats.Network.TxBytes
 	series[serTxErrors] = stats.Network.TxErrors
 
-	// Referenced Memory
-	series[serReferencedMemory] = stats.ReferencedMemory
+	// Smaps Memory
+	for k, v := range stats.SmapsMemory {
+		series[serSmapsPrefix+k] = v
+	}
 
 	return series
 }

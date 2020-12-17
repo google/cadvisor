@@ -47,7 +47,12 @@ func GenerateRandomStats(numStats, numCores int, duration time.Duration) []*info
 		stats.Memory.Cache = uint64(rand.Int63n(4096))
 		stats.Memory.RSS = uint64(rand.Int63n(4096))
 		stats.Memory.MappedFile = uint64(rand.Int63n(4096))
-		stats.ReferencedMemory = uint64(rand.Int63n(1000))
+		stats.SmapsMemory = map[string]uint64{}
+		for _, t := range []string{"Size", "KernelPageSize", "MMUPageSize", "Rss", "Pss", "Shared_Clean", "Shared_Dirty",
+			"Private_Clean", "Private_Dirty", "Referenced", "Anonymous", "LazyFree", "AnonHugePages", "ShmemPmdMapped",
+			"Shared_Hugetlb", "Private_Hugetlb", "Swap", "SwapPss", "Locked"} {
+			stats.SmapsMemory[t] = uint64(rand.Int63n(1000))
+		}
 		ret[i] = stats
 	}
 	return ret

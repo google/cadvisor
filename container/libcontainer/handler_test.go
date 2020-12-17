@@ -24,6 +24,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var expectedSmaps = map[string]uint64{
+	"AnonHugePages":   0x0,
+	"Anonymous":       0x7000,
+	"KernelPageSize":  0x6000,
+	"LazyFree":        0x0,
+	"Locked":          0x0,
+	"MMUPageSize":     0x6000,
+	"Private_Clean":   0x63000,
+	"Private_Dirty":   0x7000,
+	"Private_Hugetlb": 0x0,
+	"Pss":             0x6a000,
+	"Referenced":      0x68000,
+	"Rss":             0x6a000,
+	"Shared_Clean":    0x0,
+	"Shared_Dirty":    0x0,
+	"Shared_Hugetlb":  0x0,
+	"ShmemPmdMapped":  0x0,
+	"Size":            0x8a000,
+	"Swap":            0x0,
+	"SwapPss":         0x0,
+}
+
 func TestScanInterfaceStats(t *testing.T) {
 	stats, err := scanInterfaceStats("testdata/procnetdev")
 	if err != nil {
@@ -217,15 +239,15 @@ func TestParseLimitsFile(t *testing.T) {
 	}
 }
 
-func TestReferencedBytesStat(t *testing.T) {
+func TestSmapsStat(t *testing.T) {
 	//overwrite package variables
 	smapsFilePathPattern = "testdata/smaps%d"
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
 	pids := []int{4, 6, 8}
-	stat, err := referencedBytesStat(pids, 1, 3)
+	stat, err := smapsStat(pids, 1, 3)
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(416*1024), stat)
+	assert.Equal(t, expectedSmaps, stat)
 
 	clearRefsFiles := []string{
 		"testdata/clear_refs4",
@@ -238,15 +260,15 @@ func TestReferencedBytesStat(t *testing.T) {
 	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[2]))
 }
 
-func TestReferencedBytesStatWhenNeverCleared(t *testing.T) {
+func TestSmapsStatWhenNeverCleared(t *testing.T) {
 	//overwrite package variables
 	smapsFilePathPattern = "testdata/smaps%d"
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
 	pids := []int{4, 6, 8}
-	stat, err := referencedBytesStat(pids, 1, 0)
+	stat, err := smapsStat(pids, 1, 0)
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(416*1024), stat)
+	assert.Equal(t, expectedSmaps, stat)
 
 	clearRefsFiles := []string{
 		"testdata/clear_refs4",
@@ -259,15 +281,15 @@ func TestReferencedBytesStatWhenNeverCleared(t *testing.T) {
 	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[2]))
 }
 
-func TestReferencedBytesStatWhenResetIsNeeded(t *testing.T) {
+func TestSmapsStatWhenResetIsNeeded(t *testing.T) {
 	//overwrite package variables
 	smapsFilePathPattern = "testdata/smaps%d"
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
 	pids := []int{4, 6, 8}
-	stat, err := referencedBytesStat(pids, 1, 1)
+	stat, err := smapsStat(pids, 1, 1)
 	assert.Nil(t, err)
-	assert.Equal(t, uint64(416*1024), stat)
+	assert.Equal(t, expectedSmaps, stat)
 
 	clearRefsFiles := []string{
 		"testdata/clear_refs4",
@@ -280,16 +302,6 @@ func TestReferencedBytesStatWhenResetIsNeeded(t *testing.T) {
 	assert.Equal(t, "1\n", getFileContent(t, clearRefsFiles[2]))
 
 	clearTestData(t, clearRefsFiles)
-}
-
-func TestGetReferencedKBytesWhenSmapsMissing(t *testing.T) {
-	//overwrite package variable
-	smapsFilePathPattern = "testdata/smaps%d"
-
-	pids := []int{10}
-	referenced, err := getReferencedKBytes(pids)
-	assert.Nil(t, err)
-	assert.Equal(t, uint64(0), referenced)
 }
 
 func TestClearReferencedBytesWhenClearRefsMissing(t *testing.T) {
