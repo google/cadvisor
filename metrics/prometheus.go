@@ -1655,14 +1655,24 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
-	if includedMetrics.Has(container.ReferencedMemoryMetrics) {
+	if includedMetrics.Has(container.SmapsMemoryMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
-				name:      "container_referenced_bytes",
-				help:      "Container referenced bytes during last measurements cycle",
-				valueType: prometheus.GaugeValue,
+				name:        "container_smaps_bytes",
+				help:        "Container smaps statistics, for type=referenced during last measurements cycle",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: float64(s.ReferencedMemory), timestamp: s.Timestamp}}
+					types := []string{"Size", "KernelPageSize", "MMUPageSize", "Rss", "Pss", "Shared_Clean", "Shared_Dirty", "Private_Clean", "Private_Dirty", "Referenced", "Anonymous", "LazyFree", "AnonHugePages", "ShmemPmdMapped", "Shared_Hugetlb", "Private_Hugetlb", "Swap", "SwapPss", "Locked"}
+					metrics := make(metricValues, 0, len(types))
+					for _, t := range types {
+						metrics = append(metrics, metricValue{
+							value:     float64(s.SmapsMemory[t]),
+							labels:    []string{t},
+							timestamp: s.Timestamp,
+						})
+					}
+					return metrics
 				},
 			},
 		}...)

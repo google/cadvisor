@@ -94,14 +94,14 @@ const (
 	setHugetlbFailcnt = "hugetlb_failcnt"
 	// Perf statistics
 	serPerfStat = "perf_stat"
-	// Referenced memory
-	serReferencedMemory = "referenced_memory"
 	// Resctrl - Total memory bandwidth
 	serResctrlMemoryBandwidthTotal = "resctrl_memory_bandwidth_total"
 	// Resctrl - Local memory bandwidth
 	serResctrlMemoryBandwidthLocal = "resctrl_memory_bandwidth_local"
 	// Resctrl - Last level cache usage
 	serResctrlLLCOccupancy = "resctrl_llc_occupancy"
+	// Smaps memory prefix
+	serSmapsPrefix = "smaps_"
 )
 
 func new() (storage.StorageDriver, error) {
@@ -230,8 +230,10 @@ func (s *influxdbStorage) containerStatsToPoints(
 	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
 	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
 
-	// Referenced Memory
-	points = append(points, makePoint(serReferencedMemory, stats.ReferencedMemory))
+	// Smaps Memory
+	for k, v := range stats.SmapsMemory {
+		points = append(points, makePoint(serSmapsPrefix+k, v))
+	}
 
 	s.tagPoints(cInfo, stats, points)
 

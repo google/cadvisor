@@ -40,10 +40,10 @@ func TestUdpMetricsAreDisabledByDefault(t *testing.T) {
 	assert.True(t, ignoreMetrics.Has(container.NetworkUdpUsageMetrics))
 }
 
-func TestReferencedMemoryMetricsIsDisabledByDefault(t *testing.T) {
-	assert.True(t, ignoreMetrics.Has(container.ReferencedMemoryMetrics))
+func TestSmapsMemoryMetricsIsDisabledByDefault(t *testing.T) {
+	assert.True(t, ignoreMetrics.Has(container.SmapsMemoryMetrics))
 	flag.Parse()
-	assert.True(t, ignoreMetrics.Has(container.ReferencedMemoryMetrics))
+	assert.True(t, ignoreMetrics.Has(container.SmapsMemoryMetrics))
 }
 
 func TestCPUTopologyMetricsAreDisabledByDefault(t *testing.T) {
@@ -105,7 +105,7 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.AppMetrics:                     struct{}{},
 			container.HugetlbUsageMetrics:            struct{}{},
 			container.PerfMetrics:                    struct{}{},
-			container.ReferencedMemoryMetrics:        struct{}{},
+			container.SmapsMemoryMetrics:             struct{}{},
 			container.CPUTopologyMetrics:             struct{}{},
 			container.ResctrlMetrics:                 struct{}{},
 		},

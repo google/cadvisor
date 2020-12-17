@@ -142,10 +142,10 @@ type DeprecatedContainerStats struct {
 	// Statistics originating from perf uncore events.
 	// Applies only for root container.
 	PerfUncoreStats []v1.PerfUncoreStat `json:"perf_uncore_stats,omitempty"`
-	// Referenced memory
-	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
 	// Resource Control (resctrl) statistics
 	Resctrl v1.ResctrlStats `json:"resctrl,omitempty"`
+	// Smaps memory
+	SmapsMemory map[string]uint64 `json:"smaps_memory,omitempty"`
 }
 
 type ContainerStats struct {
@@ -179,10 +179,10 @@ type ContainerStats struct {
 	// Statistics originating from perf uncore events.
 	// Applies only for root container.
 	PerfUncoreStats []v1.PerfUncoreStat `json:"perf_uncore_stats,omitempty"`
-	// Referenced memory
-	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
 	// Resource Control (resctrl) statistics
 	Resctrl v1.ResctrlStats `json:"resctrl,omitempty"`
+	// Smaps memory statistics
+	SmapsMemory map[string]uint64 `json:"smaps,omitempty"`
 }
 
 type Percentiles struct {

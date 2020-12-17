@@ -952,11 +952,11 @@ type ContainerStats struct {
 	// Applies only for root container.
 	PerfUncoreStats []PerfUncoreStat `json:"perf_uncore_stats,omitempty"`
 
-	// Referenced memory
-	ReferencedMemory uint64 `json:"referenced_memory,omitempty"`
-
 	// Resource Control (resctrl) statistics
 	Resctrl ResctrlStats `json:"resctrl,omitempty"`
+
+	// Referenced memory
+	SmapsMemory map[string]uint64 `json:"smaps_memory,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

@@ -364,12 +364,30 @@ container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",containe
 # HELP container_processes Number of processes running inside the container.
 # TYPE container_processes gauge
 container_processes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
-# HELP container_referenced_bytes Container referenced bytes during last measurements cycle
-# TYPE container_referenced_bytes gauge
-container_referenced_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1234 1395066363000
 # HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
 # TYPE container_scrape_error gauge
 container_scrape_error 0
+# HELP container_smaps_bytes Container smaps statistics, for type=referenced during last measurements cycle
+# TYPE container_smaps_bytes gauge
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="AnonHugePages",zone_name="hello"} 1 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Anonymous",zone_name="hello"} 2 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="KernelPageSize",zone_name="hello"} 3 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="LazyFree",zone_name="hello"} 4 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Locked",zone_name="hello"} 5 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="MMUPageSize",zone_name="hello"} 6 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Private_Clean",zone_name="hello"} 7 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Private_Dirty",zone_name="hello"} 8 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Private_Hugetlb",zone_name="hello"} 9 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Pss",zone_name="hello"} 10 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Referenced",zone_name="hello"} 11 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Rss",zone_name="hello"} 12 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Shared_Clean",zone_name="hello"} 13 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Shared_Dirty",zone_name="hello"} 14 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Shared_Hugetlb",zone_name="hello"} 15 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="ShmemPmdMapped",zone_name="hello"} 16 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Size",zone_name="hello"} 17 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="Swap",zone_name="hello"} 18 1395066363000
+container_smaps_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",type="SwapPss",zone_name="hello"} 19 1395066363000
 # HELP container_sockets Number of open sockets for the container.
 # TYPE container_sockets gauge
 container_sockets{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3 1395066363000

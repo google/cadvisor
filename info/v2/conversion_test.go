@@ -233,7 +233,6 @@ func TestContainerStatsFromV1(t *testing.T) {
 				PMU:    "17",
 			},
 		},
-		ReferencedMemory: uint64(1234),
 		Resctrl: v1.ResctrlStats{
 			MemoryBandwidth: []v1.MemoryBandwidthStats{
 				{
@@ -254,6 +253,27 @@ func TestContainerStatsFromV1(t *testing.T) {
 				},
 			},
 		},
+		SmapsMemory: map[string]uint64{
+			"AnonHugePages":   1,
+			"Anonymous":       2,
+			"KernelPageSize":  3,
+			"LazyFree":        4,
+			"Locked":          5,
+			"MMUPageSize":     6,
+			"Private_Clean":   7,
+			"Private_Dirty":   8,
+			"Private_Hugetlb": 9,
+			"Pss":             10,
+			"Referenced":      11,
+			"Rss":             12,
+			"Shared_Clean":    13,
+			"Shared_Dirty":    14,
+			"Shared_Hugetlb":  15,
+			"ShmemPmdMapped":  16,
+			"Size":            17,
+			"Swap":            18,
+			"SwapPss":         19,
+		},
 	}
 	expectedV2Stats := ContainerStats{
 		Timestamp: timestamp,
@@ -270,11 +290,11 @@ func TestContainerStatsFromV1(t *testing.T) {
 			BaseUsageBytes:  &v1Stats.Filesystem[0].BaseUsage,
 			InodeUsage:      &v1Stats.Filesystem[0].Inodes,
 		},
-		Accelerators:     v1Stats.Accelerators,
-		PerfStats:        v1Stats.PerfStats,
-		PerfUncoreStats:  v1Stats.PerfUncoreStats,
-		ReferencedMemory: v1Stats.ReferencedMemory,
-		Resctrl:          v1Stats.Resctrl,
+		Accelerators:    v1Stats.Accelerators,
+		PerfStats:       v1Stats.PerfStats,
+		PerfUncoreStats: v1Stats.PerfUncoreStats,
+		Resctrl:         v1Stats.Resctrl,
+		SmapsMemory:     v1Stats.SmapsMemory,
 	}
 
 	v2Stats := ContainerStatsFromV1("test", &v1Spec, []*v1.ContainerStats{&v1Stats})

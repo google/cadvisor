@@ -687,7 +687,27 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							PMU:    "uncore_imc_0",
 						},
 					},
-					ReferencedMemory: 1234,
+					SmapsMemory: map[string]uint64{
+						"AnonHugePages":   1,
+						"Anonymous":       2,
+						"KernelPageSize":  3,
+						"LazyFree":        4,
+						"Locked":          5,
+						"MMUPageSize":     6,
+						"Private_Clean":   7,
+						"Private_Dirty":   8,
+						"Private_Hugetlb": 9,
+						"Pss":             10,
+						"Referenced":      11,
+						"Rss":             12,
+						"Shared_Clean":    13,
+						"Shared_Dirty":    14,
+						"Shared_Hugetlb":  15,
+						"ShmemPmdMapped":  16,
+						"Size":            17,
+						"Swap":            18,
+						"SwapPss":         19,
+					},
 					Resctrl: info.ResctrlStats{
 						MemoryBandwidth: []info.MemoryBandwidthStats{
 							{

@@ -47,7 +47,7 @@ var (
 	smapsFilePathPattern     = "/proc/%d/smaps"
 	clearRefsFilePathPattern = "/proc/%d/clear_refs"
 
-	referencedRegexp = regexp.MustCompile(`Referenced:\s*([0-9]+)\s*kB`)
+	smapsRegexp = regexp.MustCompile(`(?m)^(.+):\s*([0-9]+)\s*kB$`)
 )
 
 type Handler struct {
@@ -104,13 +104,13 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 		}
 	}
 
-	if h.includedMetrics.Has(container.ReferencedMemoryMetrics) {
+	if h.includedMetrics.Has(container.SmapsMemoryMetrics) {
 		h.cycles++
 		pids, err := h.cgroupManager.GetPids()
 		if err != nil {
 			klog.V(4).Infof("Could not get PIDs for container %d: %v", h.pid, err)
 		} else {
-			stats.ReferencedMemory, err = referencedBytesStat(pids, h.cycles, *referencedResetInterval)
+			stats.SmapsMemory, err = smapsStat(pids, h.cycles, *referencedResetInterval)
 			if err != nil {
 				klog.V(4).Infof("Unable to get referenced bytes: %v", err)
 			}
@@ -358,23 +358,23 @@ func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]
 	return schedstats, nil
 }
 
-// referencedBytesStat gets and clears referenced bytes
+// smapsStat gets smaps metrics and clears referenced bytes
 // see: https://github.com/brendangregg/wss#wsspl-referenced-page-flag
-func referencedBytesStat(pids []int, cycles uint64, resetInterval uint64) (uint64, error) {
-	referencedKBytes, err := getReferencedKBytes(pids)
+func smapsStat(pids []int, cycles uint64, resetInterval uint64) (map[string]uint64, error) {
+	smapsBytes, err := getSmapsBytes(pids)
 	if err != nil {
-		return uint64(0), err
+		return nil, err
 	}
 
 	err = clearReferencedBytes(pids, cycles, resetInterval)
 	if err != nil {
-		return uint64(0), err
+		return nil, err
 	}
-	return referencedKBytes * 1024, nil
+	return smapsBytes, nil
 }
 
-func getReferencedKBytes(pids []int) (uint64, error) {
-	referencedKBytes := uint64(0)
+func getSmapsBytes(pids []int) (map[string]uint64, error) {
+	smapsBytes := map[string]uint64{}
 	readSmapsContent := false
 	foundMatch := false
 	for _, pid := range pids {
@@ -385,26 +385,27 @@ func getReferencedKBytes(pids []int) (uint64, error) {
 			if os.IsNotExist(err) {
 				continue //smaps file does not exists for all PIDs
 			}
-			return 0, err
+			return nil, err
 		}
 		readSmapsContent = true
 
-		allMatches := referencedRegexp.FindAllSubmatch(smapsContent, -1)
+		allMatches := smapsRegexp.FindAllSubmatch(smapsContent, -1)
 		if len(allMatches) == 0 {
-			klog.V(5).Infof("Not found any information about referenced bytes in %s file", smapsFilePath)
+			klog.V(5).Infof("Not found any smaps information in %s file", smapsFilePath)
 			continue // referenced bytes may not exist in smaps file
 		}
 
 		for _, matches := range allMatches {
-			if len(matches) != 2 {
-				return 0, fmt.Errorf("failed to match regexp in output: %s", string(smapsContent))
+			if len(matches) != 3 {
+				return nil, fmt.Errorf("failed to match regexp in output: %s", string(smapsContent))
 			}
 			foundMatch = true
-			referenced, err := strconv.ParseUint(string(matches[1]), 10, 64)
+			key := string(matches[1])
+			kbytes, err := strconv.ParseUint(string(matches[2]), 10, 64)
 			if err != nil {
-				return 0, err
+				return nil, err
 			}
-			referencedKBytes += referenced
+			smapsBytes[key] = smapsBytes[key] + kbytes*1024
 		}
 	}
 
@@ -412,10 +413,10 @@ func getReferencedKBytes(pids []int) (uint64, error) {
 		if !readSmapsContent {
 			klog.Warningf("Cannot read smaps files for any PID from %s", "CONTAINER")
 		} else if !foundMatch {
-			klog.Warningf("Not found any information about referenced bytes in smaps files for any PID from %s", "CONTAINER")
+			klog.Warningf("Not found any information in smaps files for any PID from %s", "CONTAINER")
 		}
 	}
-	return referencedKBytes, nil
+	return smapsBytes, nil
 }
 
 func clearReferencedBytes(pids []int, cycles uint64, resetInterval uint64) error {
