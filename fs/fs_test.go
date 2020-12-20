@@ -44,7 +44,7 @@ func TestMountInfoFromDir(t *testing.T) {
 func TestGetDiskStatsMap(t *testing.T) {
 	diskStatsMap, err := getDiskStatsMap("test_resources/diskstats")
 	if err != nil {
-		t.Errorf("Error calling getDiskStatMap %s", err)
+		t.Errorf("Error calling getDiskStatsMap %s", err)
 	}
 	if len(diskStatsMap) != 30 {
 		t.Errorf("diskStatsMap %+v not valid", diskStatsMap)
@@ -96,7 +96,7 @@ func TestGetDiskStatsMap(t *testing.T) {
 func TestGetDiskStatsMapMajorMinorNum(t *testing.T) {
 	diskStatsMap, err := getDiskStatsMap("test_resources/diskstats")
 	if err != nil {
-		t.Errorf("Error calling getDiskStatMap %s", err)
+		t.Errorf("Error calling getDiskStatsMap %s", err)
 	}
 	if len(diskStatsMap) != 30 {
 		t.Errorf("diskStatsMap %+v not valid", diskStatsMap)
