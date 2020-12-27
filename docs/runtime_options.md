@@ -186,7 +186,7 @@ This requires to change disable_metrics from the default value so that reference
 - `--referenced_read_interval` duration Read interval for referenced bytes (container_referenced_bytes metric), number of seconds after which referenced bytes are read, if set to 0 referenced bytes are never read (default: 0s)
 - `--referenced_reset_interval` duration Reset interval for referenced bytes (container_referenced_bytes metric), number of seconds after which referenced bytes are cleared, if set to 0 referenced bytes are never cleared (default: 0s)
 
-The referenced memory value is based on one of two files in `/sys/<PID>`: smaps or smaps_rollup. If the latter exists it reports the same value as the first one, but in aggregated form. This is only implementation flavoring and there is no difference whether smaps_rollup exists or not.
+The referenced memory value is based on one of two files in `/proc/<PID>`: smaps or smaps_rollup. If the latter exists it reports the same value as the first one, but in aggregated form. This is only implementation flavoring and there is no difference whether smaps_rollup exists or not.
 *NOTE*: To avoid CPU starvation, reads are distributed over time. Keeping frequency, each reading loop gets a random offset from range <0, `referenced_read_interval`> before starting.
 
 Example command how to run cAdvisor container with referenced bytes measurement:
@@ -203,8 +203,8 @@ sudo docker run \
 --pid=host \
 --privileged \
 --name=cadvisor \
-cadvisor:$CADVISOR_TAG
---disable_metrics="cpu_topology,resctrl,udp,sched,hugetlb,node_vmstat,memory_numa,tcp,advtcp,percpu,process" \
+cadvisor:$CADVISOR_TAG \
+--disable_metrics="cpu_topology,resctrl,udp,sched,hugetlb,memory_numa,tcp,advtcp,percpu,process" \
 --referenced_read_interval=15s
 ```
 
