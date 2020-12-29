@@ -319,3 +319,34 @@ func TestOnDemandHousekeepingReturnsAfterStopped(t *testing.T) {
 
 	mockHandler.AssertExpectations(t)
 }
+
+func TestOnDemandHousekeepingRace(t *testing.T) {
+	statsList := itest.GenerateRandomStats(1, 4, 1*time.Second)
+	stats := statsList[0]
+
+	cd, mockHandler, _, _ := newTestContainerData(t)
+	mockHandler.On("GetStats").Return(stats, nil)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1002)
+
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		err := cd.Start()
+		assert.NoError(t, err)
+		wg.Done()
+	}()
+
+	go func() {
+		t.Log("starting on demand goroutine")
+		for i := 0; i < 1000; i++ {
+			go func() {
+				time.Sleep(1 * time.Microsecond)
+				cd.OnDemandHousekeeping(0 * time.Millisecond)
+				wg.Done()
+			}()
+		}
+		wg.Done()
+	}()
+	wg.Wait()
+}
