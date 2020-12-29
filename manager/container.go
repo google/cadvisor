@@ -47,9 +47,14 @@ import (
 var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 
+// TODO: replace regular expressions with something simpler, such as strings.Split().
 // cgroup type chosen to fetch the cgroup path of a process.
-// Memory has been chosen, as it is one of the default cgroups that is enabled for most containers.
-var cgroupPathRegExp = regexp.MustCompile(`memory[^:]*:(.*?)[,;$]`)
+// Memory has been chosen, as it is one of the default cgroups that is enabled for most containers...
+var cgroupMemoryPathRegExp = regexp.MustCompile(`memory[^:]*:(.*?)[,;$]`)
+
+// ... but there are systems (e.g. Raspberry Pi 4) where memory cgroup controller is disabled by default.
+// We should check cpu cgroup then.
+var cgroupCPUPathRegExp = regexp.MustCompile(`cpu[^:]*:(.*?)[,;$]`)
 
 type containerInfo struct {
 	info.ContainerReference
@@ -198,20 +203,28 @@ func (cd *containerData) DerivedStats() (v2.DerivedStats, error) {
 	return cd.summaryReader.DerivedStats()
 }
 
-func (cd *containerData) getCgroupPath(cgroups string) (string, error) {
+func (cd *containerData) getCgroupPath(cgroups string) string {
 	if cgroups == "-" {
-		return "/", nil
+		return "/"
 	}
 	if strings.HasPrefix(cgroups, "0::") {
-		return cgroups[3:], nil
+		return cgroups[3:]
 	}
-	matches := cgroupPathRegExp.FindSubmatch([]byte(cgroups))
+	matches := cgroupMemoryPathRegExp.FindSubmatch([]byte(cgroups))
 	if len(matches) != 2 {
-		klog.V(3).Infof("failed to get memory cgroup path from %q", cgroups)
-		// return root in case of failures - memory hierarchy might not be enabled.
-		return "/", nil
+		klog.V(3).Infof(
+			"failed to get memory cgroup path from %q, will try to get cpu cgroup path",
+			cgroups,
+		)
+		// On some systems (e.g. Raspberry PI 4) cgroup memory controlled is disabled by default.
+		matches = cgroupCPUPathRegExp.FindSubmatch([]byte(cgroups))
+		if len(matches) != 2 {
+			klog.V(3).Infof("failed to get cpu cgroup path from %q; assuming root cgroup", cgroups)
+			// return root in case of failures - memory hierarchy might not be enabled.
+			return "/"
+		}
 	}
-	return string(matches[1]), nil
+	return string(matches[1])
 }
 
 // Returns contents of a file inside the container root.
@@ -274,10 +287,7 @@ func (cd *containerData) getContainerPids(inHostNamespace bool) ([]string, error
 			return nil, fmt.Errorf("expected at least %d fields, found %d: output: %q", expectedFields, len(fields), line)
 		}
 		pid := fields[0]
-		cgroup, err := cd.getCgroupPath(fields[1])
-		if err != nil {
-			return nil, fmt.Errorf("could not parse cgroup path from %q: %v", fields[1], err)
-		}
+		cgroup := cd.getCgroupPath(fields[1])
 		if cd.info.Name == cgroup {
 			pids = append(pids, pid)
 		}
@@ -319,6 +329,7 @@ func (cd *containerData) parseProcessList(cadvisorContainer string, inHostNamesp
 		}
 		fdCount = len(fds)
 		processInfo.FdCount = fdCount
+
 		processes = append(processes, *processInfo)
 	}
 	return processes, nil
@@ -389,10 +400,7 @@ func (cd *containerData) parsePsLine(line, cadvisorContainer string, inHostNames
 	if err != nil {
 		return nil, fmt.Errorf("invalid psr %q: %v", lastTwoFields[0], err)
 	}
-	info.CgroupPath, err = cd.getCgroupPath(lastTwoFields[1])
-	if err != nil {
-		return nil, fmt.Errorf("could not parse cgroup path from %q: %v", lastTwoFields[1], err)
-	}
+	info.CgroupPath = cd.getCgroupPath(lastTwoFields[1])
 
 	// Remove the ps command we just ran from cadvisor container.
 	// Not necessary, but makes the cadvisor page look cleaner.
