@@ -505,3 +505,55 @@ func TestParsePsLine(t *testing.T) {
 		})
 	}
 }
+
+var cgroupCases = []struct {
+	name    string
+	cgroups string
+	path    string
+}{
+	{
+		name:    "no cgroup",
+		cgroups: "-",
+		path:    "/",
+	},
+	{
+		name:    "random and meaningless string",
+		cgroups: "/this/is/a/path/to/some.file",
+		path:    "/",
+	},
+	{
+		name:    "0::-type cgroup",
+		cgroups: "0::/docker/some-cgroup",
+		path:    "/docker/some-cgroup",
+	},
+	{
+		name:    "memory cgroup",
+		cgroups: "4:memory:/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6,2:net_cls:/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6",
+		path:    "/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6",
+	},
+	{
+		name:    "cpu,cpuacct cgroup",
+		cgroups: "4:cpu,cpuacct:/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6,2:net_cls:/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6",
+		path:    "/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6",
+	},
+	{
+		name:    "cpu cgroup",
+		cgroups: "4:cpu:/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6,2:net_cls:/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6",
+		path:    "/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6",
+	},
+	{
+		name:    "cpuacct cgroup",
+		cgroups: "4:cpuacct:/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6,2:net_cls:/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6",
+		path:    "/docker/09c89cd48b3597db904ab8e6920fef2cbf93588d037d9613ce362e25188f8ec6",
+	},
+}
+
+func TestGetCgroupPath(t *testing.T) {
+	for _, cgroup := range cgroupCases {
+		t.Run(cgroup.name, func(tt *testing.T) {
+			cd := &containerData{}
+			path := cd.getCgroupPath(cgroup.cgroups)
+			assert.Equal(t, cgroup.path, path)
+		})
+	}
+}
