@@ -1,0 +1,59 @@
+ 24: fs/buffer:dead
+ 25: printk:dead
+ 26: mm/memctrl:dead
+ 27: lib/percpu_cnt:dead
+ 28: lib/radix:dead
+ 29: mm/page_alloc:dead
+ 30: net/dev:dead
+ 35: padata:dead
+ 36: workqueue:prepare
+ 38: hrtimers:prepare
+ 42: relay:prepare
+ 43: slab:prepare
+ 44: md/raid5:prepare
+ 45: RCU/tree:prepare
+ 54: base/topology:prepare
+ 57: trace/RB:preapre
+ 58: mm/zsmalloc:prepare
+ 59: mm/zswap:prepare
+ 60: mm/zswap_pool:prepare
+ 63: timers:prepare
+ 65: fork:vm_stack_cache
+ 86: cpu:bringup
+ 87: idle:dead
+ 88: ap:offline
+ 89: sched:starting
+ 90: RCU/tree:dying
+ 91: irqchip/arm/gic:starting
+107: arm64/debug_monitors:starting
+108: perf/arm64/hw_breakpoint:starting
+110: perf/arm/pmu:starting
+113: clockevents/arm/arch_timer:starting
+125: kvm/cpu:starting
+126: kvm/arm/vgic:starting
+128: kvm/arm/timer:starting
+129: clockevents/dummy_timer:starting
+132: arm64/isndep:starting
+133: smpcfd:dying
+136: ap:online
+137: cpu:teardown
+139: smpboot/threads:online
+141: irq/affinity:online
+144: perf:online
+155: perf/arm/ccn:online
+168: lockup_detector:online
+169: workqueue:online
+170: RCU/tree:online
+172: mm/writeback:online
+173: mm/vmstat:online
+174: mm/compaction:online
+175: arm64/cpuinfo:online
+176: padata:online
+177: mm/vmscan:online
+178: lib/percpu_cnt:online
+179: cpufreq:online
+180: leds/trigger:starting
+181: printk:online
+205: sched:active
+206: online
+ 41: smpcfd:prepare
