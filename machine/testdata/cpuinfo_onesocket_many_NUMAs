@@ -1,0 +1,863 @@
+processor : 0
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 0
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 0
+initial apicid : 0
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 1
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 0
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 1
+initial apicid : 1
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 2
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 1
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 2
+initial apicid : 2
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 3
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 1
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 3
+initial apicid : 3
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 4
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 2
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 4
+initial apicid : 4
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 5
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 2
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 5
+initial apicid : 5
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 6
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 3
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 6
+initial apicid : 6
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 7
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 3
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 7
+initial apicid : 7
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 8
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 4
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 8
+initial apicid : 8
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 9
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 4
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 9
+initial apicid : 9
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 10
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 5
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 10
+initial apicid : 10
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 11
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 5
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 11
+initial apicid : 11
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 12
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 6
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 12
+initial apicid : 12
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 13
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 6
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 13
+initial apicid : 13
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 14
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 7
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 14
+initial apicid : 14
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 15
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 7
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 15
+initial apicid : 15
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 16
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 8
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 16
+initial apicid : 16
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 17
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 8
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 17
+initial apicid : 17
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 18
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 9
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 18
+initial apicid : 18
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 19
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 9
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 19
+initial apicid : 19
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 20
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 10
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 20
+initial apicid : 20
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 21
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 10
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 21
+initial apicid : 21
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 22
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 11
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 22
+initial apicid : 22
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 23
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 11
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 23
+initial apicid : 23
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 24
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 12
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 24
+initial apicid : 24
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 25
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 12
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 25
+initial apicid : 25
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 26
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 13
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 26
+initial apicid : 26
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 27
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 13
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 27
+initial apicid : 27
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 28
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 14
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 28
+initial apicid : 28
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 29
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 14
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 29
+initial apicid : 29
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 30
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 15
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 30
+initial apicid : 30
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
+
+processor : 31
+vendor_id : GenuineIntel
+cpu family : 6
+model : 85
+model name : Intel(R) Xeon(R) Gold 5218R CPU @ 2.10GHz
+stepping : 7
+microcode : 0x1
+cpu MHz : 2095.082
+cache size : 16384 KB
+physical id : 15
+siblings : 2
+core id : 0
+cpu cores : 1
+apicid : 31
+initial apicid : 31
+fpu : yes
+fpu_exception : yes
+cpuid level : 13
+wp : yes
+flags : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch cpuid_fault invpcid_single ssbd ibrs ibpb ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid mpx avx512f avx512dq rdseed adx smap clflushopt clwb avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves arat pku ospke avx512_vnni md_clear arch_capabilities
+bugs : spectre_v1 spectre_v2 spec_store_bypass swapgs
+bogomips : 4190.16
+clflush size : 64
+cache_alignment : 64
+address sizes : 40 bits physical, 48 bits virtual
+power management:
