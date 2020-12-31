@@ -1,0 +1,7 @@
+OF_NAME=cpu
+OF_FULLNAME=/cpus/cpu@1
+OF_TYPE=cpu
+OF_COMPATIBLE_0=arm,cortex-a72
+OF_COMPATIBLE_N=1
+MODALIAS=cpu:type:aarch64:feature:,0000,0001,0002,0007,000B
+
