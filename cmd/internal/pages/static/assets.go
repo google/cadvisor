@@ -1,4 +1,4 @@
-// Copyright 2020 Google Inc. All Rights Reserved.
+// Copyright 2021 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -351,6 +351,9 @@ var _bindata = map[string]func() (*asset, error){
 	"cmd/internal/pages/assets/styles/bootstrap-theme-3.1.1.min.css":  cmdInternalPagesAssetsStylesBootstrapTheme311MinCss,
 	"cmd/internal/pages/assets/styles/containers.css":                 cmdInternalPagesAssetsStylesContainersCss,
 }
+
+// AssetDebug is true if the assets were built with the debug flag enabled.
+const AssetDebug = false
 
 // AssetDir returns the file names below a certain
 // directory embedded in the file by go-bindata.
