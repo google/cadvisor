@@ -38,7 +38,7 @@ build_asset () {
   local output_path=$2
   local input_dirs=${@:3}
   local tmp_output=$(mktemp)
-  local year=$(date +%Y)
+  local year="$(git log -1 --date=format:'%Y' --format=%cd -- ${output_path})"
 
   go-bindata -nometadata -o $output_path -pkg $package $input_dirs
   cat build/boilerplate/boilerplate.go.txt | sed "s/YEAR/$year/" > "${tmp_output}"
