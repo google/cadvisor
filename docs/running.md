@@ -74,6 +74,21 @@ RHEL and CentOS lock down their containers a bit more. cAdvisor needs access to 
 
 On some versions of RHEL and CentOS the cgroup hierarchies are mounted in `/cgroup` so run cAdvisor with an additional Docker option of `--volume=/cgroup:/cgroup:ro \`.
 
+**Note**: For a RedHat 7 docker host the default run commands from above throw oci errors. Please use the command below if the host is RedHat 7:
+```
+docker run
+--volume=/:/rootfs:ro
+--volume=/var/run:/var/run:rw
+--volume=/sys/fs/cgroup/cpu,cpuacct:/sys/fs/cgroup/cpuacct,cpu
+--volume=/var/lib/docker/:/var/lib/docker:ro
+--publish=8080:8080
+--detach=true
+--name=cadvisor
+--privileged=true
+google/cadvisor:latest
+```
+
+
 ### Debian
 
 By default, Debian disables the memory cgroup which does not allow cAdvisor to gather memory stats. To enable the memory cgroup take a look at [these instructions](https://github.com/google/cadvisor/issues/432).
