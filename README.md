@@ -26,20 +26,6 @@ sudo docker run \
   gcr.io/cadvisor/cadvisor:$VERSION
 ```
 
-**Note**: For a redhat docker host the above command throws oci errors. Please use the command below if the host is redhat:
-```
-docker run
---volume=/:/rootfs:ro
---volume=/var/run:/var/run:rw
---volume=/sys/fs/cgroup/cpu,cpuacct:/sys/fs/cgroup/cpuacct,cpu
---volume=/var/lib/docker/:/var/lib/docker:ro
---publish=8080:8080
---detach=true
---name=cadvisor
---privileged=true
-google/cadvisor:latest
-```
-
 cAdvisor is now running (in the background) on `http://localhost:8080`. The setup includes directories with Docker state cAdvisor needs to observe.
 
 **Note**: If you're running on CentOS, Fedora, or RHEL (or are using LXC), take a look at our [running instructions](docs/running.md).
