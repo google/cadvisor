@@ -170,7 +170,8 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 	partitions := make(map[string]partition)
 
 	supportedFsType := map[string]bool{
-		// all ext systems are checked through prefix.
+		// all ext and nfs systems are checked through prefix
+		// because there are a number of families (e.g., ext3, ext4, nfs3, nfs4...)
 		"btrfs":   true,
 		"overlay": true,
 		"tmpfs":   true,
@@ -179,7 +180,8 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 	}
 
 	for _, mnt := range mounts {
-		if !strings.HasPrefix(mnt.Fstype, "ext") && !supportedFsType[mnt.Fstype] {
+		if !strings.HasPrefix(mnt.Fstype, "ext") && !strings.HasPrefix(mnt.Fstype, "nfs") &&
+			!supportedFsType[mnt.Fstype] {
 			continue
 		}
 		// Avoid bind mounts, exclude tmpfs.
