@@ -180,13 +180,13 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 	}
 
 	for _, mnt := range mounts {
-		if !strings.HasPrefix(mnt.Fstype, "ext") && !strings.HasPrefix(mnt.Fstype, "nfs") &&
-			!supportedFsType[mnt.Fstype] {
+		if !strings.HasPrefix(mnt.FSType, "ext") && !strings.HasPrefix(mnt.FSType, "nfs") &&
+			!supportedFsType[mnt.FSType] {
 			continue
 		}
 		// Avoid bind mounts, exclude tmpfs.
 		if _, ok := partitions[mnt.Source]; ok {
-			if mnt.Fstype != "tmpfs" {
+			if mnt.FSType != "tmpfs" {
 				continue
 			}
 		}
@@ -203,12 +203,12 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 		}
 
 		// using mountpoint to replace device once fstype it tmpfs
-		if mnt.Fstype == "tmpfs" {
+		if mnt.FSType == "tmpfs" {
 			mnt.Source = mnt.Mountpoint
 		}
 		// btrfs fix: following workaround fixes wrong btrfs Major and Minor Ids reported in /proc/self/mountinfo.
 		// instead of using values from /proc/self/mountinfo we use stat to get Ids from btrfs mount point
-		if mnt.Fstype == "btrfs" && mnt.Major == 0 && strings.HasPrefix(mnt.Source, "/dev/") {
+		if mnt.FSType == "btrfs" && mnt.Major == 0 && strings.HasPrefix(mnt.Source, "/dev/") {
 			major, minor, err := getBtrfsMajorMinorIds(mnt)
 			if err != nil {
 				klog.Warningf("%s", err)
@@ -219,12 +219,12 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 		}
 
 		// overlay fix: Making mount source unique for all overlay mounts, using the mount's major and minor ids.
-		if mnt.Fstype == "overlay" {
+		if mnt.FSType == "overlay" {
 			mnt.Source = fmt.Sprintf("%s_%d-%d", mnt.Source, mnt.Major, mnt.Minor)
 		}
 
 		partitions[mnt.Source] = partition{
-			fsType:     mnt.Fstype,
+			fsType:     mnt.FSType,
 			mountpoint: mnt.Mountpoint,
 			major:      uint(mnt.Major),
 			minor:      uint(mnt.Minor),
@@ -266,7 +266,7 @@ func (i *RealFsInfo) addSystemRootLabel(mounts []*mount.Info) {
 	for _, m := range mounts {
 		if m.Mountpoint == "/" {
 			i.partitions[m.Source] = partition{
-				fsType:     m.Fstype,
+				fsType:     m.FSType,
 				mountpoint: m.Mountpoint,
 				major:      uint(m.Major),
 				minor:      uint(m.Minor),
@@ -341,7 +341,7 @@ func (i *RealFsInfo) updateContainerImagesPath(label string, mounts []*mount.Inf
 	}
 	if useMount != nil {
 		i.partitions[useMount.Source] = partition{
-			fsType:     useMount.Fstype,
+			fsType:     useMount.FSType,
 			mountpoint: useMount.Mountpoint,
 			major:      uint(useMount.Major),
 			minor:      uint(useMount.Minor),
@@ -569,7 +569,7 @@ func (i *RealFsInfo) GetDirFsDevice(dir string) (*DeviceInfo, error) {
 	}
 
 	mnt, found := i.mountInfoFromDir(dir)
-	if found && mnt.Fstype == "btrfs" && mnt.Major == 0 && strings.HasPrefix(mnt.Source, "/dev/") {
+	if found && mnt.FSType == "btrfs" && mnt.Major == 0 && strings.HasPrefix(mnt.Source, "/dev/") {
 		major, minor, err := getBtrfsMajorMinorIds(mnt)
 		if err != nil {
 			klog.Warningf("%s", err)

@@ -379,12 +379,12 @@ func TestAddDockerImagesLabel(t *testing.T) {
 				{
 					Source:     "/dev/root",
 					Mountpoint: "/",
-					Fstype:     "ext4",
+					FSType:     "ext4",
 				},
 				{
 					Source:     "/sys/fs/cgroup",
 					Mountpoint: "/sys/fs/cgroup",
-					Fstype:     "tmpfs",
+					FSType:     "tmpfs",
 				},
 			},
 			expectedDockerDevice: "/dev/root",
@@ -398,7 +398,7 @@ func TestAddDockerImagesLabel(t *testing.T) {
 				{
 					Source:     "/dev/mapper/vg_vagrant-lv_root",
 					Mountpoint: "/",
-					Fstype:     "devicemapper",
+					FSType:     "devicemapper",
 				},
 			},
 			expectedDockerDevice: "vg_vagrant-docker--pool",
@@ -417,7 +417,7 @@ func TestAddDockerImagesLabel(t *testing.T) {
 				{
 					Source:     "/dev/mapper/vg_vagrant-lv_root",
 					Mountpoint: "/",
-					Fstype:     "devicemapper",
+					FSType:     "devicemapper",
 				},
 				{
 					Source:     "/dev/sdb1",
@@ -432,17 +432,17 @@ func TestAddDockerImagesLabel(t *testing.T) {
 				{
 					Source:     "/dev/sda1",
 					Mountpoint: "/",
-					Fstype:     "ext4",
+					FSType:     "ext4",
 				},
 				{
 					Source:     "/dev/sdb1",
 					Mountpoint: "/var/lib/docker",
-					Fstype:     "ext4",
+					FSType:     "ext4",
 				},
 				{
 					Source:     "/dev/sdb2",
 					Mountpoint: "/var/lib/docker/btrfs",
-					Fstype:     "btrfs",
+					FSType:     "btrfs",
 				},
 			},
 			expectedDockerDevice: "/dev/sdb2",
@@ -453,12 +453,12 @@ func TestAddDockerImagesLabel(t *testing.T) {
 				{
 					Source:     "overlay",
 					Mountpoint: "/",
-					Fstype:     "overlay",
+					FSType:     "overlay",
 				},
 				{
 					Source:     "/dev/sda1",
 					Mountpoint: "/var/lib/docker",
-					Fstype:     "ext4",
+					FSType:     "ext4",
 				},
 			},
 			expectedDockerDevice: "/dev/sda1",
@@ -469,17 +469,17 @@ func TestAddDockerImagesLabel(t *testing.T) {
 				{
 					Source:     "overlay",
 					Mountpoint: "/",
-					Fstype:     "overlay",
+					FSType:     "overlay",
 				},
 				{
 					Source:     "/dev/sdb1",
 					Mountpoint: "/var/lib/docker",
-					Fstype:     "ext4",
+					FSType:     "ext4",
 				},
 				{
 					Source:     "/dev/sdb2",
 					Mountpoint: "/var/lib/docker/overlay2",
-					Fstype:     "ext4",
+					FSType:     "ext4",
 				},
 			},
 			expectedDockerDevice: "/dev/sdb2",
@@ -528,15 +528,15 @@ func TestProcessMounts(t *testing.T) {
 		{
 			name: "unsupported fs types",
 			mounts: []*mount.Info{
-				{Fstype: "somethingelse"},
+				{FSType: "somethingelse"},
 			},
 			expected: map[string]partition{},
 		},
 		{
 			name: "avoid bind mounts",
 			mounts: []*mount.Info{
-				{Root: "/", Mountpoint: "/", Source: "/dev/sda1", Fstype: "xfs", Major: 253, Minor: 0},
-				{Root: "/foo", Mountpoint: "/bar", Source: "/dev/sda1", Fstype: "xfs", Major: 253, Minor: 0},
+				{Root: "/", Mountpoint: "/", Source: "/dev/sda1", FSType: "xfs", Major: 253, Minor: 0},
+				{Root: "/foo", Mountpoint: "/bar", Source: "/dev/sda1", FSType: "xfs", Major: 253, Minor: 0},
 			},
 			expected: map[string]partition{
 				"/dev/sda1": {fsType: "xfs", mountpoint: "/", major: 253, minor: 0},
@@ -545,9 +545,9 @@ func TestProcessMounts(t *testing.T) {
 		{
 			name: "exclude prefixes",
 			mounts: []*mount.Info{
-				{Root: "/", Mountpoint: "/someother", Source: "/dev/sda1", Fstype: "xfs", Major: 253, Minor: 2},
-				{Root: "/", Mountpoint: "/", Source: "/dev/sda2", Fstype: "xfs", Major: 253, Minor: 0},
-				{Root: "/", Mountpoint: "/excludeme", Source: "/dev/sda3", Fstype: "xfs", Major: 253, Minor: 1},
+				{Root: "/", Mountpoint: "/someother", Source: "/dev/sda1", FSType: "xfs", Major: 253, Minor: 2},
+				{Root: "/", Mountpoint: "/", Source: "/dev/sda2", FSType: "xfs", Major: 253, Minor: 0},
+				{Root: "/", Mountpoint: "/excludeme", Source: "/dev/sda3", FSType: "xfs", Major: 253, Minor: 1},
 			},
 			excludedPrefixes: []string{"/exclude", "/some"},
 			expected: map[string]partition{
@@ -557,15 +557,15 @@ func TestProcessMounts(t *testing.T) {
 		{
 			name: "supported fs types",
 			mounts: []*mount.Info{
-				{Root: "/", Mountpoint: "/a", Source: "/dev/sda", Fstype: "ext3", Major: 253, Minor: 0},
-				{Root: "/", Mountpoint: "/b", Source: "/dev/sdb", Fstype: "ext4", Major: 253, Minor: 1},
-				{Root: "/", Mountpoint: "/c", Source: "/dev/sdc", Fstype: "btrfs", Major: 253, Minor: 2},
-				{Root: "/", Mountpoint: "/d", Source: "/dev/sdd", Fstype: "xfs", Major: 253, Minor: 3},
-				{Root: "/", Mountpoint: "/e", Source: "/dev/sde", Fstype: "zfs", Major: 253, Minor: 4},
-				{Root: "/", Mountpoint: "/f", Source: "overlay", Fstype: "overlay", Major: 253, Minor: 5},
-				{Root: "/", Mountpoint: "/g", Source: "127.0.0.1:/nfs", Fstype: "nfs4", Major: 253, Minor: 6},
-				{Root: "/", Mountpoint: "/test1", Source: "tmpfs", Fstype: "tmpfs", Major: 253, Minor: 4},
-				{Root: "/", Mountpoint: "/test2", Source: "tmpfs", Fstype: "tmpfs", Major: 253, Minor: 4},
+				{Root: "/", Mountpoint: "/a", Source: "/dev/sda", FSType: "ext3", Major: 253, Minor: 0},
+				{Root: "/", Mountpoint: "/b", Source: "/dev/sdb", FSType: "ext4", Major: 253, Minor: 1},
+				{Root: "/", Mountpoint: "/c", Source: "/dev/sdc", FSType: "btrfs", Major: 253, Minor: 2},
+				{Root: "/", Mountpoint: "/d", Source: "/dev/sdd", FSType: "xfs", Major: 253, Minor: 3},
+				{Root: "/", Mountpoint: "/e", Source: "/dev/sde", FSType: "zfs", Major: 253, Minor: 4},
+				{Root: "/", Mountpoint: "/f", Source: "overlay", FSType: "overlay", Major: 253, Minor: 5},
+				{Root: "/", Mountpoint: "/g", Source: "127.0.0.1:/nfs", FSType: "nfs4", Major: 253, Minor: 6},
+				{Root: "/", Mountpoint: "/test1", Source: "tmpfs", FSType: "tmpfs", Major: 253, Minor: 4},
+				{Root: "/", Mountpoint: "/test2", Source: "tmpfs", FSType: "tmpfs", Major: 253, Minor: 4},
 			},
 			expected: map[string]partition{
 				"/dev/sda":       {fsType: "ext3", mountpoint: "/a", major: 253, minor: 0},
