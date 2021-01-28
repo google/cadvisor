@@ -419,6 +419,11 @@ should be a human readable string that will become a metric name.
 * `cas_count_read` will be measured as uncore non-grouped event on all Integrated Memory Controllers Performance Monitoring Units because of unset `type` field and
 `uncore_imc` prefix.
 
+## Resctrl
+
+```
+--resctrl_interval=0: Resctrl mon groups updating interval. Zero value disables updating mon groups.
+``` 
 
 ## Storage driver specific instructions:
 

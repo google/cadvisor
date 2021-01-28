@@ -1,6 +1,6 @@
 // +build linux
 
-// Copyright 2020 Google Inc. All Rights Reserved.
+// Copyright 2021 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,31 +18,52 @@
 package resctrl
 
 import (
-	"os"
+	"errors"
+	"time"
 
 	"github.com/google/cadvisor/stats"
-
-	"github.com/opencontainers/runc/libcontainer/intelrdt"
 )
 
-type manager struct {
-	id string
-	stats.NoopDestroy
+type Manager interface {
+	Destroy()
+	GetCollector(containerName string, getContainerPids func() ([]string, error)) (stats.Collector, error)
 }
 
-func (m manager) GetCollector(resctrlPath string) (stats.Collector, error) {
-	if _, err := os.Stat(resctrlPath); err != nil {
+type manager struct {
+	stats.NoopDestroy
+	interval time.Duration
+}
+
+func (m *manager) GetCollector(containerName string, getContainerPids func() ([]string, error)) (stats.Collector, error) {
+	collector := newCollector(containerName, getContainerPids, m.interval)
+	err := collector.setup()
+	if err != nil {
 		return &stats.NoopCollector{}, err
 	}
-	collector := newCollector(m.id, resctrlPath)
+
 	return collector, nil
 }
 
-func NewManager(id string) (stats.Manager, error) {
-
-	if intelrdt.IsMBMEnabled() || intelrdt.IsCMTEnabled() {
-		return &manager{id: id}, nil
+func NewManager(interval time.Duration, setup func() error) (Manager, error) {
+	err := setup()
+	if err != nil {
+		return &NoopManager{}, err
 	}
 
-	return &stats.NoopManager{}, nil
+	if !isResctrlInitialized {
+		return &NoopManager{}, errors.New("the resctrl isn't initialized")
+	}
+	if !(enabledCMT || enabledMBM) {
+		return &NoopManager{}, errors.New("there are no monitoring features available")
+	}
+
+	return &manager{interval: interval}, nil
+}
+
+type NoopManager struct {
+	stats.NoopDestroy
+}
+
+func (np *NoopManager) GetCollector(_ string, _ func() ([]string, error)) (stats.Collector, error) {
+	return &stats.NoopCollector{}, nil
 }

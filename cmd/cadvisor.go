@@ -77,6 +77,8 @@ var rawCgroupPrefixWhiteList = flag.String("raw_cgroup_prefix_whitelist", "", "A
 
 var perfEvents = flag.String("perf_events_config", "", "Path to a JSON file containing configuration of perf events to measure. Empty value disabled perf events measuring.")
 
+var resctrlInterval = flag.Duration("resctrl_interval", 0, "Resctrl mon groups updating interval. Zero value disables updating mon groups.")
+
 var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
@@ -173,7 +175,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, housekeepingConfig, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), *perfEvents)
+	resourceManager, err := manager.New(memoryStorage, sysFs, housekeepingConfig, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), *perfEvents, *resctrlInterval)
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
