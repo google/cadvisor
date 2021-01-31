@@ -194,7 +194,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
 
-	klog.V(1).Infof("Registering Podman factory, version %s", podmanVersion)
+	klog.V(1).Infof("Registering Podman factory")
 	f := &podmanFactory{
 		cgroupSubsystems:   cgroupSubsystems,
 		client:             client,
