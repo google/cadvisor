@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The install package registers all included container providers when imported
+// The install package registers docker.NewPlugin() as the "docker" container provider when imported
 package install
 
 import (
-	_ "github.com/google/cadvisor/cmd/internal/container/mesos/install"
-	_ "github.com/google/cadvisor/container/containerd/install"
-	_ "github.com/google/cadvisor/container/crio/install"
-	_ "github.com/google/cadvisor/container/docker/install"
-	_ "github.com/google/cadvisor/container/podman/install"
-	_ "github.com/google/cadvisor/container/systemd/install"
+	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/podman"
+	"k8s.io/klog/v2"
 )
+
+func init() {
+	err := container.RegisterPlugin("podman", podman.NewPlugin())
+	if err != nil {
+		klog.Fatalf("Failed to register podman plugin: %v", err)
+	}
+}
