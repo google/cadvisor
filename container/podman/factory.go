@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2021 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -122,7 +122,7 @@ func (f *podmanFactory) NewContainerHandler(name string, inHostNamespace bool) (
 }
 
 // Returns the Podman ID from the full container name.
-func ContainerNameToPodmanId(name string) string {
+func CgroupNameToPodmanId(name string) string {
 	id := path.Base(name)
 
 	if matches := podmanCgroupRegexp.FindStringSubmatch(id); matches != nil {
@@ -133,7 +133,8 @@ func ContainerNameToPodmanId(name string) string {
 }
 
 // isContainerName returns true if the cgroup with associated name
-// corresponds to a podman container.
+// coult be a podman container.
+// the actual decision is made by running a ContainerInspect API call
 func isContainerName(name string) bool {
 	// always ignore .mount cgroup even if associated with podman and delegate to systemd
 	if strings.HasSuffix(name, ".mount") {
@@ -150,7 +151,7 @@ func (f *podmanFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	}
 
 	// Check if the container is known to podman and it is active.
-	id := ContainerNameToPodmanId(name)
+	id := CgroupNameToPodmanId(name)
 
 	// We assume that if Inspect fails then the container is not known to podman.
 	ctnr, err := f.client.ContainerInspect(context.Background(), id)

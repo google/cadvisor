@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2021 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,14 +71,6 @@ type podmanContainerHandler struct {
 
 var _ container.ContainerHandler = &podmanContainerHandler{}
 
-// func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersion []int) (string, error) {
-// 	bytes, err := ioutil.ReadFile(path.Join(storageDir, "image", string(sd), "layerdb", "mounts", containerID, rwLayerIDFile))
-// 	if err != nil {
-// 		return "", fmt.Errorf("failed to identify the read-write layer ID for container %q. - %v", containerID, err)
-// 	}
-// 	return string(bytes), err
-// }
-
 // newPodmanContainerHandler returns a new container.ContainerHandler
 func newPodmanContainerHandler(
 	client *docker.Client,
@@ -100,7 +92,7 @@ func newPodmanContainerHandler(
 		return nil, err
 	}
 
-	id := ContainerNameToPodmanId(name)
+	id := CgroupNameToPodmanId(name)
 
 	// We assume that if Inspect fails then the container is not known to podman.
 	ctnr, err := client.ContainerInspect(context.Background(), id)
