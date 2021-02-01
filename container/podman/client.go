@@ -32,6 +32,9 @@ var (
 )
 
 // Client creates a Docker API client based on the given Podman flags
+//
+// At this time, we're using the podmans docker compatibility API layer
+// for podman containers.
 func Client() (*dclient.Client, error) {
 	podmanClientOnce.Do(func() {
 		var client *http.Client
