@@ -46,7 +46,7 @@ const PodmanNamespace = "podman"
 // The retry times for getting podman root dir
 const rootDirRetries = 5
 
-//The retry period for getting podman root dir, Millisecond
+// The retry period for getting podman root dir, Millisecond
 const rootDirRetryPeriod time.Duration = 1000 * time.Millisecond
 
 // Regexp that identifies podman cgroups

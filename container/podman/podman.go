@@ -46,7 +46,7 @@ func Status() (v1.PodmanStatus, error) {
 func StatusWithContext(ctx context.Context) (v1.PodmanStatus, error) {
 	client, err := Client()
 	if err != nil {
-		return v1.PodmanStatus{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
+		return v1.PodmanStatus{}, fmt.Errorf("unable to communicate with podman: %v", err)
 	}
 	podmanInfo, err := client.Info(ctx)
 	if err != nil {
@@ -87,33 +87,25 @@ func StatusFromPodmanInfo(podmanInfo dockertypes.Info) (v1.PodmanStatus, error) 
 func ValidateInfo() (*dockertypes.Info, error) {
 	client, err := Client()
 	if err != nil {
-		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
+		return nil, fmt.Errorf("unable to communicate with podman: %v", err)
 	}
 
 	podmanInfo, err := client.Info(defaultContext())
 	if err != nil {
-		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
+		return nil, fmt.Errorf("failed to detect podman info: %v", err)
 	}
 
 	// Fall back to version API if ServerVersion is not set in info.
 	if podmanInfo.ServerVersion == "" {
 		version, err := client.ServerVersion(defaultContext())
 		if err != nil {
-			return nil, fmt.Errorf("unable to get docker version: %v", err)
+			return nil, fmt.Errorf("unable to get podman version: %v", err)
 		}
 		podmanInfo.ServerVersion = version.Version
 	}
-	version, err := parseVersion(podmanInfo.ServerVersion, versionRe, 3)
-	if err != nil {
-		return nil, err
-	}
-
-	if version[0] < 1 {
-		return nil, fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as %q", []int{1, 0, 0}, version, podmanInfo.ServerVersion)
-	}
 
 	if podmanInfo.Driver == "" {
-		return nil, fmt.Errorf("failed to find docker storage driver")
+		return nil, fmt.Errorf("failed to find podman storage driver")
 	}
 
 	return &podmanInfo, nil
@@ -128,15 +120,15 @@ func APIVersion() ([]int, error) {
 }
 
 func VersionString() (string, error) {
-	dockerVersion := "Unknown"
+	podmanVersion := "Unknown"
 	client, err := Client()
 	if err == nil {
 		version, err := client.ServerVersion(defaultContext())
 		if err == nil {
-			dockerVersion = version.Version
+			podmanVersion = version.Version
 		}
 	}
-	return dockerVersion, err
+	return podmanVersion, err
 }
 
 func APIVersionString() (string, error) {
