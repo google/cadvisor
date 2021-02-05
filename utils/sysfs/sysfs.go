@@ -15,6 +15,7 @@
 package sysfs
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -483,7 +484,14 @@ func GetUniqueCPUPropertyCount(cpuBusPath string, propertyName string) int {
 			klog.Warningf("Cannot open %s, assuming 0 for %s of CPU %d", propertyPath, propertyName, cpuID)
 			propertyVal = []byte("0")
 		}
-		uniques[string(propertyVal)] = true
+		packagePath := filepath.Join(sysCPUPath, sysFsCPUTopology, CPUPhysicalPackageID)
+		packageVal, err := ioutil.ReadFile(packagePath)
+		if err != nil {
+			klog.Warningf("Cannot open %s, assuming 0 %s of CPU %d", packagePath, CPUPhysicalPackageID, cpuID)
+			packageVal = []byte("0")
+
+		}
+		uniques[fmt.Sprintf("%s_%s", bytes.TrimSpace(propertyVal), bytes.TrimSpace(packageVal))] = true
 	}
 	return len(uniques)
 }
