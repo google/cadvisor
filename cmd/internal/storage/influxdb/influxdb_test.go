@@ -346,6 +346,7 @@ func createTestStats() (*info.ContainerInfo, *info.ContainerStats) {
 		Memory: info.MemoryStats{
 			Usage:            26767396864,
 			MaxUsage:         30429605888,
+			Limit:			  30429605888,
 			Cache:            7837376512,
 			RSS:              18930020352,
 			Swap:             1024,

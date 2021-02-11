@@ -63,7 +63,7 @@ const (
 	// //Number of bytes of page cache memory
 	serMemoryCache string = "memory_cache"
 	// Size of RSS
-	serMemoryRss string = "memory_rss"
+	serMemoryRss string = "memory_rss" // look here
 	// Container swap usage
 	serMemorySwap string = "memory_swap"
 	// Size of memory mapped files in bytes

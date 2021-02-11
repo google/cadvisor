@@ -372,6 +372,11 @@ type MemoryStats struct {
 	// Units: Bytes.
 	MaxUsage uint64 `json:"max_usage"`
 
+	// TODO: where to use this?
+	// Memory Limit.
+	// Units: Bytes.
+	Limit uint64 `json:"max_usage"`
+
 	// Number of bytes of page cache memory.
 	// Units: Bytes.
 	Cache uint64 `json:"cache"`
@@ -922,7 +927,7 @@ type ProcessStats struct {
 	Ulimits []UlimitSpec `json:"ulimits,omitempty"`
 }
 
-type ContainerStats struct {
+type ContainerStats struct { // container stats?
 	// The time of this stat point.
 	Timestamp time.Time               `json:"timestamp"`
 	Cpu       CpuStats                `json:"cpu,omitempty"`
