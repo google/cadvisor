@@ -757,6 +757,28 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					}, s.Timestamp)
 				},
 			},
+			{
+				name:        "container_blkio_device_usage_total",
+				help:        "Blkio Device bytes usage",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device", "major", "minor", "operation"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					var values metricValues
+					for _, diskStat := range s.DiskIo.IoServiceBytes {
+						for operation, value := range diskStat.Stats {
+							values = append(values, metricValue{
+								value: float64(value),
+								labels: []string{diskStat.Device,
+									strconv.Itoa(int(diskStat.Major)),
+									strconv.Itoa(int(diskStat.Minor)),
+									operation},
+								timestamp: s.Timestamp,
+							})
+						}
+					}
+					return values
+				},
+			},
 		}...)
 	}
 	if includedMetrics.Has(container.NetworkUsageMetrics) {

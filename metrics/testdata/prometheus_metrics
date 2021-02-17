@@ -13,6 +13,14 @@ container_accelerator_memory_total_bytes{acc_id="GPU-deadbeef-1234-5678-90ab-fee
 # TYPE container_accelerator_memory_used_bytes gauge
 container_accelerator_memory_used_bytes{acc_id="GPU-deadbeef-0123-4567-89ab-feedfacecafe",container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",make="nvidia",model="tesla-k80",name="testcontaineralias",zone_name="hello"} 1.02030405e+09 1395066363000
 container_accelerator_memory_used_bytes{acc_id="GPU-deadbeef-1234-5678-90ab-feedfacecafe",container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",make="nvidia",model="tesla-p100",name="testcontaineralias",zone_name="hello"} 2.03040506e+09 1395066363000
+# HELP container_blkio_device_usage_total Blkio Device bytes usage
+# TYPE container_blkio_device_usage_total counter
+container_blkio_device_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",device="/dev/sdb",id="testcontainer",image="test",major="8",minor="0",name="testcontaineralias",operation="Async",zone_name="hello"} 1 1395066363000
+container_blkio_device_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",device="/dev/sdb",id="testcontainer",image="test",major="8",minor="0",name="testcontaineralias",operation="Discard",zone_name="hello"} 2 1395066363000
+container_blkio_device_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",device="/dev/sdb",id="testcontainer",image="test",major="8",minor="0",name="testcontaineralias",operation="Read",zone_name="hello"} 3 1395066363000
+container_blkio_device_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",device="/dev/sdb",id="testcontainer",image="test",major="8",minor="0",name="testcontaineralias",operation="Sync",zone_name="hello"} 4 1395066363000
+container_blkio_device_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",device="/dev/sdb",id="testcontainer",image="test",major="8",minor="0",name="testcontaineralias",operation="Total",zone_name="hello"} 5 1395066363000
+container_blkio_device_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",device="/dev/sdb",id="testcontainer",image="test",major="8",minor="0",name="testcontaineralias",operation="Write",zone_name="hello"} 6 1395066363000
 # HELP container_cpu_cfs_periods_total Number of elapsed enforcement period intervals.
 # TYPE container_cpu_cfs_periods_total counter
 container_cpu_cfs_periods_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 723 1395066363000
@@ -87,6 +95,9 @@ container_fs_limit_bytes{container_env_foo_env="prod",container_label_foo_label=
 # TYPE container_fs_read_seconds_total counter
 container_fs_read_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2.7e-08 1395066363000
 container_fs_read_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4.2e-08 1395066363000
+# HELP container_fs_reads_bytes_total Cumulative count of bytes read
+# TYPE container_fs_reads_bytes_total counter
+container_fs_reads_bytes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="/dev/sdb",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3 1395066363000
 # HELP container_fs_reads_merged_total Cumulative count of reads merged
 # TYPE container_fs_reads_merged_total counter
 container_fs_reads_merged_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 25 1395066363000
@@ -111,6 +122,9 @@ container_fs_usage_bytes{container_env_foo_env="prod",container_label_foo_label=
 # TYPE container_fs_write_seconds_total counter
 container_fs_write_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4.1e-08 1395066363000
 container_fs_write_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4.6e-08 1395066363000
+# HELP container_fs_writes_bytes_total Cumulative count of bytes written
+# TYPE container_fs_writes_bytes_total counter
+container_fs_writes_bytes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="/dev/sdb",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 6 1395066363000
 # HELP container_fs_writes_merged_total Cumulative count of writes merged
 # TYPE container_fs_writes_merged_total counter
 container_fs_writes_merged_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 39 1395066363000
