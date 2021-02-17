@@ -231,9 +231,17 @@ func (h *containerdContainerHandler) Type() container.ContainerType {
 }
 
 func (h *containerdContainerHandler) Start() {
+	if h.includedMetrics.Has(container.ReferencedMemoryMetrics) {
+		go h.libcontainerHandler.ReadSmaps(h.reference.Name)
+		go h.libcontainerHandler.ResetWss(h.reference.Name)
+	}
 }
 
 func (h *containerdContainerHandler) Cleanup() {
+	if h.includedMetrics.Has(container.ReferencedMemoryMetrics) {
+		h.libcontainerHandler.ReferencedMemoryStopper <- true
+		h.libcontainerHandler.ReferencedResetStopper <- true
+	}
 }
 
 func (h *containerdContainerHandler) GetContainerIPAddress() string {
