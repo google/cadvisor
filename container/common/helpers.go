@@ -30,6 +30,7 @@ import (
 	"github.com/karrick/godirwalk"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/pkg/errors"
+	"golang.org/x/sys/unix"
 
 	"k8s.io/klog/v2"
 )
@@ -68,6 +69,16 @@ func findFileInAncestorDir(current, file, limit string) (string, error) {
 	}
 }
 
+var bootTime = func() time.Time {
+	now := time.Now()
+	var sysinfo unix.Sysinfo_t
+	if err := unix.Sysinfo(&sysinfo); err != nil {
+		return now
+	}
+	sinceBoot := time.Duration(sysinfo.Uptime) * time.Second
+	return now.Add(-1 * sinceBoot).Truncate(time.Minute)
+}()
+
 func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoFactory, hasNetwork, hasFilesystem bool) (info.ContainerSpec, error) {
 	var spec info.ContainerSpec
 
@@ -96,6 +107,9 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 		if err == nil && fi.ModTime().Before(lowestTime) {
 			lowestTime = fi.ModTime()
 		}
+	}
+	if lowestTime.Before(bootTime) {
+		lowestTime = bootTime
 	}
 
 	if lowestTime != now {
