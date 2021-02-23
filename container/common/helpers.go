@@ -86,24 +86,20 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 	// Get the lowest creation time from all hierarchies as the container creation time.
 	now := time.Now()
 	lowestTime := now
-	for _, cgroupPath := range cgroupPaths {
-		fi, err := os.Stat(cgroupPath)
-		if err == nil && fi.ModTime().Before(lowestTime) {
-			lowestTime = fi.ModTime()
+	for _, cgroupPathDir := range cgroupPaths {
+		dir, err := os.Stat(cgroupPathDir)
+		if err == nil && dir.ModTime().Before(lowestTime) {
+			lowestTime = dir.ModTime()
 		}
-	}
-
-	for _, cgroupPath := range cgroupPaths {
 		// The modified time of the cgroup directory sometimes changes whenever a subcontainer is created.
 		// eg. /docker will have creation time matching the creation of latest docker container.
 		// Use clone_children/events as a workaround as it isn't usually modified. It is only likely changed
 		// immediately after creating a container. If the directory modified time is lower, we use that.
+		cgroupPathFile := path.Join(cgroupPathDir, "cgroup.clone_children")
 		if cgroups.IsCgroup2UnifiedMode() {
-			cgroupPath = path.Join(cgroupPath, "cgroup.events")
-		} else {
-			cgroupPath = path.Join(cgroupPath, "cgroup.clone_children")
+			cgroupPathFile = path.Join(cgroupPathDir, "cgroup.events")
 		}
-		fi, err := os.Stat(cgroupPath)
+		fi, err := os.Stat(cgroupPathFile)
 		if err == nil && fi.ModTime().Before(lowestTime) {
 			lowestTime = fi.ModTime()
 		}
