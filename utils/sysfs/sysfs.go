@@ -325,9 +325,9 @@ func (fs *realSysFs) GetSystemUUID() (string, error) {
 	if id, err := ioutil.ReadFile(path.Join(dmiDir, "id", "product_uuid")); err == nil {
 		return strings.TrimSpace(string(id)), nil
 	} else if id, err = ioutil.ReadFile(path.Join(ppcDevTree, "system-id")); err == nil {
-		return strings.TrimSpace(string(id)), nil
+		return strings.TrimSpace(strings.TrimRight(string(id), "\000")), nil
 	} else if id, err = ioutil.ReadFile(path.Join(ppcDevTree, "vm,uuid")); err == nil {
-		return strings.TrimSpace(string(id)), nil
+		return strings.TrimSpace(strings.TrimRight(string(id), "\000")), nil
 	} else if id, err = ioutil.ReadFile(path.Join(s390xDevTree, "machine-id")); err == nil {
 		return strings.TrimSpace(string(id)), nil
 	} else {
