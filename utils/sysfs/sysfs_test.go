@@ -126,18 +126,182 @@ func TestGetHugePagesNrWhenFileIsMissing(t *testing.T) {
 
 func TestIsCPUOnline(t *testing.T) {
 	sysFs := NewRealSysFs()
-	online := sysFs.IsCPUOnline("./testdata/node0/cpu0")
+	online := sysFs.IsCPUOnline("./testdata_epyc7402_nohyperthreading/cpu14")
 	assert.True(t, online)
 
-	online = sysFs.IsCPUOnline("./testdata/node0/cpu1")
+	online = sysFs.IsCPUOnline("./testdata_epyc7402_nohyperthreading/cpu13")
 	assert.False(t, online)
 }
 
 func TestIsCPUOnlineNoFileAndCPU0MustBeOnline(t *testing.T) {
+	// Test on x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = false
+
 	sysFs := NewRealSysFs()
-	online := sysFs.IsCPUOnline("./testdata/missing_online/node0/cpu0")
+	online := sysFs.IsCPUOnline("./testdata/missing_online/node0/cpu33")
+	assert.True(t, online)
+}
+
+func TestIsCPU0OnlineOnx86(t *testing.T) {
+	// Test on x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = true
+
+	sysFs := NewRealSysFs()
+	online := sysFs.IsCPUOnline("path/is/irrelevant/it/is/zero/that/matters/cpu0")
+	assert.True(t, online)
+}
+
+func TestCPU0OfflineOnNotx86(t *testing.T) {
+	// Test on arch other than x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = false
+
+	sysFs := NewRealSysFs()
+	online := sysFs.IsCPUOnline("./testdata_graviton2/cpu0")
+	assert.False(t, online)
+}
+
+func TestIsCpuOnlineRaspberryPi4(t *testing.T) {
+	// Test on arch other than x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = false
+
+	sysFS := NewRealSysFs()
+	online := sysFS.IsCPUOnline("./testdata_rpi4/cpu0")
 	assert.True(t, online)
 
-	online = sysFs.IsCPUOnline("./testdata/missing_online/node0/cpu33")
+	online = sysFS.IsCPUOnline("./testdata_rpi4/cpu1")
+	assert.True(t, online)
+
+	online = sysFS.IsCPUOnline("./testdata_rpi4/cpu2")
+	assert.True(t, online)
+
+	online = sysFS.IsCPUOnline("./testdata_rpi4/cpu3")
+	assert.True(t, online)
+}
+
+func TestIsCpuOnlineGraviton2(t *testing.T) {
+	// Test on arch other than x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = false
+
+	sysFS := NewRealSysFs()
+	online := sysFS.IsCPUOnline("./testdata_graviton2/cpu0")
 	assert.False(t, online)
+
+	online = sysFS.IsCPUOnline("./testdata_graviton2/cpu1")
+	assert.True(t, online)
+
+	online = sysFS.IsCPUOnline("./testdata_graviton2/cpu2")
+	assert.True(t, online)
+
+	online = sysFS.IsCPUOnline("./testdata_graviton2/cpu3")
+	assert.True(t, online)
+}
+
+func TestGetUniqueCPUPropertyCountOnRaspberryPi4(t *testing.T) {
+	// Test on arch other than x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = false
+
+	count := GetUniqueCPUPropertyCount("./testdata_rpi4/", CPUPhysicalPackageID)
+	assert.Equal(t, 1, count)
+
+	count = GetUniqueCPUPropertyCount("./testdata_rpi4/", CPUCoreID)
+	assert.Equal(t, 4, count)
+}
+
+func TestGetUniqueCPUPropertyCountOnEpyc7402(t *testing.T) {
+	// Test on x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = true
+
+	count := GetUniqueCPUPropertyCount("./testdata_epyc7402/", CPUPhysicalPackageID)
+	assert.Equal(t, 1, count)
+
+	count = GetUniqueCPUPropertyCount("./testdata_epyc7402/", CPUCoreID)
+	assert.Equal(t, 24, count)
+}
+
+func TestGetUniqueCPUPropertyCountOnEpyc7402NoHyperThreading(t *testing.T) {
+	// Test on x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = true
+
+	count := GetUniqueCPUPropertyCount("./testdata_epyc7402_nohyperthreading/", CPUPhysicalPackageID)
+	assert.Equal(t, 1, count)
+
+	count = GetUniqueCPUPropertyCount("./testdata_epyc7402_nohyperthreading/", CPUCoreID)
+	assert.Equal(t, 17, count)
+}
+
+func TestGetUniqueCPUPropertyCountOnXeon4214(t *testing.T) {
+	// Test on x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = true
+
+	count := GetUniqueCPUPropertyCount("./testdata_xeon4214_2socket/", CPUPhysicalPackageID)
+	assert.Equal(t, 2, count)
+
+	count = GetUniqueCPUPropertyCount("./testdata_xeon4214_2socket/", CPUCoreID)
+	assert.Equal(t, 24, count)
+}
+
+func TestGetUniqueCPUPropertyCountOnXeon5218NoHyperThreadingNoHotplug(t *testing.T) {
+	// Test on x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = true
+
+	count := GetUniqueCPUPropertyCount("./testdata_xeon5218_nohyperthread_2socket_nohotplug/", CPUPhysicalPackageID)
+	assert.Equal(t, 2, count)
+
+	count = GetUniqueCPUPropertyCount("./testdata_xeon5218_nohyperthread_2socket_nohotplug/", CPUCoreID)
+	assert.Equal(t, 32, count)
+}
+
+func TestUniqueCPUPropertyOnSingleSocketMultipleNUMAsSystem(t *testing.T) {
+	// Test on x86.
+	origIsX86 := isX86
+	defer func() {
+		isX86 = origIsX86
+	}()
+	isX86 = true
+
+	count := GetUniqueCPUPropertyCount("./testdata_single_socket_many_NUMAs/", CPUPhysicalPackageID)
+	assert.Equal(t, 16, count)
+
+	count = GetUniqueCPUPropertyCount("./testdata_single_socket_many_NUMAs/", CPUCoreID)
+	assert.Equal(t, 16, count)
 }
