@@ -70,21 +70,22 @@ func NewHandler(cgroupManager cgroups.Manager, rootFs string, pid int, includedM
 
 // Get cgroup and networking stats of the specified container
 func (h *Handler) GetStats() (*info.ContainerStats, error) {
-	var cgroupStats *cgroups.Stats
-	readCgroupStats := true
+	ignoreStatsError := false
 	if cgroups.IsCgroup2UnifiedMode() {
-		// On cgroup v2 there are no stats at the root cgroup
-		// so check whether it is the root cgroup
+		// On cgroup v2 the root cgroup stats have been introduced in recent kernel versions,
+		// so not all kernel versions have all the data. This means that stat fetching can fail
+		// due to lacking cgroup stat files, but that some data is provided.
 		if h.cgroupManager.Path("") == fs2.UnifiedMountpoint {
-			readCgroupStats = false
+			ignoreStatsError = true
 		}
 	}
-	var err error
-	if readCgroupStats {
-		cgroupStats, err = h.cgroupManager.GetStats()
-		if err != nil {
+
+	cgroupStats, err := h.cgroupManager.GetStats()
+	if err != nil {
+		if !ignoreStatsError {
 			return nil, err
 		}
+		klog.V(4).Infof("Ignoring errors when gathering stats for root cgroup since some controllers don't have stats on the root cgroup: %v", err)
 	}
 	libcontainerStats := &libcontainer.Stats{
 		CgroupStats: cgroupStats,
