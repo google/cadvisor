@@ -105,7 +105,7 @@ type PrometheusCollector struct {
 // ContainerLabelsFunc specifies which base labels will be attached to all
 // exported metrics. If left to nil, the DefaultContainerLabels function
 // will be used instead.
-func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, now clock.Clock, opts v2.RequestOptions) *PrometheusCollector {
+func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, now clock.Clock, opts v2.RequestOptions, denyList *DenyList) *PrometheusCollector {
 	if f == nil {
 		f = DefaultContainerLabels
 	}
@@ -1757,6 +1757,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	var filtered []containerMetric
+	for _, val := range c.containerMetrics {
+		if !denyList.IsDenied(val.name) {
+			filtered = append(filtered, val)
+		}
+	}
+	c.containerMetrics = filtered
 	return c
 }
 

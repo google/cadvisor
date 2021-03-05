@@ -17,12 +17,14 @@ package metrics
 import (
 	"bytes"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/google/cadvisor/container"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
 )
@@ -31,7 +33,9 @@ const machineMetricsFile = "testdata/prometheus_machine_metrics"
 const machineMetricsFailureFile = "testdata/prometheus_machine_metrics_failure"
 
 func TestPrometheusMachineCollector(t *testing.T) {
-	collector := NewPrometheusMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics)
+	denyList, err := NewDenyList([]string{})
+	assert.Nil(t, err)
+	collector := NewPrometheusMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics, denyList)
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collector)
 
@@ -51,11 +55,13 @@ func TestPrometheusMachineCollector(t *testing.T) {
 }
 
 func TestPrometheusMachineCollectorWithFailure(t *testing.T) {
+	denyList, err := NewDenyList([]string{})
+	assert.Nil(t, err)
 	provider := &erroringSubcontainersInfoProvider{
 		successfulProvider: testSubcontainersInfoProvider{},
 		shouldFail:         true,
 	}
-	collector := NewPrometheusMachineCollector(provider, container.AllMetrics)
+	collector := NewPrometheusMachineCollector(provider, container.AllMetrics, denyList)
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collector)
 
@@ -71,6 +77,29 @@ func TestPrometheusMachineCollectorWithFailure(t *testing.T) {
 	expectedMetrics, err := ioutil.ReadFile(machineMetricsFailureFile)
 	assert.Nil(t, err)
 	assert.Equal(t, string(expectedMetrics), collectedMetrics)
+}
+
+func TestPrometheusMachineCollectorWithDenyList(t *testing.T) {
+	denyList, err := NewDenyList(ignoreSpecificMetrics)
+	assert.Nil(t, err)
+	cMachine := NewPrometheusMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics, denyList)
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(cMachine)
+
+	testPrometheusMachineCollectorWithIsDenied(t, registry, "testdata/prometheus_machine_metrics_denylist")
+
+}
+
+func testPrometheusMachineCollectorWithIsDenied(t *testing.T, gatherer prometheus.Gatherer, metricsFile string) {
+	wantMetrics, err := os.Open(metricsFile)
+	if err != nil {
+		t.Fatalf("unable to read input test file %s", metricsFile)
+	}
+
+	err = testutil.GatherAndCompare(gatherer, wantMetrics)
+	if err != nil {
+		t.Fatalf("Metric comparison failed: %s", err)
+	}
 }
 
 func TestGetMemoryByType(t *testing.T) {

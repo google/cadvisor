@@ -33,11 +33,13 @@ import (
 var now = clock.NewFakeClock(time.Unix(1395066363, 0))
 
 func TestPrometheusCollector(t *testing.T) {
+	denyList, err := NewDenyList([]string{})
+	assert.Nil(t, err)
 	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{})
+	}, container.AllMetrics, now, v2.RequestOptions{}, denyList)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
@@ -45,6 +47,8 @@ func TestPrometheusCollector(t *testing.T) {
 }
 
 func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
+	denyList, err := NewDenyList([]string{})
+	assert.Nil(t, err)
 	metrics := container.MetricSet{
 		container.PerfMetrics: struct{}{},
 	}
@@ -52,11 +56,38 @@ func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, metrics, now, v2.RequestOptions{})
+	}, metrics, now, v2.RequestOptions{}, denyList)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
 	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_perf_aggregated")
+}
+
+func TestPrometheusCollectorWithDenyList(t *testing.T) {
+	denyList, err := NewDenyList(ignoreSpecificMetrics)
+	assert.Nil(t, err)
+	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
+		s := DefaultContainerLabels(container)
+		s["zone.name"] = "hello"
+		return s
+	}, container.AllMetrics, now, v2.RequestOptions{}, denyList)
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(c)
+
+	testPrometheusCollectorWithIsDenied(t, reg, "testdata/prometheus_metrics_denylist")
+
+}
+
+func testPrometheusCollectorWithIsDenied(t *testing.T, gatherer prometheus.Gatherer, metricsFile string) {
+	wantMetrics, err := os.Open(metricsFile)
+	if err != nil {
+		t.Fatalf("unable to read input test file %s", metricsFile)
+	}
+
+	err = testutil.GatherAndCompare(gatherer, wantMetrics)
+	if err != nil {
+		t.Fatalf("Metric comparison failed: %s", err)
+	}
 }
 
 func testPrometheusCollector(t *testing.T, gatherer prometheus.Gatherer, metricsFile string) {
@@ -72,6 +103,8 @@ func testPrometheusCollector(t *testing.T, gatherer prometheus.Gatherer, metrics
 }
 
 func TestPrometheusCollector_scrapeFailure(t *testing.T) {
+	denyList, err := NewDenyList([]string{})
+	assert.Nil(t, err)
 	provider := &erroringSubcontainersInfoProvider{
 		successfulProvider: testSubcontainersInfoProvider{},
 		shouldFail:         true,
@@ -81,7 +114,7 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{})
+	}, container.AllMetrics, now, v2.RequestOptions{}, denyList)
 	reg := prometheus.NewRegistry()
 	reg.MustRegister(c)
 
@@ -93,7 +126,9 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 }
 
 func TestNewPrometheusCollectorWithPerf(t *testing.T) {
-	c := NewPrometheusCollector(&mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now, v2.RequestOptions{})
+	denyList, err := NewDenyList([]string{})
+	assert.Nil(t, err)
+	c := NewPrometheusCollector(&mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now, v2.RequestOptions{}, denyList)
 	assert.Len(t, c.containerMetrics, 5)
 	names := []string{}
 	for _, m := range c.containerMetrics {
@@ -107,11 +142,13 @@ func TestNewPrometheusCollectorWithPerf(t *testing.T) {
 }
 
 func TestNewPrometheusCollectorWithRequestOptions(t *testing.T) {
+	denyList, err := NewDenyList([]string{})
+	assert.Nil(t, err)
 	p := mockInfoProvider{}
 	opts := v2.RequestOptions{
 		IdType: "docker",
 	}
-	c := NewPrometheusCollector(&p, mockLabelFunc, container.AllMetrics, now, opts)
+	c := NewPrometheusCollector(&p, mockLabelFunc, container.AllMetrics, now, opts, denyList)
 	ch := make(chan prometheus.Metric, 10)
 	c.Collect(ch)
 	assert.Equal(t, p.options, opts)

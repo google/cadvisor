@@ -113,6 +113,8 @@ var (
 		container.ResctrlMetrics:                 struct{}{},
 		container.CPUSetMetrics:                  struct{}{},
 	}
+	// metrics to be ignored,the difference between ignoreMetrics and ignoreSpecificMetrics is the former filters a certain type of metrics and the later filters specific metrics.
+	ignoreSpecificMetrics DenyList = DenyList{}
 )
 
 type metricSetValue struct {
@@ -142,8 +144,27 @@ func (ml *metricSetValue) Set(value string) error {
 	return nil
 }
 
+type DenyList []string
+
+func (ms *DenyList) String() string {
+	return strings.Join(*ms, ",")
+}
+
+// Set converts a comma-separated string of metrics into a slice and appends it to the DenyList.
+func (ms *DenyList) Set(value string) error {
+	metrics := strings.Split(value, ",")
+	for _, metric := range metrics {
+		metric = strings.TrimSpace(metric)
+		if len(metric) != 0 {
+			*ms = append(*ms, metric)
+		}
+	}
+	return nil
+}
+
 func init() {
 	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'referenced_memory', 'resctrl', 'cpuset'.")
+	flag.Var(&ignoreSpecificMetrics, "disable_specific_metrics", "Comma-separated list of metrics not to be enabled. This list comprises of exact metric names and/or regex patterns.It differs from the 'disable_metrics' in that 'disable_specific_metrics' filters specific metrics, while 'disable_metrics' filters a certain type of metrics.Besides, 'disable_specific_metrics' will only disable metrics being exported by Prometheus ")
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
@@ -160,6 +181,7 @@ func main() {
 	}
 
 	includedMetrics := toIncludedMetrics(ignoreMetrics.MetricSet)
+	denyList, err := metrics.NewDenyList(ignoreSpecificMetrics)
 
 	setMaxProcs()
 
@@ -172,7 +194,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, housekeepingConfig, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), *perfEvents)
+	resourceManager, err := manager.New(memoryStorage, sysFs, housekeepingConfig, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), *perfEvents, denyList)
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
@@ -199,7 +221,7 @@ func main() {
 	}
 
 	// Register Prometheus collector to gather information about containers, Go runtime, processes, and machine
-	cadvisorhttp.RegisterPrometheusHandler(mux, resourceManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)
+	cadvisorhttp.RegisterPrometheusHandler(mux, resourceManager, *prometheusEndpoint, containerLabelFunc, includedMetrics, denyList)
 
 	// Start the manager.
 	if err := resourceManager.Start(); err != nil {
