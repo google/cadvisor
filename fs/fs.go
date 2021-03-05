@@ -488,6 +488,17 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 				return nil, err
 			}
 		}
+
+		major64, err := strconv.ParseUint(words[0], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		minor64, err := strconv.ParseUint(words[1], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
 		diskStats := DiskStats{
 			MajorNum:        devInfo[0],
 			MinorNum:        devInfo[1],
@@ -502,6 +513,8 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 			IoInProgress:    stats[8],
 			IoTime:          stats[9],
 			WeightedIoTime:  stats[10],
+			Major:           major64,
+			Minor:           minor64,
 		}
 		diskStatsMap[deviceName] = diskStats
 	}

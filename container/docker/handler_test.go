@@ -24,6 +24,9 @@ import (
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/google/cadvisor/fs"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 func TestStorageDirDetectionWithOldVersions(t *testing.T) {
@@ -143,4 +146,77 @@ func TestDockerEnvWhitelist(t *testing.T) {
 	as.Equal(newEnvsMatchWithEmptyPrefix, emptyExpected)
 	as.Equal(rawEnvsMatchWithEmptyWhitelist, emptyExpected)
 
+}
+
+func TestAddDiskStatsCheck(t *testing.T) {
+	var readsCompleted, readsMerged, sectorsRead, readTime, writesCompleted, writesMerged, sectorsWritten,
+		writeTime, ioInProgress, ioTime, weightedIoTime uint64 = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+
+	fileSystem := fs.Fs{
+		DiskStats: fs.DiskStats{
+			ReadsCompleted:  readsCompleted,
+			ReadsMerged:     readsMerged,
+			SectorsRead:     sectorsRead,
+			ReadTime:        readTime,
+			WritesCompleted: writesCompleted,
+			WritesMerged:    writesMerged,
+			SectorsWritten:  sectorsWritten,
+			WriteTime:       writeTime,
+			IoInProgress:    ioInProgress,
+			IoTime:          ioTime,
+			WeightedIoTime:  weightedIoTime,
+		},
+	}
+
+	fileSystems := []fs.Fs{fileSystem}
+
+	var fsStats info.FsStats
+	addDiskStats(fileSystems, nil, &fsStats)
+}
+
+func TestAddDiskStats(t *testing.T) {
+	// Arrange
+	as := assert.New(t)
+	var readsCompleted, readsMerged, sectorsRead, readTime, writesCompleted, writesMerged, sectorsWritten,
+		writeTime, ioInProgress, ioTime, weightedIoTime uint64 = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+	var fsStats info.FsStats
+
+	fsInfo := info.FsInfo{
+		DeviceMajor: 4,
+		DeviceMinor: 64,
+	}
+
+	fileSystem := fs.Fs{
+		DiskStats: fs.DiskStats{
+			ReadsCompleted:  readsCompleted,
+			ReadsMerged:     readsMerged,
+			SectorsRead:     sectorsRead,
+			ReadTime:        readTime,
+			WritesCompleted: writesCompleted,
+			WritesMerged:    writesMerged,
+			SectorsWritten:  sectorsWritten,
+			WriteTime:       writeTime,
+			IoInProgress:    ioInProgress,
+			IoTime:          ioTime,
+			WeightedIoTime:  weightedIoTime,
+		},
+	}
+
+	fileSystems := []fs.Fs{fileSystem}
+
+	// Act
+	addDiskStats(fileSystems, &fsInfo, &fsStats)
+
+	// Assert
+	as.Equal(readsCompleted, fileSystem.DiskStats.ReadsCompleted, "ReadsCompleted metric should be %d but was %d", readsCompleted, fileSystem.DiskStats.ReadsCompleted)
+	as.Equal(readsMerged, fileSystem.DiskStats.ReadsMerged, "ReadsMerged metric should be %d but was %d", readsMerged, fileSystem.DiskStats.ReadsMerged)
+	as.Equal(sectorsRead, fileSystem.DiskStats.SectorsRead, "SectorsRead metric should be %d but was %d", sectorsRead, fileSystem.DiskStats.SectorsRead)
+	as.Equal(readTime, fileSystem.DiskStats.ReadTime, "ReadTime metric should be %d but was %d", readTime, fileSystem.DiskStats.ReadTime)
+	as.Equal(writesCompleted, fileSystem.DiskStats.WritesCompleted, "WritesCompleted metric should be %d but was %d", writesCompleted, fileSystem.DiskStats.WritesCompleted)
+	as.Equal(writesMerged, fileSystem.DiskStats.WritesMerged, "WritesMerged metric should be %d but was %d", writesMerged, fileSystem.DiskStats.WritesMerged)
+	as.Equal(sectorsWritten, fileSystem.DiskStats.SectorsWritten, "SectorsWritten metric should be %d but was %d", sectorsWritten, fileSystem.DiskStats.SectorsWritten)
+	as.Equal(writeTime, fileSystem.DiskStats.WriteTime, "WriteTime metric should be %d but was %d", writeTime, fileSystem.DiskStats.WriteTime)
+	as.Equal(ioInProgress, fileSystem.DiskStats.IoInProgress, "IoInProgress metric should be %d but was %d", ioInProgress, fileSystem.DiskStats.IoInProgress)
+	as.Equal(ioTime, fileSystem.DiskStats.IoTime, "IoTime metric should be %d but was %d", ioTime, fileSystem.DiskStats.IoTime)
+	as.Equal(weightedIoTime, fileSystem.DiskStats.WeightedIoTime, "WeightedIoTime metric should be %d but was %d", weightedIoTime, fileSystem.DiskStats.WeightedIoTime)
 }
