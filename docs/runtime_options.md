@@ -126,6 +126,7 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --collector_cert="": Collector's certificate, exposed to endpoints for certificate based authentication.
 --collector_key="": Key for the collector's certificate
 --disable_metrics=tcp,advtcp,udp,sched,process,hugetlb: comma-separated list of metrics to be disabled. Options are 'disk', 'network', 'tcp', 'advtcp', 'udp', 'sched', 'process', 'hugetlb', 'cpuset'. Note: tcp and udp are disabled by default due to high CPU usage. (default tcp,advtcp,udp,sched,process,hugetlb,cpuset)
+--disable_specific_metrics="": Comma-separated list of metrics not to be enabled. This list comprises of exact metric names and/or regex patterns.It differs from the 'disable_metrics' in that 'disable_specific_metrics' filters specific metrics, while 'disable_metrics' filters a certain type of metrics.Besides, 'disable_specific_metrics' will only disable metrics being exported by Prometheus.(default "")
 --prometheus_endpoint="/metrics": Endpoint to expose Prometheus metrics on (default "/metrics")
 --disable_root_cgroup_stats=false: Disable collecting root Cgroup stats
 ```
