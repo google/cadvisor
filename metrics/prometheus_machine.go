@@ -67,7 +67,7 @@ type PrometheusMachineCollector struct {
 }
 
 // NewPrometheusMachineCollector returns a new PrometheusCollector.
-func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.MetricSet, denyList *DenyList) *PrometheusMachineCollector {
+func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.MetricSet) *PrometheusMachineCollector {
 	c := &PrometheusMachineCollector{
 
 		infoProvider: i,
@@ -192,13 +192,6 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 			},
 		}...)
 	}
-	var filtered []machineMetric
-	for _, val := range c.machineMetrics {
-		if !denyList.IsDenied(val.name) {
-			filtered = append(filtered, val)
-		}
-	}
-	c.machineMetrics = filtered
 	return c
 }
 

@@ -37,7 +37,6 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/machine"
-	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/nvm"
 	"github.com/google/cadvisor/perf"
 	"github.com/google/cadvisor/resctrl"
@@ -147,7 +146,7 @@ type HouskeepingConfig = struct {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, perfEventsFile string, denyList *metrics.DenyList) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList []string, perfEventsFile string) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -199,7 +198,6 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		maxHousekeepingInterval:               *houskeepingConfig.Interval,
 		allowDynamicHousekeeping:              *houskeepingConfig.AllowDynamic,
 		includedMetrics:                       includedMetricsSet,
-		DenyList:                              denyList,
 		containerWatchers:                     []watcher.ContainerWatcher{},
 		eventsChannel:                         eventsChannel,
 		collectorHTTPClient:                   collectorHTTPClient,
@@ -259,7 +257,6 @@ type manager struct {
 	maxHousekeepingInterval  time.Duration
 	allowDynamicHousekeeping bool
 	includedMetrics          container.MetricSet
-	DenyList                 *metrics.DenyList
 	containerWatchers        []watcher.ContainerWatcher
 	eventsChannel            chan watcher.ContainerEvent
 	collectorHTTPClient      *http.Client
