@@ -7,7 +7,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.15 // indirect
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/containerd/containerd v1.4.3
+	github.com/containerd/containerd v1.4.4
 	github.com/containerd/ttrpc v1.0.2 // indirect
 	github.com/containerd/typeurl v1.0.1
 	github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible // indirect
