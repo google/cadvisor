@@ -358,6 +358,9 @@ container_network_udp_usage_total{container_env_foo_env="prod",container_label_f
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="listen",zone_name="hello"} 0 1395066363000
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="rxqueued",zone_name="hello"} 0 1395066363000
 container_network_udp_usage_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="txqueued",zone_name="hello"} 0 1395066363000
+# HELP container_oom_events_total Count of out of memory events observed for the container
+# TYPE container_oom_events_total counter
+container_oom_events_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0 1395066363000
 # HELP container_perf_events_total Perf event metric.
 # TYPE container_perf_events_total counter
 container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 123 1395066363000
