@@ -1,5 +1,75 @@
 # Changelog
 
+### 0.39.0 (2021-03-08)
+
+- [do not initialize libipmctl package when getting an error from nvm_init()](https://github.com/google/cadvisor/pull/2723)
+- [Don't fail permenantly when nvml isn't installed](https://github.com/google/cadvisor/pull/2732)
+- [Update libpfm to 4.11.0](https://github.com/google/cadvisor/pull/2746)
+- [Fix race between `OnDemandHousekeeping` and `housekeepingTick`](https://github.com/google/cadvisor/pull/2755)
+- [Fix timeout flooding issue after containerd restart](https://github.com/google/cadvisor/pull/2749)
+- [Refactor process parsing to accommodate commands with spaces + Memory cgroup is not available on some systems](https://github.com/google/cadvisor/pull/2751)
+- [Switch from k8s utils/mount to moby/sys mount](https://github.com/google/cadvisor/pull/2782)
+- [Support nfs in processMounts](https://github.com/google/cadvisor/pull/2787)
+- [Update docker/runc and a few other dependencies](https://github.com/google/cadvisor/pull/2790)
+- [Add container_blkio_device_usage metric](https://github.com/google/cadvisor/pull/2795)
+- [Update heuristic for container creation time](https://github.com/google/cadvisor/pull/2800)
+- [Fix incorrect CPU topology on single NUMA and multi socket platform.](https://github.com/google/cadvisor/pull/2799)
+- [Added support for filesystem metrics on Docker](https://github.com/google/cadvisor/pull/2768)
+- [sched_getaffinity does not return number of online CPUs](https://github.com/google/cadvisor/pull/2805)
+- [Add libipmctl to the docker image.](https://github.com/google/cadvisor/pull/2674)
+- [Add cgroup_memory_migrate metric](https://github.com/google/cadvisor/pull/2796)
+- [bump runc to v1.0.0-rc93](https://github.com/google/cadvisor/pull/2809)
+- [Fix memory stats for cgroup v2](https://github.com/google/cadvisor/pull/2810)
+- [Allow gathering of stats for root cgroup on v2](https://github.com/google/cadvisor/pull/2801)
+- [Remove trailing \0 from values read from ppc64le device-tree](https://github.com/google/cadvisor/pull/2811)
+- [Fix oomparser regex for kernels 5.0 and higher](https://github.com/google/cadvisor/pull/2817)
+- [Handling arm64: topology and online information](https://github.com/google/cadvisor/pull/2744)
+- [Bump golang to 1.16](https://github.com/google/cadvisor/pull/2818)
+- [Bump containerd to 1.4.4](https://github.com/google/cadvisor/pull/2826)
+- [Conditionally gathering FS usage metrics](https://github.com/google/cadvisor/pull/2828)
+
+### 0.38.8 (2021-02-18)
+- [Cherrypick to v0.38 - Fix incorrect CPU topology on single NUMA and multi socket platform](https://github.com/google/cadvisor/pulls/2799)
+- [Cherrypick to v0.38 - sched_getaffinity does not return number of online CPUs](https://github.com/google/cadvisor/pulls/2805)
+
+### 0.37.5 (2021-02-18)
+- [Cherrypick to v0.37 - Fix incorrect CPU topology on single NUMA and multi socket platform](https://github.com/google/cadvisor/pulls/2799)
+- [Cherrypick to v0.37 - sched_getaffinity does not return number of online CPUs](https://github.com/google/cadvisor/pulls/2805)
+
+### 0.38.7 (2021-01-13)
+- [Cherrypick to v0.37: Return correct DeviceInfo from GetDirFsDevice on / path for Btrfs - Fix kubernetes issue #94335](https://github.com/google/cadvisor/pulls/2775)
+
+### 0.37.4 (2021-01-13)
+- [Cherrypick to v0.37: Return correct DeviceInfo from GetDirFsDevice on / path for Btrfs - Fix kubernetes issue #94335](https://github.com/google/cadvisor/pulls/2776)
+
+### 0.38.6 (2020-12-9)
+- [Cherrypick to v0.37: Fix timeout flooding issue after containerd restart](https://github.com/google/cadvisor/pulls/2759)
+
+### 0.37.3 (2020-12-9)
+- [Cherrypick to v0.37: Fix timeout flooding issue after containerd restart](https://github.com/google/cadvisor/pulls/2758)
+
+### 0.38.5 (2020-11-23)
+- [Cherrypick to v0.37: don't fail permenantly when nvml isn't installed](https://github.com/google/cadvisor/pulls/2735)
+
+### 0.37.2 (2020-11-23)
+- [Cherrypick to v0.37 - update docker client method](https://github.com/google/cadvisor/pulls/2734)
+
+### 0.37.1 (2020-11-18)
+- [Cherrypick to v0.37: don't fail permenantly when nvml isn't installed](https://github.com/google/cadvisor/pulls/2737)
+
+### 0.38.4 (2020-11-12)
+- [vendor: run go mod tidy](https://github.com/google/cadvisor/pulls/2731)
+
+### 0.38.3 (2020-11-12)
+- [vendor: Rollback gopkg.in/yaml.v2 to v2.2.8](https://github.com/google/cadvisor/pulls/2728)
+
+### 0.38.2 (2020-11-10)
+- [Revert mount-utils back to utils/mount](https://github.com/google/cadvisor/pulls/2726)
+
+### 0.38.1 (2020-11-10)
+- [deps: Rollback grpc from v1.33.2 to v1.27.1](https://github.com/google/cadvisor/pull/2724)
+- [do not initialize libipmctl package when getting an error from nvm_init()](https://github.com/google/cadvisor/pull/2723)
+
 ### 0.38.0 (2020-11-09)
 
 - [#1594 - chore: add storage_driver_buffer_duration in Influxdb storage docs](https://github.com/google/cadvisor/pull/1594)
@@ -40,6 +110,9 @@
 - [#2713 - Bump golang to 1.15](https://github.com/google/cadvisor/pull/2713)
 - [#2714 - update docker client method](https://github.com/google/cadvisor/pull/2714)
 - [#2716 - Update dependencies](https://github.com/google/cadvisor/pull/2716)
+
+### 0.35.1 (2020-11-05)
+- [Make a copy of MachineInfo in GetMachineInfo()](https://github.com/google/cadvisor/pull/2490)
 
 ### 0.37.0 (2020-07-07)
 - Add on-demand collection for prometheus metrics
