@@ -84,13 +84,15 @@ func (c *collector) prepareMonGroup() error {
 	}
 
 	// Check if container moved between control groups.
-	if newPath != c.resctrlPath {
-		err = c.clear()
-		if err != nil {
-			c.running = false
-			return fmt.Errorf("couldn't clear previous mon group: %v", err)
+	if c.running {
+		if newPath != c.resctrlPath {
+			err = c.clear()
+			if err != nil {
+				c.running = false
+				return fmt.Errorf("couldn't clear previous mon group: %v", err)
+			}
+			c.resctrlPath = newPath
 		}
-		c.resctrlPath = newPath
 	}
 
 	// Mon group prepared, the collector is running correctly.
