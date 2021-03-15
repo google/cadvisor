@@ -40,34 +40,37 @@ func newCollector(id string, getContainerPids func() ([]string, error), interval
 }
 
 func (c *collector) setup() error {
-	err := c.prepareMonGroup()
+	if c.id != rootContainer {
+		// There is no need to prepare or update "/" container.
+		err := c.prepareMonGroup()
 
-	if c.interval != 0 && c.id != rootContainer {
-		if err != nil {
-			klog.Errorf("Failed to setup container %q resctrl collector: %v \n Trying again in next intervals!", c.id, err)
-		}
-		go func() {
-			for {
-				if c.running {
-					err = c.prepareMonGroup()
-					if err != nil {
-						klog.Errorf("checking %q resctrl collector but: %v", c.id, err)
-					}
-				} else {
-					err = c.clear()
-					if err != nil {
-						klog.Errorf("trying to end %q resctrl collector interval but: %v", c.id, err)
-					}
-					break
-				}
-				time.Sleep(c.interval)
+		if c.interval != 0 {
+			if err != nil {
+				klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals!", c.id, err)
 			}
-		}()
-	} else {
-		// There is no interval set, if setup fail, stop.
-		if err != nil {
-			c.running = false
-			return err
+			go func() {
+				for {
+					time.Sleep(c.interval)
+					if c.running {
+						err = c.prepareMonGroup()
+						if err != nil {
+							klog.Errorf("checking %q resctrl collector but: %w", c.id, err)
+						}
+					} else {
+						err = c.clear()
+						if err != nil {
+							klog.Errorf("trying to end %q resctrl collector interval but: %w", c.id, err)
+						}
+						break
+					}
+				}
+			}()
+		} else {
+			// There is no interval set, if setup fail, stop.
+			if err != nil {
+				c.running = false
+				return err
+			}
 		}
 	}
 
