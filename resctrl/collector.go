@@ -20,6 +20,7 @@ package resctrl
 import (
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"k8s.io/klog/v2"
@@ -34,10 +35,12 @@ type collector struct {
 	resctrlPath       string
 	running           bool
 	numberOfNUMANodes int
+	mu                sync.Mutex
 }
 
 func newCollector(id string, getContainerPids func() ([]string, error), interval time.Duration, numberOfNUMANodes int) *collector {
-	return &collector{id: id, interval: interval, getContainerPids: getContainerPids, numberOfNUMANodes: numberOfNUMANodes}
+	return &collector{id: id, interval: interval, getContainerPids: getContainerPids, numberOfNUMANodes: numberOfNUMANodes,
+		mu: sync.Mutex{}}
 }
 
 func (c *collector) setup() error {
@@ -52,18 +55,18 @@ func (c *collector) setup() error {
 			go func() {
 				for {
 					time.Sleep(c.interval)
+					c.mu.Lock()
+					klog.V(5).Infof("Checking %q containers control group.", c.id)
 					if c.running {
 						err = c.prepareMonGroup()
 						if err != nil {
 							klog.Errorf("checking %q resctrl collector but: %w", c.id, err)
 						}
 					} else {
-						err = c.clear()
-						if err != nil {
-							klog.Errorf("trying to end %q resctrl collector interval but: %w", c.id, err)
-						}
-						break
+						c.mu.Unlock()
+						return
 					}
+					c.mu.Unlock()
 				}
 			}()
 		} else {
@@ -104,6 +107,7 @@ func (c *collector) prepareMonGroup() error {
 }
 
 func (c *collector) UpdateStats(stats *info.ContainerStats) error {
+	c.mu.Lock()
 	if c.running {
 		stats.Resctrl = info.ResctrlStats{}
 
@@ -128,16 +132,19 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 				info.CacheStats{LLCOccupancy: numaNodeStats.LLCOccupancy})
 		}
 	}
+	c.mu.Unlock()
 
 	return nil
 }
 
 func (c *collector) Destroy() {
+	c.mu.Lock()
 	c.running = false
 	err := c.clear()
 	if err != nil {
 		klog.Errorf("trying to destroy %q resctrl collector but: %v", c.id, err)
 	}
+	c.mu.Unlock()
 }
 
 func (c *collector) clear() error {
