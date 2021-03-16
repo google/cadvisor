@@ -148,7 +148,7 @@ func (c *collector) Destroy() {
 }
 
 func (c *collector) clear() error {
-	// Couldn't remove root resctrl directory.
+	// Not allowed to remove root resctrl directory.
 	if c.id != rootContainer && c.resctrlPath != "" {
 		err := os.RemoveAll(c.resctrlPath)
 		if err != nil {
