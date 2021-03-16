@@ -124,6 +124,6 @@ func TestGetCollector(t *testing.T) {
 	manager, err := NewManager(0, setup)
 	assert.NoError(t, err)
 
-	_, err = manager.GetCollector(expectedID, mockGetContainerPids)
+	_, err = manager.GetCollector(expectedID, mockGetContainerPids, 2)
 	assert.NoError(t, err)
 }

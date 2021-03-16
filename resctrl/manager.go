@@ -26,7 +26,7 @@ import (
 
 type Manager interface {
 	Destroy()
-	GetCollector(containerName string, getContainerPids func() ([]string, error)) (stats.Collector, error)
+	GetCollector(containerName string, getContainerPids func() ([]string, error), numberOfNUMANodes int) (stats.Collector, error)
 }
 
 type manager struct {
@@ -34,8 +34,8 @@ type manager struct {
 	interval time.Duration
 }
 
-func (m *manager) GetCollector(containerName string, getContainerPids func() ([]string, error)) (stats.Collector, error) {
-	collector := newCollector(containerName, getContainerPids, m.interval)
+func (m *manager) GetCollector(containerName string, getContainerPids func() ([]string, error), numberOfNUMANodes int) (stats.Collector, error) {
+	collector := newCollector(containerName, getContainerPids, m.interval, numberOfNUMANodes)
 	err := collector.setup()
 	if err != nil {
 		return &stats.NoopCollector{}, err
@@ -64,6 +64,6 @@ type NoopManager struct {
 	stats.NoopDestroy
 }
 
-func (np *NoopManager) GetCollector(_ string, _ func() ([]string, error)) (stats.Collector, error) {
+func (np *NoopManager) GetCollector(_ string, _ func() ([]string, error), _ int) (stats.Collector, error) {
 	return &stats.NoopCollector{}, nil
 }

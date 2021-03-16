@@ -28,15 +28,16 @@ import (
 )
 
 type collector struct {
-	id               string
-	interval         time.Duration
-	getContainerPids func() ([]string, error)
-	resctrlPath      string
-	running          bool
+	id                string
+	interval          time.Duration
+	getContainerPids  func() ([]string, error)
+	resctrlPath       string
+	running           bool
+	numberOfNUMANodes int
 }
 
-func newCollector(id string, getContainerPids func() ([]string, error), interval time.Duration) *collector {
-	return &collector{id: id, interval: interval, getContainerPids: getContainerPids}
+func newCollector(id string, getContainerPids func() ([]string, error), interval time.Duration, numberOfNUMANodes int) *collector {
+	return &collector{id: id, interval: interval, getContainerPids: getContainerPids, numberOfNUMANodes: numberOfNUMANodes}
 }
 
 func (c *collector) setup() error {
@@ -83,8 +84,8 @@ func (c *collector) prepareMonGroup() error {
 		return fmt.Errorf("couldn't obtain mon_group path: %v", err)
 	}
 
-	// Check if container moved between control groups.
 	if c.running {
+		// Check if container moved between control groups.
 		if newPath != c.resctrlPath {
 			err = c.clear()
 			if err != nil {
@@ -93,10 +94,12 @@ func (c *collector) prepareMonGroup() error {
 			}
 			c.resctrlPath = newPath
 		}
+	} else {
+		// Mon group prepared, the collector is running correctly.
+		c.resctrlPath = newPath
+		c.running = true
 	}
 
-	// Mon group prepared, the collector is running correctly.
-	c.running = true
 	return nil
 }
 
@@ -108,10 +111,9 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 		if err != nil {
 			return err
 		}
-		numberOfNUMANodes := len(*resctrlStats.MBMStats)
 
-		stats.Resctrl.MemoryBandwidth = make([]info.MemoryBandwidthStats, 0, numberOfNUMANodes)
-		stats.Resctrl.Cache = make([]info.CacheStats, 0, numberOfNUMANodes)
+		stats.Resctrl.MemoryBandwidth = make([]info.MemoryBandwidthStats, 0, c.numberOfNUMANodes)
+		stats.Resctrl.Cache = make([]info.CacheStats, 0, c.numberOfNUMANodes)
 
 		for _, numaNodeStats := range *resctrlStats.MBMStats {
 			stats.Resctrl.MemoryBandwidth = append(stats.Resctrl.MemoryBandwidth,
