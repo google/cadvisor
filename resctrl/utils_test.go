@@ -279,7 +279,7 @@ func checkError(t *testing.T, err error, expected string) {
 	}
 }
 
-func TestGetResctrlPath(t *testing.T) {
+func TestPrepareMonitoringGroup(t *testing.T) {
 	rootResctrl = mockResctrl()
 	defer os.RemoveAll(rootResctrl)
 
@@ -316,7 +316,7 @@ func TestGetResctrlPath(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		actual, err := getResctrlPath(test.container, test.getContainerPids)
+		actual, err := prepareMonitoringGroup(test.container, test.getContainerPids)
 		assert.Equal(t, test.expected, actual)
 		checkError(t, err, test.err)
 	}
@@ -566,7 +566,7 @@ func TestGetStats(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		containerPath, _ := getResctrlPath(test.container, mockGetContainerPids)
+		containerPath, _ := prepareMonitoringGroup(test.container, mockGetContainerPids)
 		mockResctrlMonData(containerPath)
 		actual, err := getStats(containerPath)
 		checkError(t, err, test.err)

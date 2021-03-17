@@ -44,63 +44,63 @@ func newCollector(id string, getContainerPids func() ([]string, error), interval
 }
 
 func (c *collector) setup() error {
-	if c.id != rootContainer {
-		// There is no need to prepare or update "/" container.
-		err := c.prepareMonGroup()
+	var err error
+	c.resctrlPath, err = prepareMonitoringGroup(c.id, c.getContainerPids)
 
-		if c.interval != 0 {
-			if err != nil {
-				klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals!", c.id, err)
-			}
-			go func() {
-				for {
-					time.Sleep(c.interval)
-					c.mu.Lock()
-					klog.V(5).Infof("Checking %q containers control group.", c.id)
-					if c.running {
-						err = c.prepareMonGroup()
-						if err != nil {
-							klog.Errorf("checking %q resctrl collector but: %w", c.id, err)
-						}
-					} else {
-						c.mu.Unlock()
-						return
-					}
-					c.mu.Unlock()
-				}
-			}()
+	if c.interval != 0 {
+		if err != nil {
+			c.running = false
+			klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals.", c.id, err)
 		} else {
-			// There is no interval set, if setup fail, stop.
-			if err != nil {
-				c.running = false
-				return err
-			}
+			c.running = true
 		}
+		go func() {
+			for {
+				time.Sleep(c.interval)
+				c.mu.Lock()
+				klog.V(5).Infof("Trying to check %q containers control group.", c.id)
+				if c.running {
+					err = c.checkMonitoringGroup()
+					if err != nil {
+						c.running = false
+						klog.Errorf("Failed to check %q resctrl collector control group: %w \n Trying again in next intervals.", c.id, err)
+					}
+				} else {
+					c.resctrlPath, err = prepareMonitoringGroup(c.id, c.getContainerPids)
+					if err != nil {
+						c.running = false
+						klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals.", c.id, err)
+					} else {
+						c.running = true
+					}
+				}
+				c.mu.Unlock()
+			}
+		}()
+	} else {
+		// There is no interval set, if setup fail, stop.
+		if err != nil {
+			return fmt.Errorf("failed to setup container %q resctrl collector: %w", c.id, err)
+		}
+		c.running = true
 	}
 
 	return nil
 }
 
-func (c *collector) prepareMonGroup() error {
-	newPath, err := getResctrlPath(c.id, c.getContainerPids)
+func (c *collector) checkMonitoringGroup() error {
+	newPath, err := prepareMonitoringGroup(c.id, c.getContainerPids)
 	if err != nil {
 		return fmt.Errorf("couldn't obtain mon_group path: %v", err)
 	}
 
-	if c.running {
-		// Check if container moved between control groups.
-		if newPath != c.resctrlPath {
-			err = c.clear()
-			if err != nil {
-				c.running = false
-				return fmt.Errorf("couldn't clear previous mon group: %v", err)
-			}
-			c.resctrlPath = newPath
+	// Check if container moved between control groups.
+	if newPath != c.resctrlPath {
+		err = c.clear()
+		if err != nil {
+			return fmt.Errorf("couldn't clear previous monitoring group: %w", err)
 		}
-	} else {
-		// Mon group prepared, the collector is running correctly.
 		c.resctrlPath = newPath
-		c.running = true
 	}
 
 	return nil
@@ -108,6 +108,7 @@ func (c *collector) prepareMonGroup() error {
 
 func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.running {
 		stats.Resctrl = info.ResctrlStats{}
 
@@ -132,23 +133,22 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 				info.CacheStats{LLCOccupancy: numaNodeStats.LLCOccupancy})
 		}
 	}
-	c.mu.Unlock()
 
 	return nil
 }
 
 func (c *collector) Destroy() {
 	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.running = false
 	err := c.clear()
 	if err != nil {
 		klog.Errorf("trying to destroy %q resctrl collector but: %v", c.id, err)
 	}
-	c.mu.Unlock()
 }
 
 func (c *collector) clear() error {
-	// Not allowed to remove root resctrl directory.
+	// Not allowed to remove root or undefined resctrl directory.
 	if c.id != rootContainer && c.resctrlPath != "" {
 		err := os.RemoveAll(c.resctrlPath)
 		if err != nil {

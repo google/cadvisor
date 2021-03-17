@@ -81,7 +81,7 @@ func Setup() error {
 	return nil
 }
 
-func getResctrlPath(containerName string, getContainerPids func() ([]string, error)) (string, error) {
+func prepareMonitoringGroup(containerName string, getContainerPids func() ([]string, error)) (string, error) {
 	if containerName == rootContainer {
 		return rootResctrl, nil
 	}
@@ -92,15 +92,15 @@ func getResctrlPath(containerName string, getContainerPids func() ([]string, err
 	}
 
 	if len(pids) == 0 {
-		return "", fmt.Errorf("couldn't determine resctrl for %q: there is no pids in cGroup", containerName)
+		return "", fmt.Errorf("couldn't obtain %q container pids, there is no pids in cgroup", containerName)
 	}
 
 	path, err := findControlGroup(pids)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("couldn't find control group matching %q container: %w", containerName, err)
 	}
 
-	if containerName[0] == '/' {
+	if containerName[0] == '/' && (len(containerName) > 1) {
 		containerName = containerName[1:]
 	}
 
@@ -108,11 +108,9 @@ func getResctrlPath(containerName string, getContainerPids func() ([]string, err
 	monGroupPath := filepath.Join(path, monitoringGroupDir, properContainerName)
 
 	// Create new mon_group if not exists.
-	if stat, _ := os.Stat(monGroupPath); stat == nil {
-		err = os.Mkdir(monGroupPath, os.ModePerm)
-	}
+	err = os.MkdirAll(monGroupPath, os.ModePerm)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("couldn't create monitoring group directory for %q container: %w", containerName, err)
 	}
 
 	for _, pid := range pids {
