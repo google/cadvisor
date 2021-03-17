@@ -334,7 +334,7 @@ func TestGetPids(t *testing.T) {
 		{
 			"",
 			nil,
-			noContainerError,
+			noContainerNameError,
 		},
 		{
 			"container",
@@ -344,7 +344,7 @@ func TestGetPids(t *testing.T) {
 		{
 			"no_container",
 			nil,
-			fmt.Sprintf("couldn't obtain pids: lstat %v: no such file or directory", filepath.Join(pidsPath, "no_container")),
+			fmt.Sprintf("couldn't obtain pids for \"no_container\" container: lstat %v: no such file or directory", filepath.Join(pidsPath, "no_container")),
 		},
 	}
 
@@ -425,7 +425,7 @@ func TestFindControlGroup(t *testing.T) {
 	}
 }
 
-func TestCheckControlGroup(t *testing.T) {
+func TestArePIDsInControlGroup(t *testing.T) {
 	rootResctrl = mockResctrl()
 	defer os.RemoveAll(rootResctrl)
 
@@ -455,20 +455,20 @@ func TestCheckControlGroup(t *testing.T) {
 		},
 		{
 			false,
-			fmt.Sprintf("couldn't obtain pids: open %s: no such file or directory", filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName)),
+			fmt.Sprintf("couldn't obtain pids from %q path: open %s: no such file or directory", filepath.Join(rootResctrl, monitoringGroupDir), filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName)),
 			filepath.Join(rootResctrl, monitoringGroupDir),
 			[]string{"1", "2"},
 		},
 		{
 			false,
-			noPidsError,
+			noPidsPassedError,
 			rootResctrl,
 			nil,
 		},
 	}
 
 	for _, test := range testCases {
-		actual, err := checkControlGroup(test.path, test.pids)
+		actual, err := arePIDsInControlGroup(test.path, test.pids)
 		assert.Equal(t, test.expected, actual)
 		checkError(t, err, test.err)
 	}
@@ -568,7 +568,7 @@ func TestGetStats(t *testing.T) {
 	for _, test := range testCases {
 		containerPath, _ := prepareMonitoringGroup(test.container, mockGetContainerPids)
 		mockResctrlMonData(containerPath)
-		actual, err := getStats(containerPath)
+		actual, err := getIntelRDTStatsFrom(containerPath)
 		checkError(t, err, test.err)
 		assert.Equal(t, test.expected.CMTStats, actual.CMTStats)
 		assert.Equal(t, test.expected.MBMStats, actual.MBMStats)

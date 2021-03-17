@@ -44,8 +44,8 @@ const (
 	infoDirName           = "info"
 	monDataDirName        = "mon_data"
 	monGroupsDirName      = "mon_groups"
-	noPidsError           = "there are no pids passed"
-	noContainerError      = "there are no container name passed"
+	noPidsPassedError     = "there are no pids passed"
+	noContainerNameError  = "there are no container name passed"
 	llcOccupancyFileName  = "llc_occupancy"
 	mbmLocalBytesFileName = "mbm_local_bytes"
 	mbmTotalBytesFileName = "mbm_total_bytes"
@@ -128,9 +128,11 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 			if err != nil {
 				secondError := os.Remove(monGroupPath)
 				if secondError != nil {
-					return "", fmt.Errorf("%v : %v", err, secondError)
+					return "", fmt.Errorf(
+						"coudn't assign pids to %q container monitoring group: %w \n couldn't clear %q monitoring group: %v",
+						containerName, err, containerName, secondError)
 				}
-				return "", err
+				return "", fmt.Errorf("coudn't assign pids to %q container monitoring group: %w", containerName, err)
 			}
 		}
 	}
@@ -139,12 +141,13 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 }
 
 func getPids(containerName string) ([]int, error) {
-	if containerName == "" {
-		return nil, fmt.Errorf(noContainerError)
+	if len(containerName) == 0 {
+		// No container name passed.
+		return nil, fmt.Errorf(noContainerNameError)
 	}
 	pids, err := cgroups.GetAllPids(filepath.Join(pidsPath, containerName))
 	if err != nil {
-		return nil, fmt.Errorf("couldn't obtain pids: %v", err)
+		return nil, fmt.Errorf("couldn't obtain pids for %q container: %v", containerName, err)
 	}
 	return pids, nil
 }
@@ -164,7 +167,7 @@ func getAllProcessThreads(threadFiles []os.FileInfo) ([]int, error) {
 
 func findControlGroup(pids []string) (string, error) {
 	if len(pids) == 0 {
-		return "", fmt.Errorf(noPidsError)
+		return "", fmt.Errorf(noPidsPassedError)
 	}
 	availablePaths, err := filepath.Glob(filepath.Join(rootResctrl, "*"))
 	if err != nil {
@@ -186,7 +189,7 @@ func findControlGroup(pids []string) (string, error) {
 		case filepath.Join(rootResctrl, schemataFileName):
 			continue
 		case filepath.Join(rootResctrl, tasksFileName):
-			inGroup, err := checkControlGroup(rootResctrl, pids)
+			inGroup, err := arePIDsInControlGroup(rootResctrl, pids)
 			if err != nil {
 				return "", err
 			}
@@ -194,7 +197,7 @@ func findControlGroup(pids []string) (string, error) {
 				return rootResctrl, nil
 			}
 		default:
-			inGroup, err := checkControlGroup(path, pids)
+			inGroup, err := arePIDsInControlGroup(path, pids)
 			if err != nil {
 				return "", err
 			}
@@ -207,14 +210,15 @@ func findControlGroup(pids []string) (string, error) {
 	return "", fmt.Errorf("there is no available control group")
 }
 
-func checkControlGroup(path string, pids []string) (bool, error) {
+func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 	if len(pids) == 0 {
-		return false, fmt.Errorf(noPidsError)
+		// No container pids passed.
+		return false, fmt.Errorf(noPidsPassedError)
 	}
 
 	taskFile, err := fscommon.ReadFile(path, "tasks")
 	if err != nil {
-		return false, fmt.Errorf("couldn't obtain pids: %v", err)
+		return false, fmt.Errorf("couldn't obtain pids from %q path: %w", path, err)
 	}
 
 	for _, pid := range pids {
@@ -226,7 +230,7 @@ func checkControlGroup(path string, pids []string) (bool, error) {
 	return true, nil
 }
 
-func readStat(path string) (uint64, error) {
+func readStatFrom(path string) (uint64, error) {
 	context, err := ioutil.ReadFile(path)
 	if err != nil {
 		return 0, err
@@ -240,7 +244,7 @@ func readStat(path string) (uint64, error) {
 	return stat, nil
 }
 
-func getStats(path string) (intelrdt.Stats, error) {
+func getIntelRDTStatsFrom(path string) (intelrdt.Stats, error) {
 	stats := intelrdt.Stats{}
 
 	numaDirs, err := filepath.Glob(filepath.Join(path, monDataDirName, "*"))
@@ -252,32 +256,35 @@ func getStats(path string) (intelrdt.Stats, error) {
 		return stats, fmt.Errorf("there is no mon_data NUMA dirs: %q", path)
 	}
 
-	stats.CMTStats = &[]intelrdt.CMTNumaNodeStats{}
-	stats.MBMStats = &[]intelrdt.MBMNumaNodeStats{}
+	var cmtStats []intelrdt.CMTNumaNodeStats
+	var mbmStats []intelrdt.MBMNumaNodeStats
 
 	for _, dir := range numaDirs {
 		if enabledCMT {
-			cmtStats := intelrdt.CMTNumaNodeStats{}
-			cmtStats.LLCOccupancy, err = readStat(filepath.Join(dir, llcOccupancyFileName))
+			llcOccupancy, err := readStatFrom(filepath.Join(dir, llcOccupancyFileName))
 			if err != nil {
 				return stats, err
 			}
-			*stats.CMTStats = append(*stats.CMTStats, cmtStats)
-
+			cmtStats = append(cmtStats, intelrdt.CMTNumaNodeStats{LLCOccupancy: llcOccupancy})
 		}
 		if enabledMBM {
-			mbmStats := intelrdt.MBMNumaNodeStats{}
-			mbmStats.MBMTotalBytes, err = readStat(filepath.Join(dir, mbmTotalBytesFileName))
+			mbmTotalBytes, err := readStatFrom(filepath.Join(dir, mbmTotalBytesFileName))
 			if err != nil {
 				return stats, err
 			}
-			mbmStats.MBMLocalBytes, err = readStat(filepath.Join(dir, mbmLocalBytesFileName))
+			mbmLocalBytes, err := readStatFrom(filepath.Join(dir, mbmLocalBytesFileName))
 			if err != nil {
 				return stats, err
 			}
-			*stats.MBMStats = append(*stats.MBMStats, mbmStats)
+			mbmStats = append(mbmStats, intelrdt.MBMNumaNodeStats{
+				MBMTotalBytes: mbmTotalBytes,
+				MBMLocalBytes: mbmLocalBytes,
+			})
 		}
 	}
+
+	stats.CMTStats = &cmtStats
+	stats.MBMStats = &mbmStats
 
 	return stats, nil
 }

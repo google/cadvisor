@@ -112,7 +112,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 	if c.running {
 		stats.Resctrl = info.ResctrlStats{}
 
-		resctrlStats, err := getStats(c.resctrlPath)
+		resctrlStats, err := getIntelRDTStatsFrom(c.resctrlPath)
 		if err != nil {
 			return err
 		}
