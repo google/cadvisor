@@ -247,19 +247,19 @@ func readStatFrom(path string) (uint64, error) {
 func getIntelRDTStatsFrom(path string) (intelrdt.Stats, error) {
 	stats := intelrdt.Stats{}
 
-	numaDirs, err := filepath.Glob(filepath.Join(path, monDataDirName, "*"))
+	statsDirectories, err := filepath.Glob(filepath.Join(path, monDataDirName, "*"))
 	if err != nil {
 		return stats, err
 	}
 
-	if len(numaDirs) == 0 {
-		return stats, fmt.Errorf("there is no mon_data NUMA dirs: %q", path)
+	if len(statsDirectories) == 0 {
+		return stats, fmt.Errorf("there is no mon_data stats directories: %q", path)
 	}
 
 	var cmtStats []intelrdt.CMTNumaNodeStats
 	var mbmStats []intelrdt.MBMNumaNodeStats
 
-	for _, dir := range numaDirs {
+	for _, dir := range statsDirectories {
 		if enabledCMT {
 			llcOccupancy, err := readStatFrom(filepath.Join(dir, llcOccupancyFileName))
 			if err != nil {
