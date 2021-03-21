@@ -1,7 +1,3 @@
-# This is an example .goreleaser.yml file with some sane defaults.
-# Make sure to check the documentation at http://goreleaser.com
-before:
-  hooks:
 builds:
   - env:
       - CGO_ENABLED=0
@@ -10,13 +6,14 @@ builds:
     goarch:
       - amd64
       - arm64
-
+    goflags:
+      tags: netgo
     ldflags:
       - -X github.com/google/cadvisor/version.Version={{.Tag}}
       - -X github.com/google/cadvisor/version.Revision={{.Commit}}
       - -X github.com/google/cadvisor/version.Branch={{.Branch}}
-      - -X github.com/google/cadvisor/version.BuildUser="unknown"
+      - -X github.com/google/cadvisor/version.BuildUser={{.env.GITHUB_ACTOR}}
       - -X github.com/google/cadvisor/version.BuildDate={{.Date}}
-      - -X github.com/google/cadvisor/version.GoVersion={{.Major}}.{{.Minor}}.{{.Patch}}
+      - -X github.com/google/cadvisor/version.GoVersion=1.16
 checksum:
-  name_template: 'checksums.txt'
+  name_template: checksums.txt

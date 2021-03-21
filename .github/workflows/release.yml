@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - v*
 jobs:
   release:
     runs-on: ubuntu-20.04
@@ -19,7 +19,7 @@ jobs:
       uses: goreleaser/goreleaser-action@v2
       with:
         version: v0.160.0
-        args: "release --rm-dist --debug --config ../.goreleaser.yml --skip-sign --debug"
-        workdir: "./cmd"
+        args: release --rm-dist --debug --config ../.goreleaser.yml --skip-sign --debug
+        workdir: ./cmd
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
