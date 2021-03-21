@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 jobs:
   release:
     defaults:
@@ -22,6 +22,6 @@ jobs:
       uses: goreleaser/goreleaser-action@v2
       with:
         version: latest
-        args: ["release", "--rm-dist", "--debug", "--config", "../.goreleaser.yml", "--skip-sign", "--debug"]
+        args: "release --rm-dist --debug --config ../.goreleaser.yml --skip-sign --debug"
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
