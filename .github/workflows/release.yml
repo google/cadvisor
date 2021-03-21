@@ -1,7 +1,8 @@
 name: Release
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 jobs:
   release:
     runs-on: ubuntu-20.04
