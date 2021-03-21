@@ -18,7 +18,7 @@ jobs:
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
       with:
-        version: 0.160.0
+        version: v0.160.0
         args: "release --rm-dist --debug --config ../.goreleaser.yml --skip-sign --debug"
         workdir: "./cmd"
       env:
