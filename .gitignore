@@ -12,3 +12,4 @@ cadvisor
 .idea/
 *.iml
 *.swp
+dist/
