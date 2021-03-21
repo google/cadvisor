@@ -5,6 +5,9 @@ on:
       - 'v*'
 jobs:
   release:
+    defaults:
+      run:
+        working-directory: "./cmd"
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout
@@ -17,7 +20,6 @@ jobs:
         go-version: 1.16
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
-      working-directory: "./cmd"
       with:
         version: latest
         args: ["release", "--rm-dist", "--debug", "--config", "../.goreleaser.yml", "--skip-sign", "--debug"]
