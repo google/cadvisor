@@ -7,7 +7,7 @@ builds:
       - amd64
       - arm64
     flags:
-      tags: netgo
+      - -tags=netgo
     ldflags:
       - -X github.com/google/cadvisor/version.Version={{.Tag}}
       - -X github.com/google/cadvisor/version.Revision={{.Commit}}
