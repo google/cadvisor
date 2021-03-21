@@ -9,7 +9,7 @@ builds:
       - linux
     goarch:
       - amd64
-      - aarch64
+      - arm64
 archives:
   - replacements:
       linux: Linux
