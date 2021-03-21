@@ -6,7 +6,7 @@ builds:
     goarch:
       - amd64
       - arm64
-    goflags:
+    flags:
       tags: netgo
     ldflags:
       - -X github.com/google/cadvisor/version.Version={{.Tag}}
