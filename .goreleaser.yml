@@ -14,6 +14,6 @@ builds:
       - -X github.com/google/cadvisor/version.Branch={{.Branch}}
       - -X github.com/google/cadvisor/version.BuildUser={{.Env.GITHUB_ACTOR}}
       - -X github.com/google/cadvisor/version.BuildDate={{.Date}}
-      - -X github.com/google/cadvisor/version.GoVersion=1.16
+      - -X github.com/google/cadvisor/version.GoVersion={{.Env.GOLANG_VERSION}}
 checksum:
   name_template: checksums.txt

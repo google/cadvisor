@@ -6,6 +6,11 @@ on:
 jobs:
   release:
     runs-on: ubuntu-20.04
+    # The only reason to use strategy.matrix is to pass GOLANG_VERSION env variable while keeping Go version number
+    # in single place.
+    strategy:
+      matrix:
+        golang: [1.16]
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -14,7 +19,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.16
+        go-version: ${{ matrix.golang }}
     - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2
       with:
@@ -23,3 +28,4 @@ jobs:
         workdir: ./cmd
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GOLANG_VERSION: ${{ matrix.golang }}
