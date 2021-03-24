@@ -203,7 +203,10 @@ func readString(dirpath string, file string) string {
 
 func readUInt64(dirpath string, file string) uint64 {
 	out := readString(dirpath, file)
-	if out == "" || out == "max" {
+	if out == "max" {
+		return math.MaxUint64
+	}
+	if out == "" {
 		return 0
 	}
 
