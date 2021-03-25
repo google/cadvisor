@@ -103,17 +103,43 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 	cpuRoot, ok := cgroupPaths["cpu"]
 	if ok {
 		if utils.FileExists(cpuRoot) {
-			spec.HasCpu = true
-			spec.Cpu.Limit = readUInt64(cpuRoot, "cpu.shares")
-			spec.Cpu.Period = readUInt64(cpuRoot, "cpu.cfs_period_us")
-			quota := readString(cpuRoot, "cpu.cfs_quota_us")
+			if cgroups.IsCgroup2UnifiedMode() {
+				spec.HasCpu = true
 
-			if quota != "" && quota != "-1" {
-				val, err := strconv.ParseUint(quota, 10, 64)
-				if err != nil {
-					klog.Errorf("GetSpec: Failed to parse CPUQuota from %q: %s", path.Join(cpuRoot, "cpu.cfs_quota_us"), err)
-				} else {
-					spec.Cpu.Quota = val
+				weight := readUInt64(cpuRoot, "cpu.weight")
+				if weight > 0 {
+					limit, err := convertCPUWeightToCPULimit(weight)
+					if err != nil {
+						klog.Errorf("GetSpec: Failed to read CPULimit from %q: %s", path.Join(cpuRoot, "cpu.weight"), err)
+					} else {
+						spec.Cpu.Limit = limit
+					}
+				}
+				max := readString(cpuRoot, "cpu.max")
+				if max != "" {
+					splits := strings.SplitN(max, " ", 2)
+					if len(splits) != 2 {
+						klog.Errorf("GetSpec: Failed to parse CPUmax from %q", path.Join(cpuRoot, "cpu.max"))
+					} else {
+						if splits[0] != "max" {
+							spec.Cpu.Quota = parseUint64String(splits[0])
+						}
+						spec.Cpu.Period = parseUint64String(splits[1])
+					}
+				}
+			} else {
+				spec.HasCpu = true
+				spec.Cpu.Limit = readUInt64(cpuRoot, "cpu.shares")
+				spec.Cpu.Period = readUInt64(cpuRoot, "cpu.cfs_period_us")
+				quota := readString(cpuRoot, "cpu.cfs_quota_us")
+
+				if quota != "" && quota != "-1" {
+					val, err := strconv.ParseUint(quota, 10, 64)
+					if err != nil {
+						klog.Errorf("GetSpec: Failed to parse CPUQuota from %q: %s", path.Join(cpuRoot, "cpu.cfs_quota_us"), err)
+					} else {
+						spec.Cpu.Quota = val
+					}
 				}
 			}
 		}
@@ -199,6 +225,37 @@ func readString(dirpath string, file string) string {
 		return ""
 	}
 	return strings.TrimSpace(string(out))
+}
+
+// Convert from [1-10000] to [2-262144]
+func convertCPUWeightToCPULimit(weight uint64) (uint64, error) {
+	const (
+		// minWeight is the lowest value possible for cpu.weight
+		minWeight = 1
+		// maxWeight is the highest value possible for cpu.weight
+		maxWeight = 10000
+	)
+	if weight < minWeight || weight > maxWeight {
+		return 0, fmt.Errorf("convertCPUWeightToCPULimit: invalid cpu weight: %v", weight)
+	}
+	return 2 + ((weight-1)*262142)/9999, nil
+}
+
+func parseUint64String(strValue string) uint64 {
+	if strValue == "max" {
+		return math.MaxUint64
+	}
+	if strValue == "" {
+		return 0
+	}
+
+	val, err := strconv.ParseUint(strValue, 10, 64)
+	if err != nil {
+		klog.Errorf("parseUint64String: Failed to parse int %q: %s", strValue, err)
+		return 0
+	}
+
+	return val
 }
 
 func readUInt64(dirpath string, file string) uint64 {
