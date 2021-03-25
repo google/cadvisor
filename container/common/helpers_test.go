@@ -26,3 +26,49 @@ func BenchmarkListDirectories(b *testing.B) {
 		}
 	}
 }
+
+func TestConvertCpuWeightToCpuLimit(t *testing.T) {
+	limit, err := convertCPUWeightToCPULimit(1)
+	if err != nil {
+		t.Fatalf("Error in convertCPUWeightToCPULimit: %s", err)
+	}
+	if limit != 2 {
+		t.Fatalf("convertCPUWeightToCPULimit(1) != 2")
+	}
+	limit, err = convertCPUWeightToCPULimit(10000)
+	if err != nil {
+		t.Fatalf("Error in convertCPUWeightToCPULimit: %s", err)
+	}
+	if limit != 262144 {
+		t.Fatalf("convertCPUWeightToCPULimit(10000) != 262144")
+	}
+	_, err = convertCPUWeightToCPULimit(0)
+	if err == nil {
+		t.Fatalf("convertCPUWeightToCPULimit(0) must raise an error")
+	}
+	_, err = convertCPUWeightToCPULimit(10001)
+	if err == nil {
+		t.Fatalf("convertCPUWeightToCPULimit(10001) must raise an error")
+	}
+}
+
+func TestParseUint64String(t *testing.T) {
+	if parseUint64String("1000") != 1000 {
+		t.Fatalf("parseUint64String(\"1000\") != 1000")
+	}
+	if parseUint64String("-1") != 0 {
+		t.Fatalf("parseUint64String(\"-1\") != 0")
+	}
+	if parseUint64String("0") != 0 {
+		t.Fatalf("parseUint64String(\"0\") != 0")
+	}
+	if parseUint64String("not-a-number") != 0 {
+		t.Fatalf("parseUint64String(\"not-a-number\") != 0")
+	}
+	if parseUint64String(" 1000 ") != 0 {
+		t.Fatalf("parseUint64String(\" 1000 \") != 0")
+	}
+	if parseUint64String("18446744073709551615") != 18446744073709551615 {
+		t.Fatalf("parseUint64String(\"18446744073709551615\") != 18446744073709551615")
+	}
+}
