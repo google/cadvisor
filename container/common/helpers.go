@@ -17,9 +17,9 @@ package common
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -48,25 +48,6 @@ func DebugInfo(watches map[string][]string) map[string][]string {
 	out["Inotify watches"] = lines
 
 	return out
-}
-
-// findFileInAncestorDir returns the path to the parent directory that contains the specified file.
-// "" is returned if the lookup reaches the limit.
-func findFileInAncestorDir(current, file, limit string) (string, error) {
-	for {
-		fpath := path.Join(current, file)
-		_, err := os.Stat(fpath)
-		if err == nil {
-			return current, nil
-		}
-		if !os.IsNotExist(err) {
-			return "", err
-		}
-		if current == limit {
-			return "", nil
-		}
-		current = filepath.Dir(current)
-	}
 }
 
 var bootTime = func() time.Time {
@@ -165,11 +146,7 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 				spec.Memory.Reservation = readUInt64(memoryRoot, "memory.soft_limit_in_bytes")
 			}
 		} else {
-			memoryRoot, err := findFileInAncestorDir(memoryRoot, "memory.max", "/sys/fs/cgroup")
-			if err != nil {
-				return spec, err
-			}
-			if memoryRoot != "" {
+			if utils.FileExists(path.Join(memoryRoot, "memory.max")) {
 				spec.HasMemory = true
 				spec.Memory.Reservation = readUInt64(memoryRoot, "memory.high")
 				spec.Memory.Limit = readUInt64(memoryRoot, "memory.max")
@@ -226,7 +203,10 @@ func readString(dirpath string, file string) string {
 
 func readUInt64(dirpath string, file string) uint64 {
 	out := readString(dirpath, file)
-	if out == "" || out == "max" {
+	if out == "max" {
+		return math.MaxUint64
+	}
+	if out == "" {
 		return 0
 	}
 
