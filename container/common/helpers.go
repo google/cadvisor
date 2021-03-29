@@ -61,6 +61,10 @@ var bootTime = func() time.Time {
 }()
 
 func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoFactory, hasNetwork, hasFilesystem bool) (info.ContainerSpec, error) {
+	return getSpecInternal(cgroupPaths, machineInfoFactory, hasNetwork, hasFilesystem, cgroups.IsCgroup2UnifiedMode())
+}
+
+func getSpecInternal(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoFactory, hasNetwork, hasFilesystem, cgroup2UnifiedMode bool) (info.ContainerSpec, error) {
 	var spec info.ContainerSpec
 
 	// Assume unified hierarchy containers.
@@ -77,7 +81,7 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 		// Use clone_children/events as a workaround as it isn't usually modified. It is only likely changed
 		// immediately after creating a container. If the directory modified time is lower, we use that.
 		cgroupPathFile := path.Join(cgroupPathDir, "cgroup.clone_children")
-		if cgroups.IsCgroup2UnifiedMode() {
+		if cgroup2UnifiedMode {
 			cgroupPathFile = path.Join(cgroupPathDir, "cgroup.events")
 		}
 		fi, err := os.Stat(cgroupPathFile)
@@ -103,7 +107,7 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 	cpuRoot, ok := cgroupPaths["cpu"]
 	if ok {
 		if utils.FileExists(cpuRoot) {
-			if cgroups.IsCgroup2UnifiedMode() {
+			if cgroup2UnifiedMode {
 				spec.HasCpu = true
 
 				weight := readUInt64(cpuRoot, "cpu.weight")
@@ -152,7 +156,7 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 		if utils.FileExists(cpusetRoot) {
 			spec.HasCpu = true
 			mask := ""
-			if cgroups.IsCgroup2UnifiedMode() {
+			if cgroup2UnifiedMode {
 				mask = readString(cpusetRoot, "cpuset.cpus.effective")
 			} else {
 				mask = readString(cpusetRoot, "cpuset.cpus")
@@ -164,19 +168,19 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 	// Memory
 	memoryRoot, ok := cgroupPaths["memory"]
 	if ok {
-		if !cgroups.IsCgroup2UnifiedMode() {
-			if utils.FileExists(memoryRoot) {
-				spec.HasMemory = true
-				spec.Memory.Limit = readUInt64(memoryRoot, "memory.limit_in_bytes")
-				spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.memsw.limit_in_bytes")
-				spec.Memory.Reservation = readUInt64(memoryRoot, "memory.soft_limit_in_bytes")
-			}
-		} else {
+		if cgroup2UnifiedMode {
 			if utils.FileExists(path.Join(memoryRoot, "memory.max")) {
 				spec.HasMemory = true
 				spec.Memory.Reservation = readUInt64(memoryRoot, "memory.high")
 				spec.Memory.Limit = readUInt64(memoryRoot, "memory.max")
 				spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.swap.max")
+			}
+		} else {
+			if utils.FileExists(memoryRoot) {
+				spec.HasMemory = true
+				spec.Memory.Limit = readUInt64(memoryRoot, "memory.limit_in_bytes")
+				spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.memsw.limit_in_bytes")
+				spec.Memory.Reservation = readUInt64(memoryRoot, "memory.soft_limit_in_bytes")
 			}
 		}
 	}
@@ -202,7 +206,7 @@ func GetSpec(cgroupPaths map[string]string, machineInfoFactory info.MachineInfoF
 	spec.HasFilesystem = hasFilesystem
 
 	ioControllerName := "blkio"
-	if cgroups.IsCgroup2UnifiedMode() {
+	if cgroup2UnifiedMode {
 		ioControllerName = "io"
 	}
 	if blkioRoot, ok := cgroupPaths[ioControllerName]; ok && utils.FileExists(blkioRoot) {
