@@ -28,11 +28,11 @@ var (
 	podmanClientOnce sync.Once
 )
 
-// Client creates a Docker API client based on the given Podman flags
+// NewClient creates a Docker API client based on the given Podman flags
 //
 // At this time, we're using the podmans docker compatibility API layer
 // for podman containers.
-func Client() (*dclient.Client, error) {
+func NewClient() (*dclient.Client, error) {
 	podmanClientOnce.Do(func() {
 		var client *http.Client
 		if *ArgPodmanTLS {

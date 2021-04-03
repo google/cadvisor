@@ -44,7 +44,7 @@ func Status() (v1.PodmanStatus, error) {
 }
 
 func StatusWithContext(ctx context.Context) (v1.PodmanStatus, error) {
-	client, err := Client()
+	client, err := NewClient()
 	if err != nil {
 		return v1.PodmanStatus{}, fmt.Errorf("unable to communicate with podman: %v", err)
 	}
@@ -85,7 +85,7 @@ func StatusFromPodmanInfo(podmanInfo dockertypes.Info) (v1.PodmanStatus, error) 
 // Checks whether the podmanInfo reflects a valid docker setup, and returns it if it does, or an
 // error otherwise.
 func ValidateInfo() (*dockertypes.Info, error) {
-	client, err := Client()
+	client, err := NewClient()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with podman: %v", err)
 	}
@@ -121,7 +121,7 @@ func APIVersion() ([]int, error) {
 
 func VersionString() (string, error) {
 	podmanVersion := "Unknown"
-	client, err := Client()
+	client, err := NewClient()
 	if err == nil {
 		version, err := client.ServerVersion(defaultContext())
 		if err == nil {
@@ -133,7 +133,7 @@ func VersionString() (string, error) {
 
 func APIVersionString() (string, error) {
 	apiVersion := "Unknown"
-	client, err := Client()
+	client, err := NewClient()
 	if err == nil {
 		version, err := client.ServerVersion(defaultContext())
 		if err == nil {
@@ -153,7 +153,7 @@ func parseVersion(versionString string, regex *regexp.Regexp, length int) ([]int
 	for index, versionStr := range versionStringArray {
 		version, err := strconv.Atoi(versionStr)
 		if err != nil {
-			return nil, fmt.Errorf("error while parsing \"%v\" in \"%v\"", versionStr, versionString)
+			return nil, fmt.Errorf("error while parsing \"%v\" in \"%v\": %w", versionStr, versionString, err)
 		}
 		versionArray[index] = version
 	}

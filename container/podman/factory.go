@@ -34,28 +34,29 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var ArgPodmanEndpoint = flag.String("podman", "unix:///run/podman/podman.sock", "podman endpoint")
-var ArgPodmanTLS = flag.Bool("podman-tls", false, "use TLS to connect to podman")
-var ArgPodmanCert = flag.String("podman-tls-cert", "cert.pem", "path to client certificate")
-var ArgPodmanKey = flag.String("podman-tls-key", "key.pem", "path to private key")
-var ArgPodmanCA = flag.String("podman-tls-ca", "ca.pem", "path to trusted CA")
+const (
+	// The namespace under which podman aliases are unique.
+	PodmanNamespace = "podman"
 
-// The namespace under which podman aliases are unique.
-const PodmanNamespace = "podman"
+	// The retry times for getting podman root dir
+	rootDirRetries = 5
 
-// The retry times for getting podman root dir
-const rootDirRetries = 5
-
-// The retry period for getting podman root dir, Millisecond
-const rootDirRetryPeriod time.Duration = 1000 * time.Millisecond
-
-// Regexp that identifies podman cgroups
-// --cgroup-parent have another prefix than 'libpod'
-var podmanCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
-
-var podmanEnvWhitelist = flag.String("podman_env_metadata_whitelist", "", "a comma-separated list of environment variable keys matched with specified prefix that needs to be collected for podman containers")
+	// The retry period for getting podman root dir, Millisecond
+	rootDirRetryPeriod time.Duration = 1000 * time.Millisecond
+)
 
 var (
+	ArgPodmanEndpoint = flag.String("podman", "unix:///run/podman/podman.sock", "podman endpoint")
+	ArgPodmanTLS      = flag.Bool("podman-tls", false, "use TLS to connect to podman")
+	ArgPodmanCert     = flag.String("podman-tls-cert", "cert.pem", "path to client certificate")
+	ArgPodmanKey      = flag.String("podman-tls-key", "key.pem", "path to private key")
+	ArgPodmanCA       = flag.String("podman-tls-ca", "ca.pem", "path to trusted CA")
+
+	// Regexp that identifies podman cgroups
+	// --cgroup-parent have another prefix than 'libpod'
+	podmanCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
+
+	podmanEnvWhitelist = flag.String("podman_env_metadata_whitelist", "", "a comma-separated list of environment variable keys matched with specified prefix that needs to be collected for podman containers")
 	// Basepath to all container specific information that libcontainer stores.
 	podmanRootDir string
 
@@ -100,7 +101,7 @@ func (f *podmanFactory) String() string {
 }
 
 func (f *podmanFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
-	client, err := Client()
+	client, err := NewClient()
 	if err != nil {
 		return
 	}
@@ -175,7 +176,7 @@ var (
 
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
-	client, err := Client()
+	client, err := NewClient()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with podman: %v", err)
 	}
