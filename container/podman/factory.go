@@ -133,7 +133,7 @@ func CgroupNameToPodmanId(name string) string {
 }
 
 // isContainerName returns true if the cgroup with associated name
-// coult be a podman container.
+// could be a podman container.
 // the actual decision is made by running a ContainerInspect API call
 func isContainerName(name string) bool {
 	// always ignore .mount cgroup even if associated with podman and delegate to systemd
