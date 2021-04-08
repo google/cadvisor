@@ -29,14 +29,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/cadvisor/container"
-	info "github.com/google/cadvisor/info/v1"
-	"golang.org/x/sys/unix"
-
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	fs2 "github.com/opencontainers/runc/libcontainer/cgroups/fs2"
+	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 	"k8s.io/klog/v2"
+
+	"github.com/google/cadvisor/container"
+	info "github.com/google/cadvisor/info/v1"
 )
 
 var (
@@ -71,21 +70,22 @@ func NewHandler(cgroupManager cgroups.Manager, rootFs string, pid int, includedM
 
 // Get cgroup and networking stats of the specified container
 func (h *Handler) GetStats() (*info.ContainerStats, error) {
-	var cgroupStats *cgroups.Stats
-	readCgroupStats := true
+	ignoreStatsError := false
 	if cgroups.IsCgroup2UnifiedMode() {
-		// On cgroup v2 there are no stats at the root cgroup
-		// so check whether it is the root cgroup
+		// On cgroup v2 the root cgroup stats have been introduced in recent kernel versions,
+		// so not all kernel versions have all the data. This means that stat fetching can fail
+		// due to lacking cgroup stat files, but that some data is provided.
 		if h.cgroupManager.Path("") == fs2.UnifiedMountpoint {
-			readCgroupStats = false
+			ignoreStatsError = true
 		}
 	}
-	var err error
-	if readCgroupStats {
-		cgroupStats, err = h.cgroupManager.GetStats()
-		if err != nil {
+
+	cgroupStats, err := h.cgroupManager.GetStats()
+	if err != nil {
+		if !ignoreStatsError {
 			return nil, err
 		}
+		klog.V(4).Infof("Ignoring errors when gathering stats for root cgroup since some controllers don't have stats on the root cgroup: %v", err)
 	}
 	libcontainerStats := &libcontainer.Stats{
 		CgroupStats: cgroupStats,
@@ -758,16 +758,6 @@ func (h *Handler) GetProcesses() ([]int, error) {
 	return pids, nil
 }
 
-func minUint32(x, y uint32) uint32 {
-	if x < y {
-		return x
-	}
-	return y
-}
-
-// var to allow unit tests to stub it out
-var numCpusFunc = getNumberOnlineCPUs
-
 // Convert libcontainer stats to info.ContainerStats.
 func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 	ret.Cpu.Usage.User = s.CpuStats.CpuUsage.UsageInUsermode
@@ -846,7 +836,12 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
 	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
 
-	if s.MemoryStats.UseHierarchy {
+	if cgroups.IsCgroup2UnifiedMode() {
+		ret.Memory.Cache = s.MemoryStats.Stats["file"]
+		ret.Memory.RSS = s.MemoryStats.Stats["anon"]
+		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage
+		ret.Memory.MappedFile = s.MemoryStats.Stats["file_mapped"]
+	} else if s.MemoryStats.UseHierarchy {
 		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["total_rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["total_swap"]
@@ -880,6 +875,10 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		}
 	}
 	ret.Memory.WorkingSet = workingSet
+}
+
+func setCPUSetStats(s *cgroups.Stats, ret *info.ContainerStats) {
+	ret.CpuSet.MemoryMigrate = s.CPUSetStats.MemoryMigrate
 }
 
 func getNumaStats(memoryStats map[uint8]uint64) map[uint8]uint64 {
@@ -958,6 +957,9 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics co
 		}
 		if includedMetrics.Has(container.HugetlbUsageMetrics) {
 			setHugepageStats(s, ret)
+		}
+		if includedMetrics.Has(container.CPUSetMetrics) {
+			setCPUSetStats(s, ret)
 		}
 	}
 	if len(libcontainerStats.Interfaces) > 0 {

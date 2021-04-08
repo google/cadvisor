@@ -403,6 +403,10 @@ type MemoryStats struct {
 	HierarchicalData MemoryStatsMemoryData `json:"hierarchical_data,omitempty"`
 }
 
+type CPUSetStats struct {
+	MemoryMigrate uint64 `json:"memory_migrate"`
+}
+
 type MemoryNumaStats struct {
 	File        map[uint8]uint64 `json:"file,omitempty"`
 	Anon        map[uint8]uint64 `json:"anon,omitempty"`
@@ -961,6 +965,10 @@ type ContainerStats struct {
 
 	// Resource Control (resctrl) statistics
 	Resctrl ResctrlStats `json:"resctrl,omitempty"`
+
+	CpuSet CPUSetStats `json:"cpuset,omitempty"`
+
+	OOMEvents uint64 `json:"oom_events,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

@@ -21,6 +21,7 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `container_accelerator_duty_cycle` | Gauge | Percent of time over the past sample period during which the accelerator was actively processing | percentage | accelerator |
 `container_accelerator_memory_total_bytes` | Gauge | Total accelerator memory | bytes | accelerator |
 `container_accelerator_memory_used_bytes` | Gauge | Total accelerator memory allocated | bytes | accelerator |
+`container_blkio_device_usage_total` | Counter | Blkio device bytes usage | bytes | diskIO | 
 `container_cpu_cfs_periods_total` | Counter | Number of elapsed enforcement period intervals | | |
 `container_cpu_cfs_throttled_periods_total` | Counter | Number of throttled period intervals | | |
 `container_cpu_cfs_throttled_seconds_total` | Counter | Total time duration the container has been throttled | seconds | |
@@ -64,6 +65,7 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 `container_memory_rss` | Gauge | Size of RSS | bytes | |
 `container_memory_swap` | Gauge | Container swap usage | bytes | |
 `container_memory_mapped_file` | Gauge | Size of memory mapped files | bytes | |
+`container_memory_migrate` | Gauge | Memory migrate status | | cpuset |
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | |
 `container_network_receive_bytes_total` | Counter | Cumulative count of bytes received | bytes | network |

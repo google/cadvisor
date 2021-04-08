@@ -21,16 +21,29 @@ import (
 	"reflect"
 	"testing"
 
+	mount "github.com/moby/sys/mountinfo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"k8s.io/mount-utils"
 )
+
+func TestMountInfoFromDir(t *testing.T) {
+	as := assert.New(t)
+	fsInfo := &RealFsInfo{
+		mounts: map[string]mount.Info{
+			"/": {},
+		},
+	}
+	testDirs := []string{"/var/lib/kubelet", "/var/lib/rancher"}
+	for _, testDir := range testDirs {
+		_, found := fsInfo.mountInfoFromDir(testDir)
+		as.True(found, "failed to find MountInfo %s from FsInfo %s", testDir, fsInfo)
+	}
+}
 
 func TestGetDiskStatsMap(t *testing.T) {
 	diskStatsMap, err := getDiskStatsMap("test_resources/diskstats")
 	if err != nil {
-		t.Errorf("Error calling getDiskStatMap %s", err)
+		t.Errorf("Error calling getDiskStatsMap %s", err)
 	}
 	if len(diskStatsMap) != 30 {
 		t.Errorf("diskStatsMap %+v not valid", diskStatsMap)
@@ -82,7 +95,7 @@ func TestGetDiskStatsMap(t *testing.T) {
 func TestGetDiskStatsMapMajorMinorNum(t *testing.T) {
 	diskStatsMap, err := getDiskStatsMap("test_resources/diskstats")
 	if err != nil {
-		t.Errorf("Error calling getDiskStatMap %s", err)
+		t.Errorf("Error calling getDiskStatsMap %s", err)
 	}
 	if len(diskStatsMap) != 30 {
 		t.Errorf("diskStatsMap %+v not valid", diskStatsMap)
@@ -198,13 +211,13 @@ func TestParseDMTable(t *testing.T) {
 
 func TestAddSystemRootLabel(t *testing.T) {
 	tests := []struct {
-		mounts   []mount.MountInfo
+		mounts   []*mount.Info
 		expected string
 	}{
 		{
-			mounts: []mount.MountInfo{
-				{Source: "/dev/sda1", MountPoint: "/foo"},
-				{Source: "/dev/sdb1", MountPoint: "/"},
+			mounts: []*mount.Info{
+				{Source: "/dev/sda1", Mountpoint: "/foo"},
+				{Source: "/dev/sdb1", Mountpoint: "/"},
 			},
 			expected: "/dev/sdb1",
 		},
@@ -356,22 +369,22 @@ func TestAddDockerImagesLabel(t *testing.T) {
 		driverStatus                   map[string]string
 		dmsetupTable                   string
 		getDockerDeviceMapperInfoError error
-		mounts                         []mount.MountInfo
+		mounts                         []*mount.Info
 		expectedDockerDevice           string
 		expectedPartition              *partition
 	}{
 		{
 			name: "single partition, no dedicated image fs",
-			mounts: []mount.MountInfo{
+			mounts: []*mount.Info{
 				{
 					Source:     "/dev/root",
-					MountPoint: "/",
-					FsType:     "ext4",
+					Mountpoint: "/",
+					FSType:     "ext4",
 				},
 				{
 					Source:     "/sys/fs/cgroup",
-					MountPoint: "/sys/fs/cgroup",
-					FsType:     "tmpfs",
+					Mountpoint: "/sys/fs/cgroup",
+					FSType:     "tmpfs",
 				},
 			},
 			expectedDockerDevice: "/dev/root",
@@ -381,11 +394,11 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			driver:       "devicemapper",
 			driverStatus: map[string]string{"Pool Name": "vg_vagrant-docker--pool"},
 			dmsetupTable: "0 53870592 thin-pool 253:2 253:3 1024 0 1 skip_block_zeroing",
-			mounts: []mount.MountInfo{
+			mounts: []*mount.Info{
 				{
 					Source:     "/dev/mapper/vg_vagrant-lv_root",
-					MountPoint: "/",
-					FsType:     "devicemapper",
+					Mountpoint: "/",
+					FSType:     "devicemapper",
 				},
 			},
 			expectedDockerDevice: "vg_vagrant-docker--pool",
@@ -400,73 +413,73 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			name:         "devicemapper, loopback on non-root partition",
 			driver:       "devicemapper",
 			driverStatus: map[string]string{"Data loop file": "/var/lib/docker/devicemapper/devicemapper/data"},
-			mounts: []mount.MountInfo{
+			mounts: []*mount.Info{
 				{
 					Source:     "/dev/mapper/vg_vagrant-lv_root",
-					MountPoint: "/",
-					FsType:     "devicemapper",
+					Mountpoint: "/",
+					FSType:     "devicemapper",
 				},
 				{
 					Source:     "/dev/sdb1",
-					MountPoint: "/var/lib/docker/devicemapper",
+					Mountpoint: "/var/lib/docker/devicemapper",
 				},
 			},
 			expectedDockerDevice: "/dev/sdb1",
 		},
 		{
 			name: "multiple mounts - innermost check",
-			mounts: []mount.MountInfo{
+			mounts: []*mount.Info{
 				{
 					Source:     "/dev/sda1",
-					MountPoint: "/",
-					FsType:     "ext4",
+					Mountpoint: "/",
+					FSType:     "ext4",
 				},
 				{
 					Source:     "/dev/sdb1",
-					MountPoint: "/var/lib/docker",
-					FsType:     "ext4",
+					Mountpoint: "/var/lib/docker",
+					FSType:     "ext4",
 				},
 				{
 					Source:     "/dev/sdb2",
-					MountPoint: "/var/lib/docker/btrfs",
-					FsType:     "btrfs",
+					Mountpoint: "/var/lib/docker/btrfs",
+					FSType:     "btrfs",
 				},
 			},
 			expectedDockerDevice: "/dev/sdb2",
 		},
 		{
 			name: "root fs inside container, docker-images bindmount",
-			mounts: []mount.MountInfo{
+			mounts: []*mount.Info{
 				{
 					Source:     "overlay",
-					MountPoint: "/",
-					FsType:     "overlay",
+					Mountpoint: "/",
+					FSType:     "overlay",
 				},
 				{
 					Source:     "/dev/sda1",
-					MountPoint: "/var/lib/docker",
-					FsType:     "ext4",
+					Mountpoint: "/var/lib/docker",
+					FSType:     "ext4",
 				},
 			},
 			expectedDockerDevice: "/dev/sda1",
 		},
 		{
 			name: "[overlay2] root fs inside container - /var/lib/docker bindmount",
-			mounts: []mount.MountInfo{
+			mounts: []*mount.Info{
 				{
 					Source:     "overlay",
-					MountPoint: "/",
-					FsType:     "overlay",
+					Mountpoint: "/",
+					FSType:     "overlay",
 				},
 				{
 					Source:     "/dev/sdb1",
-					MountPoint: "/var/lib/docker",
-					FsType:     "ext4",
+					Mountpoint: "/var/lib/docker",
+					FSType:     "ext4",
 				},
 				{
 					Source:     "/dev/sdb2",
-					MountPoint: "/var/lib/docker/overlay2",
-					FsType:     "ext4",
+					Mountpoint: "/var/lib/docker/overlay2",
+					FSType:     "ext4",
 				},
 			},
 			expectedDockerDevice: "/dev/sdb2",
@@ -508,22 +521,22 @@ func TestAddDockerImagesLabel(t *testing.T) {
 func TestProcessMounts(t *testing.T) {
 	tests := []struct {
 		name             string
-		mounts           []mount.MountInfo
+		mounts           []*mount.Info
 		excludedPrefixes []string
 		expected         map[string]partition
 	}{
 		{
 			name: "unsupported fs types",
-			mounts: []mount.MountInfo{
-				{FsType: "somethingelse"},
+			mounts: []*mount.Info{
+				{FSType: "somethingelse"},
 			},
 			expected: map[string]partition{},
 		},
 		{
 			name: "avoid bind mounts",
-			mounts: []mount.MountInfo{
-				{Root: "/", MountPoint: "/", Source: "/dev/sda1", FsType: "xfs", Major: 253, Minor: 0},
-				{Root: "/foo", MountPoint: "/bar", Source: "/dev/sda1", FsType: "xfs", Major: 253, Minor: 0},
+			mounts: []*mount.Info{
+				{Root: "/", Mountpoint: "/", Source: "/dev/sda1", FSType: "xfs", Major: 253, Minor: 0},
+				{Root: "/foo", Mountpoint: "/bar", Source: "/dev/sda1", FSType: "xfs", Major: 253, Minor: 0},
 			},
 			expected: map[string]partition{
 				"/dev/sda1": {fsType: "xfs", mountpoint: "/", major: 253, minor: 0},
@@ -531,10 +544,10 @@ func TestProcessMounts(t *testing.T) {
 		},
 		{
 			name: "exclude prefixes",
-			mounts: []mount.MountInfo{
-				{Root: "/", MountPoint: "/someother", Source: "/dev/sda1", FsType: "xfs", Major: 253, Minor: 2},
-				{Root: "/", MountPoint: "/", Source: "/dev/sda2", FsType: "xfs", Major: 253, Minor: 0},
-				{Root: "/", MountPoint: "/excludeme", Source: "/dev/sda3", FsType: "xfs", Major: 253, Minor: 1},
+			mounts: []*mount.Info{
+				{Root: "/", Mountpoint: "/someother", Source: "/dev/sda1", FSType: "xfs", Major: 253, Minor: 2},
+				{Root: "/", Mountpoint: "/", Source: "/dev/sda2", FSType: "xfs", Major: 253, Minor: 0},
+				{Root: "/", Mountpoint: "/excludeme", Source: "/dev/sda3", FSType: "xfs", Major: 253, Minor: 1},
 			},
 			excludedPrefixes: []string{"/exclude", "/some"},
 			expected: map[string]partition{
@@ -543,25 +556,27 @@ func TestProcessMounts(t *testing.T) {
 		},
 		{
 			name: "supported fs types",
-			mounts: []mount.MountInfo{
-				{Root: "/", MountPoint: "/a", Source: "/dev/sda", FsType: "ext3", Major: 253, Minor: 0},
-				{Root: "/", MountPoint: "/b", Source: "/dev/sdb", FsType: "ext4", Major: 253, Minor: 1},
-				{Root: "/", MountPoint: "/c", Source: "/dev/sdc", FsType: "btrfs", Major: 253, Minor: 2},
-				{Root: "/", MountPoint: "/d", Source: "/dev/sdd", FsType: "xfs", Major: 253, Minor: 3},
-				{Root: "/", MountPoint: "/e", Source: "/dev/sde", FsType: "zfs", Major: 253, Minor: 4},
-				{Root: "/", MountPoint: "/f", Source: "overlay", FsType: "overlay", Major: 253, Minor: 5},
-				{Root: "/", MountPoint: "/test1", Source: "tmpfs", FsType: "tmpfs", Major: 253, Minor: 4},
-				{Root: "/", MountPoint: "/test2", Source: "tmpfs", FsType: "tmpfs", Major: 253, Minor: 4},
+			mounts: []*mount.Info{
+				{Root: "/", Mountpoint: "/a", Source: "/dev/sda", FSType: "ext3", Major: 253, Minor: 0},
+				{Root: "/", Mountpoint: "/b", Source: "/dev/sdb", FSType: "ext4", Major: 253, Minor: 1},
+				{Root: "/", Mountpoint: "/c", Source: "/dev/sdc", FSType: "btrfs", Major: 253, Minor: 2},
+				{Root: "/", Mountpoint: "/d", Source: "/dev/sdd", FSType: "xfs", Major: 253, Minor: 3},
+				{Root: "/", Mountpoint: "/e", Source: "/dev/sde", FSType: "zfs", Major: 253, Minor: 4},
+				{Root: "/", Mountpoint: "/f", Source: "overlay", FSType: "overlay", Major: 253, Minor: 5},
+				{Root: "/", Mountpoint: "/g", Source: "127.0.0.1:/nfs", FSType: "nfs4", Major: 253, Minor: 6},
+				{Root: "/", Mountpoint: "/test1", Source: "tmpfs", FSType: "tmpfs", Major: 253, Minor: 4},
+				{Root: "/", Mountpoint: "/test2", Source: "tmpfs", FSType: "tmpfs", Major: 253, Minor: 4},
 			},
 			expected: map[string]partition{
-				"/dev/sda":      {fsType: "ext3", mountpoint: "/a", major: 253, minor: 0},
-				"/dev/sdb":      {fsType: "ext4", mountpoint: "/b", major: 253, minor: 1},
-				"/dev/sdc":      {fsType: "btrfs", mountpoint: "/c", major: 253, minor: 2},
-				"/dev/sdd":      {fsType: "xfs", mountpoint: "/d", major: 253, minor: 3},
-				"/dev/sde":      {fsType: "zfs", mountpoint: "/e", major: 253, minor: 4},
-				"overlay_253-5": {fsType: "overlay", mountpoint: "/f", major: 253, minor: 5},
-				"/test1":        {fsType: "tmpfs", mountpoint: "/test1", major: 253, minor: 4},
-				"/test2":        {fsType: "tmpfs", mountpoint: "/test2", major: 253, minor: 4},
+				"/dev/sda":       {fsType: "ext3", mountpoint: "/a", major: 253, minor: 0},
+				"/dev/sdb":       {fsType: "ext4", mountpoint: "/b", major: 253, minor: 1},
+				"/dev/sdc":       {fsType: "btrfs", mountpoint: "/c", major: 253, minor: 2},
+				"/dev/sdd":       {fsType: "xfs", mountpoint: "/d", major: 253, minor: 3},
+				"/dev/sde":       {fsType: "zfs", mountpoint: "/e", major: 253, minor: 4},
+				"overlay_253-5":  {fsType: "overlay", mountpoint: "/f", major: 253, minor: 5},
+				"127.0.0.1:/nfs": {fsType: "nfs4", mountpoint: "/g", major: 253, minor: 6},
+				"/test1":         {fsType: "tmpfs", mountpoint: "/test1", major: 253, minor: 4},
+				"/test2":         {fsType: "tmpfs", mountpoint: "/test2", major: 253, minor: 4},
 			},
 		},
 	}

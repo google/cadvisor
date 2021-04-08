@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   lint:
     env:
-      GOLANGCI_LINT_V: 1.31.0
+      GOLANGCI_LINT_V: 1.34.1
     strategy:
       matrix:
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
@@ -13,7 +13,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v1
       with:
-        go-version: 1.15
+        go-version: 1.16
     - name: Install golangci-lint
       run: >
         cd /tmp &&
@@ -33,7 +33,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-versions: [1.15, 1.14]
+        go-versions: [1.16, 1.15]
         platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
@@ -54,7 +54,7 @@ jobs:
   test-integration:
     strategy:
       matrix:
-        go-versions: [1.15, 1.14]
+        go-versions: [1.16, 1.15]
         platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}

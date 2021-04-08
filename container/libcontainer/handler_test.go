@@ -108,7 +108,6 @@ func TestMorePossibleCPUs(t *testing.T) {
 	for i := uint32(0); i < realNumCPUs; i++ {
 		perCPUUsage[i] = 8562955455524
 	}
-
 	s := &cgroups.Stats{
 		CpuStats: cgroups.CpuStats{
 			CpuUsage: cgroups.CpuUsage{
