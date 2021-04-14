@@ -47,10 +47,11 @@ type Node struct {
 }
 
 type Core struct {
-	Id       int     `json:"core_id"`
-	Threads  []int   `json:"thread_ids"`
-	Caches   []Cache `json:"caches"`
-	SocketID int     `json:"socket_id"`
+	Id           int     `json:"core_id"`
+	Threads      []int   `json:"thread_ids"`
+	Caches       []Cache `json:"caches"`
+	UncoreCaches []Cache `json:"uncore_caches"`
+	SocketID     int     `json:"socket_id"`
 }
 
 type Cache struct {

@@ -298,7 +298,7 @@ func TestTopologyWithoutNodes(t *testing.T) {
 	topologyJSON2, err := json.Marshal(topology[1])
 	assert.Nil(t, err)
 
-	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"id":0, "size":32768,"type":"unified","level":0}], "socket_id": 0}],"caches":null}`
+	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"id":0, "size":32768,"type":"unified","level":0}], "socket_id": 0, "uncore_caches":null}],"caches":null}`
 	expectedTopology2 := `
 		{
 			"node_id":1,
@@ -319,7 +319,8 @@ func TestTopologyWithoutNodes(t *testing.T) {
 						"level":0
 					}
 					],
-					"socket_id": 1
+					"socket_id": 1,
+					"uncore_caches": null
 				}
 			],
 			"caches":null
