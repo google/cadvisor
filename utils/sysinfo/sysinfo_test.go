@@ -1317,6 +1317,7 @@ func TestIgnoredNetworkDevices(t *testing.T) {
 func TestGetCacheInfo(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	cacheInfo := sysfs.CacheInfo{
+		Id:    0,
 		Size:  1024,
 		Type:  "Data",
 		Level: 3,
