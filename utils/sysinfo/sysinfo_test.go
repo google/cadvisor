@@ -119,6 +119,7 @@ func TestGetNodesInfo(t *testing.T) {
 	}{
 		{
 			sysfs.CacheInfo{
+				Id:    0,
 				Size:  32 * 1024,
 				Type:  "unified",
 				Level: 3,
@@ -183,6 +184,7 @@ func TestGetNodesInfo(t *testing.T) {
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -211,6 +213,7 @@ func TestGetNodesInfo(t *testing.T) {
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -222,6 +225,7 @@ func TestGetNodesInfo(t *testing.T) {
 		},
 		{
 			sysfs.CacheInfo{
+				Id:    0,
 				Size:  32 * 1024,
 				Type:  "unified",
 				Level: 3,
@@ -306,6 +310,7 @@ func TestGetNodesInfo(t *testing.T) {
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -341,6 +346,7 @@ func TestGetNodesInfo(t *testing.T) {
 func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{
+		Id:    0,
 		Size:  32 * 1024,
 		Type:  "unified",
 		Level: 3,
@@ -430,6 +436,7 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -457,6 +464,7 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -632,6 +640,7 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
 func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{
+		Id:    0,
 		Size:  32 * 1024,
 		Type:  "unified",
 		Level: 2,
@@ -698,6 +707,7 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
             ],
             "caches": [
               {
+                "id": 0,
                 "size": 32768,
                 "type": "unified",
                 "level": 2
@@ -721,6 +731,7 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
             ],
             "caches": [
               {
+                "id": 0,
                 "size": 32768,
                 "type": "unified",
                 "level": 2
@@ -739,6 +750,7 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 
 	c := sysfs.CacheInfo{
+		Id:    0,
 		Size:  32 * 1024,
 		Type:  "unified",
 		Level: 1,
@@ -801,6 +813,7 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 				  ],
 				  "caches":[
 					 {
+						"id": 0,
 						"size":32768,
 						"type":"unified",
 						"level":1
@@ -824,6 +837,7 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 				  ],
 				  "caches":[
 					 {
+						"id": 0,
 						"size":32768,
 						"type":"unified",
 						"level":1
@@ -1303,6 +1317,7 @@ func TestIgnoredNetworkDevices(t *testing.T) {
 func TestGetCacheInfo(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	cacheInfo := sysfs.CacheInfo{
+		Id:    0,
 		Size:  1024,
 		Type:  "Data",
 		Level: 3,
