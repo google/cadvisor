@@ -1615,7 +1615,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					name:        "container_perf_events_total",
 					help:        "Perf event metric.",
 					valueType:   prometheus.CounterValue,
-					extraLabels: []string{"cpu", "event"},
+					extraLabels: []string{"cpu", "event", "group_id"},
 					getValues: func(s *info.ContainerStats) metricValues {
 						return getPerCPUCorePerfEvents(s)
 					},
@@ -1624,7 +1624,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					name:        "container_perf_events_scaling_ratio",
 					help:        "Perf event metric scaling ratio.",
 					valueType:   prometheus.GaugeValue,
-					extraLabels: []string{"cpu", "event"},
+					extraLabels: []string{"cpu", "event", "group_id"},
 					getValues: func(s *info.ContainerStats) metricValues {
 						return getPerCPUCoreScalingRatio(s)
 					},
@@ -1635,7 +1635,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					name:        "container_perf_events_total",
 					help:        "Perf event metric.",
 					valueType:   prometheus.CounterValue,
-					extraLabels: []string{"cpu", "event"},
+					extraLabels: []string{"cpu", "event", "group_id"},
 					getValues: func(s *info.ContainerStats) metricValues {
 						return getAggregatedCorePerfEvents(s)
 					},
@@ -1644,7 +1644,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					name:        "container_perf_events_scaling_ratio",
 					help:        "Perf event metric scaling ratio.",
 					valueType:   prometheus.GaugeValue,
-					extraLabels: []string{"cpu", "event"},
+					extraLabels: []string{"cpu", "event", "group_id"},
 					getValues: func(s *info.ContainerStats) metricValues {
 						return getMinCoreScalingRatio(s)
 					},
@@ -1655,13 +1655,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_perf_uncore_events_total",
 				help:        "Perf uncore event metric.",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"socket", "event", "pmu"},
+				extraLabels: []string{"socket", "event", "pmu", "group_id"},
 				getValues: func(s *info.ContainerStats) metricValues {
 					values := make(metricValues, 0, len(s.PerfUncoreStats))
 					for _, metric := range s.PerfUncoreStats {
 						values = append(values, metricValue{
 							value:     float64(metric.Value),
-							labels:    []string{strconv.Itoa(metric.Socket), metric.Name, metric.PMU},
+							labels:    []string{strconv.Itoa(metric.Socket), metric.Name, metric.PMU, metric.GroupID},
 							timestamp: s.Timestamp,
 						})
 					}
@@ -1672,13 +1672,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_perf_uncore_events_scaling_ratio",
 				help:        "Perf uncore event metric scaling ratio.",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"socket", "event", "pmu"},
+				extraLabels: []string{"socket", "event", "pmu", "group_id"},
 				getValues: func(s *info.ContainerStats) metricValues {
 					values := make(metricValues, 0, len(s.PerfUncoreStats))
 					for _, metric := range s.PerfUncoreStats {
 						values = append(values, metricValue{
 							value:     metric.ScalingRatio,
-							labels:    []string{strconv.Itoa(metric.Socket), metric.Name, metric.PMU},
+							labels:    []string{strconv.Itoa(metric.Socket), metric.Name, metric.PMU, metric.GroupID},
 							timestamp: s.Timestamp,
 						})
 					}
@@ -1996,7 +1996,7 @@ func getPerCPUCorePerfEvents(s *info.ContainerStats) metricValues {
 	for _, metric := range s.PerfStats {
 		values = append(values, metricValue{
 			value:     float64(metric.Value),
-			labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
+			labels:    []string{strconv.Itoa(metric.Cpu), metric.Name, metric.GroupID},
 			timestamp: s.Timestamp,
 		})
 	}
@@ -2008,7 +2008,7 @@ func getPerCPUCoreScalingRatio(s *info.ContainerStats) metricValues {
 	for _, metric := range s.PerfStats {
 		values = append(values, metricValue{
 			value:     metric.ScalingRatio,
-			labels:    []string{strconv.Itoa(metric.Cpu), metric.Name},
+			labels:    []string{strconv.Itoa(metric.Cpu), metric.Name, metric.GroupID},
 			timestamp: s.Timestamp,
 		})
 	}
@@ -2018,42 +2018,54 @@ func getPerCPUCoreScalingRatio(s *info.ContainerStats) metricValues {
 func getAggregatedCorePerfEvents(s *info.ContainerStats) metricValues {
 	values := make(metricValues, 0)
 
-	perfEventStatAgg := make(map[string]uint64)
+	groupPerfEventStatAgg := make(map[string]map[string]uint64)
 	// aggregate by event
 	for _, perfStat := range s.PerfStats {
-		perfEventStatAgg[perfStat.Name] += perfStat.Value
+		if _, ok := groupPerfEventStatAgg[perfStat.GroupID]; !ok {
+			groupPerfEventStatAgg[perfStat.GroupID] = make(map[string]uint64)
+		}
+		groupPerfEventStatAgg[perfStat.GroupID][perfStat.Name] += perfStat.Value
 	}
 	// create aggregated metrics
-	for perfEvent, perfValue := range perfEventStatAgg {
-		values = append(values, metricValue{
-			value:     float64(perfValue),
-			labels:    []string{"", perfEvent},
-			timestamp: s.Timestamp,
-		})
+	for groupID, perfEventStatAgg := range groupPerfEventStatAgg {
+		for perfEvent, perfValue := range perfEventStatAgg {
+			values = append(values, metricValue{
+				value:     float64(perfValue),
+				labels:    []string{"", perfEvent, groupID},
+				timestamp: s.Timestamp,
+			})
+		}
 	}
 	return values
 }
 
 func getMinCoreScalingRatio(s *info.ContainerStats) metricValues {
 	values := make(metricValues, 0)
-	perfEventStatMin := make(map[string]float64)
-	// search for minimal value of scalin ratio for specific event
+	groupPerfEventStatMin := make(map[string]map[string]float64)
+	// search for minimal value of scaling ratio for specific event
 	for _, perfStat := range s.PerfStats {
-		if _, ok := perfEventStatMin[perfStat.Name]; !ok {
+		if _, ok := groupPerfEventStatMin[perfStat.GroupID]; !ok {
+			groupPerfEventStatMin[perfStat.GroupID] = make(map[string]float64)
+		}
+
+		if _, ok := groupPerfEventStatMin[perfStat.GroupID][perfStat.Name]; !ok {
 			// found a new event
-			perfEventStatMin[perfStat.Name] = perfStat.ScalingRatio
-		} else if perfStat.ScalingRatio < perfEventStatMin[perfStat.Name] {
+			groupPerfEventStatMin[perfStat.GroupID][perfStat.Name] = perfStat.ScalingRatio
+		} else if perfStat.ScalingRatio < groupPerfEventStatMin[perfStat.GroupID][perfStat.Name] {
 			// found a lower value of scaling ration so replace the minimal value
-			perfEventStatMin[perfStat.Name] = perfStat.ScalingRatio
+			groupPerfEventStatMin[perfStat.GroupID][perfStat.Name] = perfStat.ScalingRatio
 		}
 	}
 
-	for perfEvent, perfScalingRatio := range perfEventStatMin {
-		values = append(values, metricValue{
-			value:     perfScalingRatio,
-			labels:    []string{"", perfEvent},
-			timestamp: s.Timestamp,
-		})
+	for groupID, perfEventStatMin := range groupPerfEventStatMin {
+		for perfEvent, perfScalingRatio := range perfEventStatMin {
+			values = append(values, metricValue{
+				value:     perfScalingRatio,
+				labels:    []string{"", perfEvent, groupID},
+				timestamp: s.Timestamp,
+			})
+		}
 	}
+
 	return values
 }
