@@ -108,14 +108,14 @@ func TestUncoreCollectorSetup(t *testing.T) {
 	events := PerfEvents{
 		Core: Events{
 			Events: []Group{
-				{[]Event{"cache-misses"}, false},
+				{[]Event{"cache-misses"}, false, "1"},
 			},
 		},
 		Uncore: Events{
 			Events: []Group{
-				{[]Event{"uncore_imc_1/cas_count_read"}, false},
-				{[]Event{"uncore_imc_1/non_existing_event"}, false},
-				{[]Event{"uncore_imc_0/cas_count_write", "uncore_imc_0/cas_count_read"}, true},
+				{[]Event{"uncore_imc_1/cas_count_read"}, false, "1"},
+				{[]Event{"uncore_imc_1/non_existing_event"}, false, "2"},
+				{[]Event{"uncore_imc_0/cas_count_write", "uncore_imc_0/cas_count_read"}, true, "3"},
 			},
 			CustomEvents: []CustomEvent{
 				{19, Config{0x01, 0x02}, "uncore_imc_1/cas_count_read"},
@@ -135,9 +135,9 @@ func TestUncoreCollectorSetup(t *testing.T) {
 
 	err = collector.setup(events, path)
 	assert.Equal(t, []string{"uncore_imc_1/cas_count_read"},
-		getMapKeys(collector.cpuFiles[0]["uncore_imc_1"].cpuFiles))
+		getMapKeys(collector.cpuFiles["1"]["uncore_imc_1"].cpuFiles))
 	assert.ElementsMatch(t, []string{"uncore_imc_0/cas_count_write", "uncore_imc_0/cas_count_read"},
-		getMapKeys(collector.cpuFiles[2]["uncore_imc_0"].cpuFiles))
+		getMapKeys(collector.cpuFiles["1"]["uncore_imc_0"].cpuFiles))
 
 	// There are no errors.
 	assert.Nil(t, err)
@@ -147,8 +147,8 @@ func TestParseUncoreEvents(t *testing.T) {
 	events := PerfEvents{
 		Uncore: Events{
 			Events: []Group{
-				{[]Event{"cas_count_read"}, false},
-				{[]Event{"cas_count_write"}, false},
+				{[]Event{"cas_count_read"}, false, "1"},
+				{[]Event{"cas_count_write"}, false, "2"},
 			},
 			CustomEvents: []CustomEvent{
 				{
@@ -203,12 +203,12 @@ func TestCheckGroup(t *testing.T) {
 		expectedOutput string
 	}{
 		{
-			Group{[]Event{"uncore_imc/cas_count_write"}, false},
+			Group{[]Event{"uncore_imc/cas_count_write"}, false, "1"},
 			map[Event]uncorePMUs{},
 			"the event \"uncore_imc/cas_count_write\" don't have any PMU to count with",
 		},
 		{
-			Group{[]Event{"uncore_imc/cas_count_write", "uncore_imc/cas_count_read"}, true},
+			Group{[]Event{"uncore_imc/cas_count_write", "uncore_imc/cas_count_read"}, true, "1"},
 			map[Event]uncorePMUs{"uncore_imc/cas_count_write": {
 				"uncore_imc_0": {name: "uncore_imc_0", typeOf: 18, cpus: []uint32{0, 1}},
 				"uncore_imc_1": {name: "uncore_imc_1", typeOf: 19, cpus: []uint32{0, 1}},
@@ -221,7 +221,7 @@ func TestCheckGroup(t *testing.T) {
 			"the events in group usually have to be from single PMU, try reorganizing the \"[uncore_imc/cas_count_write uncore_imc/cas_count_read]\" group",
 		},
 		{
-			Group{[]Event{"uncore_imc_0/cas_count_write", "uncore_imc_1/cas_count_read"}, true},
+			Group{[]Event{"uncore_imc_0/cas_count_write", "uncore_imc_1/cas_count_read"}, true, "1"},
 			map[Event]uncorePMUs{"uncore_imc_0/cas_count_write": {
 				"uncore_imc_0": {name: "uncore_imc_0", typeOf: 18, cpus: []uint32{0, 1}},
 			},
@@ -232,7 +232,7 @@ func TestCheckGroup(t *testing.T) {
 			"the events in group usually have to be from the same PMU, try reorganizing the \"[uncore_imc_0/cas_count_write uncore_imc_1/cas_count_read]\" group",
 		},
 		{
-			Group{[]Event{"uncore_imc/cas_count_write"}, false},
+			Group{[]Event{"uncore_imc/cas_count_write"}, false, "1"},
 			map[Event]uncorePMUs{"uncore_imc/cas_count_write": {
 				"uncore_imc_0": {name: "uncore_imc_0", typeOf: 18, cpus: []uint32{0, 1}},
 				"uncore_imc_1": {name: "uncore_imc_1", typeOf: 19, cpus: []uint32{0, 1}},
@@ -240,7 +240,7 @@ func TestCheckGroup(t *testing.T) {
 			"",
 		},
 		{
-			Group{[]Event{"uncore_imc_0/cas_count_write", "uncore_imc_0/cas_count_read"}, true},
+			Group{[]Event{"uncore_imc_0/cas_count_write", "uncore_imc_0/cas_count_read"}, true, "1"},
 			map[Event]uncorePMUs{"uncore_imc_0/cas_count_write": {
 				"uncore_imc_0": {name: "uncore_imc_0", typeOf: 18, cpus: []uint32{0, 1}},
 			},
@@ -279,8 +279,9 @@ func TestReadPerfUncoreStat(t *testing.T) {
 			Value:        4,
 			Name:         "foo",
 		},
-		Socket: 0,
-		PMU:    "bar",
+		Socket:  0,
+		PMU:     "bar",
+		GroupID: "1",
 	}}
 	cpuToSocket := map[int]int{
 		1: 0,
@@ -297,7 +298,7 @@ func TestReadPerfUncoreStat(t *testing.T) {
 		cpuFiles:   nil,
 		names:      []string{"foo"},
 		leaderName: "foo",
-	}, 1, "bar", cpuToSocket)
+	}, 1, "bar", cpuToSocket, "1")
 	assert.NoError(t, err)
 	assert.Equal(t, expectedStat, stat)
 }

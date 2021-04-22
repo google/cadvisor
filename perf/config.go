@@ -24,6 +24,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
+var groupIndex = 0
+
 type PerfEvents struct {
 	// Core perf events to be measured.
 	Core Events `json:"core,omitempty"`
@@ -93,6 +95,7 @@ func parseConfig(file *os.File) (events PerfEvents, err error) {
 type Group struct {
 	events []Event
 	array  bool
+	id     string
 }
 
 func (g *Group) UnmarshalJSON(b []byte) error {
@@ -101,17 +104,20 @@ func (g *Group) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
+	groupIndex++
 	switch obj := jsonObj.(type) {
 	case string:
 		*g = Group{
 			events: []Event{Event(obj)},
 			array:  false,
+			id:     strconv.Itoa(groupIndex),
 		}
 		return nil
 	case []interface{}:
 		group := Group{
 			events: make([]Event, 0, len(obj)),
 			array:  true,
+			id:     strconv.Itoa(groupIndex),
 		}
 		for _, v := range obj {
 			value, ok := v.(string)
@@ -119,6 +125,45 @@ func (g *Group) UnmarshalJSON(b []byte) error {
 				return fmt.Errorf("cannot unmarshal %v", value)
 			}
 			group.events = append(group.events, Event(value))
+		}
+		*g = group
+		return nil
+	case map[string]interface{}:
+		_, ok := obj["group_id"]
+		if !ok {
+			return fmt.Errorf("there is no group_id key in: %v", obj)
+		}
+
+		groupID, ok := obj["group_id"].(string)
+		if !ok {
+			return fmt.Errorf("cannot unmarshal %v", groupID)
+		}
+
+		_, ok = obj["group_events"]
+		if !ok {
+			return fmt.Errorf("there is no group_events key in: %v", obj)
+		}
+
+		groupEvents, ok := obj["group_events"].([]interface{})
+		if !ok {
+			return fmt.Errorf("cannot unmarshal %v", groupEvents)
+		}
+
+		group := Group{
+			id:     groupID,
+			events: make([]Event, 0, len(groupEvents)),
+		}
+
+		for _, v := range groupEvents {
+			value, ok := v.(string)
+			if !ok {
+				return fmt.Errorf("cannot unmarshal %v", value)
+			}
+			group.events = append(group.events, Event(value))
+		}
+
+		if len(group.events) > 1 {
+			group.array = true
 		}
 		*g = group
 		return nil

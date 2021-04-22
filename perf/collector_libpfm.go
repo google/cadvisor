@@ -42,7 +42,7 @@ import (
 type collector struct {
 	cgroupPath         string
 	events             PerfEvents
-	cpuFiles           map[int]group
+	cpuFiles           map[string]group
 	cpuFilesLock       sync.Mutex
 	onlineCPUs         []int
 	eventToCustomEvent map[Event]*CustomEvent
@@ -80,7 +80,7 @@ func init() {
 }
 
 func newCollector(cgroupPath string, events PerfEvents, onlineCPUs []int, cpuToSocket map[int]int) *collector {
-	collector := &collector{cgroupPath: cgroupPath, events: events, onlineCPUs: onlineCPUs, cpuFiles: map[int]group{}, uncore: NewUncoreCollector(cgroupPath, events, cpuToSocket), perfEventOpen: unix.PerfEventOpen, ioctlSetInt: unix.IoctlSetInt}
+	collector := &collector{cgroupPath: cgroupPath, events: events, onlineCPUs: onlineCPUs, cpuFiles: map[string]group{}, uncore: NewUncoreCollector(cgroupPath, events, cpuToSocket), perfEventOpen: unix.PerfEventOpen, ioctlSetInt: unix.IoctlSetInt}
 	mapEventsToCustomEvents(collector)
 	return collector
 }
@@ -97,9 +97,9 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 	stats.PerfStats = []info.PerfStat{}
 	klog.V(5).Infof("Attempting to update perf_event stats from cgroup %q", c.cgroupPath)
 
-	for _, group := range c.cpuFiles {
+	for groupID, group := range c.cpuFiles {
 		for cpu, file := range group.cpuFiles[group.leaderName] {
-			stat, err := readGroupPerfStat(file, group, cpu, c.cgroupPath)
+			stat, err := readGroupPerfStat(file, group, cpu, c.cgroupPath, groupID)
 			if err != nil {
 				klog.Warningf("Unable to read from perf_event_file (event: %q, CPU: %d) for %q: %q", group.leaderName, cpu, c.cgroupPath, err.Error())
 				continue
@@ -112,7 +112,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 	return nil
 }
 
-func readGroupPerfStat(file readerCloser, group group, cpu int, cgroupPath string) ([]info.PerfStat, error) {
+func readGroupPerfStat(file readerCloser, group group, cpu int, cgroupPath string, groupID string) ([]info.PerfStat, error) {
 	values, err := getPerfValues(file, group)
 	if err != nil {
 		return nil, err
@@ -124,6 +124,7 @@ func readGroupPerfStat(file readerCloser, group group, cpu int, cgroupPath strin
 		perfStats[i] = info.PerfStat{
 			PerfValue: value,
 			Cpu:       cpu,
+			GroupID:   groupID,
 		}
 	}
 
@@ -189,7 +190,6 @@ func (c *collector) setup() error {
 	c.cpuFilesLock.Lock()
 	defer c.cpuFilesLock.Unlock()
 	cgroupFd := int(cgroup.Fd())
-	groupIndex := 0
 	for _, group := range c.events.Core.Events {
 		// CPUs file descriptors of group leader needed for perf_event_open.
 		leaderFileDescriptors := make(map[int]int, len(c.onlineCPUs))
@@ -197,13 +197,11 @@ func (c *collector) setup() error {
 			leaderFileDescriptors[cpu] = groupLeaderFileDescriptor
 		}
 
-		leaderFileDescriptors, err := c.createLeaderFileDescriptors(group.events, cgroupFd, groupIndex, leaderFileDescriptors)
+		leaderFileDescriptors, err := c.createLeaderFileDescriptors(group.events, cgroupFd, group.id, leaderFileDescriptors)
 		if err != nil {
 			klog.Errorf("Cannot count perf event group %v: %v", group.events, err)
-			c.deleteGroup(groupIndex)
+			c.deleteGroup(group.id)
 			continue
-		} else {
-			groupIndex++
 		}
 
 		// Group is prepared so we should reset and enable counting.
@@ -222,7 +220,7 @@ func (c *collector) setup() error {
 	return nil
 }
 
-func (c *collector) createLeaderFileDescriptors(events []Event, cgroupFd int, groupIndex int, leaderFileDescriptors map[int]int) (map[int]int, error) {
+func (c *collector) createLeaderFileDescriptors(events []Event, cgroupFd int, groupID string, leaderFileDescriptors map[int]int) (map[int]int, error) {
 	for j, event := range events {
 		// First element is group leader.
 		isGroupLeader := j == 0
@@ -230,7 +228,7 @@ func (c *collector) createLeaderFileDescriptors(events []Event, cgroupFd int, gr
 		var err error
 		if ok {
 			config := c.createConfigFromRawEvent(customEvent)
-			leaderFileDescriptors, err = c.registerEvent(eventInfo{string(customEvent.Name), config, cgroupFd, groupIndex, isGroupLeader}, leaderFileDescriptors)
+			leaderFileDescriptors, err = c.registerEvent(eventInfo{string(customEvent.Name), config, cgroupFd, groupID, isGroupLeader}, leaderFileDescriptors)
 			if err != nil {
 				return nil, fmt.Errorf("cannot register perf event: %v", err)
 			}
@@ -240,7 +238,7 @@ func (c *collector) createLeaderFileDescriptors(events []Event, cgroupFd int, gr
 				return nil, fmt.Errorf("cannot create config from perf event: %v", err)
 
 			}
-			leaderFileDescriptors, err = c.registerEvent(eventInfo{string(event), config, cgroupFd, groupIndex, isGroupLeader}, leaderFileDescriptors)
+			leaderFileDescriptors, err = c.registerEvent(eventInfo{string(event), config, cgroupFd, groupID, isGroupLeader}, leaderFileDescriptors)
 			if err != nil {
 				return nil, fmt.Errorf("cannot register perf event: %v", err)
 			}
@@ -280,7 +278,7 @@ type eventInfo struct {
 	name          string
 	config        *unix.PerfEventAttr
 	pid           int
-	groupIndex    int
+	groupID       string
 	isGroupLeader bool
 }
 
@@ -307,7 +305,7 @@ func (c *collector) registerEvent(event eventInfo, leaderFileDescriptors map[int
 			return leaderFileDescriptors, fmt.Errorf("unable to create os.File from file descriptor %#v", fd)
 		}
 
-		c.addEventFile(event.groupIndex, event.name, cpu, perfFile)
+		c.addEventFile(event.groupID, event.name, cpu, perfFile)
 
 		// If group leader, save fd for others.
 		if event.isGroupLeader {
@@ -321,39 +319,39 @@ func (c *collector) registerEvent(event eventInfo, leaderFileDescriptors map[int
 	return leaderFileDescriptors, nil
 }
 
-func (c *collector) addEventFile(index int, name string, cpu int, perfFile *os.File) {
-	_, ok := c.cpuFiles[index]
+func (c *collector) addEventFile(id string, name string, cpu int, perfFile *os.File) {
+	_, ok := c.cpuFiles[id]
 	if !ok {
-		c.cpuFiles[index] = group{
+		c.cpuFiles[id] = group{
 			leaderName: name,
 			cpuFiles:   map[string]map[int]readerCloser{},
 		}
 	}
 
-	_, ok = c.cpuFiles[index].cpuFiles[name]
+	_, ok = c.cpuFiles[id].cpuFiles[name]
 	if !ok {
-		c.cpuFiles[index].cpuFiles[name] = map[int]readerCloser{}
+		c.cpuFiles[id].cpuFiles[name] = map[int]readerCloser{}
 	}
 
-	c.cpuFiles[index].cpuFiles[name][cpu] = perfFile
+	c.cpuFiles[id].cpuFiles[name][cpu] = perfFile
 
 	// Check if name is already stored.
-	for _, have := range c.cpuFiles[index].names {
+	for _, have := range c.cpuFiles[id].names {
 		if name == have {
 			return
 		}
 	}
 
 	// Otherwise save it.
-	c.cpuFiles[index] = group{
-		cpuFiles:   c.cpuFiles[index].cpuFiles,
-		names:      append(c.cpuFiles[index].names, name),
-		leaderName: c.cpuFiles[index].leaderName,
+	c.cpuFiles[id] = group{
+		cpuFiles:   c.cpuFiles[id].cpuFiles,
+		names:      append(c.cpuFiles[id].names, name),
+		leaderName: c.cpuFiles[id].leaderName,
 	}
 }
 
-func (c *collector) deleteGroup(index int) {
-	for name, files := range c.cpuFiles[index].cpuFiles {
+func (c *collector) deleteGroup(id string) {
+	for name, files := range c.cpuFiles[id].cpuFiles {
 		for cpu, file := range files {
 			klog.V(5).Infof("Closing perf event file descriptor for cgroup %q, event %q and CPU %d", c.cgroupPath, name, cpu)
 			err := file.Close()
@@ -362,7 +360,7 @@ func (c *collector) deleteGroup(index int) {
 			}
 		}
 	}
-	delete(c.cpuFiles, index)
+	delete(c.cpuFiles, id)
 }
 
 func createPerfEventAttr(event CustomEvent) *unix.PerfEventAttr {

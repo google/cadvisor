@@ -126,7 +126,7 @@ func getUncorePMUs(devicesPath string) (uncorePMUs, error) {
 
 type uncoreCollector struct {
 	cpuFilesLock       sync.Mutex
-	cpuFiles           map[int]map[string]group
+	cpuFiles           map[string]map[string]group
 	events             []Group
 	eventToCustomEvent map[Event]*CustomEvent
 	cpuToSocket        map[int]int
@@ -158,23 +158,23 @@ func NewUncoreCollector(cgroupPath string, events PerfEvents, cpuToSocket map[in
 	return collector
 }
 
-func (c *uncoreCollector) createLeaderFileDescriptors(events []Event, groupIndex int, groupPMUs map[Event]uncorePMUs,
+func (c *uncoreCollector) createLeaderFileDescriptors(events []Event, groupID string, groupPMUs map[Event]uncorePMUs,
 	leaderFileDescriptors map[string]map[uint32]int) (map[string]map[uint32]int, error) {
 	var err error
 	for _, event := range events {
 		eventName, _ := parseEventName(string(event))
 		customEvent, ok := c.eventToCustomEvent[event]
 		if ok {
-			err = c.setupRawEvent(customEvent, groupPMUs[event], groupIndex, leaderFileDescriptors)
+			err = c.setupRawEvent(customEvent, groupPMUs[event], groupID, leaderFileDescriptors)
 		} else {
-			err = c.setupEvent(eventName, groupPMUs[event], groupIndex, leaderFileDescriptors)
+			err = c.setupEvent(eventName, groupPMUs[event], groupID, leaderFileDescriptors)
 		}
 		if err != nil {
 			break
 		}
 	}
 	if err != nil {
-		c.deleteGroup(groupIndex)
+		c.deleteGroup(groupID)
 		return nil, fmt.Errorf("cannot create config from perf event: %v", err)
 	}
 	return leaderFileDescriptors, nil
@@ -186,13 +186,13 @@ func (c *uncoreCollector) setup(events PerfEvents, devicesPath string) error {
 		return err
 	}
 
-	c.cpuFiles = make(map[int]map[string]group)
+	c.cpuFiles = make(map[string]map[string]group)
 	c.events = events.Uncore.Events
 	c.eventToCustomEvent = parseUncoreEvents(events.Uncore)
 	c.cpuFilesLock.Lock()
 	defer c.cpuFilesLock.Unlock()
 
-	for i, group := range c.events {
+	for _, group := range c.events {
 		// Check what PMUs are needed.
 		groupPMUs, err := parsePMUs(group, readUncorePMUs, c.eventToCustomEvent)
 		if err != nil {
@@ -212,7 +212,7 @@ func (c *uncoreCollector) setup(events PerfEvents, devicesPath string) error {
 				leaderFileDescriptors[pmu.name][cpu] = groupLeaderFileDescriptor
 			}
 		}
-		leaderFileDescriptors, err = c.createLeaderFileDescriptors(group.events, i, groupPMUs, leaderFileDescriptors)
+		leaderFileDescriptors, err = c.createLeaderFileDescriptors(group.events, group.id, groupPMUs, leaderFileDescriptors)
 		if err != nil {
 			klog.Error(err)
 			continue
@@ -332,19 +332,19 @@ func (c *uncoreCollector) Destroy() {
 	c.cpuFilesLock.Lock()
 	defer c.cpuFilesLock.Unlock()
 
-	for groupIndex := range c.cpuFiles {
-		c.deleteGroup(groupIndex)
-		delete(c.cpuFiles, groupIndex)
+	for groupID := range c.cpuFiles {
+		c.deleteGroup(groupID)
+		delete(c.cpuFiles, groupID)
 	}
 }
 
 func (c *uncoreCollector) UpdateStats(stats *info.ContainerStats) error {
 	klog.V(5).Info("Attempting to update uncore perf_event stats")
 
-	for _, groupPMUs := range c.cpuFiles {
+	for groupID, groupPMUs := range c.cpuFiles {
 		for pmu, group := range groupPMUs {
 			for cpu, file := range group.cpuFiles[group.leaderName] {
-				stat, err := readPerfUncoreStat(file, group, cpu, pmu, c.cpuToSocket)
+				stat, err := readPerfUncoreStat(file, group, cpu, pmu, c.cpuToSocket, groupID)
 				if err != nil {
 					klog.Warningf("Unable to read from perf_event_file (event: %q, CPU: %d) for %q: %q", group.leaderName, cpu, pmu, err.Error())
 					continue
@@ -358,7 +358,7 @@ func (c *uncoreCollector) UpdateStats(stats *info.ContainerStats) error {
 	return nil
 }
 
-func (c *uncoreCollector) setupEvent(name string, pmus uncorePMUs, groupIndex int, leaderFileDescriptors map[string]map[uint32]int) error {
+func (c *uncoreCollector) setupEvent(name string, pmus uncorePMUs, groupID string, leaderFileDescriptors map[string]map[uint32]int) error {
 	if !isLibpfmInitialized {
 		return fmt.Errorf("libpfm4 is not initialized, cannot proceed with setting perf events up")
 	}
@@ -376,7 +376,7 @@ func (c *uncoreCollector) setupEvent(name string, pmus uncorePMUs, groupIndex in
 		config.Type = pmu.typeOf
 		isGroupLeader := leaderFileDescriptors[pmu.name][pmu.cpus[0]] == groupLeaderFileDescriptor
 		setAttributes(config, isGroupLeader)
-		leaderFileDescriptors[pmu.name], err = c.registerEvent(eventInfo{name, config, uncorePID, groupIndex, isGroupLeader}, pmu, leaderFileDescriptors[pmu.name])
+		leaderFileDescriptors[pmu.name], err = c.registerEvent(eventInfo{name, config, uncorePID, groupID, isGroupLeader}, pmu, leaderFileDescriptors[pmu.name])
 		if err != nil {
 			return err
 		}
@@ -402,7 +402,7 @@ func (c *uncoreCollector) registerEvent(eventInfo eventInfo, pmu pmu, leaderFile
 			return nil, fmt.Errorf("unable to create os.File from file descriptor %#v", fd)
 		}
 
-		c.addEventFile(eventInfo.groupIndex, eventInfo.name, pmu.name, int(cpu), perfFile)
+		c.addEventFile(eventInfo.groupID, eventInfo.name, pmu.name, int(cpu), perfFile)
 
 		// If group leader, save fd for others.
 		if leaderFileDescriptors[cpu] == groupLeaderFileDescriptor {
@@ -417,43 +417,43 @@ func (c *uncoreCollector) registerEvent(eventInfo eventInfo, pmu pmu, leaderFile
 	return leaderFileDescriptors, nil
 }
 
-func (c *uncoreCollector) addEventFile(index int, name string, pmu string, cpu int, perfFile *os.File) {
-	_, ok := c.cpuFiles[index]
+func (c *uncoreCollector) addEventFile(id string, name string, pmu string, cpu int, perfFile *os.File) {
+	_, ok := c.cpuFiles[id]
 	if !ok {
-		c.cpuFiles[index] = map[string]group{}
+		c.cpuFiles[id] = map[string]group{}
 	}
 
-	_, ok = c.cpuFiles[index][pmu]
+	_, ok = c.cpuFiles[id][pmu]
 	if !ok {
-		c.cpuFiles[index][pmu] = group{
+		c.cpuFiles[id][pmu] = group{
 			cpuFiles:   map[string]map[int]readerCloser{},
 			leaderName: name,
 		}
 	}
 
-	_, ok = c.cpuFiles[index][pmu].cpuFiles[name]
+	_, ok = c.cpuFiles[id][pmu].cpuFiles[name]
 	if !ok {
-		c.cpuFiles[index][pmu].cpuFiles[name] = map[int]readerCloser{}
+		c.cpuFiles[id][pmu].cpuFiles[name] = map[int]readerCloser{}
 	}
 
-	c.cpuFiles[index][pmu].cpuFiles[name][cpu] = perfFile
+	c.cpuFiles[id][pmu].cpuFiles[name][cpu] = perfFile
 
 	// Check if name is already stored.
-	for _, have := range c.cpuFiles[index][pmu].names {
+	for _, have := range c.cpuFiles[id][pmu].names {
 		if name == have {
 			return
 		}
 	}
 
 	// Otherwise save it.
-	c.cpuFiles[index][pmu] = group{
-		cpuFiles:   c.cpuFiles[index][pmu].cpuFiles,
-		names:      append(c.cpuFiles[index][pmu].names, name),
-		leaderName: c.cpuFiles[index][pmu].leaderName,
+	c.cpuFiles[id][pmu] = group{
+		cpuFiles:   c.cpuFiles[id][pmu].cpuFiles,
+		names:      append(c.cpuFiles[id][pmu].names, name),
+		leaderName: c.cpuFiles[id][pmu].leaderName,
 	}
 }
 
-func (c *uncoreCollector) setupRawEvent(event *CustomEvent, pmus uncorePMUs, groupIndex int, leaderFileDescriptors map[string]map[uint32]int) error {
+func (c *uncoreCollector) setupRawEvent(event *CustomEvent, pmus uncorePMUs, groupID string, leaderFileDescriptors map[string]map[uint32]int) error {
 	klog.V(5).Infof("Setting up raw perf uncore event %#v", event)
 
 	for _, pmu := range pmus {
@@ -466,7 +466,7 @@ func (c *uncoreCollector) setupRawEvent(event *CustomEvent, pmus uncorePMUs, gro
 		isGroupLeader := leaderFileDescriptors[pmu.name][pmu.cpus[0]] == groupLeaderFileDescriptor
 		setAttributes(config, isGroupLeader)
 		var err error
-		leaderFileDescriptors[pmu.name], err = c.registerEvent(eventInfo{string(newEvent.Name), config, uncorePID, groupIndex, isGroupLeader}, pmu, leaderFileDescriptors[pmu.name])
+		leaderFileDescriptors[pmu.name], err = c.registerEvent(eventInfo{string(newEvent.Name), config, uncorePID, groupID, isGroupLeader}, pmu, leaderFileDescriptors[pmu.name])
 		if err != nil {
 			return err
 		}
@@ -475,8 +475,8 @@ func (c *uncoreCollector) setupRawEvent(event *CustomEvent, pmus uncorePMUs, gro
 	return nil
 }
 
-func (c *uncoreCollector) deleteGroup(groupIndex int) {
-	groupPMUs := c.cpuFiles[groupIndex]
+func (c *uncoreCollector) deleteGroup(groupID string) {
+	groupPMUs := c.cpuFiles[groupID]
 	for pmu, group := range groupPMUs {
 		for name, cpus := range group.cpuFiles {
 			for cpu, file := range cpus {
@@ -490,10 +490,10 @@ func (c *uncoreCollector) deleteGroup(groupIndex int) {
 		}
 		delete(groupPMUs, pmu)
 	}
-	delete(c.cpuFiles, groupIndex)
+	delete(c.cpuFiles, groupID)
 }
 
-func readPerfUncoreStat(file readerCloser, group group, cpu int, pmu string, cpuToSocket map[int]int) ([]info.PerfUncoreStat, error) {
+func readPerfUncoreStat(file readerCloser, group group, cpu int, pmu string, cpuToSocket map[int]int, groupID string) ([]info.PerfUncoreStat, error) {
 	values, err := getPerfValues(file, group)
 	if err != nil {
 		return nil, err
@@ -512,6 +512,7 @@ func readPerfUncoreStat(file readerCloser, group group, cpu int, pmu string, cpu
 			PerfValue: value,
 			Socket:    socket,
 			PMU:       pmu,
+			GroupID:   groupID,
 		}
 	}
 
