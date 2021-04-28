@@ -169,9 +169,7 @@ func (c *uncoreCollector) createLeaderFileDescriptors(events []Event, groupIndex
 		} else {
 			err = c.setupEvent(eventName, groupPMUs[event], groupIndex, leaderFileDescriptors)
 		}
-
 		if err != nil {
-			klog.Errorf("cannot create config from perf event: %v", err)
 			break
 		}
 	}
