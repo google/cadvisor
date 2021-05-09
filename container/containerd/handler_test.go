@@ -32,6 +32,16 @@ func init() {
 	typeurl.Register(&specs.Spec{}, "types.contianerd.io/opencontainers/runtime-spec", "v1", "Spec")
 }
 
+type mockedMachineInfo struct{}
+
+func (m *mockedMachineInfo) GetMachineInfo() (*info.MachineInfo, error) {
+	return &info.MachineInfo{}, nil
+}
+
+func (m *mockedMachineInfo) GetVersionInfo() (*info.VersionInfo, error) {
+	return &info.VersionInfo{}, nil
+}
+
 func TestHandler(t *testing.T) {
 	as := assert.New(t)
 	type testCase struct {
@@ -47,13 +57,14 @@ func TestHandler(t *testing.T) {
 		hasErr         bool
 		errContains    string
 		checkReference *info.ContainerReference
+		checkEnvVars   map[string]string
 	}
 	testContainers := make(map[string]*containers.Container)
 	testContainer := &containers.Container{
 		ID:     "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 		Labels: map[string]string{"io.cri-containerd.kind": "sandbox"},
 	}
-	spec := &specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{}}
+	spec := &specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{Env: []string{"TEST_REGION=FRA", "TEST_ZONE=A", "HELLO=WORLD"}}}
 	testContainer.Spec, _ = typeurl.MarshalAny(spec)
 	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainer
 	for _, ts := range []testCase{
@@ -69,11 +80,12 @@ func TestHandler(t *testing.T) {
 			true,
 			"unable to find container \"40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9\"",
 			nil,
+			nil,
 		},
 		{
 			mockcontainerdClient(testContainers, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
-			nil,
+			&mockedMachineInfo{},
 			nil,
 			&containerlibcontainer.CgroupSubsystems{},
 			false,
@@ -87,6 +99,26 @@ func TestHandler(t *testing.T) {
 				Aliases:   []string{"40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9", "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"},
 				Namespace: k8sContainerdNamespace,
 			},
+			map[string]string{},
+		},
+		{
+			mockcontainerdClient(testContainers, nil),
+			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
+			&mockedMachineInfo{},
+			nil,
+			&containerlibcontainer.CgroupSubsystems{},
+			false,
+			[]string{"TEST"},
+			nil,
+			false,
+			"",
+			&info.ContainerReference{
+				Id:        "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
+				Name:      "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
+				Aliases:   []string{"40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9", "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"},
+				Namespace: k8sContainerdNamespace,
+			},
+			map[string]string{"TEST_REGION": "FRA", "TEST_ZONE": "A"},
 		},
 	} {
 		handler, err := newContainerdContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.includedMetrics)
@@ -100,6 +132,11 @@ func TestHandler(t *testing.T) {
 			cr, err := handler.ContainerReference()
 			as.Nil(err)
 			as.Equal(*ts.checkReference, cr)
+		}
+		if ts.checkEnvVars != nil {
+			sp, err := handler.GetSpec()
+			as.Nil(err)
+			as.Equal(ts.checkEnvVars, sp.Envs)
 		}
 	}
 }
