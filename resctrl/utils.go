@@ -213,7 +213,7 @@ func findControlGroup(pids []string) (string, error) {
 func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 	if len(pids) == 0 {
 		// No container pids passed.
-		return false, fmt.Errorf(noPidsPassedError)
+		return false, fmt.Errorf("couldn't obtain pids from %q path: %v", path, noPidsPassedError)
 	}
 
 	taskFile, err := fscommon.ReadFile(path, "tasks")
