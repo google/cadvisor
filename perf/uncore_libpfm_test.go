@@ -137,7 +137,7 @@ func TestUncoreCollectorSetup(t *testing.T) {
 	assert.Equal(t, []string{"uncore_imc_1/cas_count_read"},
 		getMapKeys(collector.cpuFiles["1"]["uncore_imc_1"].cpuFiles))
 	assert.ElementsMatch(t, []string{"uncore_imc_0/cas_count_write", "uncore_imc_0/cas_count_read"},
-		getMapKeys(collector.cpuFiles["1"]["uncore_imc_0"].cpuFiles))
+		getMapKeys(collector.cpuFiles["3"]["uncore_imc_0"].cpuFiles))
 
 	// There are no errors.
 	assert.Nil(t, err)
