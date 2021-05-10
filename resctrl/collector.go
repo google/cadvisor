@@ -51,7 +51,6 @@ func (c *collector) setup() error {
 
 	if c.interval != noInterval {
 		if err != nil {
-			c.running = false
 			klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals.", c.id, err)
 		} else {
 			c.running = true
