@@ -97,7 +97,7 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 
 	path, err := findControlGroup(pids)
 	if err != nil {
-		return "", fmt.Errorf("couldn't find control group matching %q container: %w", containerName, err)
+		return "", fmt.Errorf("couldn't find control group matching %q container: %v", containerName, err)
 	}
 
 	if containerName[0] == '/' && (len(containerName) > 1) {
