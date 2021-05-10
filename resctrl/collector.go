@@ -28,6 +28,8 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 )
 
+const noInterval = 0
+
 type collector struct {
 	id                string
 	interval          time.Duration
@@ -47,7 +49,7 @@ func (c *collector) setup() error {
 	var err error
 	c.resctrlPath, err = prepareMonitoringGroup(c.id, c.getContainerPids)
 
-	if c.interval != 0 {
+	if c.interval != noInterval {
 		if err != nil {
 			c.running = false
 			klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals.", c.id, err)
