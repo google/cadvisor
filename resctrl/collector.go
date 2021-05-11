@@ -36,6 +36,7 @@ type collector struct {
 	getContainerPids  func() ([]string, error)
 	resctrlPath       string
 	running           bool
+	destroyed         bool
 	numberOfNUMANodes int
 	mu                sync.Mutex
 }
@@ -59,6 +60,9 @@ func (c *collector) setup() error {
 			for {
 				time.Sleep(c.interval)
 				c.mu.Lock()
+				if c.destroyed {
+					break
+				}
 				klog.V(5).Infof("Trying to check %q containers control group.", c.id)
 				if c.running {
 					err = c.checkMonitoringGroup()
@@ -71,8 +75,6 @@ func (c *collector) setup() error {
 					if err != nil {
 						c.running = false
 						klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals.", c.id, err)
-					} else {
-						c.running = true
 					}
 				}
 				c.mu.Unlock()
@@ -146,6 +148,7 @@ func (c *collector) Destroy() {
 	if err != nil {
 		klog.Errorf("trying to destroy %q resctrl collector but: %v", c.id, err)
 	}
+	c.destroyed = true
 }
 
 func (c *collector) clear() error {
