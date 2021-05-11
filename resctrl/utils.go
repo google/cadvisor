@@ -28,7 +28,6 @@ import (
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
-	"github.com/opencontainers/runc/libcontainer/cgroups/fscommon"
 	"github.com/opencontainers/runc/libcontainer/intelrdt"
 )
 
@@ -216,18 +215,53 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 		return false, fmt.Errorf("couldn't obtain pids from %q path: %v", path, noPidsPassedError)
 	}
 
-	taskFile, err := fscommon.ReadFile(path, "tasks")
+	tasksFile, err := ioutil.ReadFile(filepath.Join(path, "tasks"))
 	if err != nil {
 		return false, fmt.Errorf("couldn't obtain pids from %q path: %w", path, err)
 	}
 
+	if len(tasksFile) == 0 {
+		return false, nil
+	}
+
+	tasks := readTasksFile(tasksFile)
+
 	for _, pid := range pids {
-		if !strings.Contains(taskFile, pid) {
+		_, ok := tasks[pid]
+		if !ok {
 			return false, nil
 		}
 	}
 
 	return true, nil
+}
+
+func readTasksFile(tasksFile []byte) map[string]bool {
+	const (
+		newLineAsciiCode = 0xA
+		zeroAsciiCode    = 0x30
+		nineAsciiCode    = 0x39
+	)
+	tasks := make(map[string]bool)
+	var task []byte
+	for _, b := range tasksFile {
+		if b == newLineAsciiCode {
+			if len(task) != 0 {
+				tasks[string(task)] = true
+				task = []byte{}
+			}
+			continue
+		}
+		if b >= zeroAsciiCode && b <= nineAsciiCode {
+			task = append(task, b)
+		}
+	}
+
+	if len(task) > 0 {
+		tasks[string(task)] = true
+	}
+
+	return tasks
 }
 
 func readStatFrom(path string) (uint64, error) {

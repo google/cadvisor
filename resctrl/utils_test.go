@@ -461,7 +461,7 @@ func TestArePIDsInControlGroup(t *testing.T) {
 		},
 		{
 			false,
-			noPidsPassedError,
+			fmt.Sprintf("couldn't obtain pids from %q path: %v", rootResctrl, noPidsPassedError),
 			rootResctrl,
 			nil,
 		},
@@ -572,5 +572,33 @@ func TestGetStats(t *testing.T) {
 		checkError(t, err, test.err)
 		assert.Equal(t, test.expected.CMTStats, actual.CMTStats)
 		assert.Equal(t, test.expected.MBMStats, actual.MBMStats)
+	}
+}
+
+func TestReadTasksFile(t *testing.T) {
+	var testCases = []struct {
+		tasksFile []byte
+		expected  map[string]bool
+	}{
+		{[]byte{0x31, 0x32, 0xA, 0x37, 0x37},
+			map[string]bool{
+				"12": true,
+				"77": true},
+		},
+		{[]byte{0xA, 0x32, 0xA},
+			map[string]bool{
+				"2": true},
+		},
+		{[]byte{0x0, 0x2A, 0xA},
+			map[string]bool{},
+		},
+		{[]byte{},
+			map[string]bool{},
+		},
+	}
+
+	for _, test := range testCases {
+		actual := readTasksFile(test.tasksFile)
+		assert.Equal(t, test.expected, actual)
 	}
 }
