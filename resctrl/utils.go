@@ -238,21 +238,21 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 
 func readTasksFile(tasksFile []byte) map[string]bool {
 	const (
-		newLineAsciiCode = 0xA
-		zeroAsciiCode    = 0x30
-		nineAsciiCode    = 0x39
+		newLineASCIICode = 0xA
+		zeroASCIICode    = 0x30
+		nineASCIICode    = 0x39
 	)
 	tasks := make(map[string]bool)
 	var task []byte
 	for _, b := range tasksFile {
-		if b == newLineAsciiCode {
+		if b == newLineASCIICode {
 			if len(task) != 0 {
 				tasks[string(task)] = true
 				task = []byte{}
 			}
 			continue
 		}
-		if b >= zeroAsciiCode && b <= nineAsciiCode {
+		if b >= zeroASCIICode && b <= nineASCIICode {
 			task = append(task, b)
 		}
 	}
