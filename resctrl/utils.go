@@ -48,6 +48,8 @@ const (
 	llcOccupancyFileName  = "llc_occupancy"
 	mbmLocalBytesFileName = "mbm_local_bytes"
 	mbmTotalBytesFileName = "mbm_total_bytes"
+	containerPrefix       = '/'
+	minContainerNameLen   = 2 // "/<container_name>" e.g. "/a"
 )
 
 var (
@@ -99,7 +101,7 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 		return "", fmt.Errorf("couldn't find control group matching %q container: %v", containerName, err)
 	}
 
-	if containerName[0] == '/' && (len(containerName) > 1) {
+	if len(containerName) >= minContainerNameLen && containerName[0] == containerPrefix {
 		containerName = containerName[1:]
 	}
 
