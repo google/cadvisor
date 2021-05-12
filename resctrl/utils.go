@@ -246,7 +246,7 @@ func readTasksFile(tasksFile []byte) map[string]bool {
 	var task []byte
 	for _, b := range tasksFile {
 		if b == newLineASCIICode {
-			if len(task) != 0 {
+			if len(task) > 0 {
 				tasks[string(task)] = true
 				task = []byte{}
 			}
