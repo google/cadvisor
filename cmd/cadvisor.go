@@ -97,14 +97,17 @@ var (
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
 		container.AcceleratorUsageMetrics:        struct{}{},
+		container.CpuLoadMetrics:                 struct{}{},
 		container.DiskUsageMetrics:               struct{}{},
 		container.DiskIOMetrics:                  struct{}{},
 		container.MemoryNumaMetrics:              struct{}{},
+		container.MemoryUsageMetrics:             struct{}{},
 		container.NetworkUsageMetrics:            struct{}{},
 		container.NetworkTcpUsageMetrics:         struct{}{},
 		container.NetworkAdvancedTcpUsageMetrics: struct{}{},
 		container.NetworkUdpUsageMetrics:         struct{}{},
 		container.PerCpuUsageMetrics:             struct{}{},
+		container.PerfMetrics:                    struct{}{},
 		container.ProcessSchedulerMetrics:        struct{}{},
 		container.ProcessMetrics:                 struct{}{},
 		container.HugetlbUsageMetrics:            struct{}{},
