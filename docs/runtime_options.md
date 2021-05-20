@@ -125,7 +125,7 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --application_metrics_count_limit=100: Max number of application metrics to store (per container) (default 100)
 --collector_cert="": Collector's certificate, exposed to endpoints for certificate based authentication.
 --collector_key="": Key for the collector's certificate
--disable_metrics=referenced_memory,cpu_topology,resctrl,udp,advtcp,sched,hugetlb,memory_numa,tcp,process: comma-separated list of metrics to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'referenced_memory', 'resctrl', 'cpuset'. (default referenced_memory,cpu_topology,resctrl,udp,advtcp,sched,hugetlb,memory_numa,tcp,process)
+--disable_metrics=referenced_memory,cpu_topology,resctrl,udp,advtcp,sched,hugetlb,memory_numa,tcp,process: comma-separated list of metrics to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'referenced_memory', 'resctrl', 'cpuset'. (default referenced_memory,cpu_topology,resctrl,udp,advtcp,sched,hugetlb,memory_numa,tcp,process)
 --prometheus_endpoint="/metrics": Endpoint to expose Prometheus metrics on (default "/metrics")
 --disable_root_cgroup_stats=false: Disable collecting root Cgroup stats
 ```
