@@ -19,17 +19,16 @@ require (
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/karrick/godirwalk v1.16.1
-	github.com/kr/pretty v0.2.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/mindprince/gonvml v0.0.0-20190828220739-9ebdce4bb989
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
-	github.com/moby/sys/mountinfo v0.4.0
+	github.com/moby/sys/mountinfo v0.4.1
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
-	github.com/opencontainers/runc v1.0.0-rc93
-	github.com/opencontainers/runtime-spec v1.0.3-0.20200929063507-e6143ca7d51d
+	github.com/opencontainers/runc v1.0.0-rc95
+	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
 	github.com/prometheus/client_model v0.2.0
@@ -38,13 +37,12 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae // indirect
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b
-	golang.org/x/sys v0.0.0-20201119102817-f84b799fce68
+	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887
 	golang.org/x/text v0.3.4 // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20201110150050-8816d57aaa9a // indirect
 	google.golang.org/grpc v1.27.1
-	google.golang.org/protobuf v1.25.0 // indirect
 	gotest.tools/v3 v3.0.3 // indirect
 	k8s.io/klog/v2 v2.2.0
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
