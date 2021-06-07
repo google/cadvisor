@@ -30,7 +30,7 @@ var (
 	envs      = map[string]string{"foo": "bar"}
 )
 
-func TestContanierSpecFromV1(t *testing.T) {
+func TestContainerSpecFromV1(t *testing.T) {
 	v1Spec := v1.ContainerSpec{
 		CreationTime: timestamp,
 		Labels:       labels,
