@@ -63,6 +63,7 @@ var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=1
 var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
 
 var HousekeepingConfigFlags = HouskeepingConfig{
+	flag.Duration("housekeeping_interval", 1*time.Second, "Default interval between container housekeepings"),
 	flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings"),
 	flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic"),
 }
@@ -147,8 +148,9 @@ type Manager interface {
 
 // Housekeeping configuration for the manager
 type HouskeepingConfig = struct {
-	Interval     *time.Duration
-	AllowDynamic *bool
+	DefaultInterval *time.Duration
+	MaxInterval     *time.Duration
+	AllowDynamic    *bool
 }
 
 // New takes a memory storage and returns a new manager.
@@ -201,7 +203,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		cadvisorContainer:                     selfContainer,
 		inHostNamespace:                       inHostNamespace,
 		startupTime:                           time.Now(),
-		maxHousekeepingInterval:               *houskeepingConfig.Interval,
+		maxHousekeepingInterval:               *houskeepingConfig.MaxInterval,
 		allowDynamicHousekeeping:              *houskeepingConfig.AllowDynamic,
 		includedMetrics:                       includedMetricsSet,
 		containerWatchers:                     []watcher.ContainerWatcher{},
@@ -248,27 +250,28 @@ type namespacedContainerName struct {
 }
 
 type manager struct {
-	containers               map[namespacedContainerName]*containerData
-	containersLock           sync.RWMutex
-	memoryCache              *memory.InMemoryCache
-	fsInfo                   fs.FsInfo
-	sysFs                    sysfs.SysFs
-	machineMu                sync.RWMutex // protects machineInfo
-	machineInfo              info.MachineInfo
-	quitChannels             []chan error
-	cadvisorContainer        string
-	inHostNamespace          bool
-	eventHandler             events.EventManager
-	startupTime              time.Time
-	maxHousekeepingInterval  time.Duration
-	allowDynamicHousekeeping bool
-	includedMetrics          container.MetricSet
-	containerWatchers        []watcher.ContainerWatcher
-	eventsChannel            chan watcher.ContainerEvent
-	collectorHTTPClient      *http.Client
-	nvidiaManager            stats.Manager
-	perfManager              stats.Manager
-	resctrlManager           stats.Manager
+	containers                  map[namespacedContainerName]*containerData
+	containersLock              sync.RWMutex
+	memoryCache                 *memory.InMemoryCache
+	fsInfo                      fs.FsInfo
+	sysFs                       sysfs.SysFs
+	machineMu                   sync.RWMutex // protects machineInfo
+	machineInfo                 info.MachineInfo
+	quitChannels                []chan error
+	cadvisorContainer           string
+	inHostNamespace             bool
+	eventHandler                events.EventManager
+	startupTime                 time.Time
+	defaultHousekeepingInterval time.Duration
+	maxHousekeepingInterval     time.Duration
+	allowDynamicHousekeeping    bool
+	includedMetrics             container.MetricSet
+	containerWatchers           []watcher.ContainerWatcher
+	eventsChannel               chan watcher.ContainerEvent
+	collectorHTTPClient         *http.Client
+	nvidiaManager               stats.Manager
+	perfManager                 stats.Manager
+	resctrlManager              stats.Manager
 	// List of raw container cgroup path prefix whitelist.
 	rawContainerCgroupPathPrefixWhiteList []string
 }
@@ -933,7 +936,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 	}
 
 	logUsage := *logCadvisorUsage && containerName == m.cadvisorContainer
-	cont, err := newContainerData(containerName, m.memoryCache, handler, logUsage, collectorManager, m.maxHousekeepingInterval, m.allowDynamicHousekeeping, clock.RealClock{})
+	cont, err := newContainerData(containerName, m.memoryCache, handler, logUsage, collectorManager, m.defaultHousekeepingInterval, m.maxHousekeepingInterval, m.allowDynamicHousekeeping, clock.RealClock{})
 	if err != nil {
 		return err
 	}
