@@ -30,7 +30,7 @@ import (
 	containertest "github.com/google/cadvisor/container/testing"
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
-	"github.com/google/cadvisor/info/v2"
+	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 
 	"github.com/stretchr/testify/assert"
@@ -66,7 +66,7 @@ func createManagerAndAddContainers(
 			spec,
 			nil,
 		).Once()
-		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true, clock.NewFakeClock(time.Now()))
+		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, time.Second, 60*time.Second, true, clock.NewFakeClock(time.Now()))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,7 +129,7 @@ func createManagerAndAddSubContainers(
 			subcontainerList[idx],
 			nil,
 		)
-		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true, clock.NewFakeClock(time.Now()))
+		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, time.Second, 60*time.Second, true, clock.NewFakeClock(time.Now()))
 		if err != nil {
 			t.Fatal(err)
 		}

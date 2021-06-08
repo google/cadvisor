@@ -59,6 +59,7 @@ var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest
 var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
 
 var housekeepingConfig = manager.HouskeepingConfig{
+	flag.Duration("housekeeping_interval", 1*time.Second, "Default interval between container housekeepings"),
 	flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings"),
 	flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic"),
 }
