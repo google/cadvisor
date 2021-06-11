@@ -218,7 +218,7 @@ func TestCheckGroup(t *testing.T) {
 					"uncore_imc_1": {name: "uncore_imc_1", typeOf: 19, cpus: []uint32{0, 1}},
 				},
 			},
-			"the events in group usually have to be from single PMU, try reorganizing the \"[uncore_imc/cas_count_write uncore_imc/cas_count_read]\" group",
+			"",
 		},
 		{
 			Group{[]Event{"uncore_imc_0/cas_count_write", "uncore_imc_1/cas_count_read"}, true, "1"},

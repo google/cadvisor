@@ -45,7 +45,8 @@ func TestConfigParsing(t *testing.T) {
 
 	assert.Len(t, events.Uncore.Events, 3)
 	assert.Equal(t, Event("cas_count_write"), events.Uncore.Events[0].events[0])
-	assert.Equal(t, Event("uncore_imc_0/UNC_M_CAS_COUNT:RD"), events.Uncore.Events[1].events[0])
+	assert.Equal(t, Event("uncore_imc/UNC_M_CAS_COUNT:RD"), events.Uncore.Events[1].events[0])
+	assert.Equal(t, Event("uncore_imc/UNC_M_CAS_COUNT:WR"), events.Uncore.Events[1].events[1])
 	assert.Equal(t, Event("uncore_ubox/UNC_U_EVENT_MSG"), events.Uncore.Events[2].events[0])
 
 	assert.Len(t, events.Uncore.CustomEvents, 1)

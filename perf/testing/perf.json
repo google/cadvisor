@@ -21,7 +21,10 @@
   "uncore": {
     "events": [
       "cas_count_write",
-      "uncore_imc_0/UNC_M_CAS_COUNT:RD",
+      {
+        "group_id": "my_uncore_group",
+        "group_events": ["uncore_imc/UNC_M_CAS_COUNT:RD", "uncore_imc/UNC_M_CAS_COUNT:WR"]
+      },
       "uncore_ubox/UNC_U_EVENT_MSG"
     ],
     "custom_events": [

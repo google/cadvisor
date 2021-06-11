@@ -242,21 +242,21 @@ func checkGroup(group Group, eventPMUs map[Event]uncorePMUs) error {
 	if group.array {
 		var pmu uncorePMUs
 		for _, event := range group.events {
-			if len(eventPMUs[event]) > 1 {
-				return fmt.Errorf("the events in group usually have to be from single PMU, try reorganizing the \"%v\" group", group.events)
+			if pmu == nil {
+				pmu = eventPMUs[event]
+				continue
 			}
-			if len(eventPMUs[event]) == 1 {
-				if pmu == nil {
-					pmu = eventPMUs[event]
-					continue
-				}
 
-				eq := reflect.DeepEqual(pmu, eventPMUs[event])
-				if !eq {
-					return fmt.Errorf("the events in group usually have to be from the same PMU, try reorganizing the \"%v\" group", group.events)
-				}
+			eq := reflect.DeepEqual(pmu, eventPMUs[event])
+			if !eq {
+				return fmt.Errorf("the events in group usually have to be from the same PMU, try reorganizing the \"%v\" group", group.events)
 			}
 		}
+
+		if len(pmu) > 1 {
+			klog.Warningf("You should be aware that metrics from %v group cannot be counted in the same time from different PMUs.", group.events)
+		}
+
 		return nil
 	}
 	if len(eventPMUs[group.events[0]]) < 1 {
