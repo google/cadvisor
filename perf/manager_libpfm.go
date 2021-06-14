@@ -48,6 +48,10 @@ func NewManager(configFile string, topology []info.Node) (stats.Manager, error) 
 		return nil, fmt.Errorf("unable to parse configuration file %q: %w", configFile, err)
 	}
 
+	if len(config.Core.Events) == 0 && len(config.Uncore.Events) == 0 {
+		return nil, fmt.Errorf("there is no events in config file %q", configFile)
+	}
+
 	onlineCPUs := sysinfo.GetOnlineCPUs(topology)
 
 	cpuToSocket := make(map[int]int)
