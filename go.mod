@@ -8,7 +8,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.5.2
 	github.com/containerd/typeurl v1.0.2
-	github.com/docker/docker v20.10.2+incompatible
+	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
