@@ -462,3 +462,14 @@ func TestClockSpeedOnCpuLowerCase(t *testing.T) {
 	assert.NotNil(t, clockSpeed)
 	assert.Equal(t, uint64(1450*1000), clockSpeed)
 }
+
+func TestGetVendorID(t *testing.T) {
+	testfile := "./testdata/cpuinfo_onesocket_many_NUMAs"
+
+	testcpuinfo, err := ioutil.ReadFile(testfile)
+	assert.Nil(t, err)
+	assert.NotNil(t, testcpuinfo)
+
+	vendorID := GetVendorID(testcpuinfo)
+	assert.Equal(t, "GenuineIntel", vendorID)
+}
