@@ -40,7 +40,7 @@ func TestNewCollectorWithSetup(t *testing.T) {
 	expectedID := "container"
 	expectedResctrlPath := filepath.Join(rootResctrl, monGroupsDirName, expectedID)
 
-	collector := newCollector(expectedID, mockGetContainerPids, 0, 2)
+	collector := newCollector(expectedID, mockGetContainerPids, 0, 2, "")
 	err := collector.setup()
 
 	assert.NoError(t, err)
@@ -58,7 +58,7 @@ func TestUpdateStats(t *testing.T) {
 	processPath = mockProcFs()
 	defer os.RemoveAll(processPath)
 
-	collector := newCollector("container", mockGetContainerPids, 0, 2)
+	collector := newCollector("container", mockGetContainerPids, 0, 2, "")
 	err := collector.setup()
 	assert.NoError(t, err)
 
@@ -96,7 +96,7 @@ func TestDestroy(t *testing.T) {
 	processPath = mockProcFs()
 	defer os.RemoveAll(processPath)
 
-	collector := newCollector("container", mockGetContainerPids, 0, 2)
+	collector := newCollector("container", mockGetContainerPids, 0, 2, "")
 	err := collector.setup()
 	if err != nil {
 		t.Fail()

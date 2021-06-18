@@ -38,12 +38,13 @@ type collector struct {
 	running           bool
 	destroyed         bool
 	numberOfNUMANodes int
+	vendorID          string
 	mu                sync.Mutex
 }
 
-func newCollector(id string, getContainerPids func() ([]string, error), interval time.Duration, numberOfNUMANodes int) *collector {
+func newCollector(id string, getContainerPids func() ([]string, error), interval time.Duration, numberOfNUMANodes int, vendorID string) *collector {
 	return &collector{id: id, interval: interval, getContainerPids: getContainerPids, numberOfNUMANodes: numberOfNUMANodes,
-		mu: sync.Mutex{}}
+		vendorID: vendorID, mu: sync.Mutex{}}
 }
 
 func (c *collector) setup() error {
@@ -115,7 +116,7 @@ func (c *collector) UpdateStats(stats *info.ContainerStats) error {
 	if c.running {
 		stats.Resctrl = info.ResctrlStats{}
 
-		resctrlStats, err := getIntelRDTStatsFrom(c.resctrlPath)
+		resctrlStats, err := getIntelRDTStatsFrom(c.resctrlPath, c.vendorID)
 		if err != nil {
 			return err
 		}

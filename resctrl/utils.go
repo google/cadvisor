@@ -52,6 +52,7 @@ const (
 	mbmTotalBytesFileName = "mbm_total_bytes"
 	containerPrefix       = '/'
 	minContainerNameLen   = 2 // "/<container_name>" e.g. "/a"
+	unavailable           = "Unavailable"
 )
 
 var (
@@ -272,13 +273,24 @@ func readTasksFile(tasksFile []byte) map[string]bool {
 	return tasks
 }
 
-func readStatFrom(path string) (uint64, error) {
+func readStatFrom(path string, vendorID string) (uint64, error) {
 	context, err := ioutil.ReadFile(path)
 	if err != nil {
 		return 0, err
 	}
 
-	stat, err := strconv.ParseUint(string(bytes.TrimSpace(context)), 10, 64)
+	contextString := string(bytes.TrimSpace(context))
+
+	if contextString == unavailable {
+		err := fmt.Errorf("\"Unavailable\" value from file %q", path)
+		if vendorID == "AuthenticAMD" {
+			kernelBugzillaLink := "https://bugzilla.kernel.org/show_bug.cgi?id=213311"
+			err = fmt.Errorf("%v, possible bug: %q", err, kernelBugzillaLink)
+		}
+		return 0, err
+	}
+
+	stat, err := strconv.ParseUint(contextString, 10, 64)
 	if err != nil {
 		return stat, fmt.Errorf("unable to parse %q as a uint from file %q", string(context), path)
 	}
@@ -286,7 +298,7 @@ func readStatFrom(path string) (uint64, error) {
 	return stat, nil
 }
 
-func getIntelRDTStatsFrom(path string) (intelrdt.Stats, error) {
+func getIntelRDTStatsFrom(path string, vendorID string) (intelrdt.Stats, error) {
 	stats := intelrdt.Stats{}
 
 	statsDirectories, err := filepath.Glob(filepath.Join(path, monDataDirName, "*"))
@@ -303,18 +315,18 @@ func getIntelRDTStatsFrom(path string) (intelrdt.Stats, error) {
 
 	for _, dir := range statsDirectories {
 		if enabledCMT {
-			llcOccupancy, err := readStatFrom(filepath.Join(dir, llcOccupancyFileName))
+			llcOccupancy, err := readStatFrom(filepath.Join(dir, llcOccupancyFileName), vendorID)
 			if err != nil {
 				return stats, err
 			}
 			cmtStats = append(cmtStats, intelrdt.CMTNumaNodeStats{LLCOccupancy: llcOccupancy})
 		}
 		if enabledMBM {
-			mbmTotalBytes, err := readStatFrom(filepath.Join(dir, mbmTotalBytesFileName))
+			mbmTotalBytes, err := readStatFrom(filepath.Join(dir, mbmTotalBytesFileName), vendorID)
 			if err != nil {
 				return stats, err
 			}
-			mbmLocalBytes, err := readStatFrom(filepath.Join(dir, mbmLocalBytesFileName))
+			mbmLocalBytes, err := readStatFrom(filepath.Join(dir, mbmLocalBytesFileName), vendorID)
 			if err != nil {
 				return stats, err
 			}

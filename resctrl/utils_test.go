@@ -568,7 +568,7 @@ func TestGetStats(t *testing.T) {
 	for _, test := range testCases {
 		containerPath, _ := prepareMonitoringGroup(test.container, mockGetContainerPids)
 		mockResctrlMonData(containerPath)
-		actual, err := getIntelRDTStatsFrom(containerPath)
+		actual, err := getIntelRDTStatsFrom(containerPath, "")
 		checkError(t, err, test.err)
 		assert.Equal(t, test.expected.CMTStats, actual.CMTStats)
 		assert.Equal(t, test.expected.MBMStats, actual.MBMStats)

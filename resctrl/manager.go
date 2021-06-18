@@ -32,10 +32,11 @@ type Manager interface {
 type manager struct {
 	stats.NoopDestroy
 	interval time.Duration
+	vendorID string
 }
 
 func (m *manager) GetCollector(containerName string, getContainerPids func() ([]string, error), numberOfNUMANodes int) (stats.Collector, error) {
-	collector := newCollector(containerName, getContainerPids, m.interval, numberOfNUMANodes)
+	collector := newCollector(containerName, getContainerPids, m.interval, numberOfNUMANodes, m.vendorID)
 	err := collector.setup()
 	if err != nil {
 		return &stats.NoopCollector{}, err
@@ -44,7 +45,7 @@ func (m *manager) GetCollector(containerName string, getContainerPids func() ([]
 	return collector, nil
 }
 
-func NewManager(interval time.Duration, setup func() error) (Manager, error) {
+func NewManager(interval time.Duration, setup func() error, vendorID string) (Manager, error) {
 	err := setup()
 	if err != nil {
 		return &NoopManager{}, err
@@ -57,7 +58,7 @@ func NewManager(interval time.Duration, setup func() error) (Manager, error) {
 		return &NoopManager{}, errors.New("there are no monitoring features available")
 	}
 
-	return &manager{interval: interval}, nil
+	return &manager{interval: interval, vendorID: vendorID}, nil
 }
 
 type NoopManager struct {
