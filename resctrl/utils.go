@@ -40,6 +40,8 @@ const (
 	cpusListFileName      = "cpus_list"
 	schemataFileName      = "schemata"
 	tasksFileName         = "tasks"
+	modeFileName          = "mode"
+	sizeFileName          = "size"
 	infoDirName           = "info"
 	monDataDirName        = "mon_data"
 	monGroupsDirName      = "mon_groups"
@@ -180,6 +182,10 @@ func findControlGroup(pids []string) (string, error) {
 		case filepath.Join(rootResctrl, cpusFileName):
 			continue
 		case filepath.Join(rootResctrl, cpusListFileName):
+			continue
+		case filepath.Join(rootResctrl, modeFileName):
+			continue
+		case filepath.Join(rootResctrl, sizeFileName):
 			continue
 		case filepath.Join(rootResctrl, infoDirName):
 			continue
