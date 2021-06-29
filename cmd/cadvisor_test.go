@@ -69,10 +69,10 @@ func TestEnableAndIgnoreMetrics(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		for _, sets := range []metricSetValue{enableMetrics, ignoreMetrics} {
+		for _, sets := range []container.MetricSet{enableMetrics, ignoreMetrics} {
 			assert.NoError(t, sets.Set(test.value))
 
-			assert.Equal(t, len(test.expected), len(sets.MetricSet))
+			assert.Equal(t, len(test.expected), len(sets))
 			for _, expected := range test.expected {
 				assert.True(t, sets.Has(expected), "Missing %s", expected)
 			}
@@ -118,7 +118,7 @@ func TestToIncludedMetrics(t *testing.T) {
 	}
 
 	for idx, ignore := range ignores {
-		actual := toIncludedMetrics(ignore)
+		actual := container.AllMetrics.Difference(ignore)
 		assert.Equal(t, actual, expected[idx])
 	}
 }
