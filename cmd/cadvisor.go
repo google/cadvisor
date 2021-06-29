@@ -23,7 +23,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -81,7 +80,7 @@ var perfEvents = flag.String("perf_events_config", "", "Path to a JSON file cont
 var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
-	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
+	ignoreMetrics = container.MetricSet{
 		container.MemoryNumaMetrics:              struct{}{},
 		container.NetworkTcpUsageMetrics:         struct{}{},
 		container.NetworkUdpUsageMetrics:         struct{}{},
@@ -93,74 +92,16 @@ var (
 		container.CPUTopologyMetrics:             struct{}{},
 		container.ResctrlMetrics:                 struct{}{},
 		container.CPUSetMetrics:                  struct{}{},
-	}}
-
-	// Metrics to be enabled on top of metrics not in ignoreWhitelist.
-	// Used only if non-empty.
-	enableMetrics metricSetValue = metricSetValue{container.MetricSet{}}
-
-	// List of metrics that can be ignored.
-	ignoreWhitelist = container.MetricSet{
-		container.AcceleratorUsageMetrics:        struct{}{},
-		container.CpuLoadMetrics:                 struct{}{},
-		container.DiskUsageMetrics:               struct{}{},
-		container.DiskIOMetrics:                  struct{}{},
-		container.MemoryNumaMetrics:              struct{}{},
-		container.MemoryUsageMetrics:             struct{}{},
-		container.NetworkUsageMetrics:            struct{}{},
-		container.NetworkTcpUsageMetrics:         struct{}{},
-		container.NetworkAdvancedTcpUsageMetrics: struct{}{},
-		container.NetworkUdpUsageMetrics:         struct{}{},
-		container.PerCpuUsageMetrics:             struct{}{},
-		container.PerfMetrics:                    struct{}{},
-		container.ProcessSchedulerMetrics:        struct{}{},
-		container.ProcessMetrics:                 struct{}{},
-		container.HugetlbUsageMetrics:            struct{}{},
-		container.ReferencedMemoryMetrics:        struct{}{},
-		container.CPUTopologyMetrics:             struct{}{},
-		container.ResctrlMetrics:                 struct{}{},
-		container.CPUSetMetrics:                  struct{}{},
-		container.OOMMetrics:                     struct{}{},
 	}
+
+	// Metrics to be enabled.  Used only if non-empty.
+	enableMetrics = container.MetricSet{}
 )
 
-type metricSetValue struct {
-	container.MetricSet
-}
-
-func (ml *metricSetValue) String() string {
-	values := make([]string, 0, len(ml.MetricSet))
-	for metric := range ml.MetricSet {
-		values = append(values, string(metric))
-	}
-	sort.Strings(values)
-	return strings.Join(values, ",")
-}
-
-func (ml *metricSetValue) Set(value string) error {
-	ml.MetricSet = container.MetricSet{}
-	if value == "" {
-		return nil
-	}
-	for _, metric := range strings.Split(value, ",") {
-		if ignoreWhitelist.Has(container.MetricKind(metric)) {
-			(*ml).Add(container.MetricKind(metric))
-		} else {
-			return fmt.Errorf("unsupported metric %q specified", metric)
-		}
-	}
-	return nil
-}
-
 func init() {
-	opts := make([]string, 0, len(ignoreWhitelist))
-	for key := range ignoreWhitelist {
-		opts = append(opts, string(key))
-	}
-	sort.Strings(opts)
-	optstr := strings.Join(opts, "', '")
-	flag.Var(&ignoreMetrics, "disable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be disabled. Options are '%s'.", optstr))
-	flag.Var(&enableMetrics, "enable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be enabled. If set, overrides 'disable_metrics'. Options are '%s'.", optstr))
+	optstr := container.AllMetrics.String()
+	flag.Var(&ignoreMetrics, "disable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be disabled. Options are %s.", optstr))
+	flag.Var(&enableMetrics, "enable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be enabled. If set, overrides 'disable_metrics'. Options are %s.", optstr))
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
@@ -177,13 +118,12 @@ func main() {
 	}
 
 	var includedMetrics container.MetricSet
-	if len(enableMetrics.MetricSet) > 0 {
-		includedMetrics = toIncludedMetrics(ignoreWhitelist)
-		includedMetrics = includedMetrics.Append(enableMetrics.MetricSet)
+	if len(enableMetrics) > 0 {
+		includedMetrics = enableMetrics
 	} else {
-		includedMetrics = toIncludedMetrics(ignoreMetrics.MetricSet)
+		includedMetrics = toIncludedMetrics(ignoreMetrics)
 	}
-	klog.V(1).Infof("enabled metrics: %s", (&metricSetValue{includedMetrics}).String())
+	klog.V(1).Infof("enabled metrics: %s", includedMetrics.String())
 	setMaxProcs()
 
 	memoryStorage, err := NewMemoryStorage()
