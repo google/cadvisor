@@ -344,7 +344,7 @@ func (h *dockerContainerHandler) ContainerReference() (info.ContainerReference, 
 }
 
 func (h *dockerContainerHandler) needNet() bool {
-	if h.includedMetrics.Has(container.NetworkUsageMetrics) {
+	if h.includedMetrics.Has(container.NetworkUsageMetrics) || h.includedMetrics.Has(container.NetworkTcpUsageMetrics) || h.includedMetrics.Has(container.NetworkUdpUsageMetrics) || h.includedMetrics.Has(container.NetworkAdvancedTcpUsageMetrics) {
 		return !h.networkMode.IsContainer()
 	}
 	return false
