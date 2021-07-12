@@ -18,12 +18,12 @@ package containerd
 import (
 	"testing"
 
-	"github.com/containerd/containerd/containers"
 	"github.com/containerd/typeurl"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/containerd/containers"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 )
