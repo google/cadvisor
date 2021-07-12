@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd/errdefs"
+	"github.com/google/cadvisor/container/containerd/errdefs"
 	"golang.org/x/net/context"
 
 	"github.com/google/cadvisor/container"

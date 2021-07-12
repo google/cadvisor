@@ -18,9 +18,9 @@ package containerd
 import (
 	"testing"
 
-	"github.com/containerd/containerd/containers"
 	"github.com/containerd/typeurl"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/containerd/containers"
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"

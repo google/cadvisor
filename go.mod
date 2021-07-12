@@ -4,10 +4,13 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.54.0
+	github.com/Microsoft/go-winio v0.5.0
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.5.2
+	github.com/containerd/ttrpc v1.0.2
 	github.com/containerd/typeurl v1.0.2
+	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
@@ -20,6 +23,7 @@ require (
 	github.com/moby/sys/mountinfo v0.4.1
 	github.com/moby/term v0.0.0-20201216013528-df9cb8a40635 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/opencontainers/runc v1.0.0-rc95
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/pkg/errors v0.9.1
@@ -29,7 +33,11 @@ require (
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887
-	google.golang.org/grpc v1.33.2
+	google.golang.org/grpc v1.39.0
 	k8s.io/klog/v2 v2.4.0
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 )
+
+replace github.com/containerd/containerd v1.5.2 => github.com/cpuguy83/containerd-api v0.0.0-20210709210754-7fcddcc63a11
+
+replace github.com/docker/docker v20.10.7+incompatible => github.com/dims/moby v1.3.3-0.20210712155418-c71bbab1c82e
