@@ -2,7 +2,11 @@
   "core": {
     "events": [
       ["instructions", "instructions_retired"],
-      "cycles"
+      "cycles",
+      {
+        "group_id": "my_group",
+        "group_events": ["instructions", "cycles"]
+      }
     ],
     "custom_events": [
       {
