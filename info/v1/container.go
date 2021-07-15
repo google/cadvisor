@@ -842,6 +842,9 @@ type PerfStat struct {
 
 	// CPU that perf event was measured on.
 	Cpu int `json:"cpu"`
+
+	// Group_id that perf event was measured on.
+	GroupID string `json:"group_id"`
 }
 
 type PerfValue struct {
@@ -898,6 +901,9 @@ type PerfUncoreStat struct {
 
 	// PMU is Performance Monitoring Unit which collected these stats.
 	PMU string `json:"pmu"`
+
+	// Group_id that perf event was measured on.
+	GroupID string `json:"group_id"`
 }
 
 type UlimitSpec struct {
