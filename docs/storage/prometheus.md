@@ -1,6 +1,6 @@
 # Monitoring cAdvisor with Prometheus
 
-cAdvisor exposes container and hardware statistics as [Prometheus](https://prometheus.io) metrics out of the box. By default, these metrics are served under the `/metrics` HTTP endpoint. This endpoint may be customized by setting the `-prometheus_endpoint` and `-disable_metrics` command-line flags.
+cAdvisor exposes container and hardware statistics as [Prometheus](https://prometheus.io) metrics out of the box. By default, these metrics are served under the `/metrics` HTTP endpoint. This endpoint may be customized by setting the `-prometheus_endpoint` and `-disable_metrics` or `-enable_metrics` command-line flags.
 
 To collect some of metrics it is required to build cAdvisor with additional flags, for details see [build instructions](../development/build.md), additional flags are indicated in "additional build flag" column in table below.
 
@@ -14,9 +14,9 @@ To monitor cAdvisor with Prometheus, simply configure one or more jobs in Promet
 
 ## Prometheus container metrics
 
-The table below lists the Prometheus container metrics exposed by cAdvisor (in alphabetical order by metric name):
+The table below lists the Prometheus container metrics exposed by cAdvisor (in alphabetical order by metric name) and corresponding `-disable_metrics` / `-enable_metrics` option parameter:
 
-Metric name | Type | Description | Unit (where applicable) | -disable_metrics parameter | additional build flag |
+Metric name | Type | Description | Unit (where applicable) | option parameter | additional build flag |
 :-----------|:-----|:------------|:------------------------|:---------------------------|:----------------------
 `container_accelerator_duty_cycle` | Gauge | Percent of time over the past sample period during which the accelerator was actively processing | percentage | accelerator |
 `container_accelerator_memory_total_bytes` | Gauge | Total accelerator memory | bytes | accelerator |
@@ -97,9 +97,9 @@ Metric name | Type | Description | Unit (where applicable) | -disable_metrics pa
 
 ## Prometheus hardware metrics
 
-The table below lists the Prometheus hardware metrics exposed by cAdvisor (in alphabetical order by metric name):
+The table below lists the Prometheus hardware metrics exposed by cAdvisor (in alphabetical order by metric name) and corresponding `-disable_metrics` / `-enable_metrics` option parameter:
 
-Metric name | Type | Description | Unit (where applicable) | -disable_metrics parameter | addional build flag |
+Metric name | Type | Description | Unit (where applicable) | option parameter | addional build flag |
 :-----------|:-----|:------------|:------------------------|:---------------------------|:--------------------
 `machine_cpu_cache_capacity_bytes` | Gauge |  Cache size in bytes assigned to NUMA node and CPU core | bytes | cpu_topology |
 `machine_cpu_cores` | Gauge | Number of logical CPU cores | | |
