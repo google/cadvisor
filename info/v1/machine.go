@@ -178,6 +178,9 @@ type MachineInfo struct {
 	// The time of this information point.
 	Timestamp time.Time `json:"timestamp"`
 
+	// Vendor id of CPU.
+	VendorID string `json:"vendor_id"`
+
 	// The number of cores in this machine.
 	NumCores int `json:"num_cores"`
 
@@ -249,6 +252,7 @@ func (m *MachineInfo) Clone() *MachineInfo {
 		}
 	}
 	copy := MachineInfo{
+		VendorID:         m.VendorID,
 		Timestamp:        m.Timestamp,
 		NumCores:         m.NumCores,
 		NumPhysicalCores: m.NumPhysicalCores,
