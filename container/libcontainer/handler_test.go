@@ -96,18 +96,26 @@ const nanosecondsInSeconds = 1000000000
 // https://github.com/containerd/cgroups/pull/12
 const clockTicks = 100
 
-func TestSetCPUStats(t *testing.T) {
-	perCPUUsage := make([]uint64, 31)
-	for i := uint32(0); i < 31; i++ {
+func TestMorePossibleCPUs(t *testing.T) {
+	realNumCPUs := uint32(8)
+	numCpusFunc = func() (uint32, error) {
+		return realNumCPUs, nil
+	}
+	possibleCPUs := uint32(31)
+
+	perCPUUsage := make([]uint64, possibleCPUs)
+	PercpuUsageInUsermode := make([]uint64, possibleCPUs)
+	for i := uint32(0); i < realNumCPUs; i++ {
 		perCPUUsage[i] = 8562955455524
 	}
 	s := &cgroups.Stats{
 		CpuStats: cgroups.CpuStats{
 			CpuUsage: cgroups.CpuUsage{
-				PercpuUsage:       perCPUUsage,
-				TotalUsage:        33802947350272,
-				UsageInKernelmode: 734746 * nanosecondsInSeconds / clockTicks,
-				UsageInUsermode:   2767637 * nanosecondsInSeconds / clockTicks,
+				PercpuUsage:           perCPUUsage,
+				PercpuUsageInUsermode: PercpuUsageInUsermode,
+				TotalUsage:            33802947350272,
+				UsageInKernelmode:     734746 * nanosecondsInSeconds / clockTicks,
+				UsageInUsermode:       2767637 * nanosecondsInSeconds / clockTicks,
 			},
 		},
 	}
@@ -117,10 +125,11 @@ func TestSetCPUStats(t *testing.T) {
 	expected := info.ContainerStats{
 		Cpu: info.CpuStats{
 			Usage: info.CpuUsage{
-				PerCpu: perCPUUsage,
-				User:   s.CpuStats.CpuUsage.UsageInUsermode,
-				System: s.CpuStats.CpuUsage.UsageInKernelmode,
-				Total:  33802947350272,
+				PerCpu:     perCPUUsage[0:realNumCPUs],
+				PerCpuUser: PercpuUsageInUsermode[0:realNumCPUs],
+				User:       s.CpuStats.CpuUsage.UsageInUsermode,
+				System:     s.CpuStats.CpuUsage.UsageInKernelmode,
+				Total:      33802947350272,
 			},
 		},
 	}

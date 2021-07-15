@@ -134,20 +134,53 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		opts:            opts,
 	}
 	if includedMetrics.Has(container.CpuUsageMetrics) {
+		if includedMetrics.Has(container.PerCpuUsageMetrics) {
+			c.containerMetrics = append(c.containerMetrics, []containerMetric{
+				{
+					name:        "container_cpu_user_seconds_total",
+					help:        "Cumulative user cpu time consumed in seconds.",
+					valueType:   prometheus.CounterValue,
+					extraLabels: []string{"cpu", "namespace"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, len(s.Cpu.Usage.PerCpuUser))
+						for i, value := range s.Cpu.Usage.PerCpuUser {
+							values = append(values, metricValue{
+								value:     float64(value) / float64(time.Second),
+								labels:    []string{strconv.Itoa(i), "user"},
+								timestamp: s.Timestamp,
+							})
+						}
+						return values
+					},
+				},
+			}...)
+		} else {
+			c.containerMetrics = append(c.containerMetrics, []containerMetric{
+				{
+					name:        "container_cpu_user_seconds_total",
+					help:        "Cumulative user cpu time consumed in seconds.",
+					valueType:   prometheus.CounterValue,
+					extraLabels: []string{"namespace"},
+					getValues: func(s *info.ContainerStats) metricValues {
+						values := make(metricValues, 0, 1)
+						var totalValue float64
+						totalValue = 0
+						for _, value := range s.Cpu.Usage.PerCpuUser {
+							totalValue += float64(value) / float64(time.Second)
+						}
+						values = append(values, metricValue{
+							value:     totalValue,
+							labels:    []string{""},
+							timestamp: s.Timestamp,
+						})
+
+						return values
+					},
+				},
+			}...)
+		}
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
-				name:      "container_cpu_user_seconds_total",
-				help:      "Cumulative user cpu time consumed in seconds.",
-				valueType: prometheus.CounterValue,
-				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{
-						{
-							value:     float64(s.Cpu.Usage.User) / float64(time.Second),
-							timestamp: s.Timestamp,
-						},
-					}
-				},
-			}, {
 				name:      "container_cpu_system_seconds_total",
 				help:      "Cumulative system cpu time consumed in seconds.",
 				valueType: prometheus.CounterValue,

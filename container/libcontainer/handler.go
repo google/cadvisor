@@ -775,7 +775,49 @@ func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 		// cpuacct subsystem.
 		return
 	}
-	ret.Cpu.Usage.PerCpu = s.CpuStats.CpuUsage.PercpuUsage
+
+	numPossible := uint32(len(s.CpuStats.CpuUsage.PercpuUsage))
+	// Note that as of https://patchwork.kernel.org/patch/8607101/ (kernel v4.7),
+	// the percpu usage information includes extra zero values for all additional
+	// possible CPUs. This is to allow statistic collection after CPU-hotplug.
+	// We intentionally ignore these extra zeroes.
+	numActual, err := numCpusFunc()
+	if err != nil {
+		klog.Errorf("unable to determine number of actual cpus; defaulting to maximum possible number: errno %v", err)
+		numActual = numPossible
+	}
+	if numActual > numPossible {
+		// The real number of cores should never be greater than the number of
+		// datapoints reported in cpu usage.
+		klog.Errorf("PercpuUsage had %v cpus, but the actual number is %v; ignoring extra CPUs", numPossible, numActual)
+	}
+	numActual = minUint32(numPossible, numActual)
+	ret.Cpu.Usage.PerCpu = make([]uint64, numActual)
+	ret.Cpu.Usage.PerCpuUser = make([]uint64, numActual)
+	perSpaceEqualSize := false
+	numWantedUserMode := uint32(len(s.CpuStats.CpuUsage.PercpuUsageInUsermode))
+
+	if numWantedUserMode == numActual {
+		perSpaceEqualSize = true
+	} else {
+		klog.Error("Unable to get percpu stats in kernel and user mode")
+	}
+
+	for i := uint32(0); i < numActual; i++ {
+		ret.Cpu.Usage.PerCpu[i] = s.CpuStats.CpuUsage.PercpuUsage[i]
+		if perSpaceEqualSize {
+			ret.Cpu.Usage.PerCpuUser[i] = s.CpuStats.CpuUsage.PercpuUsageInUsermode[i]
+		}
+	}
+
+}
+
+func getNumberOnlineCPUs() (uint32, error) {
+	var availableCPUs unix.CPUSet
+	if err := unix.SchedGetaffinity(0, &availableCPUs); err != nil {
+		return 0, err
+	}
+	return uint32(availableCPUs.Count()), nil
 }
 
 func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {

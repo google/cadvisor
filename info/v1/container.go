@@ -296,6 +296,10 @@ type CpuUsage struct {
 	// Time spent in kernel space.
 	// Unit: nanoseconds.
 	System uint64 `json:"system"`
+
+	// CPU time consumed per core in user mode
+	// Units: nanoseconds.
+	PerCpuUser []uint64 `json:"percpu_usage_user"`
 }
 
 // Cpu Completely Fair Scheduler statistics.
