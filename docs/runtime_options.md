@@ -125,7 +125,8 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --application_metrics_count_limit=100: Max number of application metrics to store (per container) (default 100)
 --collector_cert="": Collector's certificate, exposed to endpoints for certificate based authentication.
 --collector_key="": Key for the collector's certificate
---disable_metrics=referenced_memory,cpu_topology,resctrl,udp,advtcp,sched,hugetlb,memory_numa,tcp,process: comma-separated list of metrics to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'referenced_memory', 'resctrl', 'cpuset'. (default referenced_memory,cpu_topology,resctrl,udp,advtcp,sched,hugetlb,memory_numa,tcp,process)
+--disable_metrics=<metrics>: comma-separated list of metrics to be disabled. Options are accelerator,advtcp,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp. (default advtcp,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,tcp,udp)
+--enable_metrics=<metrics>: comma-separated list of metrics to be enabled. If set, overrides 'disable_metrics'. Options are accelerator,advtcp,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp.
 --prometheus_endpoint="/metrics": Endpoint to expose Prometheus metrics on (default "/metrics")
 --disable_root_cgroup_stats=false: Disable collecting root Cgroup stats
 ```
@@ -149,7 +150,7 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --perf_events_config="" Path to a JSON file containing configuration of perf events to measure. Empty value disables perf events measuring.
 ```
 
-Core perf events can be exposed on Prometheus endpoint per CPU or aggregated by event. It is controlled through `--disable_metrics` parameter with option `percpu`, e.g.:
+Core perf events can be exposed on Prometheus endpoint per CPU or aggregated by event. It is controlled through `--disable_metrics` and `--enable_metrics` parameters with option `percpu`, e.g.:
 - `--disable_metrics="percpu"` - core perf events are aggregated
 - `--disable_metrics=""` - core perf events are exposed per CPU.
 
