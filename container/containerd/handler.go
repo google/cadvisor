@@ -161,7 +161,7 @@ func (h *containerdContainerHandler) needNet() bool {
 	// Since containerd does not handle networking ideally we need to return based
 	// on includedMetrics list. Here the assumption is the presence of cri-containerd
 	// label
-	if h.includedMetrics.Has(container.NetworkUsageMetrics) {
+	if h.includedMetrics.Has(container.NetworkUsageMetrics) || h.includedMetrics.Has(container.NetworkTcpUsageMetrics) || h.includedMetrics.Has(container.NetworkUdpUsageMetrics) || h.includedMetrics.Has(container.NetworkAdvancedTcpUsageMetrics) {
 		//TODO change it to exported cri-containerd constants
 		return h.labels["io.cri-containerd.kind"] == "sandbox"
 	}
