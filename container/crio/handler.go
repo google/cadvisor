@@ -210,7 +210,7 @@ func (h *crioContainerHandler) ContainerReference() (info.ContainerReference, er
 }
 
 func (h *crioContainerHandler) needNet() bool {
-	if h.includedMetrics.Has(container.NetworkUsageMetrics) {
+	if h.includedMetrics.Has(container.NetworkUsageMetrics) || h.includedMetrics.Has(container.NetworkTcpUsageMetrics) || h.includedMetrics.Has(container.NetworkUdpUsageMetrics) || h.includedMetrics.Has(container.NetworkAdvancedTcpUsageMetrics) {
 		return h.labels["io.kubernetes.container.name"] == "POD"
 	}
 	return false
