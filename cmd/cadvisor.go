@@ -95,6 +95,10 @@ var (
 		container.CPUSetMetrics:                  struct{}{},
 	}}
 
+	// Metrics to be enabled on top of metrics not in ignoreWhitelist.
+	// Used only if non-empty.
+	enableMetrics metricSetValue = metricSetValue{container.MetricSet{}}
+
 	// List of metrics that can be ignored.
 	ignoreWhitelist = container.MetricSet{
 		container.AcceleratorUsageMetrics:        struct{}{},
@@ -142,7 +146,7 @@ func (ml *metricSetValue) Set(value string) error {
 		if ignoreWhitelist.Has(container.MetricKind(metric)) {
 			(*ml).Add(container.MetricKind(metric))
 		} else {
-			return fmt.Errorf("unsupported metric %q specified in disable_metrics", metric)
+			return fmt.Errorf("unsupported metric %q specified", metric)
 		}
 	}
 	return nil
@@ -154,7 +158,9 @@ func init() {
 		opts = append(opts, string(key))
 	}
 	sort.Strings(opts)
-	flag.Var(&ignoreMetrics, "disable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be disabled. Options are '%s'.", strings.Join(opts, "', '")))
+	optstr := strings.Join(opts, "', '")
+	flag.Var(&ignoreMetrics, "disable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be disabled. Options are '%s'.", optstr))
+	flag.Var(&enableMetrics, "enable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be enabled. If set, overrides 'disable_metrics'. Options are '%s'.", optstr))
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
@@ -170,8 +176,14 @@ func main() {
 		os.Exit(0)
 	}
 
-	includedMetrics := toIncludedMetrics(ignoreMetrics.MetricSet)
-
+	var includedMetrics container.MetricSet
+	if len(enableMetrics.MetricSet) > 0 {
+		includedMetrics = toIncludedMetrics(ignoreWhitelist)
+		includedMetrics = includedMetrics.Append(enableMetrics.MetricSet)
+	} else {
+		includedMetrics = toIncludedMetrics(ignoreMetrics.MetricSet)
+	}
+	klog.V(1).Infof("enabled metrics: %s", (&metricSetValue{includedMetrics}).String())
 	setMaxProcs()
 
 	memoryStorage, err := NewMemoryStorage()
