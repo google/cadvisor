@@ -13,6 +13,7 @@
 // limitations under the License.
 
 // Handler for containerd containers.
+
 package containerd
 
 import (
@@ -38,6 +39,7 @@ type containerdContainerHandler struct {
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
 	cgroupPaths map[string]string
 	fsInfo      fs.FsInfo
+	fsHandler   common.FsHandler
 	// Metadata associated with the container.
 	reference info.ContainerReference
 	envs      map[string]string
@@ -131,6 +133,16 @@ func newContainerdContainerHandler(
 		reference:           containerReference,
 		libcontainerHandler: libcontainerHandler,
 	}
+
+	if includedMetrics.Has(container.DiskUsageMetrics) {
+		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, &fsUsageProvider{
+			ctx:         ctx,
+			client:      client,
+			snapshotter: cntr.Snapshotter,
+			snapshotkey: cntr.SnapshotKey,
+		})
+	}
+
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
 
@@ -169,9 +181,7 @@ func (h *containerdContainerHandler) needNet() bool {
 }
 
 func (h *containerdContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	// TODO: Since we dont collect disk usage stats for containerd, we set hasFilesystem
-	// to false. Revisit when we support disk usage stats for containerd
-	hasFilesystem := false
+	hasFilesystem := true
 	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, h.needNet(), hasFilesystem)
 	spec.Labels = h.labels
 	spec.Envs = h.envs
@@ -189,6 +199,26 @@ func (h *containerdContainerHandler) getFsStats(stats *info.ContainerStats) erro
 	if h.includedMetrics.Has(container.DiskIOMetrics) {
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
 	}
+	if !h.includedMetrics.Has(container.DiskUsageMetrics) {
+		return nil
+	}
+
+	// TODO(yyrdl):for overlay ,the 'upperPath' is:
+	// `${containerd.Config.Root}/io.containerd.snapshotter.v1.overlayfs/snapshots/${snapshots.ID}/fs`,
+	// and for other snapshots plugins, we can also find the law from containerd's source code.
+
+	// Device 、fsType and fsLimits and other information are not supported yet, unless there is a way to
+	// know the id of the snapshot , or the `Stat`（snapshotsClient.Stat） method returns these information directly.
+	// And containerd has cached the disk usage stats in memory,so the best way is enhancing containerd's API
+	// (avoid collecting disk usage metrics twice)
+	fsStat := info.FsStats{}
+	usage := h.fsHandler.Usage()
+	fsStat.BaseUsage = usage.BaseUsageBytes
+	fsStat.Usage = usage.TotalUsageBytes
+	fsStat.Inodes = usage.InodeUsage
+
+	stats.Filesystem = append(stats.Filesystem, fsStat)
+
 	return nil
 }
 
@@ -239,12 +269,33 @@ func (h *containerdContainerHandler) Type() container.ContainerType {
 }
 
 func (h *containerdContainerHandler) Start() {
+	if h.fsHandler != nil {
+		h.fsHandler.Start()
+	}
 }
 
 func (h *containerdContainerHandler) Cleanup() {
+	if h.fsHandler != nil {
+		h.fsHandler.Stop()
+	}
 }
 
 func (h *containerdContainerHandler) GetContainerIPAddress() string {
 	// containerd doesnt take care of networking.So it doesnt maintain networking states
 	return ""
+}
+
+type fsUsageProvider struct {
+	ctx         context.Context
+	snapshotter string
+	snapshotkey string
+	client      ContainerdClient
+}
+
+func (f *fsUsageProvider) Usage() (*common.FsUsage, error) {
+	return f.client.ContainerFsUsage(f.ctx, f.snapshotter, f.snapshotkey)
+}
+
+func (f *fsUsageProvider) Targets() []string {
+	return []string{fmt.Sprintf("snapshotter(%s) with key (%s)", f.snapshotter, f.snapshotkey)}
 }

@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/containerd/containerd/containers"
+	"github.com/google/cadvisor/container/common"
 )
 
 type containerdClientMock struct {
@@ -43,6 +44,11 @@ func (c *containerdClientMock) Version(ctx context.Context) (string, error) {
 
 func (c *containerdClientMock) TaskPid(ctx context.Context, id string) (uint32, error) {
 	return 2389, nil
+}
+
+func (c *containerdClientMock) ContainerFsUsage(ctx context.Context,
+	snapshotter, snapshotkey string) (*common.FsUsage, error) {
+	return &common.FsUsage{}, nil
 }
 
 func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr error) ContainerdClient {

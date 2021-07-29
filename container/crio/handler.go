@@ -183,7 +183,8 @@ func newCrioContainerHandler(
 
 	// we optionally collect disk usage metrics
 	if includedMetrics.Has(container.DiskUsageMetrics) {
-		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, storageLogDir, fsInfo)
+		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, common.NewGeneralFsUsageProvider(
+			fsInfo, rootfsStorageDir, storageLogDir))
 	}
 	// TODO for env vars we wanted to show from container.Config.Env from whitelist
 	//for _, exposedEnv := range metadataEnvs {
