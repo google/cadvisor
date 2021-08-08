@@ -17,6 +17,7 @@ package containerd
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"strings"
 	"time"
@@ -31,6 +32,9 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
+
+// TODO: if it is decided that this is the only format, this flag can be removed.
+var useK8sContainerNameFormat = flag.Bool("use_k8s_container_name_format", true, "Use the k8s format: k8s_<container-name>_<pod-name>_<namespace>_<pod-uid>_<restart-count>")
 
 type containerdContainerHandler struct {
 	machineInfoFactory info.MachineInfoFactory
@@ -112,11 +116,22 @@ func newContainerdContainerHandler(
 		rootfs = "/rootfs"
 	}
 
+	aliases := []string{id, name}
+
+	if *useK8sContainerNameFormat && cntr.Labels["io.cri-containerd.kind"] == "container" {
+		restart := cntr.Labels["io.kubernetes.pod.restart"]
+		if restart == "" {
+			restart = "0"
+		}
+		containerNameConcat := "k8s_" + cntr.Labels["io.kubernetes.container.name"] + "_" + cntr.Labels["io.kubernetes.pod.name"] + "_" + cntr.Labels["io.kubernetes.pod.namespace"] + "_" + cntr.Labels["io.kubernetes.pod.uid"] + "_" + restart
+		aliases = []string{containerNameConcat, id, name}
+	}
+
 	containerReference := info.ContainerReference{
 		Id:        id,
 		Name:      name,
 		Namespace: k8sContainerdNamespace,
-		Aliases:   []string{id, name},
+		Aliases:   aliases,
 	}
 
 	libcontainerHandler := containerlibcontainer.NewHandler(cgroupManager, rootfs, int(taskPid), includedMetrics)
