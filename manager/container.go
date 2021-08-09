@@ -74,6 +74,7 @@ type containerData struct {
 	housekeepingInterval     time.Duration
 	maxHousekeepingInterval  time.Duration
 	allowDynamicHousekeeping bool
+        firstHousekeeping        bool
 	infoLastUpdatedTime      time.Time
 	statsLastUpdatedTime     time.Time
 	lastErrorTime            time.Time
@@ -111,9 +112,6 @@ type containerData struct {
 // to allow clients to avoid converging on periodic behavior.  If maxFactor is 0.0, a
 // suggested default value will be chosen.
 func jitter(duration time.Duration, maxFactor float64) time.Duration {
-	if maxFactor <= 0.0 {
-		maxFactor = 1.0
-	}
 	wait := duration + time.Duration(rand.Float64()*maxFactor*float64(duration))
 	return wait
 }
@@ -475,6 +473,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 		klog.V(5).Infof("Failed to create summary reader for %q: %v", ref.Name, err)
 	}
 
+        cont.firstHousekeeping = true
 	return cont, nil
 }
 
@@ -501,8 +500,15 @@ func (cd *containerData) nextHousekeepingInterval() time.Duration {
 			}
 		}
 	}
+        // Drift the containers randomly so that the start time for each container is random. However make sure each container is then
+        // collected for the configured houseKeeping interval.
+        maxJitterFactor := 0.0
+        if cd.firstHousekeeping {
+            maxJitterFactor = 1.0
+            cd.firstHousekeeping = false
+        }
 
-	return jitter(cd.housekeepingInterval, 1.0)
+	return jitter(cd.housekeepingInterval, maxJitterFactor)
 }
 
 // TODO(vmarmol): Implement stats collecting as a custom collector.
