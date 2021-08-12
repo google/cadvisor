@@ -47,6 +47,7 @@ import (
 // Housekeeping interval.
 var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
+var MaxHousekeepingInterval = flag.Duration("max_housekeeping_interval", 15*time.Second, "Max interval between container housekeepings")
 
 // TODO: replace regular expressions with something simpler, such as strings.Split().
 // cgroup type chosen to fetch the cgroup path of a process.
