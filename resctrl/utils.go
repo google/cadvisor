@@ -206,13 +206,13 @@ func findControlGroup(pids []string) (string, error) {
 	return "", fmt.Errorf("there is no available control group")
 }
 
+// arePIDsInControlGroup returns true if all of the pids are withing control group.
 func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 	if len(pids) == 0 {
-		// No container pids passed.
 		return false, fmt.Errorf("couldn't obtain pids from %q path: %v", path, noPidsPassedError)
 	}
 
-	tasks, err := readTasksFile(filepath.Join(path, "tasks"))
+	tasks, err := readTasksFile(filepath.Join(path, tasksFileName))
 	if err != nil {
 		return false, err
 	}
@@ -224,6 +224,7 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 		}
 		_, ok := tasks[pid]
 		if !ok {
+			// There is any missing pid within group.
 			return false, nil
 		}
 	}
