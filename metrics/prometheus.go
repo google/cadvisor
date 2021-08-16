@@ -1836,7 +1836,7 @@ func DefaultContainerLabels(container *info.ContainerInfo) map[string]string {
 }
 
 // BaseContainerLabels returns a ContainerLabelsFunc that exports the container
-// name, first alias, image name as well as white listed label values.
+// name, first alias, image name as well as all its env and white listed label values.
 func BaseContainerLabels(whiteList []string) func(container *info.ContainerInfo) map[string]string {
 	whiteListMap := make(map[string]struct{}, len(whiteList))
 	for _, k := range whiteList {
@@ -1855,6 +1855,9 @@ func BaseContainerLabels(whiteList []string) func(container *info.ContainerInfo)
 			if _, ok := whiteListMap[k]; ok {
 				set[ContainerLabelPrefix+k] = v
 			}
+		}
+		for k, v := range container.Spec.Envs {
+			set[ContainerEnvPrefix+k] = v
 		}
 		return set
 	}
