@@ -224,16 +224,10 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 		return false, fmt.Errorf("couldn't obtain pids from %q path: %v", path, noPidsPassedError)
 	}
 
-	tasksFile, err := ioutil.ReadFile(filepath.Join(path, "tasks"))
+	tasks, err := readTasksFile(filepath.Join(path, "tasks"))
 	if err != nil {
-		return false, fmt.Errorf("couldn't obtain pids from %q path: %w", path, err)
+		return false, err
 	}
-
-	if len(tasksFile) == 0 {
-		return false, nil
-	}
-
-	tasks := readTasksFile(tasksFile)
 
 	for _, pid := range pids {
 		_, ok := tasks[pid]
@@ -245,13 +239,20 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 	return true, nil
 }
 
-func readTasksFile(tasksFile []byte) map[string]struct{} {
+func readTasksFile(tasksPath string) (map[string]struct{}, error) {
 	const (
 		newLineASCIICode = 0xA
 		zeroASCIICode    = 0x30
 		nineASCIICode    = 0x39
 	)
+
 	tasks := make(map[string]struct{})
+
+	tasksFile, err := ioutil.ReadFile(tasksPath)
+	if err != nil {
+		return tasks, fmt.Errorf("couldn't obtain pids from %q path: %w", tasksPath, err)
+	}
+
 	var task []byte
 	for _, b := range tasksFile {
 		if b == newLineASCIICode {
@@ -270,7 +271,7 @@ func readTasksFile(tasksFile []byte) map[string]struct{} {
 		tasks[string(task)] = struct{}{}
 	}
 
-	return tasks
+	return tasks, nil
 }
 
 func readStatFrom(path string, vendorID string) (uint64, error) {

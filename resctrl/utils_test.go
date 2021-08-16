@@ -455,7 +455,7 @@ func TestArePIDsInControlGroup(t *testing.T) {
 		},
 		{
 			false,
-			fmt.Sprintf("couldn't obtain pids from %q path: open %s: no such file or directory", filepath.Join(rootResctrl, monitoringGroupDir), filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName)),
+			fmt.Sprintf("couldn't obtain pids from %q path: open %s: no such file or directory", filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName), filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName)),
 			filepath.Join(rootResctrl, monitoringGroupDir),
 			[]string{"1", "2"},
 		},
@@ -577,29 +577,30 @@ func TestGetStats(t *testing.T) {
 
 func TestReadTasksFile(t *testing.T) {
 	var testCases = []struct {
-		tasksFile []byte
+		tasksFile string
 		expected  map[string]struct{}
 	}{
-		{[]byte{0x31, 0x32, 0xA, 0x37, 0x37},
+		{"testing/tasks_two",
 			map[string]struct{}{
 				"12": {},
 				"77": {},
 			},
 		},
-		{[]byte{0xA, 0x32, 0xA},
+		{"testing/tasks_one",
 			map[string]struct{}{
 				"2": {}},
 		},
-		{[]byte{0x0, 0x2A, 0xA},
+		{"testing/tasks_invalid",
 			map[string]struct{}{},
 		},
-		{[]byte{},
+		{"testing/tasks_empty",
 			map[string]struct{}{},
 		},
 	}
 
 	for _, test := range testCases {
-		actual := readTasksFile(test.tasksFile)
+		actual, err := readTasksFile(test.tasksFile)
 		assert.Equal(t, test.expected, actual)
+		assert.NoError(t, err)
 	}
 }
