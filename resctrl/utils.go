@@ -232,6 +232,7 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 	return true, nil
 }
 
+// readTasksFile returns pids map from given tasks path.
 func readTasksFile(tasksPath string) (map[int]struct{}, error) {
 	tasks := make(map[int]struct{})
 
