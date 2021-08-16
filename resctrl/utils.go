@@ -41,8 +41,6 @@ const (
 	cpusListFileName      = "cpus_list"
 	schemataFileName      = "schemata"
 	tasksFileName         = "tasks"
-	modeFileName          = "mode"
-	sizeFileName          = "size"
 	infoDirName           = "info"
 	monDataDirName        = "mon_data"
 	monGroupsDirName      = "mon_groups"
@@ -57,12 +55,17 @@ const (
 )
 
 var (
-	rootResctrl          = ""
-	pidsPath             = ""
-	processPath          = "/proc"
-	enabledMBM           = false
-	enabledCMT           = false
-	isResctrlInitialized = false
+	rootResctrl             = ""
+	pidsPath                = ""
+	processPath             = "/proc"
+	enabledMBM              = false
+	enabledCMT              = false
+	isResctrlInitialized    = false
+	controlGroupDirectories = map[string]struct{}{
+		infoDirName:      {},
+		monDataDirName:   {},
+		monGroupsDirName: {},
+	}
 )
 
 func Setup() error {
@@ -170,49 +173,33 @@ func getAllProcessThreads(threadFiles []os.FileInfo) ([]int, error) {
 	return processThreads, nil
 }
 
+// findControlGroup returns the path of a control group in which the pids are.
 func findControlGroup(pids []string) (string, error) {
 	if len(pids) == 0 {
 		return "", fmt.Errorf(noPidsPassedError)
 	}
-	availablePaths, err := filepath.Glob(filepath.Join(rootResctrl, "*"))
+	availablePaths := make([]string, 0)
+	err := filepath.Walk(rootResctrl, func(path string, info os.FileInfo, err error) error {
+		// Look only for directories.
+		if info.IsDir() {
+			// Avoid internal control group dirs.
+			if _, ok := controlGroupDirectories[filepath.Base(path)]; !ok {
+				availablePaths = append(availablePaths, path)
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("couldn't obtain control groups paths: %w", err)
 	}
 
 	for _, path := range availablePaths {
-		switch path {
-		case filepath.Join(rootResctrl, cpusFileName):
-			continue
-		case filepath.Join(rootResctrl, cpusListFileName):
-			continue
-		case filepath.Join(rootResctrl, modeFileName):
-			continue
-		case filepath.Join(rootResctrl, sizeFileName):
-			continue
-		case filepath.Join(rootResctrl, infoDirName):
-			continue
-		case filepath.Join(rootResctrl, monDataDirName):
-			continue
-		case filepath.Join(rootResctrl, monGroupsDirName):
-			continue
-		case filepath.Join(rootResctrl, schemataFileName):
-			continue
-		case filepath.Join(rootResctrl, tasksFileName):
-			inGroup, err := arePIDsInControlGroup(rootResctrl, pids)
-			if err != nil {
-				return "", err
-			}
-			if inGroup {
-				return rootResctrl, nil
-			}
-		default:
-			inGroup, err := arePIDsInControlGroup(path, pids)
-			if err != nil {
-				return "", err
-			}
-			if inGroup {
-				return path, nil
-			}
+		groupFound, err := arePIDsInControlGroup(path, pids)
+		if err != nil {
+			return "", err
+		}
+		if groupFound {
+			return path, nil
 		}
 	}
 
