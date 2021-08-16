@@ -245,18 +245,18 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 	return true, nil
 }
 
-func readTasksFile(tasksFile []byte) map[string]bool {
+func readTasksFile(tasksFile []byte) map[string]struct{} {
 	const (
 		newLineASCIICode = 0xA
 		zeroASCIICode    = 0x30
 		nineASCIICode    = 0x39
 	)
-	tasks := make(map[string]bool)
+	tasks := make(map[string]struct{})
 	var task []byte
 	for _, b := range tasksFile {
 		if b == newLineASCIICode {
 			if len(task) > 0 {
-				tasks[string(task)] = true
+				tasks[string(task)] = struct{}{}
 				task = []byte{}
 			}
 			continue
@@ -267,7 +267,7 @@ func readTasksFile(tasksFile []byte) map[string]bool {
 	}
 
 	if len(task) > 0 {
-		tasks[string(task)] = true
+		tasks[string(task)] = struct{}{}
 	}
 
 	return tasks

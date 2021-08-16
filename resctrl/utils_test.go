@@ -578,22 +578,23 @@ func TestGetStats(t *testing.T) {
 func TestReadTasksFile(t *testing.T) {
 	var testCases = []struct {
 		tasksFile []byte
-		expected  map[string]bool
+		expected  map[string]struct{}
 	}{
 		{[]byte{0x31, 0x32, 0xA, 0x37, 0x37},
-			map[string]bool{
-				"12": true,
-				"77": true},
+			map[string]struct{}{
+				"12": {},
+				"77": {},
+			},
 		},
 		{[]byte{0xA, 0x32, 0xA},
-			map[string]bool{
-				"2": true},
+			map[string]struct{}{
+				"2": {}},
 		},
 		{[]byte{0x0, 0x2A, 0xA},
-			map[string]bool{},
+			map[string]struct{}{},
 		},
 		{[]byte{},
-			map[string]bool{},
+			map[string]struct{}{},
 		},
 	}
 
