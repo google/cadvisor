@@ -53,14 +53,12 @@ const DockerNamespace = "docker"
 // The retry times for getting docker root dir
 const rootDirRetries = 5
 
-//The retry period for getting docker root dir, Millisecond
+// The retry period for getting docker root dir, Millisecond
 const rootDirRetryPeriod time.Duration = 1000 * time.Millisecond
 
 // Regexp that identifies docker cgroups, containers started with
 // --cgroup-parent have another prefix than 'docker'
 var dockerCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
-
-var dockerEnvWhitelist = flag.String("docker_env_metadata_whitelist", "", "a comma-separated list of environment variable keys matched with specified prefix that needs to be collected for docker containers")
 
 var (
 	// Basepath to all container specific information that libcontainer stores.
@@ -136,13 +134,11 @@ func (f *dockerFactory) String() string {
 	return DockerNamespace
 }
 
-func (f *dockerFactory) NewContainerHandler(name string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
+func (f *dockerFactory) NewContainerHandler(name string, metadataEnvs []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
 	client, err := Client()
 	if err != nil {
 		return
 	}
-
-	metadataEnvs := strings.Split(*dockerEnvWhitelist, ",")
 
 	handler, err = newDockerContainerHandler(
 		client,

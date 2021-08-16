@@ -59,7 +59,7 @@ func (f *mesosFactory) String() string {
 	return MesosNamespace
 }
 
-func (f *mesosFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (f *mesosFactory) NewContainerHandler(name string, metadataEnvs []string, inHostNamespace bool) (container.ContainerHandler, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, err
@@ -72,6 +72,7 @@ func (f *mesosFactory) NewContainerHandler(name string, inHostNamespace bool) (c
 		f.fsInfo,
 		f.includedMetrics,
 		inHostNamespace,
+		metadataEnvs,
 		client,
 	)
 }

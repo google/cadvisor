@@ -22,7 +22,6 @@ import (
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/mesos/mesos-go/api/v1/lib"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,6 +42,7 @@ func TestContainerReference(t *testing.T) {
 		fsInfo             fs.FsInfo
 		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
 		inHostNamespace    bool
+		metadataEnvs       []string
 		includedMetrics    container.MetricSet
 
 		hasErr         bool
@@ -57,6 +57,7 @@ func TestContainerReference(t *testing.T) {
 			nil,
 			&containerlibcontainer.CgroupSubsystems{},
 			false,
+			[]string{},
 			nil,
 
 			true,
@@ -70,6 +71,7 @@ func TestContainerReference(t *testing.T) {
 			nil,
 			&containerlibcontainer.CgroupSubsystems{},
 			false,
+			[]string{},
 			nil,
 
 			true,
@@ -83,6 +85,7 @@ func TestContainerReference(t *testing.T) {
 			nil,
 			&containerlibcontainer.CgroupSubsystems{},
 			false,
+			[]string{},
 			nil,
 
 			false,
@@ -95,7 +98,7 @@ func TestContainerReference(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.client)
+		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.metadataEnvs, ts.client)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {
