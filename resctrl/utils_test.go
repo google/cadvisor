@@ -455,7 +455,7 @@ func TestArePIDsInControlGroup(t *testing.T) {
 		},
 		{
 			false,
-			fmt.Sprintf("couldn't obtain pids from %q path: open %s: no such file or directory", filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName), filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName)),
+			fmt.Sprintf("couldn't read tasks file from %q path: open %s: no such file or directory", filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName), filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName)),
 			filepath.Join(rootResctrl, monitoringGroupDir),
 			[]string{"1", "2"},
 		},
@@ -578,29 +578,35 @@ func TestGetStats(t *testing.T) {
 func TestReadTasksFile(t *testing.T) {
 	var testCases = []struct {
 		tasksFile string
-		expected  map[string]struct{}
+		expected  map[int]struct{}
+		err       string
 	}{
 		{"testing/tasks_two",
-			map[string]struct{}{
-				"12": {},
-				"77": {},
+			map[int]struct{}{
+				12: {},
+				77: {},
 			},
+			"",
 		},
 		{"testing/tasks_one",
-			map[string]struct{}{
-				"2": {}},
+			map[int]struct{}{
+				2: {},
+			},
+			"",
 		},
 		{"testing/tasks_invalid",
-			map[string]struct{}{},
+			map[int]struct{}{},
+			"couldn't convert pids from \"testing/tasks_invalid\" path: strconv.Atoi: parsing \"\\x00*\": invalid syntax",
 		},
 		{"testing/tasks_empty",
-			map[string]struct{}{},
+			map[int]struct{}{},
+			"",
 		},
 	}
 
 	for _, test := range testCases {
 		actual, err := readTasksFile(test.tasksFile)
 		assert.Equal(t, test.expected, actual)
-		assert.NoError(t, err)
+		checkError(t, err, test.err)
 	}
 }

@@ -18,6 +18,7 @@
 package resctrl
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -229,7 +230,11 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 		return false, err
 	}
 
-	for _, pid := range pids {
+	for _, pidString := range pids {
+		pid, err := strconv.Atoi(pidString)
+		if err != nil {
+			return false, err
+		}
 		_, ok := tasks[pid]
 		if !ok {
 			return false, nil
@@ -239,36 +244,26 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 	return true, nil
 }
 
-func readTasksFile(tasksPath string) (map[string]struct{}, error) {
-	const (
-		newLineASCIICode = 0xA
-		zeroASCIICode    = 0x30
-		nineASCIICode    = 0x39
-	)
+func readTasksFile(tasksPath string) (map[int]struct{}, error) {
+	tasks := make(map[int]struct{})
 
-	tasks := make(map[string]struct{})
-
-	tasksFile, err := ioutil.ReadFile(tasksPath)
+	tasksFile, err := os.Open(tasksPath)
 	if err != nil {
+		return tasks, fmt.Errorf("couldn't read tasks file from %q path: %w", tasksPath, err)
+	}
+	defer tasksFile.Close()
+
+	scanner := bufio.NewScanner(tasksFile)
+	for scanner.Scan() {
+		id, err := strconv.Atoi(scanner.Text())
+		if err != nil {
+			return tasks, fmt.Errorf("couldn't convert pids from %q path: %w", tasksPath, err)
+		}
+		tasks[id] = struct{}{}
+	}
+
+	if err := scanner.Err(); err != nil {
 		return tasks, fmt.Errorf("couldn't obtain pids from %q path: %w", tasksPath, err)
-	}
-
-	var task []byte
-	for _, b := range tasksFile {
-		if b == newLineASCIICode {
-			if len(task) > 0 {
-				tasks[string(task)] = struct{}{}
-				task = []byte{}
-			}
-			continue
-		}
-		if b >= zeroASCIICode && b <= nineASCIICode {
-			task = append(task, b)
-		}
-	}
-
-	if len(task) > 0 {
-		tasks[string(task)] = struct{}{}
 	}
 
 	return tasks, nil
