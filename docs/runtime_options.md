@@ -6,6 +6,10 @@ This document describes a set of runtime flags available in cAdvisor.
 * `--store_container_labels=false` - do not convert container labels and environment variables into labels on prometheus metrics for each container.
 * `--whitelisted_container_labels` - comma separated list of container labels to be converted to labels on prometheus metrics for each container. `store_container_labels` must be set to false for this to take effect.
 
+## Container envs
+
+--env_metadata_whitelist="": a comma-separated list of environment variable keys that needs to be collected for containers, only support containerd and docker runtime for now.
+
 ## Limiting which containers are monitored 
 * `--docker_only=false` - do not report raw cgroup metrics, except the root cgroup.
 * `--raw_cgroup_prefix_whitelist` - a comma-separated list of cgroup path prefix that needs to be collected even when `--docker_only` is specified
@@ -52,7 +56,6 @@ From [glog](https://github.com/golang/glog) here are some flags we find useful:
 
 ```
 --docker="unix:///var/run/docker.sock": docker endpoint (default "unix:///var/run/docker.sock")
---docker_env_metadata_whitelist="": a comma-separated list of environment variable keys that needs to be collected for docker containers
 --docker_root="/var/lib/docker": DEPRECATED: docker root is read from docker info (this is a fallback, default: /var/lib/docker) (default "/var/lib/docker")
 --docker-tls: use TLS to connect to docker
 --docker-tls-cert="cert.pem": client certificate for TLS-connection with docker
