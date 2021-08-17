@@ -47,6 +47,8 @@ var ArgDockerCert = flag.String("docker-tls-cert", "cert.pem", "path to client c
 var ArgDockerKey = flag.String("docker-tls-key", "key.pem", "path to private key")
 var ArgDockerCA = flag.String("docker-tls-ca", "ca.pem", "path to trusted CA")
 
+var dockerEnvMetadataWhiteList = flag.String("docker_env_metadata_whitelist", "", "DEPRECATED: this flag will be removed, please use `env_metadata_whitelist`. A comma-separated list of environment variable keys matched with specified prefix that needs to be collected for docker containers")
+
 // The namespace under which Docker aliases are unique.
 const DockerNamespace = "docker"
 
@@ -140,6 +142,13 @@ func (f *dockerFactory) NewContainerHandler(name string, metadataEnvs []string, 
 		return
 	}
 
+	dockerMetadataEnvs := strings.Split(*dockerEnvMetadataWhiteList, ",")
+
+	// prefer using the unified metadataEnvs
+	if len(metadataEnvs) != 0 {
+		dockerMetadataEnvs = metadataEnvs
+	}
+
 	handler, err = newDockerContainerHandler(
 		client,
 		name,
@@ -149,7 +158,7 @@ func (f *dockerFactory) NewContainerHandler(name string, metadataEnvs []string, 
 		f.storageDir,
 		&f.cgroupSubsystems,
 		inHostNamespace,
-		metadataEnvs,
+		dockerMetadataEnvs,
 		f.dockerVersion,
 		f.includedMetrics,
 		f.thinPoolName,
