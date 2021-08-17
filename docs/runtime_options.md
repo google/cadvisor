@@ -8,7 +8,7 @@ This document describes a set of runtime flags available in cAdvisor.
 
 ## Container envs
 
---env_metadata_whitelist="": a comma-separated list of environment variable keys that needs to be collected for containers, only support containerd and docker runtime for now.
+* `--env_metadata_whitelist`: a comma-separated list of environment variable keys that needs to be collected for containers, only support containerd and docker runtime for now.
 
 ## Limiting which containers are monitored 
 * `--docker_only=false` - do not report raw cgroup metrics, except the root cgroup.
