@@ -122,12 +122,7 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 	}
 
 	for _, pid := range pids {
-		threadFiles, err := ioutil.ReadDir(filepath.Join(processPath, pid, processTask))
-		if err != nil {
-			return "", err
-		}
-
-		processThreads, err := getAllProcessThreads(threadFiles)
+		processThreads, err := getAllProcessThreads(filepath.Join(processPath, pid, processTask))
 		if err != nil {
 			return "", err
 		}
@@ -160,9 +155,18 @@ func getPids(containerName string) ([]int, error) {
 	return pids, nil
 }
 
-func getAllProcessThreads(threadFiles []os.FileInfo) ([]int, error) {
+// getAllProcessThreads obtains all available processes from directory.
+// e.g. ls /proc/4215/task/ -> 4215, 4216, 4217, 4218
+// func will return [4215, 4216, 4217, 4218].
+func getAllProcessThreads(path string) ([]int, error) {
 	processThreads := make([]int, 0)
-	for _, file := range threadFiles {
+
+	threadDirs, err := ioutil.ReadDir(path)
+	if err != nil {
+		return processThreads, err
+	}
+
+	for _, file := range threadDirs {
 		pid, err := strconv.Atoi(file.Name())
 		if err != nil {
 			return nil, fmt.Errorf("couldn't parse %q file: %v", file.Name(), err)

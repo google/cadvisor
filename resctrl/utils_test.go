@@ -33,8 +33,6 @@ import (
 	"github.com/opencontainers/runc/libcontainer/intelrdt"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 )
 
 func mockAllGetContainerPids() ([]string, error) {
@@ -356,33 +354,70 @@ func TestGetPids(t *testing.T) {
 }
 
 func TestGetAllProcessThreads(t *testing.T) {
+	mockProcFs := func() string {
+		path, _ := ioutil.TempDir("", "proc")
+
+		var files = []struct {
+			path  string
+			touch func(string) error
+		}{
+			// correct
+			{
+				filepath.Join(path, "4215", processTask, "4215"),
+				touchDir,
+			},
+			{
+				filepath.Join(path, "4215", processTask, "4216"),
+				touchDir,
+			},
+			{
+				filepath.Join(path, "4215", processTask, "4217"),
+				touchDir,
+			},
+			{
+				filepath.Join(path, "4215", processTask, "4218"),
+				touchDir,
+			},
+			// invalid
+			{
+				filepath.Join(path, "301", processTask, "301"),
+				touchDir,
+			},
+			{
+				filepath.Join(path, "301", processTask, "incorrect"),
+				touchDir,
+			},
+		}
+
+		for _, file := range files {
+			_ = file.touch(file.path)
+		}
+
+		return path
+	}
+
+	mockedProcFs := mockProcFs()
+	defer os.RemoveAll(mockedProcFs)
+
 	var testCases = []struct {
-		filesInfo []os.FileInfo
-		expected  []int
-		err       string
+		path     string
+		expected []int
+		err      string
 	}{
 		{
-			[]os.FileInfo{
-				&fakesysfs.FileInfo{EntryName: "1"},
-				&fakesysfs.FileInfo{EntryName: "2"},
-				&fakesysfs.FileInfo{EntryName: "3"},
-				&fakesysfs.FileInfo{EntryName: "4"},
-			},
-			[]int{1, 2, 3, 4},
+			filepath.Join(mockedProcFs, "4215", processTask),
+			[]int{4215, 4216, 4217, 4218},
 			"",
 		},
 		{
-			[]os.FileInfo{
-				&fakesysfs.FileInfo{EntryName: "incorrect"},
-				&fakesysfs.FileInfo{EntryName: "1"},
-			},
+			filepath.Join(mockedProcFs, "301", processTask),
 			nil,
 			"couldn't parse \"incorrect\" file: strconv.Atoi: parsing \"incorrect\": invalid syntax",
 		},
 	}
 
 	for _, test := range testCases {
-		actual, err := getAllProcessThreads(test.filesInfo)
+		actual, err := getAllProcessThreads(test.path)
 		assert.Equal(t, test.expected, actual)
 		checkError(t, err, test.err)
 	}
