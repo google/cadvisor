@@ -55,13 +55,13 @@ var (
 const memTypeFileName = "dimm_mem_type"
 const sizeFileName = "size"
 
-// GetVendorID returns "vendor_id" reading /proc/cpuinfo file.
-func GetVendorID(procInfo []byte) string {
+// GetCPUVendorID returns "vendor_id" reading /proc/cpuinfo file.
+func GetCPUVendorID(procInfo []byte) string {
 	vendorID := ""
 
 	matches := vendorIDRegexp.FindSubmatch(procInfo)
 	if len(matches) != 2 {
-		klog.Error("Cannot read vendor id correctly, set empty")
+		klog.Warning("Cannot read vendor id correctly, set empty.")
 		return vendorID
 	}
 
