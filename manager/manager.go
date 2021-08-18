@@ -217,7 +217,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		return nil, err
 	}
 
-	newManager.resctrlManager, err = resctrl.NewManager(resctrlInterval, resctrl.Setup, machineInfo.VendorID)
+	newManager.resctrlManager, err = resctrl.NewManager(resctrlInterval, resctrl.Setup, machineInfo.CPUVendorID)
 	if err != nil {
 		klog.V(4).Infof("Cannot gather resctrl metrics: %v", err)
 	}
