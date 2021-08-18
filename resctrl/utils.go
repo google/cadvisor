@@ -206,7 +206,7 @@ func findControlGroup(pids []string) (string, error) {
 	return "", fmt.Errorf("there is no available control group")
 }
 
-// arePIDsInControlGroup returns true if all of the pids are withing control group.
+// arePIDsInControlGroup returns true if all of the pids are within control group.
 func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 	if len(pids) == 0 {
 		return false, fmt.Errorf("couldn't obtain pids from %q path: %v", path, noPidsPassedError)
