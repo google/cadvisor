@@ -33,25 +33,27 @@ import (
 )
 
 const (
-	cpuCgroup             = "cpu"
-	rootContainer         = "/"
-	monitoringGroupDir    = "mon_groups"
-	processTask           = "task"
-	cpusFileName          = "cpus"
-	cpusListFileName      = "cpus_list"
-	schemataFileName      = "schemata"
-	tasksFileName         = "tasks"
-	infoDirName           = "info"
-	monDataDirName        = "mon_data"
-	monGroupsDirName      = "mon_groups"
-	noPidsPassedError     = "there are no pids passed"
-	noContainerNameError  = "there are no container name passed"
-	llcOccupancyFileName  = "llc_occupancy"
-	mbmLocalBytesFileName = "mbm_local_bytes"
-	mbmTotalBytesFileName = "mbm_total_bytes"
-	containerPrefix       = '/'
-	minContainerNameLen   = 2 // "/<container_name>" e.g. "/a"
-	unavailable           = "Unavailable"
+	cpuCgroup                = "cpu"
+	rootContainer            = "/"
+	monitoringGroupDir       = "mon_groups"
+	processTask              = "task"
+	cpusFileName             = "cpus"
+	cpusListFileName         = "cpus_list"
+	schemataFileName         = "schemata"
+	tasksFileName            = "tasks"
+	infoDirName              = "info"
+	monDataDirName           = "mon_data"
+	monGroupsDirName         = "mon_groups"
+	noPidsPassedError        = "there are no pids passed"
+	noContainerNameError     = "there are no container name passed"
+	noControlGroupFoundError = "couldn't find control group matching container"
+	llcOccupancyFileName     = "llc_occupancy"
+	mbmLocalBytesFileName    = "mbm_local_bytes"
+	mbmTotalBytesFileName    = "mbm_total_bytes"
+	containerPrefix          = '/'
+	minContainerNameLen      = 2 // "/<container_name>" e.g. "/a"
+	unavailable              = "Unavailable"
+	monGroupPrefix           = "cadvisor"
 )
 
 var (
@@ -65,6 +67,9 @@ var (
 		infoDirName:      {},
 		monDataDirName:   {},
 		monGroupsDirName: {},
+	}
+	monGroupDirectories = map[string]struct{}{
+		monDataDirName: {},
 	}
 )
 
@@ -103,39 +108,50 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 		return "", fmt.Errorf("couldn't obtain %q container pids, there is no pids in cgroup", containerName)
 	}
 
-	path, err := findControlGroup(pids)
+	controlGroupPath, err := findGroup(rootResctrl, pids, controlGroupDirectories, false)
 	if err != nil {
-		return "", fmt.Errorf("couldn't find control group matching %q container: %v", containerName, err)
+		return "", fmt.Errorf("%q %q: %q", noControlGroupFoundError, containerName, err)
+	}
+	if controlGroupPath == "" {
+		return "", fmt.Errorf("%q %q", noControlGroupFoundError, containerName)
 	}
 
-	if len(containerName) >= minContainerNameLen && containerName[0] == containerPrefix {
-		containerName = containerName[1:]
-	}
-
-	properContainerName := strings.Replace(containerName, "/", "-", -1)
-	monGroupPath := filepath.Join(path, monitoringGroupDir, properContainerName)
-
-	// Create new mon_group if not exists.
-	err = os.MkdirAll(monGroupPath, os.ModePerm)
+	// Check if there is any monitoring group.
+	monGroupPath, err := findGroup(filepath.Join(controlGroupPath, monGroupsDirName), pids, monGroupDirectories, true)
 	if err != nil {
-		return "", fmt.Errorf("couldn't create monitoring group directory for %q container: %w", containerName, err)
+		return "", fmt.Errorf("couldn't find monitoring group matching %q container: %v", containerName, err)
 	}
 
-	for _, pid := range pids {
-		processThreads, err := getAllProcessThreads(filepath.Join(processPath, pid, processTask))
-		if err != nil {
-			return "", err
+	// Prepare new one if not exists.
+	if monGroupPath == "" {
+		if len(containerName) >= minContainerNameLen && containerName[0] == containerPrefix {
+			containerName = containerName[1:]
 		}
-		for _, thread := range processThreads {
-			err = intelrdt.WriteIntelRdtTasks(monGroupPath, thread)
+
+		properContainerName := fmt.Sprintf("%s-%s", monGroupPrefix, strings.Replace(containerName, "/", "-", -1))
+		monGroupPath = filepath.Join(controlGroupPath, monitoringGroupDir, properContainerName)
+
+		err = os.MkdirAll(monGroupPath, os.ModePerm)
+		if err != nil {
+			return "", fmt.Errorf("couldn't create monitoring group directory for %q container: %w", containerName, err)
+		}
+
+		for _, pid := range pids {
+			processThreads, err := getAllProcessThreads(filepath.Join(processPath, pid, processTask))
 			if err != nil {
-				secondError := os.Remove(monGroupPath)
-				if secondError != nil {
-					return "", fmt.Errorf(
-						"coudn't assign pids to %q container monitoring group: %w \n couldn't clear %q monitoring group: %v",
-						containerName, err, containerName, secondError)
+				return "", err
+			}
+			for _, thread := range processThreads {
+				err = intelrdt.WriteIntelRdtTasks(monGroupPath, thread)
+				if err != nil {
+					secondError := os.Remove(monGroupPath)
+					if secondError != nil {
+						return "", fmt.Errorf(
+							"coudn't assign pids to %q container monitoring group: %w \n couldn't clear %q monitoring group: %v",
+							containerName, err, containerName, secondError)
+					}
+					return "", fmt.Errorf("coudn't assign pids to %q container monitoring group: %w", containerName, err)
 				}
-				return "", fmt.Errorf("coudn't assign pids to %q container monitoring group: %w", containerName, err)
 			}
 		}
 	}
@@ -177,28 +193,34 @@ func getAllProcessThreads(path string) ([]int, error) {
 	return processThreads, nil
 }
 
-// findControlGroup returns the path of a control group in which the pids are.
-func findControlGroup(pids []string) (string, error) {
+// findGroup returns the path of a control/monitoring group in which the pids are.
+func findGroup(group string, pids []string, skip map[string]struct{}, monGroup bool) (string, error) {
 	if len(pids) == 0 {
 		return "", fmt.Errorf(noPidsPassedError)
 	}
 	availablePaths := make([]string, 0)
-	err := filepath.Walk(rootResctrl, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(group, func(path string, info os.FileInfo, err error) error {
 		// Look only for directories.
 		if info.IsDir() {
-			// Avoid internal control group dirs.
-			if _, ok := controlGroupDirectories[filepath.Base(path)]; !ok {
-				availablePaths = append(availablePaths, path)
+			// Monitoring path shouldn't be considered.
+			if path == group && monGroup {
+				return nil
 			}
+			// Avoid internal group dirs.
+			if _, ok := skip[filepath.Base(path)]; ok {
+				return filepath.SkipDir
+			}
+			availablePaths = append(availablePaths, path)
 		}
 		return nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("couldn't obtain control groups paths: %w", err)
+		return "", fmt.Errorf("couldn't obtain groups paths: %w", err)
 	}
 
 	for _, path := range availablePaths {
-		groupFound, err := arePIDsInControlGroup(path, pids)
+		// Mon group pids should be exclusive.
+		groupFound, err := arePIDsInGroup(path, pids, monGroup)
 		if err != nil {
 			return "", err
 		}
@@ -207,11 +229,11 @@ func findControlGroup(pids []string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("there is no available control group")
+	return "", nil
 }
 
-// arePIDsInControlGroup returns true if all of the pids are within control group.
-func arePIDsInControlGroup(path string, pids []string) (bool, error) {
+// arePIDsInGroup returns true if all of the pids are within control group.
+func arePIDsInGroup(path string, pids []string, exclusive bool) (bool, error) {
 	if len(pids) == 0 {
 		return false, fmt.Errorf("couldn't obtain pids from %q path: %v", path, noPidsPassedError)
 	}
@@ -221,6 +243,7 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 		return false, err
 	}
 
+	any := false
 	for _, pidString := range pids {
 		pid, err := strconv.Atoi(pidString)
 		if err != nil {
@@ -228,8 +251,19 @@ func arePIDsInControlGroup(path string, pids []string) (bool, error) {
 		}
 		_, ok := tasks[pid]
 		if !ok {
-			// There is any missing pid within group.
+			// There are missing pids within group.
+			if any {
+				return false, fmt.Errorf("there should be all pids in group")
+			}
 			return false, nil
+		}
+		any = true
+	}
+
+	// Check if there should be only passed pids in group.
+	if exclusive {
+		if len(tasks) != len(pids) {
+			return false, fmt.Errorf("group should have container pids only")
 		}
 	}
 

@@ -18,6 +18,7 @@
 package resctrl
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,7 +39,7 @@ func TestNewCollectorWithSetup(t *testing.T) {
 	defer os.RemoveAll(processPath)
 
 	expectedID := "container"
-	expectedResctrlPath := filepath.Join(rootResctrl, monGroupsDirName, expectedID)
+	expectedResctrlPath := filepath.Join(rootResctrl, monGroupsDirName, fmt.Sprintf("%s-%s", monGroupPrefix, expectedID))
 
 	collector := newCollector(expectedID, mockGetContainerPids, 0, 2, "")
 	err := collector.setup()

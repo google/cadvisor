@@ -143,6 +143,14 @@ func mockResctrl() string {
 			filepath.Join(path, "m1", tasksFileName),
 			touch,
 		},
+		{
+			filepath.Join(path, "m1", monGroupsDirName, "test"),
+			touchDir,
+		},
+		{
+			filepath.Join(path, "m1", monGroupsDirName, "test", tasksFileName),
+			touch,
+		},
 	}
 	for _, file := range files {
 		err := file.touch(file.path)
@@ -158,7 +166,12 @@ func mockResctrl() string {
 	}
 
 	// Mock custom CLOSID "m1" task file.
-	err = fillPids(filepath.Join(path, "m1", tasksFileName), []int{5, 6})
+	err = fillPids(filepath.Join(path, "m1", tasksFileName), []int{5, 6, 7, 8, 9, 10})
+	if err != nil {
+		return ""
+	}
+	// Mock custom mon group "test" task file.
+	err = fillPids(filepath.Join(path, "m1", monGroupsDirName, "test", tasksFileName), []int{7, 8})
 	if err != nil {
 		return ""
 	}
@@ -296,13 +309,13 @@ func TestPrepareMonitoringGroup(t *testing.T) {
 		{
 			"container",
 			mockGetContainerPids,
-			filepath.Join(rootResctrl, monGroupsDirName, "container"),
+			filepath.Join(rootResctrl, monGroupsDirName, "cadvisor-container"),
 			"",
 		},
 		{
 			"another",
 			mockAnotherGetContainerPids,
-			filepath.Join(rootResctrl, "m1", monGroupsDirName, "another"),
+			filepath.Join(rootResctrl, "m1", monGroupsDirName, "cadvisor-another"),
 			"",
 		},
 		{
@@ -423,87 +436,132 @@ func TestGetAllProcessThreads(t *testing.T) {
 	}
 }
 
-func TestFindControlGroup(t *testing.T) {
+func TestFindGroup(t *testing.T) {
 	rootResctrl = mockResctrl()
 	defer os.RemoveAll(rootResctrl)
 
 	var testCases = []struct {
+		path     string
 		pids     []string
+		skip     map[string]struct{}
+		monGroup bool
 		expected string
 		err      string
 	}{
 		{
+			rootResctrl,
 			[]string{"1", "2", "3", "4"},
+			controlGroupDirectories,
+			false,
 			rootResctrl,
 			"",
 		},
 		{
+			rootResctrl,
 			[]string{},
+			controlGroupDirectories,
+			false,
 			"",
 			"there are no pids passed",
 		},
 		{
+			rootResctrl,
 			[]string{"5", "6"},
+			controlGroupDirectories,
+			false,
 			filepath.Join(rootResctrl, "m1"),
 			"",
 		},
 		{
-			[]string{"7", "8"},
+			rootResctrl,
+			[]string{"11", "12"},
+			controlGroupDirectories,
+			false,
 			"",
-			"there is no available control group",
+			"",
+		},
+		{
+			filepath.Join(rootResctrl, "m1", monGroupsDirName),
+			[]string{"5", "6"},
+			monGroupDirectories,
+			true,
+			"",
+			"",
+		},
+		{
+			filepath.Join(rootResctrl, "m1", monGroupsDirName),
+			[]string{"7", "8"},
+			monGroupDirectories,
+			true,
+			filepath.Join(rootResctrl, "m1", monGroupsDirName, "test"),
+			"",
+		},
+		{
+			filepath.Join(rootResctrl, "m1", monGroupsDirName),
+			[]string{"7"},
+			monGroupDirectories,
+			true,
+			"",
+			"group should have container pids only",
 		},
 	}
 	for _, test := range testCases {
-		actual, err := findControlGroup(test.pids)
+		actual, err := findGroup(test.path, test.pids, test.skip, test.monGroup)
 		assert.Equal(t, test.expected, actual)
 		checkError(t, err, test.err)
 	}
 }
 
-func TestArePIDsInControlGroup(t *testing.T) {
+func TestArePIDsInGroup(t *testing.T) {
 	rootResctrl = mockResctrl()
 	defer os.RemoveAll(rootResctrl)
 
 	var testCases = []struct {
-		expected bool
-		err      string
-		path     string
-		pids     []string
+		expected  bool
+		err       string
+		path      string
+		pids      []string
+		exclusive bool
 	}{
 		{
 			true,
 			"",
 			rootResctrl,
 			[]string{"1", "2"},
+			false,
 		},
 		{
 			false,
-			"",
+			"there should be all pids in group",
 			rootResctrl,
 			[]string{"4", "5"},
+			false,
 		},
 		{
 			false,
 			"",
 			filepath.Join(rootResctrl, "m1"),
 			[]string{"1"},
+			false,
 		},
 		{
 			false,
 			fmt.Sprintf("couldn't read tasks file from %q path: open %s: no such file or directory", filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName), filepath.Join(rootResctrl, monitoringGroupDir, tasksFileName)),
 			filepath.Join(rootResctrl, monitoringGroupDir),
 			[]string{"1", "2"},
+			false,
 		},
 		{
 			false,
 			fmt.Sprintf("couldn't obtain pids from %q path: %v", rootResctrl, noPidsPassedError),
 			rootResctrl,
 			nil,
+			false,
 		},
 	}
 
 	for _, test := range testCases {
-		actual, err := arePIDsInControlGroup(test.path, test.pids)
+		actual, err := arePIDsInGroup(test.path, test.pids, test.exclusive)
 		assert.Equal(t, test.expected, actual)
 		checkError(t, err, test.err)
 	}

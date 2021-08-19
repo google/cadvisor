@@ -419,6 +419,8 @@ should be a human readable string that will become a metric name.
 `uncore_imc` prefix.
 
 ## Resctrl
+To gain metrics, cAdvisor creates own monitoring groups with `cadvisor` prefix.
+
 
 ```
 --resctrl_interval=0: Resctrl mon groups updating interval. Zero value disables updating mon groups.
