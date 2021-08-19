@@ -106,7 +106,7 @@ func (ms MetricSet) Has(mk MetricKind) bool {
 	return exists
 }
 
-func (ms MetricSet) Add(mk MetricKind) {
+func (ms MetricSet) add(mk MetricKind) {
 	ms[mk] = struct{}{}
 }
 
@@ -119,6 +119,7 @@ func (ms MetricSet) String() string {
 	return strings.Join(values, ",")
 }
 
+// Not thread-safe, exported only for https://pkg.go.dev/flag#Value
 func (ms *MetricSet) Set(value string) error {
 	*ms = MetricSet{}
 	if value == "" {
@@ -126,7 +127,7 @@ func (ms *MetricSet) Set(value string) error {
 	}
 	for _, metric := range strings.Split(value, ",") {
 		if AllMetrics.Has(MetricKind(metric)) {
-			(*ms).Add(MetricKind(metric))
+			(*ms).add(MetricKind(metric))
 		} else {
 			return fmt.Errorf("unsupported metric %q specified", metric)
 		}
@@ -138,7 +139,7 @@ func (ms MetricSet) Difference(ms1 MetricSet) MetricSet {
 	result := MetricSet{}
 	for kind := range ms {
 		if !ms1.Has(kind) {
-			result.Add(kind)
+			result.add(kind)
 		}
 	}
 	return result
