@@ -17,7 +17,7 @@ spec:
           - --max_housekeeping_interval=15s
           - --event_storage_event_limit=default=0
           - --event_storage_age_limit=default=0
-          - --enable_metrics=disk,diskIO,memory,network,process   # app & cpu metrics are always enabled
+          - --enable_metrics=app,cpu,disk,diskIO,memory,network,process
           - --docker_only                                         # only show stats for docker containers
           - --store_container_labels=false
           - --whitelisted_container_labels=io.kubernetes.container.name, io.kubernetes.pod.name,io.kubernetes.pod.namespace
