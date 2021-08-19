@@ -144,16 +144,6 @@ func (ms MetricSet) Difference(ms1 MetricSet) MetricSet {
 	return result
 }
 
-func (ms MetricSet) Append(ms1 MetricSet) MetricSet {
-	result := ms
-	for kind := range ms1 {
-		if !ms.Has(kind) {
-			result.Add(kind)
-		}
-	}
-	return result
-}
-
 // All registered auth provider plugins.
 var pluginsLock sync.Mutex
 var plugins = make(map[string]Plugin)
