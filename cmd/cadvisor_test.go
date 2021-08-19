@@ -118,7 +118,7 @@ func TestToIncludedMetrics(t *testing.T) {
 	}
 
 	for idx, ignore := range ignores {
-		actual := toIncludedMetrics(ignore)
+		actual := container.AllMetrics.Difference(ignore)
 		assert.Equal(t, actual, expected[idx])
 	}
 }

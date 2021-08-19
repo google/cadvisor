@@ -121,7 +121,7 @@ func main() {
 	if len(enableMetrics) > 0 {
 		includedMetrics = enableMetrics
 	} else {
-		includedMetrics = toIncludedMetrics(ignoreMetrics)
+		includedMetrics = container.AllMetrics.Difference(ignoreMetrics)
 	}
 	klog.V(1).Infof("enabled metrics: %s", includedMetrics.String())
 	setMaxProcs()
@@ -238,8 +238,4 @@ func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
 	}
 
 	return http.Client{Transport: transport}
-}
-
-func toIncludedMetrics(ignoreMetrics container.MetricSet) container.MetricSet {
-	return container.AllMetrics.Difference(ignoreMetrics)
 }
