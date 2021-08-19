@@ -19,10 +19,12 @@ import (
 	"fmt"
 
 	"github.com/containerd/containerd/containers"
+	criapi "github.com/google/cadvisor/container/cri-api/pkg/apis/runtime/v1alpha2"
 )
 
 type containerdClientMock struct {
 	cntrs     map[string]*containers.Container
+	status    *criapi.ContainerStatus
 	returnErr error
 }
 
@@ -43,6 +45,10 @@ func (c *containerdClientMock) Version(ctx context.Context) (string, error) {
 
 func (c *containerdClientMock) TaskPid(ctx context.Context, id string) (uint32, error) {
 	return 2389, nil
+}
+
+func (c *containerdClientMock) ContainerStatus(ctx context.Context, id string) (*criapi.ContainerStatus, error) {
+	return &criapi.ContainerStatus{}, nil
 }
 
 func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr error) ContainerdClient {
