@@ -25,7 +25,6 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
-	"time"
 
 	cadvisorhttp "github.com/google/cadvisor/cmd/internal/http"
 	"github.com/google/cadvisor/container"
@@ -57,11 +56,6 @@ var httpDigestFile = flag.String("http_digest_file", "", "HTTP digest file for t
 var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest file for the web UI")
 
 var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
-
-var housekeepingConfig = manager.HouskeepingConfig{
-	flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings"),
-	flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic"),
-}
 
 var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web interface host:port/debug/pprof/")
 
@@ -135,7 +129,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, housekeepingConfig, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), *perfEvents)
+	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), *perfEvents)
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
