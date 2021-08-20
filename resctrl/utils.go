@@ -57,19 +57,20 @@ const (
 )
 
 var (
-	rootResctrl             = ""
-	pidsPath                = ""
-	processPath             = "/proc"
-	enabledMBM              = false
-	enabledCMT              = false
-	isResctrlInitialized    = false
-	controlGroupDirectories = map[string]struct{}{
+	rootResctrl          = ""
+	pidsPath             = ""
+	processPath          = "/proc"
+	enabledMBM           = false
+	enabledCMT           = false
+	isResctrlInitialized = false
+	groupDirectories     = map[string]struct{}{
+		cpusFileName:     {},
+		cpusListFileName: {},
 		infoDirName:      {},
 		monDataDirName:   {},
 		monGroupsDirName: {},
-	}
-	monGroupDirectories = map[string]struct{}{
-		monDataDirName: {},
+		schemataFileName: {},
+		tasksFileName:    {},
 	}
 )
 
@@ -105,10 +106,10 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 	}
 
 	if len(pids) == 0 {
-		return "", fmt.Errorf("couldn't obtain %q container pids, there is no pids in cgroup", containerName)
+		return "", fmt.Errorf("couldn't obtain %q container pids: there is no pids in cgroup", containerName)
 	}
 
-	controlGroupPath, err := findGroup(rootResctrl, pids, controlGroupDirectories, false)
+	controlGroupPath, err := findGroup(rootResctrl, pids, true, false)
 	if err != nil {
 		return "", fmt.Errorf("%q %q: %q", noControlGroupFoundError, containerName, err)
 	}
@@ -117,7 +118,7 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 	}
 
 	// Check if there is any monitoring group.
-	monGroupPath, err := findGroup(filepath.Join(controlGroupPath, monGroupsDirName), pids, monGroupDirectories, true)
+	monGroupPath, err := findGroup(filepath.Join(controlGroupPath, monGroupsDirName), pids, false, true)
 	if err != nil {
 		return "", fmt.Errorf("couldn't find monitoring group matching %q container: %v", containerName, err)
 	}
@@ -194,33 +195,28 @@ func getAllProcessThreads(path string) ([]int, error) {
 }
 
 // findGroup returns the path of a control/monitoring group in which the pids are.
-func findGroup(group string, pids []string, skip map[string]struct{}, monGroup bool) (string, error) {
+func findGroup(group string, pids []string, includeGroup bool, exclusive bool) (string, error) {
 	if len(pids) == 0 {
 		return "", fmt.Errorf(noPidsPassedError)
 	}
+
 	availablePaths := make([]string, 0)
-	err := filepath.Walk(group, func(path string, info os.FileInfo, err error) error {
-		// Look only for directories.
-		if info.IsDir() {
-			// Monitoring path shouldn't be considered.
-			if path == group && monGroup {
-				return nil
-			}
-			// Avoid internal group dirs.
-			if _, ok := skip[filepath.Base(path)]; ok {
-				return filepath.SkipDir
-			}
-			availablePaths = append(availablePaths, path)
+	if includeGroup {
+		availablePaths = append(availablePaths, group)
+	}
+
+	filenames, err := ioutil.ReadDir(group)
+	for _, file := range filenames {
+		if _, ok := groupDirectories[file.Name()]; !ok {
+			availablePaths = append(availablePaths, filepath.Join(group, file.Name()))
 		}
-		return nil
-	})
+	}
 	if err != nil {
 		return "", fmt.Errorf("couldn't obtain groups paths: %w", err)
 	}
 
 	for _, path := range availablePaths {
-		// Mon group pids should be exclusive.
-		groupFound, err := arePIDsInGroup(path, pids, monGroup)
+		groupFound, err := arePIDsInGroup(path, pids, exclusive)
 		if err != nil {
 			return "", err
 		}

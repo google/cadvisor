@@ -441,17 +441,17 @@ func TestFindGroup(t *testing.T) {
 	defer os.RemoveAll(rootResctrl)
 
 	var testCases = []struct {
-		path     string
-		pids     []string
-		skip     map[string]struct{}
-		monGroup bool
-		expected string
-		err      string
+		path         string
+		pids         []string
+		includeGroup bool
+		exclusive    bool
+		expected     string
+		err          string
 	}{
 		{
 			rootResctrl,
 			[]string{"1", "2", "3", "4"},
-			controlGroupDirectories,
+			true,
 			false,
 			rootResctrl,
 			"",
@@ -459,7 +459,7 @@ func TestFindGroup(t *testing.T) {
 		{
 			rootResctrl,
 			[]string{},
-			controlGroupDirectories,
+			true,
 			false,
 			"",
 			"there are no pids passed",
@@ -467,7 +467,7 @@ func TestFindGroup(t *testing.T) {
 		{
 			rootResctrl,
 			[]string{"5", "6"},
-			controlGroupDirectories,
+			true,
 			false,
 			filepath.Join(rootResctrl, "m1"),
 			"",
@@ -475,7 +475,7 @@ func TestFindGroup(t *testing.T) {
 		{
 			rootResctrl,
 			[]string{"11", "12"},
-			controlGroupDirectories,
+			true,
 			false,
 			"",
 			"",
@@ -483,7 +483,7 @@ func TestFindGroup(t *testing.T) {
 		{
 			filepath.Join(rootResctrl, "m1", monGroupsDirName),
 			[]string{"5", "6"},
-			monGroupDirectories,
+			false,
 			true,
 			"",
 			"",
@@ -491,7 +491,7 @@ func TestFindGroup(t *testing.T) {
 		{
 			filepath.Join(rootResctrl, "m1", monGroupsDirName),
 			[]string{"7", "8"},
-			monGroupDirectories,
+			false,
 			true,
 			filepath.Join(rootResctrl, "m1", monGroupsDirName, "test"),
 			"",
@@ -499,14 +499,14 @@ func TestFindGroup(t *testing.T) {
 		{
 			filepath.Join(rootResctrl, "m1", monGroupsDirName),
 			[]string{"7"},
-			monGroupDirectories,
+			false,
 			true,
 			"",
 			"group should have container pids only",
 		},
 	}
 	for _, test := range testCases {
-		actual, err := findGroup(test.path, test.pids, test.skip, test.monGroup)
+		actual, err := findGroup(test.path, test.pids, test.includeGroup, test.exclusive)
 		assert.Equal(t, test.expected, actual)
 		checkError(t, err, test.err)
 	}
