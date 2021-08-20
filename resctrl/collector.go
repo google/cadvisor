@@ -54,7 +54,7 @@ func (c *collector) setup() error {
 
 	if c.interval != noInterval {
 		if err != nil {
-			klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals.", c.id, err)
+			klog.Errorf("Failed to setup container %q resctrl collector: %s \n Trying again in next intervals.", c.id, err)
 		} else {
 			c.running = true
 		}
@@ -70,13 +70,13 @@ func (c *collector) setup() error {
 					err = c.checkMonitoringGroup()
 					if err != nil {
 						c.running = false
-						klog.Errorf("Failed to check %q resctrl collector control group: %w \n Trying again in next intervals.", c.id, err)
+						klog.Errorf("Failed to check %q resctrl collector control group: %s \n Trying again in next intervals.", c.id, err)
 					}
 				} else {
 					c.resctrlPath, err = prepareMonitoringGroup(c.id, c.getContainerPids)
 					if err != nil {
 						c.running = false
-						klog.Errorf("Failed to setup container %q resctrl collector: %w \n Trying again in next intervals.", c.id, err)
+						klog.Errorf("Failed to setup container %q resctrl collector: %s \n Trying again in next intervals.", c.id, err)
 					}
 				}
 				c.mu.Unlock()
