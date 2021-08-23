@@ -28,9 +28,9 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/pkg/dialer"
 	ptypes "github.com/gogo/protobuf/types"
-	criapi "github.com/google/cadvisor/container/cri-api/pkg/apis/runtime/v1alpha2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
 
 type client struct {
