@@ -85,7 +85,7 @@ func newCrioContainerHandler(
 	storageDir string,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
-	metadataEnvs []string,
+	metadataEnvAllowList []string,
 	includedMetrics container.MetricSet,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
@@ -186,7 +186,7 @@ func newCrioContainerHandler(
 		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, storageLogDir, fsInfo)
 	}
 	// TODO for env vars we wanted to show from container.Config.Env from whitelist
-	//for _, exposedEnv := range metadataEnvs {
+	//for _, exposedEnv := range metadataEnvAllowList {
 	//klog.V(4).Infof("TODO env whitelist: %v", exposedEnv)
 	//}
 

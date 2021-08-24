@@ -136,17 +136,17 @@ func (f *dockerFactory) String() string {
 	return DockerNamespace
 }
 
-func (f *dockerFactory) NewContainerHandler(name string, metadataEnvs []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
+func (f *dockerFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
 	client, err := Client()
 	if err != nil {
 		return
 	}
 
-	dockerMetadataEnvs := strings.Split(*dockerEnvMetadataWhiteList, ",")
+	dockerMetadataEnvAllowList := strings.Split(*dockerEnvMetadataWhiteList, ",")
 
-	// prefer using the unified metadataEnvs
-	if len(metadataEnvs) != 0 {
-		dockerMetadataEnvs = metadataEnvs
+	// prefer using the unified metadataEnvAllowList
+	if len(metadataEnvAllowList) != 0 {
+		dockerMetadataEnvAllowList = metadataEnvAllowList
 	}
 
 	handler, err = newDockerContainerHandler(
@@ -158,7 +158,7 @@ func (f *dockerFactory) NewContainerHandler(name string, metadataEnvs []string, 
 		f.storageDir,
 		&f.cgroupSubsystems,
 		inHostNamespace,
-		dockerMetadataEnvs,
+		dockerMetadataEnvAllowList,
 		f.dockerVersion,
 		f.includedMetrics,
 		f.thinPoolName,

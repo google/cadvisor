@@ -22,7 +22,7 @@ import (
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/mesos/mesos-go/api/v1/lib"
+        "github.com/mesos/mesos-go/api/v1/lib"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,14 +37,14 @@ func PopulateContainer() *mContainer {
 func TestContainerReference(t *testing.T) {
 	as := assert.New(t)
 	type testCase struct {
-		client             mesosAgentClient
-		name               string
-		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
-		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
-		inHostNamespace    bool
-		metadataEnvs       []string
-		includedMetrics    container.MetricSet
+		client               mesosAgentClient
+		name                 string
+		machineInfoFactory   info.MachineInfoFactory
+		fsInfo               fs.FsInfo
+		cgroupSubsystems     *containerlibcontainer.CgroupSubsystems
+		inHostNamespace      bool
+		metadataEnvAllowList []string
+		includedMetrics      container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -99,7 +99,7 @@ func TestContainerReference(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.metadataEnvs, ts.client)
+		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.metadataEnvAllowList, ts.client)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {

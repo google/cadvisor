@@ -64,7 +64,7 @@ func (f *crioFactory) String() string {
 	return CrioNamespace
 }
 
-func (f *crioFactory) NewContainerHandler(name string, metadataEnvs []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
+func (f *crioFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
 	client, err := Client()
 	if err != nil {
 		return
@@ -78,7 +78,7 @@ func (f *crioFactory) NewContainerHandler(name string, metadataEnvs []string, in
 		f.storageDir,
 		&f.cgroupSubsystems,
 		inHostNamespace,
-		metadataEnvs,
+		metadataEnvAllowList,
 		f.includedMetrics,
 	)
 	return

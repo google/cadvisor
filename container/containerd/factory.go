@@ -58,17 +58,17 @@ func (f *containerdFactory) String() string {
 	return k8sContainerdNamespace
 }
 
-func (f *containerdFactory) NewContainerHandler(name string, metadataEnvs []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
+func (f *containerdFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
 	client, err := Client(*ArgContainerdEndpoint, *ArgContainerdNamespace)
 	if err != nil {
 		return
 	}
 
-	containerdMetadataEnvs := strings.Split(*containerdEnvMetadataWhiteList, ",")
+	containerdMetadataEnvAllowList := strings.Split(*containerdEnvMetadataWhiteList, ",")
 
-	// prefer using the unified metadataEnvs
-	if len(metadataEnvs) != 0 {
-		containerdMetadataEnvs = metadataEnvs
+	// prefer using the unified metadataEnvAllowList
+	if len(metadataEnvAllowList) != 0 {
+		containerdMetadataEnvAllowList = metadataEnvAllowList
 	}
 
 	return newContainerdContainerHandler(
@@ -78,7 +78,7 @@ func (f *containerdFactory) NewContainerHandler(name string, metadataEnvs []stri
 		f.fsInfo,
 		&f.cgroupSubsystems,
 		inHostNamespace,
-		containerdMetadataEnvs,
+		containerdMetadataEnvAllowList,
 		f.includedMetrics,
 	)
 }
