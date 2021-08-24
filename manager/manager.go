@@ -61,6 +61,11 @@ var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h",
 var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
 var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
 
+var HousekeepingConfigFlags = HouskeepingConfig{
+	flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings"),
+	flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic"),
+}
+
 // The Manager interface defines operations for starting a manager and getting
 // container and machine information.
 type Manager interface {
@@ -693,6 +698,10 @@ func (m *manager) GetRequestedContainersInfo(containerName string, options v2.Re
 	for name, data := range containers {
 		info, err := m.containerDataToContainerInfo(data, &query)
 		if err != nil {
+			if err == memory.ErrDataNotFound {
+				klog.Warningf("Error getting data for container %s because of race condition", name)
+				continue
+			}
 			errs.append(name, "containerDataToContainerInfo", err)
 		}
 		containersMap[name] = info
@@ -930,10 +939,12 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 	}
 
 	if cgroups.IsCgroup2UnifiedMode() {
-		perfCgroupPath := path.Join(fs2.UnifiedMountpoint, containerName)
-		cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
-		if err != nil {
-			klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
+		if m.includedMetrics.Has(container.PerfMetrics) {
+			perfCgroupPath := path.Join(fs2.UnifiedMountpoint, containerName)
+			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
+			if err != nil {
+				klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
+			}
 		}
 	} else {
 		devicesCgroupPath, err := handler.GetCgroupPath("devices")
@@ -945,13 +956,15 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 				klog.V(4).Infof("GPU metrics may be unavailable/incomplete for container %s: %s", cont.info.Name, err)
 			}
 		}
-		perfCgroupPath, err := handler.GetCgroupPath("perf_event")
-		if err != nil {
-			klog.Warningf("Error getting perf_event cgroup path: %q", err)
-		} else {
-			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
+		if m.includedMetrics.Has(container.PerfMetrics) {
+			perfCgroupPath, err := handler.GetCgroupPath("perf_event")
 			if err != nil {
-				klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
+				klog.Warningf("Error getting perf_event cgroup path: %q", err)
+			} else {
+				cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
+				if err != nil {
+					klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
+				}
 			}
 		}
 	}

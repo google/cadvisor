@@ -6,17 +6,20 @@ metadata:
 data:
   perf-non-hardware.json: |
     {
-    "events": [
-      ["context-switches"],
-      ["cpu-migrations-custom"]
-    ],
-    "custom_events": [
-        {
-          "type": 1,
-          "config": [
-            "0x4"
-          ],
-          "name": "cpu-migrations-custom"
-        }
-      ]
+      "core": {
+        "events": [
+          "context-switches",
+          "cpu-migrations-custom"
+        ],
+        "custom_events": [
+          {
+            "type": 1,
+            "config": [
+              "0x4"
+            ],
+            "name": "cpu-migrations-custom"
+          }
+        ]
+      }
     }
+

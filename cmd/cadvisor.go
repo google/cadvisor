@@ -25,7 +25,6 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
-	"time"
 
 	cadvisorhttp "github.com/google/cadvisor/cmd/internal/http"
 	"github.com/google/cadvisor/container"
@@ -58,11 +57,6 @@ var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest
 
 var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
 
-var housekeepingConfig = manager.HouskeepingConfig{
-	flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings"),
-	flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic"),
-}
-
 var enableProfiling = flag.Bool("profiling", false, "Enable profiling via web interface host:port/debug/pprof/")
 
 var collectorCert = flag.String("collector_cert", "", "Collector's certificate, exposed to endpoints for certificate based authentication.")
@@ -82,7 +76,7 @@ var resctrlInterval = flag.Duration("resctrl_interval", 0, "Resctrl mon groups u
 var (
 	// Metrics to be ignored.
 	// Tcp metrics are ignored by default.
-	ignoreMetrics metricSetValue = metricSetValue{container.MetricSet{
+	ignoreMetrics = container.MetricSet{
 		container.MemoryNumaMetrics:              struct{}{},
 		container.NetworkTcpUsageMetrics:         struct{}{},
 		container.NetworkUdpUsageMetrics:         struct{}{},
@@ -94,59 +88,16 @@ var (
 		container.CPUTopologyMetrics:             struct{}{},
 		container.ResctrlMetrics:                 struct{}{},
 		container.CPUSetMetrics:                  struct{}{},
-	}}
-
-	// List of metrics that can be ignored.
-	ignoreWhitelist = container.MetricSet{
-		container.AcceleratorUsageMetrics:        struct{}{},
-		container.DiskUsageMetrics:               struct{}{},
-		container.DiskIOMetrics:                  struct{}{},
-		container.MemoryNumaMetrics:              struct{}{},
-		container.NetworkUsageMetrics:            struct{}{},
-		container.NetworkTcpUsageMetrics:         struct{}{},
-		container.NetworkAdvancedTcpUsageMetrics: struct{}{},
-		container.NetworkUdpUsageMetrics:         struct{}{},
-		container.PerCpuUsageMetrics:             struct{}{},
-		container.ProcessSchedulerMetrics:        struct{}{},
-		container.ProcessMetrics:                 struct{}{},
-		container.HugetlbUsageMetrics:            struct{}{},
-		container.ReferencedMemoryMetrics:        struct{}{},
-		container.CPUTopologyMetrics:             struct{}{},
-		container.ResctrlMetrics:                 struct{}{},
-		container.CPUSetMetrics:                  struct{}{},
-		container.OOMMetrics:                     struct{}{},
 	}
+
+	// Metrics to be enabled.  Used only if non-empty.
+	enableMetrics = container.MetricSet{}
 )
 
-type metricSetValue struct {
-	container.MetricSet
-}
-
-func (ml *metricSetValue) String() string {
-	var values []string
-	for metric := range ml.MetricSet {
-		values = append(values, string(metric))
-	}
-	return strings.Join(values, ",")
-}
-
-func (ml *metricSetValue) Set(value string) error {
-	ml.MetricSet = container.MetricSet{}
-	if value == "" {
-		return nil
-	}
-	for _, metric := range strings.Split(value, ",") {
-		if ignoreWhitelist.Has(container.MetricKind(metric)) {
-			(*ml).Add(container.MetricKind(metric))
-		} else {
-			return fmt.Errorf("unsupported metric %q specified in disable_metrics", metric)
-		}
-	}
-	return nil
-}
-
 func init() {
-	flag.Var(&ignoreMetrics, "disable_metrics", "comma-separated list of `metrics` to be disabled. Options are 'accelerator', 'cpu_topology','disk', 'diskIO', 'memory_numa', 'network', 'tcp', 'udp', 'percpu', 'sched', 'process', 'hugetlb', 'referenced_memory', 'resctrl', 'cpuset'.")
+	optstr := container.AllMetrics.String()
+	flag.Var(&ignoreMetrics, "disable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be disabled. Options are %s.", optstr))
+	flag.Var(&enableMetrics, "enable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be enabled. If set, overrides 'disable_metrics'. Options are %s.", optstr))
 
 	// Default logging verbosity to V(2)
 	flag.Set("v", "2")
@@ -162,8 +113,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	includedMetrics := toIncludedMetrics(ignoreMetrics.MetricSet)
-
+	var includedMetrics container.MetricSet
+	if len(enableMetrics) > 0 {
+		includedMetrics = enableMetrics
+	} else {
+		includedMetrics = container.AllMetrics.Difference(ignoreMetrics)
+	}
+	klog.V(1).Infof("enabled metrics: %s", includedMetrics.String())
 	setMaxProcs()
 
 	memoryStorage, err := NewMemoryStorage()
@@ -175,7 +131,7 @@ func main() {
 
 	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, housekeepingConfig, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), *perfEvents, *resctrlInterval)
+	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), *perfEvents, *resctrlInterval)
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
@@ -278,8 +234,4 @@ func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
 	}
 
 	return http.Client{Transport: transport}
-}
-
-func toIncludedMetrics(ignoreMetrics container.MetricSet) container.MetricSet {
-	return container.AllMetrics.Difference(ignoreMetrics)
 }

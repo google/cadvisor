@@ -23,7 +23,7 @@ cAdvisor is now running (in the background) on `http://localhost:8080/`. The set
 - If docker daemon is running with [user namespace enabled](https://docs.docker.com/engine/reference/commandline/dockerd/#starting-the-daemon-with-user-namespaces-enabled),
 you need to add `--userns=host` option in order for cAdvisor to monitor Docker containers,
 otherwise cAdvisor can not connect to docker daemon.
-- If cadvisor scrapes `process metrics` by set flag `--disable_metrics`, you need to add `--pid=host` and `--privileged` for `docker run` to get `/proc/pid/fd` path in host.
+- If cadvisor scrapes `process` metrics due to `--disable_metrics` or `--enable_metrics` options, you need to add `--pid=host` and `--privileged` for `docker run` to get `/proc/pid/fd` path in host.
 - If cAdvisor needs to be run in Docker container without `--privileged` option it is possible to add host devices to container using `--dev` and
   specify security options using `--security-opt` with secure computing mode (seccomp).
   For details related to seccomp please [see](https://docs.docker.com/engine/security/seccomp/), the default Docker profile can be found [here](https://github.com/moby/moby/blob/master/profiles/seccomp/default.json).

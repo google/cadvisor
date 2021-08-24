@@ -16,6 +16,8 @@ package container
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 	"sync"
 
 	"github.com/google/cadvisor/fs"
@@ -104,15 +106,40 @@ func (ms MetricSet) Has(mk MetricKind) bool {
 	return exists
 }
 
-func (ms MetricSet) Add(mk MetricKind) {
+func (ms MetricSet) add(mk MetricKind) {
 	ms[mk] = struct{}{}
+}
+
+func (ms MetricSet) String() string {
+	values := make([]string, 0, len(ms))
+	for metric := range ms {
+		values = append(values, string(metric))
+	}
+	sort.Strings(values)
+	return strings.Join(values, ",")
+}
+
+// Not thread-safe, exported only for https://pkg.go.dev/flag#Value
+func (ms *MetricSet) Set(value string) error {
+	*ms = MetricSet{}
+	if value == "" {
+		return nil
+	}
+	for _, metric := range strings.Split(value, ",") {
+		if AllMetrics.Has(MetricKind(metric)) {
+			(*ms).add(MetricKind(metric))
+		} else {
+			return fmt.Errorf("unsupported metric %q specified", metric)
+		}
+	}
+	return nil
 }
 
 func (ms MetricSet) Difference(ms1 MetricSet) MetricSet {
 	result := MetricSet{}
 	for kind := range ms {
 		if !ms1.Has(kind) {
-			result.Add(kind)
+			result.add(kind)
 		}
 	}
 	return result

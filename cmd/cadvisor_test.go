@@ -58,7 +58,7 @@ func TestMemoryNumaMetricsAreDisabledByDefault(t *testing.T) {
 	assert.True(t, ignoreMetrics.Has(container.MemoryNumaMetrics))
 }
 
-func TestIgnoreMetrics(t *testing.T) {
+func TestEnableAndIgnoreMetrics(t *testing.T) {
 	tests := []struct {
 		value    string
 		expected []container.MetricKind
@@ -69,11 +69,13 @@ func TestIgnoreMetrics(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		assert.NoError(t, ignoreMetrics.Set(test.value))
+		for _, sets := range []container.MetricSet{enableMetrics, ignoreMetrics} {
+			assert.NoError(t, sets.Set(test.value))
 
-		assert.Equal(t, len(test.expected), len(ignoreMetrics.MetricSet))
-		for _, expected := range test.expected {
-			assert.True(t, ignoreMetrics.Has(expected), "Missing %s", expected)
+			assert.Equal(t, len(test.expected), len(sets))
+			for _, expected := range test.expected {
+				assert.True(t, sets.Has(expected), "Missing %s", expected)
+			}
 		}
 	}
 }
@@ -116,7 +118,7 @@ func TestToIncludedMetrics(t *testing.T) {
 	}
 
 	for idx, ignore := range ignores {
-		actual := toIncludedMetrics(ignore)
+		actual := container.AllMetrics.Difference(ignore)
 		assert.Equal(t, actual, expected[idx])
 	}
 }
