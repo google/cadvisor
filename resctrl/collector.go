@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -157,13 +158,10 @@ func (c *collector) clear() error {
 	// Not allowed to remove root or undefined resctrl directory.
 	if c.id != rootContainer && c.resctrlPath != "" {
 		// Remove only own prepared mon group.
-		base := filepath.Base(c.resctrlPath)
-		if len(base) > len(monGroupPrefix) {
-			if base[:len(monGroupPrefix)] == monGroupPrefix {
-				err := os.RemoveAll(c.resctrlPath)
-				if err != nil {
-					return fmt.Errorf("couldn't clear mon_group: %v", err)
-				}
+		if strings.HasPrefix(filepath.Base(c.resctrlPath), monGroupPrefix) {
+			err := os.RemoveAll(c.resctrlPath)
+			if err != nil {
+				return fmt.Errorf("couldn't clear mon_group: %v", err)
 			}
 		}
 	}
