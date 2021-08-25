@@ -189,10 +189,10 @@ func getAllProcessThreads(path string) ([]int, error) {
 		return processThreads, err
 	}
 
-	for _, file := range threadDirs {
-		pid, err := strconv.Atoi(file.Name())
+	for _, dir := range threadDirs {
+		pid, err := strconv.Atoi(dir.Name())
 		if err != nil {
-			return nil, fmt.Errorf("couldn't parse %q file: %v", file.Name(), err)
+			return nil, fmt.Errorf("couldn't parse %q dir: %v", dir.Name(), err)
 		}
 		processThreads = append(processThreads, pid)
 	}
@@ -211,8 +211,8 @@ func findGroup(group string, pids []string, includeGroup bool, exclusive bool) (
 		availablePaths = append(availablePaths, group)
 	}
 
-	filenames, err := ioutil.ReadDir(group)
-	for _, file := range filenames {
+	files, err := ioutil.ReadDir(group)
+	for _, file := range files {
 		if _, ok := groupDirectories[file.Name()]; !ok {
 			availablePaths = append(availablePaths, filepath.Join(group, file.Name()))
 		}
