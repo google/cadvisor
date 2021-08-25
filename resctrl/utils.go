@@ -109,6 +109,8 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 		return "", fmt.Errorf("couldn't obtain %q container pids: there is no pids in cgroup", containerName)
 	}
 
+	// Firstly, find the control group to which the container belongs.
+	// Consider the root group.
 	controlGroupPath, err := findGroup(rootResctrl, pids, true, false)
 	if err != nil {
 		return "", fmt.Errorf("%q %q: %q", noControlGroupFoundError, containerName, err)
@@ -125,10 +127,14 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 
 	// Prepare new one if not exists.
 	if monGroupPath == "" {
+		// Remove leading prefix.
+		// e.g. /my/container -> my/container
 		if len(containerName) >= minContainerNameLen && containerName[0] == containerPrefix {
 			containerName = containerName[1:]
 		}
 
+		// Add own prefix and use `-` instead `/`.
+		// e.g. my/container -> cadvisor-my-container
 		properContainerName := fmt.Sprintf("%s-%s", monGroupPrefix, strings.Replace(containerName, "/", "-", -1))
 		monGroupPath = filepath.Join(controlGroupPath, monitoringGroupDir, properContainerName)
 
