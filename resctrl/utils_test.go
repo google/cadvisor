@@ -425,7 +425,7 @@ func TestGetAllProcessThreads(t *testing.T) {
 		{
 			filepath.Join(mockedProcFs, "301", processTask),
 			nil,
-			"couldn't parse \"incorrect\" file: strconv.Atoi: parsing \"incorrect\": invalid syntax",
+			"couldn't parse \"incorrect\" dir: strconv.Atoi: parsing \"incorrect\": invalid syntax",
 		},
 	}
 
