@@ -671,28 +671,24 @@ func TestGetStats(t *testing.T) {
 func TestReadTasksFile(t *testing.T) {
 	var testCases = []struct {
 		tasksFile string
-		expected  map[int]struct{}
+		expected  map[string]struct{}
 		err       string
 	}{
 		{"testing/tasks_two",
-			map[int]struct{}{
-				12: {},
-				77: {},
+			map[string]struct{}{
+				"12": {},
+				"77": {},
 			},
 			"",
 		},
 		{"testing/tasks_one",
-			map[int]struct{}{
-				2: {},
+			map[string]struct{}{
+				"2": {},
 			},
 			"",
 		},
-		{"testing/tasks_invalid",
-			map[int]struct{}{},
-			"couldn't convert pids from \"testing/tasks_invalid\" path: strconv.Atoi: parsing \"\\x00*\": invalid syntax",
-		},
 		{"testing/tasks_empty",
-			map[int]struct{}{},
+			map[string]struct{}{},
 			"",
 		},
 	}

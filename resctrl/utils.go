@@ -246,11 +246,7 @@ func arePIDsInGroup(path string, pids []string, exclusive bool) (bool, error) {
 	}
 
 	any := false
-	for _, pidString := range pids {
-		pid, err := strconv.Atoi(pidString)
-		if err != nil {
-			return false, err
-		}
+	for _, pid := range pids {
 		_, ok := tasks[pid]
 		if !ok {
 			// There are missing pids within group.
@@ -273,8 +269,8 @@ func arePIDsInGroup(path string, pids []string, exclusive bool) (bool, error) {
 }
 
 // readTasksFile returns pids map from given tasks path.
-func readTasksFile(tasksPath string) (map[int]struct{}, error) {
-	tasks := make(map[int]struct{})
+func readTasksFile(tasksPath string) (map[string]struct{}, error) {
+	tasks := make(map[string]struct{})
 
 	tasksFile, err := os.Open(tasksPath)
 	if err != nil {
@@ -284,11 +280,7 @@ func readTasksFile(tasksPath string) (map[int]struct{}, error) {
 
 	scanner := bufio.NewScanner(tasksFile)
 	for scanner.Scan() {
-		id, err := strconv.Atoi(scanner.Text())
-		if err != nil {
-			return tasks, fmt.Errorf("couldn't convert pids from %q path: %w", tasksPath, err)
-		}
-		tasks[id] = struct{}{}
+		tasks[scanner.Text()] = struct{}{}
 	}
 
 	if err := scanner.Err(); err != nil {
