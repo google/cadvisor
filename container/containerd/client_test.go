@@ -51,9 +51,10 @@ func (c *containerdClientMock) ContainerStatus(ctx context.Context, id string) (
 	return &criapi.ContainerStatus{}, nil
 }
 
-func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr error) ContainerdClient {
+func mockcontainerdClient(cntrs map[string]*containers.Container, status *criapi.ContainerStatus, returnErr error) ContainerdClient {
 	return &containerdClientMock{
 		cntrs:     cntrs,
+		status:    status,
 		returnErr: returnErr,
 	}
 }
