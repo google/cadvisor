@@ -69,7 +69,7 @@ func TestHandler(t *testing.T) {
 	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainer
 	for _, ts := range []testCase{
 		{
-			mockcontainerdClient(nil, nil),
+			mockcontainerdClient(nil, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			nil,
 			nil,
@@ -83,7 +83,7 @@ func TestHandler(t *testing.T) {
 			nil,
 		},
 		{
-			mockcontainerdClient(testContainers, nil),
+			mockcontainerdClient(testContainers, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			&mockedMachineInfo{},
 			nil,
@@ -102,7 +102,7 @@ func TestHandler(t *testing.T) {
 			map[string]string{},
 		},
 		{
-			mockcontainerdClient(testContainers, nil),
+			mockcontainerdClient(testContainers, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			&mockedMachineInfo{},
 			nil,
