@@ -1,3 +1,4 @@
+//go:build linux
 // +build linux
 
 // Copyright 2020 Google Inc. All Rights Reserved.
