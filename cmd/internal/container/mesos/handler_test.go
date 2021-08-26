@@ -37,13 +37,14 @@ func PopulateContainer() *mContainer {
 func TestContainerReference(t *testing.T) {
 	as := assert.New(t)
 	type testCase struct {
-		client             mesosAgentClient
-		name               string
-		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
-		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
-		inHostNamespace    bool
-		includedMetrics    container.MetricSet
+		client               mesosAgentClient
+		name                 string
+		machineInfoFactory   info.MachineInfoFactory
+		fsInfo               fs.FsInfo
+		cgroupSubsystems     *containerlibcontainer.CgroupSubsystems
+		inHostNamespace      bool
+		metadataEnvAllowList []string
+		includedMetrics      container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -57,6 +58,7 @@ func TestContainerReference(t *testing.T) {
 			nil,
 			&containerlibcontainer.CgroupSubsystems{},
 			false,
+			[]string{},
 			nil,
 
 			true,
@@ -70,6 +72,7 @@ func TestContainerReference(t *testing.T) {
 			nil,
 			&containerlibcontainer.CgroupSubsystems{},
 			false,
+			[]string{},
 			nil,
 
 			true,
@@ -83,6 +86,7 @@ func TestContainerReference(t *testing.T) {
 			nil,
 			&containerlibcontainer.CgroupSubsystems{},
 			false,
+			[]string{},
 			nil,
 
 			false,
@@ -95,7 +99,7 @@ func TestContainerReference(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.client)
+		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.metadataEnvAllowList, ts.client)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {

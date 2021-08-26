@@ -57,6 +57,7 @@ func newMesosContainerHandler(
 	fsInfo fs.FsInfo,
 	includedMetrics container.MetricSet,
 	inHostNamespace bool,
+	metadataEnvAllowList []string,
 	client mesosAgentClient,
 ) (container.ContainerHandler, error) {
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
