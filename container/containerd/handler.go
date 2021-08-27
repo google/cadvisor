@@ -112,11 +112,31 @@ func newContainerdContainerHandler(
 		rootfs = "/rootfs"
 	}
 
+	var restart uint32 = 0
+	containerName := "POD"
+	if cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
+		status, err := client.ContainerStatus(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		restart = status.Metadata.Attempt
+		containerName = cntr.Labels["io.kubernetes.container.name"]
+	}
+
+	// The "io.kubernetes" labels are defined in https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/types/labels.go
+	containerNameConcat := strings.Join([]string{
+		"k8s",
+		containerName,
+		cntr.Labels["io.kubernetes.pod.name"],
+		cntr.Labels["io.kubernetes.pod.namespace"],
+		cntr.Labels["io.kubernetes.pod.uid"],
+		fmt.Sprint(restart)}, "_")
+
 	containerReference := info.ContainerReference{
 		Id:        id,
 		Name:      name,
 		Namespace: k8sContainerdNamespace,
-		Aliases:   []string{id, name},
+		Aliases:   []string{containerNameConcat, id, name},
 	}
 
 	libcontainerHandler := containerlibcontainer.NewHandler(cgroupManager, rootfs, int(taskPid), includedMetrics)
