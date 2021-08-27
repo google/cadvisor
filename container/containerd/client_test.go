@@ -48,7 +48,7 @@ func (c *containerdClientMock) TaskPid(ctx context.Context, id string) (uint32, 
 }
 
 func (c *containerdClientMock) ContainerStatus(ctx context.Context, id string) (*criapi.ContainerStatus, error) {
-	return &criapi.ContainerStatus{}, nil
+	return c.status, nil
 }
 
 func mockcontainerdClient(cntrs map[string]*containers.Container, status *criapi.ContainerStatus, returnErr error) ContainerdClient {

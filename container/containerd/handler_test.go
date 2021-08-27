@@ -26,6 +26,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
 
 func init() {
@@ -60,13 +61,31 @@ func TestHandler(t *testing.T) {
 		checkEnvVars   map[string]string
 	}
 	testContainers := make(map[string]*containers.Container)
+	testContainerSandbox := &containers.Container{
+		ID: "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
+		Labels: map[string]string{
+			"io.cri-containerd.kind":       "sandbox",
+			"io.kubernetes.container.name": "pause",
+			"io.kubernetes.pod.name":       "some-pod",
+			"io.kubernetes.pod.namespace":  "some-ns",
+			"io.kubernetes.pod.uid":        "some-uid"},
+	}
 	testContainer := &containers.Container{
-		ID:     "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
-		Labels: map[string]string{"io.cri-containerd.kind": "sandbox"},
+		ID: "c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086",
+		Labels: map[string]string{
+			"io.cri-containerd.kind":       "container",
+			"io.kubernetes.container.name": "some-container",
+			"io.kubernetes.pod.name":       "some-pod",
+			"io.kubernetes.pod.namespace":  "some-ns",
+			"io.kubernetes.pod.uid":        "some-uid"},
 	}
 	spec := &specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{Env: []string{"TEST_REGION=FRA", "TEST_ZONE=A", "HELLO=WORLD"}}}
+	testContainerSandbox.Spec, _ = typeurl.MarshalAny(spec)
 	testContainer.Spec, _ = typeurl.MarshalAny(spec)
-	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainer
+	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainerSandbox
+	testContainers["c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086"] = testContainer
+	status := &criapi.ContainerStatus{Metadata: &criapi.ContainerMetadata{Attempt: 2}}
+
 	for _, ts := range []testCase{
 		{
 			mockcontainerdClient(nil, nil, nil),
@@ -96,7 +115,7 @@ func TestHandler(t *testing.T) {
 			&info.ContainerReference{
 				Id:        "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 				Name:      "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
-				Aliases:   []string{"40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9", "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"},
+				Aliases:   []string{"k8s_POD_some-pod_some-ns_some-uid_0", "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9", "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"},
 				Namespace: k8sContainerdNamespace,
 			},
 			map[string]string{},
@@ -115,10 +134,29 @@ func TestHandler(t *testing.T) {
 			&info.ContainerReference{
 				Id:        "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 				Name:      "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
-				Aliases:   []string{"40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9", "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"},
+				Aliases:   []string{"k8s_POD_some-pod_some-ns_some-uid_0", "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9", "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"},
 				Namespace: k8sContainerdNamespace,
 			},
 			map[string]string{"TEST_REGION": "FRA", "TEST_ZONE": "A"},
+		},
+		{
+			mockcontainerdClient(testContainers, status, nil),
+			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086",
+			&mockedMachineInfo{},
+			nil,
+			&containerlibcontainer.CgroupSubsystems{},
+			false,
+			nil,
+			nil,
+			false,
+			"",
+			&info.ContainerReference{
+				Id:        "c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086",
+				Name:      "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086",
+				Aliases:   []string{"k8s_some-container_some-pod_some-ns_some-uid_2", "c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086", "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086"},
+				Namespace: k8sContainerdNamespace,
+			},
+			map[string]string{},
 		},
 	} {
 		handler, err := newContainerdContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvAllowList, ts.includedMetrics)
