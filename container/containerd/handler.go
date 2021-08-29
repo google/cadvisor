@@ -112,7 +112,10 @@ func newContainerdContainerHandler(
 		rootfs = "/rootfs"
 	}
 
+	// For sandbox container (pause), the restart is hardcoded to "0"
 	var restart uint32 = 0
+	// Special container name for sandbox(pause)
+	// It is defined in https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/dockershim/naming.go#L50-L52
 	containerName := "POD"
 	if cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
 		status, err := client.ContainerStatus(ctx, id)
