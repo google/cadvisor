@@ -32,12 +32,19 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+type fsUsageProvider struct {
+	ctx         context.Context
+	containerId string
+	client      ContainerdClient
+}
+
 type containerdContainerHandler struct {
 	machineInfoFactory info.MachineInfoFactory
 	// Absolute path to the cgroup hierarchies of this container.
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
 	cgroupPaths map[string]string
 	fsInfo      fs.FsInfo
+	fsHandler   common.FsHandler
 	// Metadata associated with the container.
 	reference info.ContainerReference
 	envs      map[string]string
@@ -157,6 +164,14 @@ func newContainerdContainerHandler(
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
 
+	if includedMetrics.Has(container.DiskUsageMetrics) {
+		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, &fsUsageProvider{
+			ctx:         ctx,
+			client:      client,
+			containerId: id,
+		})
+	}
+
 	for _, exposedEnv := range metadataEnvAllowList {
 		if exposedEnv == "" {
 			// if no containerdEnvWhitelist provided, len(metadataEnvAllowList) == 1, metadataEnvAllowList[0] == ""
@@ -212,6 +227,20 @@ func (h *containerdContainerHandler) getFsStats(stats *info.ContainerStats) erro
 	if h.includedMetrics.Has(container.DiskIOMetrics) {
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
 	}
+
+	if !h.includedMetrics.Has(container.DiskUsageMetrics) {
+		return nil
+	}
+
+	// Device 、fsType and fsLimits and other information are not supported yet
+	fsStat := info.FsStats{}
+	usage := h.fsHandler.Usage()
+	fsStat.BaseUsage = usage.BaseUsageBytes
+	fsStat.Usage = usage.TotalUsageBytes
+	fsStat.Inodes = usage.InodeUsage
+
+	stats.Filesystem = append(stats.Filesystem, fsStat)
+
 	return nil
 }
 
@@ -262,12 +291,34 @@ func (h *containerdContainerHandler) Type() container.ContainerType {
 }
 
 func (h *containerdContainerHandler) Start() {
+	if h.fsHandler != nil {
+		h.fsHandler.Start()
+	}
 }
 
 func (h *containerdContainerHandler) Cleanup() {
+	if h.fsHandler != nil {
+		h.fsHandler.Stop()
+	}
 }
 
 func (h *containerdContainerHandler) GetContainerIPAddress() string {
 	// containerd doesnt take care of networking.So it doesnt maintain networking states
 	return ""
+}
+
+func (f *fsUsageProvider) Usage() (*common.FsUsage, error) {
+	stats, err := f.client.ContainerStats(f.ctx, f.containerId)
+	if err != nil {
+		return nil, err
+	}
+	return &common.FsUsage{
+		BaseUsageBytes:  stats.WritableLayer.UsedBytes.Value,
+		TotalUsageBytes: stats.WritableLayer.UsedBytes.Value,
+		InodeUsage:      stats.WritableLayer.InodesUsed.Value,
+	}, nil
+}
+
+func (f *fsUsageProvider) Targets() []string {
+	return []string{f.containerId}
 }
