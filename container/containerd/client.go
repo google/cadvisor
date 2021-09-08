@@ -45,6 +45,7 @@ type ContainerdClient interface {
 	TaskPid(ctx context.Context, id string) (uint32, error)
 	Version(ctx context.Context) (string, error)
 	ContainerStatus(ctx context.Context, id string) (*criapi.ContainerStatus, error)
+	ContainerStats(ctx context.Context, id string) (*criapi.ContainerStats, error)
 }
 
 var once sync.Once
@@ -138,6 +139,16 @@ func (c *client) ContainerStatus(ctx context.Context, id string) (*criapi.Contai
 		return nil, err
 	}
 	return response.Status, nil
+}
+
+func (c *client) ContainerStats(ctx context.Context, id string) (*criapi.ContainerStats, error) {
+	response, err := c.criService.ContainerStats(ctx, &criapi.ContainerStatsRequest{
+		ContainerId: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return response.Stats, nil
 }
 
 func containerFromProto(containerpb containersapi.Container) *containers.Container {

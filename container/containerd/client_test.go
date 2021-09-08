@@ -25,6 +25,7 @@ import (
 type containerdClientMock struct {
 	cntrs     map[string]*containers.Container
 	status    *criapi.ContainerStatus
+	stats     *criapi.ContainerStats
 	returnErr error
 }
 
@@ -51,10 +52,15 @@ func (c *containerdClientMock) ContainerStatus(ctx context.Context, id string) (
 	return c.status, nil
 }
 
-func mockcontainerdClient(cntrs map[string]*containers.Container, status *criapi.ContainerStatus, returnErr error) ContainerdClient {
+func (c *containerdClientMock) ContainerStats(ctx context.Context, id string) (*criapi.ContainerStats, error) {
+	return c.stats, nil
+}
+
+func mockcontainerdClient(cntrs map[string]*containers.Container, status *criapi.ContainerStatus, stats *criapi.ContainerStats, returnErr error) ContainerdClient {
 	return &containerdClientMock{
 		cntrs:     cntrs,
 		status:    status,
+		stats:     stats,
 		returnErr: returnErr,
 	}
 }
