@@ -34,7 +34,7 @@ import (
 
 type fsUsageProvider struct {
 	ctx         context.Context
-	containerId string
+	containerID string
 	client      ContainerdClient
 }
 
@@ -168,7 +168,7 @@ func newContainerdContainerHandler(
 		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, &fsUsageProvider{
 			ctx:         ctx,
 			client:      client,
-			containerId: id,
+			containerID: id,
 		})
 	}
 
@@ -308,7 +308,7 @@ func (h *containerdContainerHandler) GetContainerIPAddress() string {
 }
 
 func (f *fsUsageProvider) Usage() (*common.FsUsage, error) {
-	stats, err := f.client.ContainerStats(f.ctx, f.containerId)
+	stats, err := f.client.ContainerStats(f.ctx, f.containerID)
 	if err != nil {
 		return nil, err
 	}
@@ -320,5 +320,5 @@ func (f *fsUsageProvider) Usage() (*common.FsUsage, error) {
 }
 
 func (f *fsUsageProvider) Targets() []string {
-	return []string{f.containerId}
+	return []string{f.containerID}
 }
