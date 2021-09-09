@@ -34,7 +34,7 @@ RUN ./build/build.sh
 FROM alpine:3.12
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
-RUN apk --no-cache add libc6-compat device-mapper findutils zfs ndctl procps && \
+RUN apk --no-cache add libc6-compat device-mapper findutils zfs ndctl && \
     apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*

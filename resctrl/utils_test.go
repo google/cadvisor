@@ -327,7 +327,7 @@ func TestPrepareMonitoringGroup(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		actual, err := prepareMonitoringGroup(test.container, test.getContainerPids)
+		actual, err := prepareMonitoringGroup(test.container, test.getContainerPids, true)
 		assert.Equal(t, test.expected, actual)
 		checkError(t, err, test.err)
 	}
@@ -659,7 +659,7 @@ func TestGetStats(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		containerPath, _ := prepareMonitoringGroup(test.container, mockGetContainerPids)
+		containerPath, _ := prepareMonitoringGroup(test.container, mockGetContainerPids, true)
 		mockResctrlMonData(containerPath)
 		actual, err := getIntelRDTStatsFrom(containerPath, "")
 		checkError(t, err, test.err)

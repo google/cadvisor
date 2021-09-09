@@ -95,7 +95,7 @@ func Setup() error {
 	return nil
 }
 
-func prepareMonitoringGroup(containerName string, getContainerPids func() ([]string, error)) (string, error) {
+func prepareMonitoringGroup(containerName string, getContainerPids func() ([]string, error), inHostNamespace bool) (string, error) {
 	if containerName == rootContainer {
 		return rootResctrl, nil
 	}
@@ -141,6 +141,10 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 		err = os.MkdirAll(monGroupPath, os.ModePerm)
 		if err != nil {
 			return "", fmt.Errorf("couldn't create monitoring group directory for %q container: %w", containerName, err)
+		}
+
+		if !inHostNamespace {
+			processPath = "/rootfs/proc"
 		}
 
 		for _, pid := range pids {

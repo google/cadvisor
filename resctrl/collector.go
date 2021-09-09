@@ -42,16 +42,17 @@ type collector struct {
 	numberOfNUMANodes int
 	vendorID          string
 	mu                sync.Mutex
+	inHostNamespace   bool
 }
 
-func newCollector(id string, getContainerPids func() ([]string, error), interval time.Duration, numberOfNUMANodes int, vendorID string) *collector {
+func newCollector(id string, getContainerPids func() ([]string, error), interval time.Duration, numberOfNUMANodes int, vendorID string, inHostNamespace bool) *collector {
 	return &collector{id: id, interval: interval, getContainerPids: getContainerPids, numberOfNUMANodes: numberOfNUMANodes,
-		vendorID: vendorID, mu: sync.Mutex{}}
+		vendorID: vendorID, mu: sync.Mutex{}, inHostNamespace: inHostNamespace}
 }
 
 func (c *collector) setup() error {
 	var err error
-	c.resctrlPath, err = prepareMonitoringGroup(c.id, c.getContainerPids)
+	c.resctrlPath, err = prepareMonitoringGroup(c.id, c.getContainerPids, c.inHostNamespace)
 
 	if c.interval != noInterval {
 		if err != nil {
@@ -74,7 +75,7 @@ func (c *collector) setup() error {
 						klog.Errorf("Failed to check %q resctrl collector control group: %s \n Trying again in next intervals.", c.id, err)
 					}
 				} else {
-					c.resctrlPath, err = prepareMonitoringGroup(c.id, c.getContainerPids)
+					c.resctrlPath, err = prepareMonitoringGroup(c.id, c.getContainerPids, c.inHostNamespace)
 					if err != nil {
 						c.running = false
 						klog.Errorf("Failed to setup container %q resctrl collector: %s \n Trying again in next intervals.", c.id, err)
@@ -95,7 +96,7 @@ func (c *collector) setup() error {
 }
 
 func (c *collector) checkMonitoringGroup() error {
-	newPath, err := prepareMonitoringGroup(c.id, c.getContainerPids)
+	newPath, err := prepareMonitoringGroup(c.id, c.getContainerPids, c.inHostNamespace)
 	if err != nil {
 		return fmt.Errorf("couldn't obtain mon_group path: %v", err)
 	}

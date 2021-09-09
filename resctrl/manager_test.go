@@ -29,6 +29,7 @@ func TestNewManager(t *testing.T) {
 		isResctrlInitialized bool
 		enabledCMT           bool
 		enabledMBM           bool
+		inHostNamespace      bool
 		err                  string
 		expected             Manager
 	}{
@@ -36,26 +37,30 @@ func TestNewManager(t *testing.T) {
 			true,
 			true,
 			false,
+			true,
 			"",
-			&manager{interval: 0},
+			&manager{interval: 0, inHostNamespace: true},
 		},
 		{
 			true,
 			false,
-			true,
-			"",
-			&manager{interval: 0},
-		},
-		{
-			true,
 			true,
 			true,
 			"",
-			&manager{interval: 0},
+			&manager{interval: 0, inHostNamespace: true},
+		},
+		{
+			true,
+			true,
+			true,
+			false,
+			"",
+			&manager{interval: 0, inHostNamespace: false},
 		},
 		{
 			false,
 			true,
+			false,
 			false,
 			"the resctrl isn't initialized",
 			&NoopManager{},
@@ -64,6 +69,7 @@ func TestNewManager(t *testing.T) {
 			false,
 			false,
 			true,
+			false,
 			"the resctrl isn't initialized",
 			&NoopManager{},
 		},
@@ -71,6 +77,7 @@ func TestNewManager(t *testing.T) {
 			false,
 			true,
 			true,
+			true,
 			"the resctrl isn't initialized",
 			&NoopManager{},
 		},
@@ -78,6 +85,7 @@ func TestNewManager(t *testing.T) {
 			false,
 			false,
 			false,
+			true,
 			"the resctrl isn't initialized",
 			&NoopManager{},
 		},
@@ -85,6 +93,7 @@ func TestNewManager(t *testing.T) {
 			true,
 			false,
 			false,
+			true,
 			"there are no monitoring features available",
 			&NoopManager{},
 		},
@@ -97,7 +106,7 @@ func TestNewManager(t *testing.T) {
 			enabledMBM = test.enabledMBM
 			return nil
 		}
-		got, err := NewManager(0, setup, "")
+		got, err := NewManager(0, setup, "", test.inHostNamespace)
 		assert.Equal(t, got, test.expected)
 		checkError(t, err, test.err)
 	}
@@ -121,7 +130,7 @@ func TestGetCollector(t *testing.T) {
 		enabledMBM = true
 		return nil
 	}
-	manager, err := NewManager(0, setup, "")
+	manager, err := NewManager(0, setup, "", true)
 	assert.NoError(t, err)
 
 	_, err = manager.GetCollector(expectedID, mockGetContainerPids, 2)
