@@ -425,6 +425,7 @@ should be a human readable string that will become a metric name.
 ## Resctrl
 To gain metrics, cAdvisor creates own monitoring groups with `cadvisor` prefix.
 
+Resctrl file system is not hierarchical like cgroups, so it's recommended to set `--docker_only` flag to avoid race conditions and unexpected behaviours.
 
 ```
 --resctrl_interval=0: Resctrl mon groups updating interval. Zero value disables updating mon groups.
