@@ -28,16 +28,16 @@ import (
 func TestHandler(t *testing.T) {
 	as := assert.New(t)
 	type testCase struct {
-		client             CrioClient
-		name               string
-		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
-		storageDriver      storageDriver
-		storageDir         string
-		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
-		inHostNamespace    bool
-		metadataEnvs       []string
-		includedMetrics    container.MetricSet
+		client               CrioClient
+		name                 string
+		machineInfoFactory   info.MachineInfoFactory
+		fsInfo               fs.FsInfo
+		storageDriver        storageDriver
+		storageDir           string
+		cgroupSubsystems     *containerlibcontainer.CgroupSubsystems
+		inHostNamespace      bool
+		metadataEnvAllowList []string
+		includedMetrics      container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -102,7 +102,7 @@ func TestHandler(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newCrioContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.storageDriver, ts.storageDir, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.includedMetrics)
+		handler, err := newCrioContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.storageDriver, ts.storageDir, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvAllowList, ts.includedMetrics)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {

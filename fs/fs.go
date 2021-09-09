@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
 // +build linux
 
 // Provides Filesystem Stats
@@ -283,15 +284,17 @@ func (i *RealFsInfo) addSystemRootLabel(mounts []*mount.Info) {
 
 // addDockerImagesLabel attempts to determine which device contains the mount for docker images.
 func (i *RealFsInfo) addDockerImagesLabel(context Context, mounts []*mount.Info) {
-	dockerDev, dockerPartition, err := i.getDockerDeviceMapperInfo(context.Docker)
-	if err != nil {
-		klog.Warningf("Could not get Docker devicemapper device: %v", err)
-	}
-	if len(dockerDev) > 0 && dockerPartition != nil {
-		i.partitions[dockerDev] = *dockerPartition
-		i.labels[LabelDockerImages] = dockerDev
-	} else {
-		i.updateContainerImagesPath(LabelDockerImages, mounts, getDockerImagePaths(context))
+	if context.Docker.Driver != "" {
+		dockerDev, dockerPartition, err := i.getDockerDeviceMapperInfo(context.Docker)
+		if err != nil {
+			klog.Warningf("Could not get Docker devicemapper device: %v", err)
+		}
+		if len(dockerDev) > 0 && dockerPartition != nil {
+			i.partitions[dockerDev] = *dockerPartition
+			i.labels[LabelDockerImages] = dockerDev
+		} else {
+			i.updateContainerImagesPath(LabelDockerImages, mounts, getDockerImagePaths(context))
+		}
 	}
 }
 

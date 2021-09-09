@@ -60,7 +60,7 @@ func newContainerdContainerHandler(
 	fsInfo fs.FsInfo,
 	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
-	metadataEnvs []string,
+	metadataEnvAllowList []string,
 	includedMetrics container.MetricSet,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
@@ -134,9 +134,9 @@ func newContainerdContainerHandler(
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
 
-	for _, exposedEnv := range metadataEnvs {
+	for _, exposedEnv := range metadataEnvAllowList {
 		if exposedEnv == "" {
-			// if no containerdEnvWhitelist provided, len(metadataEnvs) == 1, metadataEnvs[0] == ""
+			// if no containerdEnvWhitelist provided, len(metadataEnvAllowList) == 1, metadataEnvAllowList[0] == ""
 			continue
 		}
 

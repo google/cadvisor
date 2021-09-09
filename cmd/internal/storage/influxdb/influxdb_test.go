@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build influxdb_test
 // +build influxdb_test
+
 // To run unit test: go test -tags influxdb_test
 
 package influxdb

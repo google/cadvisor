@@ -45,14 +45,14 @@ func (m *mockedMachineInfo) GetVersionInfo() (*info.VersionInfo, error) {
 func TestHandler(t *testing.T) {
 	as := assert.New(t)
 	type testCase struct {
-		client             ContainerdClient
-		name               string
-		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
-		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
-		inHostNamespace    bool
-		metadataEnvs       []string
-		includedMetrics    container.MetricSet
+		client               ContainerdClient
+		name                 string
+		machineInfoFactory   info.MachineInfoFactory
+		fsInfo               fs.FsInfo
+		cgroupSubsystems     *containerlibcontainer.CgroupSubsystems
+		inHostNamespace      bool
+		metadataEnvAllowList []string
+		includedMetrics      container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -121,7 +121,7 @@ func TestHandler(t *testing.T) {
 			map[string]string{"TEST_REGION": "FRA", "TEST_ZONE": "A"},
 		},
 	} {
-		handler, err := newContainerdContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.includedMetrics)
+		handler, err := newContainerdContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvAllowList, ts.includedMetrics)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {

@@ -44,6 +44,22 @@ func TestPrometheusCollector(t *testing.T) {
 	testPrometheusCollector(t, reg, "testdata/prometheus_metrics")
 }
 
+func TestPrometheusCollectorWithWhiteList(t *testing.T) {
+	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
+		whitelistedLabels := []string{
+			"no_one_match",
+		}
+		containerLabelFunc := BaseContainerLabels(whitelistedLabels)
+		s := containerLabelFunc(container)
+		s["zone.name"] = "hello"
+		return s
+	}, container.AllMetrics, now, v2.RequestOptions{})
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(c)
+
+	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_whitelist_filtered")
+}
+
 func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
 	metrics := container.MetricSet{
 		container.PerfMetrics: struct{}{},
