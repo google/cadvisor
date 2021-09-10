@@ -164,7 +164,7 @@ func newContainerdContainerHandler(
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
 
-	if includedMetrics.Has(container.DiskUsageMetrics) {
+	if includedMetrics.Has(container.DiskUsageMetrics) && cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
 		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, &fsUsageProvider{
 			ctx:         ctx,
 			client:      client,
@@ -228,7 +228,7 @@ func (h *containerdContainerHandler) getFsStats(stats *info.ContainerStats) erro
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
 	}
 
-	if !h.includedMetrics.Has(container.DiskUsageMetrics) {
+	if !h.includedMetrics.Has(container.DiskUsageMetrics) || h.labels["io.cri-containerd.kind"] == "sandbox" {
 		return nil
 	}
 
