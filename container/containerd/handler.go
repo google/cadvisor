@@ -42,9 +42,14 @@ type containerdContainerHandler struct {
 	machineInfoFactory info.MachineInfoFactory
 	// Absolute path to the cgroup hierarchies of this container.
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
-	cgroupPaths map[string]string
-	fsInfo      fs.FsInfo
-	fsHandler   common.FsHandler
+	cgroupPaths   map[string]string
+	fsInfo        fs.FsInfo
+	fsHandler     common.FsHandler
+	fsLimit       uint64
+	fsTotalInodes uint64
+	fsType        string
+	device        string
+
 	// Metadata associated with the container.
 	reference info.ContainerReference
 	envs      map[string]string
@@ -165,6 +170,52 @@ func newContainerdContainerHandler(
 	handler.image = cntr.Image
 
 	if includedMetrics.Has(container.DiskUsageMetrics) && cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
+		mounts, err := client.SnapshotMounts(ctx, cntr.Snapshotter, cntr.SnapshotKey)
+		if err != nil {
+			return nil, err
+		}
+
+		// Default to top directory if the specific upperdir snapshot is not found
+		snapshotDir := "/var/lib/containerd"
+		// Example: upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/fs
+		if len(mounts) > 0 {
+			for _, option := range mounts[0].Options {
+				if strings.Index(option, "upperdir=") == 0 {
+					snapshotDir = option[len("upperdir="):]
+					break
+				}
+			}
+		}
+		deviceInfo, err := fsInfo.GetDirFsDevice(snapshotDir)
+		if err != nil {
+			return nil, err
+		}
+
+		mi, err := machineInfoFactory.GetMachineInfo()
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			fsLimit       uint64
+			fsType        string
+			fsTotalInodes uint64
+		)
+		// Containerd does not impose any filesystem limits for containers. So use capacity as limit.
+		for _, fs := range mi.Filesystems {
+			if fs.Device == deviceInfo.Device {
+				fsLimit = fs.Capacity
+				fsType = fs.Type
+				fsTotalInodes = fs.Inodes
+				break
+			}
+		}
+
+		handler.fsLimit = fsLimit
+		handler.fsType = fsType
+		handler.fsTotalInodes = fsTotalInodes
+		handler.device = deviceInfo.Device
+
 		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, &fsUsageProvider{
 			ctx:         ctx,
 			client:      client,
@@ -232,12 +283,19 @@ func (h *containerdContainerHandler) getFsStats(stats *info.ContainerStats) erro
 		return nil
 	}
 
-	// Device 、fsType and fsLimits and other information are not supported yet
 	fsStat := info.FsStats{}
 	usage := h.fsHandler.Usage()
 	fsStat.BaseUsage = usage.BaseUsageBytes
 	fsStat.Usage = usage.TotalUsageBytes
+	// By definition, "Inodes" is supposed to be the total number of inodes of a filesystem.
+	// Set to the number of used inodes to be back-compatible with docker
 	fsStat.Inodes = usage.InodeUsage
+	// This is not accurate because it ignores inodes used by everything else.
+	fsStat.InodesFree = h.fsTotalInodes - usage.InodeUsage
+
+	fsStat.Device = h.device
+	fsStat.Limit = h.fsLimit
+	fsStat.Type = h.fsType
 
 	stats.Filesystem = append(stats.Filesystem, fsStat)
 
