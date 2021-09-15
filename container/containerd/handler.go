@@ -23,6 +23,7 @@ import (
 
 	"github.com/containerd/containerd/errdefs"
 	"golang.org/x/net/context"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
@@ -36,6 +37,8 @@ type fsUsageProvider struct {
 	ctx         context.Context
 	containerID string
 	client      ContainerdClient
+	fsInfo      fs.FsInfo
+	logPath     string
 }
 
 type containerdContainerHandler struct {
@@ -129,8 +132,9 @@ func newContainerdContainerHandler(
 	// Special container name for sandbox(pause)
 	// It is defined in https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/dockershim/naming.go#L50-L52
 	containerName := "POD"
+	var status *criapi.ContainerStatus
 	if cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
-		status, err := client.ContainerStatus(ctx, id)
+		status, err = client.ContainerStatus(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -220,6 +224,9 @@ func newContainerdContainerHandler(
 			ctx:         ctx,
 			client:      client,
 			containerID: id,
+			// Path of logs, e.g. /var/log/pods/XXX
+			logPath: status.LogPath,
+			fsInfo:  fsInfo,
 		})
 	}
 
@@ -370,9 +377,17 @@ func (f *fsUsageProvider) Usage() (*common.FsUsage, error) {
 	if err != nil {
 		return nil, err
 	}
+	var logUsedBytes uint64
+	if f.logPath != "" {
+		logUsage, err := f.fsInfo.GetDirUsage(f.logPath)
+		if err != nil {
+			return nil, err
+		}
+		logUsedBytes = logUsage.Bytes
+	}
 	return &common.FsUsage{
 		BaseUsageBytes:  stats.WritableLayer.UsedBytes.Value,
-		TotalUsageBytes: stats.WritableLayer.UsedBytes.Value,
+		TotalUsageBytes: stats.WritableLayer.UsedBytes.Value + logUsedBytes,
 		InodeUsage:      stats.WritableLayer.InodesUsed.Value,
 	}, nil
 }
