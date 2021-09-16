@@ -26,8 +26,8 @@ printf "" # Refresh sudo credentials if necessary.
 function start {
   set +e  # We want to handle errors if cAdvisor crashes.
   echo ">> starting cAdvisor locally"
-  # This cpuset, percpu, memory, disk, diskIO, network, perf_event metrics should be enabled.
-  GORACE="halt_on_error=1" ./cadvisor --enable_metrics="cpuset,percpu,memory,disk,diskIO,network,perf_event" --env_metadata_whitelist=TEST_VAR --v=6 --logtostderr $CADVISOR_ARGS &> "$log_file"
+  # cpu, cpuset, percpu, memory, disk, diskIO, network, perf_event metrics should be enabled.
+  GORACE="halt_on_error=1" ./cadvisor --enable_metrics="cpu,cpuset,percpu,memory,disk,diskIO,network,perf_event" --env_metadata_whitelist=TEST_VAR --v=6 --logtostderr $CADVISOR_ARGS &> "$log_file"
   if [ $? != 0 ]; then
     echo "!! cAdvisor exited unexpectedly with Exit $?"
     kill $TEST_PID # cAdvisor crashed: abort testing.
