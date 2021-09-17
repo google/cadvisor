@@ -110,7 +110,7 @@ func (h *FactoryForMockContainerHandler) String() string {
 	return h.Name
 }
 
-func (h *FactoryForMockContainerHandler) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
+func (h *FactoryForMockContainerHandler) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (container.ContainerHandler, error) {
 	handler := &MockContainerHandler{}
 	if h.PrepareContainerHandlerFunc != nil {
 		h.PrepareContainerHandlerFunc(name, handler)
