@@ -55,11 +55,11 @@ func TestStorageDirDetectionWithNewVersions(t *testing.T) {
 }
 
 func rawMetadataEnvMatch(dockerEnvWhiteList string, cntConfig container.Config) map[string]string {
-	metadataEnvs := strings.Split(dockerEnvWhiteList, ",")
+	metadataEnvAllowList := strings.Split(dockerEnvWhiteList, ",")
 	handlerEnvs := make(map[string]string)
 
 	// split env vars to get metadata map.
-	for _, exposedEnv := range metadataEnvs {
+	for _, exposedEnv := range metadataEnvAllowList {
 		for _, envVar := range cntConfig.Env {
 			if envVar != "" {
 				splits := strings.SplitN(envVar, "=", 2)
@@ -74,13 +74,13 @@ func rawMetadataEnvMatch(dockerEnvWhiteList string, cntConfig container.Config) 
 }
 
 func newMetadataEnvMatch(dockerEnvWhiteList string, cntConfig container.Config) map[string]string {
-	metadataEnvs := strings.Split(dockerEnvWhiteList, ",")
+	metadataEnvAllowList := strings.Split(dockerEnvWhiteList, ",")
 	handlerEnvs := make(map[string]string)
 
 	// split env vars to get metadata map.
-	for _, exposedEnv := range metadataEnvs {
+	for _, exposedEnv := range metadataEnvAllowList {
 		if exposedEnv == "" {
-			// if no dockerEnvWhitelist provided, len(metadataEnvs) == 1, metadataEnvs[0] == ""
+			// if no dockerEnvWhitelist provided, len(metadataEnvAllowList) == 1, metadataEnvAllowList[0] == ""
 			continue
 		}
 

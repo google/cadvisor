@@ -374,7 +374,8 @@ func TestAddDockerImagesLabel(t *testing.T) {
 		expectedPartition              *partition
 	}{
 		{
-			name: "single partition, no dedicated image fs",
+			name:   "single partition, no dedicated image fs",
+			driver: "overlay2",
 			mounts: []*mount.Info{
 				{
 					Source:     "/dev/root",
@@ -427,7 +428,8 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			expectedDockerDevice: "/dev/sdb1",
 		},
 		{
-			name: "multiple mounts - innermost check",
+			name:   "multiple mounts - innermost check",
+			driver: "overlay2",
 			mounts: []*mount.Info{
 				{
 					Source:     "/dev/sda1",
@@ -448,7 +450,8 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			expectedDockerDevice: "/dev/sdb2",
 		},
 		{
-			name: "root fs inside container, docker-images bindmount",
+			name:   "root fs inside container, docker-images bindmount",
+			driver: "overlay2",
 			mounts: []*mount.Info{
 				{
 					Source:     "overlay",
@@ -464,7 +467,8 @@ func TestAddDockerImagesLabel(t *testing.T) {
 			expectedDockerDevice: "/dev/sda1",
 		},
 		{
-			name: "[overlay2] root fs inside container - /var/lib/docker bindmount",
+			name:   "[overlay2] root fs inside container - /var/lib/docker bindmount",
+			driver: "overlay2",
 			mounts: []*mount.Info{
 				{
 					Source:     "overlay",
