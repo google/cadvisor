@@ -40,7 +40,7 @@ type FsUsage struct {
 type FsUsageProvider interface {
 	// Usage returns the fs usage
 	Usage() (*FsUsage, error)
-	// Targets returns where the fs usage metric is collected,it maybe a directory ,a file or some
+	// Targets returns where the fs usage metric is collected,it maybe a directory, a file or some
 	// information about the snapshotter(for containerd)
 	Targets() []string
 }
@@ -139,8 +139,9 @@ func (fh *realFsHandler) Usage() FsUsage {
 }
 
 type fsUsageProvider struct {
-	fsInfo   fs.FsInfo
-	rootFs   string
+	fsInfo fs.FsInfo
+	rootFs string
+	// The directory consumed by the container but outside rootFs, e.g. directory of saving logs
 	extraDir string
 }
 
@@ -184,7 +185,7 @@ func (f *fsUsageProvider) Usage() (*FsUsage, error) {
 
 	// Combine errors into a single error to return
 	if rootErr != nil || extraErr != nil {
-		return nil, fmt.Errorf("rootDiskErr: %v, extraDiskErr: %v", rootErr, extraErr)
+		return nil, fmt.Errorf("failed to obtain filesystem usage; rootDiskErr: %v, extraDiskErr: %v", rootErr, extraErr)
 	}
 
 	return usage, nil

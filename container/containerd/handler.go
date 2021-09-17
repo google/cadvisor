@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/errdefs"
+	criapi "github.com/google/cadvisor/cri-api/pkg/apis/runtime/v1alpha2"
 	"golang.org/x/net/context"
-	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
@@ -176,15 +176,17 @@ func newContainerdContainerHandler(
 	if includedMetrics.Has(container.DiskUsageMetrics) && cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
 		mounts, err := client.SnapshotMounts(ctx, cntr.Snapshotter, cntr.SnapshotKey)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to obtain containerd snapshot mounts for disk usage metrics: %v", err)
 		}
 
-		// Default to top directory if the specific upperdir snapshot is not found
+		// Default to top directory
 		snapshotDir := "/var/lib/containerd"
-		// Example: upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/fs
-		if len(mounts) > 0 {
+		// TODO: only overlay snapshotters is handled as of now.
+		// Note: overlay returns single mount. https://github.com/containerd/containerd/blob/main/snapshots/overlay/overlay.go
+		if len(mounts) > 0 && mounts[0].Type == "overlay" {
 			for _, option := range mounts[0].Options {
-				if strings.Index(option, "upperdir=") == 0 {
+				// Example: upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/fs
+				if strings.HasPrefix(option, "upperdir=") {
 					snapshotDir = option[len("upperdir="):]
 					break
 				}
