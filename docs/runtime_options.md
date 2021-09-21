@@ -422,6 +422,14 @@ should be a human readable string that will become a metric name.
 * `cas_count_read` will be measured as uncore non-grouped event on all Integrated Memory Controllers Performance Monitoring Units because of unset `type` field and
 `uncore_imc` prefix.
 
+## Resctrl
+To gain metrics, cAdvisor creates own monitoring groups with `cadvisor` prefix.
+
+Resctrl file system is not hierarchical like cgroups, so users should set `--docker_only` flag to avoid race conditions and unexpected behaviours.
+
+```
+--resctrl_interval=0: Resctrl mon groups updating interval. Zero value disables updating mon groups.
+``` 
 
 ## Storage driver specific instructions:
 

@@ -29,7 +29,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var dockerOnly = flag.Bool("docker_only", false, "Only report docker containers in addition to root stats")
+var DockerOnly = flag.Bool("docker_only", false, "Only report docker containers in addition to root stats")
 var disableRootCgroupStats = flag.Bool("disable_root_cgroup_stats", false, "Disable collecting root Cgroup stats")
 
 type rawFactory struct {
@@ -69,7 +69,7 @@ func (f *rawFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	if name == "/" {
 		return true, true, nil
 	}
-	if *dockerOnly && f.rawPrefixWhiteList[0] == "" {
+	if *DockerOnly && f.rawPrefixWhiteList[0] == "" {
 		return true, false, nil
 	}
 	for _, prefix := range f.rawPrefixWhiteList {

@@ -462,3 +462,27 @@ func TestClockSpeedOnCpuLowerCase(t *testing.T) {
 	assert.NotNil(t, clockSpeed)
 	assert.Equal(t, uint64(1450*1000), clockSpeed)
 }
+
+func TestGetCPUVendorID(t *testing.T) {
+	var testCases = []struct {
+		file     string
+		expected string
+	}{
+		{
+			"./testdata/cpuinfo_onesocket_many_NUMAs",
+			"GenuineIntel",
+		},
+		{
+			"./testdata/cpuinfo_arm",
+			"",
+		},
+	}
+
+	for _, test := range testCases {
+		testcpuinfo, err := ioutil.ReadFile(test.file)
+		assert.Nil(t, err)
+		assert.NotNil(t, testcpuinfo)
+		cpuVendorID := GetCPUVendorID(testcpuinfo)
+		assert.Equal(t, test.expected, cpuVendorID)
+	}
+}
