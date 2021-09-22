@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	types "github.com/containerd/containerd/api/types"
 	"github.com/containerd/containerd/containers"
 	criapi "github.com/google/cadvisor/cri-api/pkg/apis/runtime/v1alpha2"
 )
@@ -25,6 +26,7 @@ import (
 type containerdClientMock struct {
 	cntrs     map[string]*containers.Container
 	status    *criapi.ContainerStatus
+	stats     *criapi.ContainerStats
 	returnErr error
 }
 
@@ -51,10 +53,19 @@ func (c *containerdClientMock) ContainerStatus(ctx context.Context, id string) (
 	return c.status, nil
 }
 
-func mockcontainerdClient(cntrs map[string]*containers.Container, status *criapi.ContainerStatus, returnErr error) ContainerdClient {
+func (c *containerdClientMock) ContainerStats(ctx context.Context, id string) (*criapi.ContainerStats, error) {
+	return c.stats, nil
+}
+
+func (c *containerdClientMock) SnapshotMounts(ctx context.Context, snapshotter, key string) ([]*types.Mount, error) {
+	return nil, nil
+}
+
+func mockcontainerdClient(cntrs map[string]*containers.Container, status *criapi.ContainerStatus, stats *criapi.ContainerStats, returnErr error) ContainerdClient {
 	return &containerdClientMock{
 		cntrs:     cntrs,
 		status:    status,
+		stats:     stats,
 		returnErr: returnErr,
 	}
 }

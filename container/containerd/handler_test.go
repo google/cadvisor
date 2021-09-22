@@ -88,7 +88,7 @@ func TestHandler(t *testing.T) {
 
 	for _, ts := range []testCase{
 		{
-			mockcontainerdClient(nil, nil, nil),
+			mockcontainerdClient(nil, nil, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			nil,
 			nil,
@@ -102,7 +102,7 @@ func TestHandler(t *testing.T) {
 			nil,
 		},
 		{
-			mockcontainerdClient(testContainers, nil, nil),
+			mockcontainerdClient(testContainers, nil, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			&mockedMachineInfo{},
 			nil,
@@ -121,7 +121,7 @@ func TestHandler(t *testing.T) {
 			map[string]string{},
 		},
 		{
-			mockcontainerdClient(testContainers, nil, nil),
+			mockcontainerdClient(testContainers, nil, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			&mockedMachineInfo{},
 			nil,
@@ -140,7 +140,7 @@ func TestHandler(t *testing.T) {
 			map[string]string{"TEST_REGION": "FRA", "TEST_ZONE": "A"},
 		},
 		{
-			mockcontainerdClient(testContainers, status, nil),
+			mockcontainerdClient(testContainers, status, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086",
 			&mockedMachineInfo{},
 			nil,

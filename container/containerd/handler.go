@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/errdefs"
+	criapi "github.com/google/cadvisor/cri-api/pkg/apis/runtime/v1alpha2"
 	"golang.org/x/net/context"
 
 	"github.com/google/cadvisor/container"
@@ -32,12 +33,26 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+type fsUsageProvider struct {
+	ctx         context.Context
+	containerID string
+	client      ContainerdClient
+	fsInfo      fs.FsInfo
+	logPath     string
+}
+
 type containerdContainerHandler struct {
 	machineInfoFactory info.MachineInfoFactory
 	// Absolute path to the cgroup hierarchies of this container.
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
-	cgroupPaths map[string]string
-	fsInfo      fs.FsInfo
+	cgroupPaths   map[string]string
+	fsInfo        fs.FsInfo
+	fsHandler     common.FsHandler
+	fsLimit       uint64
+	fsTotalInodes uint64
+	fsType        string
+	device        string
+
 	// Metadata associated with the container.
 	reference info.ContainerReference
 	envs      map[string]string
@@ -117,8 +132,9 @@ func newContainerdContainerHandler(
 	// Special container name for sandbox(pause)
 	// It is defined in https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/dockershim/naming.go#L50-L52
 	containerName := "POD"
+	var status *criapi.ContainerStatus
 	if cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
-		status, err := client.ContainerStatus(ctx, id)
+		status, err = client.ContainerStatus(ctx, id)
 		if err != nil {
 			return nil, err
 		}
@@ -156,6 +172,65 @@ func newContainerdContainerHandler(
 	}
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
+
+	if includedMetrics.Has(container.DiskUsageMetrics) && cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
+		mounts, err := client.SnapshotMounts(ctx, cntr.Snapshotter, cntr.SnapshotKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to obtain containerd snapshot mounts for disk usage metrics: %v", err)
+		}
+
+		// Default to top directory
+		snapshotDir := "/var/lib/containerd"
+		// TODO: only overlay snapshotters is handled as of now.
+		// Note: overlay returns single mount. https://github.com/containerd/containerd/blob/main/snapshots/overlay/overlay.go
+		if len(mounts) > 0 && mounts[0].Type == "overlay" {
+			for _, option := range mounts[0].Options {
+				// Example: upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/fs
+				if strings.HasPrefix(option, "upperdir=") {
+					snapshotDir = option[len("upperdir="):]
+					break
+				}
+			}
+		}
+		deviceInfo, err := fsInfo.GetDirFsDevice(snapshotDir)
+		if err != nil {
+			return nil, err
+		}
+
+		mi, err := machineInfoFactory.GetMachineInfo()
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			fsLimit       uint64
+			fsType        string
+			fsTotalInodes uint64
+		)
+		// Containerd does not impose any filesystem limits for containers. So use capacity as limit.
+		for _, fs := range mi.Filesystems {
+			if fs.Device == deviceInfo.Device {
+				fsLimit = fs.Capacity
+				fsType = fs.Type
+				fsTotalInodes = fs.Inodes
+				break
+			}
+		}
+
+		handler.fsLimit = fsLimit
+		handler.fsType = fsType
+		handler.fsTotalInodes = fsTotalInodes
+		handler.device = deviceInfo.Device
+
+		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, &fsUsageProvider{
+			ctx:         ctx,
+			client:      client,
+			containerID: id,
+			// Path of logs, e.g. /var/log/pods/XXX
+			logPath: status.LogPath,
+			fsInfo:  fsInfo,
+		})
+	}
 
 	for _, exposedEnv := range metadataEnvAllowList {
 		if exposedEnv == "" {
@@ -212,6 +287,27 @@ func (h *containerdContainerHandler) getFsStats(stats *info.ContainerStats) erro
 	if h.includedMetrics.Has(container.DiskIOMetrics) {
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
 	}
+
+	if !h.includedMetrics.Has(container.DiskUsageMetrics) || h.labels["io.cri-containerd.kind"] == "sandbox" {
+		return nil
+	}
+
+	fsStat := info.FsStats{}
+	usage := h.fsHandler.Usage()
+	fsStat.BaseUsage = usage.BaseUsageBytes
+	fsStat.Usage = usage.TotalUsageBytes
+	// By definition, "Inodes" is supposed to be the total number of inodes of a filesystem.
+	// Set to the number of used inodes to be back-compatible with docker
+	fsStat.Inodes = usage.InodeUsage
+	// This is not accurate because it ignores inodes used by everything else.
+	fsStat.InodesFree = h.fsTotalInodes - usage.InodeUsage
+
+	fsStat.Device = h.device
+	fsStat.Limit = h.fsLimit
+	fsStat.Type = h.fsType
+
+	stats.Filesystem = append(stats.Filesystem, fsStat)
+
 	return nil
 }
 
@@ -262,12 +358,42 @@ func (h *containerdContainerHandler) Type() container.ContainerType {
 }
 
 func (h *containerdContainerHandler) Start() {
+	if h.fsHandler != nil {
+		h.fsHandler.Start()
+	}
 }
 
 func (h *containerdContainerHandler) Cleanup() {
+	if h.fsHandler != nil {
+		h.fsHandler.Stop()
+	}
 }
 
 func (h *containerdContainerHandler) GetContainerIPAddress() string {
 	// containerd doesnt take care of networking.So it doesnt maintain networking states
 	return ""
+}
+
+func (f *fsUsageProvider) Usage() (*common.FsUsage, error) {
+	stats, err := f.client.ContainerStats(f.ctx, f.containerID)
+	if err != nil {
+		return nil, err
+	}
+	var logUsedBytes uint64
+	if f.logPath != "" {
+		logUsage, err := f.fsInfo.GetDirUsage(f.logPath)
+		if err != nil {
+			return nil, err
+		}
+		logUsedBytes = logUsage.Bytes
+	}
+	return &common.FsUsage{
+		BaseUsageBytes:  stats.WritableLayer.UsedBytes.Value,
+		TotalUsageBytes: stats.WritableLayer.UsedBytes.Value + logUsedBytes,
+		InodeUsage:      stats.WritableLayer.InodesUsed.Value,
+	}, nil
+}
+
+func (f *fsUsageProvider) Targets() []string {
+	return []string{f.containerID}
 }

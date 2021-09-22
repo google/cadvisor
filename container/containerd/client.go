@@ -22,8 +22,10 @@ import (
 	"time"
 
 	containersapi "github.com/containerd/containerd/api/services/containers/v1"
+	snapshotapi "github.com/containerd/containerd/api/services/snapshots/v1"
 	tasksapi "github.com/containerd/containerd/api/services/tasks/v1"
 	versionapi "github.com/containerd/containerd/api/services/version/v1"
+	types "github.com/containerd/containerd/api/types"
 	"github.com/containerd/containerd/containers"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/pkg/dialer"
@@ -37,6 +39,7 @@ type client struct {
 	containerService containersapi.ContainersClient
 	taskService      tasksapi.TasksClient
 	versionService   versionapi.VersionClient
+	snapshotService  snapshotapi.SnapshotsClient
 	criService       criapi.RuntimeServiceClient
 }
 
@@ -44,7 +47,9 @@ type ContainerdClient interface {
 	LoadContainer(ctx context.Context, id string) (*containers.Container, error)
 	TaskPid(ctx context.Context, id string) (uint32, error)
 	Version(ctx context.Context) (string, error)
+	SnapshotMounts(ctx context.Context, snapshotter, key string) ([]*types.Mount, error)
 	ContainerStatus(ctx context.Context, id string) (*criapi.ContainerStatus, error)
+	ContainerStats(ctx context.Context, id string) (*criapi.ContainerStats, error)
 }
 
 var once sync.Once
@@ -95,6 +100,7 @@ func Client(address, namespace string) (ContainerdClient, error) {
 			containerService: containersapi.NewContainersClient(conn),
 			taskService:      tasksapi.NewTasksClient(conn),
 			versionService:   versionapi.NewVersionClient(conn),
+			snapshotService:  snapshotapi.NewSnapshotsClient(conn),
 			criService:       criapi.NewRuntimeServiceClient(conn),
 		}
 	})
@@ -129,6 +135,17 @@ func (c *client) Version(ctx context.Context) (string, error) {
 	return response.Version, nil
 }
 
+func (c *client) SnapshotMounts(ctx context.Context, snapshotter, key string) ([]*types.Mount, error) {
+	response, err := c.snapshotService.Mounts(ctx, &snapshotapi.MountsRequest{
+		Snapshotter: snapshotter,
+		Key:         key,
+	})
+	if err != nil {
+		return nil, errdefs.FromGRPC(err)
+	}
+	return response.Mounts, nil
+}
+
 func (c *client) ContainerStatus(ctx context.Context, id string) (*criapi.ContainerStatus, error) {
 	response, err := c.criService.ContainerStatus(ctx, &criapi.ContainerStatusRequest{
 		ContainerId: id,
@@ -138,6 +155,16 @@ func (c *client) ContainerStatus(ctx context.Context, id string) (*criapi.Contai
 		return nil, err
 	}
 	return response.Status, nil
+}
+
+func (c *client) ContainerStats(ctx context.Context, id string) (*criapi.ContainerStats, error) {
+	response, err := c.criService.ContainerStats(ctx, &criapi.ContainerStatsRequest{
+		ContainerId: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return response.Stats, nil
 }
 
 func containerFromProto(containerpb containersapi.Container) *containers.Container {
