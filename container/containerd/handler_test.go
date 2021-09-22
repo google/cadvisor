@@ -22,11 +22,11 @@ import (
 	"github.com/containerd/typeurl"
 	"github.com/google/cadvisor/container"
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
+	criapi "github.com/google/cadvisor/cri-api/pkg/apis/runtime/v1alpha2"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
-	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
 
 func init() {
