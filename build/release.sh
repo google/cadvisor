@@ -18,7 +18,7 @@ set -e
 
 VERSION=$( git describe --tags --dirty --abbrev=14 | sed -E 's/-([0-9]+)-g/.\1+/' )
 # Only allow releases of tagged versions.
-TAGGED='^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta)[0-9]*)?$'
+TAGGED='^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.?[0-9]*)?$'
 if [[ ! "$VERSION" =~ $TAGGED ]]; then
   echo "Error: Only tagged versions are allowed for releases" >&2
   echo "Found: $VERSION" >&2
