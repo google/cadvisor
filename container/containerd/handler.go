@@ -18,6 +18,7 @@ package containerd
 import (
 	"encoding/json"
 	"fmt"
+	"path"
 	"strings"
 	"time"
 
@@ -192,7 +193,7 @@ func newContainerdContainerHandler(
 				}
 			}
 		}
-		deviceInfo, err := fsInfo.GetDirFsDevice(snapshotDir)
+		deviceInfo, err := fsInfo.GetDirFsDevice(path.Join(rootfs, snapshotDir))
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +228,7 @@ func newContainerdContainerHandler(
 			client:      client,
 			containerID: id,
 			// Path of logs, e.g. /var/log/pods/XXX
-			logPath: status.LogPath,
+			logPath: path.Join(rootfs, status.LogPath),
 			fsInfo:  fsInfo,
 		})
 	}
