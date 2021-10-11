@@ -176,7 +176,7 @@ func newContainerdContainerHandler(
 	handler.image = cntr.Image
 
 	if includedMetrics.Has(container.DiskUsageMetrics) && cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
-		err = handler.fillDiskUsageInfo(client, machineInfoFactory, fsInfo, ctx, cntr.Snapshotter, cntr.SnapshotKey, rootfs, status.LogPath)
+		err = handler.fillDiskUsageInfo(ctx, client, machineInfoFactory, fsInfo, cntr.Snapshotter, cntr.SnapshotKey, rootfs, status.LogPath)
 		if err != nil {
 			klog.Errorf("error occured while filling disk usage info for container %s: %s", name, err)
 		}
@@ -202,10 +202,10 @@ func newContainerdContainerHandler(
 }
 
 func (h *containerdContainerHandler) fillDiskUsageInfo(
+	ctx context.Context,
 	client ContainerdClient,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
-	ctx context.Context,
 	snapshotter, snapshotKey, rootfs, logPath string) error {
 	mounts, err := client.SnapshotMounts(ctx, snapshotter, snapshotKey)
 	if err != nil {
