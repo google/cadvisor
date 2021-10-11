@@ -16,8 +16,11 @@
 package containerd
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
+	types "github.com/containerd/containerd/api/types"
 	"github.com/containerd/containerd/containers"
 	"github.com/containerd/typeurl"
 	"github.com/google/cadvisor/container"
@@ -25,22 +28,128 @@ import (
 	criapi "github.com/google/cadvisor/cri-api/pkg/apis/runtime/v1alpha2"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
+	v1 "github.com/google/cadvisor/info/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testContainerSandboxName = "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"
+	testContainerId          = "c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086"
+	testContainerName        = "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086"
+
+	testLogPath = "/var/log/pods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa"
+
+	testLogUsage    = 5000
+	testBaseUsage   = 10000
+	testInodesTotal = 10
+	testBaseInodes  = 6
+	testLogInodes   = 2
+)
+
+var (
+	testContainers       map[string]*containers.Container
+	testContainer        *containers.Container
+	testContainerSandbox *containers.Container
+	testStatus           *criapi.ContainerStatus
+	testStats            *criapi.ContainerStats
+)
+
 func init() {
 	typeurl.Register(&specs.Spec{}, "types.contianerd.io/opencontainers/runtime-spec", "v1", "Spec")
+
+	testContainers = make(map[string]*containers.Container)
+	testContainerSandbox = &containers.Container{
+		ID: "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
+		Labels: map[string]string{
+			"io.cri-containerd.kind":       "sandbox",
+			"io.kubernetes.container.name": "pause",
+			"io.kubernetes.pod.name":       "some-pod",
+			"io.kubernetes.pod.namespace":  "some-ns",
+			"io.kubernetes.pod.uid":        "some-uid"},
+	}
+	testContainer = &containers.Container{
+		ID: "c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086",
+		Labels: map[string]string{
+			"io.cri-containerd.kind":       "container",
+			"io.kubernetes.container.name": "some-container",
+			"io.kubernetes.pod.name":       "some-pod",
+			"io.kubernetes.pod.namespace":  "some-ns",
+			"io.kubernetes.pod.uid":        "some-uid"},
+	}
+	spec := &specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{Env: []string{"TEST_REGION=FRA", "TEST_ZONE=A", "HELLO=WORLD"}}}
+	testContainerSandbox.Spec, _ = typeurl.MarshalAny(spec)
+	testContainer.Spec, _ = typeurl.MarshalAny(spec)
+	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainerSandbox
+	testContainers["c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086"] = testContainer
+
+	testStatus = &criapi.ContainerStatus{
+		Metadata: &criapi.ContainerMetadata{Attempt: 2},
+		LogPath:  testLogPath,
+	}
+
+	testStats = &criapi.ContainerStats{
+		WritableLayer: &criapi.FilesystemUsage{
+			UsedBytes:  &criapi.UInt64Value{Value: testBaseUsage},
+			InodesUsed: &criapi.UInt64Value{Value: testBaseInodes},
+		},
+	}
 }
 
-type mockedMachineInfo struct{}
+type mockedMachineInfo struct {
+	machineInfo *v1.MachineInfo
+}
 
 func (m *mockedMachineInfo) GetMachineInfo() (*info.MachineInfo, error) {
-	return &info.MachineInfo{}, nil
+	return m.machineInfo, nil
 }
 
 func (m *mockedMachineInfo) GetVersionInfo() (*info.VersionInfo, error) {
 	return &info.VersionInfo{}, nil
+}
+
+type fsInfoMock struct {
+	deviceDir  string
+	deviceinfo *fs.DeviceInfo
+}
+
+func (m *fsInfoMock) GetDirFsDevice(dir string) (*fs.DeviceInfo, error) {
+	if dir == m.deviceDir {
+		return m.deviceinfo, nil
+	} else {
+		return nil, fmt.Errorf("cannot get device for dir: %q", dir)
+	}
+}
+
+func (m *fsInfoMock) GetGlobalFsInfo() ([]fs.Fs, error) {
+	return nil, nil
+}
+
+func (m *fsInfoMock) GetFsInfoForPath(mountSet map[string]struct{}) ([]fs.Fs, error) {
+	return nil, nil
+}
+
+func (m *fsInfoMock) GetDirUsage(dir string) (fs.UsageInfo, error) {
+	return fs.UsageInfo{
+		Bytes:  testLogUsage,
+		Inodes: testLogInodes,
+	}, nil
+}
+
+func (m *fsInfoMock) GetDeviceInfoByFsUUID(uuid string) (*fs.DeviceInfo, error) {
+	return nil, nil
+}
+
+func (m *fsInfoMock) GetDeviceForLabel(label string) (string, error) {
+	return "", nil
+}
+
+func (m *fsInfoMock) GetLabelsForDevice(device string) ([]string, error) {
+	return nil, nil
+}
+
+func (m *fsInfoMock) GetMountpointForDevice(device string) (string, error) {
+	return "", nil
 }
 
 func TestHandler(t *testing.T) {
@@ -60,35 +169,10 @@ func TestHandler(t *testing.T) {
 		checkReference *info.ContainerReference
 		checkEnvVars   map[string]string
 	}
-	testContainers := make(map[string]*containers.Container)
-	testContainerSandbox := &containers.Container{
-		ID: "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
-		Labels: map[string]string{
-			"io.cri-containerd.kind":       "sandbox",
-			"io.kubernetes.container.name": "pause",
-			"io.kubernetes.pod.name":       "some-pod",
-			"io.kubernetes.pod.namespace":  "some-ns",
-			"io.kubernetes.pod.uid":        "some-uid"},
-	}
-	testContainer := &containers.Container{
-		ID: "c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086",
-		Labels: map[string]string{
-			"io.cri-containerd.kind":       "container",
-			"io.kubernetes.container.name": "some-container",
-			"io.kubernetes.pod.name":       "some-pod",
-			"io.kubernetes.pod.namespace":  "some-ns",
-			"io.kubernetes.pod.uid":        "some-uid"},
-	}
-	spec := &specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{Env: []string{"TEST_REGION=FRA", "TEST_ZONE=A", "HELLO=WORLD"}}}
-	testContainerSandbox.Spec, _ = typeurl.MarshalAny(spec)
-	testContainer.Spec, _ = typeurl.MarshalAny(spec)
-	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainerSandbox
-	testContainers["c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086"] = testContainer
-	status := &criapi.ContainerStatus{Metadata: &criapi.ContainerMetadata{Attempt: 2}}
 
 	for _, ts := range []testCase{
 		{
-			mockcontainerdClient(nil, nil, nil, nil),
+			mockcontainerdClient(nil, nil, nil, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			nil,
 			nil,
@@ -102,7 +186,7 @@ func TestHandler(t *testing.T) {
 			nil,
 		},
 		{
-			mockcontainerdClient(testContainers, nil, nil, nil),
+			mockcontainerdClient(testContainers, nil, nil, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			&mockedMachineInfo{},
 			nil,
@@ -121,7 +205,7 @@ func TestHandler(t *testing.T) {
 			map[string]string{},
 		},
 		{
-			mockcontainerdClient(testContainers, nil, nil, nil),
+			mockcontainerdClient(testContainers, nil, nil, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			&mockedMachineInfo{},
 			nil,
@@ -140,7 +224,7 @@ func TestHandler(t *testing.T) {
 			map[string]string{"TEST_REGION": "FRA", "TEST_ZONE": "A"},
 		},
 		{
-			mockcontainerdClient(testContainers, status, nil, nil),
+			mockcontainerdClient(testContainers, testStatus, nil, nil, nil),
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/c6a1aa99f14d3e57417e145b897e34961145f6b6f14216a176a34bfabbf79086",
 			&mockedMachineInfo{},
 			nil,
@@ -176,5 +260,121 @@ func TestHandler(t *testing.T) {
 			as.Nil(err)
 			as.Equal(ts.checkEnvVars, sp.Envs)
 		}
+	}
+}
+
+func TestHandlerDiskUssage(t *testing.T) {
+	as := assert.New(t)
+
+	metricSet := container.MetricSet{container.DiskUsageMetrics: {}}
+	testMount := types.Mount{
+		Type:   "overlay",
+		Source: "overlay",
+		Target: "",
+		Options: []string{
+			"index=off",
+			"workdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/work",
+			"upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/fs",
+			"lowerdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/4802/fs:/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/4801/fs",
+		},
+	}
+	testMounts := []*types.Mount{&testMount}
+
+	type testCase struct {
+		client             ContainerdClient
+		machineInfoFactory info.MachineInfoFactory
+		fsInfo             fs.FsInfo
+		inHostNamespace    bool
+
+		hasErr bool
+	}
+
+	for _, ts := range []testCase{
+		{
+			mockcontainerdClient(testContainers, testStatus, testStats, testMounts, nil),
+			&mockedMachineInfo{
+				machineInfo: &v1.MachineInfo{
+					Filesystems: []v1.FsInfo{
+						{
+							Device:   "/dev/sda",
+							Capacity: 100,
+							Inodes:   10,
+							Type:     "fake type",
+						},
+					},
+				},
+			},
+			&fsInfoMock{
+				deviceDir:  "/rootfs/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/fs",
+				deviceinfo: &fs.DeviceInfo{Device: "/dev/sda"},
+			},
+			false,
+			false,
+		},
+		{
+			mockcontainerdClient(testContainers, testStatus, testStats, testMounts, nil),
+			&mockedMachineInfo{},
+			&fsInfoMock{
+				// The dummy dir will trigger an error in fsInfo.GetDirFsDevice, thus triggering error in fillDiskUsageInfo
+				deviceDir:  "dummy dir",
+				deviceinfo: &fs.DeviceInfo{Device: "/dev/sda"},
+			},
+			false,
+			true, // fillDiskUsageInfo is expected to return error
+		},
+	} {
+		handler, err := newContainerdContainerHandler(
+			ts.client,
+			testContainerName,
+			ts.machineInfoFactory,
+			ts.fsInfo,
+			&containerlibcontainer.CgroupSubsystems{},
+			ts.inHostNamespace,
+			nil,
+			metricSet,
+		)
+		as.Nil(err)
+		h := handler.(*containerdContainerHandler)
+
+		if !ts.hasErr {
+			mi := ts.machineInfoFactory.(*mockedMachineInfo)
+			as.Equal(mi.machineInfo.Filesystems[0].Capacity, h.fsLimit)
+			as.Equal(mi.machineInfo.Filesystems[0].Type, h.fsType)
+			as.Equal(mi.machineInfo.Filesystems[0].Inodes, h.fsTotalInodes)
+
+			stats := &info.ContainerStats{}
+
+			err = h.getFsStats(stats)
+			as.Nil(err)
+			as.Equal(mi.machineInfo.Filesystems[0].Device, stats.Filesystem[0].Device)
+		}
+	}
+}
+
+func TestUsageProvider(t *testing.T) {
+	as := assert.New(t)
+	type testCase struct {
+		client ContainerdClient
+		fsInfo fs.FsInfo
+	}
+
+	for _, ts := range []testCase{
+		{
+			mockcontainerdClient(testContainers, testStatus, testStats, nil, nil),
+			&fsInfoMock{},
+		},
+	} {
+		up := fsUsageProvider{
+			ctx:         context.Background(),
+			containerID: testContainerId,
+			client:      ts.client,
+			fsInfo:      ts.fsInfo,
+			logPath:     testLogPath,
+		}
+		fsUsage, err := up.Usage()
+		as.Nil(err)
+		as.EqualValues(testBaseUsage, fsUsage.BaseUsageBytes)
+		as.EqualValues(testBaseUsage+testLogUsage, fsUsage.TotalUsageBytes)
+		as.EqualValues(testBaseInodes, fsUsage.InodeUsage)
 	}
 }
