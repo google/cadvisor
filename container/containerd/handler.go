@@ -25,6 +25,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	criapi "github.com/google/cadvisor/cri-api/pkg/apis/runtime/v1alpha2"
 	"golang.org/x/net/context"
+	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
@@ -175,62 +176,10 @@ func newContainerdContainerHandler(
 	handler.image = cntr.Image
 
 	if includedMetrics.Has(container.DiskUsageMetrics) && cntr.Labels["io.cri-containerd.kind"] != "sandbox" {
-		mounts, err := client.SnapshotMounts(ctx, cntr.Snapshotter, cntr.SnapshotKey)
+		err = handler.fillDiskUsageInfo(client, machineInfoFactory, fsInfo, ctx, cntr.Snapshotter, cntr.SnapshotKey, rootfs, status.LogPath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to obtain containerd snapshot mounts for disk usage metrics: %v", err)
+			klog.Errorf("error occured while filling disk usage info for container %s: %s", name, err)
 		}
-
-		// Default to top directory
-		snapshotDir := "/var/lib/containerd"
-		// TODO: only overlay snapshotters is handled as of now.
-		// Note: overlay returns single mount. https://github.com/containerd/containerd/blob/main/snapshots/overlay/overlay.go
-		if len(mounts) > 0 && mounts[0].Type == "overlay" {
-			for _, option := range mounts[0].Options {
-				// Example: upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/fs
-				if strings.HasPrefix(option, "upperdir=") {
-					snapshotDir = option[len("upperdir="):]
-					break
-				}
-			}
-		}
-		deviceInfo, err := fsInfo.GetDirFsDevice(path.Join(rootfs, snapshotDir))
-		if err != nil {
-			return nil, err
-		}
-
-		mi, err := machineInfoFactory.GetMachineInfo()
-		if err != nil {
-			return nil, err
-		}
-
-		var (
-			fsLimit       uint64
-			fsType        string
-			fsTotalInodes uint64
-		)
-		// Containerd does not impose any filesystem limits for containers. So use capacity as limit.
-		for _, fs := range mi.Filesystems {
-			if fs.Device == deviceInfo.Device {
-				fsLimit = fs.Capacity
-				fsType = fs.Type
-				fsTotalInodes = fs.Inodes
-				break
-			}
-		}
-
-		handler.fsLimit = fsLimit
-		handler.fsType = fsType
-		handler.fsTotalInodes = fsTotalInodes
-		handler.device = deviceInfo.Device
-
-		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, &fsUsageProvider{
-			ctx:         ctx,
-			client:      client,
-			containerID: id,
-			// Path of logs, e.g. /var/log/pods/XXX
-			logPath: path.Join(rootfs, status.LogPath),
-			fsInfo:  fsInfo,
-		})
 	}
 
 	for _, exposedEnv := range metadataEnvAllowList {
@@ -250,6 +199,71 @@ func newContainerdContainerHandler(
 	}
 
 	return handler, nil
+}
+
+func (h *containerdContainerHandler) fillDiskUsageInfo(
+	client ContainerdClient,
+	machineInfoFactory info.MachineInfoFactory,
+	fsInfo fs.FsInfo,
+	ctx context.Context,
+	snapshotter, snapshotKey, rootfs, logPath string) error {
+	mounts, err := client.SnapshotMounts(ctx, snapshotter, snapshotKey)
+	if err != nil {
+		return fmt.Errorf("failed to obtain containerd snapshot mounts for disk usage metrics: %v", err)
+	}
+
+	// Default to top directory
+	snapshotDir := "/var/lib/containerd"
+	// TODO: only overlay snapshotters is handled as of now.
+	// Note: overlay returns single mount. https://github.com/containerd/containerd/blob/main/snapshots/overlay/overlay.go
+	if len(mounts) > 0 && mounts[0].Type == "overlay" {
+		for _, option := range mounts[0].Options {
+			// Example: upperdir=/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/5001/fs
+			if strings.HasPrefix(option, "upperdir=") {
+				snapshotDir = option[len("upperdir="):]
+				break
+			}
+		}
+	}
+	deviceInfo, err := fsInfo.GetDirFsDevice(path.Join(rootfs, snapshotDir))
+	if err != nil {
+		return err
+	}
+
+	mi, err := machineInfoFactory.GetMachineInfo()
+	if err != nil {
+		return err
+	}
+
+	var (
+		fsLimit       uint64
+		fsType        string
+		fsTotalInodes uint64
+	)
+	// Containerd does not impose any filesystem limits for containers. So use capacity as limit.
+	for _, fs := range mi.Filesystems {
+		if fs.Device == deviceInfo.Device {
+			fsLimit = fs.Capacity
+			fsType = fs.Type
+			fsTotalInodes = fs.Inodes
+			break
+		}
+	}
+
+	h.fsLimit = fsLimit
+	h.fsType = fsType
+	h.fsTotalInodes = fsTotalInodes
+	h.device = deviceInfo.Device
+
+	h.fsHandler = common.NewFsHandler(common.DefaultPeriod, &fsUsageProvider{
+		ctx:         ctx,
+		client:      client,
+		containerID: h.reference.Id,
+		// Path of logs, e.g. /var/log/pods/XXX
+		logPath: path.Join(rootfs, logPath),
+		fsInfo:  fsInfo,
+	})
+	return nil
 }
 
 func (h *containerdContainerHandler) ContainerReference() (info.ContainerReference, error) {
@@ -289,7 +303,7 @@ func (h *containerdContainerHandler) getFsStats(stats *info.ContainerStats) erro
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
 	}
 
-	if !h.includedMetrics.Has(container.DiskUsageMetrics) || h.labels["io.cri-containerd.kind"] == "sandbox" {
+	if !h.includedMetrics.Has(container.DiskUsageMetrics) || h.fsHandler == nil || h.labels["io.cri-containerd.kind"] == "sandbox" {
 		return nil
 	}
 
