@@ -84,7 +84,7 @@ func newCrioContainerHandler(
 	fsInfo fs.FsInfo,
 	storageDriver storageDriver,
 	storageDir string,
-	cgroupSubsystems containerlibcontainer.CgroupSubsystems,
+	cgroupSubsystems map[string]string,
 	inHostNamespace bool,
 	metadataEnvAllowList []string,
 	includedMetrics container.MetricSet,

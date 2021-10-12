@@ -121,7 +121,7 @@ func newDockerContainerHandler(
 	fsInfo fs.FsInfo,
 	storageDriver storageDriver,
 	storageDir string,
-	cgroupSubsystems containerlibcontainer.CgroupSubsystems,
+	cgroupSubsystems map[string]string,
 	inHostNamespace bool,
 	metadataEnvAllowList []string,
 	dockerVersion []int,

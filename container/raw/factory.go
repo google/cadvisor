@@ -39,7 +39,7 @@ type rawFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
 	// Information about the cgroup subsystems.
-	cgroupSubsystems libcontainer.CgroupSubsystems
+	cgroupSubsystems map[string]string
 
 	// Information about mounted filesystems.
 	fsInfo fs.FsInfo

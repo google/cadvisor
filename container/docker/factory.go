@@ -116,7 +116,7 @@ type dockerFactory struct {
 	client *docker.Client
 
 	// Information about the mounted cgroup subsystems.
-	cgroupSubsystems libcontainer.CgroupSubsystems
+	cgroupSubsystems map[string]string
 
 	// Information about mounted filesystems.
 	fsInfo fs.FsInfo

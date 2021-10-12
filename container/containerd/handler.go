@@ -59,7 +59,7 @@ func newContainerdContainerHandler(
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
-	cgroupSubsystems containerlibcontainer.CgroupSubsystems,
+	cgroupSubsystems map[string]string,
 	inHostNamespace bool,
 	metadataEnvAllowList []string,
 	includedMetrics container.MetricSet,

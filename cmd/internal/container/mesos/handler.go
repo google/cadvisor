@@ -52,7 +52,7 @@ type mesosContainerHandler struct {
 
 func newMesosContainerHandler(
 	name string,
-	cgroupSubsystems containerlibcontainer.CgroupSubsystems,
+	cgroupSubsystems map[string]string,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
 	includedMetrics container.MetricSet,

@@ -48,7 +48,7 @@ type containerdFactory struct {
 	client             ContainerdClient
 	version            string
 	// Information about the mounted cgroup subsystems.
-	cgroupSubsystems libcontainer.CgroupSubsystems
+	cgroupSubsystems map[string]string
 	// Information about mounted filesystems.
 	fsInfo          fs.FsInfo
 	includedMetrics container.MetricSet

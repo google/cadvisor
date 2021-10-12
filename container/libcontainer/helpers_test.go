@@ -44,7 +44,7 @@ func cgroupMountsAt(path string, subsystems []string) []cgroups.Mount {
 func TestGetCgroupSubsystems(t *testing.T) {
 	testCases := []struct {
 		mounts   []cgroups.Mount
-		expected CgroupSubsystems
+		expected map[string]string
 		err      bool
 	}{
 		{
