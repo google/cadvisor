@@ -29,15 +29,17 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var DockerOnly = flag.Bool("docker_only", false, "Only report docker containers in addition to root stats")
-var disableRootCgroupStats = flag.Bool("disable_root_cgroup_stats", false, "Disable collecting root Cgroup stats")
+var (
+	DockerOnly             = flag.Bool("docker_only", false, "Only report docker containers in addition to root stats")
+	disableRootCgroupStats = flag.Bool("disable_root_cgroup_stats", false, "Disable collecting root Cgroup stats")
+)
 
 type rawFactory struct {
 	// Factory for machine information.
 	machineInfoFactory info.MachineInfoFactory
 
 	// Information about the cgroup subsystems.
-	cgroupSubsystems *libcontainer.CgroupSubsystems
+	cgroupSubsystems libcontainer.CgroupSubsystems
 
 	// Information about mounted filesystems.
 	fsInfo fs.FsInfo
@@ -89,7 +91,7 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, incl
 	if err != nil {
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
-	if len(cgroupSubsystems.MountPoints) == 0 {
+	if len(cgroupSubsystems) == 0 {
 		return fmt.Errorf("failed to find supported cgroup mounts for the raw factory")
 	}
 
@@ -102,7 +104,7 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, incl
 	factory := &rawFactory{
 		machineInfoFactory: machineInfoFactory,
 		fsInfo:             fsInfo,
-		cgroupSubsystems:   &cgroupSubsystems,
+		cgroupSubsystems:   cgroupSubsystems,
 		watcher:            watcher,
 		includedMetrics:    includedMetrics,
 		rawPrefixWhiteList: rawPrefixWhiteList,

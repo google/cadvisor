@@ -21,8 +21,6 @@ import (
 	"github.com/containerd/typeurl"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
-
-	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 )
 
 func TestIsContainerName(t *testing.T) {
@@ -59,7 +57,7 @@ func TestCanHandleAndAccept(t *testing.T) {
 
 	f := &containerdFactory{
 		client:             mockcontainerdClient(testContainers, nil),
-		cgroupSubsystems:   containerlibcontainer.CgroupSubsystems{},
+		cgroupSubsystems:   nil,
 		fsInfo:             nil,
 		machineInfoFactory: nil,
 		includedMetrics:    nil,

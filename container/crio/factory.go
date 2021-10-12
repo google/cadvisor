@@ -76,7 +76,7 @@ func (f *crioFactory) NewContainerHandler(name string, metadataEnvAllowList []st
 		f.fsInfo,
 		f.storageDriver,
 		f.storageDir,
-		&f.cgroupSubsystems,
+		f.cgroupSubsystems,
 		inHostNamespace,
 		metadataEnvAllowList,
 		f.includedMetrics,

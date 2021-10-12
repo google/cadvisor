@@ -157,7 +157,7 @@ func (f *dockerFactory) NewContainerHandler(name string, metadataEnvAllowList []
 		f.fsInfo,
 		f.storageDriver,
 		f.storageDir,
-		&f.cgroupSubsystems,
+		f.cgroupSubsystems,
 		inHostNamespace,
 		dockerMetadataEnvAllowList,
 		f.dockerVersion,

@@ -52,7 +52,7 @@ type mesosContainerHandler struct {
 
 func newMesosContainerHandler(
 	name string,
-	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
+	cgroupSubsystems containerlibcontainer.CgroupSubsystems,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
 	includedMetrics container.MetricSet,
@@ -60,7 +60,7 @@ func newMesosContainerHandler(
 	metadataEnvAllowList []string,
 	client mesosAgentClient,
 ) (container.ContainerHandler, error) {
-	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
+	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems, name)
 
 	// Generate the equivalent cgroup manager for this container.
 	cgroupManager, err := containerlibcontainer.NewCgroupManager(name, cgroupPaths)

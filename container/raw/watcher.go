@@ -48,7 +48,7 @@ func NewRawContainerWatcher() (watcher.ContainerWatcher, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
-	if len(cgroupSubsystems.MountPoints) == 0 {
+	if len(cgroupSubsystems) == 0 {
 		return nil, fmt.Errorf("failed to find supported cgroup mounts for the raw factory")
 	}
 
@@ -58,7 +58,7 @@ func NewRawContainerWatcher() (watcher.ContainerWatcher, error) {
 	}
 
 	rawWatcher := &rawContainerWatcher{
-		cgroupPaths: cgroupSubsystems.MountPoints,
+		cgroupPaths: cgroupSubsystems,
 		watcher:     watcher,
 		stopWatcher: make(chan error),
 	}

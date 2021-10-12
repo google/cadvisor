@@ -59,7 +59,7 @@ func TestCanHandleAndAccept(t *testing.T) {
 
 	f := &mesosFactory{
 		machineInfoFactory: nil,
-		cgroupSubsystems:   containerlibcontainer.CgroupSubsystems{},
+		cgroupSubsystems:   nil,
 		fsInfo:             nil,
 		includedMetrics:    nil,
 		client:             fakeMesosAgentClient(testContainers, nil),
