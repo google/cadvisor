@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/cadvisor/container"
-	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 )
@@ -50,7 +49,7 @@ func TestHandler(t *testing.T) {
 		name                 string
 		machineInfoFactory   info.MachineInfoFactory
 		fsInfo               fs.FsInfo
-		cgroupSubsystems     containerlibcontainer.CgroupSubsystems
+		cgroupSubsystems     map[string]string
 		inHostNamespace      bool
 		metadataEnvAllowList []string
 		includedMetrics      container.MetricSet

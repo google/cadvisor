@@ -29,12 +29,10 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// CgroupSubsystems is a map of cgroup controllers to their mount points.
+// GetCgroupSubsystems returns information about the cgroup subsystems that are
+// of interest as a map of cgroup controllers to their mount points.
 // For example, "cpu" -> "/sys/fs/cgroup/cpu".
-type CgroupSubsystems map[string]string
-
-// Get information about the cgroup subsystems those we want
-func GetCgroupSubsystems(includedMetrics container.MetricSet) (CgroupSubsystems, error) {
+func GetCgroupSubsystems(includedMetrics container.MetricSet) (map[string]string, error) {
 	// Get all cgroup mounts.
 	allCgroups, err := cgroups.GetCgroupMounts(true)
 	if err != nil {
@@ -76,7 +74,7 @@ func GetCgroupSubsystems(includedMetrics container.MetricSet) (CgroupSubsystems,
 }
 
 // Get information about all the cgroup subsystems.
-func GetAllCgroupSubsystems() (CgroupSubsystems, error) {
+func GetAllCgroupSubsystems() (map[string]string, error) {
 	// Get all cgroup mounts.
 	allCgroups, err := cgroups.GetCgroupMounts(true)
 	if err != nil {
@@ -87,7 +85,7 @@ func GetAllCgroupSubsystems() (CgroupSubsystems, error) {
 	return getCgroupSubsystemsHelper(allCgroups, emptyDisableCgroups)
 }
 
-func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, disableCgroups map[string]struct{}) (CgroupSubsystems, error) {
+func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, disableCgroups map[string]struct{}) (map[string]string, error) {
 	if len(allCgroups) == 0 {
 		return nil, fmt.Errorf("failed to find cgroup mounts")
 	}
