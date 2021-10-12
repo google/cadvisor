@@ -50,7 +50,7 @@ func NewRawContainerWatcher() (watcher.ContainerWatcher, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
-	if len(cgroupSubsystems.Mounts) == 0 {
+	if len(cgroupSubsystems.MountPoints) == 0 {
 		return nil, fmt.Errorf("failed to find supported cgroup mounts for the raw factory")
 	}
 
@@ -196,8 +196,8 @@ func (w *rawContainerWatcher) processEvent(event *inotify.Event, events chan wat
 
 	// Derive the container name from the path name.
 	var containerName string
-	for _, mount := range w.cgroupSubsystems.Mounts {
-		mountLocation := path.Clean(mount.Mountpoint) + "/"
+	for _, mount := range w.cgroupSubsystems.MountPoints {
+		mountLocation := path.Clean(mount) + "/"
 		if strings.HasPrefix(event.Name, mountLocation) {
 			containerName = event.Name[len(mountLocation)-1:]
 			break

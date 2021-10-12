@@ -30,10 +30,6 @@ import (
 )
 
 type CgroupSubsystems struct {
-	// Cgroup subsystem mounts.
-	// e.g.: "/sys/fs/cgroup/cpu" -> ["cpu", "cpuacct"]
-	Mounts []cgroups.Mount
-
 	// Cgroup subsystem to their mount location.
 	// e.g.: "cpu" -> "/sys/fs/cgroup/cpu"
 	MountPoints map[string]string
@@ -99,8 +95,6 @@ func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, disableCgroups map[st
 	}
 
 	// Trim the mounts to only the subsystems we care about.
-	supportedCgroups := make([]cgroups.Mount, 0, len(allCgroups))
-	recordedMountpoints := make(map[string]struct{}, len(allCgroups))
 	mountPoints := make(map[string]string, len(allCgroups))
 	for _, mount := range allCgroups {
 		for _, subsystem := range mount.Subsystems {
@@ -116,17 +110,11 @@ func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, disableCgroups map[st
 				klog.V(5).Infof("skipping %s, already using mount at %s", mount.Mountpoint, mountPoints[subsystem])
 				continue
 			}
-			if _, ok := recordedMountpoints[mount.Mountpoint]; !ok {
-				// avoid appending the same mount twice in e.g. `cpu,cpuacct` case
-				supportedCgroups = append(supportedCgroups, mount)
-				recordedMountpoints[mount.Mountpoint] = struct{}{}
-			}
 			mountPoints[subsystem] = mount.Mountpoint
 		}
 	}
 
 	return CgroupSubsystems{
-		Mounts:      supportedCgroups,
 		MountPoints: mountPoints,
 	}, nil
 }
