@@ -121,7 +121,7 @@ func newDockerContainerHandler(
 	fsInfo fs.FsInfo,
 	storageDriver storageDriver,
 	storageDir string,
-	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
+	cgroupSubsystems containerlibcontainer.CgroupSubsystems,
 	inHostNamespace bool,
 	metadataEnvAllowList []string,
 	dockerVersion []int,
@@ -131,7 +131,7 @@ func newDockerContainerHandler(
 	zfsWatcher *zfs.ZfsWatcher,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
-	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
+	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems, name)
 
 	// Generate the equivalent cgroup manager for this container.
 	cgroupManager, err := containerlibcontainer.NewCgroupManager(name, cgroupPaths)

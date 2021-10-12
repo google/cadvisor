@@ -76,7 +76,7 @@ func (f *containerdFactory) NewContainerHandler(name string, metadataEnvAllowLis
 		name,
 		f.machineInfoFactory,
 		f.fsInfo,
-		&f.cgroupSubsystems,
+		f.cgroupSubsystems,
 		inHostNamespace,
 		containerdMetadataEnvAllowList,
 		f.includedMetrics,

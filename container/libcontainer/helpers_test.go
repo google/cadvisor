@@ -54,43 +54,37 @@ func TestGetCgroupSubsystems(t *testing.T) {
 		{
 			// normal case
 			mounts: cgroupMountsAt("/sys/fs/cgroup", defaultCgroupSubsystems),
-			expected: CgroupSubsystems{
-				MountPoints: map[string]string{
-					"blkio":   "/sys/fs/cgroup/blkio",
-					"cpu":     "/sys/fs/cgroup/cpu,cpuacct",
-					"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
-					"cpuset":  "/sys/fs/cgroup/cpuset",
-					"devices": "/sys/fs/cgroup/devices",
-					"memory":  "/sys/fs/cgroup/memory",
-					"hugetlb": "/sys/fs/cgroup/hugetlb",
-					"pids":    "/sys/fs/cgroup/pids",
-				},
+			expected: map[string]string{
+				"blkio":   "/sys/fs/cgroup/blkio",
+				"cpu":     "/sys/fs/cgroup/cpu,cpuacct",
+				"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
+				"cpuset":  "/sys/fs/cgroup/cpuset",
+				"devices": "/sys/fs/cgroup/devices",
+				"memory":  "/sys/fs/cgroup/memory",
+				"hugetlb": "/sys/fs/cgroup/hugetlb",
+				"pids":    "/sys/fs/cgroup/pids",
 			},
 		},
 		{
 			// multiple croup subsystems, should ignore second one
 			mounts: append(cgroupMountsAt("/sys/fs/cgroup", defaultCgroupSubsystems),
 				cgroupMountsAt("/var/lib/rkt/pods/run/ccdd4e36-2d4c-49fd-8b94-4fb06133913d/stage1/rootfs/opt/stage2/flannel/rootfs/sys/fs/cgroup", defaultCgroupSubsystems)...),
-			expected: CgroupSubsystems{
-				MountPoints: map[string]string{
-					"blkio":   "/sys/fs/cgroup/blkio",
-					"cpu":     "/sys/fs/cgroup/cpu,cpuacct",
-					"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
-					"cpuset":  "/sys/fs/cgroup/cpuset",
-					"devices": "/sys/fs/cgroup/devices",
-					"memory":  "/sys/fs/cgroup/memory",
-					"hugetlb": "/sys/fs/cgroup/hugetlb",
-					"pids":    "/sys/fs/cgroup/pids",
-				},
+			expected: map[string]string{
+				"blkio":   "/sys/fs/cgroup/blkio",
+				"cpu":     "/sys/fs/cgroup/cpu,cpuacct",
+				"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
+				"cpuset":  "/sys/fs/cgroup/cpuset",
+				"devices": "/sys/fs/cgroup/devices",
+				"memory":  "/sys/fs/cgroup/memory",
+				"hugetlb": "/sys/fs/cgroup/hugetlb",
+				"pids":    "/sys/fs/cgroup/pids",
 			},
 		},
 		{
 			// most subsystems not mounted
 			mounts: cgroupMountsAt("/sys/fs/cgroup", []string{"cpu"}),
-			expected: CgroupSubsystems{
-				MountPoints: map[string]string{
-					"cpu": "/sys/fs/cgroup/cpu",
-				},
+			expected: map[string]string{
+				"cpu": "/sys/fs/cgroup/cpu",
 			},
 		},
 	}
@@ -106,8 +100,8 @@ func TestGetCgroupSubsystems(t *testing.T) {
 		if err != nil {
 			t.Fatalf("[case %d] Expected no error, but got %v", i, err)
 		}
-		if !reflect.DeepEqual(testCase.expected.MountPoints, subSystems.MountPoints) {
-			t.Fatalf("[case %d] Expected %v == %v", i, testCase.expected.MountPoints, subSystems.MountPoints)
+		if !reflect.DeepEqual(testCase.expected, subSystems) {
+			t.Fatalf("[case %d] Expected %v == %v", i, testCase.expected, subSystems)
 		}
 	}
 }

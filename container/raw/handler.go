@@ -48,13 +48,13 @@ func isRootCgroup(name string) bool {
 	return name == "/"
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems *libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems libcontainer.CgroupSubsystems, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet) (container.ContainerHandler, error) {
 	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
 	if err != nil {
 		return nil, err
 	}
 
-	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
+	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems, name)
 
 	cgroupManager, err := libcontainer.NewCgroupManager(name, cgroupPaths)
 	if err != nil {

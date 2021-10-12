@@ -42,7 +42,7 @@ func TestContainerReference(t *testing.T) {
 		name                 string
 		machineInfoFactory   info.MachineInfoFactory
 		fsInfo               fs.FsInfo
-		cgroupSubsystems     *containerlibcontainer.CgroupSubsystems
+		cgroupSubsystems     containerlibcontainer.CgroupSubsystems
 		inHostNamespace      bool
 		metadataEnvAllowList []string
 		includedMetrics      container.MetricSet
@@ -57,7 +57,7 @@ func TestContainerReference(t *testing.T) {
 			"/mesos/04e20821-67d3-4bf7-96b4-7d4495f50b28",
 			nil,
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			[]string{},
 			nil,
@@ -71,7 +71,7 @@ func TestContainerReference(t *testing.T) {
 			"/mesos/04e20821-67d3-4bf7-96b4-7d4495f50b28",
 			nil,
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			[]string{},
 			nil,
@@ -85,7 +85,7 @@ func TestContainerReference(t *testing.T) {
 			"/mesos/04e20821-67d3-4bf7-96b4-7d4495f50b28",
 			nil,
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			[]string{},
 			nil,

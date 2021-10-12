@@ -68,7 +68,7 @@ func (f *mesosFactory) NewContainerHandler(name string, metadataEnvAllowList []s
 
 	return newMesosContainerHandler(
 		name,
-		&f.cgroupSubsystems,
+		f.cgroupSubsystems,
 		f.machineInfoFactory,
 		f.fsInfo,
 		f.includedMetrics,

@@ -50,7 +50,7 @@ func TestHandler(t *testing.T) {
 		name                 string
 		machineInfoFactory   info.MachineInfoFactory
 		fsInfo               fs.FsInfo
-		cgroupSubsystems     *containerlibcontainer.CgroupSubsystems
+		cgroupSubsystems     containerlibcontainer.CgroupSubsystems
 		inHostNamespace      bool
 		metadataEnvAllowList []string
 		includedMetrics      container.MetricSet
@@ -74,7 +74,7 @@ func TestHandler(t *testing.T) {
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			nil,
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			nil,
 			nil,
@@ -88,7 +88,7 @@ func TestHandler(t *testing.T) {
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			&mockedMachineInfo{},
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			nil,
 			nil,
@@ -107,7 +107,7 @@ func TestHandler(t *testing.T) {
 			"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9",
 			&mockedMachineInfo{},
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			[]string{"TEST"},
 			nil,

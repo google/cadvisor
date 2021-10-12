@@ -35,7 +35,7 @@ func TestHandler(t *testing.T) {
 		fsInfo               fs.FsInfo
 		storageDriver        storageDriver
 		storageDir           string
-		cgroupSubsystems     *containerlibcontainer.CgroupSubsystems
+		cgroupSubsystems     containerlibcontainer.CgroupSubsystems
 		inHostNamespace      bool
 		metadataEnvAllowList []string
 		includedMetrics      container.MetricSet
@@ -52,7 +52,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			"",
 			"",
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			nil,
 			nil,
@@ -68,7 +68,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			"",
 			"",
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			nil,
 			nil,
@@ -88,7 +88,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			"",
 			"",
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			nil,
 			nil,
