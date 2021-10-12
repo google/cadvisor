@@ -204,5 +204,4 @@ func NewCgroupManager(name string, paths map[string]string) (cgroups.Manager, er
 		Name: name,
 	}
 	return fs.NewManager(&config, paths, false), nil
-
 }
