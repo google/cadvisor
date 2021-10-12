@@ -15,11 +15,9 @@
 package libcontainer
 
 import (
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
@@ -44,8 +42,6 @@ func cgroupMountsAt(path string, subsystems []string) []cgroups.Mount {
 }
 
 func TestGetCgroupSubsystems(t *testing.T) {
-	ourSubsystems := []string{"cpu,cpuacct", "devices", "memory", "hugetlb", "cpuset", "blkio", "pids"}
-
 	testCases := []struct {
 		mounts   []cgroups.Mount
 		expected CgroupSubsystems
@@ -69,7 +65,6 @@ func TestGetCgroupSubsystems(t *testing.T) {
 					"hugetlb": "/sys/fs/cgroup/hugetlb",
 					"pids":    "/sys/fs/cgroup/pids",
 				},
-				Mounts: cgroupMountsAt("/sys/fs/cgroup", ourSubsystems),
 			},
 		},
 		{
@@ -87,7 +82,6 @@ func TestGetCgroupSubsystems(t *testing.T) {
 					"hugetlb": "/sys/fs/cgroup/hugetlb",
 					"pids":    "/sys/fs/cgroup/pids",
 				},
-				Mounts: cgroupMountsAt("/sys/fs/cgroup", ourSubsystems),
 			},
 		},
 		{
@@ -97,7 +91,6 @@ func TestGetCgroupSubsystems(t *testing.T) {
 				MountPoints: map[string]string{
 					"cpu": "/sys/fs/cgroup/cpu",
 				},
-				Mounts: cgroupMountsAt("/sys/fs/cgroup", []string{"cpu"}),
 			},
 		},
 	}
@@ -113,23 +106,9 @@ func TestGetCgroupSubsystems(t *testing.T) {
 		if err != nil {
 			t.Fatalf("[case %d] Expected no error, but got %v", i, err)
 		}
-		assertCgroupSubsystemsEqual(t, testCase.expected, subSystems, fmt.Sprintf("[case %d]", i))
-	}
-}
-
-func assertCgroupSubsystemsEqual(t *testing.T, expected, actual CgroupSubsystems, message string) {
-	if !reflect.DeepEqual(expected.MountPoints, actual.MountPoints) {
-		t.Fatalf("%s Expected %v == %v", message, expected.MountPoints, actual.MountPoints)
-	}
-
-	sort.Slice(expected.Mounts, func(i, j int) bool {
-		return expected.Mounts[i].Mountpoint < expected.Mounts[j].Mountpoint
-	})
-	sort.Slice(actual.Mounts, func(i, j int) bool {
-		return actual.Mounts[i].Mountpoint < actual.Mounts[j].Mountpoint
-	})
-	if !reflect.DeepEqual(expected.Mounts, actual.Mounts) {
-		t.Fatalf("%s Expected %v == %v", message, expected.Mounts, actual.Mounts)
+		if !reflect.DeepEqual(testCase.expected.MountPoints, subSystems.MountPoints) {
+			t.Fatalf("[case %d] Expected %v == %v", i, testCase.expected.MountPoints, subSystems.MountPoints)
+		}
 	}
 }
 

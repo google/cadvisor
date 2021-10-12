@@ -89,7 +89,7 @@ func Register(machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, incl
 	if err != nil {
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
-	if len(cgroupSubsystems.Mounts) == 0 {
+	if len(cgroupSubsystems.MountPoints) == 0 {
 		return fmt.Errorf("failed to find supported cgroup mounts for the raw factory")
 	}
 
