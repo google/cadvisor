@@ -39,38 +39,7 @@ func GetCgroupSubsystems(includedMetrics container.MetricSet) (map[string]string
 		return nil, err
 	}
 
-	disableCgroups := map[string]struct{}{}
-
-	if !includedMetrics.Has(container.DiskIOMetrics) {
-		disableCgroups["blkio"] = struct{}{}
-		disableCgroups["io"] = struct{}{}
-	}
-
-	if !includedMetrics.Has(container.CpuUsageMetrics) {
-		disableCgroups["cpu"] = struct{}{}
-	}
-
-	if !includedMetrics.Has(container.CPUSetMetrics) {
-		disableCgroups["cpuset"] = struct{}{}
-	}
-
-	if !includedMetrics.Has(container.HugetlbUsageMetrics) {
-		disableCgroups["hugetlb"] = struct{}{}
-	}
-
-	if !includedMetrics.Has(container.MemoryUsageMetrics) {
-		disableCgroups["memory"] = struct{}{}
-	}
-
-	if !includedMetrics.Has(container.PerfMetrics) {
-		disableCgroups["perf_event"] = struct{}{}
-	}
-
-	if !includedMetrics.Has(container.ProcessMetrics) {
-		disableCgroups["pids"] = struct{}{}
-	}
-
-	return getCgroupSubsystemsHelper(allCgroups, disableCgroups)
+	return getCgroupSubsystemsHelper(allCgroups, includedMetrics)
 }
 
 // Get information about all the cgroup subsystems.
@@ -81,11 +50,10 @@ func GetAllCgroupSubsystems() (map[string]string, error) {
 		return nil, err
 	}
 
-	emptyDisableCgroups := map[string]struct{}{}
-	return getCgroupSubsystemsHelper(allCgroups, emptyDisableCgroups)
+	return getCgroupSubsystemsHelper(allCgroups, nil)
 }
 
-func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, disableCgroups map[string]struct{}) (map[string]string, error) {
+func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, includedMetrics container.MetricSet) (map[string]string, error) {
 	if len(allCgroups) == 0 {
 		return nil, fmt.Errorf("failed to find cgroup mounts")
 	}
@@ -94,11 +62,7 @@ func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, disableCgroups map[st
 	mountPoints := make(map[string]string, len(allCgroups))
 	for _, mount := range allCgroups {
 		for _, subsystem := range mount.Subsystems {
-			if _, exists := disableCgroups[subsystem]; exists {
-				continue
-			}
-			if _, ok := supportedSubsystems[subsystem]; !ok {
-				// Unsupported subsystem
+			if !needSubsys(subsystem, includedMetrics) {
 				continue
 			}
 			if _, ok := mountPoints[subsystem]; ok {
@@ -113,18 +77,34 @@ func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, disableCgroups map[st
 	return mountPoints, nil
 }
 
-// Cgroup subsystems we support listing (should be the minimal set we need stats from).
-var supportedSubsystems map[string]struct{} = map[string]struct{}{
-	"cpu":        {},
-	"cpuacct":    {},
-	"memory":     {},
-	"hugetlb":    {},
-	"pids":       {},
-	"cpuset":     {},
-	"blkio":      {},
-	"io":         {},
-	"devices":    {},
-	"perf_event": {},
+// A map of cgroup subsystems we support listing (should be the minimal set
+// we need stats from) to a respective MetricKind.
+var supportedSubsystems = map[string]container.MetricKind{
+	"cpu":        container.CpuUsageMetrics,
+	"cpuacct":    container.CpuUsageMetrics,
+	"memory":     container.MemoryUsageMetrics,
+	"hugetlb":    container.HugetlbUsageMetrics,
+	"pids":       container.ProcessMetrics,
+	"cpuset":     container.CPUSetMetrics,
+	"blkio":      container.DiskIOMetrics,
+	"io":         container.DiskIOMetrics,
+	"devices":    "",
+	"perf_event": container.PerfMetrics,
+}
+
+// Check if this cgroup subsystem/controller is of use.
+func needSubsys(name string, metrics container.MetricSet) bool {
+	// Check if supported.
+	metric, supported := supportedSubsystems[name]
+	if !supported {
+		return false
+	}
+	// Check if needed.
+	if metrics == nil || metric == "" {
+		return true
+	}
+
+	return metrics.Has(metric)
 }
 
 func diskStatsCopy0(major, minor uint64) *info.PerDiskStats {
