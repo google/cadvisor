@@ -32,6 +32,10 @@ import (
 // GetCgroupSubsystems returns information about the cgroup subsystems that are
 // of interest as a map of cgroup controllers to their mount points.
 // For example, "cpu" -> "/sys/fs/cgroup/cpu".
+//
+// The incudeMetrics arguments specifies which metrics are requested,
+// and is used to filter out some cgroups and their mounts. If nil,
+// all supported cgroup subsystems are included.
 func GetCgroupSubsystems(includedMetrics container.MetricSet) (map[string]string, error) {
 	// Get all cgroup mounts.
 	allCgroups, err := cgroups.GetCgroupMounts(true)
@@ -40,17 +44,6 @@ func GetCgroupSubsystems(includedMetrics container.MetricSet) (map[string]string
 	}
 
 	return getCgroupSubsystemsHelper(allCgroups, includedMetrics)
-}
-
-// Get information about all the cgroup subsystems.
-func GetAllCgroupSubsystems() (map[string]string, error) {
-	// Get all cgroup mounts.
-	allCgroups, err := cgroups.GetCgroupMounts(true)
-	if err != nil {
-		return nil, err
-	}
-
-	return getCgroupSubsystemsHelper(allCgroups, nil)
 }
 
 func getCgroupSubsystemsHelper(allCgroups []cgroups.Mount, includedMetrics container.MetricSet) (map[string]string, error) {
