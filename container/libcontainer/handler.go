@@ -779,14 +779,14 @@ func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 }
 
 func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
-	ret.DiskIo.IoServiceBytes = DiskStatsCopy(s.BlkioStats.IoServiceBytesRecursive)
-	ret.DiskIo.IoServiced = DiskStatsCopy(s.BlkioStats.IoServicedRecursive)
-	ret.DiskIo.IoQueued = DiskStatsCopy(s.BlkioStats.IoQueuedRecursive)
-	ret.DiskIo.Sectors = DiskStatsCopy(s.BlkioStats.SectorsRecursive)
-	ret.DiskIo.IoServiceTime = DiskStatsCopy(s.BlkioStats.IoServiceTimeRecursive)
-	ret.DiskIo.IoWaitTime = DiskStatsCopy(s.BlkioStats.IoWaitTimeRecursive)
-	ret.DiskIo.IoMerged = DiskStatsCopy(s.BlkioStats.IoMergedRecursive)
-	ret.DiskIo.IoTime = DiskStatsCopy(s.BlkioStats.IoTimeRecursive)
+	ret.DiskIo.IoServiceBytes = diskStatsCopy(s.BlkioStats.IoServiceBytesRecursive)
+	ret.DiskIo.IoServiced = diskStatsCopy(s.BlkioStats.IoServicedRecursive)
+	ret.DiskIo.IoQueued = diskStatsCopy(s.BlkioStats.IoQueuedRecursive)
+	ret.DiskIo.Sectors = diskStatsCopy(s.BlkioStats.SectorsRecursive)
+	ret.DiskIo.IoServiceTime = diskStatsCopy(s.BlkioStats.IoServiceTimeRecursive)
+	ret.DiskIo.IoWaitTime = diskStatsCopy(s.BlkioStats.IoWaitTimeRecursive)
+	ret.DiskIo.IoMerged = diskStatsCopy(s.BlkioStats.IoMergedRecursive)
+	ret.DiskIo.IoTime = diskStatsCopy(s.BlkioStats.IoTimeRecursive)
 }
 
 func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
