@@ -36,8 +36,6 @@ type rawContainerWatcher struct {
 	// Absolute path to the root of the cgroup hierarchies
 	cgroupPaths map[string]string
 
-	cgroupSubsystems *libcontainer.CgroupSubsystems
-
 	// Inotify event watcher.
 	watcher *common.InotifyWatcher
 
@@ -60,10 +58,9 @@ func NewRawContainerWatcher() (watcher.ContainerWatcher, error) {
 	}
 
 	rawWatcher := &rawContainerWatcher{
-		cgroupPaths:      common.MakeCgroupPaths(cgroupSubsystems.MountPoints, "/"),
-		cgroupSubsystems: &cgroupSubsystems,
-		watcher:          watcher,
-		stopWatcher:      make(chan error),
+		cgroupPaths: cgroupSubsystems.MountPoints,
+		watcher:     watcher,
+		stopWatcher: make(chan error),
 	}
 
 	return rawWatcher, nil
@@ -196,7 +193,7 @@ func (w *rawContainerWatcher) processEvent(event *inotify.Event, events chan wat
 
 	// Derive the container name from the path name.
 	var containerName string
-	for _, mount := range w.cgroupSubsystems.MountPoints {
+	for _, mount := range w.cgroupPaths {
 		mountLocation := path.Clean(mount) + "/"
 		if strings.HasPrefix(event.Name, mountLocation) {
 			containerName = event.Name[len(mountLocation)-1:]
