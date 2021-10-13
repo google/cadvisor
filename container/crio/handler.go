@@ -328,7 +328,11 @@ func (h *crioContainerHandler) ListContainers(listType container.ListType) ([]in
 }
 
 func (h *crioContainerHandler) GetCgroupPath(resource string) (string, error) {
-	path, ok := h.cgroupPaths[resource]
+	var res string
+	if !cgroups.IsCgroup2UnifiedMode() {
+		res = resource
+	}
+	path, ok := h.cgroupPaths[res]
 	if !ok {
 		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.reference.Name)
 	}

@@ -24,6 +24,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/machine"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 
 	"k8s.io/klog/v2"
 )
@@ -244,7 +245,11 @@ func (h *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
 }
 
 func (h *rawContainerHandler) GetCgroupPath(resource string) (string, error) {
-	path, ok := h.cgroupPaths[resource]
+	var res string
+	if !cgroups.IsCgroup2UnifiedMode() {
+		res = resource
+	}
+	path, ok := h.cgroupPaths[res]
 	if !ok {
 		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.name)
 	}
