@@ -141,7 +141,7 @@ func getFileContent(t *testing.T, filePath string) string {
 
 func clearTestData(t *testing.T, clearRefsPaths []string) {
 	for _, clearRefsPath := range clearRefsPaths {
-		err := ioutil.WriteFile(clearRefsPath, []byte("0\n"), 0644)
+		err := ioutil.WriteFile(clearRefsPath, []byte("0\n"), 0o644)
 		assert.Nil(t, err)
 	}
 }

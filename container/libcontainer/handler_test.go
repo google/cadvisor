@@ -30,7 +30,7 @@ func TestScanInterfaceStats(t *testing.T) {
 		t.Error(err)
 	}
 
-	var netdevstats = []info.InterfaceStats{
+	netdevstats := []info.InterfaceStats{
 		{
 			Name:      "wlp4s0",
 			RxBytes:   1,
@@ -78,7 +78,7 @@ func TestScanUDPStats(t *testing.T) {
 		t.Error(err)
 	}
 
-	var udpstats = info.UdpStat{
+	udpstats := info.UdpStat{
 		Listen:   2,
 		Dropped:  4,
 		RxQueued: 10,
@@ -168,11 +168,10 @@ func TestSetProcessesStats(t *testing.T) {
 	if expected.Processes.ThreadsMax != ret.Processes.ThreadsMax {
 		t.Fatalf("expected max threads: %d == %d", ret.Processes.ThreadsMax, expected.Processes.ThreadsMax)
 	}
-
 }
 
 func TestParseLimitsFile(t *testing.T) {
-	var testData = []struct {
+	testData := []struct {
 		limitLine string
 		expected  []info.UlimitSpec
 	}{
@@ -211,7 +210,7 @@ func TestParseLimitsFile(t *testing.T) {
 }
 
 func TestReferencedBytesStat(t *testing.T) {
-	//overwrite package variables
+	// overwrite package variables
 	smapsFilePathPattern = "testdata/smaps%d"
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
@@ -223,16 +222,17 @@ func TestReferencedBytesStat(t *testing.T) {
 	clearRefsFiles := []string{
 		"testdata/clear_refs4",
 		"testdata/clear_refs6",
-		"testdata/clear_refs8"}
+		"testdata/clear_refs8",
+	}
 
-	//check if clear_refs files have proper values
+	// check if clear_refs files have proper values
 	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[0]))
 	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[1]))
 	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[2]))
 }
 
 func TestReferencedBytesStatWhenNeverCleared(t *testing.T) {
-	//overwrite package variables
+	// overwrite package variables
 	smapsFilePathPattern = "testdata/smaps%d"
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
@@ -244,16 +244,17 @@ func TestReferencedBytesStatWhenNeverCleared(t *testing.T) {
 	clearRefsFiles := []string{
 		"testdata/clear_refs4",
 		"testdata/clear_refs6",
-		"testdata/clear_refs8"}
+		"testdata/clear_refs8",
+	}
 
-	//check if clear_refs files have proper values
+	// check if clear_refs files have proper values
 	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[0]))
 	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[1]))
 	assert.Equal(t, "0\n", getFileContent(t, clearRefsFiles[2]))
 }
 
 func TestReferencedBytesStatWhenResetIsNeeded(t *testing.T) {
-	//overwrite package variables
+	// overwrite package variables
 	smapsFilePathPattern = "testdata/smaps%d"
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
@@ -265,9 +266,10 @@ func TestReferencedBytesStatWhenResetIsNeeded(t *testing.T) {
 	clearRefsFiles := []string{
 		"testdata/clear_refs4",
 		"testdata/clear_refs6",
-		"testdata/clear_refs8"}
+		"testdata/clear_refs8",
+	}
 
-	//check if clear_refs files have proper values
+	// check if clear_refs files have proper values
 	assert.Equal(t, "1\n", getFileContent(t, clearRefsFiles[0]))
 	assert.Equal(t, "1\n", getFileContent(t, clearRefsFiles[1]))
 	assert.Equal(t, "1\n", getFileContent(t, clearRefsFiles[2]))
@@ -276,7 +278,7 @@ func TestReferencedBytesStatWhenResetIsNeeded(t *testing.T) {
 }
 
 func TestGetReferencedKBytesWhenSmapsMissing(t *testing.T) {
-	//overwrite package variable
+	// overwrite package variable
 	smapsFilePathPattern = "testdata/smaps%d"
 
 	pids := []int{10}
@@ -286,7 +288,7 @@ func TestGetReferencedKBytesWhenSmapsMissing(t *testing.T) {
 }
 
 func TestClearReferencedBytesWhenClearRefsMissing(t *testing.T) {
-	//overwrite package variable
+	// overwrite package variable
 	clearRefsFilePathPattern = "testdata/clear_refs%d"
 
 	pids := []int{10}

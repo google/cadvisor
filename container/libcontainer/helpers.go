@@ -144,7 +144,7 @@ var supportedSubsystems map[string]struct{} = map[string]struct{}{
 	"perf_event": {},
 }
 
-func DiskStatsCopy0(major, minor uint64) *info.PerDiskStats {
+func diskStatsCopy0(major, minor uint64) *info.PerDiskStats {
 	disk := info.PerDiskStats{
 		Major: major,
 		Minor: minor,
@@ -153,12 +153,12 @@ func DiskStatsCopy0(major, minor uint64) *info.PerDiskStats {
 	return &disk
 }
 
-type DiskKey struct {
+type diskKey struct {
 	Major uint64
 	Minor uint64
 }
 
-func DiskStatsCopy1(diskStat map[DiskKey]*info.PerDiskStats) []info.PerDiskStats {
+func diskStatsCopy1(diskStat map[diskKey]*info.PerDiskStats) []info.PerDiskStats {
 	i := 0
 	stat := make([]info.PerDiskStats, len(diskStat))
 	for _, disk := range diskStat {
@@ -168,21 +168,21 @@ func DiskStatsCopy1(diskStat map[DiskKey]*info.PerDiskStats) []info.PerDiskStats
 	return stat
 }
 
-func DiskStatsCopy(blkioStats []cgroups.BlkioStatEntry) (stat []info.PerDiskStats) {
+func diskStatsCopy(blkioStats []cgroups.BlkioStatEntry) (stat []info.PerDiskStats) {
 	if len(blkioStats) == 0 {
 		return
 	}
-	diskStat := make(map[DiskKey]*info.PerDiskStats)
+	diskStat := make(map[diskKey]*info.PerDiskStats)
 	for i := range blkioStats {
 		major := blkioStats[i].Major
 		minor := blkioStats[i].Minor
-		key := DiskKey{
+		key := diskKey{
 			Major: major,
 			Minor: minor,
 		}
 		diskp, ok := diskStat[key]
 		if !ok {
-			diskp = DiskStatsCopy0(major, minor)
+			diskp = diskStatsCopy0(major, minor)
 			diskStat[key] = diskp
 		}
 		op := blkioStats[i].Op
@@ -191,7 +191,7 @@ func DiskStatsCopy(blkioStats []cgroups.BlkioStatEntry) (stat []info.PerDiskStat
 		}
 		diskp.Stats[op] = blkioStats[i].Value
 	}
-	return DiskStatsCopy1(diskStat)
+	return diskStatsCopy1(diskStat)
 }
 
 func NewCgroupManager(name string, paths map[string]string) (cgroups.Manager, error) {
@@ -204,5 +204,4 @@ func NewCgroupManager(name string, paths map[string]string) (cgroups.Manager, er
 		Name: name,
 	}
 	return fs.NewManager(&config, paths, false), nil
-
 }
