@@ -47,7 +47,6 @@ import (
 	"github.com/google/cadvisor/watcher"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
 
 	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
@@ -937,15 +936,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		return err
 	}
 
-	if cgroups.IsCgroup2UnifiedMode() {
-		if m.includedMetrics.Has(container.PerfMetrics) {
-			perfCgroupPath := path.Join(fs2.UnifiedMountpoint, containerName)
-			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
-			if err != nil {
-				klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
-			}
-		}
-	} else {
+	if !cgroups.IsCgroup2UnifiedMode() {
 		devicesCgroupPath, err := handler.GetCgroupPath("devices")
 		if err != nil {
 			klog.Warningf("Error getting devices cgroup path: %v", err)
@@ -955,15 +946,15 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 				klog.V(4).Infof("GPU metrics may be unavailable/incomplete for container %s: %s", cont.info.Name, err)
 			}
 		}
-		if m.includedMetrics.Has(container.PerfMetrics) {
-			perfCgroupPath, err := handler.GetCgroupPath("perf_event")
+	}
+	if m.includedMetrics.Has(container.PerfMetrics) {
+		perfCgroupPath, err := handler.GetCgroupPath("perf_event")
+		if err != nil {
+			klog.Warningf("Error getting perf_event cgroup path: %q", err)
+		} else {
+			cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
 			if err != nil {
-				klog.Warningf("Error getting perf_event cgroup path: %q", err)
-			} else {
-				cont.perfCollector, err = m.perfManager.GetCollector(perfCgroupPath)
-				if err != nil {
-					klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
-				}
+				klog.Errorf("Perf event metrics will not be available for container %q: %v", containerName, err)
 			}
 		}
 	}

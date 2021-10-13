@@ -19,8 +19,6 @@ import (
 
 	mesos "github.com/mesos/mesos-go/api/v1/lib"
 	"github.com/stretchr/testify/assert"
-
-	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 )
 
 func TestIsContainerName(t *testing.T) {
