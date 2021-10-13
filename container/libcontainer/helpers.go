@@ -36,7 +36,13 @@ import (
 // The incudeMetrics arguments specifies which metrics are requested,
 // and is used to filter out some cgroups and their mounts. If nil,
 // all supported cgroup subsystems are included.
+//
+// For cgroup v2, includedMetrics argument is unused, the only map key is ""
+// (empty string), and the value is the unified cgroup mount point.
 func GetCgroupSubsystems(includedMetrics container.MetricSet) (map[string]string, error) {
+	if cgroups.IsCgroup2UnifiedMode() {
+		return map[string]string{"": fs2.UnifiedMountpoint}, nil
+	}
 	// Get all cgroup mounts.
 	allCgroups, err := cgroups.GetCgroupMounts(true)
 	if err != nil {
@@ -152,7 +158,7 @@ func diskStatsCopy(blkioStats []cgroups.BlkioStatEntry) (stat []info.PerDiskStat
 
 func NewCgroupManager(name string, paths map[string]string) (cgroups.Manager, error) {
 	if cgroups.IsCgroup2UnifiedMode() {
-		path := paths["cpu"]
+		path := paths[""]
 		return fs2.NewManager(nil, path, false)
 	}
 

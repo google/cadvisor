@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/errdefs"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"golang.org/x/net/context"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -216,7 +217,11 @@ func (h *containerdContainerHandler) ListContainers(listType container.ListType)
 }
 
 func (h *containerdContainerHandler) GetCgroupPath(resource string) (string, error) {
-	path, ok := h.cgroupPaths[resource]
+	var res string
+	if !cgroups.IsCgroup2UnifiedMode() {
+		res = resource
+	}
+	path, ok := h.cgroupPaths[res]
 	if !ok {
 		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.reference.Name)
 	}
