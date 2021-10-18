@@ -16,7 +16,7 @@ package mesos
 
 import (
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
-	"github.com/mesos/mesos-go/api/v1/lib"
+	mesos "github.com/mesos/mesos-go/api/v1/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"github.com/Rican7/retry"
 	"github.com/Rican7/retry/strategy"
-	"github.com/mesos/mesos-go/api/v1/lib"
+	mesos "github.com/mesos/mesos-go/api/v1/lib"
 	"github.com/mesos/mesos-go/api/v1/lib/agent"
 	"github.com/mesos/mesos-go/api/v1/lib/agent/calls"
 	mclient "github.com/mesos/mesos-go/api/v1/lib/client"
