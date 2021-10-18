@@ -26,6 +26,7 @@ import (
 
 	"github.com/blang/semver"
 	dockertypes "github.com/docker/docker/api/types"
+
 	"github.com/google/cadvisor/container"
 	dockerutil "github.com/google/cadvisor/container/docker/utils"
 	"github.com/google/cadvisor/container/libcontainer"

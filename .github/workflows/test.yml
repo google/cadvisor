@@ -1,25 +1,6 @@
 name: Test
 on: [push, pull_request]
 jobs:
-  lint:
-    strategy:
-      matrix:
-        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
-    runs-on: ubuntu-20.04
-    timeout-minutes: 10
-    steps:
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.17
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Run golangci-lint
-      run: |
-        set -e
-        source ${{ matrix.environment-variables }}
-        if [[ "${BUILD_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${BUILD_PACKAGES}; fi
-        make -e lint
   test:
     strategy:
       matrix:
@@ -36,7 +17,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run presubmit checks
-      run: GOFLAGS="$GO_FLAGS" make presubmit
+      run: |
+        source ${{ matrix.environment-variables }}
+        if [[ "${BUILD_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${BUILD_PACKAGES}; fi
+        make -e presubmit
     - name: Run tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}

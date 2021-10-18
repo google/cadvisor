@@ -32,8 +32,9 @@ import (
 	"sync"
 	"time"
 
-	cadvisorApi "github.com/google/cadvisor/info/v2"
 	"k8s.io/klog/v2"
+
+	cadvisorApi "github.com/google/cadvisor/info/v2"
 )
 
 // must be able to ssh into hosts without password

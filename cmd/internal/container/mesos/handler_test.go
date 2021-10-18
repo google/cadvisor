@@ -18,12 +18,13 @@ import (
 	"fmt"
 	"testing"
 
+	mesos "github.com/mesos/mesos-go/api/v1/lib"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/google/cadvisor/container"
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	mesos "github.com/mesos/mesos-go/api/v1/lib"
-	"github.com/stretchr/testify/assert"
 )
 
 func PopulateContainer() *mContainer {

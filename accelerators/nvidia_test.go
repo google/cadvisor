@@ -14,11 +14,12 @@
 package accelerators
 
 import (
-	"github.com/google/cadvisor/stats"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/cadvisor/stats"
 
 	"github.com/mindprince/gonvml"
 	"github.com/stretchr/testify/assert"

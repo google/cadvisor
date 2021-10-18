@@ -16,10 +16,11 @@ package mesos
 
 import (
 	"fmt"
+	"testing"
+
 	mesos "github.com/mesos/mesos-go/api/v1/lib"
 	"github.com/mesos/mesos-go/api/v1/lib/agent"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func PopulateFrameworks(fwID string) *agent.Response_GetFrameworks {

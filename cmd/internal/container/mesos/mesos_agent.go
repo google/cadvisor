@@ -16,6 +16,7 @@ package mesos
 
 import (
 	"fmt"
+
 	mesos "github.com/mesos/mesos-go/api/v1/lib"
 	"github.com/mesos/mesos-go/api/v1/lib/agent"
 )

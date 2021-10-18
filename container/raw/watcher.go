@@ -23,10 +23,11 @@ import (
 	"path"
 	"strings"
 
+	inotify "k8s.io/utils/inotify"
+
 	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/watcher"
-	inotify "k8s.io/utils/inotify"
 
 	"k8s.io/klog/v2"
 )

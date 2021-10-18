@@ -62,13 +62,8 @@ tidy:
 
 format:
 	@echo ">> formatting code"
-	@$(GO) fmt $(pkgs)
-	@cd cmd && $(GO) fmt $(cmd_pkgs)
-
-vet:
-	@echo ">> vetting code"
-	@$(GO) vet $(pkgs)
-	@cd cmd && $(GO) vet $(cmd_pkgs)
+	@# goimports is a superset of gofmt.
+	@goimports -w -local github.com/google/cadvisor .
 
 build: assets
 	@echo ">> building binaries"
@@ -88,9 +83,7 @@ docker-%:
 docker-build:
 	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.17 make build
 
-presubmit: vet
-	@echo ">> checking go formatting"
-	@./build/check_gofmt.sh
+presubmit: lint
 	@echo ">> checking go mod tidy"
 	@./build/check_gotidy.sh
 	@echo ">> checking file boilerplate"
@@ -108,4 +101,4 @@ lint:
 clean:
 	@rm -f *.test cadvisor
 
-.PHONY: all build docker format release test test-integration vet lint presubmit tidy
+.PHONY: all build docker format release test test-integration lint presubmit tidy

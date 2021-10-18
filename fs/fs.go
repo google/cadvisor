@@ -32,10 +32,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/google/cadvisor/devicemapper"
-	"github.com/google/cadvisor/utils"
 	zfs "github.com/mistifyio/go-zfs"
 	mount "github.com/moby/sys/mountinfo"
+
+	"github.com/google/cadvisor/devicemapper"
+	"github.com/google/cadvisor/utils"
 
 	"k8s.io/klog/v2"
 )
