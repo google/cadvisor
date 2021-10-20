@@ -31,7 +31,7 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/docker"
+	//"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
@@ -87,11 +87,11 @@ type Manager interface {
 	// Get information about all subcontainers of the specified container (includes self).
 	SubcontainersInfo(containerName string, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error)
 
-	// Gets all the Docker containers. Return is a map from full container name to ContainerInfo.
-	AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error)
-
-	// Gets information about a specific Docker container. The specified name is within the Docker namespace.
-	DockerContainer(dockerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
+	//// Gets all the Docker containers. Return is a map from full container name to ContainerInfo.
+	//AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error)
+	//
+	//// Gets information about a specific Docker container. The specified name is within the Docker namespace.
+	//DockerContainer(dockerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
 
 	// Gets spec for all containers based on request options.
 	GetContainerSpec(containerName string, options v2.RequestOptions) (map[string]v2.ContainerSpec, error)
@@ -134,12 +134,12 @@ type Manager interface {
 
 	CloseEventChannel(watchID int)
 
-	// Get status information about docker.
-	DockerInfo() (info.DockerStatus, error)
-
-	// Get details about interesting docker images.
-	DockerImages() ([]info.DockerImage, error)
-
+	//// Get status information about docker.
+	//DockerInfo() (info.DockerStatus, error)
+	//
+	//// Get details about interesting docker images.
+	//DockerImages() ([]info.DockerImage, error)
+	//
 	// Returns debugging information. Map of lines per category.
 	DebugInfo() map[string][]string
 }
@@ -592,81 +592,81 @@ func (m *manager) SubcontainersInfo(containerName string, query *info.ContainerI
 	return m.containerDataSliceToContainerInfoSlice(containers, query)
 }
 
-func (m *manager) getAllDockerContainers() map[string]*containerData {
-	m.containersLock.RLock()
-	defer m.containersLock.RUnlock()
-	containers := make(map[string]*containerData, len(m.containers))
+//func (m *manager) getAllDockerContainers() map[string]*containerData {
+//	m.containersLock.RLock()
+//	defer m.containersLock.RUnlock()
+//	containers := make(map[string]*containerData, len(m.containers))
+//
+//	// Get containers in the Docker namespace.
+//	for name, cont := range m.containers {
+//		if name.Namespace == docker.DockerNamespace {
+//			containers[cont.info.Name] = cont
+//		}
+//	}
+//	return containers
+//}
 
-	// Get containers in the Docker namespace.
-	for name, cont := range m.containers {
-		if name.Namespace == docker.DockerNamespace {
-			containers[cont.info.Name] = cont
-		}
-	}
-	return containers
-}
+//func (m *manager) AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
+//	containers := m.getAllDockerContainers()
+//
+//	output := make(map[string]info.ContainerInfo, len(containers))
+//	for name, cont := range containers {
+//		inf, err := m.containerDataToContainerInfo(cont, query)
+//		if err != nil {
+//			// Ignore the error because of race condition and return best-effort result.
+//			if err == memory.ErrDataNotFound {
+//				klog.Warningf("Error getting data for container %s because of race condition", name)
+//				continue
+//			}
+//			return nil, err
+//		}
+//		output[name] = *inf
+//	}
+//	return output, nil
+//}
 
-func (m *manager) AllDockerContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
-	containers := m.getAllDockerContainers()
-
-	output := make(map[string]info.ContainerInfo, len(containers))
-	for name, cont := range containers {
-		inf, err := m.containerDataToContainerInfo(cont, query)
-		if err != nil {
-			// Ignore the error because of race condition and return best-effort result.
-			if err == memory.ErrDataNotFound {
-				klog.Warningf("Error getting data for container %s because of race condition", name)
-				continue
-			}
-			return nil, err
-		}
-		output[name] = *inf
-	}
-	return output, nil
-}
-
-func (m *manager) getDockerContainer(containerName string) (*containerData, error) {
-	m.containersLock.RLock()
-	defer m.containersLock.RUnlock()
-
-	// Check for the container in the Docker container namespace.
-	cont, ok := m.containers[namespacedContainerName{
-		Namespace: docker.DockerNamespace,
-		Name:      containerName,
-	}]
-
-	// Look for container by short prefix name if no exact match found.
-	if !ok {
-		for contName, c := range m.containers {
-			if contName.Namespace == docker.DockerNamespace && strings.HasPrefix(contName.Name, containerName) {
-				if cont == nil {
-					cont = c
-				} else {
-					return nil, fmt.Errorf("unable to find container. Container %q is not unique", containerName)
-				}
-			}
-		}
-
-		if cont == nil {
-			return nil, fmt.Errorf("unable to find Docker container %q", containerName)
-		}
-	}
-
-	return cont, nil
-}
-
-func (m *manager) DockerContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
-	container, err := m.getDockerContainer(containerName)
-	if err != nil {
-		return info.ContainerInfo{}, err
-	}
-
-	inf, err := m.containerDataToContainerInfo(container, query)
-	if err != nil {
-		return info.ContainerInfo{}, err
-	}
-	return *inf, nil
-}
+//func (m *manager) getDockerContainer(containerName string) (*containerData, error) {
+//	m.containersLock.RLock()
+//	defer m.containersLock.RUnlock()
+//
+//	// Check for the container in the Docker container namespace.
+//	cont, ok := m.containers[namespacedContainerName{
+//		Namespace: docker.DockerNamespace,
+//		Name:      containerName,
+//	}]
+//
+//	// Look for container by short prefix name if no exact match found.
+//	if !ok {
+//		for contName, c := range m.containers {
+//			if contName.Namespace == docker.DockerNamespace && strings.HasPrefix(contName.Name, containerName) {
+//				if cont == nil {
+//					cont = c
+//				} else {
+//					return nil, fmt.Errorf("unable to find container. Container %q is not unique", containerName)
+//				}
+//			}
+//		}
+//
+//		if cont == nil {
+//			return nil, fmt.Errorf("unable to find Docker container %q", containerName)
+//		}
+//	}
+//
+//	return cont, nil
+//}
+//
+//func (m *manager) DockerContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
+//	container, err := m.getDockerContainer(containerName)
+//	if err != nil {
+//		return info.ContainerInfo{}, err
+//	}
+//
+//	inf, err := m.containerDataToContainerInfo(container, query)
+//	if err != nil {
+//		return info.ContainerInfo{}, err
+//	}
+//	return *inf, nil
+//}
 
 func (m *manager) containerDataSliceToContainerInfoSlice(containers []*containerData, query *info.ContainerInfoRequest) ([]*info.ContainerInfo, error) {
 	if len(containers) == 0 {
@@ -728,20 +728,20 @@ func (m *manager) getRequestedContainers(containerName string, options v2.Reques
 				return containersMap, fmt.Errorf("unknown container: %q", containerName)
 			}
 		}
-	case v2.TypeDocker:
-		if !options.Recursive {
-			containerName = strings.TrimPrefix(containerName, "/")
-			cont, err := m.getDockerContainer(containerName)
-			if err != nil {
-				return containersMap, err
-			}
-			containersMap[cont.info.Name] = cont
-		} else {
-			if containerName != "/" {
-				return containersMap, fmt.Errorf("invalid request for docker container %q with subcontainers", containerName)
-			}
-			containersMap = m.getAllDockerContainers()
-		}
+	//case v2.TypeDocker:
+	//	if !options.Recursive {
+	//		containerName = strings.TrimPrefix(containerName, "/")
+	//		cont, err := m.getDockerContainer(containerName)
+	//		if err != nil {
+	//			return containersMap, err
+	//		}
+	//		containersMap[cont.info.Name] = cont
+	//	} else {
+	//		if containerName != "/" {
+	//			return containersMap, fmt.Errorf("invalid request for docker container %q with subcontainers", containerName)
+	//		}
+	//		containersMap = m.getAllDockerContainers()
+	//	}
 	default:
 		return containersMap, fmt.Errorf("invalid request type %q", options.IdType)
 	}
@@ -1335,14 +1335,14 @@ func parseEventsStoragePolicy() events.StoragePolicy {
 	return policy
 }
 
-func (m *manager) DockerImages() ([]info.DockerImage, error) {
-	return docker.Images()
-}
-
-func (m *manager) DockerInfo() (info.DockerStatus, error) {
-	return docker.Status()
-}
-
+//func (m *manager) DockerImages() ([]info.DockerImage, error) {
+//	return docker.Images()
+//}
+//
+//func (m *manager) DockerInfo() (info.DockerStatus, error) {
+//	return docker.Status()
+//}
+//
 func (m *manager) DebugInfo() map[string][]string {
 	debugInfo := container.DebugInfo()
 
@@ -1399,22 +1399,22 @@ func getVersionInfo() (*info.VersionInfo, error) {
 
 	kernelVersion := machine.KernelVersion()
 	osVersion := machine.ContainerOsVersion()
-	dockerVersion, err := docker.VersionString()
-	if err != nil {
-		return nil, err
-	}
-	dockerAPIVersion, err := docker.APIVersionString()
-	if err != nil {
-		return nil, err
-	}
+	//dockerVersion, err := docker.VersionString()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//dockerAPIVersion, err := docker.APIVersionString()
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	return &info.VersionInfo{
 		KernelVersion:      kernelVersion,
 		ContainerOsVersion: osVersion,
-		DockerVersion:      dockerVersion,
-		DockerAPIVersion:   dockerAPIVersion,
-		CadvisorVersion:    version.Info["version"],
-		CadvisorRevision:   version.Info["revision"],
+		//DockerVersion:      dockerVersion,
+		//DockerAPIVersion:   dockerAPIVersion,
+		CadvisorVersion:  version.Info["version"],
+		CadvisorRevision: version.Info["revision"],
 	}, nil
 }
 

@@ -198,47 +198,47 @@ func (api *version1_2) SupportedRequestTypes() []string {
 
 func (api *version1_2) HandleRequest(requestType string, request []string, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	switch requestType {
-	case dockerApi:
-		klog.V(4).Infof("Api - Docker(%v)", request)
-
-		// Get the query request.
-		query, err := getContainerInfoRequest(r.Body)
-		if err != nil {
-			return err
-		}
-
-		var containers map[string]info.ContainerInfo
-		// map requests for "docker/" to "docker"
-		if len(request) == 1 && len(request[0]) == 0 {
-			request = request[:0]
-		}
-		switch len(request) {
-		case 0:
-			// Get all Docker containers.
-			containers, err = m.AllDockerContainers(query)
-			if err != nil {
-				return fmt.Errorf("failed to get all Docker containers with error: %v", err)
-			}
-		case 1:
-			// Get one Docker container.
-			var cont info.ContainerInfo
-			cont, err = m.DockerContainer(request[0], query)
-			if err != nil {
-				return fmt.Errorf("failed to get Docker container %q with error: %v", request[0], err)
-			}
-			containers = map[string]info.ContainerInfo{
-				cont.Name: cont,
-			}
-		default:
-			return fmt.Errorf("unknown request for Docker container %v", request)
-		}
-
-		// Only output the containers as JSON.
-		err = writeResult(containers, w)
-		if err != nil {
-			return err
-		}
-		return nil
+	//case dockerApi:
+	//	klog.V(4).Infof("Api - Docker(%v)", request)
+	//
+	//	// Get the query request.
+	//	query, err := getContainerInfoRequest(r.Body)
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	var containers map[string]info.ContainerInfo
+	//	// map requests for "docker/" to "docker"
+	//	if len(request) == 1 && len(request[0]) == 0 {
+	//		request = request[:0]
+	//	}
+	//	switch len(request) {
+	//	case 0:
+	//		// Get all Docker containers.
+	//		containers, err = m.AllDockerContainers(query)
+	//		if err != nil {
+	//			return fmt.Errorf("failed to get all Docker containers with error: %v", err)
+	//		}
+	//	case 1:
+	//		// Get one Docker container.
+	//		var cont info.ContainerInfo
+	//		cont, err = m.DockerContainer(request[0], query)
+	//		if err != nil {
+	//			return fmt.Errorf("failed to get Docker container %q with error: %v", request[0], err)
+	//		}
+	//		containers = map[string]info.ContainerInfo{
+	//			cont.Name: cont,
+	//		}
+	//	default:
+	//		return fmt.Errorf("unknown request for Docker container %v", request)
+	//	}
+	//
+	//	// Only output the containers as JSON.
+	//	err = writeResult(containers, w)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	return nil
 	default:
 		return api.baseVersion.HandleRequest(requestType, request, m, w, r)
 	}
