@@ -135,10 +135,6 @@ func writeResult(res interface{}, w http.ResponseWriter) error {
 }
 
 func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *http.Request, m manager.Manager) error {
-	cn, ok := w.(http.CloseNotifier)
-	if !ok {
-		return errors.New("could not access http.CloseNotifier")
-	}
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		return errors.New("could not access http.Flusher")
@@ -151,7 +147,7 @@ func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *
 	enc := json.NewEncoder(w)
 	for {
 		select {
-		case <-cn.CloseNotify():
+		case <-r.Context().Done():
 			m.CloseEventChannel(eventChannel.GetWatchId())
 			return nil
 		case ev := <-eventChannel.GetChannel():

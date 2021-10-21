@@ -47,7 +47,7 @@ func (c *Client) Close() error {
 func (c *Client) Send(namespace, containerName, key string, value uint64) error {
 	// only send counter value
 	formatted := fmt.Sprintf("%s.%s.%s:%d|g", namespace, containerName, key, value)
-	_, err := fmt.Fprintf(c.conn, formatted)
+	_, err := fmt.Fprint(c.conn, formatted)
 	if err != nil {
 		return fmt.Errorf("failed to send data %q: %v", formatted, err)
 	}

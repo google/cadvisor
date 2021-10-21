@@ -15,6 +15,7 @@
 package client
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -23,6 +24,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/jwt"
 	bigquery "google.golang.org/api/bigquery/v2"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -71,7 +73,7 @@ func connect() (*oauth2.Token, *bigquery.Service, error) {
 		PrivateKey: pemBytes,
 		TokenURL:   "https://accounts.google.com/o/oauth2/token",
 	}
-	token, err := jwtConfig.TokenSource(oauth2.NoContext).Token()
+	token, err := jwtConfig.TokenSource(context.Background()).Token()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -88,9 +90,9 @@ func connect() (*oauth2.Token, *bigquery.Service, error) {
 			TokenURL: "https://accounts.google.com/o/oauth2/token",
 		},
 	}
-	client := config.Client(oauth2.NoContext, token)
+	client := config.Client(context.Background(), token)
 
-	service, err := bigquery.New(client)
+	service, err := bigquery.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
 		fmt.Printf("Failed to create new service: %v\n", err)
 		return nil, nil, err
