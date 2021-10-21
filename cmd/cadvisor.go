@@ -102,7 +102,7 @@ func init() {
 	flag.Var(&enableMetrics, "enable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be enabled. If set, overrides 'disable_metrics'. Options are %s.", optstr))
 
 	// Default logging verbosity to V(2)
-	flag.Set("v", "2")
+	_ = flag.Set("v", "2")
 }
 
 func main() {

@@ -129,8 +129,8 @@ func writeResult(res interface{}, w http.ResponseWriter) error {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(out)
-	return nil
+	_, err = w.Write(out)
+	return err
 
 }
 
