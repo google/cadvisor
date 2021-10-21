@@ -134,12 +134,6 @@ type Manager interface {
 
 	CloseEventChannel(watchID int)
 
-	// Get status information about docker.
-	DockerInfo() (info.DockerStatus, error)
-
-	// Get details about interesting docker images.
-	DockerImages() ([]info.DockerImage, error)
-
 	// Returns debugging information. Map of lines per category.
 	DebugInfo() map[string][]string
 }
@@ -1333,14 +1327,6 @@ func parseEventsStoragePolicy() events.StoragePolicy {
 	}
 
 	return policy
-}
-
-func (m *manager) DockerImages() ([]info.DockerImage, error) {
-	return docker.Images()
-}
-
-func (m *manager) DockerInfo() (info.DockerStatus, error) {
-	return docker.Status()
 }
 
 func (m *manager) DebugInfo() map[string][]string {
