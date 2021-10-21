@@ -61,7 +61,7 @@ func (f *mesosFactory) String() string {
 }
 
 func (f *mesosFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (container.ContainerHandler, error) {
-	client, err := Client()
+	client, err := newClient()
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (f *mesosFactory) CanHandleAndAccept(name string) (handle bool, accept bool
 	// Check if the container is known to mesos and it is active.
 	id := ContainerNameToMesosId(name)
 
-	_, err = f.client.ContainerInfo(id)
+	_, err = f.client.containerInfo(id)
 	if err != nil {
 		return false, true, fmt.Errorf("error getting running container: %v", err)
 	}
@@ -126,7 +126,7 @@ func Register(
 	fsInfo fs.FsInfo,
 	includedMetrics container.MetricSet,
 ) error {
-	client, err := Client()
+	client, err := newClient()
 
 	if err != nil {
 		return fmt.Errorf("unable to create mesos agent client: %v", err)

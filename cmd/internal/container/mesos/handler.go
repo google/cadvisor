@@ -75,14 +75,14 @@ func newMesosContainerHandler(
 
 	id := ContainerNameToMesosId(name)
 
-	cinfo, err := client.ContainerInfo(id)
+	cinfo, err := client.containerInfo(id)
 
 	if err != nil {
 		return nil, err
 	}
 
 	labels := cinfo.labels
-	pid, err := client.ContainerPid(id)
+	pid, err := client.containerPID(id)
 	if err != nil {
 		return nil, err
 	}
