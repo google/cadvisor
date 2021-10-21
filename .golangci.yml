@@ -7,6 +7,8 @@ run:
       min-confidence: 0
     gofmt:
       simplify: true
+    goimports:
+      local-prefixes: github.com/google/cadvisor
 linters:
   disable-all: true
   enable:
@@ -22,6 +24,7 @@ linters:
     - typecheck
     - golint
     - gofmt
+    - goimports
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

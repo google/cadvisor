@@ -13,10 +13,10 @@
 # limitations under the License.
 
 GO := go
+GOLANGCI_VER := v1.42.1
 pkgs     = $(shell $(GO) list ./... | grep -v vendor)
 cmd_pkgs = $(shell cd cmd && $(GO) list ./... | grep -v vendor)
 arch ?= $(shell go env GOARCH)
-go_path = $(shell go env GOPATH)
 
 ifeq ($(arch), amd64)
   Dockerfile_tag := ''
@@ -62,13 +62,8 @@ tidy:
 
 format:
 	@echo ">> formatting code"
-	@$(GO) fmt $(pkgs)
-	@cd cmd && $(GO) fmt $(cmd_pkgs)
-
-vet:
-	@echo ">> vetting code"
-	@$(GO) vet $(pkgs)
-	@cd cmd && $(GO) vet $(cmd_pkgs)
+	@# goimports is a superset of gofmt.
+	@goimports -w -local github.com/google/cadvisor .
 
 build: assets
 	@echo ">> building binaries"
@@ -88,19 +83,22 @@ docker-%:
 docker-build:
 	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.17 make build
 
-presubmit: vet
-	@echo ">> checking go formatting"
-	@./build/check_gofmt.sh
+presubmit: lint
 	@echo ">> checking go mod tidy"
 	@./build/check_gotidy.sh
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
 
 lint:
+	@# This assumes GOPATH/bin is in $PATH -- if not, the target will fail.
+	@if ! golangci-lint version; then \
+		echo ">> installing golangci-lint $(GOLANGCI_VER)"; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_VER); \
+	fi
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
-	@GOFLAGS="$(GO_FLAGS)" $(go_path)/bin/golangci-lint run
+	@golangci-lint run
 
 clean:
 	@rm -f *.test cadvisor
 
-.PHONY: all build docker format release test test-integration vet presubmit tidy
+.PHONY: all build docker format release test test-integration lint presubmit tidy

@@ -21,10 +21,11 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetHugePagesInfo(t *testing.T) {

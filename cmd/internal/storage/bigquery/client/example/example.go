@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/SeanDolphin/bqschema"
+
 	"github.com/google/cadvisor/cmd/internal/storage/bigquery/client"
 )
 

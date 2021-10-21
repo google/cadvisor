@@ -17,8 +17,9 @@ package crio
 import (
 	"testing"
 
-	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/stretchr/testify/assert"
+
+	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 )
 
 func TestCanHandleAndAccept(t *testing.T) {
