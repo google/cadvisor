@@ -144,9 +144,8 @@ func (c *Client) PrintDatasets() error {
 	if err != nil {
 		fmt.Printf("Failed to get list of datasets\n")
 		return err
-	} else {
-		fmt.Printf("Successfully retrieved datasets. Retrieved: %d\n", len(datasetList.Datasets))
 	}
+	fmt.Printf("Successfully retrieved datasets. Retrieved: %d\n", len(datasetList.Datasets))
 
 	for _, d := range datasetList.Datasets {
 		fmt.Printf("%s %s\n", d.Id, d.FriendlyName)
