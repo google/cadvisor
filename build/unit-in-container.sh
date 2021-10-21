@@ -16,12 +16,8 @@
 
 set -e
 
-CONTAINER_ENGINE=$(command -v docker || true)
-if [ "$CONTAINER_ENGINE" == "" ]; then
-  CONTAINER_ENGINE=$(command -v podman || true)
-fi
-if [ "$CONTAINER_ENGINE" == "" ]; then
-  echo "Unable to find docker and podman. Exiting."
+if ! CONTAINER_ENGINE=$(command -v docker || command -v podman); then
+  echo "Neither docker nor podman found. Exiting."
   exit 1
 fi
 
