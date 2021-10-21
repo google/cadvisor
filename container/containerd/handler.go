@@ -23,8 +23,8 @@ import (
 	"time"
 
 	"github.com/containerd/containerd/errdefs"
-	criapi "github.com/google/cadvisor/cri-api/pkg/apis/runtime/v1alpha2"
 	"golang.org/x/net/context"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"
