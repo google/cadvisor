@@ -37,12 +37,12 @@ const (
 	// Cumulative CPU usage
 	// To be deprecated in 0.39
 	// https://github.com/google/cadvisor/issues/2637
-	colCpuCumulativeUsage string = "cpu_cumulative_usage"
+	colCPUCumulativeUsage string = "cpu_cumulative_usage"
 	// Cumulative CPU usage
-	serCpuUsageTotal  string = "cpu_usage_total"
-	serCpuUsageSystem string = "cpu_usage_system"
-	serCpuUsageUser   string = "cpu_usage_user"
-	serCpuUsagePerCpu string = "cpu_usage_per_cpu"
+	serCPUUsageTotal  string = "cpu_usage_total"
+	serCPUUsageSystem string = "cpu_usage_system"
+	serCPUUsageUser   string = "cpu_usage_user"
+	serCPUUsagePerCPU string = "cpu_usage_per_cpu"
 	// Smoothed average of number of runnable threads x 1000.
 	serLoadAverage string = "load_average"
 	// Memory Usage
@@ -106,20 +106,20 @@ func (driver *stdoutStorage) containerStatsToValues(stats *info.ContainerStats) 
 	series[serTimestamp] = uint64(time.Now().UnixNano())
 
 	// Total usage in nanoseconds
-	series[serCpuUsageTotal] = stats.Cpu.Usage.Total
+	series[serCPUUsageTotal] = stats.Cpu.Usage.Total
 
 	// To be deprecated in 0.39
-	series[colCpuCumulativeUsage] = series[serCpuUsageTotal]
+	series[colCPUCumulativeUsage] = series[serCPUUsageTotal]
 
 	// CPU usage: Time spend in system space (in nanoseconds)
-	series[serCpuUsageSystem] = stats.Cpu.Usage.System
+	series[serCPUUsageSystem] = stats.Cpu.Usage.System
 
 	// CPU usage: Time spent in user space (in nanoseconds)
-	series[serCpuUsageUser] = stats.Cpu.Usage.User
+	series[serCPUUsageUser] = stats.Cpu.Usage.User
 
 	// CPU usage per CPU
 	for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
-		series[serCpuUsagePerCpu+"."+strconv.Itoa(i)] = stats.Cpu.Usage.PerCpu[i]
+		series[serCPUUsagePerCPU+"."+strconv.Itoa(i)] = stats.Cpu.Usage.PerCpu[i]
 	}
 
 	// Load Average

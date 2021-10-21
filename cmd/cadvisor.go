@@ -44,7 +44,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var argIp = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
+var argIP = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
 var argPort = flag.Int("port", 8080, "port to listen")
 var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
 
@@ -131,9 +131,9 @@ func main() {
 
 	sysFs := sysfs.NewRealSysFs()
 
-	collectorHttpClient := createCollectorHttpClient(*collectorCert, *collectorKey)
+	collectorHTTPClient := createCollectorHTTPClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHttpClient, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval)
+	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHTTPClient, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval)
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
@@ -175,7 +175,7 @@ func main() {
 	rootMux := http.NewServeMux()
 	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, mux))
 
-	addr := fmt.Sprintf("%s:%d", *argIp, *argPort)
+	addr := fmt.Sprintf("%s:%d", *argIP, *argPort)
 	klog.Fatal(http.ListenAndServe(addr, rootMux))
 }
 
@@ -212,7 +212,7 @@ func installSignalHandler(containerManager manager.Manager) {
 	}()
 }
 
-func createCollectorHttpClient(collectorCert, collectorKey string) http.Client {
+func createCollectorHTTPClient(collectorCert, collectorKey string) http.Client {
 	//Enable accessing insecure endpoints. We should be able to access metrics from any endpoint
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,

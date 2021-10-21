@@ -67,9 +67,9 @@ type pageData struct {
 }
 
 func init() {
-	containersHtmlTemplate, _ := Asset("cmd/internal/pages/assets/html/containers.html")
+	containersHTMLTemplate, _ := Asset("cmd/internal/pages/assets/html/containers.html")
 	pageTemplate = template.New("containersTemplate").Funcs(funcMap)
-	_, err := pageTemplate.Parse(string(containersHtmlTemplate))
+	_, err := pageTemplate.Parse(string(containersHTMLTemplate))
 	if err != nil {
 		klog.Fatalf("Failed to parse template: %s", err)
 	}

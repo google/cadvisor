@@ -50,10 +50,10 @@ type influxdbStorage struct {
 // Series names
 const (
 	// Cumulative CPU usage
-	serCpuUsageTotal  string = "cpu_usage_total"
-	serCpuUsageSystem string = "cpu_usage_system"
-	serCpuUsageUser   string = "cpu_usage_user"
-	serCpuUsagePerCpu string = "cpu_usage_per_cpu"
+	serCPUUsageTotal  string = "cpu_usage_total"
+	serCPUUsageSystem string = "cpu_usage_system"
+	serCPUUsageUser   string = "cpu_usage_user"
+	serCPUUsagePerCPU string = "cpu_usage_per_cpu"
 	// Smoothed average of number of runnable threads x 1000.
 	serLoadAverage string = "load_average"
 	// Memory Usage
@@ -204,17 +204,17 @@ func (s *influxdbStorage) containerStatsToPoints(
 	stats *info.ContainerStats,
 ) (points []*influxdb.Point) {
 	// CPU usage: Total usage in nanoseconds
-	points = append(points, makePoint(serCpuUsageTotal, stats.Cpu.Usage.Total))
+	points = append(points, makePoint(serCPUUsageTotal, stats.Cpu.Usage.Total))
 
 	// CPU usage: Time spend in system space (in nanoseconds)
-	points = append(points, makePoint(serCpuUsageSystem, stats.Cpu.Usage.System))
+	points = append(points, makePoint(serCPUUsageSystem, stats.Cpu.Usage.System))
 
 	// CPU usage: Time spent in user space (in nanoseconds)
-	points = append(points, makePoint(serCpuUsageUser, stats.Cpu.Usage.User))
+	points = append(points, makePoint(serCPUUsageUser, stats.Cpu.Usage.User))
 
 	// CPU usage per CPU
 	for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
-		point := makePoint(serCpuUsagePerCpu, stats.Cpu.Usage.PerCpu[i])
+		point := makePoint(serCPUUsagePerCPU, stats.Cpu.Usage.PerCpu[i])
 		tags := map[string]string{"instance": fmt.Sprintf("%v", i)}
 		addTagsToPoint(point, tags)
 
