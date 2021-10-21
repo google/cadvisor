@@ -31,7 +31,6 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
@@ -60,6 +59,9 @@ var logCadvisorUsage = flag.Bool("log_cadvisor_usage", false, "Whether to log th
 var eventStorageAgeLimit = flag.String("event_storage_age_limit", "default=24h", "Max length of time for which to store events (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is a duration. Default is applied to all non-specified event types")
 var eventStorageEventLimit = flag.String("event_storage_event_limit", "default=100000", "Max number of events to store (per type). Value is a comma separated list of key values, where the keys are event types (e.g.: creation, oom) or \"default\" and the value is an integer. Default is applied to all non-specified event types")
 var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 100, "Max number of application metrics to store (per container)")
+
+// The namespace under which Docker aliases are unique.
+const DockerNamespace = "docker"
 
 var HousekeepingConfigFlags = HouskeepingConfig{
 	flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings"),
@@ -593,7 +595,7 @@ func (m *manager) getAllDockerContainers() map[string]*containerData {
 
 	// Get containers in the Docker namespace.
 	for name, cont := range m.containers {
-		if name.Namespace == docker.DockerNamespace {
+		if name.Namespace == DockerNamespace {
 			containers[cont.info.Name] = cont
 		}
 	}
@@ -625,14 +627,14 @@ func (m *manager) getDockerContainer(containerName string) (*containerData, erro
 
 	// Check for the container in the Docker container namespace.
 	cont, ok := m.containers[namespacedContainerName{
-		Namespace: docker.DockerNamespace,
+		Namespace: DockerNamespace,
 		Name:      containerName,
 	}]
 
 	// Look for container by short prefix name if no exact match found.
 	if !ok {
 		for contName, c := range m.containers {
-			if contName.Namespace == docker.DockerNamespace && strings.HasPrefix(contName.Name, containerName) {
+			if contName.Namespace == DockerNamespace && strings.HasPrefix(contName.Name, containerName) {
 				if cont == nil {
 					cont = c
 				} else {
@@ -1385,20 +1387,10 @@ func getVersionInfo() (*info.VersionInfo, error) {
 
 	kernelVersion := machine.KernelVersion()
 	osVersion := machine.ContainerOsVersion()
-	dockerVersion, err := docker.VersionString()
-	if err != nil {
-		return nil, err
-	}
-	dockerAPIVersion, err := docker.APIVersionString()
-	if err != nil {
-		return nil, err
-	}
 
 	return &info.VersionInfo{
 		KernelVersion:      kernelVersion,
 		ContainerOsVersion: osVersion,
-		DockerVersion:      dockerVersion,
-		DockerAPIVersion:   dockerAPIVersion,
 		CadvisorVersion:    version.Info["version"],
 		CadvisorRevision:   version.Info["revision"],
 	}, nil
