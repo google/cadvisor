@@ -367,7 +367,7 @@ func (api *version2_0) HandleRequest(requestType string, request []string, m man
 			}
 			klog.Errorf("Error calling GetRequestedContainersInfo: %v", err)
 		}
-		contStats := make(map[string][]v2.DeprecatedContainerStats, 0)
+		contStats := make(map[string][]v2.DeprecatedContainerStats)
 		for name, cinfo := range infos {
 			contStats[name] = v2.DeprecatedStatsFromV1(cinfo)
 		}
@@ -379,15 +379,15 @@ func (api *version2_0) HandleRequest(requestType string, request []string, m man
 		if err != nil {
 			return err
 		}
-		contMetrics := make(map[string]map[string]map[string][]info.MetricValBasic, 0)
+		contMetrics := make(map[string]map[string]map[string][]info.MetricValBasic)
 		for _, cinfo := range infos {
-			metrics := make(map[string]map[string][]info.MetricValBasic, 0)
+			metrics := make(map[string]map[string][]info.MetricValBasic)
 			for _, contStat := range cinfo.Stats {
 				if len(contStat.CustomMetrics) == 0 {
 					continue
 				}
 				for name, allLabels := range contStat.CustomMetrics {
-					metricLabels := make(map[string][]info.MetricValBasic, 0)
+					metricLabels := make(map[string][]info.MetricValBasic)
 					for _, metric := range allLabels {
 						if !metric.Timestamp.IsZero() {
 							metVal := info.MetricValBasic{

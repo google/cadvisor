@@ -101,8 +101,7 @@ func (c *client) ContainerInfo(id string) (*containerInfo, error) {
 // Get the Pid of the container
 func (c *client) ContainerPid(id string) (int, error) {
 	var pid int
-	var err error
-	err = retry.Retry(
+	err := retry.Retry(
 		func(attempt uint) error {
 			c, err := c.ContainerInfo(id)
 			if err != nil {

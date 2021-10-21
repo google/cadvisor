@@ -70,10 +70,8 @@ func TimeEq(t1, t2 time.Time, tolerance time.Duration) bool {
 		t1, t2 = t2, t1
 	}
 	diff := t2.Sub(t1)
-	if diff <= tolerance {
-		return true
-	}
-	return false
+
+	return diff <= tolerance
 }
 
 // This function will generate random stats and write

@@ -158,5 +158,4 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 	}
 
 	klog.V(5).Infof("Request took %s", time.Since(start))
-	return
 }

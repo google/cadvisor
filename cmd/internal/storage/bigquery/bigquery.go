@@ -254,7 +254,7 @@ func (s *bigqueryStorage) containerFilesystemStatsToRows(
 	stats *info.ContainerStats,
 ) (rows []map[string]interface{}) {
 	for _, fsStat := range stats.Filesystem {
-		row := make(map[string]interface{}, 0)
+		row := make(map[string]interface{})
 		row[colFsDevice] = fsStat.Device
 		row[colFsLimit] = fsStat.Limit
 		row[colFsUsage] = fsStat.Usage
