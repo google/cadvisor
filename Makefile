@@ -14,8 +14,7 @@
 
 GO := go
 GOLANGCI_VER := v1.42.1
-pkgs     = $(shell $(GO) list ./... | grep -v vendor)
-cmd_pkgs = $(shell cd cmd && $(GO) list ./... | grep -v vendor)
+GO_TEST ?= $(GO) test $(or $(GO_FLAGS),-race)
 arch ?= $(shell go env GOARCH)
 
 ifeq ($(arch), amd64)
@@ -29,13 +28,12 @@ all: presubmit build test
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short -race $(pkgs)
-	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
+	@# Filter out integration.
+	$(GO) list ./... | grep -vw integration | xargs $(GO_TEST)
+	cd cmd && $(GO_TEST) ./...
 
-test-with-libpfm:
-	@echo ">> running tests"
-	@$(GO) test -short -race -tags="libpfm" $(pkgs)
-	@cd cmd && $(GO) test -short -race -tags="libpfm" $(cmd_pkgs)
+test-with-libpfm: GO_FLAGS=-race -tags libpfm
+test-with-libpfm: test
 
 container-test:
 	@echo ">> runinng tests in a container"
@@ -45,9 +43,9 @@ docker-test: container-test
 	@echo "docker-test target is deprecated, use container-test instead"
 
 test-integration:
-	@GO_FLAGS=${$GO_FLAGS:-"-race"} ./build/build.sh
-	go test -c github.com/google/cadvisor/integration/tests/api
-	go test -c github.com/google/cadvisor/integration/tests/healthz
+	GO_FLAGS=$(or $(GO_FLAGS),-race) ./build/build.sh
+	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/api
+	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/healthz
 	@./build/integration.sh
 
 docker-test-integration:
