@@ -29,24 +29,24 @@ import (
 const StaticResource = "/static/"
 
 var popper, _ = Asset("cmd/internal/pages/assets/js/popper.min.js")
-var bootstrapJs, _ = Asset("cmd/internal/pages/assets/js/bootstrap-4.0.0-beta.2.min.js")
-var containersJs, _ = Asset("cmd/internal/pages/assets/js/containers.js")
-var loaderJs, _ = Asset("cmd/internal/pages/assets/js/loader.js")
-var jqueryJs, _ = Asset("cmd/internal/pages/assets/js/jquery-3.5.1.min.js")
+var bootstrapJS, _ = Asset("cmd/internal/pages/assets/js/bootstrap-4.0.0-beta.2.min.js")
+var containersJS, _ = Asset("cmd/internal/pages/assets/js/containers.js")
+var loaderJS, _ = Asset("cmd/internal/pages/assets/js/loader.js")
+var jqueryJS, _ = Asset("cmd/internal/pages/assets/js/jquery-3.5.1.min.js")
 
-var bootstrapCss, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-4.0.0-beta.2.min.css")
-var bootstrapThemeCss, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-theme-3.1.1.min.css")
-var containersCss, _ = Asset("cmd/internal/pages/assets/styles/containers.css")
+var bootstrapCSS, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-4.0.0-beta.2.min.css")
+var bootstrapThemeCSS, _ = Asset("cmd/internal/pages/assets/styles/bootstrap-theme-3.1.1.min.css")
+var containersCSS, _ = Asset("cmd/internal/pages/assets/styles/containers.css")
 
 var staticFiles = map[string][]byte{
 	"popper.min.js":                  popper,
-	"bootstrap-4.0.0-beta.2.min.css": bootstrapCss,
-	"bootstrap-4.0.0-beta.2.min.js":  bootstrapJs,
-	"bootstrap-theme-3.1.1.min.css":  bootstrapThemeCss,
-	"containers.css":                 containersCss,
-	"containers.js":                  containersJs,
-	"loader.js":                      loaderJs,
-	"jquery-3.5.1.min.js":            jqueryJs,
+	"bootstrap-4.0.0-beta.2.min.css": bootstrapCSS,
+	"bootstrap-4.0.0-beta.2.min.js":  bootstrapJS,
+	"bootstrap-theme-3.1.1.min.css":  bootstrapThemeCSS,
+	"containers.css":                 containersCSS,
+	"containers.js":                  containersJS,
+	"loader.js":                      loaderJS,
+	"jquery-3.5.1.min.js":            jqueryJS,
 }
 
 func HandleRequest(w http.ResponseWriter, u *url.URL) {

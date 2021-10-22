@@ -40,7 +40,10 @@ func main() {
 		panic(err)
 	}
 
-	c.PrintDatasets()
+	err = c.PrintDatasets()
+	if err != nil {
+		panic(err)
+	}
 
 	// Create a new dataset.
 	err = c.CreateDataset("sampledataset")

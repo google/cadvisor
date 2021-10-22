@@ -42,10 +42,10 @@ const (
 	colTimestamp          string = "timestamp"
 	colMachineName        string = "machine"
 	colContainerName      string = "container_name"
-	colCpuCumulativeUsage string = "cpu_cumulative_usage"
-	// Cumulative Cpu usage in system and user mode
-	colCpuCumulativeUsageSystem string = "cpu_cumulative_usage_system"
-	colCpuCumulativeUsageUser   string = "cpu_cumulative_usage_user"
+	colCPUCumulativeUsage string = "cpu_cumulative_usage"
+	// Cumulative CPU usage in system and user mode
+	colCPUCumulativeUsageSystem string = "cpu_cumulative_usage_system"
+	colCPUCumulativeUsageUser   string = "cpu_cumulative_usage_user"
 	// Memory usage
 	colMemoryUsage string = "memory_usage"
 	// Working set size
@@ -110,17 +110,17 @@ func (s *bigqueryStorage) GetSchema() *bigquery.TableSchema {
 	i++
 	fields[i] = &bigquery.TableFieldSchema{
 		Type: typeInteger,
-		Name: colCpuCumulativeUsage,
+		Name: colCPUCumulativeUsage,
 	}
 	i++
 	fields[i] = &bigquery.TableFieldSchema{
 		Type: typeInteger,
-		Name: colCpuCumulativeUsageSystem,
+		Name: colCPUCumulativeUsageSystem,
 	}
 	i++
 	fields[i] = &bigquery.TableFieldSchema{
 		Type: typeInteger,
-		Name: colCpuCumulativeUsageUser,
+		Name: colCPUCumulativeUsageUser,
 	}
 	i++
 	fields[i] = &bigquery.TableFieldSchema{
@@ -212,13 +212,13 @@ func (s *bigqueryStorage) containerStatsToRows(
 	row[colContainerName] = name
 
 	// Cumulative Cpu Usage
-	row[colCpuCumulativeUsage] = stats.Cpu.Usage.Total
+	row[colCPUCumulativeUsage] = stats.Cpu.Usage.Total
 
 	// Cumulative Cpu Usage in system mode
-	row[colCpuCumulativeUsageSystem] = stats.Cpu.Usage.System
+	row[colCPUCumulativeUsageSystem] = stats.Cpu.Usage.System
 
 	// Cumulative Cpu Usage in user mode
-	row[colCpuCumulativeUsageUser] = stats.Cpu.Usage.User
+	row[colCPUCumulativeUsageUser] = stats.Cpu.Usage.User
 
 	// Memory Usage
 	row[colMemoryUsage] = stats.Memory.Usage
@@ -254,7 +254,7 @@ func (s *bigqueryStorage) containerFilesystemStatsToRows(
 	stats *info.ContainerStats,
 ) (rows []map[string]interface{}) {
 	for _, fsStat := range stats.Filesystem {
-		row := make(map[string]interface{}, 0)
+		row := make(map[string]interface{})
 		row[colFsDevice] = fsStat.Device
 		row[colFsLimit] = fsStat.Limit
 		row[colFsUsage] = fsStat.Usage
@@ -289,12 +289,12 @@ func (s *bigqueryStorage) Close() error {
 // machineName: A unique identifier to identify the host that current cAdvisor
 // instance is running on.
 // tableName: BigQuery table used for storing stats.
-func newStorage(machineName, datasetId, tableName string) (storage.StorageDriver, error) {
+func newStorage(machineName, datasetID, tableName string) (storage.StorageDriver, error) {
 	bqClient, err := client.NewClient()
 	if err != nil {
 		return nil, err
 	}
-	err = bqClient.CreateDataset(datasetId)
+	err = bqClient.CreateDataset(datasetID)
 	if err != nil {
 		return nil, err
 	}

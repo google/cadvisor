@@ -41,14 +41,14 @@ const (
 )
 
 func RegisterHandlers(mux httpmux.Mux, m manager.Manager) error {
-	apiVersions := getApiVersions()
-	supportedApiVersions := make(map[string]ApiVersion, len(apiVersions))
+	apiVersions := getAPIVersions()
+	supportedAPIVersions := make(map[string]ApiVersion, len(apiVersions))
 	for _, v := range apiVersions {
-		supportedApiVersions[v.Version()] = v
+		supportedAPIVersions[v.Version()] = v
 	}
 
 	mux.HandleFunc(apiResource, func(w http.ResponseWriter, r *http.Request) {
-		err := handleRequest(supportedApiVersions, m, w, r)
+		err := handleRequest(supportedAPIVersions, m, w, r)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 		}
@@ -65,7 +65,7 @@ const (
 	apiRequestArgs
 )
 
-func handleRequest(supportedApiVersions map[string]ApiVersion, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
+func handleRequest(supportedAPIVersions map[string]ApiVersion, m manager.Manager, w http.ResponseWriter, r *http.Request) error {
 	start := time.Now()
 	defer func() {
 		klog.V(4).Infof("Request took %s", time.Since(start))
@@ -80,8 +80,8 @@ func handleRequest(supportedApiVersions map[string]ApiVersion, m manager.Manager
 
 	// If the request doesn't have an API version, list those.
 	if request == apiPrefix || request == apiResource {
-		versions := make([]string, 0, len(supportedApiVersions))
-		for v := range supportedApiVersions {
+		versions := make([]string, 0, len(supportedAPIVersions))
+		for v := range supportedAPIVersions {
 			versions = append(versions, v)
 		}
 		sort.Strings(versions)
@@ -100,7 +100,7 @@ func handleRequest(supportedApiVersions map[string]ApiVersion, m manager.Manager
 	requestArgs := strings.Split(requestElements[apiRequestArgs], "/")
 
 	// Check supported versions.
-	versionHandler, ok := supportedApiVersions[version]
+	versionHandler, ok := supportedAPIVersions[version]
 	if !ok {
 		return fmt.Errorf("unsupported API version %q", version)
 	}
@@ -129,16 +129,12 @@ func writeResult(res interface{}, w http.ResponseWriter) error {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(out)
-	return nil
+	_, err = w.Write(out)
+	return err
 
 }
 
 func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *http.Request, m manager.Manager) error {
-	cn, ok := w.(http.CloseNotifier)
-	if !ok {
-		return errors.New("could not access http.CloseNotifier")
-	}
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		return errors.New("could not access http.Flusher")
@@ -151,7 +147,7 @@ func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *
 	enc := json.NewEncoder(w)
 	for {
 		select {
-		case <-cn.CloseNotify():
+		case <-r.Context().Done():
 			m.CloseEventChannel(eventChannel.GetWatchId())
 			return nil
 		case ev := <-eventChannel.GetChannel():

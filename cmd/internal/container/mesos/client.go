@@ -44,8 +44,8 @@ type client struct {
 }
 
 type mesosAgentClient interface {
-	ContainerInfo(id string) (*containerInfo, error)
-	ContainerPid(id string) (int, error)
+	containerInfo(id string) (*containerInfo, error)
+	containerPID(id string) (int, error)
 }
 
 type containerInfo struct {
@@ -53,8 +53,8 @@ type containerInfo struct {
 	labels map[string]string
 }
 
-// Client is an interface to query mesos agent http endpoints
-func Client() (mesosAgentClient, error) {
+// newClient is an interface to query mesos agent http endpoints
+func newClient() (mesosAgentClient, error) {
 	mesosClientOnce.Do(func() {
 		// Start Client
 		apiURL := url.URL{
@@ -79,8 +79,8 @@ func Client() (mesosAgentClient, error) {
 	return mesosClient, nil
 }
 
-// ContainerInfo returns the container information of the given container id
-func (c *client) ContainerInfo(id string) (*containerInfo, error) {
+// containerInfo returns the container information of the given container id
+func (c *client) containerInfo(id string) (*containerInfo, error) {
 	container, err := c.getContainer(id)
 	if err != nil {
 		return nil, err
@@ -99,12 +99,11 @@ func (c *client) ContainerInfo(id string) (*containerInfo, error) {
 }
 
 // Get the Pid of the container
-func (c *client) ContainerPid(id string) (int, error) {
+func (c *client) containerPID(id string) (int, error) {
 	var pid int
-	var err error
-	err = retry.Retry(
+	err := retry.Retry(
 		func(attempt uint) error {
-			c, err := c.ContainerInfo(id)
+			c, err := c.containerInfo(id)
 			if err != nil {
 				return err
 			}
