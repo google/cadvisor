@@ -29,8 +29,8 @@ all: presubmit build test
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short -race $(pkgs)
-	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
+	$(GO) test -short -race $(pkgs)
+	cd cmd && $(GO) test -short -race $(cmd_pkgs)
 
 test-with-libpfm:
 	@echo ">> running tests"

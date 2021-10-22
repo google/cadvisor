@@ -338,6 +338,9 @@ func TestGetPids(t *testing.T) {
 	pidsPath = mockContainersPids()
 	defer os.RemoveAll(pidsPath)
 
+	cgroups.TestMode = true
+	defer func() { cgroups.TestMode = false }()
+
 	var testCases = []struct {
 		container string
 		expected  []int
