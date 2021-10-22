@@ -227,7 +227,7 @@ func (h *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 }
 
 func (h *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	if *disableRootCgroupStats && isRootCgroup(h.name) {
+	if *DisableRootCgroupStats && isRootCgroup(h.name) {
 		return nil, nil
 	}
 	stats, err := h.libcontainerHandler.GetStats()
