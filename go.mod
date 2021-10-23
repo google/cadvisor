@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	cloud.google.com/go v0.54.0
-	github.com/Microsoft/go-winio v0.4.15
+ 	github.com/Microsoft/go-winio v0.4.15
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.4.12
@@ -28,7 +28,7 @@ require (
 	github.com/opencontainers/runc v1.1.0
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/client_golang v1.11.1-0.20211022145618-187ecc4ac97e
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.10.0
 	github.com/stretchr/testify v1.7.0
