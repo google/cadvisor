@@ -96,9 +96,16 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 // the provided HTTP mux to handle the given Prometheus endpoint.
 func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager, prometheusEndpoint string,
 	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
-	goCollector := prometheus.NewGoCollector()
-	processCollector := prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{})
-	machineCollector := metrics.NewPrometheusMachineCollector(resourceManager, includedMetrics)
+	r := prometheus.NewBlockingRegistry(prometheus.NewRegistry())
+	r.MustRegister(
+		prometheus.NewGoCollector(),
+		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
+	)
+	containersCollector := metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, clock.RealClock{})
+	r.MustRegisterRaw(
+		containersCollector,
+		metrics.NewPrometheusMachineCollector(resourceManager, includedMetrics),
+	)
 
 	mux.Handle(prometheusEndpoint, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		opts, err := api.GetRequestOptions(req)
@@ -106,17 +113,11 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 			http.Error(w, "No metrics gathered, last error:\n\n"+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		opts.Count = 1        // we only want the latest datapoint
-		opts.Recursive = true // get all child containers
+		opts.Count = 1        // We only want the latest datapoint.
+		opts.Recursive = true // Get all child containers.
 
-		r := prometheus.NewRegistry()
-		r.MustRegister(
-			metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, clock.RealClock{}, opts),
-			machineCollector,
-			goCollector,
-			processCollector,
-		)
-		promhttp.HandlerFor(r, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
+		containersCollector.SetOpts(opts)
+		promhttp.HandlerForTransactional(r, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
 	}))
 }
 

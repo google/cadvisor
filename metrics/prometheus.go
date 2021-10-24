@@ -83,8 +83,11 @@ type containerMetric struct {
 	getValues   func(s *info.ContainerStats) metricValues
 }
 
-func (cm *containerMetric) desc(baseLabels []string) *prometheus.Desc {
-	return prometheus.NewDesc(cm.name, cm.help, append(baseLabels, cm.extraLabels...), nil)
+func (cm *containerMetric) desc(session *prometheus.CollectSession, baseLabels []string) *prometheus.Desc {
+	if session == nil {
+		return prometheus.NewDesc(cm.name, cm.help, append(baseLabels, cm.extraLabels...), nil)
+	}
+	return session.NewDesc(cm.name, cm.help, append(baseLabels, cm.extraLabels...), nil)
 }
 
 // ContainerLabelsFunc defines all base labels and their values attached to
@@ -99,6 +102,8 @@ type PrometheusCollector struct {
 	containerLabelsFunc ContainerLabelsFunc
 	includedMetrics     container.MetricSet
 	opts                v2.RequestOptions
+
+	cache prometheus.CachedCollector
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector. The passed
@@ -1784,7 +1789,7 @@ var (
 func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 	c.errors.Describe(ch)
 	for _, cm := range c.containerMetrics {
-		ch <- cm.desc([]string{})
+		ch <- cm.desc(nil, []string{})
 	}
 	ch <- startTimeDesc
 	ch <- cpuPeriodDesc
@@ -1796,9 +1801,10 @@ func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 // Collect fetches the stats from all containers and delivers them as
 // Prometheus metrics. It implements prometheus.PrometheusCollector.
 func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
+	session := c.cache.NewSession()
 	c.errors.Set(0)
-	c.collectVersionInfo(ch)
-	c.collectContainersInfo(ch)
+	c.collectVersionInfo(session, ch)
+	c.collectContainersInfo(session, ch)
 	c.errors.Collect(ch)
 }
 
@@ -1863,7 +1869,7 @@ func BaseContainerLabels(whiteList []string) func(container *info.ContainerInfo)
 	}
 }
 
-func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
+func (c *PrometheusCollector) collectContainersInfo(session *prometheus.CollectSession, ch chan<- prometheus.Metric) {
 	containers, err := c.infoProvider.GetRequestedContainersInfo("/", c.opts)
 	if err != nil {
 		c.errors.Set(1)
@@ -1896,27 +1902,27 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			}
 		}
 
-		// Container spec
-		desc := prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
+		// Container spec.
+		desc := session.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
 		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), values...)
 
 		if cont.Spec.HasCpu {
-			desc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil)
+			desc = session.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Period), values...)
 			if cont.Spec.Cpu.Quota != 0 {
-				desc = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", labels, nil)
+				desc = session.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", labels, nil)
 				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Quota), values...)
 			}
-			desc := prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", labels, nil)
+			desc := session.NewDesc("container_spec_cpu_shares", "CPU share of the container.", labels, nil)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Limit), values...)
 
 		}
 		if cont.Spec.HasMemory {
-			desc := prometheus.NewDesc("container_spec_memory_limit_bytes", "Memory limit for the container.", labels, nil)
+			desc := session.NewDesc("container_spec_memory_limit_bytes", "Memory limit for the container.", labels, nil)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Limit), values...)
-			desc = prometheus.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil)
+			desc = session.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), values...)
-			desc = prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil)
+			desc = session.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil)
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Reservation), values...)
 		}
 
@@ -1929,11 +1935,11 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			if cm.condition != nil && !cm.condition(cont.Spec) {
 				continue
 			}
-			desc := cm.desc(labels)
+			desc := cm.desc(session, labels)
 			for _, metricValue := range cm.getValues(stats) {
 				ch <- prometheus.NewMetricWithTimestamp(
 					metricValue.timestamp,
-					prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append(values, metricValue.labels...)...),
+					prometheus.MustNewConstMetric(desc, cm.valueType, metricValue.value, append(values, metricValue.labels...)...),
 				)
 			}
 		}
@@ -1948,22 +1954,22 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 						clabels = append(clabels, sanitizeLabelName("app_"+label))
 						cvalues = append(cvalues, value)
 					}
-					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
-					ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), cvalues...)
+					desc := session.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
+					ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, metric.FloatValue, cvalues...)
 				}
 			}
 		}
 	}
 }
 
-func (c *PrometheusCollector) collectVersionInfo(ch chan<- prometheus.Metric) {
+func (c *PrometheusCollector) collectVersionInfo(session *prometheus.CollectSession, ch chan<- prometheus.Metric) {
 	versionInfo, err := c.infoProvider.GetVersionInfo()
 	if err != nil {
 		c.errors.Set(1)
 		klog.Warningf("Couldn't get version info: %s", err)
 		return
 	}
-	ch <- prometheus.MustNewConstMetric(versionInfoDesc, prometheus.GaugeValue, 1, []string{versionInfo.KernelVersion, versionInfo.ContainerOsVersion, versionInfo.DockerVersion, versionInfo.CadvisorVersion, versionInfo.CadvisorRevision}...)
+	ch <- prometheus.MustNewConstMetric(versionInfoDesc, prometheus.GaugeValue, 1, versionInfo.KernelVersion, versionInfo.ContainerOsVersion, versionInfo.DockerVersion, versionInfo.CadvisorVersion, versionInfo.CadvisorRevision)
 }
 
 // Size after which we consider memory to be "unlimited". This is not

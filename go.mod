@@ -38,3 +38,5 @@ require (
 	k8s.io/klog/v2 v2.4.0
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 )
+
+replace github.com/prometheus/client_golang => /home/bwplotka/Repos/client_golang
