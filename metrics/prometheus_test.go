@@ -37,9 +37,9 @@ func TestPrometheusCollector(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{})
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(c)
+	}, container.AllMetrics, now)
+	reg := prometheus.NewBlockingRegistry()
+	reg.MustRegisterRaw(c)
 
 	testPrometheusCollector(t, reg, "testdata/prometheus_metrics")
 }
@@ -53,9 +53,9 @@ func TestPrometheusCollectorWithWhiteList(t *testing.T) {
 		s := containerLabelFunc(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{})
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(c)
+	}, container.AllMetrics, now)
+	reg := prometheus.NewBlockingRegistry()
+	reg.MustRegisterRaw(c)
 
 	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_whitelist_filtered")
 }
@@ -68,20 +68,19 @@ func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, metrics, now, v2.RequestOptions{})
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(c)
-
+	}, metrics, now)
+	reg := prometheus.NewBlockingRegistry()
+	reg.MustRegisterRaw(c)
 	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_perf_aggregated")
 }
 
-func testPrometheusCollector(t *testing.T, gatherer prometheus.Gatherer, metricsFile string) {
+func testPrometheusCollector(t *testing.T, gatherer prometheus.TransactionalGatherer, metricsFile string) {
 	wantMetrics, err := os.Open(metricsFile)
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", metricsFile)
 	}
 
-	err = testutil.GatherAndCompare(gatherer, wantMetrics)
+	err = testutil.TransactionalGatherAndCompare(gatherer, wantMetrics)
 	if err != nil {
 		t.Fatalf("Metric comparison failed: %s", err)
 	}
@@ -97,10 +96,9 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{})
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(c)
-
+	}, container.AllMetrics, now)
+	reg := prometheus.NewBlockingRegistry()
+	reg.MustRegisterRaw(c)
 	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_failure")
 
 	provider.shouldFail = false
@@ -109,9 +107,9 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 }
 
 func TestNewPrometheusCollectorWithPerf(t *testing.T) {
-	c := NewPrometheusCollector(&mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now, v2.RequestOptions{})
+	c := NewPrometheusCollector(&mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now)
 	assert.Len(t, c.containerMetrics, 5)
-	names := []string{}
+	names := make([]string, 0, len(c.containerMetrics))
 	for _, m := range c.containerMetrics {
 		names = append(names, m.name)
 	}
@@ -127,9 +125,8 @@ func TestNewPrometheusCollectorWithRequestOptions(t *testing.T) {
 	opts := v2.RequestOptions{
 		IdType: "docker",
 	}
-	c := NewPrometheusCollector(&p, mockLabelFunc, container.AllMetrics, now, opts)
-	ch := make(chan prometheus.Metric, 10)
-	c.Collect(ch)
+	c := NewPrometheusCollector(&p, mockLabelFunc, container.AllMetrics, now)
+	_ = c.Collect()
 	assert.Equal(t, p.options, opts)
 }
 
@@ -137,7 +134,7 @@ type mockInfoProvider struct {
 	options v2.RequestOptions
 }
 
-func (m *mockInfoProvider) GetRequestedContainersInfo(containerName string, options v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
+func (m *mockInfoProvider) GetRequestedContainersInfo(_ string, options v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
 	m.options = options
 	return map[string]*info.ContainerInfo{}, nil
 }

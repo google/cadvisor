@@ -37,17 +37,21 @@ func BenchmarkPrometheusCollector_Collect(b *testing.B) {
 		infoProvider.containers[name] = genContainerInfo(name)
 	}
 
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(NewPrometheusCollector(infoProvider, func(container *info.ContainerInfo) map[string]string {
+	reg := prometheus.NewBlockingRegistry()
+	c := NewPrometheusCollector(infoProvider, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{}))
+	}, container.AllMetrics, now)
+	reg.MustRegisterRaw(c)
 
+	c.SetOpts(v2.RequestOptions{})
 	var err error
+	var done func()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		mfsTmp, err = reg.Gather()
+		mfsTmp, done, err = reg.Gather()
 		require.NoError(b, err)
+		done()
 	}
 }
