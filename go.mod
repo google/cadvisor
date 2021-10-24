@@ -28,7 +28,8 @@ require (
 	github.com/opencontainers/runc v1.1.0
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.1-0.20211022145618-187ecc4ac97e
+	// TODO(bwplotka): Move to maintstream once merged https://github.com/prometheus/client_golang/pull/929.
+	github.com/prometheus/client_golang v1.11.1-0.20211024130314-8afb1687d291
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.10.0
 	github.com/stretchr/testify v1.7.0
@@ -38,5 +39,3 @@ require (
 	k8s.io/klog/v2 v2.4.0
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 )
-
-replace github.com/prometheus/client_golang => /home/bwplotka/Repos/client_golang

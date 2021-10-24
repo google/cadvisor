@@ -110,7 +110,7 @@ type PrometheusCollector struct {
 	opts                v2.RequestOptions
 
 	lastUpdate time.Time
-	cache *prometheus.CachedCollector
+	cache      *prometheus.CachedCollector
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector. The passed
@@ -138,7 +138,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		},
 		includedMetrics: includedMetrics,
-		cache: prometheus.NewCachedCollector(),
+		cache:           prometheus.NewCachedCollector(),
 	}
 	if includedMetrics.Has(container.CpuUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
@@ -1782,7 +1782,6 @@ func (c *PrometheusCollector) SetOpts(opts v2.RequestOptions) {
 	c.opts = opts
 }
 
-
 //// Describe describes all the metrics ever exported by cadvisor. It
 //// implements prometheus.PrometheusCollector.
 //func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -1816,8 +1815,8 @@ func (c *PrometheusCollector) Collect() []*dto.MetricFamily {
 		}
 
 		session.MustAddMetric(
-			"container_scrape_error","1 if there was an error while getting container metrics, 0 otherwise",
-			nil, nil,prometheus.GaugeValue, float64(errorsGauge),nil,
+			"container_scrape_error", "1 if there was an error while getting container metrics, 0 otherwise",
+			nil, nil, prometheus.GaugeValue, float64(errorsGauge), nil,
 		)
 		session.Commit()
 	}
@@ -1906,34 +1905,34 @@ func (c *PrometheusCollector) collectContainersInfo(session *prometheus.CollectS
 
 		// Container spec.
 		session.MustAddMetric(
-			"container_start_time_seconds","Start time of the container since unix epoch in seconds.",
-			labels, values,prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()),nil,
+			"container_start_time_seconds", "Start time of the container since unix epoch in seconds.",
+			labels, values, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), nil,
 		)
 
 		if cont.Spec.HasCpu {
 			session.MustAddMetric(
 				"container_spec_cpu_period", "CPU period of the container.",
-				labels, values,prometheus.GaugeValue, float64(cont.Spec.Cpu.Period),nil,
-				 )
+				labels, values, prometheus.GaugeValue, float64(cont.Spec.Cpu.Period), nil,
+			)
 			if cont.Spec.Cpu.Quota != 0 {
 				session.MustAddMetric(
 					"container_spec_cpu_quota", "CPU quota of the container.",
-					labels, values,prometheus.GaugeValue, float64(cont.Spec.Cpu.Quota),nil,
+					labels, values, prometheus.GaugeValue, float64(cont.Spec.Cpu.Quota), nil,
 				)
 			}
 			session.MustAddMetric(
 				"container_spec_cpu_shares", "CPU share of the container.",
-				labels, values, prometheus.GaugeValue, float64(cont.Spec.Cpu.Limit),nil,
+				labels, values, prometheus.GaugeValue, float64(cont.Spec.Cpu.Limit), nil,
 			)
 		}
 		if cont.Spec.HasMemory {
 			session.MustAddMetric(
 				"container_spec_memory_limit_bytes", "Memory limit for the container.",
-				labels,values, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Limit),nil,
-		)
+				labels, values, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Limit), nil,
+			)
 			session.MustAddMetric(
 				"container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.",
-				labels,values, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), nil,
+				labels, values, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), nil,
 			)
 			session.MustAddMetric(
 				"container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.",
@@ -1971,7 +1970,7 @@ func (c *PrometheusCollector) collectContainersInfo(session *prometheus.CollectS
 					}
 					session.MustAddMetric(
 						metricLabel, "Custom application metric.",
-						clabels,cvalues, prometheus.GaugeValue, metric.FloatValue, nil,
+						clabels, cvalues, prometheus.GaugeValue, metric.FloatValue, nil,
 					)
 				}
 			}

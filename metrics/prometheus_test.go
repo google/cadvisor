@@ -41,11 +41,13 @@ func TestPrometheusCollector(t *testing.T) {
 	reg := prometheus.NewBlockingRegistry()
 	reg.MustRegisterRaw(c)
 
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics")
-}
+	collectAndCompare(t, reg, "testdata/prometheus_metrics")
 
-func TestPrometheusCollectorWithWhiteList(t *testing.T) {
-	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
+	// Check if caching / in-place replacement work.
+	collectAndCompare(t, reg, "testdata/prometheus_metrics")
+
+	// Use with allowlist, which should expose different metrics.
+	c.containerLabelsFunc = func(container *info.ContainerInfo) map[string]string {
 		whitelistedLabels := []string{
 			"no_one_match",
 		}
@@ -53,11 +55,8 @@ func TestPrometheusCollectorWithWhiteList(t *testing.T) {
 		s := containerLabelFunc(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now)
-	reg := prometheus.NewBlockingRegistry()
-	reg.MustRegisterRaw(c)
-
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_whitelist_filtered")
+	}
+	collectAndCompare(t, reg, "testdata/prometheus_metrics_whitelist_filtered")
 }
 
 func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
@@ -71,18 +70,19 @@ func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
 	}, metrics, now)
 	reg := prometheus.NewBlockingRegistry()
 	reg.MustRegisterRaw(c)
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_perf_aggregated")
+	collectAndCompare(t, reg, "testdata/prometheus_metrics_perf_aggregated")
 }
 
-func testPrometheusCollector(t *testing.T, gatherer prometheus.TransactionalGatherer, metricsFile string) {
+func collectAndCompare(t *testing.T, gatherer prometheus.TransactionalGatherer, metricsFile string) {
+	t.Helper()
+
 	wantMetrics, err := os.Open(metricsFile)
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", metricsFile)
 	}
 
-	err = testutil.TransactionalGatherAndCompare(gatherer, wantMetrics)
-	if err != nil {
-		t.Fatalf("Metric comparison failed: %s", err)
+	if err := testutil.TransactionalGatherAndCompare(gatherer, wantMetrics); err != nil {
+		t.Fatalf("Metric comparison with %v failed: %s", metricsFile, err)
 	}
 }
 
@@ -99,11 +99,11 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 	}, container.AllMetrics, now)
 	reg := prometheus.NewBlockingRegistry()
 	reg.MustRegisterRaw(c)
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_failure")
+	collectAndCompare(t, reg, "testdata/prometheus_metrics_failure")
 
 	provider.shouldFail = false
 
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics")
+	collectAndCompare(t, reg, "testdata/prometheus_metrics")
 }
 
 func TestNewPrometheusCollectorWithPerf(t *testing.T) {
@@ -127,7 +127,10 @@ func TestNewPrometheusCollectorWithRequestOptions(t *testing.T) {
 	}
 	c := NewPrometheusCollector(&p, mockLabelFunc, container.AllMetrics, now)
 	_ = c.Collect()
-	assert.Equal(t, p.options, opts)
+	assert.Equal(t, v2.RequestOptions{}, p.options)
+	c.SetOpts(opts)
+	_ = c.Collect()
+	assert.Equal(t, opts, p.options)
 }
 
 type mockInfoProvider struct {
