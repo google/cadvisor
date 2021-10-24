@@ -17,6 +17,7 @@ package metrics
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"time"
 
@@ -1877,18 +1878,30 @@ func (c *PrometheusCollector) collectContainersInfo(session *prometheus.CollectS
 	if err != nil {
 		return err
 	}
-	rawLabels := map[string]struct{}{}
+
+	rawLabelsDup := map[string]struct{}{}
 	for _, container := range containers {
 		for l := range c.containerLabelsFunc(container) {
-			rawLabels[l] = struct{}{}
+			rawLabelsDup[l] = struct{}{}
 		}
 	}
 
+	rawLabels := make([]string, 0, len(rawLabelsDup))
+	for r := range rawLabelsDup {
+		rawLabels = append(rawLabels, r)
+	}
+	sort.Strings(rawLabels)
+
+	values := make([]string, 0, len(rawLabels))
+	labels := make([]string, 0, len(rawLabels))
+
+	clabels := make([]string, 0, len(rawLabels))
+	cvalues := make([]string, 0, len(rawLabels))
 	for _, cont := range containers {
-		values := make([]string, 0, len(rawLabels))
-		labels := make([]string, 0, len(rawLabels))
+		values := values[:0]
+		labels := labels[:0]
 		containerLabels := c.containerLabelsFunc(cont)
-		for l := range rawLabels {
+		for _, l := range rawLabels {
 			duplicate := false
 			sl := sanitizeLabelName(l)
 			for _, x := range labels {
@@ -1950,18 +1963,27 @@ func (c *PrometheusCollector) collectContainersInfo(session *prometheus.CollectS
 				continue
 			}
 			for _, metricValue := range cm.getValues(stats) {
+				labels = append(labels, cm.extraLabels...)
+				values = append(values, metricValue.labels...)
 				session.MustAddMetric(
-					cm.name, cm.help,
-					append(labels, cm.extraLabels...), append(values, metricValue.labels...),
-					cm.valueType, metricValue.value, &metricValue.timestamp,
+					cm.name, cm.help, labels, values, cm.valueType, metricValue.value, &metricValue.timestamp,
 				)
+				labels = labels[:len(labels)-len(cm.extraLabels)]
+				values = values[:len(values)-len(metricValue.labels)]
 			}
 		}
 		if c.includedMetrics.Has(container.AppMetrics) {
-			for metricLabel, v := range stats.CustomMetrics {
+			metricLabels := make([]string, 0, len(stats.CustomMetrics))
+			for metricLabel := range stats.CustomMetrics {
+				metricLabels = append(metricLabels, metricLabel)
+			}
+			sort.Strings(metricLabels)
+
+			for _, metricLabel := range metricLabels {
+				v := stats.CustomMetrics[metricLabel]
 				for _, metric := range v {
-					clabels := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
-					cvalues := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
+					clabels = clabels[:len(rawLabels)]
+					cvalues = cvalues[:len(rawLabels)]
 					copy(clabels, labels)
 					copy(cvalues, values)
 					for label, value := range metric.Labels {
