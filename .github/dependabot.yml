@@ -1,0 +1,18 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: daily
+  - package-ecosystem: gomod
+    directory: "/cmd"
+    schedule:
+      interval: daily
+  - package-ecosystem: docker
+    directory: "/deploy"
+    schedule:
+      interval: daily
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
