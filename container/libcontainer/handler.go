@@ -315,6 +315,7 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 }
 
 func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]*info.CpuSchedstat) (info.CpuSchedstat, error) {
+	seen := make(map[int]bool, len(pids))
 	for _, pid := range pids {
 		f, err := os.Open(path.Join(rootFs, "proc", strconv.Itoa(pid), "schedstat"))
 		if err != nil {
@@ -347,6 +348,13 @@ func schedulerStatsFromProcs(rootFs string, pids []int, pidMetricsCache map[int]
 			case 2:
 				cacheEntry.RunPeriods = metric
 			}
+		}
+		seen[pid] = true
+	}
+	// cleanup cache by removing metrics for pids not seen
+	for pid := range pidMetricsCache {
+		if _, found := seen[pid]; !found {
+			delete(pidMetricsCache, pid)
 		}
 	}
 	schedstats := info.CpuSchedstat{}
