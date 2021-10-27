@@ -1,4 +1,4 @@
-FROM ppc64le/alpine:3.10
+FROM ppc64le/alpine:3.14.2
 MAINTAINER dashpole@google.com lysannef@us.ibm.com
 
 RUN apk --no-cache add libc6-compat device-mapper findutils zfs && \
