@@ -1,4 +1,4 @@
-FROM alpine:3.12 AS build
+FROM alpine:3.14.2 AS build
 
 RUN apk --no-cache add libc6-compat device-mapper findutils zfs build-base linux-headers go python3 bash git wget cmake pkgconfig ndctl-dev && \
     apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
@@ -31,7 +31,7 @@ ENV GO_FLAGS="-tags=libpfm,netgo,libipmctl"
 
 RUN ./build/build.sh
 
-FROM alpine:3.12
+FROM alpine:3.14.2
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
 RUN apk --no-cache add libc6-compat device-mapper findutils zfs ndctl && \
