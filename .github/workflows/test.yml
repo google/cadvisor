@@ -24,7 +24,9 @@ jobs:
     - name: Run tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
-      run: source ${{ matrix.environment-variables }} && make docker-test
+      run: |
+        source ${{ matrix.environment-variables }}
+        make test
   test-integration:
     strategy:
       matrix:
