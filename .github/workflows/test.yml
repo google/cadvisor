@@ -24,7 +24,9 @@ jobs:
     - name: Run tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
-      run: source ${{ matrix.environment-variables }} && make docker-test
+      run: |
+        source ${{ matrix.environment-variables }}
+        make test
   test-integration:
     strategy:
       matrix:
@@ -36,15 +38,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
-        path: go/src/github.com/google/cadvisor
     - name: Run integration tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
       run: |
         set -ex
-        cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor
         source ${{ matrix.environment-variables }}
         make docker-test-integration
     - name: Upload cAdvisor log file
