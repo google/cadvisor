@@ -46,7 +46,7 @@ jobs:
         source ${{ matrix.environment-variables }}
         make docker-test-integration
     - name: Upload cAdvisor log file
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v2.2.4
       if: failure()
       with:
         name: cadvisor.log
