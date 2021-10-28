@@ -162,3 +162,25 @@ func TestNewContainerHandler_Accept(t *testing.T) {
 		t.Error("Expected NewContainerHandler to ignore the container.")
 	}
 }
+
+func TestRawContainerHandler_Last(t *testing.T) {
+	chf1 := &mockContainerHandlerFactory{
+		Name: "raw",
+	}
+	container.RegisterContainerHandlerFactory(chf1, []watcher.ContainerWatchSource{watcher.Raw})
+	cfh2 := &mockContainerHandlerFactory{
+		Name: "crio",
+	}
+	container.RegisterContainerHandlerFactory(cfh2, []watcher.ContainerWatchSource{watcher.Raw})
+
+	cfh3 := &mockContainerHandlerFactory{
+		Name: "containerd",
+	}
+	container.RegisterContainerHandlerFactory(cfh3, []watcher.ContainerWatchSource{watcher.Raw})
+
+	list := container.GetReorderedFactoryList(watcher.Raw)
+
+	if list[len(list)-1].String() != "raw" {
+		t.Error("Expected raw container handler to be last in the list.")
+	}
+}
