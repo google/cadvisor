@@ -4,7 +4,17 @@ cAdvisor uses [Kustomize](https://github.com/kubernetes-sigs/kustomize) to manag
 
 ## Usage
 
-From the cadvisor/ directory, to generate the base daemonset:
+Pick a [cAdvisor release](https://github.com/google/cadvisor/releases)
+```
+VERSION=v0.42.0
+```
+
+From the `cadvisor/` directory, to update the image version([reference](https://github.com/kubernetes-sigs/kustomize/blob/master/examples/image.md)):
+```
+cd deploy/kubernetes/base && kustomize edit set image gcr.io/cadvisor/cadvisor:${VERSION} && cd ../../..
+```
+
+From the `cadvisor/` directory, to generate the base daemonset:
 ```
 kubectl kustomize deploy/kubernetes/base
 ```
