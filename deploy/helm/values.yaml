@@ -1,0 +1,39 @@
+enable_metrics:
+  - perf_event
+  - resctrl
+perf:
+  core:
+    events:
+      - ["instructions", "instructions_retired"]
+      - "ref-cycles"
+    custom_events:
+      - type: 4
+        config: ["0x5300c0"]
+        name: "instructions_retired"
+  uncore:
+    events:
+      - "cas_count_write"
+      - "uncore_imc_0/UNC_M_CAS_COUNT:RD"
+      - "uncore_ubox/UNC_U_EVENT_MSG"
+    custom_events:
+      - type: 18
+        config: ["0x5300"]
+        name: "cas_count_write"
+port: 8080
+node_port: 30000
+
+# configure the container security context
+securityContext:
+  privileged: true  # Note: some of the metrics are unavailable without privileges ( perf_events )
+  allowPrivilegeEscalation: true
+  runAsNonRoot: false
+  readOnlyRootFilesystem: true
+  runAsGroup: 2000
+  capabilities:
+    drop:
+      - ALL
+
+docker_only: true
+
+image: gcr.io/cadvisor/cadvisor:v0.41.0@sha256:c4a53e233abff2a995d6978462c92801d045c70298d21be3b2768d465f865a44
+imagePullPolicy: Always

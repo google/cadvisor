@@ -1,0 +1,9 @@
+apiVersion: v2
+name: cadvisor
+description: cAdvisor analyzes resource usage and performance characteristics of running containers.
+type: application
+version: 0.1.0
+appVersion: "0.41.0"
+maintainers:
+  - name: Creatone
+    email: pawel.szulik@intel.com

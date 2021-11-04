@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cadvisor
+  namespace: {{.Release.Namespace}}
+  labels:
+    app.kubernetes.io/name: cAdvisor
+    app.kubernetes.io/managed_by: Helm
+spec:
+  selector:
+    matchLabels:
+      name: cadvisor
+  template:
+    metadata:
+      labels:
+        name: cadvisor
+      annotations:
+        seccomp.security.alpha.kubernetes.io/pod: runtime/default
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: cadvisor
+      hostPID: true
+      containers:
+      - name: cadvisor
+        image: {{.Values.image}}
+        imagePullPolicy: {{.Values.imagePullPolicy}}
+        args:
+          {{if .Values.perf}}- --perf_events_config=/etc/config/perf-config.json{{end}}
+          {{if .Values.disable_metrics}}- --disable_metrics={{ join "," .Values.disable_metrics}}{{end}}
+          {{if .Values.enable_metrics}}- --enable_metrics={{ join "," .Values.enable_metrics}}{{end}}
+          {{if .Values.port}}- --port={{.Values.port}}{{end}}
+          {{if .Values.docker_only}}- --docker_only={{.Values.docker_only}}{{end}}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        resources:
+          requests:
+            memory: 400Mi
+            cpu: 400m
+          limits:
+            memory: 2000Mi
+            cpu: 800m
+        volumeMounts:
+        - name: rootfs
+          mountPath: /rootfs
+          readOnly: true
+        - name: var-run
+          mountPath: /var/run
+          readOnly: true
+        - name: sys
+          mountPath: /sys
+          readOnly: true
+        - name: docker
+          mountPath: /var/lib/docker
+          readOnly: true
+        - name: disk
+          mountPath: /dev/disk
+          readOnly: true
+        - name: perf-volume
+          mountPath: /etc/config/
+          readOnly: true
+        ports:
+          - name: http
+            containerPort: {{.Values.port}}
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            port: http
+            path: /healthz
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            port: http
+            path: /metrics
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: rootfs
+        hostPath:
+          path: /
+      - name: var-run
+        hostPath:
+          path: /var/run
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: docker
+        hostPath:
+          path: /var/lib/docker
+      - name: disk
+        hostPath:
+          path: /dev/disk
+      - name: perf-volume
+        configMap:
+          name: perf-config

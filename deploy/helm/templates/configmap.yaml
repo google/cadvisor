@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: perf-config
+  namespace: {{.Release.Namespace}}
+data:
+  perf-config.json: |
+    {
+      "core": {
+        "events":
+          {{if .Values.perf}}
+            {{if .Values.perf.core}}
+              {{if .Values.perf.core.events}}{{.Values.perf.core.events | toJson}}{{end}}
+            {{end}}
+          {{end}}
+        ,
+        "custom_events":
+          {{if .Values.perf}}
+            {{if .Values.perf.core}}
+              {{if .Values.perf.core.custom_events}}{{.Values.perf.core.custom_events | toJson}}{{end}}
+            {{end}}
+          {{end}}
+      },
+      "uncore": {
+        "events":
+          {{if .Values.perf}}
+            {{if .Values.perf.uncore}}
+              {{if .Values.perf.uncore.events}}{{.Values.perf.uncore.events | toJson}}{{end}}
+            {{end}}
+          {{end}}
+        ,
+        "custom_events":
+          {{if .Values.perf}}
+            {{if .Values.perf.uncore}}
+              {{if .Values.perf.uncore.custom_events}}{{.Values.perf.uncore.custom_events | toJson}}{{end}}
+            {{end}}
+          {{end}}
+      }
+    }
