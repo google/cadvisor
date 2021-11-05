@@ -596,11 +596,12 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 						},
 					},
 					Processes: info.ProcessStats{
-						ProcessCount:   1,
-						FdCount:        5,
-						SocketCount:    3,
-						ThreadsCurrent: 5,
-						ThreadsMax:     100,
+						ProcessCount:    1,
+						FdCount:         5,
+						SocketCount:     3,
+						MountpointCount: 10,
+						ThreadsCurrent:  5,
+						ThreadsMax:      100,
 						Ulimits: []info.UlimitSpec{
 							{
 								Name:      "max_open_files",

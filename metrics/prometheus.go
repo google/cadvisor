@@ -1606,6 +1606,19 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return values
 				},
 			},
+			{
+				name:      "container_mountpoints",
+				help:      "Number of mountpoints inside container.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{
+						{
+							value:     float64(s.Processes.MountpointCount),
+							timestamp: s.Timestamp,
+						},
+					}
+				},
+			},
 		}...)
 	}
 	if includedMetrics.Has(container.PerfMetrics) {

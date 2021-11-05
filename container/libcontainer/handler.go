@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	mount "github.com/moby/sys/mountinfo"
 	"github.com/opencontainers/runc/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
@@ -262,7 +263,7 @@ func processRootProcUlimits(rootFs string, rootPid int) []info.UlimitSpec {
 }
 
 func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.ProcessStats, error) {
-	var fdCount, socketCount uint64
+	var fdCount, socketCount, mountpointCount uint64
 	filePath := path.Join(cgroupPath, "cgroup.procs")
 	out, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -297,12 +298,26 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 				socketCount++
 			}
 		}
+		mountpointPath := path.Join(rootFs, "/proc", pid, "mountinfo")
+		fileReader, err := os.Open(mountpointPath)
+		if err != nil {
+			klog.V(4).Infof("error while listing directory %q to measure mountpoints: %v", mountpointPath, err)
+			continue
+		}
+		mounts, err := mount.GetMountsFromReader(fileReader, nil)
+		fileReader.Close()
+		if err != nil {
+			klog.V(4).Infof("error while reading %q link: %v", mountpointPath, err)
+			continue
+		}
+		mountpointCount += uint64(len(mounts))
 	}
 
 	processStats := info.ProcessStats{
-		ProcessCount: uint64(len(pids)),
-		FdCount:      fdCount,
-		SocketCount:  socketCount,
+		ProcessCount:    uint64(len(pids)),
+		FdCount:         fdCount,
+		SocketCount:     socketCount,
+		MountpointCount: mountpointCount,
 	}
 
 	if rootPid > 0 {

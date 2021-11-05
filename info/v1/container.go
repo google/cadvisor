@@ -916,6 +916,9 @@ type ProcessStats struct {
 	// Number of sockets
 	SocketCount uint64 `json:"socket_count"`
 
+	// Number of mountpoints.
+	MountpointCount uint64 `json:"mountpoint_count"`
+
 	// Number of threads currently in container
 	ThreadsCurrent uint64 `json:"threads_current,omitempty"`
 

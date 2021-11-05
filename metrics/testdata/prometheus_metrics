@@ -195,6 +195,9 @@ container_memory_usage_bytes{container_env_foo_env="prod",container_label_foo_la
 # HELP container_memory_working_set_bytes Current working set in bytes.
 # TYPE container_memory_working_set_bytes gauge
 container_memory_working_set_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 9 1395066363000
+# HELP container_mountpoints Number of mountpoints inside container.
+# TYPE container_mountpoints gauge
+container_mountpoints{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 10 1395066363000
 # HELP container_network_advance_tcp_stats_total advance tcp connections statistic for container
 # TYPE container_network_advance_tcp_stats_total gauge
 container_network_advance_tcp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="activeopens",zone_name="hello"} 1.1038621e+07 1395066363000
