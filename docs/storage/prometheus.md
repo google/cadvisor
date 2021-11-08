@@ -68,6 +68,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_swap` | Gauge | Container swap usage | bytes | memory |
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | memory |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | memory |
+`container_mountpoints` | Gauge | Number of mountpoints inside container | | process |
 `container_network_advance_tcp_stats_total` | Gauge | advanced tcp connections statistic for container | | advtcp |
 `container_network_receive_bytes_total` | Counter | Cumulative count of bytes received | bytes | network |
 `container_network_receive_errors_total` | Counter | Cumulative count of errors encountered while receiving | | network |
