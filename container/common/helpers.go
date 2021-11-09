@@ -195,7 +195,6 @@ func getSpecInternal(cgroupPaths map[string]string, machineInfoFactory info.Mach
 	}
 
 	// Processes, read it's value from pids path directly
-	//pidsRoot, ok := cgroupPaths["pids"]
 	pidsRoot, ok := getControllerPath(cgroupPaths, "pids", cgroup2UnifiedMode)
 	if ok {
 		if utils.FileExists(pidsRoot) {
