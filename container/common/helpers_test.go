@@ -143,10 +143,7 @@ func TestGetSpecCgroupV2(t *testing.T) {
 	}
 
 	cgroupPaths := map[string]string{
-		"memory": filepath.Join(root, "test_resources/cgroup_v2/test1"),
-		"cpu":    filepath.Join(root, "test_resources/cgroup_v2/test1"),
-		"cpuset": filepath.Join(root, "test_resources/cgroup_v2/test1"),
-		"pids":   filepath.Join(root, "test_resources/cgroup_v2/test1"),
+		"": filepath.Join(root, "test_resources/cgroup_v2/test1"),
 	}
 
 	spec, err := getSpecInternal(cgroupPaths, &mockInfoProvider{}, false, false, true)
@@ -176,9 +173,7 @@ func TestGetSpecCgroupV2Max(t *testing.T) {
 	assert.Nil(t, err)
 
 	cgroupPaths := map[string]string{
-		"memory": filepath.Join(root, "test_resources/cgroup_v2/test2"),
-		"cpu":    filepath.Join(root, "test_resources/cgroup_v2/test2"),
-		"pids":   filepath.Join(root, "test_resources/cgroup_v2/test2"),
+		"": filepath.Join(root, "test_resources/cgroup_v2/test2"),
 	}
 
 	spec, err := getSpecInternal(cgroupPaths, &mockInfoProvider{}, false, false, true)
