@@ -486,7 +486,7 @@ func (cd *containerData) nextHousekeepingInterval() time.Duration {
 		var empty time.Time
 		stats, err := cd.memoryCache.RecentStats(cd.info.Name, empty, empty, 2)
 		if err != nil {
-			if cd.allowErrorLogging() && !(cd.isRoot() && *raw.DisableRootCgroupStats){
+			if cd.allowErrorLogging() && !(cd.isRoot() && *raw.DisableRootCgroupStats) {
 				klog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", cd.info.Name, err)
 			}
 		} else if len(stats) == 2 {
