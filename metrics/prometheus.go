@@ -1865,16 +1865,24 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 	if err != nil {
 		c.errors.Set(1)
 		klog.Warningf("Couldn't get containers: %s", err)
-		return
+		if containers == nil {
+			return
+		}
 	}
 	rawLabels := map[string]struct{}{}
 	for _, container := range containers {
+		if container == nil {
+			continue
+		}
 		for l := range c.containerLabelsFunc(container) {
 			rawLabels[l] = struct{}{}
 		}
 	}
 
 	for _, cont := range containers {
+		if cont == nil {
+			continue
+		}
 		values := make([]string, 0, len(rawLabels))
 		labels := make([]string, 0, len(rawLabels))
 		containerLabels := c.containerLabelsFunc(cont)
