@@ -36,6 +36,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	// All the test cases in this file uses "fake" cgroups (not the real
+	// cgroupfs). This setting relaxes filesystem type check in cgroups
+	// package so it can work with fake cgroups.
+	cgroups.TestMode = true
+}
+
 func mockAllGetContainerPids() ([]string, error) {
 	return []string{"1", "2", "3", "5", "6"}, nil
 }
