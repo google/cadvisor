@@ -171,7 +171,7 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 	// file descriptors etc.) and not required a proper container's
 	// root PID (systemd services don't have the root PID atm)
 	if h.includedMetrics.Has(container.ProcessMetrics) {
-		path, ok := common.GetControllerPath(h.cgroupManager.GetPaths(), "cpu", cgroups.IsCgroup2UnifiedMode())
+		path, ok := common.GetControllerPath(h.cgroupManager.GetPaths(), "pids", cgroups.IsCgroup2UnifiedMode())
 		if !ok {
 			klog.V(4).Infof("Could not find cgroups CPU for container %d", h.pid)
 		} else {
