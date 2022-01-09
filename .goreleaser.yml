@@ -1,5 +1,5 @@
 builds:
-  -
+  - id: cadvisor-plain
     goarch:
       - amd64
       - arm64
@@ -8,7 +8,7 @@ builds:
       - linux
     flags:
       - -tags=netgo
-    main: ./cmd
+    dir: ./cmd/
     goarm:
       - 6
       - 7
@@ -21,7 +21,57 @@ builds:
       - -X github.com/google/cadvisor/version.BuildUser={{.Env.GITHUB_ACTOR}}
       - -X github.com/google/cadvisor/version.BuildDate={{.Date}}
       - -X github.com/google/cadvisor/version.GoVersion={{.Env.GOLANG_VERSION}}
+  - id: cadvisor-full
+    goarch:
+      - amd64
+    goos:
+      - linux
+    flags:
+      - -tags=netgo,libpfm,libipmctl
+      - -race
+    dir: cmd
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -X github.com/google/cadvisor/version.Version={{.Tag}}
+      - -X github.com/google/cadvisor/version.Revision={{.Commit}}
+      - -X github.com/google/cadvisor/version.Branch={{.Branch}}
+      - -X github.com/google/cadvisor/version.BuildUser={{.Env.GITHUB_ACTOR}}
+      - -X github.com/google/cadvisor/version.BuildDate={{.Date}}
+      - -X github.com/google/cadvisor/version.GoVersion={{.Env.GOLANG_VERSION}}
+    hooks:
+      pre: ./build/goreleaser-hook-pre.sh
+      post: ./build/goreleaser-hook-post.sh
 archives:
   - format: binary
+    id: cadvisor-plain
+    name_template: "{{.ProjectName}}_{{.Os}}_{{.Arch}}"
+    replacements:
+      linux: ""
+      amd64: ""
+    builds:
+      - cadvisor-plain
+  - format: binary
+    id: cadvisor-full
+    name_template: "{{.ProjectName}}_{{.Os}}_{{.Arch}}-libpfm4-libipmctl"
+    builds:
+      - cadvisor-full
+dockers:
+  - goos: linux
+    goarch: amd64
+    image_templates:
+      - europe-central2-docker.pkg.dev/ebpf-testing/cadvisor:latest-amd64
+      - europe-central2-docker.pkg.dev/ebpf-testing/cadvisor:{{.Tag}}-amd64
+    build_flag_templates:
+      - --pull
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.title={{.ProjectName}}
+      - --label=org.opencontainers.image.revision={{.FullCommit}}
+      - --label=org.opencontainers.image.version={{.Tag}}
+      - --platform=linux/amd64
+    dockerfile: ./deploy/Dockerfile-plain
+    skip_push: true
+    ids:
+      - cadvisor-plain
 checksum:
   name_template: checksums.txt

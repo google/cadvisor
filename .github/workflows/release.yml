@@ -4,34 +4,7 @@ on:
     tags:
       - v*
 jobs:
-#  release-with-cgo:
-#    runs-on: ubuntu-20.04
-#    # The only reason to use strategy.matrix is to pass GOLANG_VERSION env variable while keeping Go version number
-#    # in single place.
-#    strategy:
-#      matrix:
-#        golang: ["1.17"]
-#        arch: ["amd64", "arm64", "arm"]
-#        tags: ["libpfm,netgo", "libipmctl,netgo", "libpfm,libipmctl,netgo"]
-#    steps:
-#    - name: Checkout
-#      uses: actions/checkout@v2
-#      with:
-#        fetch-depth: 0
-#    - name: Set up Go
-#      uses: actions/setup-go@v2
-#      with:
-#        go-version: ${{ matrix.golang }}
-#    - name: Run GoReleaser for builds that require cgo
-#      uses: goreleaser/goreleaser-action@v2.8.0
-#      with:
-#        args: release --rm-dist --debug --config ../.goreleaser.yml --skip-sign --debug
-#        workdir: ./cmd
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-#        GOLANG_VERSION: ${{ matrix.golang }}
-
-  relese-no-cgo:
+  release:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -45,7 +18,7 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.golang }}
-    - name: Run GoReleaser to build version without cgo
+    - name: Run GoReleaser
       uses: goreleaser/goreleaser-action@v2.8.0
       with:
         args: release --rm-dist --debug --skip-sign
