@@ -8,6 +8,7 @@ builds:
       - linux
     flags:
       - -tags=netgo
+      - -race
     dir: ./cmd/
     goarm:
       - 6
@@ -45,7 +46,7 @@ builds:
 archives:
   - format: binary
     id: cadvisor-plain
-    name_template: "{{.ProjectName}}_{{.Os}}_{{.Arch}}"
+    name_template: "{{.ProjectName}}_{{.Os}}_{{.Arch}}{{if .Arm}}v{{.Arm}}{{end}}"
     replacements:
       linux: ""
       amd64: ""
@@ -57,7 +58,8 @@ archives:
     builds:
       - cadvisor-full
 dockers:
-  - goos: linux
+  - id: cadvisor-plain
+    goos: linux
     goarch: amd64
     image_templates:
       - europe-central2-docker.pkg.dev/ebpf-testing/cadvisor:latest-amd64
@@ -72,6 +74,23 @@ dockers:
     dockerfile: ./deploy/Dockerfile-plain
     skip_push: true
     ids:
-      - cadvisor-plain
+     - cadvisor-plain
+  - id: cadvisor-full
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - europe-central2-docker.pkg.dev/ebpf-testing/cadvisor:latest-amd64
+      - europe-central2-docker.pkg.dev/ebpf-testing/cadvisor:{{.Tag}}-amd64
+    build_flag_templates:
+      - --pull
+      - --label=org.opencontainers.image.created={{.Date}}
+      - --label=org.opencontainers.image.title={{.ProjectName}}
+      - --label=org.opencontainers.image.revision={{.FullCommit}}
+      - --label=org.opencontainers.image.version={{.Tag}}
+      - --platform=linux/amd64
+    dockerfile: ./deploy/Dockerfile-full
+    skip_push: true
+    ids:
+      - cadvisor-full
 checksum:
   name_template: checksums.txt
