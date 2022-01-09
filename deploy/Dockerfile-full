@@ -22,15 +22,6 @@ RUN git clone -b v02.00.00.3820 https://github.com/intel/ipmctl/ && \
     make -j all && \
     make install
 
-ADD . /go/src/github.com/google/cadvisor
-WORKDIR /go/src/github.com/google/cadvisor
-
-ENV GOROOT /usr/lib/go
-ENV GOPATH /go
-ENV GO_FLAGS="-tags=libpfm,netgo,libipmctl"
-
-RUN ./build/build.sh
-
 FROM alpine:3.15
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
@@ -39,9 +30,17 @@ RUN apk --no-cache add libc6-compat device-mapper findutils zfs ndctl && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
 
-# Grab cadvisor,libpfm4 and libipmctl from "build" container.
+# Grab libpfm4 and libipmctl from "build" container.
 COPY --from=build /usr/local/lib/libpfm.so* /usr/local/lib/
+
+COPY --from=build /usr/bin/ipmctl /usr/bin/ipmctl
+COPY --from=build /usr/share/doc/ipmctl/     /usr/share/doc/ipmctl/
+COPY --from=build /usr/share/ipmctl/ipmctl.conf /usr/share/ipmctl/ipmctl.conf
+COPY --from=build /usr/var/log/ipmctl /usr/var/log/ipmctl
+COPY --from=build /usr/etc/logrotate.d/ipmctl /usr/etc/logrotate.d/ipmctl
 COPY --from=build /usr/local/lib/libipmctl.so* /usr/local/lib/
+
+# cadvisor comes from goreleaser artifacts
 COPY cadvisor /usr/bin/cadvisor
 
 EXPOSE 8080
