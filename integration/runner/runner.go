@@ -32,8 +32,9 @@ import (
 	"sync"
 	"time"
 
-	cadvisorApi "github.com/google/cadvisor/info/v2"
 	"k8s.io/klog/v2"
+
+	cadvisorApi "github.com/google/cadvisor/info/v2"
 )
 
 // must be able to ssh into hosts without password
@@ -113,7 +114,7 @@ func PushAndRunTests(host, testDir string) (result error) {
 	portStr := strconv.Itoa(*port)
 	errChan := make(chan error, 1)
 	go func() {
-		err = RunSshCommand("ssh", host, "--", fmt.Sprintf("sudo GORACE='halt_on_error=1' %s --port %s --logtostderr --docker_env_metadata_whitelist=TEST_VAR  &> %s/log.txt", path.Join(testDir, cadvisorBinary), portStr, testDir))
+		err = RunSshCommand("ssh", host, "--", fmt.Sprintf("sudo GORACE='halt_on_error=1' %s --port %s --logtostderr --env_metadata_whitelist=TEST_VAR  &> %s/log.txt", path.Join(testDir, cadvisorBinary), portStr, testDir))
 		if err != nil {
 			errChan <- fmt.Errorf("error running cAdvisor: %v", err)
 		}

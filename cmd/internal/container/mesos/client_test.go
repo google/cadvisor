@@ -21,7 +21,7 @@ type FakeMesosAgentClient struct {
 	err      error
 }
 
-func (c *FakeMesosAgentClient) ContainerInfo(id string) (*containerInfo, error) {
+func (c *FakeMesosAgentClient) containerInfo(id string) (*containerInfo, error) {
 	if c.err != nil {
 		return nil, c.err
 	}
@@ -32,7 +32,7 @@ func (c *FakeMesosAgentClient) ContainerInfo(id string) (*containerInfo, error) 
 	return cInfo, nil
 }
 
-func (c *FakeMesosAgentClient) ContainerPid(id string) (int, error) {
+func (c *FakeMesosAgentClient) containerPID(id string) (int, error) {
 	if c.err != nil {
 		return invalidPID, c.err
 	}

@@ -1,60 +1,36 @@
 name: Test
 on: [push, pull_request]
 jobs:
-  lint:
-    env:
-      GOLANGCI_LINT_V: 1.34.1
-    strategy:
-      matrix:
-        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
-    runs-on: ubuntu-20.04
-    timeout-minutes: 10
-    steps:
-    - name: Install Go
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.16
-    - name: Install golangci-lint
-      run: >
-        cd /tmp &&
-        mkdir -p $(go env GOPATH)/bin &&
-        wget -q https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_V}/golangci-lint-${GOLANGCI_LINT_V}-linux-amd64.tar.gz &&
-        tar xf golangci-lint-${GOLANGCI_LINT_V}-linux-amd64.tar.gz &&
-        mv golangci-lint-${GOLANGCI_LINT_V}-linux-amd64/golangci-lint $(go env GOPATH)/bin &&
-        rm -fr golangci-lint-*
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Run golangci-lint
-      run: |
-        set -e
-        source ${{ matrix.environment-variables }}
-        if [[ "${BUILD_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${BUILD_PACKAGES}; fi
-        make -e lint
   test:
     strategy:
       matrix:
-        go-versions: [1.16, 1.15]
+        go-versions: [1.17, 1.16]
         platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
     steps:
     - name: Install Go
-      uses: actions/setup-go@v1
+      uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-versions }}
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Run presubmit checks
-      run: GOFLAGS="$GO_FLAGS" make presubmit
+      run: |
+        source ${{ matrix.environment-variables }}
+        if [[ "${BUILD_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${BUILD_PACKAGES}; fi
+        make -e presubmit
     - name: Run tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
-      run: source ${{ matrix.environment-variables }} && make docker-test
+      run: |
+        source ${{ matrix.environment-variables }}
+        make test
   test-integration:
     strategy:
       matrix:
-        go-versions: [1.16, 1.15]
+        go-versions: [1.17, 1.16]
         platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
@@ -62,15 +38,11 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-      with:
-        fetch-depth: 1
-        path: go/src/github.com/google/cadvisor
     - name: Run integration tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
       run: |
         set -ex
-        cd $GITHUB_WORKSPACE/go/src/github.com/google/cadvisor
         source ${{ matrix.environment-variables }}
         make docker-test-integration
     - name: Upload cAdvisor log file

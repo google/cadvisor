@@ -17,7 +17,6 @@ package crio
 import (
 	"testing"
 
-	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,7 +24,7 @@ func TestCanHandleAndAccept(t *testing.T) {
 	as := assert.New(t)
 	f := &crioFactory{
 		client:             nil,
-		cgroupSubsystems:   containerlibcontainer.CgroupSubsystems{},
+		cgroupSubsystems:   nil,
 		fsInfo:             nil,
 		machineInfoFactory: nil,
 		storageDriver:      "",

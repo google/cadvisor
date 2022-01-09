@@ -6,6 +6,10 @@ This document describes a set of runtime flags available in cAdvisor.
 * `--store_container_labels=false` - do not convert container labels and environment variables into labels on prometheus metrics for each container.
 * `--whitelisted_container_labels` - comma separated list of container labels to be converted to labels on prometheus metrics for each container. `store_container_labels` must be set to false for this to take effect.
 
+## Container envs
+
+* `--env_metadata_whitelist`: a comma-separated list of environment variable keys that needs to be collected for containers, only support containerd and docker runtime for now.
+
 ## Limiting which containers are monitored 
 * `--docker_only=false` - do not report raw cgroup metrics, except the root cgroup.
 * `--raw_cgroup_prefix_whitelist` - a comma-separated list of cgroup path prefix that needs to be collected even when `--docker_only` is specified
@@ -52,7 +56,6 @@ From [glog](https://github.com/golang/glog) here are some flags we find useful:
 
 ```
 --docker="unix:///var/run/docker.sock": docker endpoint (default "unix:///var/run/docker.sock")
---docker_env_metadata_whitelist="": a comma-separated list of environment variable keys that needs to be collected for docker containers
 --docker_root="/var/lib/docker": DEPRECATED: docker root is read from docker info (this is a fallback, default: /var/lib/docker) (default "/var/lib/docker")
 --docker-tls: use TLS to connect to docker
 --docker-tls-cert="cert.pem": client certificate for TLS-connection with docker
@@ -125,8 +128,8 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --application_metrics_count_limit=100: Max number of application metrics to store (per container) (default 100)
 --collector_cert="": Collector's certificate, exposed to endpoints for certificate based authentication.
 --collector_key="": Key for the collector's certificate
---disable_metrics=tcp,advtcp,udp,sched,process,hugetlb: comma-separated list of metrics to be disabled. Options are 'disk', 'network', 'tcp', 'advtcp', 'udp', 'sched', 'process', 'hugetlb', 'cpuset'. Note: tcp and udp are disabled by default due to high CPU usage. (default tcp,advtcp,udp,sched,process,hugetlb,cpuset)
---disable_specific_metrics="": Comma-separated list of metrics not to be enabled. This list comprises of exact metric names and/or regex patterns.It differs from the 'disable_metrics' in that 'disable_specific_metrics' filters specific metrics, while 'disable_metrics' filters a certain type of metrics.Besides, 'disable_specific_metrics' will only disable metrics being exported by Prometheus.(default "")
+--disable_metrics=<metrics>: comma-separated list of metrics to be disabled. Options are accelerator,advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp. (default advtcp,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,tcp,udp)
+--enable_metrics=<metrics>: comma-separated list of metrics to be enabled. If set, overrides 'disable_metrics'. Options are accelerator,advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp.
 --prometheus_endpoint="/metrics": Endpoint to expose Prometheus metrics on (default "/metrics")
 --disable_root_cgroup_stats=false: Disable collecting root Cgroup stats
 ```
@@ -150,7 +153,7 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --perf_events_config="" Path to a JSON file containing configuration of perf events to measure. Empty value disables perf events measuring.
 ```
 
-Core perf events can be exposed on Prometheus endpoint per CPU or aggregated by event. It is controlled through `--disable_metrics` parameter with option `percpu`, e.g.:
+Core perf events can be exposed on Prometheus endpoint per CPU or aggregated by event. It is controlled through `--disable_metrics` and `--enable_metrics` parameters with option `percpu`, e.g.:
 - `--disable_metrics="percpu"` - core perf events are aggregated
 - `--disable_metrics=""` - core perf events are exposed per CPU.
 
@@ -419,6 +422,14 @@ should be a human readable string that will become a metric name.
 * `cas_count_read` will be measured as uncore non-grouped event on all Integrated Memory Controllers Performance Monitoring Units because of unset `type` field and
 `uncore_imc` prefix.
 
+## Resctrl
+To gain metrics, cAdvisor creates own monitoring groups with `cadvisor` prefix.
+
+Resctrl file system is not hierarchical like cgroups, so users should set `--docker_only` flag to avoid race conditions and unexpected behaviours.
+
+```
+--resctrl_interval=0: Resctrl mon groups updating interval. Zero value disables updating mon groups.
+``` 
 
 ## Storage driver specific instructions:
 

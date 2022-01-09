@@ -15,6 +15,7 @@
 package client
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -23,13 +24,14 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/jwt"
 	bigquery "google.golang.org/api/bigquery/v2"
+	"google.golang.org/api/option"
 )
 
 var (
 	// TODO(jnagal): Condense all flags to an identity file and a pem key file.
-	clientId       = flag.String("bq_id", "", "Client ID")
+	clientID       = flag.String("bq_id", "", "Client ID")
 	clientSecret   = flag.String("bq_secret", "notasecret", "Client Secret")
-	projectId      = flag.String("bq_project_id", "", "Bigquery project ID")
+	projectID      = flag.String("bq_project_id", "", "Bigquery project ID")
 	serviceAccount = flag.String("bq_account", "", "Service account email")
 	pemFile        = flag.String("bq_credentials_file", "", "Credential Key file (pem)")
 )
@@ -41,19 +43,19 @@ const (
 type Client struct {
 	service   *bigquery.Service
 	token     *oauth2.Token
-	datasetId string
-	tableId   string
+	datasetID string
+	tableID   string
 }
 
 // Helper method to create an authenticated connection.
 func connect() (*oauth2.Token, *bigquery.Service, error) {
-	if *clientId == "" {
+	if *clientID == "" {
 		return nil, nil, fmt.Errorf("no client id specified")
 	}
 	if *serviceAccount == "" {
 		return nil, nil, fmt.Errorf("no service account specified")
 	}
-	if *projectId == "" {
+	if *projectID == "" {
 		return nil, nil, fmt.Errorf("no project id specified")
 	}
 	authScope := bigquery.BigqueryScope
@@ -71,7 +73,7 @@ func connect() (*oauth2.Token, *bigquery.Service, error) {
 		PrivateKey: pemBytes,
 		TokenURL:   "https://accounts.google.com/o/oauth2/token",
 	}
-	token, err := jwtConfig.TokenSource(oauth2.NoContext).Token()
+	token, err := jwtConfig.TokenSource(context.Background()).Token()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -80,7 +82,7 @@ func connect() (*oauth2.Token, *bigquery.Service, error) {
 	}
 
 	config := &oauth2.Config{
-		ClientID:     *clientId,
+		ClientID:     *clientID,
 		ClientSecret: *clientSecret,
 		Scopes:       []string{authScope},
 		Endpoint: oauth2.Endpoint{
@@ -88,9 +90,9 @@ func connect() (*oauth2.Token, *bigquery.Service, error) {
 			TokenURL: "https://accounts.google.com/o/oauth2/token",
 		},
 	}
-	client := config.Client(oauth2.NoContext, token)
+	client := config.Client(context.Background(), token)
 
-	service, err := bigquery.New(client)
+	service, err := bigquery.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
 		fmt.Printf("Failed to create new service: %v\n", err)
 		return nil, nil, err
@@ -138,13 +140,12 @@ func (c *Client) getService() (*bigquery.Service, error) {
 }
 
 func (c *Client) PrintDatasets() error {
-	datasetList, err := c.service.Datasets.List(*projectId).Do()
+	datasetList, err := c.service.Datasets.List(*projectID).Do()
 	if err != nil {
 		fmt.Printf("Failed to get list of datasets\n")
 		return err
-	} else {
-		fmt.Printf("Successfully retrieved datasets. Retrieved: %d\n", len(datasetList.Datasets))
 	}
+	fmt.Printf("Successfully retrieved datasets. Retrieved: %d\n", len(datasetList.Datasets))
 
 	for _, d := range datasetList.Datasets {
 		fmt.Printf("%s %s\n", d.Id, d.FriendlyName)
@@ -152,39 +153,39 @@ func (c *Client) PrintDatasets() error {
 	return nil
 }
 
-func (c *Client) CreateDataset(datasetId string) error {
+func (c *Client) CreateDataset(datasetID string) error {
 	if c.service == nil {
 		return fmt.Errorf("no service created")
 	}
-	_, err := c.service.Datasets.Insert(*projectId, &bigquery.Dataset{
+	_, err := c.service.Datasets.Insert(*projectID, &bigquery.Dataset{
 		DatasetReference: &bigquery.DatasetReference{
-			DatasetId: datasetId,
-			ProjectId: *projectId,
+			DatasetId: datasetID,
+			ProjectId: *projectID,
 		},
 	}).Do()
 	// TODO(jnagal): Do a Get() to verify dataset already exists.
 	if err != nil && !strings.Contains(err.Error(), errAlreadyExists) {
 		return err
 	}
-	c.datasetId = datasetId
+	c.datasetID = datasetID
 	return nil
 }
 
 // Create a table with provided table ID and schema.
 // Schema is currently not updated if the table already exists.
-func (c *Client) CreateTable(tableId string, schema *bigquery.TableSchema) error {
-	if c.service == nil || c.datasetId == "" {
+func (c *Client) CreateTable(tableID string, schema *bigquery.TableSchema) error {
+	if c.service == nil || c.datasetID == "" {
 		return fmt.Errorf("no dataset created")
 	}
-	_, err := c.service.Tables.Get(*projectId, c.datasetId, tableId).Do()
+	_, err := c.service.Tables.Get(*projectID, c.datasetID, tableID).Do()
 	if err != nil {
 		// Create a new table.
-		_, err := c.service.Tables.Insert(*projectId, c.datasetId, &bigquery.Table{
+		_, err := c.service.Tables.Insert(*projectID, c.datasetID, &bigquery.Table{
 			Schema: schema,
 			TableReference: &bigquery.TableReference{
-				DatasetId: c.datasetId,
-				ProjectId: *projectId,
-				TableId:   tableId,
+				DatasetId: c.datasetID,
+				ProjectId: *projectID,
+				TableId:   tableID,
 			},
 		}).Do()
 		if err != nil {
@@ -192,14 +193,14 @@ func (c *Client) CreateTable(tableId string, schema *bigquery.TableSchema) error
 		}
 	}
 	// TODO(jnagal): Update schema if it has changed. We can only extend existing schema.
-	c.tableId = tableId
+	c.tableID = tableID
 	return nil
 }
 
 // Add a row to the connected table.
 func (c *Client) InsertRow(rowData map[string]interface{}) error {
 	service, _ := c.getService()
-	if service == nil || c.datasetId == "" || c.tableId == "" {
+	if service == nil || c.datasetID == "" || c.tableID == "" {
 		return fmt.Errorf("table not setup to add rows")
 	}
 	jsonRows := make(map[string]bigquery.JsonValue)
@@ -215,7 +216,7 @@ func (c *Client) InsertRow(rowData map[string]interface{}) error {
 	// TODO(jnagal): Batch insert requests.
 	insertRequest := &bigquery.TableDataInsertAllRequest{Rows: rows}
 
-	result, err := service.Tabledata.InsertAll(*projectId, c.datasetId, c.tableId, insertRequest).Do()
+	result, err := service.Tabledata.InsertAll(*projectID, c.datasetID, c.tableID, insertRequest).Do()
 	if err != nil {
 		return fmt.Errorf("error inserting row: %v", err)
 	}

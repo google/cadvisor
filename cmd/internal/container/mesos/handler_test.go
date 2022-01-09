@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"testing"
 
+	mesos "github.com/mesos/mesos-go/api/v1/lib"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/google/cadvisor/container"
-	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/mesos/mesos-go/api/v1/lib"
-	"github.com/stretchr/testify/assert"
 )
 
 func PopulateContainer() *mContainer {
@@ -37,13 +37,14 @@ func PopulateContainer() *mContainer {
 func TestContainerReference(t *testing.T) {
 	as := assert.New(t)
 	type testCase struct {
-		client             mesosAgentClient
-		name               string
-		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
-		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
-		inHostNamespace    bool
-		includedMetrics    container.MetricSet
+		client               mesosAgentClient
+		name                 string
+		machineInfoFactory   info.MachineInfoFactory
+		fsInfo               fs.FsInfo
+		cgroupSubsystems     map[string]string
+		inHostNamespace      bool
+		metadataEnvAllowList []string
+		includedMetrics      container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -55,8 +56,9 @@ func TestContainerReference(t *testing.T) {
 			"/mesos/04e20821-67d3-4bf7-96b4-7d4495f50b28",
 			nil,
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
+			[]string{},
 			nil,
 
 			true,
@@ -68,8 +70,9 @@ func TestContainerReference(t *testing.T) {
 			"/mesos/04e20821-67d3-4bf7-96b4-7d4495f50b28",
 			nil,
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
+			[]string{},
 			nil,
 
 			true,
@@ -81,8 +84,9 @@ func TestContainerReference(t *testing.T) {
 			"/mesos/04e20821-67d3-4bf7-96b4-7d4495f50b28",
 			nil,
 			nil,
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
+			[]string{},
 			nil,
 
 			false,
@@ -95,7 +99,7 @@ func TestContainerReference(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.client)
+		handler, err := newMesosContainerHandler(ts.name, ts.cgroupSubsystems, ts.machineInfoFactory, ts.fsInfo, ts.includedMetrics, ts.inHostNamespace, ts.metadataEnvAllowList, ts.client)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {

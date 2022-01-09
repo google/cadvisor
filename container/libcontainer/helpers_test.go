@@ -15,11 +15,9 @@
 package libcontainer
 
 import (
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
@@ -44,11 +42,9 @@ func cgroupMountsAt(path string, subsystems []string) []cgroups.Mount {
 }
 
 func TestGetCgroupSubsystems(t *testing.T) {
-	ourSubsystems := []string{"cpu,cpuacct", "devices", "memory", "hugetlb", "cpuset", "blkio", "pids"}
-
 	testCases := []struct {
 		mounts   []cgroups.Mount
-		expected CgroupSubsystems
+		expected map[string]string
 		err      bool
 	}{
 		{
@@ -58,52 +54,43 @@ func TestGetCgroupSubsystems(t *testing.T) {
 		{
 			// normal case
 			mounts: cgroupMountsAt("/sys/fs/cgroup", defaultCgroupSubsystems),
-			expected: CgroupSubsystems{
-				MountPoints: map[string]string{
-					"blkio":   "/sys/fs/cgroup/blkio",
-					"cpu":     "/sys/fs/cgroup/cpu,cpuacct",
-					"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
-					"cpuset":  "/sys/fs/cgroup/cpuset",
-					"devices": "/sys/fs/cgroup/devices",
-					"memory":  "/sys/fs/cgroup/memory",
-					"hugetlb": "/sys/fs/cgroup/hugetlb",
-					"pids":    "/sys/fs/cgroup/pids",
-				},
-				Mounts: cgroupMountsAt("/sys/fs/cgroup", ourSubsystems),
+			expected: map[string]string{
+				"blkio":   "/sys/fs/cgroup/blkio",
+				"cpu":     "/sys/fs/cgroup/cpu,cpuacct",
+				"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
+				"cpuset":  "/sys/fs/cgroup/cpuset",
+				"devices": "/sys/fs/cgroup/devices",
+				"memory":  "/sys/fs/cgroup/memory",
+				"hugetlb": "/sys/fs/cgroup/hugetlb",
+				"pids":    "/sys/fs/cgroup/pids",
 			},
 		},
 		{
 			// multiple croup subsystems, should ignore second one
 			mounts: append(cgroupMountsAt("/sys/fs/cgroup", defaultCgroupSubsystems),
 				cgroupMountsAt("/var/lib/rkt/pods/run/ccdd4e36-2d4c-49fd-8b94-4fb06133913d/stage1/rootfs/opt/stage2/flannel/rootfs/sys/fs/cgroup", defaultCgroupSubsystems)...),
-			expected: CgroupSubsystems{
-				MountPoints: map[string]string{
-					"blkio":   "/sys/fs/cgroup/blkio",
-					"cpu":     "/sys/fs/cgroup/cpu,cpuacct",
-					"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
-					"cpuset":  "/sys/fs/cgroup/cpuset",
-					"devices": "/sys/fs/cgroup/devices",
-					"memory":  "/sys/fs/cgroup/memory",
-					"hugetlb": "/sys/fs/cgroup/hugetlb",
-					"pids":    "/sys/fs/cgroup/pids",
-				},
-				Mounts: cgroupMountsAt("/sys/fs/cgroup", ourSubsystems),
+			expected: map[string]string{
+				"blkio":   "/sys/fs/cgroup/blkio",
+				"cpu":     "/sys/fs/cgroup/cpu,cpuacct",
+				"cpuacct": "/sys/fs/cgroup/cpu,cpuacct",
+				"cpuset":  "/sys/fs/cgroup/cpuset",
+				"devices": "/sys/fs/cgroup/devices",
+				"memory":  "/sys/fs/cgroup/memory",
+				"hugetlb": "/sys/fs/cgroup/hugetlb",
+				"pids":    "/sys/fs/cgroup/pids",
 			},
 		},
 		{
 			// most subsystems not mounted
 			mounts: cgroupMountsAt("/sys/fs/cgroup", []string{"cpu"}),
-			expected: CgroupSubsystems{
-				MountPoints: map[string]string{
-					"cpu": "/sys/fs/cgroup/cpu",
-				},
-				Mounts: cgroupMountsAt("/sys/fs/cgroup", []string{"cpu"}),
+			expected: map[string]string{
+				"cpu": "/sys/fs/cgroup/cpu",
 			},
 		},
 	}
 
 	for i, testCase := range testCases {
-		subSystems, err := getCgroupSubsystemsHelper(testCase.mounts, map[string]struct{}{})
+		subSystems, err := getCgroupSubsystemsHelper(testCase.mounts, nil)
 		if testCase.err {
 			if err == nil {
 				t.Fatalf("[case %d] Expected error but didn't get one", i)
@@ -113,23 +100,9 @@ func TestGetCgroupSubsystems(t *testing.T) {
 		if err != nil {
 			t.Fatalf("[case %d] Expected no error, but got %v", i, err)
 		}
-		assertCgroupSubsystemsEqual(t, testCase.expected, subSystems, fmt.Sprintf("[case %d]", i))
-	}
-}
-
-func assertCgroupSubsystemsEqual(t *testing.T, expected, actual CgroupSubsystems, message string) {
-	if !reflect.DeepEqual(expected.MountPoints, actual.MountPoints) {
-		t.Fatalf("%s Expected %v == %v", message, expected.MountPoints, actual.MountPoints)
-	}
-
-	sort.Slice(expected.Mounts, func(i, j int) bool {
-		return expected.Mounts[i].Mountpoint < expected.Mounts[j].Mountpoint
-	})
-	sort.Slice(actual.Mounts, func(i, j int) bool {
-		return actual.Mounts[i].Mountpoint < actual.Mounts[j].Mountpoint
-	})
-	if !reflect.DeepEqual(expected.Mounts, actual.Mounts) {
-		t.Fatalf("%s Expected %v == %v", message, expected.Mounts, actual.Mounts)
+		if !reflect.DeepEqual(testCase.expected, subSystems) {
+			t.Fatalf("[case %d] Expected %v == %v", i, testCase.expected, subSystems)
+		}
 	}
 }
 
@@ -141,7 +114,7 @@ func getFileContent(t *testing.T, filePath string) string {
 
 func clearTestData(t *testing.T, clearRefsPaths []string) {
 	for _, clearRefsPath := range clearRefsPaths {
-		err := ioutil.WriteFile(clearRefsPath, []byte("0\n"), 0644)
+		err := ioutil.WriteFile(clearRefsPath, []byte("0\n"), 0o644)
 		assert.Nil(t, err)
 	}
 }

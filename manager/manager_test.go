@@ -26,11 +26,10 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/docker"
 	containertest "github.com/google/cadvisor/container/testing"
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
-	"github.com/google/cadvisor/info/v2"
+	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 
 	"github.com/stretchr/testify/assert"
@@ -76,7 +75,7 @@ func createManagerAndAddContainers(
 		// Add Docker containers under their namespace.
 		if strings.HasPrefix(name, "/docker") {
 			mif.containers[namespacedContainerName{
-				Namespace: docker.DockerNamespace,
+				Namespace: DockerNamespace,
 				Name:      strings.TrimPrefix(name, "/docker/"),
 			}] = cont
 		}
@@ -139,7 +138,7 @@ func createManagerAndAddSubContainers(
 		// Add Docker containers under their namespace.
 		if strings.HasPrefix(name, "/docker") {
 			mif.containers[namespacedContainerName{
-				Namespace: docker.DockerNamespace,
+				Namespace: DockerNamespace,
 				Name:      strings.TrimPrefix(name, "/docker/"),
 			}] = cont
 		}
@@ -320,7 +319,6 @@ func TestGetContainerInfo(t *testing.T) {
 			t.Errorf("returned unexpected info for container %v; returned %+v; expected %+v", container, returned, expected)
 		}
 	}
-
 }
 
 func TestGetContainerInfoV2(t *testing.T) {

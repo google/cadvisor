@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/SeanDolphin/bqschema"
+
 	"github.com/google/cadvisor/cmd/internal/storage/bigquery/client"
 )
 
@@ -39,7 +40,10 @@ func main() {
 		panic(err)
 	}
 
-	c.PrintDatasets()
+	err = c.PrintDatasets()
+	if err != nil {
+		panic(err)
+	}
 
 	// Create a new dataset.
 	err = c.CreateDataset("sampledataset")

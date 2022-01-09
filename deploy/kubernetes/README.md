@@ -4,24 +4,34 @@ cAdvisor uses [Kustomize](https://github.com/kubernetes-sigs/kustomize) to manag
 
 ## Usage
 
-From the cadvisor/ directory, to generate the base daemonset:
+Pick a [cAdvisor release](https://github.com/google/cadvisor/releases)
 ```
-kustomize build deploy/kubernetes/base
+VERSION=v0.42.0
+```
+
+To update the image version([reference](https://github.com/kubernetes-sigs/kustomize/blob/master/examples/image.md)):
+```
+cd deploy/kubernetes/base && kustomize edit set image gcr.io/cadvisor/cadvisor:${VERSION} && cd ../../..
+```
+
+To generate the base daemonset:
+```
+kubectl kustomize deploy/kubernetes/base
 ```
 
 To apply the base daemonset to your cluster:
 ```
-kustomize build deploy/kubernetes/base | kubectl apply -f -
+kubectl kustomize deploy/kubernetes/base | kubectl apply -f -
 ```
 
 To generate the daemonset with example patches applied:
 ```
-kustomize build deploy/kubernetes/overlays/examples
+kubectl kustomize deploy/kubernetes/overlays/examples
 ```
 
 To apply the daemonset to your cluster with example patches applied:
 ```
-kustomize build deploy/kubernetes/overlays/examples | kubectl apply -f -
+kubectl kustomize deploy/kubernetes/overlays/examples | kubectl apply -f -
 ```
 
 ### cAdvisor with perf support on Kubernetes
@@ -30,7 +40,7 @@ Example of modifications needed to deploy cAdvisor with perf support is provided
 
 To generate and apply the daemonset with patches for cAdvisor with perf support:
 ```
-kustomize build deploy/kubernetes/overlays/examples_perf | kubectl apply -f -
+kubectl kustomize deploy/kubernetes/overlays/examples_perf | kubectl apply -f -
 ```
 
 ## Kustomization
@@ -39,7 +49,7 @@ On your own fork of cAdvisor, create your own overlay directoy with your patches
 
 To run the daemonset with your patches applied:
 ```
-kustomize build deploy/kubernetes/overlays/<my_custom_overlays> | kubectl apply -f -
+kubectl kustomize deploy/kubernetes/overlays/<my_custom_overlays> | kubectl apply -f -
 ```
 
 To get changes made to the upstream cAdvisor daemonset, simply rebase your fork of cAdvisor on top of upstream.  Since you didn't make changes to the originals, you won't have any conflicts.

@@ -14,35 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
-CONTAINER_ENGINE=$(command -v docker || true)
-if [ "$CONTAINER_ENGINE" == "" ]; then
-  CONTAINER_ENGINE=$(command -v podman || true)
-fi
-if [ "$CONTAINER_ENGINE" == "" ]; then
-  echo "Unable to find docker and podman. Exiting."
+if ! CONTAINER_ENGINE=$(command -v docker || command -v podman); then
+  echo "Neither docker nor podman found. Exiting."
   exit 1
 fi
 
 function run_tests() {
-  BUILD_CMD="go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v 'vendor\|integration' | tr '\n' ' ') && \
-    cd cmd && go test $GO_FLAGS $(go list $GO_FLAGS ./... | grep -v 'vendor\|integration' | tr '\n' ' ')"
+  BUILD_CMD="make test"
   if [ "$BUILD_PACKAGES" != "" ]; then
-    BUILD_CMD="echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
-    apt update && \
-    apt install -y -t buster-backports $BUILD_PACKAGES && \
+    BUILD_CMD="echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list
+    apt update
+    apt install -y -t buster-backports $BUILD_PACKAGES
     $BUILD_CMD"
   fi
 
   $CONTAINER_ENGINE run --rm \
     -w /go/src/github.com/google/cadvisor \
     -v ${PWD}:/go/src/github.com/google/cadvisor \
+    -e GO_FLAGS \
     golang:${GOLANG_VERSION} \
-    bash -c "$BUILD_CMD"
+    bash -e -c "$BUILD_CMD"
 }
 
 GO_FLAGS=${GO_FLAGS:-"-tags=netgo -race"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
-GOLANG_VERSION=${GOLANG_VERSION:-"1.16"}
+GOLANG_VERSION=${GOLANG_VERSION:-"1.17"}
 run_tests

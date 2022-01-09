@@ -78,7 +78,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		}
 
 		// Get Docker status
-		status, err := m.DockerInfo()
+		status, err := docker.Status()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to get docker info: %v", err), http.StatusInternalServerError)
 			return
@@ -86,7 +86,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 
 		dockerStatus, driverStatus := toStatusKV(status)
 		// Get Docker Images
-		images, err := m.DockerImages()
+		images, err := docker.Images()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to get docker images: %v", err), http.StatusInternalServerError)
 			return
@@ -158,5 +158,4 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 	}
 
 	klog.V(5).Infof("Request took %s", time.Since(start))
-	return
 }

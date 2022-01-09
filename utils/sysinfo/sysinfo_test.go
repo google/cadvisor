@@ -21,10 +21,11 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/sysfs"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetHugePagesInfo(t *testing.T) {
@@ -119,6 +120,7 @@ func TestGetNodesInfo(t *testing.T) {
 	}{
 		{
 			sysfs.CacheInfo{
+				Id:    0,
 				Size:  32 * 1024,
 				Type:  "unified",
 				Level: 3,
@@ -178,11 +180,13 @@ func TestGetNodesInfo(t *testing.T) {
               1
             ],
             "caches": null,
-	    "socket_id": 0
+            "uncore_caches": null,
+            "socket_id": 0
           }
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -206,11 +210,13 @@ func TestGetNodesInfo(t *testing.T) {
               3
             ],
             "caches": null,
-	    "socket_id": 1
+            "uncore_caches": null,
+            "socket_id": 1
           }
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -222,6 +228,7 @@ func TestGetNodesInfo(t *testing.T) {
 		},
 		{
 			sysfs.CacheInfo{
+				Id:    0,
 				Size:  32 * 1024,
 				Type:  "unified",
 				Level: 3,
@@ -283,7 +290,8 @@ func TestGetNodesInfo(t *testing.T) {
               1
             ],
             "caches": null,
-	    	"socket_id": 0
+            "socket_id": 0,
+            "uncore_caches": null
           },
           {
             "core_id": 1,
@@ -292,7 +300,8 @@ func TestGetNodesInfo(t *testing.T) {
               3
             ],
             "caches": null,
-	    	"socket_id": 1
+            "socket_id": 1,
+            "uncore_caches": null
           },
           {
             "core_id": 2,
@@ -301,11 +310,13 @@ func TestGetNodesInfo(t *testing.T) {
               5
             ],
             "caches": null,
-	    	"socket_id": 2
+            "socket_id": 2,
+            "uncore_caches": null
           }
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -341,6 +352,7 @@ func TestGetNodesInfo(t *testing.T) {
 func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{
+		Id:    0,
 		Size:  32 * 1024,
 		Type:  "unified",
 		Level: 3,
@@ -425,11 +437,13 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
               0
             ],
             "caches": null,
-	    "socket_id": 0
+            "socket_id": 0,
+            "uncore_caches": null
           }
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -452,11 +466,13 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
               2
             ],
             "caches": null,
-	    "socket_id": 1
+            "socket_id": 1,
+            "uncore_caches": null
           }
         ],
         "caches": [
           {
+            "id": 0,
             "size": 32768,
             "type": "unified",
             "level": 3
@@ -598,7 +614,8 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
               1
             ],
             "caches": null,
-	    "socket_id": 0
+            "uncore_caches": null,
+            "socket_id": 0
           }
         ],
         "caches": null
@@ -620,7 +637,8 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
               3
             ],
             "caches": null,
-	    "socket_id": 1
+            "uncore_caches": null,
+            "socket_id": 1
           }
         ],
         "caches": null
@@ -632,6 +650,7 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
 func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	c := sysfs.CacheInfo{
+		Id:    0,
 		Size:  32 * 1024,
 		Type:  "unified",
 		Level: 2,
@@ -698,12 +717,14 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
             ],
             "caches": [
               {
+                "id": 0,
                 "size": 32768,
                 "type": "unified",
                 "level": 2
               }
             ],
-	    "socket_id": 0
+            "uncore_caches": null,
+            "socket_id": 0
           }
         ],
         "caches": null
@@ -721,12 +742,14 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
             ],
             "caches": [
               {
+                "id": 0,
                 "size": 32768,
                 "type": "unified",
                 "level": 2
               }
             ],
-	    "socket_id": 1
+            "uncore_caches": null,
+            "socket_id": 1
           }
         ],
         "caches": null
@@ -739,6 +762,7 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 
 	c := sysfs.CacheInfo{
+		Id:    0,
 		Size:  32 * 1024,
 		Type:  "unified",
 		Level: 1,
@@ -801,12 +825,14 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 				  ],
 				  "caches":[
 					 {
+						"id": 0,
 						"size":32768,
 						"type":"unified",
 						"level":1
 					 }
 				  ],
-				  "socket_id": 0
+				  "socket_id": 0,
+				  "uncore_caches": null
 			   }
 			],
 			"caches":null
@@ -824,11 +850,13 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 				  ],
 				  "caches":[
 					 {
+						"id": 0,
 						"size":32768,
 						"type":"unified",
 						"level":1
 					 }
 				  ],
+				  "uncore_caches": null,
 				  "socket_id": 1
 			   }
 			],
@@ -900,7 +928,8 @@ func TestGetNodesInfoWithoutNodesWhenPhysicalPackageIDMissingForOneCPU(t *testin
 					 0
 				  ],
 				  "caches": null,
-				  "socket_id": 0
+				  "socket_id": 0,
+				  "uncore_caches": null
 			   }
 			],
 			"caches":null
@@ -1038,7 +1067,8 @@ func TestGetNodesWhenTopologyDirMissingForOneCPU(t *testing.T) {
 					0
 				 ],
 				 "caches":null,
-				 "socket_id":0
+				 "socket_id":0,
+				 "uncore_caches":null
 			  }
 		   ],
 		   "caches": null
@@ -1129,7 +1159,8 @@ func TestGetNodesWhenPhysicalPackageIDMissingForOneCPU(t *testing.T) {
 					0
 				 ],
 				 "caches":null,
-				 "socket_id":0
+				 "socket_id":0,
+				 "uncore_caches": null
 			  }
 		   ],
 		   "caches": null
@@ -1303,6 +1334,7 @@ func TestIgnoredNetworkDevices(t *testing.T) {
 func TestGetCacheInfo(t *testing.T) {
 	fakeSys := &fakesysfs.FakeSysFs{}
 	cacheInfo := sysfs.CacheInfo{
+		Id:    0,
 		Size:  1024,
 		Type:  "Data",
 		Level: 3,
@@ -1439,4 +1471,114 @@ func TestGetOnlineCPUs(t *testing.T) {
 	}
 	onlineCPUs := GetOnlineCPUs(topology)
 	assert.Equal(t, onlineCPUs, []int{0, 1, 2, 3, 4, 5, 6, 7})
+}
+
+func TestGetNodesInfoWithUncoreCacheInfo(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	c := sysfs.CacheInfo{
+		Id:    0,
+		Size:  32 * 1024,
+		Type:  "unified",
+		Level: 3,
+		Cpus:  8,
+	}
+	fakeSys.SetCacheInfo(c)
+
+	nodesPaths := []string{
+		"/fakeSysfs/devices/system/node/node0",
+		"/fakeSysfs/devices/system/node/node1",
+	}
+	fakeSys.SetNodesPaths(nodesPaths, nil)
+
+	memTotal := "MemTotal:       32817192 kB"
+	fakeSys.SetMemory(memTotal, nil)
+
+	cpusPaths := map[string][]string{
+		"/fakeSysfs/devices/system/node/node0": {
+			"/fakeSysfs/devices/system/node/node0/cpu0",
+			"/fakeSysfs/devices/system/node/node0/cpu1",
+		},
+		"/fakeSysfs/devices/system/node/node1": {
+			"/fakeSysfs/devices/system/node/node0/cpu2",
+			"/fakeSysfs/devices/system/node/node0/cpu3",
+		},
+	}
+	fakeSys.SetCPUsPaths(cpusPaths, nil)
+
+	coreThread := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu3": "1",
+	}
+	fakeSys.SetCoreThreads(coreThread, nil)
+	physicalPackageIDs := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/cpu0": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu1": "0",
+		"/fakeSysfs/devices/system/node/node0/cpu2": "1",
+		"/fakeSysfs/devices/system/node/node0/cpu3": "1",
+	}
+	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, nil)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(nodes))
+	assert.Equal(t, 4, cores)
+
+	nodesJSON, err := json.Marshal(nodes)
+	assert.Nil(t, err)
+	expectedNodes := `
+	[
+      {
+        "node_id": 0,
+        "memory": 33604804608,
+        "hugepages": null,
+        "cores": [
+          {
+            "core_id": 0,
+            "thread_ids": [
+              0,
+              1
+            ],
+            "caches": null,
+            "uncore_caches": [
+                {
+                  "id": 0,
+                  "size": 32768,
+                  "type": "unified",
+                  "level": 3
+                }
+            ],
+            "socket_id": 0
+          }
+        ],
+        "caches": null
+      },
+      {
+        "node_id": 1,
+        "memory": 33604804608,
+        "hugepages": null,
+        "cores": [
+          {
+            "core_id": 1,
+            "thread_ids": [
+              2,
+              3
+            ],
+            "caches": null,
+            "uncore_caches": [
+                {
+                  "id": 0,
+                  "size": 32768,
+                  "type": "unified",
+                  "level": 3
+                }
+            ],
+            "socket_id": 1
+          }
+        ],
+        "caches": null
+      }
+    ]`
+	assert.JSONEq(t, expectedNodes, string(nodesJSON))
 }

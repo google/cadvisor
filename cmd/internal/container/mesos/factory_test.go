@@ -15,10 +15,10 @@
 package mesos
 
 import (
-	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
-	"github.com/mesos/mesos-go/api/v1/lib"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	mesos "github.com/mesos/mesos-go/api/v1/lib"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIsContainerName(t *testing.T) {
@@ -57,7 +57,7 @@ func TestCanHandleAndAccept(t *testing.T) {
 
 	f := &mesosFactory{
 		machineInfoFactory: nil,
-		cgroupSubsystems:   containerlibcontainer.CgroupSubsystems{},
+		cgroupSubsystems:   nil,
 		fsInfo:             nil,
 		includedMetrics:    nil,
 		client:             fakeMesosAgentClient(testContainers, nil),

@@ -52,14 +52,15 @@ type mesosContainerHandler struct {
 
 func newMesosContainerHandler(
 	name string,
-	cgroupSubsystems *containerlibcontainer.CgroupSubsystems,
+	cgroupSubsystems map[string]string,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
 	includedMetrics container.MetricSet,
 	inHostNamespace bool,
+	metadataEnvAllowList []string,
 	client mesosAgentClient,
 ) (container.ContainerHandler, error) {
-	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems.MountPoints, name)
+	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems, name)
 
 	// Generate the equivalent cgroup manager for this container.
 	cgroupManager, err := containerlibcontainer.NewCgroupManager(name, cgroupPaths)
@@ -74,14 +75,14 @@ func newMesosContainerHandler(
 
 	id := ContainerNameToMesosId(name)
 
-	cinfo, err := client.ContainerInfo(id)
+	cinfo, err := client.containerInfo(id)
 
 	if err != nil {
 		return nil, err
 	}
 
 	labels := cinfo.labels
-	pid, err := client.ContainerPid(id)
+	pid, err := client.containerPID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +170,7 @@ func (h *mesosContainerHandler) GetStats() (*info.ContainerStats, error) {
 func (h *mesosContainerHandler) GetCgroupPath(resource string) (string, error) {
 	path, ok := h.cgroupPaths[resource]
 	if !ok {
-		return "", fmt.Errorf("could not find path for resource %q for container %q\n", resource, h.name)
+		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.name)
 	}
 	return path, nil
 }

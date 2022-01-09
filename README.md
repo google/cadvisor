@@ -67,3 +67,20 @@ cAdvisor aims to improve the resource usage and performance characteristics of r
 ## Community
 
 Contributions, questions, and comments are all welcomed and encouraged! cAdvisor developers hang out on [Slack](https://kubernetes.slack.com) in the #sig-node channel (get an invitation [here](http://slack.kubernetes.io/)). We also have [discuss.kubernetes.io](https://discuss.kubernetes.io/).
+
+Please reach out and get involved in the project, we're actively looking for more contributors to bring on board!
+
+### Core Team
+* [@bobbypage, Google](https://github.com/bobbypage)
+* [@iwankgb, Independent](https://github.com/iwankgb)
+* [@creatone, Intel](https://github.com/creatone)
+* [@dims, VMWare](https://github.com/dims)
+* [@mrunalp, RedHat](https://github.com/mrunalp)
+
+### Frequent Collaborators
+* [@haircommander, RedHat](https://github.com/haircommander)
+
+### Emeritus
+* [@dashpole, Google](https://github.com/dashpole)
+* [@dchen1107, Google](https://github.com/dchen1107)
+* [@derekwaynecarr, RedHat](https://github.com/derekwaynecarr)

@@ -1,0 +1,11 @@
+{
+  "core": {
+    "events": [],
+    "custom_events": []
+  },
+  "uncore": {
+    "events": [],
+    "custom_events": []
+  }
+}
+

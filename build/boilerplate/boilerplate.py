@@ -139,8 +139,8 @@ def get_regexs():
     regexs["year"] = re.compile( 'YEAR' )
     # dates can be something in the 21st century
     regexs["date"] = re.compile( '20[0-9][0-9]' )
-    # strip // +build \n\n build constraints
-    regexs["go_build_constraints"] = re.compile(r"^(// \+build.*\n)+\n", re.MULTILINE)
+    # strip // +build \n\n build and //go:build constraints
+    regexs["go_build_constraints"] = re.compile(r"^(//\s*(\+build|go:build).*\n)+\n", re.MULTILINE)
     # strip #!.* from shell scripts
     regexs["shebang"] = re.compile(r"^(#!.*\n)\n*", re.MULTILINE)
     return regexs

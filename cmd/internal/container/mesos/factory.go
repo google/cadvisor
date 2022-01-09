@@ -22,12 +22,13 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/klog/v2"
+
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/watcher"
-	"k8s.io/klog/v2"
 )
 
 var MesosAgentAddress = flag.String("mesos_agent", "127.0.0.1:5051", "Mesos agent address")
@@ -45,7 +46,7 @@ type mesosFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
 	// Information about the cgroup subsystems.
-	cgroupSubsystems libcontainer.CgroupSubsystems
+	cgroupSubsystems map[string]string
 
 	// Information about mounted filesystems.
 	fsInfo fs.FsInfo
@@ -59,19 +60,20 @@ func (f *mesosFactory) String() string {
 	return MesosNamespace
 }
 
-func (f *mesosFactory) NewContainerHandler(name string, inHostNamespace bool) (container.ContainerHandler, error) {
-	client, err := Client()
+func (f *mesosFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (container.ContainerHandler, error) {
+	client, err := newClient()
 	if err != nil {
 		return nil, err
 	}
 
 	return newMesosContainerHandler(
 		name,
-		&f.cgroupSubsystems,
+		f.cgroupSubsystems,
 		f.machineInfoFactory,
 		f.fsInfo,
 		f.includedMetrics,
 		inHostNamespace,
+		metadataEnvAllowList,
 		client,
 	)
 }
@@ -107,7 +109,7 @@ func (f *mesosFactory) CanHandleAndAccept(name string) (handle bool, accept bool
 	// Check if the container is known to mesos and it is active.
 	id := ContainerNameToMesosId(name)
 
-	_, err = f.client.ContainerInfo(id)
+	_, err = f.client.containerInfo(id)
 	if err != nil {
 		return false, true, fmt.Errorf("error getting running container: %v", err)
 	}
@@ -124,7 +126,7 @@ func Register(
 	fsInfo fs.FsInfo,
 	includedMetrics container.MetricSet,
 ) error {
-	client, err := Client()
+	client, err := newClient()
 
 	if err != nil {
 		return fmt.Errorf("unable to create mesos agent client: %v", err)

@@ -24,9 +24,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/info/v2"
 	"github.com/stretchr/testify/assert"
+
+	v1 "github.com/google/cadvisor/info/v1"
+	v2 "github.com/google/cadvisor/info/v2"
 )
 
 func cadvisorTestClient(path string, expectedPostObj *v1.ContainerInfoRequest, replyObj interface{}, t *testing.T) (*Client, *httptest.Server, error) {

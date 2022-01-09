@@ -248,6 +248,7 @@ func TestTopologyWithoutNodes(t *testing.T) {
 	sysFs := &fakesysfs.FakeSysFs{}
 
 	c := sysfs.CacheInfo{
+		Id:    0,
 		Size:  32 * 1024,
 		Type:  "unified",
 		Level: 0,
@@ -297,7 +298,7 @@ func TestTopologyWithoutNodes(t *testing.T) {
 	topologyJSON2, err := json.Marshal(topology[1])
 	assert.Nil(t, err)
 
-	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"size":32768,"type":"unified","level":0}], "socket_id": 0}],"caches":null}`
+	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"id":0, "size":32768,"type":"unified","level":0}], "socket_id": 0, "uncore_caches":null}],"caches":null}`
 	expectedTopology2 := `
 		{
 			"node_id":1,
@@ -312,12 +313,14 @@ func TestTopologyWithoutNodes(t *testing.T) {
 					],
 					"caches":[
 					{
+						"id": 0,
 						"size":32768,
 						"type":"unified",
 						"level":0
 					}
 					],
-					"socket_id": 1
+					"socket_id": 1,
+					"uncore_caches": null
 				}
 			],
 			"caches":null
@@ -458,4 +461,28 @@ func TestClockSpeedOnCpuLowerCase(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, clockSpeed)
 	assert.Equal(t, uint64(1450*1000), clockSpeed)
+}
+
+func TestGetCPUVendorID(t *testing.T) {
+	var testCases = []struct {
+		file     string
+		expected string
+	}{
+		{
+			"./testdata/cpuinfo_onesocket_many_NUMAs",
+			"GenuineIntel",
+		},
+		{
+			"./testdata/cpuinfo_arm",
+			"",
+		},
+	}
+
+	for _, test := range testCases {
+		testcpuinfo, err := ioutil.ReadFile(test.file)
+		assert.Nil(t, err)
+		assert.NotNil(t, testcpuinfo)
+		cpuVendorID := GetCPUVendorID(testcpuinfo)
+		assert.Equal(t, test.expected, cpuVendorID)
+	}
 }

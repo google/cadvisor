@@ -32,6 +32,6 @@ func TestAttributeInformationIsReturned(t *testing.T) {
 	}
 
 	vp := `\d+\.\d+\.\d+`
-	assert.True(t, assert.Regexp(t, vp, attributes.DockerVersion),
-		"Expected %s to match %s", attributes.DockerVersion, vp)
+	assert.True(t, assert.Regexp(t, vp, attributes.KernelVersion),
+		"Expected %s to match %s", attributes.KernelVersion, vp)
 }

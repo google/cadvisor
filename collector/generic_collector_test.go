@@ -22,10 +22,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/cadvisor/info/v1"
+	"github.com/stretchr/testify/assert"
 
 	containertest "github.com/google/cadvisor/container/testing"
-	"github.com/stretchr/testify/assert"
+	v1 "github.com/google/cadvisor/info/v1"
 )
 
 func TestEmptyConfig(t *testing.T) {

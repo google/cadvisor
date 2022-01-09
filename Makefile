@@ -13,10 +13,9 @@
 # limitations under the License.
 
 GO := go
-pkgs     = $(shell $(GO) list ./... | grep -v vendor)
-cmd_pkgs = $(shell cd cmd && $(GO) list ./... | grep -v vendor)
+GOLANGCI_VER := v1.42.1
+GO_TEST ?= $(GO) test $(or $(GO_FLAGS),-race)
 arch ?= $(shell go env GOARCH)
-go_path = $(shell go env GOPATH)
 
 ifeq ($(arch), amd64)
   Dockerfile_tag := ''
@@ -29,13 +28,12 @@ all: presubmit build test
 
 test:
 	@echo ">> running tests"
-	@$(GO) test -short -race $(pkgs)
-	@cd cmd && $(GO) test -short -race $(cmd_pkgs)
+	@# Filter out integration.
+	$(GO) list ./... | grep -vw integration | xargs $(GO_TEST)
+	cd cmd && $(GO_TEST) ./...
 
-test-with-libpfm:
-	@echo ">> running tests"
-	@$(GO) test -short -race -tags="libpfm" $(pkgs)
-	@cd cmd && $(GO) test -short -race -tags="libpfm" $(cmd_pkgs)
+test-with-libpfm: GO_FLAGS=-race -tags libpfm
+test-with-libpfm: test
 
 container-test:
 	@echo ">> runinng tests in a container"
@@ -45,9 +43,9 @@ docker-test: container-test
 	@echo "docker-test target is deprecated, use container-test instead"
 
 test-integration:
-	@GO_FLAGS=${$GO_FLAGS:-"-race"} ./build/build.sh
-	go test -c github.com/google/cadvisor/integration/tests/api
-	go test -c github.com/google/cadvisor/integration/tests/healthz
+	GO_FLAGS=$(or $(GO_FLAGS),-race) ./build/build.sh
+	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/api
+	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/healthz
 	@./build/integration.sh
 
 docker-test-integration:
@@ -62,13 +60,8 @@ tidy:
 
 format:
 	@echo ">> formatting code"
-	@$(GO) fmt $(pkgs)
-	@cd cmd && $(GO) fmt $(cmd_pkgs)
-
-vet:
-	@echo ">> vetting code"
-	@$(GO) vet $(pkgs)
-	@cd cmd && $(GO) vet $(cmd_pkgs)
+	@# goimports is a superset of gofmt.
+	@goimports -w -local github.com/google/cadvisor .
 
 build: assets
 	@echo ">> building binaries"
@@ -86,21 +79,25 @@ docker-%:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile$(Dockerfile_tag) .
 
 docker-build:
-	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.16 make build
+	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.17 make build
 
-presubmit: vet
-	@echo ">> checking go formatting"
-	@./build/check_gofmt.sh
+presubmit: lint
 	@echo ">> checking go mod tidy"
 	@./build/check_gotidy.sh
 	@echo ">> checking file boilerplate"
 	@./build/check_boilerplate.sh
 
 lint:
+	@# This assumes GOPATH/bin is in $PATH -- if not, the target will fail.
+	@if ! golangci-lint version; then \
+		echo ">> installing golangci-lint $(GOLANGCI_VER)"; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_VER); \
+	fi
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
-	@GOFLAGS="$(GO_FLAGS)" $(go_path)/bin/golangci-lint run
+	@golangci-lint run
+	@cd cmd && golangci-lint run
 
 clean:
 	@rm -f *.test cadvisor
 
-.PHONY: all build docker format release test test-integration vet presubmit tidy
+.PHONY: all build docker format release test test-integration lint presubmit tidy

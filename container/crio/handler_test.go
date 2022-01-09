@@ -18,26 +18,26 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/google/cadvisor/container"
-	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestHandler(t *testing.T) {
 	as := assert.New(t)
 	type testCase struct {
-		client             CrioClient
-		name               string
-		machineInfoFactory info.MachineInfoFactory
-		fsInfo             fs.FsInfo
-		storageDriver      storageDriver
-		storageDir         string
-		cgroupSubsystems   *containerlibcontainer.CgroupSubsystems
-		inHostNamespace    bool
-		metadataEnvs       []string
-		includedMetrics    container.MetricSet
+		client               CrioClient
+		name                 string
+		machineInfoFactory   info.MachineInfoFactory
+		fsInfo               fs.FsInfo
+		storageDriver        storageDriver
+		storageDir           string
+		cgroupSubsystems     map[string]string
+		inHostNamespace      bool
+		metadataEnvAllowList []string
+		includedMetrics      container.MetricSet
 
 		hasErr         bool
 		errContains    string
@@ -51,7 +51,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			"",
 			"",
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			nil,
 			nil,
@@ -67,7 +67,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			"",
 			"",
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			nil,
 			nil,
@@ -87,7 +87,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			"",
 			"",
-			&containerlibcontainer.CgroupSubsystems{},
+			nil,
 			false,
 			nil,
 			nil,
@@ -102,7 +102,7 @@ func TestHandler(t *testing.T) {
 			},
 		},
 	} {
-		handler, err := newCrioContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.storageDriver, ts.storageDir, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvs, ts.includedMetrics)
+		handler, err := newCrioContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.storageDriver, ts.storageDir, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvAllowList, ts.includedMetrics)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {
