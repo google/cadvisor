@@ -22,6 +22,26 @@ builds:
       - -X github.com/google/cadvisor/version.BuildUser={{.Env.GITHUB_ACTOR}}
       - -X github.com/google/cadvisor/version.BuildDate={{.Date}}
       - -X github.com/google/cadvisor/version.GoVersion={{.Env.GOLANG_VERSION}}
+  - id: cadvisor-plain-no-race
+    goarch:
+      - arm
+    goos:
+      - linux
+    flags:
+      - -tags=netgo
+    dir: ./cmd/
+    goarm:
+      - 6
+      - 7
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -X github.com/google/cadvisor/version.Version={{.Tag}}
+      - -X github.com/google/cadvisor/version.Revision={{.Commit}}
+      - -X github.com/google/cadvisor/version.Branch={{.Branch}}
+      - -X github.com/google/cadvisor/version.BuildUser={{.Env.GITHUB_ACTOR}}
+      - -X github.com/google/cadvisor/version.BuildDate={{.Date}}
+      - -X github.com/google/cadvisor/version.GoVersion={{.Env.GOLANG_VERSION}}
   - id: cadvisor-full
     goarch:
       - amd64
@@ -52,6 +72,7 @@ archives:
       amd64: ""
     builds:
       - cadvisor-plain
+      - cadvisor-plain-no-race
   - format: binary
     id: cadvisor-full
     name_template: "{{.ProjectName}}_{{.Os}}_{{.Arch}}-libpfm4-libipmctl"
