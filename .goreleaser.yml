@@ -2,7 +2,6 @@ builds:
   - id: cadvisor-plain
     goarch:
       - amd64
-      - arm64
     goos:
       - linux
     flags:
@@ -21,6 +20,7 @@ builds:
   - id: cadvisor-plain-no-race
     goarch:
       - arm
+      - arm64
     goos:
       - linux
     flags:
