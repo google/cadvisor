@@ -21,9 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/prometheus/client_golang/prometheus/cache"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/google/cadvisor/container"
 )
@@ -31,13 +33,16 @@ import (
 const machineMetricsFile = "testdata/prometheus_machine_metrics"
 const machineMetricsFailureFile = "testdata/prometheus_machine_metrics_failure"
 
-func TestPrometheusMachineCollector(t *testing.T) {
-	collector := NewPrometheusMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics)
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(collector)
+func TestMachineCollector(t *testing.T) {
+	c := NewMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics)
+	gatherer := cache.NewCachedTGatherer()
 
-	metricsFamily, err := registry.Gather()
-	assert.Nil(t, err)
+	var inserts []cache.Insert
+	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+
+	metricsFamily, done, err := gatherer.Gather()
+	done()
+	require.NoError(t, err)
 
 	var metricBuffer bytes.Buffer
 	for _, metricFamily := range metricsFamily {
@@ -51,17 +56,20 @@ func TestPrometheusMachineCollector(t *testing.T) {
 	assert.Equal(t, string(expectedMetrics), collectedMetrics)
 }
 
-func TestPrometheusMachineCollectorWithFailure(t *testing.T) {
+func TestMachineCollectorWithFailure(t *testing.T) {
 	provider := &erroringSubcontainersInfoProvider{
 		successfulProvider: testSubcontainersInfoProvider{},
 		shouldFail:         true,
 	}
-	collector := NewPrometheusMachineCollector(provider, container.AllMetrics)
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(collector)
+	c := NewMachineCollector(provider, container.AllMetrics)
+	gatherer := cache.NewCachedTGatherer()
 
-	metricsFamily, err := registry.Gather()
-	assert.Nil(t, err)
+	var inserts []cache.Insert
+	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+
+	metricsFamily, done, err := gatherer.Gather()
+	done()
+	require.NoError(t, err)
 
 	var metricBuffer bytes.Buffer
 	for _, metricFamily := range metricsFamily {

@@ -3,12 +3,11 @@ package metrics
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/cache"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
 )
@@ -36,54 +35,40 @@ func BenchmarkPrometheusCollector_Collect(b *testing.B) {
 		infoProvider.containers[name] = genContainerInfo(name)
 	}
 
-	reg := prometheus.NewBlockingRegistry()
-	c := NewPrometheusCollector(infoProvider, func(container *info.ContainerInfo) map[string]string {
+	c := NewContainerCollector(infoProvider, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
 	}, container.AllMetrics, now)
-	reg.MustRegisterRaw(c)
+	gatherer := cache.NewCachedTGatherer()
+
+	var inserts []cache.Insert
+	require.NoError(b, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+
+	var (
+		done func()
+		err  error
+	)
 
 	b.Run("Cached", func(b *testing.B) {
 		b.ReportAllocs()
-
-		neverUpdate := 9999 * time.Hour
-		c.SetOpts(v2.RequestOptions{
-			MaxAge: &neverUpdate, // Never update.
-		})
-
-		// Warm cache.
-		_, done, err := reg.Gather()
-		require.NoError(b, err)
-		done()
-
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			mfsTmp, done, err = reg.Gather()
-			require.NoError(b, err)
+			mfsTmp, done, err = gatherer.Gather()
 			done()
+			require.NoError(b, err)
 		}
 	})
 	b.Run("AlwaysUpdate", func(b *testing.B) {
 		b.ReportAllocs()
-
-		c.SetOpts(v2.RequestOptions{
-			MaxAge: nil, // Always trigger update.
-		})
-
-		var err error
-		var done func()
-
-		// Warm cache.
-		_, done, err = reg.Gather()
-		require.NoError(b, err)
-		done()
-
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			mfsTmp, done, err = reg.Gather()
-			require.NoError(b, err)
+			// Update and gather.
+			inserts = inserts[:0]
+			require.NoError(b, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+			mfsTmp, done, err = gatherer.Gather()
 			done()
+			require.NoError(b, err)
 		}
 	})
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/google/cadvisor/cmd/internal/pages"
 	"github.com/google/cadvisor/cmd/internal/pages/static"
 	"github.com/google/cadvisor/container"
+	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/validate"
@@ -92,22 +93,26 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 	return nil
 }
 
-// RegisterPrometheusHandler creates a new PrometheusCollector and configures
+// RegisterPrometheusHandler creates a new ContainerCollector and configures
 // the provided HTTP mux to handle the given Prometheus endpoint.
 func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager, prometheusEndpoint string,
 	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
-	r := prometheus.NewBlockingRegistry(prometheus.NewRegistry())
+
+	r := prometheus.NewRegistry()
 	r.MustRegister(
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
 	)
-	containersCollector := metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, clock.RealClock{})
-	r.MustRegisterRaw(
-		containersCollector,
-		metrics.NewPrometheusMachineCollector(resourceManager, includedMetrics),
-	)
+	containerUpdater := metrics.NewContainerCollector(resourceManager, f, includedMetrics, clock.RealClock{})
+	// TODO	metrics.NewMachineCollector(resourceManager, includedMetrics),
+
+	nameTypeCache := metrics.NewCachedGatherer(containerUpdater.Collect)
+	nameDockerCache := metrics.NewCachedGatherer(containerUpdater.Collect)
+	nameTypeGatherer := prometheus.NewMultiTRegistry(prometheus.ToTransactionalGatherer(r), nameTypeCache)
+	nameDockerGatherer := prometheus.NewMultiTRegistry(prometheus.ToTransactionalGatherer(r), nameDockerCache)
 
 	mux.Handle(prometheusEndpoint, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// TODO(bwplotka): Why we ask for full object if we override half of fields?
 		opts, err := api.GetRequestOptions(req)
 		if err != nil {
 			http.Error(w, "No metrics gathered, last error:\n\n"+err.Error(), http.StatusInternalServerError)
@@ -116,8 +121,13 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 		opts.Count = 1        // We only want the latest datapoint.
 		opts.Recursive = true // Get all child containers.
 
-		containersCollector.SetOpts(opts)
-		promhttp.HandlerForTransactional(r, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
+		// Present different metrics depending on option.
+		if opts.IdType == v2.TypeDocker {
+
+			promhttp.HandlerForTransactional(nameDockerGatherer, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
+			return
+		}
+		promhttp.HandlerForTransactional(nameTypeGatherer, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
 	}))
 }
 

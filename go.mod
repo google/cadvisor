@@ -3,8 +3,8 @@ module github.com/google/cadvisor
 go 1.16
 
 require (
-	cloud.google.com/go v0.54.0
- 	github.com/Microsoft/go-winio v0.4.15
+	cloud.google.com/go v0.65.0
+	github.com/Microsoft/go-winio v0.4.15
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/containerd v1.4.12
@@ -29,12 +29,12 @@ require (
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/pkg/errors v0.9.1
 	// TODO(bwplotka): Move to maintstream once merged https://github.com/prometheus/client_golang/pull/929.
-	github.com/prometheus/client_golang v1.11.1-0.20211024130314-8afb1687d291
+	github.com/prometheus/client_golang v1.12.1-0.20220126194218-961f8ca5e65b
 	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.10.0
+	github.com/prometheus/common v0.32.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
-	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c
+	golang.org/x/net v0.0.0-20210525063256-abc453219eb5
+	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
 	google.golang.org/grpc v1.33.2
 	k8s.io/klog/v2 v2.4.0
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
