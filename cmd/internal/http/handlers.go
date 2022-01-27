@@ -103,11 +103,11 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 		prometheus.NewGoCollector(),
 		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
 	)
-	containerUpdater := metrics.NewContainerCollector(resourceManager, f, includedMetrics, clock.RealClock{})
-	// TODO	metrics.NewMachineCollector(resourceManager, includedMetrics),
+	container := metrics.NewContainerCollector(resourceManager, f, includedMetrics, clock.RealClock{})
+	machine := metrics.NewMachineCollector(resourceManager, includedMetrics)
 
-	nameTypeCache := metrics.NewCachedGatherer(containerUpdater.Collect)
-	nameDockerCache := metrics.NewCachedGatherer(containerUpdater.Collect)
+	nameTypeCache := metrics.NewCachedGatherer(container.Collect, machine.Collect)
+	nameDockerCache := metrics.NewCachedGatherer(container.Collect, machine.Collect)
 	nameTypeGatherer := prometheus.NewMultiTRegistry(prometheus.ToTransactionalGatherer(r), nameTypeCache)
 	nameDockerGatherer := prometheus.NewMultiTRegistry(prometheus.ToTransactionalGatherer(r), nameDockerCache)
 
