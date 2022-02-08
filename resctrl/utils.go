@@ -27,6 +27,10 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
+
+	"k8s.io/klog/v2"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
@@ -57,6 +61,17 @@ const (
 	monGroupPrefix           = "cadvisor"
 )
 
+// mon_group info
+type monGroupInfo struct {
+	path       string
+	updateTime time.Time
+}
+
+type monGroupMap struct {
+	monGroups map[string]*monGroupInfo
+	lock sync.RWMutex
+}
+
 var (
 	rootResctrl          = ""
 	pidsPath             = ""
@@ -73,6 +88,7 @@ var (
 		schemataFileName: {},
 		tasksFileName:    {},
 	}
+	cadvisorMonGroupCache = &monGroupMap{}  // cache the mon_groups created by cadvisor
 )
 
 func Setup() error {
@@ -120,6 +136,8 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 		return "", fmt.Errorf("%q %q", noControlGroupFoundError, containerName)
 	}
 
+	// Reload all the mon_group created by cadvisor
+	cadvisorMonGroupCache.refreshMonGroup(controlGroupPath)
 	// Check if there is any monitoring group.
 	monGroupPath, err := findGroup(filepath.Join(controlGroupPath, monGroupsDirName), pids, false, true)
 	if err != nil {
@@ -167,7 +185,8 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 			}
 		}
 	}
-
+	// Add mon_group to cache
+	cadvisorMonGroupCache.addMonGroup(monGroupPath)
 	return monGroupPath, nil
 }
 
@@ -363,4 +382,61 @@ func getIntelRDTStatsFrom(path string, vendorID string) (intelrdt.Stats, error) 
 	stats.MBMStats = &mbmStats
 
 	return stats, nil
+}
+
+// refreshMonGroup load the mon_groups under the controlGroupPath
+func (m *monGroupMap)refreshMonGroup(controlGroupPath string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	if m.monGroups == nil {
+		m.monGroups = make(map[string]*monGroupInfo, 0)
+	}
+	files, _ := ioutil.ReadDir(controlGroupPath)
+	for _, file := range files {
+		monGroupName := file.Name()
+		if strings.HasPrefix(monGroupName, monGroupPrefix) {
+			if _, exist := m.monGroups[monGroupName]; !exist {
+				m.monGroups[monGroupName] = &monGroupInfo{
+					path:       filepath.Join(controlGroupPath, monGroupName),
+					updateTime: file.ModTime(),
+				}
+			}
+		}
+	}
+}
+
+// addMonGroup add new mon_group to cadvisorMonGroup
+func (m *monGroupMap)addMonGroup(monGroupPath string) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	if m.monGroups == nil {
+		m.monGroups = make(map[string]*monGroupInfo, 0)
+	}
+	monGroupFile := filepath.Base(monGroupPath)
+	if info, exist := m.monGroups[monGroupFile]; exist {
+		info.updateTime = time.Now()
+	} else {
+		m.monGroups[monGroupFile] = &monGroupInfo{
+			path:       monGroupPath,
+			updateTime: time.Now(),
+		}
+	}
+}
+
+// clearMonGroup clear up the expired mon_group
+func (m *monGroupMap) clearMonGroup(interval time.Duration) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	for monGroup, info := range m.monGroups {
+		if info.updateTime.Before(time.Now().Add(-3 * interval)) {
+			if strings.HasPrefix(filepath.Base(info.path), monGroupPrefix) {
+				err := os.RemoveAll(info.path)
+				if err != nil {
+					klog.Errorf("fail to clear up mon_group[%s]: %v", info.path, err)
+					continue
+				}
+			}
+			delete(m.monGroups, monGroup)
+		}
+	}
 }

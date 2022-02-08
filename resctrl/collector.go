@@ -61,6 +61,9 @@ func (c *collector) setup() error {
 		} else {
 			c.running = true
 		}
+
+		// when new container setup, try to remove expired mon_groups
+		cadvisorMonGroupCache.clearMonGroup(c.interval)
 		go func() {
 			for {
 				time.Sleep(c.interval)

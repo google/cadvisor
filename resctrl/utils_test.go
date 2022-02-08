@@ -27,8 +27,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runc/libcontainer/intelrdt"
@@ -705,5 +708,112 @@ func TestReadTasksFile(t *testing.T) {
 		actual, err := readTasksFile(test.tasksFile)
 		assert.Equal(t, test.expected, actual)
 		checkError(t, err, test.err)
+	}
+}
+
+func mockCadvisorMonGroup(controllerGroupPath string) int {
+	paths := []string{
+		path.Join(controllerGroupPath, strings.Join([]string{monGroupPrefix, "a"}, "-")),
+		path.Join(controllerGroupPath, strings.Join([]string{monGroupPrefix, "b"}, "-")),
+		path.Join(controllerGroupPath, strings.Join([]string{monGroupPrefix, "c"}, "-")),
+	}
+	num := 0
+	for _, p := range paths {
+		err := os.MkdirAll(p, os.ModePerm)
+		if err != nil {
+			num++
+		}
+	}
+	return num
+}
+
+func mockOtherMonGroup(controllerGroupPath string) int {
+	paths := []string{
+		path.Join(controllerGroupPath, strings.Join([]string{"a"}, "-")),
+		path.Join(controllerGroupPath, strings.Join([]string{"b"}, "-")),
+		path.Join(controllerGroupPath, strings.Join([]string{"c"}, "-")),
+	}
+	num := 0
+	for _, p := range paths {
+		err := os.MkdirAll(p, os.ModePerm)
+		if err != nil {
+			num++
+		}
+	}
+	return num
+}
+
+func TestRefreshCadvisorMonGroup(t *testing.T) {
+	controllerGroupPath, _ := ioutil.TempDir("", "cadvisor-test")
+	defer os.RemoveAll(controllerGroupPath)
+	testGroup := &monGroupMap{}
+	numOfCMon := mockCadvisorMonGroup(controllerGroupPath)
+	mockOtherMonGroup(controllerGroupPath)
+	testGroup.refreshMonGroup(controllerGroupPath)
+	assert.Equal(t, numOfCMon, len(testGroup.monGroups))
+}
+
+func TestAddCadvisorMonGroup(t *testing.T) {
+	testGroup := &monGroupMap{}
+	var testCases = []struct {
+		monGroupPath string
+		key          string
+		expected     string
+	}{
+		{
+			path.Join("testing", strings.Join([]string{monGroupPrefix, "1"}, "-")),
+			strings.Join([]string{monGroupPrefix, "1"}, "-"),
+			path.Join("testing", strings.Join([]string{monGroupPrefix, "1"}, "-")),
+		}, {
+			path.Join("testing", strings.Join([]string{monGroupPrefix, "2"}, "-")),
+			strings.Join([]string{monGroupPrefix, "2"}, "-"),
+			path.Join("testing", strings.Join([]string{monGroupPrefix, "2"}, "-")),
+		}, {
+			path.Join("testing", strings.Join([]string{monGroupPrefix, "3"}, "-")),
+			strings.Join([]string{monGroupPrefix, "3"}, "-"),
+			path.Join("testing", strings.Join([]string{monGroupPrefix, "3"}, "-")),
+		},
+	}
+	for _, testCase := range testCases {
+		testGroup.addMonGroup(testCase.monGroupPath)
+		assert.Equal(t, testGroup.monGroups[testCase.key].path, testCase.monGroupPath, "testing addMonGroup")
+	}
+}
+
+func TestClearCadvisorMonGroup(t *testing.T) {
+	interval := 1 * time.Hour
+	testGroup := &monGroupMap{}
+	var testCases = []struct {
+		monGroupPath string
+		key          string
+		updateTime   time.Time
+		isExist      bool
+	}{
+		{
+			path.Join("testing", strings.Join([]string{monGroupPrefix, "1"}, "-")),
+			strings.Join([]string{monGroupPrefix, "1"}, "-"),
+			time.Now(),
+			true,
+		}, {
+			path.Join("testing", strings.Join([]string{monGroupPrefix, "1"}, "-")),
+			strings.Join([]string{monGroupPrefix, "1"}, "-"),
+			time.Now().Add(-4 * interval),
+			false,
+		}, {
+			path.Join("testing", strings.Join([]string{"1"}, "-")),
+			strings.Join([]string{"1"}, "-"),
+			time.Now().Add(-4 * interval),
+			true,
+		},
+	}
+	for _, testCase := range testCases {
+		testGroup.monGroups = make(map[string]*monGroupInfo, 0)
+		testGroup.monGroups[testCase.key] = &monGroupInfo{
+			path:       testCase.monGroupPath,
+			updateTime: testCase.updateTime,
+		}
+		testGroup.clearMonGroup(interval)
+		_, exist := testGroup.monGroups[testCase.key]
+		assert.Equal(t, exist, testCase.isExist, "testing clearMonGroup")
 	}
 }
