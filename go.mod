@@ -10,8 +10,8 @@ require (
 	github.com/containerd/containerd v1.4.12
 	github.com/containerd/ttrpc v1.0.2
 	github.com/containerd/typeurl v1.0.2
-	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v20.10.7+incompatible
+	github.com/docker/distribution v2.8.0+incompatible // indirect
+	github.com/docker/docker v20.10.12+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
