@@ -123,10 +123,11 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 
 		// Present different metrics depending on option.
 		if opts.IdType == v2.TypeDocker {
-
+			nameDockerCache.UpdateOnMaxAge(opts)
 			promhttp.HandlerForTransactional(nameDockerGatherer, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
 			return
 		}
+		nameTypeCache.UpdateOnMaxAge(opts)
 		promhttp.HandlerForTransactional(nameTypeGatherer, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
 	}))
 }
