@@ -150,7 +150,7 @@ type Metric struct {
 
 	Help      *string
 	ValueType prometheus.ValueType
-	Value     float64
+	Value     *float64
 
 	// Timestamp is optional. Pass nil for no explicit timestamp.
 	Timestamp *time.Time
@@ -228,33 +228,27 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	case prometheus.CounterValue:
 		v := m.Counter
 		if v == nil {
-			v = &dto.Counter{Value: &entry.Value}
-		} else if *v.Value != entry.Value {
-			v.Value = &entry.Value
+			v = &dto.Counter{}
 		}
-
+		v.Value = entry.Value
 		m.Counter = v
 		m.Gauge = nil
 		m.Untyped = nil
 	case prometheus.GaugeValue:
 		v := m.Gauge
 		if v == nil {
-			v = &dto.Gauge{Value: &entry.Value}
-		} else if *v.Value != entry.Value {
-			v.Value = &entry.Value
+			v = &dto.Gauge{}
 		}
-
+		v.Value = entry.Value
 		m.Counter = nil
 		m.Gauge = v
 		m.Untyped = nil
 	case prometheus.UntypedValue:
 		v := m.Untyped
 		if v == nil {
-			v = &dto.Untyped{Value: &entry.Value}
-		} else if *v.Value != entry.Value {
-			v.Value = &entry.Value
+			v = &dto.Untyped{}
 		}
-
+		v.Value = entry.Value
 		m.Counter = nil
 		m.Gauge = nil
 		m.Untyped = v
@@ -271,7 +265,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	return nil
 }
 
-func (c *CachedTGatherer) Delete(entry *Metric) error {
+func (c *CachedTGatherer) Delete(entry Metric) error {
 	if !c.locked {
 		return errors.New("can't use Delete without start session using StartUpdateSession")
 	}

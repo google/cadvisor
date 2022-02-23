@@ -55,7 +55,7 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 			LabelValues: ins.lValues,
 			Help:        &ins.help,
 			ValueType:   ins.valueType,
-			Value:       ins.value,
+			Value:       &ins.value,
 		}); err != nil {
 			b.Error("update:", err)
 		}
@@ -83,7 +83,7 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 				LabelValues: inserts[0].lValues,
 				Help:        &inserts[0].help,
 				ValueType:   inserts[0].valueType,
-				Value:       inserts[0].value,
+				Value:       &inserts[0].value,
 			}); err != nil {
 				b.Error("update:", err)
 			}
@@ -104,7 +104,7 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 					LabelValues: ins.lValues,
 					Help:        &ins.help,
 					ValueType:   ins.valueType,
-					Value:       ins.value,
+					Value:       &ins.value,
 				}); err != nil {
 					b.Error("update:", err)
 				}
