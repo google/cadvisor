@@ -148,6 +148,18 @@ container_hugetlb_usage_bytes{container_env_foo_env="prod",container_label_foo_l
 # HELP container_last_seen Last time a container was seen by the exporter
 # TYPE container_last_seen gauge
 container_last_seen{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.395066363e+09 1395066363000
+# HELP container_llc_occupancy_bytes Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
+# TYPE container_llc_occupancy_bytes gauge
+container_llc_occupancy_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 162626 1395066363000
+container_llc_occupancy_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 213777 1395066363000
+# HELP container_memory_bandwidth_bytes Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
+# TYPE container_memory_bandwidth_bytes gauge
+container_memory_bandwidth_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 4.512312e+06 1395066363000
+container_memory_bandwidth_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 2.173713e+06 1395066363000
+# HELP container_memory_bandwidth_local_bytes Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
+# TYPE container_memory_bandwidth_local_bytes gauge
+container_memory_bandwidth_local_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 2.390393e+06 1395066363000
+container_memory_bandwidth_local_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 1.231233e+06 1395066363000
 # HELP container_memory_cache Number of bytes of page cache memory.
 # TYPE container_memory_cache gauge
 container_memory_cache{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 14 1395066363000
@@ -361,33 +373,33 @@ container_network_udp_usage_total{container_env_foo_env="prod",container_label_f
 # HELP container_oom_events_total Count of out of memory events observed for the container
 # TYPE container_oom_events_total counter
 container_oom_events_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0 1395066363000
-# HELP container_perf_events_total Perf event metric.
-# TYPE container_perf_events_total counter
-container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 123 1395066363000
-container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 321 1395066363000
-container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 456 1395066363000
-container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 789 1395066363000
 # HELP container_perf_events_scaling_ratio Perf event metric scaling ratio.
 # TYPE container_perf_events_scaling_ratio gauge
 container_perf_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
 container_perf_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.66666666666 1395066363000
 container_perf_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.5 1395066363000
 container_perf_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.33333333333 1395066363000
-# HELP container_perf_uncore_events_total Perf uncore event metric.
-# TYPE container_perf_uncore_events_total counter
-container_perf_uncore_events_total{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="0",zone_name="hello"} 1.231231512e+09 1395066363000
-container_perf_uncore_events_total{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="1",zone_name="hello"} 1.111231331e+09 1395066363000
+# HELP container_perf_events_total Perf event metric.
+# TYPE container_perf_events_total counter
+container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 123 1395066363000
+container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="0",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 321 1395066363000
+container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 456 1395066363000
+container_perf_events_total{container_env_foo_env="prod",container_label_foo_label="bar",cpu="1",event="instructions_retired",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 789 1395066363000
 # HELP container_perf_uncore_events_scaling_ratio Perf uncore event metric scaling ratio.
 # TYPE container_perf_uncore_events_scaling_ratio gauge
 container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="0",zone_name="hello"} 1 1395066363000
 container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="1",zone_name="hello"} 1 1395066363000
+# HELP container_perf_uncore_events_total Perf uncore event metric.
+# TYPE container_perf_uncore_events_total counter
+container_perf_uncore_events_total{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="0",zone_name="hello"} 1.231231512e+09 1395066363000
+container_perf_uncore_events_total{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="1",zone_name="hello"} 1.111231331e+09 1395066363000
 # HELP container_processes Number of processes running inside the container.
 # TYPE container_processes gauge
 container_processes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
 # HELP container_referenced_bytes Container referenced bytes during last measurements cycle
 # TYPE container_referenced_bytes gauge
 container_referenced_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1234 1395066363000
-# HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
+# HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise.
 # TYPE container_scrape_error gauge
 container_scrape_error 0
 # HELP container_sockets Number of open sockets for the container.
@@ -399,7 +411,7 @@ container_spec_cpu_period{container_env_foo_env="prod",container_label_foo_label
 # HELP container_spec_cpu_quota CPU quota of the container.
 # TYPE container_spec_cpu_quota gauge
 container_spec_cpu_quota{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 10000
-# HELP container_spec_cpu_shares CPU share of the container.
+# HELP container_spec_cpu_shares CPU share (limit) of the container.
 # TYPE container_spec_cpu_shares gauge
 container_spec_cpu_shares{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1000
 # HELP container_start_time_seconds Start time of the container since unix epoch in seconds.
@@ -421,15 +433,3 @@ container_threads_max{container_env_foo_env="prod",container_label_foo_label="ba
 # HELP container_ulimits_soft Soft ulimit values for the container root process. Unlimited if -1, except priority and nice
 # TYPE container_ulimits_soft gauge
 container_ulimits_soft{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",ulimit="max_open_files",zone_name="hello"} 16384 1395066363000
-# HELP container_llc_occupancy_bytes Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
-# TYPE container_llc_occupancy_bytes gauge
-container_llc_occupancy_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 162626 1395066363000
-container_llc_occupancy_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 213777 1395066363000
-# HELP container_memory_bandwidth_bytes Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
-# TYPE container_memory_bandwidth_bytes gauge
-container_memory_bandwidth_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 4.512312e+06 1395066363000
-container_memory_bandwidth_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 2.173713e+06 1395066363000
-# HELP container_memory_bandwidth_local_bytes Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM).
-# TYPE container_memory_bandwidth_local_bytes gauge
-container_memory_bandwidth_local_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 2.390393e+06 1395066363000
-container_memory_bandwidth_local_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 1.231233e+06 1395066363000

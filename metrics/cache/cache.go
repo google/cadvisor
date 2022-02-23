@@ -189,18 +189,20 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	mf, ok := c.metricFamiliesByName[*entry.FQName]
 	if !ok {
 		mf = &family{
-			MetricFamily:  &dto.MetricFamily{},
+			MetricFamily: &dto.MetricFamily{
+				Name: proto.String(""),
+				Help: proto.String(""),
+			},
 			metricsByHash: map[uint64]*metric{},
 		}
-		mf.Name = entry.FQName
+		mf.Type = entry.ValueType.ToDTO()
+		*mf.Name = *entry.FQName
+		*mf.Help = *entry.Help
 	}
 	if c.resetMode {
 		// Maintain if things were touched for more efficient clean up.
 		mf.touchState = c.desiredTouchState
 	}
-
-	mf.Type = entry.ValueType.ToDTO()
-	mf.Help = entry.Help
 
 	c.metricFamiliesByName[*entry.FQName] = mf
 
@@ -212,10 +214,14 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 			Metric: &dto.Metric{Label: make([]*dto.LabelPair, 0, len(entry.LabelNames))},
 		}
 		for j := range entry.LabelNames {
-			m.Label = append(m.Label, &dto.LabelPair{
-				Name:  &entry.LabelNames[j],
-				Value: &entry.LabelValues[j],
-			})
+			p := &dto.LabelPair{
+				Name:  proto.String(""),
+				Value: proto.String(""),
+			}
+			*p.Name = entry.LabelNames[j]
+			*p.Value = entry.LabelValues[j]
+
+			m.Label = append(m.Label, p)
 		}
 		sort.Sort(labelPairSorter(m.Label))
 		mf.needsRebuild = true
@@ -228,27 +234,27 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	case prometheus.CounterValue:
 		v := m.Counter
 		if v == nil {
-			v = &dto.Counter{}
+			v = &dto.Counter{Value: proto.Float64(0)}
 		}
-		v.Value = entry.Value
+		*v.Value = *entry.Value
 		m.Counter = v
 		m.Gauge = nil
 		m.Untyped = nil
 	case prometheus.GaugeValue:
 		v := m.Gauge
 		if v == nil {
-			v = &dto.Gauge{}
+			v = &dto.Gauge{Value: proto.Float64(0)}
 		}
-		v.Value = entry.Value
+		*v.Value = *entry.Value
 		m.Counter = nil
 		m.Gauge = v
 		m.Untyped = nil
 	case prometheus.UntypedValue:
 		v := m.Untyped
 		if v == nil {
-			v = &dto.Untyped{}
+			v = &dto.Untyped{Value: proto.Float64(0)}
 		}
-		v.Value = entry.Value
+		*v.Value = *entry.Value
 		m.Counter = nil
 		m.Gauge = nil
 		m.Untyped = v
