@@ -78,13 +78,10 @@ func (c *CachedGatherer) UpdateOnMaxAge(opts v2.RequestOptions) {
 	if opts.MaxAge == nil || time.Since(c.lastUpdate) > *opts.MaxAge {
 		c.lastUpdate = time.Now()
 
-		c.buf = c.buf[:0]
-		for _, collect := range c.collectFns {
-			c.buf = collect(opts, c.buf)
-		}
-		if err := c.CachedTGatherer.Update(true, c.buf, nil); err != nil {
-			panic(err) // Programmatic error.
-		}
+		stop := c.CachedTGatherer.StartUpdateSession()
+		c.container.Collect(opts, c.CachedTGatherer.InsertInPlace)
+		c.machine.Collect(c.CachedTGatherer.InsertInPlace)
+		stop()
 	}
 }
 
