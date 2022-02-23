@@ -24,6 +24,7 @@ func (p benchSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Re
 	return p.containers, nil
 }
 
+// export var=v1 && go test -count 5 -benchtime 5s -run '^$' -bench BenchmarkPrometheusCollector_Collect -memprofile=${var}.mem.pprof -cpuprofile=${var}.cpu.pprof > ${var}.txt
 func BenchmarkPrometheusCollector_Collect(b *testing.B) {
 	// Generate bigger dataset for realistic situation (we can assume node has ~20 pods), which produces:
 	// * 84 metric families, with 5567 series in total.
