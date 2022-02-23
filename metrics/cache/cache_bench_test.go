@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 
@@ -23,6 +24,9 @@ type insert struct {
 
 // export var=v1 && go test -count 5 -benchtime 100x -run '^$' -bench . -memprofile=${var}.mem.pprof -cpuprofile=${var}.cpu.pprof > ${var}.txt
 func BenchmarkCachedTGatherer_Insert(b *testing.B) {
+	defProfRate := runtime.MemProfileRate
+	runtime.MemProfileRate = 0
+
 	c := NewCachedTGatherer()
 
 	// Generate larger metric payload.
@@ -45,7 +49,7 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 	// Initial update.
 	stop := c.StartUpdateSession()
 	for _, ins := range inserts {
-		if err := c.InsertInPlace(ins.fqName, ins.lNames, ins.lValues, ins.help, ins.valueType, ins.value, nil); err != nil {
+		if err := c.InsertInPlace(&ins.fqName, ins.lNames, ins.lValues, &ins.help, &ins.valueType, &ins.value, nil); err != nil {
 			b.Error("update:", err)
 		}
 	}
@@ -56,20 +60,26 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 		panic("generated data set gave wrong numbers")
 	}
 
+	b.ResetTimer()
 	b.Run("Update of all elements with reset", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 
-		stop := c.StartUpdateSession()
-		for _, ins := range inserts {
-			if err := c.InsertInPlace(ins.fqName, ins.lNames, ins.lValues, ins.help, ins.valueType, ins.value, nil); err != nil {
-				b.Error("update:", err)
+		runtime.MemProfileRate = defProfRate
+
+		for i := 0; i < b.N; i++ {
+			stop := c.StartUpdateSession()
+			for _, ins := range inserts {
+				if err := c.InsertInPlace(&ins.fqName, ins.lNames, ins.lValues, &ins.help, &ins.valueType, &ins.value, nil); err != nil {
+					b.Error("update:", err)
+				}
 			}
+			stop()
 		}
-		stop()
 	})
 
 	b.Run("Gather", func(b *testing.B) {
+		b.Skip("l")
 		b.ReportAllocs()
 		b.ResetTimer()
 

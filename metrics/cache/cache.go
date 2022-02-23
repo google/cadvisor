@@ -90,21 +90,6 @@ func (c *CachedTGatherer) Gather() (_ []*dto.MetricFamily, done func(), err erro
 	return normalizeMetricFamilies(c.metricFamiliesByName), c.mMu.RUnlock, nil
 }
 
-// hash returns unique hash for this key.
-func hash(fqName string, lNames, lValues []string) uint64 {
-	h := xxhash.New()
-	_, _ = h.WriteString(fqName)
-	h.Write(separatorByteSlice)
-
-	for i := range lNames {
-		h.WriteString(lValues[i])
-		h.Write(separatorByteSlice)
-		h.WriteString(lValues[i])
-		h.Write(separatorByteSlice)
-	}
-	return h.Sum64()
-}
-
 func (c *CachedTGatherer) StartUpdateSession() (done func()) {
 	c.mMu.Lock()
 	c.locked = true
@@ -138,6 +123,9 @@ func (c *CachedTGatherer) StartUpdateSession() (done func()) {
 			}
 
 			mf.Metric = mf.Metric[:0]
+			if cap(mf.Metric) < len(mf.metricsByHash) {
+				mf.Metric = make([]*dto.Metric, 0, len(mf.metricsByHash))
+			}
 			for _, m := range mf.metricsByHash {
 				mf.Metric = append(mf.Metric, m.Metric)
 			}
@@ -151,17 +139,32 @@ func (c *CachedTGatherer) StartUpdateSession() (done func()) {
 	}
 }
 
+// hash returns unique hash for this key.
+func hash(fqName string, lNames, lValues []string) uint64 {
+	h := xxhash.New()
+	_, _ = h.WriteString(fqName)
+	_, _ = h.Write(separatorByteSlice)
+
+	for i := range lNames {
+		_, _ = h.WriteString(lValues[i])
+		_, _ = h.Write(separatorByteSlice)
+		_, _ = h.WriteString(lValues[i])
+		_, _ = h.Write(separatorByteSlice)
+	}
+	return h.Sum64()
+}
+
 // InsertInPlace all strings are reused, arrays are not reused.
 func (c *CachedTGatherer) InsertInPlace(
-	fqName string, // __name__
+	fqName *string, // __name__
 	// Label names can be unsorted, we will be sorting them later. The only implication is cachability if
 	// consumer provide non-deterministic order of those.
 	lNames []string,
 	lValues []string,
 
-	help string,
-	valueType prometheus.ValueType,
-	value float64,
+	help *string,
+	valueType *prometheus.ValueType,
+	value *float64,
 
 	// Timestamp is optional. Pass nil for no explicit timestamp.
 	timestamp *time.Time,
@@ -170,7 +173,7 @@ func (c *CachedTGatherer) InsertInPlace(
 		return errors.New("can't use InsertInPlace without starting session via StartUpdateSession")
 	}
 
-	if fqName == "" {
+	if *fqName == "" {
 		return errors.New("fqName cannot be empty")
 	}
 	if len(lNames) != len(lValues) {
@@ -179,13 +182,13 @@ func (c *CachedTGatherer) InsertInPlace(
 
 	// TODO(bwplotka): Validate FQ name and if lbl names and values are same length?
 	// Update metric family.
-	mf, ok := c.metricFamiliesByName[fqName]
+	mf, ok := c.metricFamiliesByName[*fqName]
 	if !ok {
 		mf = &family{
 			MetricFamily:  &dto.MetricFamily{},
 			metricsByHash: map[uint64]*metric{},
 		}
-		mf.Name = &fqName
+		mf.Name = fqName
 	}
 	if c.resetMode {
 		// Maintain if things were touched for more efficient clean up.
@@ -193,12 +196,12 @@ func (c *CachedTGatherer) InsertInPlace(
 	}
 
 	mf.Type = valueType.ToDTO()
-	mf.Help = &help
+	mf.Help = help
 
-	c.metricFamiliesByName[fqName] = mf
+	c.metricFamiliesByName[*fqName] = mf
 
 	// Update metric pointer.
-	hSum := hash(fqName, lNames, lValues)
+	hSum := hash(*fqName, lNames, lValues)
 	m, ok := mf.metricsByHash[hSum]
 	if !ok {
 		m = &metric{
@@ -217,40 +220,31 @@ func (c *CachedTGatherer) InsertInPlace(
 		m.touchState = c.desiredTouchState
 	}
 
-	switch valueType {
+	switch *valueType {
 	case prometheus.CounterValue:
 		v := m.Counter
 		if v == nil {
-			v = &dto.Counter{
-				Value: &value,
-			}
-		} else if *v.Value != value {
-			*v.Value = value
+			v = &dto.Counter{}
 		}
+		v.Value = value
 		m.Counter = v
 		m.Gauge = nil
 		m.Untyped = nil
 	case prometheus.GaugeValue:
 		v := m.Gauge
 		if v == nil {
-			v = &dto.Gauge{
-				Value: &value,
-			}
-		} else if *v.Value != value {
-			*v.Value = value
+			v = &dto.Gauge{}
 		}
+		v.Value = value
 		m.Counter = nil
 		m.Gauge = v
 		m.Untyped = nil
 	case prometheus.UntypedValue:
 		v := m.Untyped
 		if v == nil {
-			v = &dto.Untyped{
-				Value: &value,
-			}
-		} else if *v.Value != value {
-			*v.Value = value
+			v = &dto.Untyped{}
 		}
+		v.Value = value
 		m.Counter = nil
 		m.Gauge = nil
 		m.Untyped = v
