@@ -22,7 +22,7 @@ import (
 	"time"
 
 	v2 "github.com/google/cadvisor/info/v2"
-	"github.com/prometheus/client_golang/prometheus/cache"
+	"github.com/google/cadvisor/metrics/cache"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

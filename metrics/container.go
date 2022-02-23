@@ -24,7 +24,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
-	"github.com/prometheus/client_golang/prometheus/cache"
+	"github.com/google/cadvisor/metrics/cache"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/klog/v2"
@@ -1997,7 +1997,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, inser
 				})
 
 				labels = labels[:len(labels)-len(cm.extraLabels)]
-				values = values[:len(values)-len(metricValue.labels)]
+				values = values[:len(values)-len(metricValue.labels)] // RESUSES ALL!
 			}
 		}
 		if c.includedMetrics.Has(container.AppMetrics) {

@@ -7,6 +7,7 @@ require (
 	github.com/Microsoft/go-winio v0.4.15
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/containerd/containerd v1.4.12
 	github.com/containerd/ttrpc v1.0.2
 	github.com/containerd/typeurl v1.0.2
@@ -16,6 +17,7 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/gogo/protobuf v1.3.2
+	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/karrick/godirwalk v1.16.1
 	github.com/mindprince/gonvml v0.0.0-20190828220739-9ebdce4bb989
@@ -28,8 +30,7 @@ require (
 	github.com/opencontainers/runc v1.1.0
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/pkg/errors v0.9.1
-	// TODO(bwplotka): Move to maintstream once merged https://github.com/prometheus/client_golang/pull/929.
-	github.com/prometheus/client_golang v1.12.1-0.20220126194218-961f8ca5e65b
+	github.com/prometheus/client_golang v1.12.2-0.20220223112252-1f81b3e9130f
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.32.1
 	github.com/stretchr/testify v1.7.0
