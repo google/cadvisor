@@ -90,68 +90,55 @@ func (c *CachedTGatherer) Gather() (_ []*dto.MetricFamily, done func(), err erro
 	return normalizeMetricFamilies(c.metricFamiliesByName), c.mMu.RUnlock, nil
 }
 
+func (c *CachedTGatherer) closeUpdateSession() {
+	if c.resetMode {
+		// Trading off-time instead of memory allocated for otherwise needed replacement map.
+		for name, mf := range c.metricFamiliesByName {
+			if mf.touchState != c.desiredTouchState {
+				delete(c.metricFamiliesByName, name)
+				continue
+			}
+			for hash, m := range mf.metricsByHash {
+				if m.touchState != c.desiredTouchState {
+					delete(mf.metricsByHash, hash)
+					continue
+				}
+			}
+			if len(mf.metricsByHash) == 0 {
+				delete(c.metricFamiliesByName, name)
+			}
+		}
+
+		// Avoid resetting state by flipping what we will expect in the next update.
+		c.desiredTouchState = !c.desiredTouchState
+	}
+
+	for _, mf := range c.metricFamiliesByName {
+		if !mf.needsRebuild {
+			continue
+		}
+
+		mf.Metric = mf.Metric[:0]
+		if cap(mf.Metric) < len(mf.metricsByHash) {
+			mf.Metric = make([]*dto.Metric, 0, len(mf.metricsByHash))
+		}
+		for _, m := range mf.metricsByHash {
+			mf.Metric = append(mf.Metric, m.Metric)
+		}
+		sort.Sort(metricSorter(mf.Metric))
+
+		mf.needsRebuild = false
+	}
+
+	c.locked = false
+	c.mMu.Unlock()
+}
+
 func (c *CachedTGatherer) StartUpdateSession() (done func()) {
 	c.mMu.Lock()
 	c.locked = true
 
-	return func() {
-		if c.resetMode {
-			// Trading off-time instead of memory allocated for otherwise needed replacement map.
-			for name, mf := range c.metricFamiliesByName {
-				if mf.touchState != c.desiredTouchState {
-					delete(c.metricFamiliesByName, name)
-					continue
-				}
-				for hash, m := range mf.metricsByHash {
-					if m.touchState != c.desiredTouchState {
-						delete(mf.metricsByHash, hash)
-						continue
-					}
-				}
-				if len(mf.metricsByHash) == 0 {
-					delete(c.metricFamiliesByName, name)
-				}
-			}
-
-			// Avoid resetting state by flipping what we will expect in the next update.
-			c.desiredTouchState = !c.desiredTouchState
-		}
-
-		for _, mf := range c.metricFamiliesByName {
-			if !mf.needsRebuild {
-				continue
-			}
-
-			mf.Metric = mf.Metric[:0]
-			if cap(mf.Metric) < len(mf.metricsByHash) {
-				mf.Metric = make([]*dto.Metric, 0, len(mf.metricsByHash))
-			}
-			for _, m := range mf.metricsByHash {
-				mf.Metric = append(mf.Metric, m.Metric)
-			}
-			sort.Sort(metricSorter(mf.Metric))
-
-			mf.needsRebuild = false
-		}
-
-		c.locked = false
-		c.mMu.Unlock()
-	}
-}
-
-// hash returns unique hash for this key.
-func hash(fqName string, lNames, lValues []string) uint64 {
-	h := xxhash.New()
-	_, _ = h.WriteString(fqName)
-	_, _ = h.Write(separatorByteSlice)
-
-	for i := range lNames {
-		_, _ = h.WriteString(lValues[i])
-		_, _ = h.Write(separatorByteSlice)
-		_, _ = h.WriteString(lValues[i])
-		_, _ = h.Write(separatorByteSlice)
-	}
-	return h.Sum64()
+	return c.closeUpdateSession
 }
 
 type Insert struct {
@@ -167,6 +154,21 @@ type Insert struct {
 
 	// Timestamp is optional. Pass nil for no explicit timestamp.
 	Timestamp *time.Time
+}
+
+// hash returns unique hash for this key.
+func (ins *Insert) hash() uint64 {
+	h := xxhash.New()
+	_, _ = h.WriteString(ins.FQName)
+	_, _ = h.Write(separatorByteSlice)
+
+	for i := range ins.LabelNames {
+		_, _ = h.WriteString(ins.LabelValues[i])
+		_, _ = h.Write(separatorByteSlice)
+		_, _ = h.WriteString(ins.LabelValues[i])
+		_, _ = h.Write(separatorByteSlice)
+	}
+	return h.Sum64()
 }
 
 // InsertInPlace all strings are reused, arrays are not reused.
@@ -203,7 +205,7 @@ func (c *CachedTGatherer) InsertInPlace(entry *Insert) error {
 	c.metricFamiliesByName[entry.FQName] = mf
 
 	// Update metric pointer.
-	hSum := hash(entry.FQName, entry.LabelNames, entry.LabelValues)
+	hSum := entry.hash()
 	m, ok := mf.metricsByHash[hSum]
 	if !ok {
 		m = &metric{
@@ -263,7 +265,7 @@ func (c *CachedTGatherer) InsertInPlace(entry *Insert) error {
 	return nil
 }
 
-func (c *CachedTGatherer) Delete(fqName string, lNames []string, lValues []string) error {
+func (c *CachedTGatherer) Delete(entry *Insert) error {
 	if !c.locked {
 		return errors.New("can't use Delete without start session using StartUpdateSession")
 	}
@@ -272,25 +274,25 @@ func (c *CachedTGatherer) Delete(fqName string, lNames []string, lValues []strin
 		return errors.New("does not makes sense to delete entries in resetMode")
 	}
 
-	if fqName == "" {
+	if entry.FQName == "" {
 		return errors.New("fqName cannot be empty")
 	}
-	if len(lNames) != len(lValues) {
+	if len(entry.LabelNames) != len(entry.LabelValues) {
 		return errors.New("new metric: label name has different length than values")
 	}
 
-	mf, ok := c.metricFamiliesByName[fqName]
+	mf, ok := c.metricFamiliesByName[entry.FQName]
 	if !ok {
 		return nil
 	}
 
-	hSum := hash(fqName, lNames, lValues)
+	hSum := entry.hash()
 	if _, ok := mf.metricsByHash[hSum]; !ok {
 		return nil
 	}
 
 	if len(mf.metricsByHash) == 1 {
-		delete(c.metricFamiliesByName, fqName)
+		delete(c.metricFamiliesByName, entry.FQName)
 		return nil
 	}
 
