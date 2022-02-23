@@ -141,14 +141,14 @@ func (c *CachedTGatherer) StartUpdateSession() (done func()) {
 	return c.closeUpdateSession
 }
 
-type Insert struct {
-	FQName string // __name__
+type Metric struct {
+	FQName *string // __name__
 	// Label names can be unsorted, we will be sorting them later. The only implication is cachability if
 	// consumer provide non-deterministic order of those.
 	LabelNames  []string
 	LabelValues []string
 
-	Help      string
+	Help      *string
 	ValueType prometheus.ValueType
 	Value     float64
 
@@ -157,27 +157,27 @@ type Insert struct {
 }
 
 // hash returns unique hash for this key.
-func (ins *Insert) hash() uint64 {
+func (m *Metric) hash() uint64 {
 	h := xxhash.New()
-	_, _ = h.WriteString(ins.FQName)
+	_, _ = h.WriteString(*m.FQName)
 	_, _ = h.Write(separatorByteSlice)
 
-	for i := range ins.LabelNames {
-		_, _ = h.WriteString(ins.LabelValues[i])
+	for i := range m.LabelNames {
+		_, _ = h.WriteString(m.LabelValues[i])
 		_, _ = h.Write(separatorByteSlice)
-		_, _ = h.WriteString(ins.LabelValues[i])
+		_, _ = h.WriteString(m.LabelValues[i])
 		_, _ = h.Write(separatorByteSlice)
 	}
 	return h.Sum64()
 }
 
 // InsertInPlace all strings are reused, arrays are not reused.
-func (c *CachedTGatherer) InsertInPlace(entry *Insert) error {
+func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	if !c.locked {
 		return errors.New("can't use InsertInPlace without starting session via StartUpdateSession")
 	}
 
-	if entry.FQName == "" {
+	if *entry.FQName == "" {
 		return errors.New("fqName cannot be empty")
 	}
 	if len(entry.LabelNames) != len(entry.LabelValues) {
@@ -186,13 +186,13 @@ func (c *CachedTGatherer) InsertInPlace(entry *Insert) error {
 
 	// TODO(bwplotka): Validate FQ name and if lbl names and values are same length?
 	// Update metric family.
-	mf, ok := c.metricFamiliesByName[entry.FQName]
+	mf, ok := c.metricFamiliesByName[*entry.FQName]
 	if !ok {
 		mf = &family{
 			MetricFamily:  &dto.MetricFamily{},
 			metricsByHash: map[uint64]*metric{},
 		}
-		mf.Name = &entry.FQName
+		mf.Name = entry.FQName
 	}
 	if c.resetMode {
 		// Maintain if things were touched for more efficient clean up.
@@ -200,9 +200,9 @@ func (c *CachedTGatherer) InsertInPlace(entry *Insert) error {
 	}
 
 	mf.Type = entry.ValueType.ToDTO()
-	mf.Help = &entry.Help
+	mf.Help = entry.Help
 
-	c.metricFamiliesByName[entry.FQName] = mf
+	c.metricFamiliesByName[*entry.FQName] = mf
 
 	// Update metric pointer.
 	hSum := entry.hash()
@@ -228,27 +228,33 @@ func (c *CachedTGatherer) InsertInPlace(entry *Insert) error {
 	case prometheus.CounterValue:
 		v := m.Counter
 		if v == nil {
-			v = &dto.Counter{}
+			v = &dto.Counter{Value: &entry.Value}
+		} else if *v.Value != entry.Value {
+			v.Value = &entry.Value
 		}
-		v.Value = &entry.Value
+
 		m.Counter = v
 		m.Gauge = nil
 		m.Untyped = nil
 	case prometheus.GaugeValue:
 		v := m.Gauge
 		if v == nil {
-			v = &dto.Gauge{}
+			v = &dto.Gauge{Value: &entry.Value}
+		} else if *v.Value != entry.Value {
+			v.Value = &entry.Value
 		}
-		v.Value = &entry.Value
+
 		m.Counter = nil
 		m.Gauge = v
 		m.Untyped = nil
 	case prometheus.UntypedValue:
 		v := m.Untyped
 		if v == nil {
-			v = &dto.Untyped{}
+			v = &dto.Untyped{Value: &entry.Value}
+		} else if *v.Value != entry.Value {
+			v.Value = &entry.Value
 		}
-		v.Value = &entry.Value
+
 		m.Counter = nil
 		m.Gauge = nil
 		m.Untyped = v
@@ -265,7 +271,7 @@ func (c *CachedTGatherer) InsertInPlace(entry *Insert) error {
 	return nil
 }
 
-func (c *CachedTGatherer) Delete(entry *Insert) error {
+func (c *CachedTGatherer) Delete(entry *Metric) error {
 	if !c.locked {
 		return errors.New("can't use Delete without start session using StartUpdateSession")
 	}
@@ -274,14 +280,14 @@ func (c *CachedTGatherer) Delete(entry *Insert) error {
 		return errors.New("does not makes sense to delete entries in resetMode")
 	}
 
-	if entry.FQName == "" {
+	if *entry.FQName == "" {
 		return errors.New("fqName cannot be empty")
 	}
 	if len(entry.LabelNames) != len(entry.LabelValues) {
 		return errors.New("new metric: label name has different length than values")
 	}
 
-	mf, ok := c.metricFamiliesByName[entry.FQName]
+	mf, ok := c.metricFamiliesByName[*entry.FQName]
 	if !ok {
 		return nil
 	}
@@ -292,7 +298,7 @@ func (c *CachedTGatherer) Delete(entry *Insert) error {
 	}
 
 	if len(mf.metricsByHash) == 1 {
-		delete(c.metricFamiliesByName, entry.FQName)
+		delete(c.metricFamiliesByName, *entry.FQName)
 		return nil
 	}
 

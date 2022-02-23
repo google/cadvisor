@@ -42,7 +42,7 @@ func TestContainerCollector(t *testing.T) {
 	}, container.AllMetrics, now)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Insert
+	var inserts []cache.Metric
 	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics")
 
@@ -77,7 +77,7 @@ func TestContainerCollectorWithPerfAggregated(t *testing.T) {
 	}, metrics, now)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Insert
+	var inserts []cache.Metric
 	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics_perf_aggregated")
 }
@@ -108,7 +108,7 @@ func TestContainerCollector_scrapeFailure(t *testing.T) {
 	}, container.AllMetrics, now)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Insert
+	var inserts []cache.Metric
 	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics_failure")
 

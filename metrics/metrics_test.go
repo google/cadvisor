@@ -43,7 +43,7 @@ func BenchmarkPrometheusCollector_Collect(b *testing.B) {
 	}, container.AllMetrics, now)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Insert
+	var inserts []cache.Metric
 	require.NoError(b, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
 
 	var (

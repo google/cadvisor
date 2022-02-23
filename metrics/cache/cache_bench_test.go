@@ -4,22 +4,23 @@ import (
 	"fmt"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 )
 
-//type insert struct {
-//	fqName  string
-//	lNames  []string
-//	lValues []string
-//
-//	help      string
-//	valueType prometheus.ValueType
-//	value     float64
-//
-//	timestamp *time.Time
-//}
+type insert struct {
+	fqName  string
+	lNames  []string
+	lValues []string
+
+	help      string
+	valueType prometheus.ValueType
+	value     float64
+
+	timestamp *time.Time
+}
 
 // export var=v1 && go test -count 5 -benchtime 100x -run '^$' -bench . -memprofile=${var}.mem.pprof -cpuprofile=${var}.cpu.pprof > ${var}.txt
 func BenchmarkCachedTGatherer_Insert(b *testing.B) {
@@ -29,18 +30,18 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 	c := NewCachedTGatherer()
 
 	// Generate larger metric payload.
-	inserts := make([]Insert, 0, 1e6)
+	inserts := make([]insert, 0, 1e6)
 
 	// 1000 metrics in 1000 families.
 	for i := 0; i < 1e3; i++ {
 		for j := 0; j < 1e3; j++ {
-			inserts = append(inserts, Insert{
-				FQName:      fmt.Sprintf("realistic_longer_name_%d", i),
-				LabelNames:  []string{"realistic_label_name1", "realistic_label_name2", "realistic_label_name3"},
-				LabelValues: []string{"realistic_label_value1", "realistic_label_value2", fmt.Sprintf("realistic_label_value3_%d", j)},
-				Help:        "help string is usually quite large, so let's make it a bit realistic.",
-				ValueType:   prometheus.GaugeValue,
-				Value:       float64(j),
+			inserts = append(inserts, insert{
+				fqName:    fmt.Sprintf("realistic_longer_name_%d", i),
+				lNames:    []string{"realistic_label_name1", "realistic_label_name2", "realistic_label_name3"},
+				lValues:   []string{"realistic_label_value1", "realistic_label_value2", fmt.Sprintf("realistic_label_value3_%d", j)},
+				help:      "help string is usually quite large, so let's make it a bit realistic.",
+				valueType: prometheus.GaugeValue,
+				value:     float64(j),
 			})
 		}
 	}
@@ -48,7 +49,14 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 	// Initial update.
 	stop := c.StartUpdateSession()
 	for _, ins := range inserts {
-		if err := c.InsertInPlace(&ins); err != nil {
+		if err := c.InsertInPlace(Metric{
+			FQName:      &ins.fqName,
+			LabelNames:  ins.lNames,
+			LabelValues: ins.lValues,
+			Help:        &ins.help,
+			ValueType:   ins.valueType,
+			Value:       ins.value,
+		}); err != nil {
 			b.Error("update:", err)
 		}
 	}
@@ -59,17 +67,45 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 		panic("generated data set gave wrong numbers")
 	}
 
-	b.ResetTimer()
+	// We care about memory profile starting from here.
+	runtime.MemProfileRate = defProfRate
+
+	b.Run("Update of one element in empty cache", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+
+		for i := 0; i < b.N; i++ {
+			c := NewCachedTGatherer()
+			stop := c.StartUpdateSession()
+			if err := c.InsertInPlace(Metric{
+				FQName:      &inserts[0].fqName,
+				LabelNames:  inserts[0].lNames,
+				LabelValues: inserts[0].lValues,
+				Help:        &inserts[0].help,
+				ValueType:   inserts[0].valueType,
+				Value:       inserts[0].value,
+			}); err != nil {
+				b.Error("update:", err)
+			}
+			stop()
+		}
+	})
+
 	b.Run("Update of all elements with reset", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
 
-		runtime.MemProfileRate = defProfRate
-
 		for i := 0; i < b.N; i++ {
 			stop := c.StartUpdateSession()
 			for _, ins := range inserts {
-				if err := c.InsertInPlace(&ins); err != nil {
+				if err := c.InsertInPlace(Metric{
+					FQName:      &ins.fqName,
+					LabelNames:  ins.lNames,
+					LabelValues: ins.lValues,
+					Help:        &ins.help,
+					ValueType:   ins.valueType,
+					Value:       ins.value,
+				}); err != nil {
 					b.Error("update:", err)
 				}
 			}
@@ -78,7 +114,6 @@ func BenchmarkCachedTGatherer_Insert(b *testing.B) {
 	})
 
 	b.Run("Gather", func(b *testing.B) {
-		b.Skip("l")
 		b.ReportAllocs()
 		b.ResetTimer()
 

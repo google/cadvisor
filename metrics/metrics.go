@@ -45,27 +45,29 @@ type infoProvider interface {
 	GetMachineInfo() (*info.MachineInfo, error)
 }
 
-type CollectFn func(opts v2.RequestOptions, inserts []cache.Insert) []cache.Insert
-
 var _ prometheus.TransactionalGatherer = &CachedGatherer{}
 
 // CachedGatherer is an TransactionalGatherer that is able to cache and update in place metrics from defined Cadvisor collectors.
 // Caller has responsibility to use `UpdateOnMaxAge` whenever cache has to be updated.
 type CachedGatherer struct {
 	*cache.CachedTGatherer
-	buf []cache.Insert
+
+	container *ContainerCollector
+	machine   *MachineCollector
 
 	mu         sync.Mutex
-	collectFns []CollectFn
 	lastUpdate time.Time
 }
 
-func NewCachedGatherer(cfs ...CollectFn) *CachedGatherer {
+func NewCachedGatherer(container *ContainerCollector, machine *MachineCollector) *CachedGatherer {
 	return &CachedGatherer{
 		CachedTGatherer: cache.NewCachedTGatherer(),
-		collectFns:      cfs,
+		container:       container,
+		machine:         machine,
 	}
 }
+
+type cacheInsertFn func(entry cache.Metric) error
 
 // UpdateOnMaxAge updates cache using provided collectorFns whenever cache is older than provided `MaxAge`. If `MaxAge` is nil, we always update cache.
 // UpdateOnMaxAge is goroutine safe.

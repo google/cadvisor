@@ -189,7 +189,7 @@ func NewMachineCollector(i infoProvider, includedMetrics container.MetricSet) *M
 }
 
 // Collect fetches latest statistics about machines in form of prometheus cache inserts.
-func (c *MachineCollector) Collect(_ v2.RequestOptions, inserts []cache.Insert) []cache.Insert {
+func (c *MachineCollector) Collect(_ v2.RequestOptions, inserts []cache.Metric) []cache.Metric {
 	errorsGauge := 0
 	inserts, err := c.collectMachineInfo(inserts)
 	if err != nil {
@@ -198,7 +198,7 @@ func (c *MachineCollector) Collect(_ v2.RequestOptions, inserts []cache.Insert) 
 	}
 
 	// TODO(bwplotka): Consider moving this to normal metric or returning error directly instead of metric.
-	return append(inserts, cache.Insert{
+	return append(inserts, cache.Metric{
 		Key:       cache.Key{FQName: "machine_scrape_error"},
 		Help:      "1 if there was an error while getting machine metrics, 0 otherwise",
 		ValueType: prometheus.GaugeValue,
@@ -206,7 +206,7 @@ func (c *MachineCollector) Collect(_ v2.RequestOptions, inserts []cache.Insert) 
 	})
 }
 
-func (c *MachineCollector) collectMachineInfo(inserts []cache.Insert) ([]cache.Insert, error) {
+func (c *MachineCollector) collectMachineInfo(inserts []cache.Metric) ([]cache.Metric, error) {
 	machineInfo, err := c.infoProvider.GetMachineInfo()
 	if err != nil {
 		return nil, err
@@ -227,7 +227,7 @@ func (c *MachineCollector) collectMachineInfo(inserts []cache.Insert) ([]cache.I
 			labels = append(labels, metric.extraLabels...)
 			values = append(values, metricValue.labels...)
 
-			inserts = append(inserts, cache.Insert{
+			inserts = append(inserts, cache.Metric{
 				Key: cache.Key{
 					FQName:      metric.name,
 					LabelNames:  labels,

@@ -4,16 +4,17 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/google/cadvisor/metrics/cache"
 	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 )
 
-var testEntries = []*cache.Insert{
-	{FQName: "a", LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc"}, Help: "help a", ValueType: prometheus.GaugeValue, Value: 1},
-	{FQName: "b", LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc"}, Help: "help b", ValueType: prometheus.GaugeValue, Value: 2},
-	{FQName: "a", LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc2"}, Help: "help a2", ValueType: prometheus.GaugeValue, Value: 3},
-	{FQName: "a", LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc3"}, Help: "help a2", ValueType: prometheus.GaugeValue, Value: 4},
+var testEntries = []*cache.Metric{
+	{FQName: proto.String("a"), LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc"}, Help: proto.String("help a"), ValueType: prometheus.GaugeValue, Value: 1},
+	{FQName: proto.String("b"), LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc"}, Help: proto.String("help b"), ValueType: prometheus.GaugeValue, Value: 2},
+	{FQName: proto.String("a"), LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc2"}, Help: proto.String("help a2"), ValueType: prometheus.GaugeValue, Value: 3},
+	{FQName: proto.String("a"), LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc3"}, Help: proto.String("help a3"), ValueType: prometheus.GaugeValue, Value: 4},
 }
 
 func TestCachedTGatherer(t *testing.T) {
@@ -103,12 +104,12 @@ func TestCachedTGatherer(t *testing.T) {
 	}
 
 	closeSession = c.StartUpdateSession()
-	if err := c.InsertInPlace(&cache.Insert{
+	if err := c.InsertInPlace(&cache.Metric{
 		FQName: "ax", LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc"}, Help: "help ax", ValueType: prometheus.GaugeValue, Value: 1,
 	}); err != nil {
 		t.Fatal("unexpected error:", err)
 	}
-	if err := c.InsertInPlace(&cache.Insert{
+	if err := c.InsertInPlace(&cache.Metric{
 		FQName: "bx", LabelNames: []string{"b", "c"}, LabelValues: []string{"valb", "valc"}, Help: "help bx", ValueType: prometheus.GaugeValue, Value: 1,
 	}); err != nil {
 		t.Fatal("unexpected error:", err)

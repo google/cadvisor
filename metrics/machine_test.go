@@ -37,7 +37,7 @@ func TestMachineCollector(t *testing.T) {
 	c := NewMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Insert
+	var inserts []cache.Metric
 	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
 
 	metricsFamily, done, err := gatherer.Gather()
@@ -64,7 +64,7 @@ func TestMachineCollectorWithFailure(t *testing.T) {
 	c := NewMachineCollector(provider, container.AllMetrics)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Insert
+	var inserts []cache.Metric
 	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
 
 	metricsFamily, done, err := gatherer.Gather()
