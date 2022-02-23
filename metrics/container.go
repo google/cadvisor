@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
@@ -45,29 +44,29 @@ const (
 	LabelImage = "image"
 )
 
-var (
-	containerStartTimeMetricName = proto.String("container_start_time_seconds")
-	containerStartTimeMetricHelp = proto.String("Start time of the container since unix epoch in seconds.")
+const (
+	containerStartTimeMetricName = "container_start_time_seconds"
+	containerStartTimeMetricHelp = "Start time of the container since unix epoch in seconds."
 
-	containerSpecCPUPeriodName = proto.String("container_spec_cpu_period")
-	containerSpecCPUPeriodHelp = proto.String("CPU period of the container.")
+	containerSpecCPUPeriodName = "container_spec_cpu_period"
+	containerSpecCPUPeriodHelp = "CPU period of the container."
 
-	containerSpecCPUQuotaName = proto.String("container_spec_cpu_quota")
-	containerSpecCPUQuotaHelp = proto.String("CPU quota of the container.")
+	containerSpecCPUQuotaName = "container_spec_cpu_quota"
+	containerSpecCPUQuotaHelp = "CPU quota of the container."
 
-	containerSpecCPUSharesName = proto.String("container_spec_cpu_shares")
-	containerSpecCPUSharesHelp = proto.String("CPU share (limit) of the container.")
+	containerSpecCPUSharesName = "container_spec_cpu_shares"
+	containerSpecCPUSharesHelp = "CPU share (limit) of the container."
 
-	containerSpecMemLimitName = proto.String("container_spec_memory_limit_bytes")
-	containerSpecMemLimitHelp = proto.String("Memory limit for the container.")
+	containerSpecMemLimitName = "container_spec_memory_limit_bytes"
+	containerSpecMemLimitHelp = "Memory limit for the container."
 
-	containerSpecMemSwapLimitName = proto.String("container_spec_memory_swap_limit_bytes")
-	containerSpecMemSwapLimitHelp = proto.String("Memory swap limit for the container.")
+	containerSpecMemSwapLimitName = "container_spec_memory_swap_limit_bytes"
+	containerSpecMemSwapLimitHelp = "Memory swap limit for the container."
 
-	containerSpecMemResLimitName = proto.String("container_spec_memory_reservation_limit_bytes")
-	containerSpecMemResLimitHelp = proto.String("Memory reservation limit for the container.")
+	containerSpecMemResLimitName = "container_spec_memory_reservation_limit_bytes"
+	containerSpecMemResLimitHelp = "Memory reservation limit for the container."
 
-	customAppMetricHelp = proto.String("Custom application metric.")
+	customAppMetricHelp = "Custom application metric."
 )
 
 // asFloat64 converts a uint64 into a float64.
@@ -155,18 +154,17 @@ func NewContainerCollector(i infoProvider, f ContainerLabelsFunc, includedMetric
 		infoProvider:        i,
 		containerLabelsFunc: f,
 		versionInfo: cache.Metric{
-			FQName:      proto.String("cadvisor_version_info"),
+			FQName:      "cadvisor_version_info",
 			LabelNames:  []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"},
 			LabelValues: make([]string, 0, 5),
-			Help:        proto.String("A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision."),
+			Help:        "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.",
 			ValueType:   prometheus.GaugeValue,
-			Value:       proto.Float64(1),
+			Value:       1,
 		},
 		containerScrapeErrors: cache.Metric{
-			FQName:    proto.String("container_scrape_error"),
-			Help:      proto.String("1 if there was an error while getting container metrics, 0 otherwise."),
+			FQName:    "container_scrape_error",
+			Help:      "1 if there was an error while getting container metrics, 0 otherwise.",
 			ValueType: prometheus.GaugeValue,
-			Value:     proto.Float64(1),
 		},
 		containerMetrics: []containerMetric{
 			{
@@ -1836,7 +1834,7 @@ func (c *ContainerCollector) Collect(opts v2.RequestOptions, cacheInsertFn cache
 		klog.Warningf("Couldn't get containers: %s", err)
 	}
 
-	*c.containerScrapeErrors.Value = errorsGauge
+	c.containerScrapeErrors.Value = errorsGauge
 	_ = cacheInsertFn(c.containerScrapeErrors)
 }
 
@@ -1938,7 +1936,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 			LabelValues: values,
 			Help:        containerStartTimeMetricHelp,
 			ValueType:   prometheus.GaugeValue,
-			Value:       proto.Float64(float64(cont.Spec.CreationTime.Unix())),
+			Value:       float64(cont.Spec.CreationTime.Unix()),
 		}))
 		if cont.Spec.HasCpu {
 			merr.Append(cacheInsertFn(cache.Metric{
@@ -1947,7 +1945,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecCPUPeriodHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       proto.Float64(float64(cont.Spec.Cpu.Period)),
+				Value:       float64(cont.Spec.Cpu.Period),
 			}))
 			if cont.Spec.Cpu.Quota != 0 {
 				merr.Append(cacheInsertFn(cache.Metric{
@@ -1956,7 +1954,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 					LabelValues: values,
 					Help:        containerSpecCPUQuotaHelp,
 					ValueType:   prometheus.GaugeValue,
-					Value:       proto.Float64(float64(cont.Spec.Cpu.Quota)),
+					Value:       float64(cont.Spec.Cpu.Quota),
 				}))
 			}
 			merr.Append(cacheInsertFn(cache.Metric{
@@ -1965,7 +1963,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecCPUSharesHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       proto.Float64(float64(cont.Spec.Cpu.Limit)),
+				Value:       float64(cont.Spec.Cpu.Limit),
 			}))
 		}
 		if cont.Spec.HasMemory {
@@ -1975,7 +1973,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecMemLimitHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       proto.Float64(float64(cont.Spec.Memory.Limit)),
+				Value:       float64(cont.Spec.Memory.Limit),
 			}))
 			merr.Append(cacheInsertFn(cache.Metric{
 				FQName:      containerSpecMemSwapLimitName,
@@ -1983,7 +1981,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecMemSwapLimitHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       proto.Float64(float64(cont.Spec.Memory.SwapLimit)),
+				Value:       float64(cont.Spec.Memory.SwapLimit),
 			}))
 			merr.Append(cacheInsertFn(cache.Metric{
 				FQName:      containerSpecMemSwapLimitName,
@@ -1991,7 +1989,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecMemSwapLimitHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       proto.Float64(float64(cont.Spec.Memory.SwapLimit)),
+				Value:       float64(cont.Spec.Memory.SwapLimit),
 			}))
 			merr.Append(cacheInsertFn(cache.Metric{
 				FQName:      containerSpecMemResLimitName,
@@ -1999,7 +1997,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecMemResLimitHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       proto.Float64(float64(cont.Spec.Memory.Reservation)),
+				Value:       float64(cont.Spec.Memory.Reservation),
 			}))
 		}
 
@@ -2016,12 +2014,12 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				values = append(values, metricValue.labels...)
 
 				merr.Append(cacheInsertFn(cache.Metric{
-					FQName:      &cm.name,
+					FQName:      cm.name,
 					LabelNames:  labels,
 					LabelValues: values,
-					Help:        &cm.help,
+					Help:        cm.help,
 					ValueType:   cm.valueType,
-					Value:       &metricValue.value,
+					Value:       metricValue.value,
 					Timestamp:   &metricValue.timestamp,
 				}))
 
@@ -2050,12 +2048,12 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 					}
 
 					merr.Append(cacheInsertFn(cache.Metric{
-						FQName:      &metricLabel,
+						FQName:      metricLabel,
 						LabelNames:  clabels,
 						LabelValues: cvalues,
 						Help:        customAppMetricHelp,
 						ValueType:   prometheus.GaugeValue,
-						Value:       &metric.FloatValue,
+						Value:       metric.FloatValue,
 					}))
 				}
 			}

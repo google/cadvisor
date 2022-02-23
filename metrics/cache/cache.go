@@ -142,15 +142,15 @@ func (c *CachedTGatherer) StartUpdateSession() (done func()) {
 }
 
 type Metric struct {
-	FQName *string // __name__
+	FQName string // __name__
 	// Label names can be unsorted, we will be sorting them later. The only implication is cachability if
 	// consumer provide non-deterministic order of those.
 	LabelNames  []string
 	LabelValues []string
 
-	Help      *string
+	Help      string
 	ValueType prometheus.ValueType
-	Value     *float64
+	Value     float64
 
 	// Timestamp is optional. Pass nil for no explicit timestamp.
 	Timestamp *time.Time
@@ -159,7 +159,7 @@ type Metric struct {
 // hash returns unique hash for this key.
 func (m *Metric) hash() uint64 {
 	h := xxhash.New()
-	_, _ = h.WriteString(*m.FQName)
+	_, _ = h.WriteString(m.FQName)
 	_, _ = h.Write(separatorByteSlice)
 
 	for i := range m.LabelNames {
@@ -177,7 +177,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 		return errors.New("can't use InsertInPlace without starting session via StartUpdateSession")
 	}
 
-	if *entry.FQName == "" {
+	if entry.FQName == "" {
 		return errors.New("fqName cannot be empty")
 	}
 	if len(entry.LabelNames) != len(entry.LabelValues) {
@@ -186,7 +186,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 
 	// TODO(bwplotka): Validate FQ name and if lbl names and values are same length?
 	// Update metric family.
-	mf, ok := c.metricFamiliesByName[*entry.FQName]
+	mf, ok := c.metricFamiliesByName[entry.FQName]
 	if !ok {
 		mf = &family{
 			MetricFamily: &dto.MetricFamily{
@@ -196,15 +196,15 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 			metricsByHash: map[uint64]*metric{},
 		}
 		mf.Type = entry.ValueType.ToDTO()
-		*mf.Name = *entry.FQName
-		*mf.Help = *entry.Help
+		*mf.Name = entry.FQName
+		*mf.Help = entry.Help
 	}
 	if c.resetMode {
 		// Maintain if things were touched for more efficient clean up.
 		mf.touchState = c.desiredTouchState
 	}
 
-	c.metricFamiliesByName[*entry.FQName] = mf
+	c.metricFamiliesByName[entry.FQName] = mf
 
 	// Update metric pointer.
 	hSum := entry.hash()
@@ -236,7 +236,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 		if v == nil {
 			v = &dto.Counter{Value: proto.Float64(0)}
 		}
-		*v.Value = *entry.Value
+		*v.Value = entry.Value
 		m.Counter = v
 		m.Gauge = nil
 		m.Untyped = nil
@@ -245,7 +245,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 		if v == nil {
 			v = &dto.Gauge{Value: proto.Float64(0)}
 		}
-		*v.Value = *entry.Value
+		*v.Value = entry.Value
 		m.Counter = nil
 		m.Gauge = v
 		m.Untyped = nil
@@ -254,7 +254,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 		if v == nil {
 			v = &dto.Untyped{Value: proto.Float64(0)}
 		}
-		*v.Value = *entry.Value
+		*v.Value = entry.Value
 		m.Counter = nil
 		m.Gauge = nil
 		m.Untyped = v
@@ -280,14 +280,14 @@ func (c *CachedTGatherer) Delete(entry Metric) error {
 		return errors.New("does not makes sense to delete entries in resetMode")
 	}
 
-	if *entry.FQName == "" {
+	if entry.FQName == "" {
 		return errors.New("fqName cannot be empty")
 	}
 	if len(entry.LabelNames) != len(entry.LabelValues) {
 		return errors.New("new metric: label name has different length than values")
 	}
 
-	mf, ok := c.metricFamiliesByName[*entry.FQName]
+	mf, ok := c.metricFamiliesByName[entry.FQName]
 	if !ok {
 		return nil
 	}
@@ -298,7 +298,7 @@ func (c *CachedTGatherer) Delete(entry Metric) error {
 	}
 
 	if len(mf.metricsByHash) == 1 {
-		delete(c.metricFamiliesByName, *entry.FQName)
+		delete(c.metricFamiliesByName, entry.FQName)
 		return nil
 	}
 

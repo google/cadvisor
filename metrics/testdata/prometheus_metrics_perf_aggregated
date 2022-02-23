@@ -20,7 +20,7 @@ container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",containe
 # TYPE container_perf_uncore_events_total counter
 container_perf_uncore_events_total{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="0",zone_name="hello"} 1.231231512e+09 1395066363000
 container_perf_uncore_events_total{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="1",zone_name="hello"} 1.111231331e+09 1395066363000
-# HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise
+# HELP container_scrape_error 1 if there was an error while getting container metrics, 0 otherwise.
 # TYPE container_scrape_error gauge
 container_scrape_error 0
 # HELP container_spec_cpu_period CPU period of the container.
@@ -29,7 +29,7 @@ container_spec_cpu_period{container_env_foo_env="prod",container_label_foo_label
 # HELP container_spec_cpu_quota CPU quota of the container.
 # TYPE container_spec_cpu_quota gauge
 container_spec_cpu_quota{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 10000
-# HELP container_spec_cpu_shares CPU share of the container.
+# HELP container_spec_cpu_shares CPU share (limit) of the container.
 # TYPE container_spec_cpu_shares gauge
 container_spec_cpu_shares{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1000
 # HELP container_start_time_seconds Start time of the container since unix epoch in seconds.

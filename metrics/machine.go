@@ -17,7 +17,6 @@ package metrics
 import (
 	"strconv"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/google/cadvisor/metrics/cache"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -72,10 +71,9 @@ func NewMachineCollector(i infoProvider, includedMetrics container.MetricSet) *M
 	c := &MachineCollector{
 		infoProvider: i,
 		machineScrapeErrors: cache.Metric{
-			FQName:    proto.String("machine_scrape_error"),
-			Help:      proto.String("1 if there was an error while getting machine metrics, 0 otherwise"),
+			FQName:    "machine_scrape_error",
+			Help:      "1 if there was an error while getting machine metrics, 0 otherwise.",
 			ValueType: prometheus.GaugeValue,
-			Value:     proto.Float64(1),
 		},
 		machineMetrics: []machineMetric{
 			{
@@ -204,7 +202,7 @@ func (c *MachineCollector) Collect(cacheInsertFn cacheInsertFn) {
 		klog.Warningf("Couldn't get machine info: %s", err)
 	}
 
-	*c.machineScrapeErrors.Value = errorsGauge
+	c.machineScrapeErrors.Value = errorsGauge
 	_ = cacheInsertFn(c.machineScrapeErrors)
 }
 
@@ -231,12 +229,12 @@ func (c *MachineCollector) collectMachineInfo(cacheInsertFn cacheInsertFn) error
 			values = append(values, metricValue.labels...)
 
 			m := cache.Metric{
-				FQName:      &metric.name,
+				FQName:      metric.name,
 				LabelNames:  labels,
 				LabelValues: values,
-				Help:        &metric.help,
+				Help:        metric.help,
 				ValueType:   metric.valueType,
-				Value:       &metricValue.value,
+				Value:       metricValue.value,
 			}
 
 			if !metricValue.timestamp.IsZero() {
