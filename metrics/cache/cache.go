@@ -154,63 +154,65 @@ func hash(fqName string, lNames, lValues []string) uint64 {
 	return h.Sum64()
 }
 
-// InsertInPlace all strings are reused, arrays are not reused.
-func (c *CachedTGatherer) InsertInPlace(
-	fqName *string, // __name__
+type Insert struct {
+	FQName string // __name__
 	// Label names can be unsorted, we will be sorting them later. The only implication is cachability if
 	// consumer provide non-deterministic order of those.
-	lNames []string,
-	lValues []string,
+	LabelNames  []string
+	LabelValues []string
 
-	help *string,
-	valueType *prometheus.ValueType,
-	value *float64,
+	Help      string
+	ValueType prometheus.ValueType
+	Value     float64
 
 	// Timestamp is optional. Pass nil for no explicit timestamp.
-	timestamp *time.Time,
-) error {
+	Timestamp *time.Time
+}
+
+// InsertInPlace all strings are reused, arrays are not reused.
+func (c *CachedTGatherer) InsertInPlace(entry *Insert) error {
 	if !c.locked {
 		return errors.New("can't use InsertInPlace without starting session via StartUpdateSession")
 	}
 
-	if *fqName == "" {
+	if entry.FQName == "" {
 		return errors.New("fqName cannot be empty")
 	}
-	if len(lNames) != len(lValues) {
+	if len(entry.LabelNames) != len(entry.LabelValues) {
 		return errors.New("new metric: label name has different length than values")
 	}
 
 	// TODO(bwplotka): Validate FQ name and if lbl names and values are same length?
 	// Update metric family.
-	mf, ok := c.metricFamiliesByName[*fqName]
+	mf, ok := c.metricFamiliesByName[entry.FQName]
 	if !ok {
 		mf = &family{
 			MetricFamily:  &dto.MetricFamily{},
 			metricsByHash: map[uint64]*metric{},
 		}
-		mf.Name = fqName
+		mf.Name = &entry.FQName
 	}
 	if c.resetMode {
 		// Maintain if things were touched for more efficient clean up.
 		mf.touchState = c.desiredTouchState
 	}
 
-	mf.Type = valueType.ToDTO()
-	mf.Help = help
+	mf.Type = entry.ValueType.ToDTO()
+	mf.Help = &entry.Help
 
-	c.metricFamiliesByName[*fqName] = mf
+	c.metricFamiliesByName[entry.FQName] = mf
 
 	// Update metric pointer.
-	hSum := hash(*fqName, lNames, lValues)
+	hSum := hash(entry.FQName, entry.LabelNames, entry.LabelValues)
 	m, ok := mf.metricsByHash[hSum]
 	if !ok {
 		m = &metric{
-			Metric: &dto.Metric{Label: make([]*dto.LabelPair, 0, len(lNames))},
+			Metric: &dto.Metric{Label: make([]*dto.LabelPair, 0, len(entry.LabelNames))},
 		}
-		for j := range lNames {
+		for j := range entry.LabelNames {
 			m.Label = append(m.Label, &dto.LabelPair{
-				Name:  &lNames[j],
-				Value: &lValues[j],
+				Name:  &entry.LabelNames[j],
+				Value: &entry.LabelValues[j],
 			})
 		}
 		sort.Sort(labelPairSorter(m.Label))
@@ -220,13 +222,13 @@ func (c *CachedTGatherer) InsertInPlace(
 		m.touchState = c.desiredTouchState
 	}
 
-	switch *valueType {
+	switch entry.ValueType {
 	case prometheus.CounterValue:
 		v := m.Counter
 		if v == nil {
 			v = &dto.Counter{}
 		}
-		v.Value = value
+		v.Value = &entry.Value
 		m.Counter = v
 		m.Gauge = nil
 		m.Untyped = nil
@@ -235,7 +237,7 @@ func (c *CachedTGatherer) InsertInPlace(
 		if v == nil {
 			v = &dto.Gauge{}
 		}
-		v.Value = value
+		v.Value = &entry.Value
 		m.Counter = nil
 		m.Gauge = v
 		m.Untyped = nil
@@ -244,17 +246,17 @@ func (c *CachedTGatherer) InsertInPlace(
 		if v == nil {
 			v = &dto.Untyped{}
 		}
-		v.Value = value
+		v.Value = &entry.Value
 		m.Counter = nil
 		m.Gauge = nil
 		m.Untyped = v
 	default:
-		return fmt.Errorf("unsupported value type %v", valueType)
+		return fmt.Errorf("unsupported value type %v", entry.ValueType)
 	}
 
 	m.TimestampMs = nil
-	if timestamp != nil {
-		m.TimestampMs = proto.Int64(timestamp.Unix()*1000 + int64(timestamp.Nanosecond()/1000000))
+	if entry.Timestamp != nil {
+		m.TimestampMs = proto.Int64(entry.Timestamp.Unix()*1000 + int64(entry.Timestamp.Nanosecond()/1000000))
 	}
 	mf.metricsByHash[hSum] = m
 
