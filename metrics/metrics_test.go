@@ -24,8 +24,8 @@ func (p benchSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Re
 	return p.containers, nil
 }
 
-// export var=v1 && go test -count 5 -benchtime 5s -run '^$' -bench BenchmarkPrometheusCollector_Collect -memprofile=${var}.mem.pprof -cpuprofile=${var}.cpu.pprof > ${var}.txt
-func BenchmarkPrometheusCollector_Collect(b *testing.B) {
+// export var=v1 && go test -count 5 -benchtime 5s -run '^$' -bench . -memprofile=${var}.mem.pprof -cpuprofile=${var}.cpu.pprof > ${var}.txt
+func BenchmarkContainerCollector_Collect(b *testing.B) {
 	// Generate bigger dataset for realistic situation (we can assume node has ~20 pods), which produces:
 	// * 84 metric families, with 5567 series in total.
 	// * 1081124 bytes (~1MB) of DTO struct.
@@ -43,8 +43,9 @@ func BenchmarkPrometheusCollector_Collect(b *testing.B) {
 	}, container.AllMetrics, now)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Metric
-	require.NoError(b, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop := gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
 
 	var (
 		done func()
@@ -65,8 +66,10 @@ func BenchmarkPrometheusCollector_Collect(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			// Update and gather.
-			inserts = inserts[:0]
-			require.NoError(b, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+			stop := gatherer.StartUpdateSession()
+			c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+			stop()
+
 			mfsTmp, done, err = gatherer.Gather()
 			done()
 			require.NoError(b, err)

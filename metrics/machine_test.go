@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/metrics/cache"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
@@ -37,8 +36,9 @@ func TestMachineCollector(t *testing.T) {
 	c := NewMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Metric
-	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop := gatherer.StartUpdateSession()
+	c.Collect(gatherer.InsertInPlace)
+	stop()
 
 	metricsFamily, done, err := gatherer.Gather()
 	done()
@@ -64,8 +64,9 @@ func TestMachineCollectorWithFailure(t *testing.T) {
 	c := NewMachineCollector(provider, container.AllMetrics)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Metric
-	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop := gatherer.StartUpdateSession()
+	c.Collect(gatherer.InsertInPlace)
+	stop()
 
 	metricsFamily, done, err := gatherer.Gather()
 	done()

@@ -24,8 +24,6 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/metrics/cache"
-	"github.com/stretchr/testify/require"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
@@ -42,13 +40,15 @@ func TestContainerCollector(t *testing.T) {
 	}, container.AllMetrics, now)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Metric
-	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop := gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics")
 
 	// Check if caching / in-place replacement work.
-	inserts = inserts[:0]
-	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop = gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics")
 
 	// Use with allowlist, which should expose different metrics.
@@ -61,8 +61,9 @@ func TestContainerCollector(t *testing.T) {
 		s["zone.name"] = "hello"
 		return s
 	}
-	inserts = inserts[:0]
-	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop = gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics_whitelist_filtered")
 }
 
@@ -77,8 +78,9 @@ func TestContainerCollectorWithPerfAggregated(t *testing.T) {
 	}, metrics, now)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Metric
-	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop := gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics_perf_aggregated")
 }
 
@@ -108,14 +110,16 @@ func TestContainerCollector_scrapeFailure(t *testing.T) {
 	}, container.AllMetrics, now)
 	gatherer := cache.NewCachedTGatherer()
 
-	var inserts []cache.Metric
-	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop := gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics_failure")
 
 	provider.shouldFail = false
 
-	inserts = inserts[:0]
-	require.NoError(t, gatherer.Update(true, c.Collect(v2.RequestOptions{}, inserts), nil))
+	stop = gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
 	collectAndCompare(t, gatherer, "testdata/prometheus_metrics")
 }
 
