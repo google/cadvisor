@@ -190,8 +190,8 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	if !ok {
 		mf = &family{
 			MetricFamily: &dto.MetricFamily{
-				Name: proto.String(""),
-				Help: proto.String(""),
+				Name: new(string),
+				Help: new(string),
 			},
 			metricsByHash: map[uint64]*metric{},
 		}
@@ -215,8 +215,8 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 		}
 		for j := range entry.LabelNames {
 			p := &dto.LabelPair{
-				Name:  proto.String(""),
-				Value: proto.String(""),
+				Name:  new(string),
+				Value: new(string),
 			}
 			*p.Name = entry.LabelNames[j]
 			*p.Value = entry.LabelValues[j]
@@ -234,7 +234,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	case prometheus.CounterValue:
 		v := m.Counter
 		if v == nil {
-			v = &dto.Counter{Value: proto.Float64(0)}
+			v = &dto.Counter{Value: new(float64)}
 		}
 		*v.Value = entry.Value
 		m.Counter = v
@@ -243,7 +243,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	case prometheus.GaugeValue:
 		v := m.Gauge
 		if v == nil {
-			v = &dto.Gauge{Value: proto.Float64(0)}
+			v = &dto.Gauge{Value: new(float64)}
 		}
 		*v.Value = entry.Value
 		m.Counter = nil
@@ -252,7 +252,7 @@ func (c *CachedTGatherer) InsertInPlace(entry Metric) error {
 	case prometheus.UntypedValue:
 		v := m.Untyped
 		if v == nil {
-			v = &dto.Untyped{Value: proto.Float64(0)}
+			v = &dto.Untyped{Value: new(float64)}
 		}
 		*v.Value = entry.Value
 		m.Counter = nil
