@@ -1973,7 +1973,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecMemLimitHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       float64(cont.Spec.Memory.Limit),
+				Value:       specMemoryValue(cont.Spec.Memory.Limit),
 			}))
 			merr.Append(cacheInsertFn(cache.Metric{
 				FQName:      containerSpecMemSwapLimitName,
@@ -1981,15 +1981,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecMemSwapLimitHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       float64(cont.Spec.Memory.SwapLimit),
-			}))
-			merr.Append(cacheInsertFn(cache.Metric{
-				FQName:      containerSpecMemSwapLimitName,
-				LabelNames:  labels,
-				LabelValues: values,
-				Help:        containerSpecMemSwapLimitHelp,
-				ValueType:   prometheus.GaugeValue,
-				Value:       float64(cont.Spec.Memory.SwapLimit),
+				Value:       specMemoryValue(cont.Spec.Memory.SwapLimit),
 			}))
 			merr.Append(cacheInsertFn(cache.Metric{
 				FQName:      containerSpecMemResLimitName,
@@ -1997,7 +1989,7 @@ func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cache
 				LabelValues: values,
 				Help:        containerSpecMemResLimitHelp,
 				ValueType:   prometheus.GaugeValue,
-				Value:       float64(cont.Spec.Memory.Reservation),
+				Value:       specMemoryValue(cont.Spec.Memory.Reservation),
 			}))
 		}
 

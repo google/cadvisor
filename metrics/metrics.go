@@ -49,6 +49,7 @@ var _ prometheus.TransactionalGatherer = &CachedGatherer{}
 
 // CachedGatherer is an TransactionalGatherer that is able to cache and update in place metrics from defined Cadvisor collectors.
 // Caller has responsibility to use `UpdateOnMaxAge` whenever cache has to be updated.
+// TODO(bwplotka): While this cache improves efficiency containerData has memoryCache which might be not needed if this layer caches.
 type CachedGatherer struct {
 	*cache.CachedTGatherer
 
