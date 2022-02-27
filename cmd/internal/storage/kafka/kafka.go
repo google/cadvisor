@@ -59,6 +59,7 @@ type detailSpec struct {
 	ContainerName   string               `json:"container_Name,omitempty"`
 	ContainerID     string               `json:"container_Id,omitempty"`
 	ContainerLabels map[string]string    `json:"container_labels,omitempty"`
+	ContainerEnvs   map[string]string    `json:"container_envs,omitempty"`
 	ContainerStats  *info.ContainerStats `json:"container_stats,omitempty"`
 }
 
@@ -66,6 +67,7 @@ func (s *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *info.C
 	timestamp := time.Now()
 	containerID := cInfo.ContainerReference.Id
 	containerLabels := cInfo.Spec.Labels
+	containerEnvs := cInfo.Spec.Envs
 	containerName := container.GetPreferredName(cInfo.ContainerReference)
 
 	detail := &detailSpec{
@@ -74,6 +76,7 @@ func (s *kafkaStorage) infoToDetailSpec(cInfo *info.ContainerInfo, stats *info.C
 		ContainerName:   containerName,
 		ContainerID:     containerID,
 		ContainerLabels: containerLabels,
+		ContainerEnvs:   containerEnvs,
 		ContainerStats:  stats,
 	}
 	return detail
