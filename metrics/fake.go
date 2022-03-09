@@ -269,7 +269,7 @@ func genContainerInfo(name string) *info.ContainerInfo {
 	return &info.ContainerInfo{
 		ContainerReference: info.ContainerReference{
 			Name:    name,
-			Aliases: []string{name +"alias"},
+			Aliases: []string{name + "alias"},
 		},
 		Spec: info.ContainerSpec{
 			Image:  "test",

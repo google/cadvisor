@@ -31,6 +31,7 @@ import (
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
@@ -100,14 +101,14 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 
 	r := prometheus.NewRegistry()
 	r.MustRegister(
-		prometheus.NewGoCollector(),
-		prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
 	container := metrics.NewContainerCollector(resourceManager, f, includedMetrics, clock.RealClock{})
 	machine := metrics.NewMachineCollector(resourceManager, includedMetrics)
 
-	nameTypeCache := metrics.NewCachedGatherer(container.Collect, machine.Collect)
-	nameDockerCache := metrics.NewCachedGatherer(container.Collect, machine.Collect)
+	nameTypeCache := metrics.NewCachedGatherer(container, machine)
+	nameDockerCache := metrics.NewCachedGatherer(container, machine)
 	nameTypeGatherer := prometheus.NewMultiTRegistry(prometheus.ToTransactionalGatherer(r), nameTypeCache)
 	nameDockerGatherer := prometheus.NewMultiTRegistry(prometheus.ToTransactionalGatherer(r), nameDockerCache)
 
