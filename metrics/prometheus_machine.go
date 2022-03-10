@@ -130,26 +130,6 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 					return getMemoryByType(machineInfo, memoryByTypeDimmCapacityKey)
 				},
 			},
-			{
-				name:        "machine_nvm_capacity",
-				help:        "NVM capacity value labeled by NVM mode (memory mode or app direct mode).",
-				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{prometheusModeLabelName},
-				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return metricValues{
-						{value: float64(machineInfo.NVMInfo.MemoryModeCapacity), labels: []string{nvmMemoryMode}, timestamp: machineInfo.Timestamp},
-						{value: float64(machineInfo.NVMInfo.AppDirectModeCapacity), labels: []string{nvmAppDirectMode}, timestamp: machineInfo.Timestamp},
-					}
-				},
-			},
-			{
-				name:      "machine_nvm_avg_power_budget_watts",
-				help:      "NVM power budget.",
-				valueType: prometheus.GaugeValue,
-				getValues: func(machineInfo *info.MachineInfo) metricValues {
-					return metricValues{{value: float64(machineInfo.NVMInfo.AvgPowerBudget), timestamp: machineInfo.Timestamp}}
-				},
-			},
 		},
 	}
 
@@ -189,6 +169,30 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 				extraLabels: []string{prometheusNodeLabelName, prometheusPageSizeLabelName},
 				getValues: func(machineInfo *info.MachineInfo) metricValues {
 					return getHugePagesCount(machineInfo)
+				},
+			},
+		}...)
+	}
+	if includedMetrics.Has(container.NVMMetrics) {
+		c.machineMetrics = append(c.machineMetrics, []machineMetric{
+			{
+				name:        "machine_nvm_capacity",
+				help:        "NVM capacity value labeled by NVM mode (memory mode or app direct mode).",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusModeLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return metricValues{
+						{value: float64(machineInfo.NVMInfo.MemoryModeCapacity), labels: []string{nvmMemoryMode}, timestamp: machineInfo.Timestamp},
+						{value: float64(machineInfo.NVMInfo.AppDirectModeCapacity), labels: []string{nvmAppDirectMode}, timestamp: machineInfo.Timestamp},
+					}
+				},
+			},
+			{
+				name:      "machine_nvm_avg_power_budget_watts",
+				help:      "NVM power budget.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return metricValues{{value: float64(machineInfo.NVMInfo.AvgPowerBudget), timestamp: machineInfo.Timestamp}}
 				},
 			},
 		}...)

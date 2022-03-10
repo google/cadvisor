@@ -116,6 +116,6 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `machine_memory_bytes` | Gauge | Amount of memory installed on the machine | bytes | |
 `machine_node_hugepages_count` | Gauge |  Numer of hugepages assigned to NUMA node | | cpu_topology |
 `machine_node_memory_capacity_bytes` | Gauge |  Amount of memory assigned to NUMA node | bytes | cpu_topology |
-`machine_nvm_avg_power_budget_watts` | Gauge |  NVM power budget | watts | | libipmctl
-`machine_nvm_capacity` | Gauge | NVM capacity value labeled by NVM mode (memory mode or app direct mode) | bytes | | libipmctl
+`machine_nvm_avg_power_budget_watts` | Gauge |  NVM power budget | watts | nvm | libipmctl
+`machine_nvm_capacity` | Gauge | NVM capacity value labeled by NVM mode (memory mode or app direct mode) | bytes | nvm | libipmctl
 `machine_thread_siblings_count` | Gauge | Number of CPU thread siblings | | cpu_topology |
