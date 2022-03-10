@@ -109,6 +109,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 :-----------|:-----|:------------|:------------------------|:---------------------------|:--------------------
 `machine_cpu_cache_capacity_bytes` | Gauge |  Cache size in bytes assigned to NUMA node and CPU core | bytes | cpu_topology |
 `machine_cpu_cores` | Gauge | Number of logical CPU cores | | |
+`machine_cpu_max_frequency` | Gauge | Max CPU frequency | khz | |
 `machine_cpu_physical_cores` | Gauge | Number of physical CPU cores | | |
 `machine_cpu_sockets` | Gauge | Number of CPU sockets | | |
 `machine_dimm_capacity_bytes` | Gauge | Total RAM DIMM capacity (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 | bytes | | |

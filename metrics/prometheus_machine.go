@@ -79,6 +79,14 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 		}),
 		machineMetrics: []machineMetric{
 			{
+				name:      "machine_cpu_max_frequency",
+				help:      "Max CPU frequency.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return metricValues{{value: float64(machineInfo.CpuFrequency), timestamp: machineInfo.Timestamp}}
+				},
+			},
+			{
 				name:      "machine_cpu_physical_cores",
 				help:      "Number of physical CPU cores.",
 				valueType: prometheus.GaugeValue,

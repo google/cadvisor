@@ -28,6 +28,9 @@ machine_cpu_cache_capacity_bytes{boot_id="boot-id-test",core_id="7",level="2",ma
 # HELP machine_cpu_cores Number of logical CPU cores.
 # TYPE machine_cpu_cores gauge
 machine_cpu_cores{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 4 1395066363000
+# HELP machine_cpu_max_frequency Max CPU frequency.
+# TYPE machine_cpu_max_frequency gauge
+machine_cpu_max_frequency{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 4.8e+06 1395066363000
 # HELP machine_cpu_physical_cores Number of physical CPU cores.
 # TYPE machine_cpu_physical_cores gauge
 machine_cpu_physical_cores{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1 1395066363000
