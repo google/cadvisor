@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	dockertypes "github.com/docker/docker/api/types"
 
 	"github.com/google/cadvisor/container"
