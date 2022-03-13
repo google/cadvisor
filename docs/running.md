@@ -76,15 +76,15 @@ On some versions of RHEL and CentOS the cgroup hierarchies are mounted in `/cgro
 
 **Note**: For a RedHat 7 docker host the default run commands from above throw oci errors. Please use the command below if the host is RedHat 7:
 ```
-docker run
---volume=/:/rootfs:ro
---volume=/var/run:/var/run:rw
---volume=/sys/fs/cgroup/cpu,cpuacct:/sys/fs/cgroup/cpuacct,cpu
---volume=/var/lib/docker/:/var/lib/docker:ro
---publish=8080:8080
---detach=true
---name=cadvisor
---privileged=true
+docker run \
+--volume=/:/rootfs:ro \
+--volume=/var/run:/var/run:rw \
+--volume=/sys/fs/cgroup/cpu,cpuacct:/sys/fs/cgroup/cpuacct,cpu \
+--volume=/var/lib/docker/:/var/lib/docker:ro \
+--publish=8080:8080 \
+--detach=true \
+--name=cadvisor \
+--privileged=true \
 google/cadvisor:latest
 ```
 
