@@ -1,5 +1,5 @@
 FROM ppc64le/alpine:3.15
-5AINTAINER dashpole@google.com lysannef@us.ibm.com
+MAINTAINER dashpole@google.com lysannef@us.ibm.com
 
 RUN apk --no-cache add libc6-compat device-mapper findutils zfs && \
     apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
