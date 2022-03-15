@@ -1,0 +1,27 @@
+name: Release
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  release:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        golang: ["1.17"]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.golang }}
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v2.8.0
+      with:
+        args: release --rm-dist --debug --skip-sign
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        GOLANG_VERSION: ${{ matrix.golang }}

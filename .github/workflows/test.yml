@@ -1,53 +1,53 @@
-name: Test
-on: [push, pull_request]
-jobs:
-  test:
-    strategy:
-      matrix:
-        go-versions: [1.17, 1.16]
-        platform: [ubuntu-20.04]
-        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
-    runs-on: ${{ matrix.platform }}
-    timeout-minutes: 30
-    steps:
-    - name: Install Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: ${{ matrix.go-versions }}
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Run presubmit checks
-      run: |
-        source ${{ matrix.environment-variables }}
-        if [[ "${BUILD_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${BUILD_PACKAGES}; fi
-        make -e presubmit
-    - name: Run tests
-      env:
-        GOLANG_VERSION: ${{ matrix.go-versions }}
-      run: |
-        source ${{ matrix.environment-variables }}
-        make test
-  test-integration:
-    strategy:
-      matrix:
-        go-versions: [1.17, 1.16]
-        platform: [ubuntu-20.04]
-        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
-    runs-on: ${{ matrix.platform }}
-    timeout-minutes: 30
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Run integration tests
-      env:
-        GOLANG_VERSION: ${{ matrix.go-versions }}
-      run: |
-        set -ex
-        source ${{ matrix.environment-variables }}
-        make docker-test-integration
-    - name: Upload cAdvisor log file
-      uses: actions/upload-artifact@v1
-      if: failure()
-      with:
-        name: cadvisor.log
-        path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log
+#name: Test
+#on: [push, pull_request]
+#jobs:
+#  test:
+#    strategy:
+#      matrix:
+#        go-versions: [1.17, 1.16]
+#        platform: [ubuntu-20.04]
+#        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
+#    runs-on: ${{ matrix.platform }}
+#    timeout-minutes: 30
+#    steps:
+#    - name: Install Go
+#      uses: actions/setup-go@v2
+#      with:
+#        go-version: ${{ matrix.go-versions }}
+#    - name: Checkout code
+#      uses: actions/checkout@v2
+#    - name: Run presubmit checks
+#      run: |
+#        source ${{ matrix.environment-variables }}
+#        if [[ "${BUILD_PACKAGES}" != "" ]]; then sudo apt-get update; sudo apt-get install ${BUILD_PACKAGES}; fi
+#        make -e presubmit
+#    - name: Run tests
+#      env:
+#        GOLANG_VERSION: ${{ matrix.go-versions }}
+#      run: |
+#        source ${{ matrix.environment-variables }}
+#        make test
+#  test-integration:
+#    strategy:
+#      matrix:
+#        go-versions: [1.17, 1.16]
+#        platform: [ubuntu-20.04]
+#        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
+#    runs-on: ${{ matrix.platform }}
+#    timeout-minutes: 30
+#    steps:
+#    - name: Checkout code
+#      uses: actions/checkout@v2
+#    - name: Run integration tests
+#      env:
+#        GOLANG_VERSION: ${{ matrix.go-versions }}
+#      run: |
+#        set -ex
+#        source ${{ matrix.environment-variables }}
+#        make docker-test-integration
+#    - name: Upload cAdvisor log file
+#      uses: actions/upload-artifact@v1
+#      if: failure()
+#      with:
+#        name: cadvisor.log
+#        path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log
