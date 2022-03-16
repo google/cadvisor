@@ -1,5 +1,8 @@
 name: Test
 on: [push, pull_request]
+permissions:
+  contents: read
+
 jobs:
   test:
     strategy:
@@ -11,11 +14,11 @@ jobs:
     timeout-minutes: 30
     steps:
     - name: Install Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@bfdd3570ce990073878bf10f6b2d79082de49492 # v2
       with:
         go-version: ${{ matrix.go-versions }}
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
     - name: Run presubmit checks
       run: |
         source ${{ matrix.environment-variables }}
@@ -37,7 +40,7 @@ jobs:
     timeout-minutes: 30
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@629c2de402a417ea7690ca6ce3f33229e27606a5 # v2
     - name: Run integration tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
@@ -46,7 +49,7 @@ jobs:
         source ${{ matrix.environment-variables }}
         make docker-test-integration
     - name: Upload cAdvisor log file
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@34622df80861c3ed63eb2bff892de2f1fbf4c9da # v1
       if: failure()
       with:
         name: cadvisor.log
