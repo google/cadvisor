@@ -433,3 +433,51 @@ container_memory_bandwidth_bytes{container_env_foo_env="prod",container_label_fo
 # TYPE container_memory_bandwidth_local_bytes gauge
 container_memory_bandwidth_local_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="0",zone_name="hello"} 2.390393e+06 1395066363000
 container_memory_bandwidth_local_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",node_id="1",zone_name="hello"} 1.231233e+06 1395066363000
+# HELP container_cpu_psi_avg10_ratio Ratio of time spent under cpu pressure over time window of 10 seconds
+# TYPE container_cpu_psi_avg10_ratio gauge
+container_cpu_psi_avg10_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.4 1395066363000
+container_cpu_psi_avg10_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.1 1395066363000
+# HELP container_cpu_psi_avg300_ratio Ratio of time spent under cpu pressure over time window of 300 seconds
+# TYPE container_cpu_psi_avg300_ratio gauge
+container_cpu_psi_avg300_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.6 1395066363000
+container_cpu_psi_avg300_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.3 1395066363000
+# HELP container_cpu_psi_avg60_ratio Ratio of time spent under cpu pressure over time window of 60 seconds
+# TYPE container_cpu_psi_avg60_ratio gauge
+container_cpu_psi_avg60_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.5 1395066363000
+container_cpu_psi_avg60_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.2 1395066363000
+# HELP container_cpu_psi_total_seconds Total time spent under cpu pressure in seconds.
+# TYPE container_cpu_psi_total_seconds counter
+container_cpu_psi_total_seconds{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.0002 1395066363000
+container_cpu_psi_total_seconds{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.0001 1395066363000
+# HELP container_io_psi_avg10_ratio Ratio of time spent under io pressure over time window of 10 seconds
+# TYPE container_io_psi_avg10_ratio gauge
+container_io_psi_avg10_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.14 1395066363000
+container_io_psi_avg10_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.11 1395066363000
+# HELP container_io_psi_avg300_ratio Ratio of time spent under io pressure over time window of 300 seconds
+# TYPE container_io_psi_avg300_ratio gauge
+container_io_psi_avg300_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.16 1395066363000
+container_io_psi_avg300_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.13 1395066363000
+# HELP container_io_psi_avg60_ratio Ratio of time spent under io pressure over time window of 60 seconds
+# TYPE container_io_psi_avg60_ratio gauge
+container_io_psi_avg60_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.15 1395066363000
+container_io_psi_avg60_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.12 1395066363000
+# HELP container_io_psi_total_seconds Total time spent under io pressure in seconds.
+# TYPE container_io_psi_total_seconds counter
+container_io_psi_total_seconds{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.002222 1395066363000
+container_io_psi_total_seconds{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.001111 1395066363000
+# HELP container_memory_psi_avg10_ratio Ratio of time spent under memory pressure over time window of 10 seconds
+# TYPE container_memory_psi_avg10_ratio gauge
+container_memory_psi_avg10_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.04 1395066363000
+container_memory_psi_avg10_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.01 1395066363000
+# HELP container_memory_psi_avg300_ratio Ratio of time spent under memory pressure over time window of 300 seconds
+# TYPE container_memory_psi_avg300_ratio gauge
+container_memory_psi_avg300_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.06 1395066363000
+container_memory_psi_avg300_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.03 1395066363000
+# HELP container_memory_psi_avg60_ratio Ratio of time spent under memory pressure over time window of 60 seconds
+# TYPE container_memory_psi_avg60_ratio gauge
+container_memory_psi_avg60_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.05 1395066363000
+container_memory_psi_avg60_ratio{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.02 1395066363000
+# HELP container_memory_psi_total_seconds Total container time spent under memory pressure in seconds.
+# TYPE container_memory_psi_total_seconds counter
+container_memory_psi_total_seconds{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="full",name="testcontaineralias",zone_name="hello"} 0.002 1395066363000
+container_memory_psi_total_seconds{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",kind="some",name="testcontaineralias",zone_name="hello"} 0.001 1395066363000
