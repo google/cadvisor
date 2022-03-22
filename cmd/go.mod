@@ -129,3 +129,5 @@ require (
 	google.golang.org/protobuf v1.36.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/opencontainers/runc => github.com/dqminh/runc v0.0.0-20220513155811-6414629ada8a
