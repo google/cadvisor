@@ -110,6 +110,20 @@ func TestSetCPUStats(t *testing.T) {
 				UsageInKernelmode: 734746 * nanosecondsInSeconds / clockTicks,
 				UsageInUsermode:   2767637 * nanosecondsInSeconds / clockTicks,
 			},
+			PSI: cgroups.PSIStats{
+				Some: cgroups.PSIData{
+					Avg10:  0.1,
+					Avg60:  0.2,
+					Avg300: 0.3,
+					Total:  100,
+				},
+				Full: cgroups.PSIData{
+					Avg10:  0.4,
+					Avg60:  0.5,
+					Avg300: 0.6,
+					Total:  200,
+				},
+			},
 		},
 	}
 	var ret info.ContainerStats
@@ -122,6 +136,20 @@ func TestSetCPUStats(t *testing.T) {
 				User:   s.CpuStats.CpuUsage.UsageInUsermode,
 				System: s.CpuStats.CpuUsage.UsageInKernelmode,
 				Total:  33802947350272,
+			},
+			PSI: info.PSIStats{
+				Some: info.PSIData{
+					Avg10:  0.1,
+					Avg60:  0.2,
+					Avg300: 0.3,
+					Total:  100,
+				},
+				Full: info.PSIData{
+					Avg10:  0.4,
+					Avg60:  0.5,
+					Avg300: 0.6,
+					Total:  200,
+				},
 			},
 		},
 	}
