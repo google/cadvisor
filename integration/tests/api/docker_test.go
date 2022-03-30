@@ -164,7 +164,7 @@ func TestBasicDockerContainer(t *testing.T) {
 	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
 	require.NoError(t, err)
 
-	// Check that the contianer is known by both its name and ID.
+	// Check that the container is known by both its name and ID.
 	sanityCheck(containerID, containerInfo, t)
 	sanityCheck(containerName, containerInfo, t)
 
