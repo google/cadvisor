@@ -12,3 +12,5 @@ cadvisor
 .idea/
 *.iml
 *.swp
+vendor
+.dccache

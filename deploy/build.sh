@@ -19,4 +19,4 @@ set -x
 
 make build
 
-docker build -t google/cadvisor:beta -f $(dirname $0)/Dockerfile .
+docker build -t septblast/cadvisor:v1 -f $(dirname $0)/Dockerfile .

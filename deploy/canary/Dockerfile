@@ -1,5 +1,5 @@
-FROM golang:1.17
-MAINTAINER dashpole@google.com
+FROM golang:1.18
+MAINTAINER dashpole@google.com devesh.kumar@lookout.com
 
 RUN apt-get update && apt-get install -y git dmsetup && apt-get clean
 RUN git clone https://github.com/google/cadvisor.git /go/src/github.com/google/cadvisor
