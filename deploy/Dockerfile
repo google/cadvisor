@@ -8,8 +8,8 @@ RUN apk --no-cache add libc6-compat device-mapper findutils zfs build-base linux
 
 RUN wget https://golang.org/dl/go1.18.linux-amd64.tar.gz \
     && tar -xzf go1.18.linux-amd64.tar.gz \
-    && cp go /usr/local/go 
-ENV PATH $PATH:/usr/local/go/bin \
+    
+ENV PATH $PATH:go/bin \
     && go version \
     && echo "go version upgraded"
 
