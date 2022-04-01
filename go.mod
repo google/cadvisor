@@ -1,6 +1,6 @@
 module github.com/google/cadvisor
 
-go 1.18
+go 1.17
 
 require (
 	cloud.google.com/go v0.54.0
