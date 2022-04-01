@@ -1,4 +1,4 @@
-FROM golang:1.17
+FROM golang:1.18
 MAINTAINER dashpole@google.com devesh.kumar@lookout.com
 
 RUN apt-get update && apt-get install -y git dmsetup && apt-get clean
