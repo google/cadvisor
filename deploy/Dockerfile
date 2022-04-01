@@ -6,7 +6,8 @@ RUN apk --no-cache add libc6-compat device-mapper findutils zfs build-base linux
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
 
-RUN wget https://golang.org/dl/go1.18.linux-amd64.tar.gz \
+RUN wget -O - https://golang.org/dl/go1.18.linux-amd64.tar.gz \
+    rm -rf /usr/local/go && tar -C /usr/local -xzf go1.18.linux-amd64.tar.gz \
     export PATH=$PATH:/usr/local/go/bin \
     go version
 
