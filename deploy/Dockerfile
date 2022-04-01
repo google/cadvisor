@@ -7,7 +7,8 @@ RUN apk --no-cache add libc6-compat device-mapper findutils zfs build-base linux
     rm -rf /var/cache/apk/*
 
 ADD https://golang.org/dl/go1.18.linux-amd64.tar.gz /usr/local
-RUN rm -rf /usr/local/go && tar -C /usr/local -xzf /usr/local/go1.18.linux-amd64.tar.gz \
+RUN rm -rf /usr/local/go \
+    tar -xzf /usr/local/go1.18.linux-amd64.tar.gz \
     export PATH=$PATH:/usr/local/go/bin \
     go version \
     echo "go version upgraded"
