@@ -8,10 +8,11 @@ RUN apk --no-cache add libc6-compat device-mapper findutils zfs build-base linux
 
 RUN wget https://golang.org/dl/go1.18.linux-amd64.tar.gz \
     && tar -xzf go1.18.linux-amd64.tar.gz \
-    
-ENV PATH $PATH:go/bin \
     && go version \
-    && echo "go version upgraded"
+    && echo "go version upgraded" \
+    && rm go1.18.linux-amd64.tar.gz
+    
+ENV PATH="$PATH:go/bin"
 
 RUN wget https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz && \
     echo "112bced9a67d565ff0ce6c2bb90452516d1183e5  libpfm-4.11.0.tar.gz" | sha1sum -c  && \
