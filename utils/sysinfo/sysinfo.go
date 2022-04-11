@@ -15,6 +15,7 @@
 package sysinfo
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"regexp"
@@ -32,6 +33,7 @@ var (
 	nodeDirRegExp        = regexp.MustCompile(`node/node(\d*)`)
 	cpuDirRegExp         = regexp.MustCompile(`/cpu(\d+)`)
 	memoryCapacityRegexp = regexp.MustCompile(`MemTotal:\s*([0-9]+) kB`)
+	allowedDevices       = flag.String("allowed_diskIO_devices", "^", "Regexp of devices to allow for diskstats.")
 
 	cpusPath = "/sys/devices/system/cpu"
 )
@@ -57,39 +59,42 @@ func GetBlockDeviceInfo(sysfs sysfs.SysFs) (map[string]info.DiskInfo, error) {
 		if strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "ram") || strings.HasPrefix(name, "sr") {
 			continue
 		}
-		diskInfo := info.DiskInfo{
-			Name: name,
-		}
-		dev, err := sysfs.GetBlockDeviceNumbers(name)
-		if err != nil {
-			return nil, err
-		}
-		n, err := fmt.Sscanf(dev, "%d:%d", &diskInfo.Major, &diskInfo.Minor)
-		if err != nil || n != 2 {
-			return nil, fmt.Errorf("could not parse device numbers from %s for device %s", dev, name)
-		}
-		out, err := sysfs.GetBlockDeviceSize(name)
-		if err != nil {
-			return nil, err
-		}
-		// Remove trailing newline before conversion.
-		size, err := strconv.ParseUint(strings.TrimSpace(out), 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		// size is in 512 bytes blocks.
-		diskInfo.Size = size * 512
-
-		diskInfo.Scheduler = "none"
-		blkSched, err := sysfs.GetBlockDeviceScheduler(name)
-		if err == nil {
-			matches := schedulerRegExp.FindSubmatch([]byte(blkSched))
-			if len(matches) >= 2 {
-				diskInfo.Scheduler = string(matches[1])
+		var allowedDevicesPattern = regexp.MustCompile(*allowedDevices)
+		if allowedDevicesPattern.MatchString(name) {
+			diskInfo := info.DiskInfo{
+				Name: name,
 			}
+			dev, err := sysfs.GetBlockDeviceNumbers(name)
+			if err != nil {
+				return nil, err
+			}
+			n, err := fmt.Sscanf(dev, "%d:%d", &diskInfo.Major, &diskInfo.Minor)
+			if err != nil || n != 2 {
+				return nil, fmt.Errorf("could not parse device numbers from %s for device %s", dev, name)
+			}
+			out, err := sysfs.GetBlockDeviceSize(name)
+			if err != nil {
+				return nil, err
+			}
+			// Remove trailing newline before conversion.
+			size, err := strconv.ParseUint(strings.TrimSpace(out), 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			// size is in 512 bytes blocks.
+			diskInfo.Size = size * 512
+
+			diskInfo.Scheduler = "none"
+			blkSched, err := sysfs.GetBlockDeviceScheduler(name)
+			if err == nil {
+				matches := schedulerRegExp.FindSubmatch([]byte(blkSched))
+				if len(matches) >= 2 {
+					diskInfo.Scheduler = string(matches[1])
+				}
+			}
+			device := fmt.Sprintf("%d:%d", diskInfo.Major, diskInfo.Minor)
+			diskMap[device] = diskInfo
 		}
-		device := fmt.Sprintf("%d:%d", diskInfo.Major, diskInfo.Minor)
-		diskMap[device] = diskInfo
 	}
 	return diskMap, nil
 }
