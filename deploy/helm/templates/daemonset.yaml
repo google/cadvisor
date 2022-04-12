@@ -57,9 +57,11 @@ spec:
         - name: disk
           mountPath: /dev/disk
           readOnly: true
+        {{if .Values.perf}}
         - name: perf-volume
           mountPath: /etc/config/
           readOnly: true
+        {{end}}
         ports:
           - name: http
             containerPort: {{.Values.port}}
@@ -94,6 +96,8 @@ spec:
       - name: disk
         hostPath:
           path: /dev/disk
+      {{if .Values.perf}}
       - name: perf-volume
         configMap:
           name: perf-config
+      {{end}}
