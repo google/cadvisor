@@ -1,14 +1,16 @@
 # cAdvisor
 
 ### Installing the Chart
-```helm install cadvisor ./charts/cadvisor```
+```helm install cadvisor ./deploy/helm```
 
 ### Configuration
-`disable_metrics` - comma-separated list of `metrics` to be disabled. 
+`enable_metrics` - comma-separated list of `metrics` to be enabled. 
 
 `perf` - configuration of perf events. More information [here](https://github.com/google/cadvisor/blob/master/docs/runtime_options.md#perf-events). 
 
 `node_port` - if present, creates service on that port.
+
+`docker_only` - only report docker containers in addition to root stats.
 
 #### Example perf events configuration:
 ```yaml
@@ -31,6 +33,9 @@ perf:
         config: ["0x5300"]
         name: "cas_count_write"
 ```
+
+#### Using provided example perf configuration:
+`` helm install cadvisor ./deploy/helm -f ./deploy/helm/examples/perf.yaml``
 
 ### Uninstall the Chart
 ```helm uninstall cadvisor```
