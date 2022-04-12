@@ -18,7 +18,3 @@ perf:
       - type: 18
         config: ["0x5300"]
         name: "cas_count_write"
-
-securityContext:
-  privileged: true  # Perf events are unavailable without privileges.
-  allowPrivilegeEscalation: true # When privileged equals true, this needs to be set.

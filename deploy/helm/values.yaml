@@ -13,10 +13,10 @@ enable_metrics:
 
 port: 8080
 
-# Configure the container security context
+# Configure the container security context.
 securityContext:
-  privileged: false  # Note: Some metrics are unavailable without privileges ( perf_events ).
-  allowPrivilegeEscalation: false
+  privileged: true  # Note: Some metrics are unavailable without privileges.
+  allowPrivilegeEscalation: true
   runAsNonRoot: false
   readOnlyRootFilesystem: true
   runAsGroup: 2000
