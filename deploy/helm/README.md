@@ -8,6 +8,8 @@
 
 `perf` - configuration of perf events. More information [here](https://github.com/google/cadvisor/blob/master/docs/runtime_options.md#perf-events). 
 
+`node_port` - if present, creates service on that port.
+
 #### Example perf events configuration:
 ```yaml
 perf:

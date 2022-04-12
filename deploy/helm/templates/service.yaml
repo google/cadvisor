@@ -1,3 +1,4 @@
+{{if .Values.node_port}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -14,3 +15,4 @@ spec:
       protocol: TCP
       port: {{.Values.port}}
       nodePort: {{.Values.node_port}}
+{{end}}
