@@ -87,6 +87,7 @@ var (
 		container.ProcessMetrics:                 struct{}{},
 		container.HugetlbUsageMetrics:            struct{}{},
 		container.ReferencedMemoryMetrics:        struct{}{},
+		container.MachineMetrics:                 struct{}{},
 		container.CPUTopologyMetrics:             struct{}{},
 		container.ResctrlMetrics:                 struct{}{},
 		container.CPUSetMetrics:                  struct{}{},

@@ -70,14 +70,17 @@ type PrometheusMachineCollector struct {
 // NewPrometheusMachineCollector returns a new PrometheusCollector.
 func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.MetricSet) *PrometheusMachineCollector {
 	c := &PrometheusMachineCollector{
-
 		infoProvider: i,
 		errors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: "machine",
 			Name:      "scrape_error",
 			Help:      "1 if there was an error while getting machine metrics, 0 otherwise.",
 		}),
-		machineMetrics: []machineMetric{
+		machineMetrics: []machineMetric{},
+	}
+
+	if includedMetrics.Has(container.MachineMetrics) {
+		c.machineMetrics = append(c.machineMetrics, []machineMetric{
 			{
 				name:      "machine_cpu_physical_cores",
 				help:      "Number of physical CPU cores.",
@@ -150,7 +153,7 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 					return metricValues{{value: float64(machineInfo.NVMInfo.AvgPowerBudget), timestamp: machineInfo.Timestamp}}
 				},
 			},
-		},
+		}...)
 	}
 
 	if includedMetrics.Has(container.CPUTopologyMetrics) {
