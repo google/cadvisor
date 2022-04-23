@@ -24,6 +24,7 @@ import (
 	containersapi "github.com/containerd/containerd/api/services/containers/v1"
 	tasksapi "github.com/containerd/containerd/api/services/tasks/v1"
 	versionapi "github.com/containerd/containerd/api/services/version/v1"
+	tasktypes "github.com/containerd/containerd/api/types/task"
 	ptypes "github.com/gogo/protobuf/types"
 	"github.com/google/cadvisor/container/containerd/containers"
 	"github.com/google/cadvisor/container/containerd/errdefs"
@@ -113,6 +114,9 @@ func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
 	})
 	if err != nil {
 		return 0, errdefs.FromGRPC(err)
+	}
+	if response.Process.Status == tasktypes.StatusUnknown {
+		return 0, errdefs.ErrUnknown
 	}
 	return response.Process.Pid, nil
 }
