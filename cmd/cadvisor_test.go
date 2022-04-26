@@ -109,6 +109,7 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.HugetlbUsageMetrics:            struct{}{},
 			container.PerfMetrics:                    struct{}{},
 			container.ReferencedMemoryMetrics:        struct{}{},
+			container.MachineMetrics:                 struct{}{},
 			container.CPUTopologyMetrics:             struct{}{},
 			container.ResctrlMetrics:                 struct{}{},
 			container.CPUSetMetrics:                  struct{}{},
