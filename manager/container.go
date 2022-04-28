@@ -45,7 +45,7 @@ import (
 )
 
 // Housekeeping interval.
-var enableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
+var EnableLoadReader = flag.Bool("enable_load_reader", false, "Whether to enable cpu load reader")
 var HousekeepingInterval = flag.Duration("housekeeping_interval", 1*time.Second, "Interval between container housekeepings")
 
 // TODO: replace regular expressions with something simpler, such as strings.Split().
@@ -455,7 +455,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 
 	cont.loadDecay = math.Exp(float64(-cont.housekeepingInterval.Seconds() / 10))
 
-	if *enableLoadReader {
+	if *EnableLoadReader {
 		// Create cpu load reader.
 		loadReader, err := cpuload.New()
 		if err != nil {
