@@ -2,7 +2,7 @@ apiVersion: apps/v1 # for Kubernetes versions before 1.9.0 use apps/v1beta2
 kind: DaemonSet
 metadata:
   name: cadvisor
-  namespace: cadvisor
+  namespace: cadvisor1
   annotations:
       seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
 spec:
