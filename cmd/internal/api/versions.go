@@ -547,11 +547,14 @@ func GetRequestOptions(r *http.Request) (v2.RequestOptions, error) {
 	}
 	count := r.URL.Query().Get("count")
 	if len(count) != 0 {
-		n, err := strconv.ParseUint(count, 10, 32)
+		n, err := strconv.Atoi(count)
 		if err != nil {
 			return opt, fmt.Errorf("failed to parse 'count' option: %v", count)
 		}
-		opt.Count = int(n)
+		if n < -1 {
+			return opt, fmt.Errorf("invalid 'count' option: only -1 and larger values allowed, not %d", n)
+		}
+		opt.Count = n
 	}
 	recursive := r.URL.Query().Get("recursive")
 	if recursive == "true" {
