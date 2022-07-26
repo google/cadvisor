@@ -15,6 +15,16 @@
 # limitations under the License.
 
 set -e
+# When running this script locally, you may need to run cadvisor with sudo
+# permissions if you cadvisor can't find containers.
+# USE_SUDO=true make test-integration
+USE_SUDO=${USE_SUDO:-false}
+cadvisor_bin=${CADVISOR_BIN:-"./_output/cadvisor"}
+
+if ! [ -f "$cadvisor_bin" ]; then
+  echo Failed to find cadvisor binary for integration test at path $cadvisor_bin
+  exit 1
+fi
 
 log_file="cadvisor.log"
 if [ "$#" -gt 0 ]; then
@@ -26,10 +36,16 @@ printf "" # Refresh sudo credentials if necessary.
 function start {
   set +e  # We want to handle errors if cAdvisor crashes.
   echo ">> starting cAdvisor locally"
+  cadvisor_prereqs=""
+  if [ $USE_SUDO = true ]; then
+    cadvisor_prereqs=sudo
+  fi
   # cpu, cpuset, percpu, memory, disk, diskIO, network, perf_event metrics should be enabled.
-  GORACE="halt_on_error=1" ./cadvisor --enable_metrics="cpu,cpuset,percpu,memory,disk,diskIO,network,perf_event" --env_metadata_whitelist=TEST_VAR --v=6 --logtostderr $CADVISOR_ARGS &> "$log_file"
-  if [ $? != 0 ]; then
-    echo "!! cAdvisor exited unexpectedly with Exit $?"
+  GORACE="halt_on_error=1" $cadvisor_prereqs $cadvisor_bin --enable_metrics="cpu,cpuset,percpu,memory,disk,diskIO,network,perf_event" --env_metadata_whitelist=TEST_VAR --v=6 --logtostderr $CADVISOR_ARGS &> "$log_file"
+  exit_code=$?
+  if [ $exit_code != 0 ]; then
+    echo "!! cAdvisor exited unexpectedly with Exit $exit_code"
+    cat $log_file
     kill $TEST_PID # cAdvisor crashed: abort testing.
   fi
 }
@@ -43,7 +59,7 @@ function cleanup {
     wait $RUNNER_PID
   fi
 }
-trap cleanup EXIT
+trap cleanup EXIT SIGINT TERM
 
 readonly TIMEOUT=30 # Timeout to wait for cAdvisor, in seconds.
 START=$(date +%s)
@@ -57,5 +73,10 @@ while [ "$(curl -Gs http://localhost:8080/healthz)" != "ok" ]; do
 done
 
 echo ">> running integration tests against local cAdvisor"
+if ! [ -f ./api.test ] || ! [ -f ./healthz.test ]; then
+  echo You must compile the ./api.test binary and ./healthz.test binary before
+  echo running the integration tests.
+  exit 1
+fi
 ./api.test --vmodule=*=2 -test.v
 ./healthz.test --vmodule=*=2 -test.v

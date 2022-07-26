@@ -1,6 +1,7 @@
 cadvisor
 /release
 .vscode
+_output/
 
 # Log files
 *.log
