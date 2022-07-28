@@ -25,6 +25,7 @@ import (
 	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/integration/framework"
 
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -211,7 +212,20 @@ func TestDockerContainerSpec(t *testing.T) {
 	assert := assert.New(t)
 
 	assert.True(containerInfo.Spec.HasCpu, "CPU should be isolated")
-	assert.Equal(cpuShares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
+	if cgroups.IsCgroup2UnifiedMode() {
+		// cpu shares are rounded slighly on cgroupv2 due to conversion between cgroupv1 (cpu.shares) and cgroupv2 (cpu.weight)
+		// When container is created via docker, runc will convert cpu shares to cpu.weight https://github.com/opencontainers/runc/blob/d11f4d756e85ece5cdba8bb69f8bd4db3cdcbeab/libcontainer/cgroups/utils.go#L423-L428
+		// And cAdvisor will convert cpu.weight back to cpu shares in https://github.com/google/cadvisor/blob/24e7a9883d12f944fd4403861707f4bafcaf4f3d/container/common/helpers.go#L249-L260
+		// Worked example:
+		// cpuShares = 2048 (input to docker --cpu-shares)
+		// cpuWeight = int((1 + ((cpuShares-2)*9999)/262142))=79 (conversion done by runc)
+		// cpuWeight back to cpuShares = int(2 + ((cpuWeight-1)*262142)/9999)= 2046
+		var cgroupV2Shares uint64 = 2046
+		assert.Equal(cgroupV2Shares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cgroupV2Shares, containerInfo.Spec.Cpu.Limit)
+	} else {
+		assert.Equal(cpuShares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
+	}
+
 	assert.Equal(cpuMask, containerInfo.Spec.Cpu.Mask, "Cpu mask should be %q, but is %q", cpuMask, containerInfo.Spec.Cpu.Mask)
 	assert.True(containerInfo.Spec.HasMemory, "Memory should be isolated")
 	assert.Equal(memoryLimit, containerInfo.Spec.Memory.Limit, "Container should have memory limit of %d, has %d", memoryLimit, containerInfo.Spec.Memory.Limit)

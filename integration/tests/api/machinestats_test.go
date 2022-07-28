@@ -22,6 +22,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/google/cadvisor/integration/framework"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 )
 
 func TestMachineStatsIsReturned(t *testing.T) {
@@ -37,7 +38,11 @@ func TestMachineStatsIsReturned(t *testing.T) {
 	for _, stat := range machineStats {
 		as.NotEqual(stat.Timestamp, time.Time{})
 		as.True(stat.Cpu.Usage.Total > 0)
-		as.True(len(stat.Cpu.Usage.PerCpu) > 0)
+		// PerCPU CPU usage is not supported in cgroupv2 (cpuacct.usage_percpu)
+		// https://github.com/google/cadvisor/issues/3065
+		if !cgroups.IsCgroup2UnifiedMode() {
+			as.True(len(stat.Cpu.Usage.PerCpu) > 0)
+		}
 		if stat.CpuInst != nil {
 			as.True(stat.CpuInst.Usage.Total > 0)
 		}
