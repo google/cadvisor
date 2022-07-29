@@ -16,15 +16,17 @@
 
 set -e
 
+export GOOS=${GOOS:-$(go env GOOS)}
+export GOARCH=${GOARCH:-$(go env GOARCH)}
 GO_FLAGS=${GO_FLAGS:-"-tags netgo"}    # Extra go flags to use in the build.
 BUILD_USER=${BUILD_USER:-"${USER}@${HOSTNAME}"}
 BUILD_DATE=${BUILD_DATE:-$( date +%Y%m%d-%H:%M:%S )}
 VERBOSE=${VERBOSE:-}
-GOARCH=$1
+OUTPUT_NAME_WITH_ARCH=${OUTPUT_NAME_WITH_ARCH:-"false"}
 
 repo_path="github.com/google/cadvisor"
 
-version=$( git describe --tags --dirty --abbrev=14 | sed -E 's/-([0-9]+)-g/.\1+/' )
+version=${VERSION:-$( git describe --tags --dirty --abbrev=14 | sed -E 's/-([0-9]+)-g/.\1+/' )}
 revision=$( git rev-parse --short HEAD 2> /dev/null || echo 'unknown' )
 branch=$( git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown' )
 go_version=$( go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/' )
@@ -50,15 +52,15 @@ if [ -n "$VERBOSE" ]; then
   echo "Building with -ldflags $ldflags"
 fi
 
-# Since github.com/google/cadvisor/cmd is a submodule, we must build from inside that directory
-output_file="$PWD/cadvisor"
-pushd cmd > /dev/null
-if [ -z "$GOARCH" ]
-then
-  go build ${GO_FLAGS} -ldflags "${ldflags}" -o "${output_file}" "${repo_path}/cmd"
-else
-  env GOOS=linux GOARCH=$GOARCH go build ${GO_FLAGS} -ldflags "${ldflags}" -o "${output_file}" "${repo_path}/cmd"
+mkdir -p "$PWD/_output"
+output_file="$PWD/_output/cadvisor"
+if [ "${OUTPUT_NAME_WITH_ARCH}" = "true" ] ; then
+  output_file="${output_file}-${version}-${GOOS}-${GOARCH}"
 fi
+
+# Since github.com/google/cadvisor/cmd is a submodule, we must build from inside that directory
+pushd cmd > /dev/null
+  go build ${GO_FLAGS} -ldflags "${ldflags}" -o "${output_file}" "${repo_path}/cmd"
 popd > /dev/null
 
 exit 0

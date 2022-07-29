@@ -51,32 +51,59 @@ Command: `make release`
 - Try to build it from the release branch, since we include that in the binary version
 - Verify the ldflags output, in particular check the Version, BuildUser, and GoVersion are expected
 
-Once the build is complete, check the VERSION and note the sha256 hash.
+Once the build is complete, copy the output after `Release info...` and save it to use in step 5
 
-## 4. Push the Docker images
-
-`make release` should output a command to push the image.  Alternatively, run:
+Example:
 
 ```
-$ PATCH_VERSION=v0.23.0
-$ docker push gcr.io/cadvisor/cadvisor:$PATCH_VERSION
+Multi Arch Container:
+gcr.io/cadvisor/cadvisor:v0.44.1-test-8
+
+Architecture Specific Containers:
+gcr.io/cadvisor/cadvisor-arm:v0.44.1-test-8
+gcr.io/cadvisor/cadvisor-arm64:v0.44.1-test-8
+gcr.io/cadvisor/cadvisor-amd64:v0.44.1-test-8
+
+Binaries:
+SHA256 (cadvisor-v0.44.1-test-8-linux-arm64) = e5e3f9e72208bc6a5ef8b837473f6c12877ace946e6f180bce8d81edadf66767
+SHA256 (cadvisor-v0.44.1-test-8-linux-arm) = 7d714e495a4f50d9cc374bd5e6b5c6922ffa40ff1cc7244f2308f7d351c4ccea
+SHA256 (cadvisor-v0.44.1-test-8-linux-amd64) = ea95c5a6db8eecb47379715c0ca260a8a8d1522971fd3736f80006c7f6cc9466
+```
+
+## 4. Check that the Containers for the release work
+
+The only argument to the script is the tag of the Multi Arch Container from step
+3. To verify that the container images for the release were built successfully,
+use the check_container.sh script. The script will start each cadvisor image and
+curl the `/healthz` endpoint to confirm that it is working.
+
+Running this script requires that you have installed `qemu-user-static` and
+configured qemu as a binary interpreter.
+
+```
+$ sudo apt install qemu-user-static
+$ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+```
+
+The only argument to the script is the tag of the Multi Arch Container from step
+3.
+
+```sh
+build/check_container.sh gcr.io/tstapler-gke-dev/cadvisor:v0.44.1-test-8
 ```
 
 ## 5. Cut the release
 
-Go to https://github.com/google/cadvisor/releases and click "Draft a new release"
+Go to https://github.com/google/cadvisor/releases and click "Draft a new
+release"
 
-- "Tag version" and "Release title" should be preceded by 'v' and then the version. Select the tag pushed in step 2.b
-- Copy an old release as a template (e.g. github.com/google/cadvisor/releases/tag/v0.23.1)
+- "Tag version" and "Release title" should be preceded by 'v' and then the
+  version. Select the tag pushed in step 2.b
+- Copy an old release as a template (e.g.
+  github.com/google/cadvisor/releases/tag/v0.23.1)
 - Body should start with release notes (from CHANGELOG.md)
-- Next is the Docker image: `gcr.io/cadvisor/cadvisor:$VERSION`
-- Next are the binary hashes (from step 3)
-- Upload the binary build in step 3
+- Next are the docker images and binary hashes you copied (from step 3).
+- Upload the binaries build in step 3, they are located in the `_output`
+  directory.
 - If this is a minor version release, mark the release as a "pre-release"
 - Click publish when done
-
-## 6. Finalize the release
-
-~~Once you are satisfied with the release quality (generally we wait until the next minor release), it is time to remove the "pre-release" tag~~
-
-cAdvisor is no longer pushed with the :latest tag.  This is to ensure tagged images are immutable.

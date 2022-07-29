@@ -1,5 +1,7 @@
 FROM ppc64le/alpine:3.15
 MAINTAINER dashpole@google.com lysannef@us.ibm.com
+# Deprecated: the Dockerfile in this directory should support ppc64le
+# Simply build using: docker buildx build --platform linux/ppc64le -f Dockerfile .
 
 RUN apk --no-cache add libc6-compat device-mapper findutils zfs && \
     apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
