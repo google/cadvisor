@@ -24,12 +24,14 @@ import (
 	"github.com/google/cadvisor/cmd/internal/pages"
 	"github.com/google/cadvisor/cmd/internal/pages/static"
 	"github.com/google/cadvisor/container"
+	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/validate"
 
 	auth "github.com/abbot/go-http-auth"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
@@ -92,31 +94,42 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 	return nil
 }
 
-// RegisterPrometheusHandler creates a new PrometheusCollector and configures
+// RegisterPrometheusHandler creates a new ContainerCollector and configures
 // the provided HTTP mux to handle the given Prometheus endpoint.
 func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager, prometheusEndpoint string,
 	f metrics.ContainerLabelsFunc, includedMetrics container.MetricSet) {
-	goCollector := prometheus.NewGoCollector()
-	processCollector := prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{})
-	machineCollector := metrics.NewPrometheusMachineCollector(resourceManager, includedMetrics)
+
+	r := prometheus.NewRegistry()
+	r.MustRegister(
+		collectors.NewGoCollector(),
+		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
+	)
+	container := metrics.NewContainerCollector(resourceManager, f, includedMetrics, clock.RealClock{})
+	machine := metrics.NewMachineCollector(resourceManager, includedMetrics)
+
+	nameTypeCache := metrics.NewCachedGatherer(container, machine)
+	nameDockerCache := metrics.NewCachedGatherer(container, machine)
+	nameTypeGatherer := prometheus.NewMultiTRegistry(prometheus.ToTransactionalGatherer(r), nameTypeCache)
+	nameDockerGatherer := prometheus.NewMultiTRegistry(prometheus.ToTransactionalGatherer(r), nameDockerCache)
 
 	mux.Handle(prometheusEndpoint, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// TODO(bwplotka): Why we ask for full object if we override half of fields?
 		opts, err := api.GetRequestOptions(req)
 		if err != nil {
 			http.Error(w, "No metrics gathered, last error:\n\n"+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		opts.Count = 1        // we only want the latest datapoint
-		opts.Recursive = true // get all child containers
+		opts.Count = 1        // We only want the latest datapoint.
+		opts.Recursive = true // Get all child containers.
 
-		r := prometheus.NewRegistry()
-		r.MustRegister(
-			metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, clock.RealClock{}, opts),
-			machineCollector,
-			goCollector,
-			processCollector,
-		)
-		promhttp.HandlerFor(r, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
+		// Present different metrics depending on option.
+		if opts.IdType == v2.TypeDocker {
+			nameDockerCache.UpdateOnMaxAge(opts)
+			promhttp.HandlerForTransactional(nameDockerGatherer, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
+			return
+		}
+		nameTypeCache.UpdateOnMaxAge(opts)
+		promhttp.HandlerForTransactional(nameTypeGatherer, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}).ServeHTTP(w, req)
 	}))
 }
 

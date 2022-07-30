@@ -15,63 +15,39 @@
 package metrics
 
 import (
-	"bytes"
-	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/common/expfmt"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/metrics/cache"
+	"github.com/stretchr/testify/assert"
 )
 
-const machineMetricsFile = "testdata/prometheus_machine_metrics"
-const machineMetricsFailureFile = "testdata/prometheus_machine_metrics_failure"
+func TestMachineCollector(t *testing.T) {
+	c := NewMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics)
+	gatherer := cache.NewCachedTGatherer()
 
-func TestPrometheusMachineCollector(t *testing.T) {
-	collector := NewPrometheusMachineCollector(testSubcontainersInfoProvider{}, container.AllMetrics)
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(collector)
+	stop := gatherer.StartUpdateSession()
+	c.Collect(gatherer.InsertInPlace)
+	stop()
 
-	metricsFamily, err := registry.Gather()
-	assert.Nil(t, err)
-
-	var metricBuffer bytes.Buffer
-	for _, metricFamily := range metricsFamily {
-		_, err := expfmt.MetricFamilyToText(&metricBuffer, metricFamily)
-		assert.Nil(t, err)
-	}
-	collectedMetrics := metricBuffer.String()
-
-	expectedMetrics, err := ioutil.ReadFile(machineMetricsFile)
-	assert.Nil(t, err)
-	assert.Equal(t, string(expectedMetrics), collectedMetrics)
+	collectAndCompare(t, gatherer, "testdata/prometheus_machine_metrics")
 }
 
-func TestPrometheusMachineCollectorWithFailure(t *testing.T) {
+func TestMachineCollectorWithFailure(t *testing.T) {
 	provider := &erroringSubcontainersInfoProvider{
 		successfulProvider: testSubcontainersInfoProvider{},
 		shouldFail:         true,
 	}
-	collector := NewPrometheusMachineCollector(provider, container.AllMetrics)
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(collector)
+	c := NewMachineCollector(provider, container.AllMetrics)
+	gatherer := cache.NewCachedTGatherer()
 
-	metricsFamily, err := registry.Gather()
-	assert.Nil(t, err)
+	stop := gatherer.StartUpdateSession()
+	c.Collect(gatherer.InsertInPlace)
+	stop()
 
-	var metricBuffer bytes.Buffer
-	for _, metricFamily := range metricsFamily {
-		_, err := expfmt.MetricFamilyToText(&metricBuffer, metricFamily)
-		assert.Nil(t, err)
-	}
-	collectedMetrics := metricBuffer.String()
-	expectedMetrics, err := ioutil.ReadFile(machineMetricsFailureFile)
-	assert.Nil(t, err)
-	assert.Equal(t, string(expectedMetrics), collectedMetrics)
+	collectAndCompare(t, gatherer, "testdata/prometheus_machine_metrics_failure")
 }
 
 func TestGetMemoryByType(t *testing.T) {

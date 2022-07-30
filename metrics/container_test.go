@@ -23,7 +23,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
-
+	"github.com/google/cadvisor/metrics/cache"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
@@ -32,20 +32,27 @@ import (
 
 var now = clock.NewFakeClock(time.Unix(1395066363, 0))
 
-func TestPrometheusCollector(t *testing.T) {
-	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
+func TestContainerCollector(t *testing.T) {
+	c := NewContainerCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{})
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(c)
+	}, container.AllMetrics, now)
+	gatherer := cache.NewCachedTGatherer()
 
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics")
-}
+	stop := gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
+	collectAndCompare(t, gatherer, "testdata/prometheus_metrics")
 
-func TestPrometheusCollectorWithWhiteList(t *testing.T) {
-	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
+	// Check if caching / in-place replacement work.
+	stop = gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
+	collectAndCompare(t, gatherer, "testdata/prometheus_metrics")
+
+	// Use with allowlist, which should expose different metrics.
+	c.containerLabelsFunc = func(container *info.ContainerInfo) map[string]string {
 		whitelistedLabels := []string{
 			"no_one_match",
 		}
@@ -53,65 +60,73 @@ func TestPrometheusCollectorWithWhiteList(t *testing.T) {
 		s := containerLabelFunc(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{})
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(c)
-
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_whitelist_filtered")
+	}
+	stop = gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
+	collectAndCompare(t, gatherer, "testdata/prometheus_metrics_whitelist_filtered")
 }
 
-func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
+func TestContainerCollectorWithPerfAggregated(t *testing.T) {
 	metrics := container.MetricSet{
 		container.PerfMetrics: struct{}{},
 	}
-	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
+	c := NewContainerCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, metrics, now, v2.RequestOptions{})
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(c)
+	}, metrics, now)
+	gatherer := cache.NewCachedTGatherer()
 
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_perf_aggregated")
+	stop := gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
+	collectAndCompare(t, gatherer, "testdata/prometheus_metrics_perf_aggregated")
 }
 
-func testPrometheusCollector(t *testing.T, gatherer prometheus.Gatherer, metricsFile string) {
+func collectAndCompare(t *testing.T, gatherer prometheus.TransactionalGatherer, metricsFile string) {
+	t.Helper()
+
 	wantMetrics, err := os.Open(metricsFile)
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", metricsFile)
 	}
 
-	err = testutil.GatherAndCompare(gatherer, wantMetrics)
-	if err != nil {
-		t.Fatalf("Metric comparison failed: %s", err)
+	if err := testutil.TransactionalGatherAndCompare(gatherer, wantMetrics); err != nil {
+		t.Fatalf("Metric comparison with %v failed: %s", metricsFile, err)
 	}
 }
 
-func TestPrometheusCollector_scrapeFailure(t *testing.T) {
+func TestContainerCollector_scrapeFailure(t *testing.T) {
 	provider := &erroringSubcontainersInfoProvider{
 		successfulProvider: testSubcontainersInfoProvider{},
 		shouldFail:         true,
 	}
 
-	c := NewPrometheusCollector(provider, func(container *info.ContainerInfo) map[string]string {
+	c := NewContainerCollector(provider, func(container *info.ContainerInfo) map[string]string {
 		s := DefaultContainerLabels(container)
 		s["zone.name"] = "hello"
 		return s
-	}, container.AllMetrics, now, v2.RequestOptions{})
-	reg := prometheus.NewRegistry()
-	reg.MustRegister(c)
+	}, container.AllMetrics, now)
+	gatherer := cache.NewCachedTGatherer()
 
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_failure")
+	stop := gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
+	collectAndCompare(t, gatherer, "testdata/prometheus_metrics_failure")
 
 	provider.shouldFail = false
 
-	testPrometheusCollector(t, reg, "testdata/prometheus_metrics")
+	stop = gatherer.StartUpdateSession()
+	c.Collect(v2.RequestOptions{}, gatherer.InsertInPlace)
+	stop()
+	collectAndCompare(t, gatherer, "testdata/prometheus_metrics")
 }
 
-func TestNewPrometheusCollectorWithPerf(t *testing.T) {
-	c := NewPrometheusCollector(&mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now, v2.RequestOptions{})
+func TestNewContinerCollectorWithPerf(t *testing.T) {
+	c := NewContainerCollector(&mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now)
 	assert.Len(t, c.containerMetrics, 5)
-	names := []string{}
+	names := make([]string, 0, len(c.containerMetrics))
 	for _, m := range c.containerMetrics {
 		names = append(names, m.name)
 	}
@@ -122,22 +137,11 @@ func TestNewPrometheusCollectorWithPerf(t *testing.T) {
 	assert.Contains(t, names, "container_perf_uncore_events_scaling_ratio")
 }
 
-func TestNewPrometheusCollectorWithRequestOptions(t *testing.T) {
-	p := mockInfoProvider{}
-	opts := v2.RequestOptions{
-		IdType: "docker",
-	}
-	c := NewPrometheusCollector(&p, mockLabelFunc, container.AllMetrics, now, opts)
-	ch := make(chan prometheus.Metric, 10)
-	c.Collect(ch)
-	assert.Equal(t, p.options, opts)
-}
-
 type mockInfoProvider struct {
 	options v2.RequestOptions
 }
 
-func (m *mockInfoProvider) GetRequestedContainersInfo(containerName string, options v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
+func (m *mockInfoProvider) GetRequestedContainersInfo(_ string, options v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
 	m.options = options
 	return map[string]*info.ContainerInfo{}, nil
 }

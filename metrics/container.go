@@ -17,16 +17,56 @@ package metrics
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"time"
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/metrics/cache"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/klog/v2"
 	"k8s.io/utils/clock"
+)
+
+const (
+	// ContainerLabelPrefix is the prefix added to all container labels.
+	ContainerLabelPrefix = "container_label_"
+	// ContainerEnvPrefix is the prefix added to all env variable labels.
+	ContainerEnvPrefix = "container_env_"
+	// LabelID is the name of the id label.
+	LabelID = "id"
+	// LabelName is the name of the name label.
+	LabelName = "name"
+	// LabelImage is the name of the image label.
+	LabelImage = "image"
+)
+
+const (
+	containerStartTimeMetricName = "container_start_time_seconds"
+	containerStartTimeMetricHelp = "Start time of the container since unix epoch in seconds."
+
+	containerSpecCPUPeriodName = "container_spec_cpu_period"
+	containerSpecCPUPeriodHelp = "CPU period of the container."
+
+	containerSpecCPUQuotaName = "container_spec_cpu_quota"
+	containerSpecCPUQuotaHelp = "CPU quota of the container."
+
+	containerSpecCPUSharesName = "container_spec_cpu_shares"
+	containerSpecCPUSharesHelp = "CPU share (limit) of the container."
+
+	containerSpecMemLimitName = "container_spec_memory_limit_bytes"
+	containerSpecMemLimitHelp = "Memory limit for the container."
+
+	containerSpecMemSwapLimitName = "container_spec_memory_swap_limit_bytes"
+	containerSpecMemSwapLimitHelp = "Memory swap limit for the container."
+
+	containerSpecMemResLimitName = "container_spec_memory_reservation_limit_bytes"
+	containerSpecMemResLimitHelp = "Memory reservation limit for the container."
+
+	customAppMetricHelp = "Custom application metric."
 )
 
 // asFloat64 converts a uint64 into a float64.
@@ -79,44 +119,53 @@ type containerMetric struct {
 	help        string
 	valueType   prometheus.ValueType
 	extraLabels []string
-	condition   func(s info.ContainerSpec) bool
+	condition   func(s *info.ContainerSpec) bool
 	getValues   func(s *info.ContainerStats) metricValues
-}
-
-func (cm *containerMetric) desc(baseLabels []string) *prometheus.Desc {
-	return prometheus.NewDesc(cm.name, cm.help, append(baseLabels, cm.extraLabels...), nil)
 }
 
 // ContainerLabelsFunc defines all base labels and their values attached to
 // each metric exported by cAdvisor.
 type ContainerLabelsFunc func(*info.ContainerInfo) map[string]string
 
-// PrometheusCollector implements prometheus.Collector.
-type PrometheusCollector struct {
+// ContainerCollector allows updating prometheus cache.CachedTGatherer based on
+// container data.
+type ContainerCollector struct {
 	infoProvider        infoProvider
-	errors              prometheus.Gauge
 	containerMetrics    []containerMetric
 	containerLabelsFunc ContainerLabelsFunc
 	includedMetrics     container.MetricSet
-	opts                v2.RequestOptions
+
+	versionInfo           cache.Metric
+	containerScrapeErrors cache.Metric
 }
 
-// NewPrometheusCollector returns a new PrometheusCollector. The passed
+// NewContainerCollector returns a new ContainerCollector. The passed
 // ContainerLabelsFunc specifies which base labels will be attached to all
 // exported metrics. If left to nil, the DefaultContainerLabels function
 // will be used instead.
-func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, now clock.Clock, opts v2.RequestOptions) *PrometheusCollector {
+// TODO(bwplotka): Instead of basing on infoProvider which needs to converts state from watchers,
+// instrument metrics cache updates directly in resource manager, whenever event occurs.
+// This will make update process more CPU efficient.
+func NewContainerCollector(i infoProvider, f ContainerLabelsFunc, includedMetrics container.MetricSet, now clock.Clock) *ContainerCollector {
 	if f == nil {
 		f = DefaultContainerLabels
 	}
-	c := &PrometheusCollector{
+	c := &ContainerCollector{
 		infoProvider:        i,
 		containerLabelsFunc: f,
-		errors: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: "container",
-			Name:      "scrape_error",
-			Help:      "1 if there was an error while getting container metrics, 0 otherwise",
-		}),
+		versionInfo: cache.Metric{
+			FQName:      "cadvisor_version_info",
+			LabelNames:  []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"},
+			LabelValues: make([]string, 0, 5),
+			Help:        "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.",
+			ValueType:   prometheus.GaugeValue,
+			Value:       1,
+		},
+		containerScrapeErrors: cache.Metric{
+			FQName:    "container_scrape_error",
+			Help:      "1 if there was an error while getting container metrics, 0 otherwise.",
+			ValueType: prometheus.GaugeValue,
+		},
 		containerMetrics: []containerMetric{
 			{
 				name:      "container_last_seen",
@@ -131,7 +180,6 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		},
 		includedMetrics: includedMetrics,
-		opts:            opts,
 	}
 	if includedMetrics.Has(container.CpuUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
@@ -190,7 +238,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:      "container_cpu_cfs_periods_total",
 				help:      "Number of elapsed enforcement period intervals.",
 				valueType: prometheus.CounterValue,
-				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				condition: func(s *info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{
 						{
@@ -202,7 +250,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:      "container_cpu_cfs_throttled_periods_total",
 				help:      "Number of throttled period intervals.",
 				valueType: prometheus.CounterValue,
-				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				condition: func(s *info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{
 						{
@@ -214,7 +262,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:      "container_cpu_cfs_throttled_seconds_total",
 				help:      "Total time duration the container has been throttled.",
 				valueType: prometheus.CounterValue,
-				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				condition: func(s *info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{
 						{
@@ -1771,49 +1819,24 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 	return c
 }
 
-var (
-	versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
-	startTimeDesc   = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
-	cpuPeriodDesc   = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
-	cpuQuotaDesc    = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
-	cpuSharesDesc   = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
-)
-
-// Describe describes all the metrics ever exported by cadvisor. It
-// implements prometheus.PrometheusCollector.
-func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
-	c.errors.Describe(ch)
-	for _, cm := range c.containerMetrics {
-		ch <- cm.desc([]string{})
+// Collect fetches latest statistics about containers in form of prometheus cache inserts.
+// Based on option it
+// * ask the latest from provided services.
+// * uses either docker or name ID.
+func (c *ContainerCollector) Collect(opts v2.RequestOptions, cacheInsertFn cacheInsertFn) {
+	errorsGauge := 0.0
+	if err := c.collectVersionInfo(cacheInsertFn); err != nil {
+		errorsGauge = 1
+		klog.Warningf("Couldn't get version info: %s", err)
 	}
-	ch <- startTimeDesc
-	ch <- cpuPeriodDesc
-	ch <- cpuQuotaDesc
-	ch <- cpuSharesDesc
-	ch <- versionInfoDesc
-}
+	if err := c.collectContainersInfo(opts, cacheInsertFn); err != nil {
+		errorsGauge = 1
+		klog.Warningf("Couldn't get containers: %s", err)
+	}
 
-// Collect fetches the stats from all containers and delivers them as
-// Prometheus metrics. It implements prometheus.PrometheusCollector.
-func (c *PrometheusCollector) Collect(ch chan<- prometheus.Metric) {
-	c.errors.Set(0)
-	c.collectVersionInfo(ch)
-	c.collectContainersInfo(ch)
-	c.errors.Collect(ch)
+	c.containerScrapeErrors.Value = errorsGauge
+	_ = cacheInsertFn(c.containerScrapeErrors)
 }
-
-const (
-	// ContainerLabelPrefix is the prefix added to all container labels.
-	ContainerLabelPrefix = "container_label_"
-	// ContainerEnvPrefix is the prefix added to all env variable labels.
-	ContainerEnvPrefix = "container_env_"
-	// LabelID is the name of the id label.
-	LabelID = "id"
-	// LabelName is the name of the name label.
-	LabelName = "name"
-	// LabelImage is the name of the image label.
-	LabelImage = "image"
-)
 
 // DefaultContainerLabels implements ContainerLabelsFunc. It exports the
 // container name, first alias, image name as well as all its env and label
@@ -1863,25 +1886,36 @@ func BaseContainerLabels(whiteList []string) func(container *info.ContainerInfo)
 	}
 }
 
-func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
-	containers, err := c.infoProvider.GetRequestedContainersInfo("/", c.opts)
+func (c *ContainerCollector) collectContainersInfo(opts v2.RequestOptions, cacheInsertFn cacheInsertFn) error {
+	containers, err := c.infoProvider.GetRequestedContainersInfo("/", opts)
 	if err != nil {
-		c.errors.Set(1)
-		klog.Warningf("Couldn't get containers: %s", err)
-		return
+		return err
 	}
-	rawLabels := map[string]struct{}{}
+
+	merr := prometheus.MultiError{}
+	rawLabelsDup := map[string]struct{}{}
 	for _, container := range containers {
 		for l := range c.containerLabelsFunc(container) {
-			rawLabels[l] = struct{}{}
+			rawLabelsDup[l] = struct{}{}
 		}
 	}
 
+	rawLabels := make([]string, 0, len(rawLabelsDup))
+	for r := range rawLabelsDup {
+		rawLabels = append(rawLabels, r)
+	}
+	sort.Strings(rawLabels)
+
+	values := make([]string, 0, len(rawLabels))
+	labels := make([]string, 0, len(rawLabels))
+
+	clabels := make([]string, 0, len(rawLabels))
+	cvalues := make([]string, 0, len(rawLabels))
 	for _, cont := range containers {
-		values := make([]string, 0, len(rawLabels))
-		labels := make([]string, 0, len(rawLabels))
+		values := values[:0]
+		labels := labels[:0]
 		containerLabels := c.containerLabelsFunc(cont)
-		for l := range rawLabels {
+		for _, l := range rawLabels {
 			duplicate := false
 			sl := sanitizeLabelName(l)
 			for _, x := range labels {
@@ -1896,74 +1930,137 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			}
 		}
 
-		// Container spec
-		desc := prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
-		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), values...)
-
+		merr.Append(cacheInsertFn(cache.Metric{
+			FQName:      containerStartTimeMetricName,
+			LabelNames:  labels,
+			LabelValues: values,
+			Help:        containerStartTimeMetricHelp,
+			ValueType:   prometheus.GaugeValue,
+			Value:       float64(cont.Spec.CreationTime.Unix()),
+		}))
 		if cont.Spec.HasCpu {
-			desc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Period), values...)
+			merr.Append(cacheInsertFn(cache.Metric{
+				FQName:      containerSpecCPUPeriodName,
+				LabelNames:  labels,
+				LabelValues: values,
+				Help:        containerSpecCPUPeriodHelp,
+				ValueType:   prometheus.GaugeValue,
+				Value:       float64(cont.Spec.Cpu.Period),
+			}))
 			if cont.Spec.Cpu.Quota != 0 {
-				desc = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", labels, nil)
-				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Quota), values...)
+				merr.Append(cacheInsertFn(cache.Metric{
+					FQName:      containerSpecCPUQuotaName,
+					LabelNames:  labels,
+					LabelValues: values,
+					Help:        containerSpecCPUQuotaHelp,
+					ValueType:   prometheus.GaugeValue,
+					Value:       float64(cont.Spec.Cpu.Quota),
+				}))
 			}
-			desc := prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Limit), values...)
-
+			merr.Append(cacheInsertFn(cache.Metric{
+				FQName:      containerSpecCPUSharesName,
+				LabelNames:  labels,
+				LabelValues: values,
+				Help:        containerSpecCPUSharesHelp,
+				ValueType:   prometheus.GaugeValue,
+				Value:       float64(cont.Spec.Cpu.Limit),
+			}))
 		}
 		if cont.Spec.HasMemory {
-			desc := prometheus.NewDesc("container_spec_memory_limit_bytes", "Memory limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Limit), values...)
-			desc = prometheus.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), values...)
-			desc = prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Reservation), values...)
+			merr.Append(cacheInsertFn(cache.Metric{
+				FQName:      containerSpecMemLimitName,
+				LabelNames:  labels,
+				LabelValues: values,
+				Help:        containerSpecMemLimitHelp,
+				ValueType:   prometheus.GaugeValue,
+				Value:       specMemoryValue(cont.Spec.Memory.Limit),
+			}))
+			merr.Append(cacheInsertFn(cache.Metric{
+				FQName:      containerSpecMemSwapLimitName,
+				LabelNames:  labels,
+				LabelValues: values,
+				Help:        containerSpecMemSwapLimitHelp,
+				ValueType:   prometheus.GaugeValue,
+				Value:       specMemoryValue(cont.Spec.Memory.SwapLimit),
+			}))
+			merr.Append(cacheInsertFn(cache.Metric{
+				FQName:      containerSpecMemResLimitName,
+				LabelNames:  labels,
+				LabelValues: values,
+				Help:        containerSpecMemResLimitHelp,
+				ValueType:   prometheus.GaugeValue,
+				Value:       specMemoryValue(cont.Spec.Memory.Reservation),
+			}))
 		}
 
-		// Now for the actual metrics
 		if len(cont.Stats) == 0 {
 			continue
 		}
 		stats := cont.Stats[0]
 		for _, cm := range c.containerMetrics {
-			if cm.condition != nil && !cm.condition(cont.Spec) {
+			if cm.condition != nil && !cm.condition(&cont.Spec) {
 				continue
 			}
-			desc := cm.desc(labels)
 			for _, metricValue := range cm.getValues(stats) {
-				ch <- prometheus.NewMetricWithTimestamp(
-					metricValue.timestamp,
-					prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append(values, metricValue.labels...)...),
-				)
+				labels = append(labels, cm.extraLabels...)
+				values = append(values, metricValue.labels...)
+
+				merr.Append(cacheInsertFn(cache.Metric{
+					FQName:      cm.name,
+					LabelNames:  labels,
+					LabelValues: values,
+					Help:        cm.help,
+					ValueType:   cm.valueType,
+					Value:       metricValue.value,
+					Timestamp:   &metricValue.timestamp,
+				}))
+
+				// It is safe to reuse labels as they are copied in cacheInsertFn into []*dto.MetricLabel.
+				labels = labels[:len(labels)-len(cm.extraLabels)]
+				values = values[:len(values)-len(metricValue.labels)]
 			}
 		}
 		if c.includedMetrics.Has(container.AppMetrics) {
-			for metricLabel, v := range stats.CustomMetrics {
+			metricLabels := make([]string, 0, len(stats.CustomMetrics))
+			for metricLabel := range stats.CustomMetrics {
+				metricLabels = append(metricLabels, metricLabel)
+			}
+			sort.Strings(metricLabels)
+
+			for _, metricLabel := range metricLabels {
+				v := stats.CustomMetrics[metricLabel]
 				for _, metric := range v {
-					clabels := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
-					cvalues := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
+					clabels = clabels[:len(rawLabels)]
+					cvalues = cvalues[:len(rawLabels)]
 					copy(clabels, labels)
 					copy(cvalues, values)
 					for label, value := range metric.Labels {
 						clabels = append(clabels, sanitizeLabelName("app_"+label))
 						cvalues = append(cvalues, value)
 					}
-					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
-					ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), cvalues...)
+
+					merr.Append(cacheInsertFn(cache.Metric{
+						FQName:      metricLabel,
+						LabelNames:  clabels,
+						LabelValues: cvalues,
+						Help:        customAppMetricHelp,
+						ValueType:   prometheus.GaugeValue,
+						Value:       metric.FloatValue,
+					}))
 				}
 			}
 		}
 	}
+	return merr.MaybeUnwrap()
 }
 
-func (c *PrometheusCollector) collectVersionInfo(ch chan<- prometheus.Metric) {
+func (c *ContainerCollector) collectVersionInfo(cacheInsertFn cacheInsertFn) error {
 	versionInfo, err := c.infoProvider.GetVersionInfo()
 	if err != nil {
-		c.errors.Set(1)
-		klog.Warningf("Couldn't get version info: %s", err)
-		return
+		return err
 	}
-	ch <- prometheus.MustNewConstMetric(versionInfoDesc, prometheus.GaugeValue, 1, []string{versionInfo.KernelVersion, versionInfo.ContainerOsVersion, versionInfo.DockerVersion, versionInfo.CadvisorVersion, versionInfo.CadvisorRevision}...)
+	c.versionInfo.LabelValues = append(c.versionInfo.LabelValues[:0], versionInfo.KernelVersion, versionInfo.ContainerOsVersion, versionInfo.DockerVersion, versionInfo.CadvisorVersion, versionInfo.CadvisorRevision)
+	return cacheInsertFn(c.versionInfo)
 }
 
 // Size after which we consider memory to be "unlimited". This is not
