@@ -165,7 +165,7 @@ func TestGetSpecCgroupV2(t *testing.T) {
 	assert.EqualValues(t, spec.Processes.Limit, 1027)
 
 	assert.False(t, spec.HasHugetlb)
-	assert.False(t, spec.HasDiskIo)
+	assert.True(t, spec.HasDiskIo)
 }
 
 func TestGetSpecCgroupV2Max(t *testing.T) {

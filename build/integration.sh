@@ -72,6 +72,22 @@ while [ "$(curl -Gs http://localhost:8080/healthz)" != "ok" ]; do
   sleep 1
 done
 
+if [[ "${DOCKER_IN_DOCKER_ENABLED:-}" == "true" ]]; then
+  # see https://github.com/moby/moby/blob/master/hack/dind
+  # cgroup v2: enable nesting
+  if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+    echo ">> configuring cgroupsv2 for docker in docker..."
+    # move the processes from the root group to the /init group,
+    # otherwise writing subtree_control fails with EBUSY.
+    # An error during moving non-existent process (i.e., "cat") is ignored.
+    mkdir -p /sys/fs/cgroup/init
+    xargs -rn1 < /sys/fs/cgroup/cgroup.procs > /sys/fs/cgroup/init/cgroup.procs || :
+    # enable controllers
+    sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers \
+      > /sys/fs/cgroup/cgroup.subtree_control
+  fi
+fi
+
 echo ">> running integration tests against local cAdvisor"
 if ! [ -f ./api.test ] || ! [ -f ./healthz.test ]; then
   echo You must compile the ./api.test binary and ./healthz.test binary before
