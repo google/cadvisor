@@ -20,7 +20,7 @@ require (
 	github.com/karrick/godirwalk v1.16.1
 	github.com/mindprince/gonvml v0.0.0-20190828220739-9ebdce4bb989
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
-	github.com/moby/sys/mountinfo v0.5.0
+	github.com/moby/sys/mountinfo v0.6.1
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -33,8 +33,10 @@ require (
 	github.com/prometheus/common v0.10.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
-	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c
+	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5
 	google.golang.org/grpc v1.33.2
 	k8s.io/klog/v2 v2.4.0
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 )
+
+replace github.com/opencontainers/runc => github.com/dqminh/runc v0.0.0-20220513155811-6414629ada8a
