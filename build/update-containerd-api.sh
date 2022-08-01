@@ -26,7 +26,7 @@ rm -rf "$GIT_ROOT/third_party/containerd/api"
 mkdir -p "$GIT_ROOT/third_party/containerd"
 
 pushd "$GIT_ROOT/third_party/containerd"
-curl -sSL "$CONTAINERD_TAR_GZ" | tar --strip-components=1 --exclude "*/vendor/" -xzf - "*/api/" "*/LICENSE" "*/NOTICE"
+curl -sSL "$CONTAINERD_TAR_GZ" | tar --wildcards --strip-components=1 --exclude="vendor/*" -xzf - "*/api/" "*/LICENSE" "*/NOTICE"
 popd
 
 find "$GIT_ROOT/third_party/containerd/api" -name "*.go" \
