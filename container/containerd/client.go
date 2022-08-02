@@ -30,21 +30,29 @@ import (
 	"github.com/google/cadvisor/container/containerd/errdefs"
 	"github.com/google/cadvisor/container/containerd/pkg/dialer"
 	containersapi "github.com/google/cadvisor/third_party/containerd/api/services/containers/v1"
+	snapshotapi "github.com/google/cadvisor/third_party/containerd/api/services/snapshots/v1"
 	tasksapi "github.com/google/cadvisor/third_party/containerd/api/services/tasks/v1"
 	versionapi "github.com/google/cadvisor/third_party/containerd/api/services/version/v1"
+	"github.com/google/cadvisor/third_party/containerd/api/types"
 	tasktypes "github.com/google/cadvisor/third_party/containerd/api/types/task"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
 
 type client struct {
 	containerService containersapi.ContainersClient
 	taskService      tasksapi.TasksClient
 	versionService   versionapi.VersionClient
+	snapshotService  snapshotapi.SnapshotsClient
+	criService       criapi.RuntimeServiceClient
 }
 
 type ContainerdClient interface {
 	LoadContainer(ctx context.Context, id string) (*containers.Container, error)
 	TaskPid(ctx context.Context, id string) (uint32, error)
 	Version(ctx context.Context) (string, error)
+	SnapshotMounts(ctx context.Context, snapshotter, key string) ([]*types.Mount, error)
+	ContainerStatus(ctx context.Context, id string) (*criapi.ContainerStatus, error)
+	ContainerStats(ctx context.Context, id string) (*criapi.ContainerStats, error)
 }
 
 var (
@@ -99,6 +107,8 @@ func Client(address, namespace string) (ContainerdClient, error) {
 			containerService: containersapi.NewContainersClient(conn),
 			taskService:      tasksapi.NewTasksClient(conn),
 			versionService:   versionapi.NewVersionClient(conn),
+			snapshotService:  snapshotapi.NewSnapshotsClient(conn),
+			criService:       criapi.NewRuntimeServiceClient(conn),
 		}
 	})
 	return ctrdClient, retErr
@@ -133,6 +143,38 @@ func (c *client) Version(ctx context.Context) (string, error) {
 		return "", errdefs.FromGRPC(err)
 	}
 	return response.Version, nil
+}
+
+func (c *client) SnapshotMounts(ctx context.Context, snapshotter, key string) ([]*types.Mount, error) {
+	response, err := c.snapshotService.Mounts(ctx, &snapshotapi.MountsRequest{
+		Snapshotter: snapshotter,
+		Key:         key,
+	})
+	if err != nil {
+		return nil, errdefs.FromGRPC(err)
+	}
+	return response.Mounts, nil
+}
+
+func (c *client) ContainerStatus(ctx context.Context, id string) (*criapi.ContainerStatus, error) {
+	response, err := c.criService.ContainerStatus(ctx, &criapi.ContainerStatusRequest{
+		ContainerId: id,
+		Verbose:     false,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return response.Status, nil
+}
+
+func (c *client) ContainerStats(ctx context.Context, id string) (*criapi.ContainerStats, error) {
+	response, err := c.criService.ContainerStats(ctx, &criapi.ContainerStatsRequest{
+		ContainerId: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return response.Stats, nil
 }
 
 func containerFromProto(containerpb containersapi.Container) *containers.Container {
