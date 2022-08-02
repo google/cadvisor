@@ -72,7 +72,7 @@ docker-%:
 	@docker build -t cadvisor:$(shell git rev-parse --short HEAD) -f deploy/Dockerfile .
 
 docker-build:
-	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.18 make build
+	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.19 make build
 
 presubmit: # lint : TODO re-enable lint after it works on golang 1.19
 	@echo ">> checking go mod tidy"
