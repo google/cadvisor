@@ -39,6 +39,8 @@ issues:
     - "(method|func) [A-Z].* should be .*"
 #   Stuttering affects exported names:
     - "type name will be used as .*\\.[A-Z]{1}.* by other packages, and that stutters"
+#   TODO: Migrate away from io/ioutil
+    - "\"io/ioutil\" has been deprecated since Go 1.16"
   exclude-rules:
 #   utils/cpuload/netlink/netlink.go:102:15: Error return value of `binary.Write` is not checked (errcheck)
 #   There are more similar issues in this file
