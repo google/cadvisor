@@ -62,7 +62,7 @@ var applicationMetricsCountLimit = flag.Int("application_metrics_count_limit", 1
 // The namespace under which Docker aliases are unique.
 const DockerNamespace = "docker"
 
-var HousekeepingConfigFlags = HouskeepingConfig{
+var HousekeepingConfigFlags = HousekeepingConfig{
 	flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings"),
 	flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic"),
 }
@@ -140,13 +140,13 @@ type Manager interface {
 }
 
 // Housekeeping configuration for the manager
-type HouskeepingConfig = struct {
+type HousekeepingConfig = struct {
 	Interval     *time.Duration
 	AllowDynamic *bool
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, housekeepingConfig HousekeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -193,8 +193,8 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		cadvisorContainer:                     selfContainer,
 		inHostNamespace:                       inHostNamespace,
 		startupTime:                           time.Now(),
-		maxHousekeepingInterval:               *houskeepingConfig.Interval,
-		allowDynamicHousekeeping:              *houskeepingConfig.AllowDynamic,
+		maxHousekeepingInterval:               *housekeepingConfig.Interval,
+		allowDynamicHousekeeping:              *housekeepingConfig.AllowDynamic,
 		includedMetrics:                       includedMetricsSet,
 		containerWatchers:                     []watcher.ContainerWatcher{},
 		eventsChannel:                         eventsChannel,
