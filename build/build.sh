@@ -18,6 +18,7 @@ set -e
 
 export GOOS=${GOOS:-$(go env GOOS)}
 export GOARCH=${GOARCH:-$(go env GOARCH)}
+export CGO_ENABLED=${GO_CGO_ENABLED:-"1"}
 GO_FLAGS=${GO_FLAGS:-"-tags netgo"}    # Extra go flags to use in the build.
 BUILD_USER=${BUILD_USER:-"${USER}@${HOSTNAME}"}
 BUILD_DATE=${BUILD_DATE:-$( date +%Y%m%d-%H:%M:%S )}
