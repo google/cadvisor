@@ -20,7 +20,6 @@
 // Mocked environment:
 // - "container" first container with {1, 2, 3} processes.
 // - "another" second container with {5, 6} processes.
-//
 package resctrl
 
 import (
