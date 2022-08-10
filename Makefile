@@ -13,7 +13,7 @@
 # limitations under the License.
 
 GO := go
-GOLANGCI_VER := v1.45.2
+GOLANGCI_VER := v1.48.0
 GO_TEST ?= $(GO) test $(or $(GO_FLAGS),-race)
 arch ?= $(shell go env GOARCH)
 
@@ -74,7 +74,7 @@ docker-%:
 docker-build:
 	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.19 make build
 
-presubmit: # lint : TODO re-enable lint after it works on golang 1.19
+presubmit: lint
 	@echo ">> checking go mod tidy"
 	@./build/check_gotidy.sh
 	@echo ">> checking file boilerplate"
