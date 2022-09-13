@@ -18,6 +18,7 @@ sudo docker run \
   --volume=/sys:/sys:ro \
   --volume=/var/lib/docker/:/var/lib/docker:ro \
   --volume=/dev/disk/:/dev/disk:ro \
+  --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro \
   --publish=8080:8080 \
   --detach=true \
   --name=cadvisor \
