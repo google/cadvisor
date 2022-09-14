@@ -21,10 +21,10 @@ require (
 	github.com/mesos/mesos-go v0.0.7-0.20180413204204-29de6ff97b48
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
 	github.com/prometheus/client_golang v1.8.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 	google.golang.org/api v0.34.0
 	gopkg.in/olivere/elastic.v2 v2.0.12
-	k8s.io/klog/v2 v2.4.0
+	k8s.io/klog/v2 v2.80.1
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 )
