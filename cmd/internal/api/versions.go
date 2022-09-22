@@ -455,8 +455,12 @@ func (api *version2_0) HandleRequest(requestType string, request []string, m man
 		klog.V(4).Infof("Api - Spec for container %q, options %+v", name, opt)
 		ps, err := m.GetProcessList(name, opt)
 		if err != nil {
-			return fmt.Errorf("process listing failed: %v", err)
-		}
+                        klog.Errorf("Process listing failed: %v", err)
+                        // Process listing failed since the process is not running/found on the machine.
+                        // Set the header accordingly and return the error.
+                        w.WriteHeader(http.StatusNotFound)
+                        return fmt.Errorf("Process listing failed.")
+                }
 		return writeResult(ps, w)
 	default:
 		return fmt.Errorf("unknown request type %q", requestType)
