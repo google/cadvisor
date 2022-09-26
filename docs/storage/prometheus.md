@@ -105,7 +105,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 
 The table below lists the Prometheus hardware metrics exposed by cAdvisor (in alphabetical order by metric name) and corresponding `-disable_metrics` / `-enable_metrics` option parameter:
 
-Metric name | Type | Description | Unit (where applicable) | option parameter | addional build flag |
+Metric name | Type | Description | Unit (where applicable) | option parameter | additional build flag |
 :-----------|:-----|:------------|:------------------------|:---------------------------|:--------------------
 `machine_cpu_cache_capacity_bytes` | Gauge |  Cache size in bytes assigned to NUMA node and CPU core | bytes | cpu_topology |
 `machine_cpu_cores` | Gauge | Number of logical CPU cores | | |

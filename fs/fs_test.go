@@ -149,7 +149,7 @@ func TestDirInodeUsage(t *testing.T) {
 	}
 	usage, err := fsInfo.GetDirUsage(dir)
 	as.NoError(err)
-	// We sould get numFiles+1 inodes, since we get 1 inode for each file, plus 1 for the directory
+	// We should get numFiles+1 inodes, since we get 1 inode for each file, plus 1 for the directory
 	as.True(uint64(numFiles+1) == usage.Inodes, "expected inodes in dir to be %d; got inodes: %d", numFiles+1, usage.Inodes)
 }
 

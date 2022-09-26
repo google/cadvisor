@@ -81,7 +81,7 @@ func RegisterHandlers(mux httpmux.Mux, containerManager manager.Manager, httpAut
 		authenticated = true
 	}
 
-	// Change handler based on authenticator initalization
+	// Change handler based on authenticator initialization
 	if !authenticated {
 		mux.HandleFunc(static.StaticResource, staticHandlerNoAuth)
 		if err := pages.RegisterHandlersBasic(mux, containerManager, nil, urlBasePrefix); err != nil {
