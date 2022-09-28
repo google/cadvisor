@@ -16,6 +16,7 @@ package sysinfo
 
 import (
 	"encoding/json"
+
 	"fmt"
 	"os"
 	"sort"
@@ -116,6 +117,7 @@ func TestGetNodesInfo(t *testing.T) {
 		physicalPackageIDs map[string]string
 		nodes              int
 		cores              int
+		distances          []string
 		expectedNodes      string
 	}{
 		{
@@ -161,6 +163,10 @@ func TestGetNodesInfo(t *testing.T) {
 			},
 			2,
 			4,
+			[]string{
+				"10 11",
+				"11 10",
+			},
 			`
 	[
       {
@@ -171,6 +177,10 @@ func TestGetNodesInfo(t *testing.T) {
             "page_size": 2048,
             "num_pages": 1
           }
+        ],
+        "distances": [
+          10,
+          11
         ],
         "cores": [
           {
@@ -201,6 +211,10 @@ func TestGetNodesInfo(t *testing.T) {
             "page_size": 2048,
             "num_pages": 1
           }
+        ],
+        "distances": [
+          11,
+          10
         ],
         "cores": [
           {
@@ -271,11 +285,17 @@ func TestGetNodesInfo(t *testing.T) {
 			},
 			1,
 			6,
+			[]string{
+				"10",
+			},
 			`
 	[
       {
         "node_id": 0,
         "memory": 33604804608,
+        "distances": [
+          10
+        ],
         "hugepages": [
           {
             "page_size": 2048,
@@ -338,6 +358,10 @@ func TestGetNodesInfo(t *testing.T) {
 		fakeSys.SetHugePages(test.hugePages, nil)
 		fakeSys.SetHugePagesNr(test.hugePageNr, nil)
 		fakeSys.SetPhysicalPackageIDs(test.physicalPackageIDs, nil)
+		for i, node := range test.nodesPaths {
+			fakeSys.SetDistances(node, test.distances[i], nil)
+		}
+
 		nodes, cores, err := GetNodesInfo(fakeSys)
 		assert.Nil(t, err)
 		assert.Equal(t, test.nodes, len(nodes))
@@ -412,6 +436,9 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
 	}
 	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, nil)
 
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node0", "10 11", nil)
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node1", "11 10", nil)
+
 	nodes, cores, err := GetNodesInfo(fakeSys)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(nodes))
@@ -429,6 +456,10 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
             "page_size": 2048,
             "num_pages": 1
           }
+        ],
+        "distances": [
+          10,
+          11
         ],
         "cores": [
           {
@@ -458,6 +489,10 @@ func TestGetNodesInfoWithOfflineCPUs(t *testing.T) {
             "page_size": 2048,
             "num_pages": 1
           }
+        ],
+        "distances": [
+          11,
+          10
         ],
         "cores": [
           {
@@ -588,6 +623,9 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
 	}
 	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, nil)
 
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node0", "10 11", nil)
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node1", "11 10", nil)
+
 	nodes, cores, err := GetNodesInfo(fakeSys)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(nodes))
@@ -605,6 +643,10 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
             "page_size": 2048,
             "num_pages": 1
           }
+        ],
+        "distances": [
+          10,
+          11
         ],
         "cores": [
 	  {
@@ -628,6 +670,10 @@ func TestGetNodesInfoWithoutCacheInfo(t *testing.T) {
             "page_size": 2048,
             "num_pages": 1
           }
+        ],
+        "distances": [
+          11,
+          10
         ],
         "cores": [
           {
@@ -695,6 +741,9 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
 	}
 	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, nil)
 
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node0", "10 11", nil)
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node1", "11 10", nil)
+
 	nodes, cores, err := GetNodesInfo(fakeSys)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(nodes))
@@ -707,6 +756,10 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
       {
         "node_id": 0,
         "memory": 33604804608,
+        "distances": [
+          10,
+          11
+        ],
         "hugepages": null,
         "cores": [
           {
@@ -733,6 +786,10 @@ func TestGetNodesInfoWithoutHugePagesInfo(t *testing.T) {
         "node_id": 1,
         "memory": 33604804608,
         "hugepages": null,
+        "distances": [
+          11,
+          10
+        ],
         "cores": [
           {
             "core_id": 1,
@@ -815,6 +872,7 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 		{
 			"node_id":0,
 			"memory":0,
+            "distances": null,
 			"hugepages":null,
 			"cores":[
 			   {
@@ -840,6 +898,7 @@ func TestGetNodesInfoWithoutNodes(t *testing.T) {
 		 {
 			"node_id":1,
 			"memory":0,
+            "distances": null,
 			"hugepages":null,
 			"cores":[
 			   {
@@ -920,6 +979,7 @@ func TestGetNodesInfoWithoutNodesWhenPhysicalPackageIDMissingForOneCPU(t *testin
 		{
 			"node_id":0,
 			"memory":0,
+            "distances": null,
 			"hugepages":null,
 			"cores":[
 			   {
@@ -1037,6 +1097,8 @@ func TestGetNodesWhenTopologyDirMissingForOneCPU(t *testing.T) {
 
 	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, physicalPackageIDErrors)
 
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node0", "10", nil)
+
 	nodes, cores, err := GetNodesInfo(fakeSys)
 	assert.Nil(t, err)
 
@@ -1054,6 +1116,9 @@ func TestGetNodesWhenTopologyDirMissingForOneCPU(t *testing.T) {
 		{
 		   "node_id":0,
 		   "memory":33604804608,
+           "distances" : [
+             10
+           ],
 		   "hugepages":[
 			  {
 				 "page_size":2048,
@@ -1129,6 +1194,8 @@ func TestGetNodesWhenPhysicalPackageIDMissingForOneCPU(t *testing.T) {
 
 	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, physicalPackageIDErrors)
 
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node0", "10", nil)
+
 	nodes, cores, err := GetNodesInfo(fakeSys)
 	assert.Nil(t, err)
 
@@ -1146,6 +1213,9 @@ func TestGetNodesWhenPhysicalPackageIDMissingForOneCPU(t *testing.T) {
 		{
 		   "node_id":0,
 		   "memory":33604804608,
+           "distances" : [
+             10
+           ],
 		   "hugepages":[
 			  {
 				 "page_size":2048,
@@ -1520,8 +1590,12 @@ func TestGetNodesInfoWithUncoreCacheInfo(t *testing.T) {
 	}
 	fakeSys.SetPhysicalPackageIDs(physicalPackageIDs, nil)
 
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node0", "10 11", nil)
+	fakeSys.SetDistances("/fakeSysfs/devices/system/node/node1", "11 10", nil)
+
 	nodes, cores, err := GetNodesInfo(fakeSys)
 	assert.Nil(t, err)
+	fmt.Println(err)
 	assert.Equal(t, 2, len(nodes))
 	assert.Equal(t, 4, cores)
 
@@ -1532,6 +1606,10 @@ func TestGetNodesInfoWithUncoreCacheInfo(t *testing.T) {
       {
         "node_id": 0,
         "memory": 33604804608,
+        "distances" : [
+          10,
+          11
+        ],
         "hugepages": null,
         "cores": [
           {
@@ -1557,6 +1635,10 @@ func TestGetNodesInfoWithUncoreCacheInfo(t *testing.T) {
       {
         "node_id": 1,
         "memory": 33604804608,
+        "distances" : [
+          11,
+          10
+        ],
         "hugepages": null,
         "cores": [
           {
@@ -1581,4 +1663,26 @@ func TestGetNodesInfoWithUncoreCacheInfo(t *testing.T) {
       }
     ]`
 	assert.JSONEq(t, expectedNodes, string(nodesJSON))
+}
+
+func TestGetDistances(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	node := "/fakeSysfs/devices/system/node/node0"
+	fakeSys.SetDistances(node, "10 11", nil)
+
+	distances, err := getDistances(fakeSys, node)
+	assert.Nil(t, err)
+	assert.Len(t, distances, 2)
+	assert.Equal(t, uint64(10), distances[0])
+	assert.Equal(t, uint64(11), distances[1])
+}
+
+func TestGetDistancesMissingDistances(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	node := "/fakeSysfs/devices/system/node/node0"
+	fakeSys.SetDistances(node, "10 11", fmt.Errorf("no distances file"))
+
+	distances, err := getDistances(fakeSys, node)
+	assert.Nil(t, err)
+	assert.Len(t, distances, 0)
 }
