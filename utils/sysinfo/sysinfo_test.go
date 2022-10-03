@@ -16,7 +16,6 @@ package sysinfo
 
 import (
 	"encoding/json"
-
 	"fmt"
 	"os"
 	"sort"
