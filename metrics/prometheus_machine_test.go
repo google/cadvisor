@@ -188,6 +188,22 @@ func TestGetHugePagesCount(t *testing.T) {
 	assertMetricValues(t, expectedMetricVals, metricVals, "Unexpected information about Node memory")
 }
 
+func TestGetDistance(t *testing.T) {
+	machineInfo, err := testSubcontainersInfoProvider{}.GetMachineInfo()
+	assert.Nil(t, err)
+
+	metricVals := getDistance(machineInfo)
+
+	assert.Equal(t, 4, len(metricVals))
+	expectedMetricVals := []metricValue{
+		{value: 10, labels: []string{"0", "0"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 12, labels: []string{"0", "1"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 12, labels: []string{"1", "0"}, timestamp: time.Unix(1395066363, 0)},
+		{value: 10, labels: []string{"1", "1"}, timestamp: time.Unix(1395066363, 0)},
+	}
+	assertMetricValues(t, expectedMetricVals, metricVals, "Unexpected information about Node memory")
+}
+
 func assertMetricValues(t *testing.T, expected metricValues, actual metricValues, message string) {
 	for i := range actual {
 		assert.Truef(t, reflect.DeepEqual(expected[i], actual[i]),

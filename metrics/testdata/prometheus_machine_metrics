@@ -45,6 +45,12 @@ machine_dimm_count{boot_id="boot-id-test",machine_id="machine-id-test",system_uu
 # HELP machine_memory_bytes Amount of memory installed on the machine.
 # TYPE machine_memory_bytes gauge
 machine_memory_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 1024 1395066363000
+# HELP machine_node_distance Distance between NUMA node and target NUMA node.
+# TYPE machine_node_distance gauge
+machine_node_distance{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",target_node_id="0"} 10 1395066363000
+machine_node_distance{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",target_node_id="1"} 12 1395066363000
+machine_node_distance{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",target_node_id="0"} 12 1395066363000
+machine_node_distance{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",system_uuid="system-uuid-test",target_node_id="1"} 10 1395066363000
 # HELP machine_node_hugepages_count Numer of hugepages assigned to NUMA node.
 # TYPE machine_node_hugepages_count gauge
 machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",page_size="1048576",system_uuid="system-uuid-test"} 0 1395066363000

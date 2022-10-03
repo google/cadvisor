@@ -204,6 +204,10 @@ func TestTopology(t *testing.T) {
 		"/fakeSysfs/devices/system/node/node0/cpu11": "1",
 	}
 	sysFs.SetPhysicalPackageIDs(physicalPackageIDs, nil)
+
+	sysFs.SetDistances("/fakeSysfs/devices/system/node/node0", "10 11", nil)
+	sysFs.SetDistances("/fakeSysfs/devices/system/node/node1", "11 10", nil)
+
 	topology, numCores, err := GetTopology(sysFs)
 	assert.Nil(t, err)
 	assert.Equal(t, 12, numCores)
@@ -217,12 +221,17 @@ func TestTopology(t *testing.T) {
 		Type:  "unified",
 		Level: 1,
 	}
+	distances := [][]uint64{
+		{10, 11},
+		{11, 10},
+	}
 	for i := 0; i < numNodes; i++ {
 		node := info.Node{Id: i}
 		// Copy over Memory from result. TODO(rjnagal): Use memory from fake.
 		node.Memory = topology[i].Memory
 		// Copy over HugePagesInfo from result. TODO(ohsewon): Use HugePagesInfo from fake.
 		node.HugePages = topology[i].HugePages
+		node.Distances = distances[i]
 		for j := 0; j < numCoresPerNode; j++ {
 			core := info.Core{Id: i*numCoresPerNode + j}
 			core.Caches = append(core.Caches, cache)
@@ -298,12 +307,13 @@ func TestTopologyWithoutNodes(t *testing.T) {
 	topologyJSON2, err := json.Marshal(topology[1])
 	assert.Nil(t, err)
 
-	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"id":0, "size":32768,"type":"unified","level":0}], "socket_id": 0, "uncore_caches":null}],"caches":null}`
+	expectedTopology1 := `{"node_id":0,"memory":0,"hugepages":null,"distances":null,"cores":[{"core_id":0,"thread_ids":[0,2],"caches":[{"id":0, "size":32768,"type":"unified","level":0}], "socket_id": 0, "uncore_caches":null}],"caches":null}`
 	expectedTopology2 := `
 		{
 			"node_id":1,
 			"memory":0,
 			"hugepages":null,
+            "distances": null,
 			"cores":[
 				{
 					"core_id":1,
@@ -359,6 +369,9 @@ func TestTopologyWithNodesWithoutCPU(t *testing.T) {
 	}
 	sysFs.SetHugePagesNr(hugePageNr, nil)
 
+	sysFs.SetDistances("/fakeSysfs/devices/system/node/node0", "10 11", nil)
+	sysFs.SetDistances("/fakeSysfs/devices/system/node/node1", "11 10", nil)
+
 	topology, numCores, err := GetTopology(sysFs)
 
 	assert.Nil(t, err)
@@ -381,6 +394,10 @@ func TestTopologyWithNodesWithoutCPU(t *testing.T) {
         "page_size": 1048576
        }
       ],
+      "distances": [
+        10,
+        11
+      ],
       "memory": 33604804608,
       "node_id": 0
      },
@@ -396,6 +413,10 @@ func TestTopologyWithNodesWithoutCPU(t *testing.T) {
         "num_pages": 1,
         "page_size": 1048576
        }
+      ],
+      "distances": [
+        11,
+        10
       ],
       "memory": 33604804608,
       "node_id": 1

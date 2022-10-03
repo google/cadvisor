@@ -114,6 +114,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `machine_dimm_capacity_bytes` | Gauge | Total RAM DIMM capacity (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 | bytes | | |
 `machine_dimm_count` | Gauge | Number of RAM DIMM (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 | | |
 `machine_memory_bytes` | Gauge | Amount of memory installed on the machine | bytes | |
+`machine_node_distance` | Gauge | Distance between NUMA node and target NUMA node | | cpu_topology |
 `machine_node_hugepages_count` | Gauge |  Numer of hugepages assigned to NUMA node | | cpu_topology |
 `machine_node_memory_capacity_bytes` | Gauge |  Amount of memory assigned to NUMA node | bytes | cpu_topology |
 `machine_nvm_avg_power_budget_watts` | Gauge |  NVM power budget | watts | | libipmctl
