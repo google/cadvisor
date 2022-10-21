@@ -1949,7 +1949,11 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 						cvalues = append(cvalues, value)
 					}
 					desc := prometheus.NewDesc(metricLabel, "Custom application metric.", clabels, nil)
-					ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(metric.FloatValue), cvalues...)
+					metVal := metric.FloatValue
+					if metVal == 0 {
+						metVal = float64(metric.IntValue)
+					}
+					ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, metVal, cvalues...)
 				}
 			}
 		}
