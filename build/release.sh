@@ -69,7 +69,7 @@ for arch in "${arches[@]}"; do
 done
 
 for arch in "${!arches[@]}"; do
-  GOARCH="$arch" OUTPUT_NAME_WITH_ARCH="true" build/build.sh
+  GOARCH="$arch" GO_CGO_ENABLED="0" OUTPUT_NAME_WITH_ARCH="true" build/build.sh
   arch_specific_image="${image_name}-${arch}:${VERSION}"
   docker buildx build --platform "linux/${arch}" --build-arg VERSION="$VERSION" -f deploy/Dockerfile -t "$arch_specific_image"  --progress plain --push .
   docker manifest create --amend "$final_image" "$arch_specific_image"
