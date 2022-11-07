@@ -4,9 +4,6 @@ namespace: cadvisor
 commonLabels:
   app: cadvisor
 resources:
-- clusterrole.yaml
-- clusterrolebinding.yaml
 - daemonset.yaml
 - namespace.yaml
-- podsecuritypolicy.yaml
 - serviceaccount.yaml
