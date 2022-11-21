@@ -37,3 +37,5 @@ require (
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 )
+
+replace github.com/aws/aws-sdk-go => github.com/fengshunli/aws-sdk-go v0.0.0-20221121041908-199b8c2a907a
