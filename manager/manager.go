@@ -202,7 +202,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		containerEnvMetadataWhiteList:         containerEnvMetadataWhiteList,
 	}
 
-	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
+	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace, includedMetricsSet)
 	if err != nil {
 		return nil, err
 	}
@@ -354,7 +354,7 @@ func (m *manager) updateMachineInfo(quit chan error) {
 	for {
 		select {
 		case <-ticker.C:
-			info, err := machine.Info(m.sysFs, m.fsInfo, m.inHostNamespace)
+			info, err := machine.Info(m.sysFs, m.fsInfo, m.inHostNamespace, m.includedMetrics)
 			if err != nil {
 				klog.Errorf("Could not get machine info: %v", err)
 				break

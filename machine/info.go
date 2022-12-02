@@ -24,6 +24,7 @@ import (
 
 	"golang.org/x/sys/unix"
 
+	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/nvm"
@@ -54,7 +55,7 @@ func getInfoFromFiles(filePaths string) string {
 	return ""
 }
 
-func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.MachineInfo, error) {
+func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool, enabledMetrics container.MetricSet) (*info.MachineInfo, error) {
 	rootFs := "/"
 	if !inHostNamespace {
 		rootFs = "/rootfs"
@@ -79,9 +80,12 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		return nil, err
 	}
 
-	nvmInfo, err := nvm.GetInfo()
-	if err != nil {
-		return nil, err
+	var nvmInfo info.NVMInfo
+	if enabledMetrics.Has(container.NVMMetrics) {
+		nvmInfo, err = nvm.GetInfo()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	hugePagesInfo, err := sysinfo.GetHugePagesInfo(sysFs, hugepagesDirectory)
