@@ -17,7 +17,6 @@ require (
 	github.com/gogo/googleapis v1.4.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/karrick/godirwalk v1.17.0
-	github.com/mindprince/gonvml v0.0.0-20190828220739-9ebdce4bb989
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
 	github.com/moby/sys/mountinfo v0.6.2
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect

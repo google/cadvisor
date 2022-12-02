@@ -98,7 +98,6 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.MemoryNumaMetrics:              struct{}{},
 			container.CpuLoadMetrics:                 struct{}{},
 			container.DiskIOMetrics:                  struct{}{},
-			container.AcceleratorUsageMetrics:        struct{}{},
 			container.DiskUsageMetrics:               struct{}{},
 			container.NetworkUsageMetrics:            struct{}{},
 			container.NetworkTcpUsageMetrics:         struct{}{},
