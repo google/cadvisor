@@ -55,7 +55,7 @@ docker buildx inspect cadvisor-builder > /dev/null \
 # Build binaries
 
 # A mapping of the docker arch name to the qemu arch name
-declare -A arches=( ["amd64"]="x86_64" ["arm"]="arm" ["arm64"]="aarch64")
+declare -A arches=( ["amd64"]="x86_64" ["arm"]="arm" ["arm64"]="aarch64" ["ppc64le"]="pcp64le")
 
 for arch in "${arches[@]}"; do
   if ! hash "qemu-${arch}-static"; then
