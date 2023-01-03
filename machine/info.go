@@ -145,6 +145,7 @@ func Info(sysFs sysfs.SysFs, fsInfo fs.FsInfo, inHostNamespace bool) (*info.Mach
 		CloudProvider:    cloudProvider,
 		InstanceType:     instanceType,
 		InstanceID:       instanceID,
+		Hostname:         GetHostname(),
 	}
 
 	for i := range filesystems {

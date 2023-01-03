@@ -151,6 +151,15 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 					return metricValues{{value: float64(machineInfo.NVMInfo.AvgPowerBudget), timestamp: machineInfo.Timestamp}}
 				},
 			},
+			{
+				name:        "machine_hostname",
+				help:        "machine hostname.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"hostname"},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return metricValues{{value: 1, labels: []string{machineInfo.Hostname}, timestamp: machineInfo.Timestamp}}
+				},
+			},
 		},
 	}
 

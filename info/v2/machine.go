@@ -73,6 +73,9 @@ type Attributes struct {
 
 	// Type of cloud instance (e.g. GCE standard) the machine is.
 	InstanceType v1.InstanceType `json:"instance_type"`
+
+	// hostname
+	Hostname string `json:"hostname"`
 }
 
 func GetAttributes(mi *v1.MachineInfo, vi *v1.VersionInfo) Attributes {
@@ -94,6 +97,7 @@ func GetAttributes(mi *v1.MachineInfo, vi *v1.VersionInfo) Attributes {
 		Topology:           mi.Topology,
 		CloudProvider:      mi.CloudProvider,
 		InstanceType:       mi.InstanceType,
+		Hostname:           mi.Hostname,
 	}
 }
 

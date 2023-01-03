@@ -231,6 +231,11 @@ func GetTopology(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 	return sysinfo.GetNodesInfo(sysFs)
 }
 
+func GetHostname() string {
+	name, _ := os.Hostname()
+	return name
+}
+
 // parseCapacity matches a Regexp in a []byte, returning the resulting value in bytes.
 // Assumes that the value matched by the Regexp is in KB.
 func parseCapacity(b []byte, r *regexp.Regexp) (uint64, error) {
