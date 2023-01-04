@@ -29,7 +29,9 @@ function delete() {
 trap delete EXIT INT TERM
 
 function run_tests() {
-  BUILD_CMD="env GOOS=linux GOARCH=amd64 GO_FLAGS='$GO_FLAGS' ./build/build.sh && \
+
+  # Add safe.directory as workaround for https://github.com/actions/runner/issues/2033
+  BUILD_CMD="git config --global safe.directory /go/src/github.com/google/cadvisor && env GOOS=linux GOARCH=amd64 GO_FLAGS='$GO_FLAGS' ./build/build.sh && \
     env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/api && \
     env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/healthz"
 
