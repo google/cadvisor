@@ -12,28 +12,21 @@ require github.com/google/cadvisor v0.0.0
 replace github.com/google/cadvisor => ../
 
 require (
-	github.com/Rican7/retry v0.1.1-0.20160712041035-272ad122d6e5
-	github.com/SeanDolphin/bqschema v0.0.0-20150424181127-f92a08f515e1
-	github.com/Shopify/sarama v1.19.0
-	github.com/Shopify/toxiproxy v2.1.4+incompatible // indirect
-	github.com/abbot/go-http-auth v0.0.0-20140618235127-c0ef4539dfab
-	github.com/eapache/go-resiliency v1.1.0 // indirect
-	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
-	github.com/eapache/queue v1.1.0 // indirect
-	github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7
-	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/Rican7/retry v0.3.1
+	github.com/SeanDolphin/bqschema v1.0.0
+	github.com/Shopify/sarama v1.37.2
+	github.com/abbot/go-http-auth v0.4.0
+	github.com/gomodule/redigo v1.8.9
 	github.com/influxdb/influxdb v0.9.6-0.20151125225445-9eab56311373
-	github.com/mesos/mesos-go v0.0.7-0.20180413204204-29de6ff97b48
-	github.com/onsi/ginkgo v1.7.0 // indirect
-	github.com/onsi/gomega v1.4.3 // indirect
-	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
-	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
-	github.com/prometheus/client_golang v1.13.0
-	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
-	github.com/stretchr/testify v1.8.0
-	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
-	google.golang.org/api v0.34.0
-	gopkg.in/olivere/elastic.v2 v2.0.12
+	github.com/mesos/mesos-go v0.0.11
+	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/onsi/gomega v1.24.1 // indirect
+	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7 // indirect
+	github.com/prometheus/client_golang v1.14.0
+	github.com/stretchr/testify v1.8.1
+	golang.org/x/oauth2 v0.3.0
+	google.golang.org/api v0.104.0
+	gopkg.in/olivere/elastic.v2 v2.0.61
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed
 )

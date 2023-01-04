@@ -23,7 +23,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	storage "github.com/google/cadvisor/storage"
 
-	redis "github.com/garyburd/redigo/redis"
+	redis "github.com/gomodule/redigo/redis"
 )
 
 func init() {
