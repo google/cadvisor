@@ -38,6 +38,9 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+    # See https://github.com/actions/runner/issues/2033
+    - name: Fix git safe.directory in container
+      run: git config --global safe.directory '*'
     - name: Run integration tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
