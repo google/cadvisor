@@ -74,7 +74,7 @@ Please reach out and get involved in the project, we're actively looking for mor
 * [@bobbypage, Google](https://github.com/bobbypage)
 * [@iwankgb, Independent](https://github.com/iwankgb)
 * [@creatone, Intel](https://github.com/creatone)
-* [@dims, VMWare](https://github.com/dims)
+* [@dims, VMware](https://github.com/dims)
 * [@mrunalp, RedHat](https://github.com/mrunalp)
 
 ### Frequent Collaborators
