@@ -3,8 +3,8 @@ module github.com/google/cadvisor
 go 1.16
 
 require (
-	cloud.google.com/go v0.97.0
-	github.com/Microsoft/go-winio v0.4.15
+	cloud.google.com/go/compute v1.7.0
+	github.com/Microsoft/go-winio v0.6.0
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/ttrpc v1.1.0
