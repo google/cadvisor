@@ -3,7 +3,7 @@ module github.com/google/cadvisor
 go 1.16
 
 require (
-	cloud.google.com/go/compute v1.7.0
+	cloud.google.com/go v0.97.0
 	github.com/Microsoft/go-winio v0.4.15
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/blang/semver v3.5.1+incompatible
@@ -17,6 +17,7 @@ require (
 	github.com/gogo/googleapis v1.4.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/karrick/godirwalk v1.17.0
+	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
 	github.com/moby/sys/mountinfo v0.6.2
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
@@ -28,10 +29,11 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/client_model v0.3.0
-	github.com/prometheus/common v0.38.0
-	github.com/stretchr/testify v1.8.1
+	github.com/prometheus/common v0.37.0
+	github.com/stretchr/testify v1.8.0
 	golang.org/x/net v0.4.0
 	golang.org/x/sys v0.3.0
+	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21 // indirect
 	google.golang.org/grpc v1.51.0
 	gotest.tools/v3 v3.0.2 // indirect
 	k8s.io/klog/v2 v2.80.1
