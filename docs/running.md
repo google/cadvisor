@@ -5,7 +5,7 @@
 We have a Docker image that includes everything you need to get started. Simply run:
 
 ```
-VERSION=v0.35.0 # use the latest release version from https://github.com/google/cadvisor/releases
+VERSION=v0.47.0 # use the latest release version from https://github.com/google/cadvisor/releases
 sudo docker run \
   --volume=/:/rootfs:ro \
   --volume=/var/run:/var/run:rw \
