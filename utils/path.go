@@ -14,11 +14,35 @@
 
 package utils
 
-import "os"
+import (
+	"context"
+	"errors"
+	"os"
+	"os/exec"
+	"time"
+)
 
+// FileExists returns true if the file exists
 func FileExists(file string) bool {
 	if _, err := os.Stat(file); err != nil {
 		return false
 	}
 	return true
+}
+
+// FilesystemHung returns true if the filesystem appears to be hung.  This is determined by running the `stat` command
+// against the path provided and waiting up to the specified timeout for the command to complete.  If it does not
+// complete, the command is killed and the function returns false. If the `stat` command is not found on the system,
+// the function always returns false.
+func FilesystemHung(path string, timeout time.Duration) bool {
+	stat, err := exec.LookPath("stat")
+	if err != nil {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	// we don't actually care if the command suceeds or fails, just if it hangs
+	_ = exec.CommandContext(ctx, stat, path).Run()
+	return errors.Is(ctx.Err(), context.DeadlineExceeded)
 }

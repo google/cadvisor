@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	zfs "github.com/mistifyio/go-zfs"
 	mount "github.com/moby/sys/mountinfo"
@@ -53,6 +54,8 @@ const (
 	statBlockSize uint64 = 512
 	// The maximum number of `disk usage` tasks that can be running at once.
 	maxConcurrentOps = 20
+	// The length of time to wait when checking for a filesystem timeout
+	filesystemHangTimeout = 5 * time.Second
 )
 
 // A pool for restricting the number of consecutive `du` and `find` tasks running.
@@ -409,6 +412,12 @@ func (i *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error
 				// if /dev/zfs is not present default to VFS
 				fallthrough
 			default:
+				// this check is primarily intended to detect situations where a network filesystem (e.g. NFS) is no longer
+				// responding to prevent consumers of cadvisor from hanging indefinitely
+				if utils.FilesystemHung(partition.mountpoint, filesystemHangTimeout) {
+					err = fmt.Errorf("filesystem mounted at %s appears to be hung", partition.mountpoint)
+					break
+				}
 				var inodes, inodesFree uint64
 				if utils.FileExists(partition.mountpoint) {
 					fs.Capacity, fs.Free, fs.Available, inodes, inodesFree, err = getVfsStats(partition.mountpoint)
