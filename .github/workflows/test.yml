@@ -47,10 +47,10 @@ jobs:
         make docker-test-integration
     - name: Upload cAdvisor log file
       uses: actions/upload-artifact@v1
-      if: failure()
+      if: success() || failure()
       with:
-        name: cadvisor.log
-        path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log
+        name: cadvisor-${{ matrix.distro }}-${{ matrix.arch }}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
+        path: ${{ github.workspace }}/cadvisor.log
   test-integration-non-amd64:
     strategy:
       matrix:
