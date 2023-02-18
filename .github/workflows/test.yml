@@ -51,3 +51,46 @@ jobs:
       with:
         name: cadvisor.log
         path: ${{ github.workspace }}/go/src/github.com/google/cadvisor/cadvisor.log
+  test-integration-non-amd64:
+    strategy:
+      matrix:
+        go-versions: [ 1.19, 1.18 ]
+        arch: [ aarch64, armv7 ]
+        distro: [ ubuntu20.04 ]
+        environment-variables: [ build/config/plain.sh, build/config/libpfm4.sh ]
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run integration tests
+        with:
+          arch: ${{ matrix.arch }}
+          distro: ${{ matrix.distro }}
+          env: |
+            GOLANG_VERSION: ${{ matrix.go-versions }}
+          setup: |
+            mkdir -p ${{ github.workspace }}/artifacts
+          dockerRunArgs: |
+            --volume "${{ github.workspace }}/artifacts:/artifacts"
+          shell: /bin/bash
+          install: |
+            set -ex
+            apt update -y -qq
+            apt install -y -qq ca-certificates curl gnupg lsb-release
+            mkdir -p /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+            apt update -y -qq
+            apt install -y -qq make docker-ce docker-ce-cli containerd.io
+          run: |
+            set -ex
+            source ${{ matrix.environment-variables }}
+            make docker-test-integration
+            cp "${PWD}/cadvisor.log" "/artifacts"
+      - name: Upload cAdvisor log file
+        uses: actions/upload-artifact@v1
+        with:
+          name: cadvisor-${{ matrix.distro }}-${{ matrix.arch }}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
+          path: ${{ github.workspace }}/artifacts/cadvisor.log
