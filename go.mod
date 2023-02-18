@@ -2,6 +2,8 @@ module github.com/google/cadvisor
 
 go 1.16
 
+replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.14.0
+
 require (
 	cloud.google.com/go v0.97.0
 	github.com/Microsoft/go-winio v0.4.15
