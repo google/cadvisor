@@ -3,8 +3,6 @@ run:
   linters-settings:
     govet:
       enable-all: true
-    golint:
-      min-confidence: 0
     gofmt:
       simplify: true
     goimports:
@@ -17,12 +15,8 @@ linters:
     - staticcheck
     - unused
     - gosimple
-    - structcheck
-    - varcheck
     - ineffassign
-    - deadcode
     - typecheck
-    - golint
     - gofmt
     - goimports
 issues:
