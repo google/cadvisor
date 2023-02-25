@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	io2 "github.com/google/cadvisor/io/uring"
 	"io"
 	"io/ioutil"
 	"os"
@@ -286,17 +287,22 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 			continue
 		}
 		fdCount += uint64(len(fds))
-		for _, fd := range fds {
-			fdPath := path.Join(dirPath, fd.Name())
-			linkName, err := os.Readlink(fdPath)
-			if err != nil {
-				klog.V(4).Infof("error while reading %q link: %v", fdPath, err)
-				continue
-			}
-			if strings.HasPrefix(linkName, "socket") {
-				socketCount++
-			}
-		}
+
+		ring, err := io2.New(io2.Params{}, len(fds))
+		fmt.Println("outside io_uring_setup", ring, err)
+		ring.Destroy()
+
+		//for _, fd := range fds {
+		//fdPath := path.Join(dirPath, fd.Name())
+		//linkName, err := os.Readlink(fdPath)
+		//if err != nil {
+		//	klog.V(4).Infof("error while reading %q link: %v", fdPath, err)
+		//	continue
+		//}
+		//if strings.HasPrefix(linkName, "socket") {
+		//	socketCount++
+		//}
+		//}
 	}
 
 	processStats := info.ProcessStats{

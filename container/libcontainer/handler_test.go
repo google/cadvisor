@@ -296,3 +296,7 @@ func TestClearReferencedBytesWhenClearRefsMissing(t *testing.T) {
 	err := clearReferencedBytes(pids, 0, 1)
 	assert.Nil(t, err)
 }
+
+func TestProcessStatsFromProcs(t *testing.T) {
+	processStatsFromProcs("testdata/processStatsFromProcs/root", "testdata/processStatsFromProcs/cgroup", 123)
+}
