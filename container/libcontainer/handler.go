@@ -280,7 +280,7 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 
 	for _, pid := range pids {
 		dirPath := path.Join(rootFs, "/proc", pid, "fd")
-		fds, err := ioutil.ReadDir(dirPath)
+		fds, err := os.ReadDir(dirPath)
 		if err != nil {
 			klog.V(4).Infof("error while listing directory %q to measure fd count: %v", dirPath, err)
 			continue
