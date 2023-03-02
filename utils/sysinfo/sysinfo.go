@@ -57,6 +57,12 @@ func GetBlockDeviceInfo(sysfs sysfs.SysFs) (map[string]info.DiskInfo, error) {
 		if strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "ram") || strings.HasPrefix(name, "sr") {
 			continue
 		}
+		// Ignore "hidden" devices (i.e. nvme path device sysfs entries).
+		// These devices are in the form of /dev/nvme$Xc$Yn$Z and will
+		// not have a device handle (i.e. "hidden")
+		if sysfs.IsBlockDeviceHidden(name) {
+			continue
+		}
 		diskInfo := info.DiskInfo{
 			Name: name,
 		}
