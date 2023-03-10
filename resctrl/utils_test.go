@@ -118,6 +118,14 @@ func mockResctrl() string {
 			touch,
 		},
 		{
+			filepath.Join(path, modeFileName),
+			touch,
+		},
+		{
+			filepath.Join(path, sizeFileName),
+			touch,
+		},
+		{
 			filepath.Join(path, tasksFileName),
 			touch,
 		},
