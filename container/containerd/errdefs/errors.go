@@ -41,8 +41,8 @@ package errdefs
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"errors"
+	"strings"
 )
 
 // Definitions of common error types used throughout containerd. All containerd
@@ -64,43 +64,43 @@ var (
 
 // IsInvalidArgument returns true if the error is due to an invalid argument
 func IsInvalidArgument(err error) bool {
-	return errors.Is(err, ErrInvalidArgument)
+	return strings.Contains(err.Error(), ErrInvalidArgument.Error())
 }
 
 // IsNotFound returns true if the error is due to a missing object
 func IsNotFound(err error) bool {
-	return errors.Is(err, ErrNotFound)
+	return strings.Contains(err.Error(), ErrNotFound.Error())
 }
 
 // IsAlreadyExists returns true if the error is due to an already existing
 // metadata item
 func IsAlreadyExists(err error) bool {
-	return errors.Is(err, ErrAlreadyExists)
+	return strings.Contains(err.Error(), ErrAlreadyExists.Error())
 }
 
 // IsFailedPrecondition returns true if an operation could not proceed to the
 // lack of a particular condition
 func IsFailedPrecondition(err error) bool {
-	return errors.Is(err, ErrFailedPrecondition)
+	return strings.Contains(err.Error(), ErrFailedPrecondition.Error())
 }
 
 // IsUnavailable returns true if the error is due to a resource being unavailable
 func IsUnavailable(err error) bool {
-	return errors.Is(err, ErrUnavailable)
+	return strings.Contains(err.Error(), ErrUnavailable.Error())
 }
 
 // IsNotImplemented returns true if the error is due to not being implemented
 func IsNotImplemented(err error) bool {
-	return errors.Is(err, ErrNotImplemented)
+	return strings.Contains(err.Error(), ErrNotImplemented.Error())
 }
 
 // IsCanceled returns true if the error is due to `context.Canceled`.
 func IsCanceled(err error) bool {
-	return errors.Is(err, context.Canceled)
+	return strings.Contains(err.Error(), context.Canceled.Error())
 }
 
 // IsDeadlineExceeded returns true if the error is due to
 // `context.DeadlineExceeded`.
 func IsDeadlineExceeded(err error) bool {
-	return errors.Is(err, context.DeadlineExceeded)
+	return strings.Contains(err.Error(), context.DeadlineExceeded.Error())
 }
