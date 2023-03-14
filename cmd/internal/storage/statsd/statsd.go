@@ -194,7 +194,7 @@ func (s *statsdStorage) resctrlStatsToValues(series *map[string]uint64, stats *i
 
 }
 
-// Push the data into redis
+// Push the data via the statsd client
 func (s *statsdStorage) AddStats(cInfo *info.ContainerInfo, stats *info.ContainerStats) error {
 	if stats == nil {
 		return nil
