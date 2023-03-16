@@ -48,7 +48,7 @@ func init() {
 }
 
 // getAvgPowerBudget retrieves configured power budget
-// (in watts) for NVM devices. When libipmct is not available
+// (in watts) for NVM devices. When libipmctl is not available
 // zero is returned.
 func getAvgPowerBudget() (uint, error) {
 	// Get number of devices on the platform
