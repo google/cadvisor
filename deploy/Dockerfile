@@ -40,11 +40,11 @@ ADD . .
 ARG VERSION
 
 # libipmctl only works on x86_64 CPUs.
-RUN export GO_TAGS="-tags=libfpm,netgo"; \
+RUN export GO_TAGS="--tags=libpfm,netgo"; \
     if [ "$(uname --machine)" = "x86_64" ]; then \
           export GO_TAGS="$GO_TAGS,libipmctl"; \
     fi; \
-    GO_FLAGS="-tags=$GO_TAGS" ./build/build.sh
+    GO_FLAGS="$GO_TAGS" ./build/build.sh
 
 FROM mirror.gcr.io/library/alpine:3.16
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
