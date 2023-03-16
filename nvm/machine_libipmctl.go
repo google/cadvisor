@@ -61,7 +61,7 @@ func getAvgPowerBudget() (uint, error) {
 	}
 
 	if count == 0 {
-		klog.Warningf("There are no NVM devices!")
+		klog.V(1).Infof("There are no NVM devices.")
 		return uint(0), nil
 	}
 
