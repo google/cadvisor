@@ -468,7 +468,7 @@ func networkStatsFromProc(rootFs string, pid int) ([]info.InterfaceStats, error)
 	return ifaceStats, nil
 }
 
-var ignoredDevicePrefixes = []string{"lo", "veth", "docker"}
+var ignoredDevicePrefixes = []string{"lo", "veth", "docker", "nerdctl"}
 
 func isIgnoredDevice(ifName string) bool {
 	for _, prefix := range ignoredDevicePrefixes {
