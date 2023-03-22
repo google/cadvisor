@@ -16,6 +16,8 @@ GO := go
 GOLANGCI_VER := v1.51.2
 GO_TEST ?= $(GO) test $(or $(GO_FLAGS),-race)
 arch ?= $(shell go env GOARCH)
+PLATFORMS ?= linux/arm64,linux/amd64
+IMG ?= cadvisor:$(shell git rev-parse --short HEAD)
 
 all: presubmit build test
 
@@ -73,6 +75,15 @@ docker-%:
 
 docker-build:
 	@docker run --rm -w /go/src/github.com/google/cadvisor -v ${PWD}:/go/src/github.com/google/cadvisor golang:1.20 make build
+
+docker-buildx: ## Build and push docker image for the manager for cross-platform support
+	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
+	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' deploy/Dockerfile > deploy/Dockerfile.cross
+	- docker buildx create --name project-cadvisor-builder
+	docker buildx use project-cadvisor-builder
+	- docker buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f deploy/Dockerfile.cross .
+	- docker buildx rm project-cadvisor-builder
+	rm deploy/Dockerfile.cross
 
 presubmit: lint
 	@echo ">> checking go mod tidy"
