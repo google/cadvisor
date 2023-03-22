@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/euank/go-kmsg-parser/kmsgparser"
-
 	"k8s.io/klog/v2"
 )
 
@@ -37,6 +36,12 @@ var (
 // individual kernel ring buffer messages.
 type OomParser struct {
 	parser kmsgparser.Parser
+}
+
+type ContainerOomInfo struct {
+	MetricLabels map[string]string
+	OomEvents    uint64
+	TimeOfDeath  time.Time
 }
 
 // struct that contains information related to an OOM kill instance
