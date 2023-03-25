@@ -200,7 +200,7 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 	}
 
 	if len(nodesDirs) == 0 {
-		klog.Warningf("Nodes topology is not available, providing CPU topology")
+		klog.V(4).Info("Nodes topology is not available, providing CPU topology")
 		return getCPUTopology(sysFs)
 	}
 
