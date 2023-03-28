@@ -119,7 +119,7 @@ type SysFs interface {
 	// GetDistances returns distance array
 	GetDistances(string) (string, error)
 
-	// IsCPUOnline determines if CPU status from kernel hotplug machanism standpoint.
+	// IsCPUOnline determines if CPU status from kernel hotplug mechanism standpoint.
 	// See: https://www.kernel.org/doc/html/latest/core-api/cpu_hotplug.html
 	IsCPUOnline(dir string) bool
 }
