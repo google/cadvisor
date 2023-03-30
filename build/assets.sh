@@ -30,7 +30,7 @@ FORCE="${FORCE:-}" # Force assets to be rebuilt if FORCE=true
 
 # Install while in a temp dir to avoid polluting go.mod/go.sum
 pushd "${TMPDIR:-/tmp}" > /dev/null
-go install github.com/kevinburke/go-bindata/go-bindata@v3.24.0
+go install github.com/kevinburke/go-bindata/v4/go-bindata@v4.0.2
 popd > /dev/null
 
 build_asset () {
