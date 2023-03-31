@@ -799,14 +799,10 @@ func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
 }
 
 func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
-	ret.Memory.Usage = s.MemoryStats.Usage.Usage
-	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
-	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
-
 	if cgroups.IsCgroup2UnifiedMode() {
 		ret.Memory.Cache = s.MemoryStats.Stats["file"]
 		ret.Memory.RSS = s.MemoryStats.Stats["anon"]
-		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage - s.MemoryStats.Usage.Usage
+		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage - ret.Memory.Cache - ret.Memory.RSS
 		ret.Memory.MappedFile = s.MemoryStats.Stats["file_mapped"]
 	} else if s.MemoryStats.UseHierarchy {
 		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]
@@ -832,6 +828,11 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	if cgroups.IsCgroup2UnifiedMode() {
 		inactiveFileKeyName = "inactive_file"
 	}
+
+
+	ret.Memory.Usage = ret.Memory.Cache + ret.Memory.RSS
+	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
+	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
 
 	workingSet := ret.Memory.Usage
 	if v, ok := s.MemoryStats.Stats[inactiveFileKeyName]; ok {
