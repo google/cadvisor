@@ -54,6 +54,7 @@ var httpAuthFile = flag.String("http_auth_file", "", "HTTP auth file for the web
 var httpAuthRealm = flag.String("http_auth_realm", "localhost", "HTTP auth realm for the web UI")
 var httpDigestFile = flag.String("http_digest_file", "", "HTTP digest file for the web UI")
 var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest file for the web UI")
+var disableWebUI = flag.Bool("disable_web_ui", false, "disable the web UI")
 
 var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
 
@@ -147,10 +148,12 @@ func main() {
 		mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 	}
 
-	// Register all HTTP handlers.
-	err = cadvisorhttp.RegisterHandlers(mux, resourceManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *urlBasePrefix)
-	if err != nil {
-		klog.Fatalf("Failed to register HTTP handlers: %v", err)
+	// If not disable web UI, Register all HTTP handlers.
+	if !*disableWebUI {
+		err = cadvisorhttp.RegisterHandlers(mux, resourceManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *urlBasePrefix)
+		if err != nil {
+			klog.Fatalf("Failed to register HTTP handlers: %v", err)
+		}
 	}
 
 	containerLabelFunc := metrics.DefaultContainerLabels
