@@ -47,16 +47,16 @@ jobs:
         make docker-test-integration
     - name: Upload cAdvisor log file
       uses: actions/upload-artifact@v1
-      if: success() || failure()
+      if: failure()
       with:
-        name: cadvisor-${{ matrix.distro }}-${{ matrix.arch }}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
+        name: cadvisor-${{ matrix.platform }}-${{matrix.environment-variables}}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
         path: ${{ github.workspace }}/cadvisor.log
   test-integration-non-amd64:
     strategy:
       matrix:
-        go-versions: [ 1.19, 1.18 ]
+        go-versions: [ '1.20', '1.19' ]
         arch: [ aarch64, armv7 ]
-        distro: [ ubuntu20.04 ]
+        platform: [ ubuntu20.04 ]
         environment-variables: [ build/config/plain.sh, build/config/libpfm4.sh ]
     runs-on: ubuntu-20.04
     timeout-minutes: 30
@@ -67,7 +67,7 @@ jobs:
         name: Run integration tests
         with:
           arch: ${{ matrix.arch }}
-          distro: ${{ matrix.distro }}
+          distro: ${{ matrix.platform }}
           env: |
             GOLANG_VERSION: ${{ matrix.go-versions }}
           setup: |
@@ -91,6 +91,7 @@ jobs:
             cp "${PWD}/cadvisor.log" "/artifacts"
       - name: Upload cAdvisor log file
         uses: actions/upload-artifact@v1
+        if: failure()
         with:
-          name: cadvisor-${{ matrix.distro }}-${{ matrix.arch }}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
+          name: cadvisor-${{ matrix.platform }}-${{matrix.environment-variables}}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
           path: ${{ github.workspace }}/artifacts/cadvisor.log
