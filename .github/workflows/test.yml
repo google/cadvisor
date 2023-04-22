@@ -94,4 +94,4 @@ jobs:
         if: failure() || success()
         with:
           name: cadvisor-${{ matrix.platform }}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
-          path: ${{ github.workspace }}/artifacts/cadvisor.log
+          path: ${{ github.workspace }}/cadvisor.log
