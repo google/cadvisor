@@ -47,7 +47,7 @@ jobs:
         make docker-test-integration
     - name: Upload cAdvisor log file
       uses: actions/upload-artifact@v1
-      if: failure()
+      if: failure() || success()
       with:
         name: cadvisor-${{ matrix.platform }}-${{matrix.environment-variables}}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
         path: ${{ github.workspace }}/cadvisor.log
@@ -91,7 +91,7 @@ jobs:
             cp "${PWD}/cadvisor.log" "/artifacts"
       - name: Upload cAdvisor log file
         uses: actions/upload-artifact@v1
-        if: failure()
+        if: failure() || success()
         with:
           name: cadvisor-${{ matrix.platform }}-${{matrix.environment-variables}}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
           path: ${{ github.workspace }}/artifacts/cadvisor.log
