@@ -49,7 +49,7 @@ jobs:
       uses: actions/upload-artifact@v1
       if: failure() || success()
       with:
-        name: cadvisor-${{ matrix.platform }}-${{matrix.environment-variables}}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
+        name: cadvisor-${{ matrix.platform }}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
         path: ${{ github.workspace }}/cadvisor.log
   test-integration-non-amd64:
     strategy:
@@ -93,5 +93,5 @@ jobs:
         uses: actions/upload-artifact@v1
         if: failure() || success()
         with:
-          name: cadvisor-${{ matrix.platform }}-${{matrix.environment-variables}}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
+          name: cadvisor-${{ matrix.platform }}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
           path: ${{ github.workspace }}/artifacts/cadvisor.log
