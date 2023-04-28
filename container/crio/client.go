@@ -79,16 +79,20 @@ func configureUnixTransport(tr *http.Transport, proto, addr string) error {
 }
 
 // Client returns a new configured CRI-O client
-func Client() (CrioClient, error) {
+func Client(crioClientTimeout *time.Duration) (CrioClient, error) {
 	crioClientOnce.Do(func() {
 		tr := new(http.Transport)
 		theClient = nil
 		if clientErr = configureUnixTransport(tr, "unix", CrioSocket); clientErr != nil {
 			return
 		}
+		if crioClientTimeout == nil {
+			*crioClientTimeout = time.Duration(0)
+		}
 		theClient = &crioClientImpl{
 			client: &http.Client{
 				Transport: tr,
+				Timeout:   *crioClientTimeout,
 			},
 		}
 	})
