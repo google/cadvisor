@@ -31,7 +31,7 @@ func NewPlugin() container.Plugin {
 type plugin struct{}
 
 func (p *plugin) InitializeFSContext(context *fs.Context) error {
-	crioClient, err := Client(nil)
+	crioClient, err := Client()
 	if err != nil {
 		return err
 	}

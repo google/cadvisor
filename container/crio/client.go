@@ -17,6 +17,7 @@ package crio
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -25,6 +26,8 @@ import (
 	"syscall"
 	"time"
 )
+
+var crioClientTimeout = flag.Duration("crio_client_timeout", time.Duration(0), "CRI-O client timeout. Default is no timeout.")
 
 const (
 	CrioSocket            = "/var/run/crio/crio.sock"
@@ -79,15 +82,12 @@ func configureUnixTransport(tr *http.Transport, proto, addr string) error {
 }
 
 // Client returns a new configured CRI-O client
-func Client(crioClientTimeout *time.Duration) (CrioClient, error) {
+func Client() (CrioClient, error) {
 	crioClientOnce.Do(func() {
 		tr := new(http.Transport)
 		theClient = nil
 		if clientErr = configureUnixTransport(tr, "unix", CrioSocket); clientErr != nil {
 			return
-		}
-		if crioClientTimeout == nil {
-			*crioClientTimeout = time.Duration(0)
 		}
 		theClient = &crioClientImpl{
 			client: &http.Client{

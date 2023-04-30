@@ -15,12 +15,10 @@
 package crio
 
 import (
-	"flag"
 	"fmt"
 	"path"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/libcontainer"
@@ -30,8 +28,6 @@ import (
 
 	"k8s.io/klog/v2"
 )
-
-var crioClientTimeout = flag.Duration("crio_client_timeout", time.Duration(0), "CRI-O client timeout. Default is no timeout.")
 
 // The namespace under which crio aliases are unique.
 const CrioNamespace = "crio"
@@ -72,7 +68,7 @@ func (f *crioFactory) String() string {
 }
 
 func (f *crioFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
-	client, err := Client(crioClientTimeout)
+	client, err := Client()
 	if err != nil {
 		return
 	}
@@ -137,7 +133,7 @@ func (f *crioFactory) DebugInfo() map[string][]string {
 
 // Register root container before running this function!
 func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
-	client, err := Client(crioClientTimeout)
+	client, err := Client()
 	if err != nil {
 		return err
 	}
