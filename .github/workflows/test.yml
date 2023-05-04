@@ -54,10 +54,10 @@ jobs:
   test-integration-non-amd64:
     strategy:
       matrix:
-        go-versions: [ '1.20', '1.19' ]
-        arch: [ aarch64, armv7 ]
-        platform: [ ubuntu20.04 ]
-        environment-variables: [ build/config/plain.sh, build/config/libpfm4.sh ]
+        go-versions: ['1.20', '1.19']
+        arch: [aarch64, armv7]
+        platform: [ubuntu20.04]
+        environment-variables: [build/config/plain.sh, build/config/libpfm4.sh]
     runs-on: ubuntu-20.04
     timeout-minutes: 30
     steps:
@@ -93,5 +93,5 @@ jobs:
         uses: actions/upload-artifact@v1
         if: failure() || success()
         with:
-          name: cadvisor-${{ matrix.platform }}-${{ matrix.go-versions}}-${{ github.run_number }}-${{ github.run_id }}.log
-          path: ${{ github.workspace }}/cadvisor.log
+          name: cadvisor-${{ matrix.platform }}-${{ matrix.go-versions }}-${{ github.run_number }}-${{ github.run_id }}.log
+          path: ${{ github.workspace }}/artifacts/cadvisor.log
