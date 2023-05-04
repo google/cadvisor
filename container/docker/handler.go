@@ -33,7 +33,6 @@ import (
 	"github.com/google/cadvisor/zfs"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 
-	dockercontainer "github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
 	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
@@ -71,9 +70,6 @@ type dockerContainerHandler struct {
 
 	// Image name used for this container.
 	image string
-
-	// The network mode of the container
-	networkMode dockercontainer.NetworkMode
 
 	// Filesystem handler.
 	fsHandler common.FsHandler
@@ -188,6 +184,9 @@ func newDockerContainerHandler(
 		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 	}
 
+	// Do not report network metrics for containers that share netns with another container.
+	metrics := common.RemoveNetMetrics(includedMetrics, ctnr.HostConfig.NetworkMode.IsContainer())
+
 	// TODO: extract object mother method
 	handler := &dockerContainerHandler{
 		machineInfoFactory: machineInfoFactory,
@@ -198,7 +197,7 @@ func newDockerContainerHandler(
 		rootfsStorageDir:   rootfsStorageDir,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
-		includedMetrics:    includedMetrics,
+		includedMetrics:    metrics,
 		zfsParent:          zfsParent,
 	}
 	// Timestamp returned by Docker is in time.RFC3339Nano format.
@@ -207,7 +206,7 @@ func newDockerContainerHandler(
 		// This should not happen, report the error just in case
 		return nil, fmt.Errorf("failed to parse the create timestamp %q for container %q: %v", ctnr.Created, id, err)
 	}
-	handler.libcontainerHandler = containerlibcontainer.NewHandler(cgroupManager, rootFs, ctnr.State.Pid, includedMetrics)
+	handler.libcontainerHandler = containerlibcontainer.NewHandler(cgroupManager, rootFs, ctnr.State.Pid, metrics)
 
 	// Add the name and bare ID as aliases of the container.
 	handler.reference = info.ContainerReference{
@@ -217,7 +216,6 @@ func newDockerContainerHandler(
 		Namespace: DockerNamespace,
 	}
 	handler.image = ctnr.Config.Image
-	handler.networkMode = ctnr.HostConfig.NetworkMode
 	// Only adds restartcount label if it's greater than 0
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
@@ -344,16 +342,10 @@ func (h *dockerContainerHandler) ContainerReference() (info.ContainerReference, 
 	return h.reference, nil
 }
 
-func (h *dockerContainerHandler) needNet() bool {
-	if h.includedMetrics.Has(container.NetworkUsageMetrics) {
-		return !h.networkMode.IsContainer()
-	}
-	return false
-}
-
 func (h *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := h.includedMetrics.Has(container.DiskUsageMetrics)
-	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, h.needNet(), hasFilesystem)
+	hasNetwork := h.includedMetrics.Has(container.NetworkUsageMetrics)
+	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, hasNetwork, hasFilesystem)
 
 	spec.Labels = h.labels
 	spec.Envs = h.envs
@@ -461,13 +453,6 @@ func (h *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 	stats, err := h.libcontainerHandler.GetStats()
 	if err != nil {
 		return stats, err
-	}
-	// Clean up stats for containers that don't have their own network - this
-	// includes containers running in Kubernetes pods that use the network of the
-	// infrastructure container. This stops metrics being reported multiple times
-	// for each container in a pod.
-	if !h.needNet() {
-		stats.Network = info.NetworkStats{}
 	}
 
 	// Get filesystem stats.
