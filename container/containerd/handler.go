@@ -284,8 +284,6 @@ func (h *containerdContainerHandler) needNet() bool {
 }
 
 func (h *containerdContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	// TODO: Since we dont collect disk usage stats for containerd, we set hasFilesystem
-	// to false. Revisit when we support disk usage stats for containerd
 	hasFilesystem := true
 	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, h.needNet(), hasFilesystem)
 	spec.Labels = h.labels
