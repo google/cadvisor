@@ -14,7 +14,9 @@
 
 // This is an implementation of a cAdvisor REST API in Go.
 // To use it, create a client (replace the URL with your actual cAdvisor REST endpoint):
-//   client, err := client.NewClient("http://192.168.59.103:8080/")
+//
+//	client, err := client.NewClient("http://192.168.59.103:8080/")
+//
 // Then, the client interface exposes go methods corresponding to the REST endpoints.
 package client
 

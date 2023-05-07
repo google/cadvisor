@@ -20,7 +20,7 @@ import (
 
 	"github.com/google/cadvisor/container/containerd/containers"
 	types "github.com/google/cadvisor/third_party/containerd/api/types"
-	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type containerdClientMock struct {

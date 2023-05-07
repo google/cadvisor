@@ -27,7 +27,7 @@ import (
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"golang.org/x/net/context"
-	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"

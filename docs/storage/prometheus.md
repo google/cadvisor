@@ -18,9 +18,6 @@ The table below lists the Prometheus container metrics exposed by cAdvisor (in a
 
 Metric name | Type | Description | Unit (where applicable) | option parameter | additional build flag |
 :-----------|:-----|:------------|:------------------------|:---------------------------|:----------------------
-`container_accelerator_duty_cycle` | Gauge | Percent of time over the past sample period during which the accelerator was actively processing | percentage | accelerator |
-`container_accelerator_memory_total_bytes` | Gauge | Total accelerator memory | bytes | accelerator |
-`container_accelerator_memory_used_bytes` | Gauge | Total accelerator memory allocated | bytes | accelerator |
 `container_blkio_device_usage_total` | Counter | Blkio device bytes usage | bytes | diskIO | 
 `container_cpu_cfs_periods_total` | Counter | Number of elapsed enforcement period intervals | | cpu |
 `container_cpu_cfs_throttled_periods_total` | Counter | Number of throttled period intervals | | cpu |
@@ -114,6 +111,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `machine_dimm_capacity_bytes` | Gauge | Total RAM DIMM capacity (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 | bytes | | |
 `machine_dimm_count` | Gauge | Number of RAM DIMM (all types memory modules) value labeled by dimm type,<br>information is retrieved from sysfs edac per-DIMM API (/sys/devices/system/edac/mc/) introduced in kernel 3.6 | | |
 `machine_memory_bytes` | Gauge | Amount of memory installed on the machine | bytes | |
+`machine_node_distance` | Gauge | Distance between NUMA node and target NUMA node | | cpu_topology |
 `machine_node_hugepages_count` | Gauge |  Numer of hugepages assigned to NUMA node | | cpu_topology |
 `machine_node_memory_capacity_bytes` | Gauge |  Amount of memory assigned to NUMA node | bytes | cpu_topology |
 `machine_nvm_avg_power_budget_watts` | Gauge |  NVM power budget | watts | | libipmctl

@@ -20,7 +20,6 @@
 // Mocked environment:
 // - "container" first container with {1, 2, 3} processes.
 // - "another" second container with {5, 6} processes.
-//
 package resctrl
 
 import (
@@ -116,6 +115,14 @@ func mockResctrl() string {
 		},
 		{
 			filepath.Join(path, schemataFileName),
+			touch,
+		},
+		{
+			filepath.Join(path, modeFileName),
+			touch,
+		},
+		{
+			filepath.Join(path, sizeFileName),
 			touch,
 		},
 		{

@@ -108,7 +108,7 @@ func (c *client) containerPID(id string) (int, error) {
 				return err
 			}
 
-			if c.cntr.ContainerStatus != nil {
+			if c.cntr.ContainerStatus != nil && c.cntr.ContainerStatus.ExecutorPID != nil {
 				pid = int(*c.cntr.ContainerStatus.ExecutorPID)
 			} else {
 				err = fmt.Errorf("error fetching Pid")

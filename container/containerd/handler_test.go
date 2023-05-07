@@ -30,7 +30,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	v1 "github.com/google/cadvisor/info/v1"
-	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 const (

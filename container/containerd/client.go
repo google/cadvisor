@@ -25,6 +25,7 @@ import (
 	ptypes "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/google/cadvisor/container/containerd/containers"
 	"github.com/google/cadvisor/container/containerd/errdefs"
@@ -35,7 +36,7 @@ import (
 	versionapi "github.com/google/cadvisor/third_party/containerd/api/services/version/v1"
 	"github.com/google/cadvisor/third_party/containerd/api/types"
 	tasktypes "github.com/google/cadvisor/third_party/containerd/api/types/task"
-	criapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+	criapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type client struct {
@@ -66,6 +67,7 @@ const (
 	maxBackoffDelay   = 3 * time.Second
 	baseBackoffDelay  = 100 * time.Millisecond
 	connectionTimeout = 2 * time.Second
+	maxMsgSize        = 16 * 1024 * 1024 // 16MB
 )
 
 // Client creates a containerd client
@@ -85,10 +87,11 @@ func Client(address, namespace string) (ContainerdClient, error) {
 		connParams.Backoff.BaseDelay = baseBackoffDelay
 		connParams.Backoff.MaxDelay = maxBackoffDelay
 		gopts := []grpc.DialOption{
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithContextDialer(dialer.ContextDialer),
 			grpc.WithBlock(),
 			grpc.WithConnectParams(connParams),
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
 		}
 		unary, stream := newNSInterceptors(namespace)
 		gopts = append(gopts,

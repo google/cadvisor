@@ -228,7 +228,7 @@ func createCollectorHTTPClient(collectorCert, collectorKey string) http.Client {
 		}
 
 		tlsConfig.Certificates = []tls.Certificate{cert}
-		tlsConfig.BuildNameToCertificate()
+		tlsConfig.BuildNameToCertificate() //nolint: staticcheck
 	}
 
 	transport := &http.Transport{

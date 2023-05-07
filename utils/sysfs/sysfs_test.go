@@ -305,3 +305,17 @@ func TestUniqueCPUPropertyOnSingleSocketMultipleNUMAsSystem(t *testing.T) {
 	count = GetUniqueCPUPropertyCount("./testdata_single_socket_many_NUMAs/", CPUCoreID)
 	assert.Equal(t, 16, count)
 }
+
+func TestGetDistances(t *testing.T) {
+	sysFs := NewRealSysFs()
+	distances, err := sysFs.GetDistances("./testdata/node0")
+	assert.Nil(t, err)
+	assert.Equal(t, "10 11", distances)
+}
+
+func TestGetDistancesFileIsMissing(t *testing.T) {
+	sysFs := NewRealSysFs()
+	distances, err := sysFs.GetDistances("./testdata/node1")
+	assert.NotNil(t, err)
+	assert.Equal(t, "", distances)
+}
