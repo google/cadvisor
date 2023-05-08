@@ -18,7 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"golang.org/x/oauth2"
@@ -62,7 +62,7 @@ func connect() (*oauth2.Token, *bigquery.Service, error) {
 	if *pemFile == "" {
 		return nil, nil, fmt.Errorf("no credentials specified")
 	}
-	pemBytes, err := ioutil.ReadFile(*pemFile)
+	pemBytes, err := os.ReadFile(*pemFile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not access credential file %v - %v", pemFile, err)
 	}
