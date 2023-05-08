@@ -16,7 +16,6 @@
 package docker
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -38,13 +37,13 @@ func TestStorageDirDetectionWithOldVersions(t *testing.T) {
 
 func TestStorageDirDetectionWithNewVersions(t *testing.T) {
 	as := assert.New(t)
-	testDir, err := ioutil.TempDir("", "")
+	testDir, err := os.MkdirTemp(os.TempDir(), "")
 	as.Nil(err)
 	containerID := "abcd"
 	randomizedID := "xyz"
 	randomIDPath := path.Join(testDir, "image/aufs/layerdb/mounts/", containerID)
 	as.Nil(os.MkdirAll(randomIDPath, os.ModePerm))
-	as.Nil(ioutil.WriteFile(path.Join(randomIDPath, "mount-id"), []byte(randomizedID), os.ModePerm))
+	as.Nil(os.WriteFile(path.Join(randomIDPath, "mount-id"), []byte(randomizedID), os.ModePerm))
 	rwLayer, err := getRwLayerID(containerID, testDir, "aufs", []int{1, 10, 0})
 	as.Nil(err)
 	as.Equal(rwLayer, randomizedID)

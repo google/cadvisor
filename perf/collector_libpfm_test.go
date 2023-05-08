@@ -21,7 +21,6 @@ package perf
 import (
 	"bytes"
 	"encoding/binary"
-	"io/ioutil"
 	"os"
 	"testing"
 	"unsafe"
@@ -204,7 +203,7 @@ func TestNewCollector(t *testing.T) {
 }
 
 func TestCollectorSetup(t *testing.T) {
-	path, err := ioutil.TempDir("", "cgroup")
+	path, err := os.MkdirTemp("", "cgroup")
 	assert.Nil(t, err)
 	defer func() {
 		err := os.RemoveAll(path)

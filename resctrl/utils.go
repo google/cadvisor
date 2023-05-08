@@ -22,7 +22,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -193,7 +192,7 @@ func getPids(containerName string) ([]int, error) {
 func getAllProcessThreads(path string) ([]int, error) {
 	processThreads := make([]int, 0)
 
-	threadDirs, err := ioutil.ReadDir(path)
+	threadDirs, err := os.ReadDir(path)
 	if err != nil {
 		return processThreads, err
 	}
@@ -220,7 +219,7 @@ func findGroup(group string, pids []string, includeGroup bool, exclusive bool) (
 		availablePaths = append(availablePaths, group)
 	}
 
-	files, err := ioutil.ReadDir(group)
+	files, err := os.ReadDir(group)
 	for _, file := range files {
 		if _, ok := groupDirectories[file.Name()]; !ok {
 			availablePaths = append(availablePaths, filepath.Join(group, file.Name()))
@@ -300,7 +299,7 @@ func readTasksFile(tasksPath string) (map[string]struct{}, error) {
 }
 
 func readStatFrom(path string, vendorID string) (uint64, error) {
-	context, err := ioutil.ReadFile(path)
+	context, err := os.ReadFile(path)
 	if err != nil {
 		return 0, err
 	}

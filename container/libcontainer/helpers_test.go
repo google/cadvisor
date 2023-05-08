@@ -15,7 +15,7 @@
 package libcontainer
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -107,14 +107,14 @@ func TestGetCgroupSubsystems(t *testing.T) {
 }
 
 func getFileContent(t *testing.T, filePath string) string {
-	fileContent, err := ioutil.ReadFile(filePath)
+	fileContent, err := os.ReadFile(filePath)
 	assert.Nil(t, err)
 	return string(fileContent)
 }
 
 func clearTestData(t *testing.T, clearRefsPaths []string) {
 	for _, clearRefsPath := range clearRefsPaths {
-		err := ioutil.WriteFile(clearRefsPath, []byte("0\n"), 0o644)
+		err := os.WriteFile(clearRefsPath, []byte("0\n"), 0o644)
 		assert.Nil(t, err)
 	}
 }
