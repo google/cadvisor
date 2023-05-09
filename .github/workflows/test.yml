@@ -4,7 +4,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-versions: [1.19, 1.18]
+        go-versions: ['1.20', '1.19']
         platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
@@ -30,7 +30,7 @@ jobs:
   test-integration:
     strategy:
       matrix:
-        go-versions: [1.19, 1.18]
+        go-versions: ['1.20', '1.19']
         platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
