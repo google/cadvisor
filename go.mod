@@ -11,7 +11,7 @@ require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/ttrpc v1.1.0
 	github.com/containerd/typeurl v1.0.2
-	github.com/docker/docker v20.10.21+incompatible
+	github.com/docker/docker v20.10.24+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
@@ -21,7 +21,7 @@ require (
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible
 	github.com/moby/sys/mountinfo v0.6.2
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/runc v1.1.4
+	github.com/opencontainers/runc v1.1.5
 	github.com/opencontainers/runtime-spec v1.0.3-0.20220909204839-494a5a6aca78
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
