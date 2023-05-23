@@ -41,12 +41,12 @@ func TestPhysicalCores(t *testing.T) {
 }
 
 func TestPhysicalCoresReadingFromCpuBus(t *testing.T) {
-	origCPUBusPath := cpuBusPath
+	origCPUAttributesPath := cpuAttributesPath
 	defer func() {
-		cpuBusPath = origCPUBusPath
+		cpuAttributesPath = origCPUAttributesPath
 	}()
-	cpuBusPath = "./testdata/sysfs_cpus/" // overwriting package variable to mock sysfs
-	testfile := "./testdata/cpuinfo_arm"  // mock cpuinfo without core id
+	cpuAttributesPath = "./testdata/sysfs_cpus/" // overwriting package variable to mock sysfs
+	testfile := "./testdata/cpuinfo_arm"         // mock cpuinfo without core id
 
 	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
@@ -57,12 +57,12 @@ func TestPhysicalCoresReadingFromCpuBus(t *testing.T) {
 }
 
 func TestPhysicalCoresFromWrongSysFs(t *testing.T) {
-	origCPUBusPath := cpuBusPath
+	origCPUAttributesPath := cpuAttributesPath
 	defer func() {
-		cpuBusPath = origCPUBusPath
+		cpuAttributesPath = origCPUAttributesPath
 	}()
-	cpuBusPath = "./testdata/wrongsysfs" // overwriting package variable to mock sysfs
-	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without core id
+	cpuAttributesPath = "./testdata/wrongsysfs" // overwriting package variable to mock sysfs
+	testfile := "./testdata/cpuinfo_arm"        // mock cpuinfo without core id
 
 	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
@@ -84,12 +84,12 @@ func TestSockets(t *testing.T) {
 }
 
 func TestSocketsReadingFromCpuBus(t *testing.T) {
-	origCPUBusPath := cpuBusPath
+	origCPUAttributesPath := cpuAttributesPath
 	defer func() {
-		cpuBusPath = origCPUBusPath
+		cpuAttributesPath = origCPUAttributesPath
 	}()
-	cpuBusPath = "./testdata/wrongsysfs" // overwriting package variable to mock sysfs
-	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without physical id
+	cpuAttributesPath = "./testdata/wrongsysfs" // overwriting package variable to mock sysfs
+	testfile := "./testdata/cpuinfo_arm"        // mock cpuinfo without physical id
 
 	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
@@ -103,11 +103,11 @@ func TestSocketsReadingFromWrongSysFs(t *testing.T) {
 	path, err := filepath.Abs("./testdata/sysfs_cpus/")
 	assert.NoError(t, err)
 
-	origCPUBusPath := cpuBusPath
+	origCPUAttributesPath := cpuAttributesPath
 	defer func() {
-		cpuBusPath = origCPUBusPath
+		cpuAttributesPath = origCPUAttributesPath
 	}()
-	cpuBusPath = path                    // overwriting package variable to mock sysfs
+	cpuAttributesPath = path             // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without physical id
 
 	testcpuinfo, err := os.ReadFile(testfile)

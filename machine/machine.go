@@ -45,7 +45,7 @@ var (
 	swapCapacityRegexp   = regexp.MustCompile(`SwapTotal:\s*([0-9]+) kB`)
 	vendorIDRegexp       = regexp.MustCompile(`vendor_id\s*:\s*(\w+)`)
 
-	cpuBusPath         = "/sys/bus/cpu/devices/"
+	cpuAttributesPath  = "/sys/devices/system/cpu/"
 	isMemoryController = regexp.MustCompile("mc[0-9]+")
 	isDimm             = regexp.MustCompile("dimm[0-9]+")
 	machineArch        = getMachineArch()
@@ -76,7 +76,7 @@ func GetPhysicalCores(procInfo []byte) int {
 	if numCores == 0 {
 		// read number of cores from /sys/bus/cpu/devices/cpu*/topology/core_id to deal with processors
 		// for which 'core id' is not available in /proc/cpuinfo
-		numCores = sysfs.GetUniqueCPUPropertyCount(cpuBusPath, sysfs.CPUCoreID)
+		numCores = sysfs.GetUniqueCPUPropertyCount(cpuAttributesPath, sysfs.CPUCoreID)
 	}
 	if numCores == 0 {
 		klog.Errorf("Cannot read number of physical cores correctly, number of cores set to %d", numCores)
@@ -90,7 +90,7 @@ func GetSockets(procInfo []byte) int {
 	if numSocket == 0 {
 		// read number of sockets from /sys/bus/cpu/devices/cpu*/topology/physical_package_id to deal with processors
 		// for which 'physical id' is not available in /proc/cpuinfo
-		numSocket = sysfs.GetUniqueCPUPropertyCount(cpuBusPath, sysfs.CPUPhysicalPackageID)
+		numSocket = sysfs.GetUniqueCPUPropertyCount(cpuAttributesPath, sysfs.CPUPhysicalPackageID)
 	}
 	if numSocket == 0 {
 		klog.Errorf("Cannot read number of sockets correctly, number of sockets set to %d", numSocket)
