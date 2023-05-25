@@ -17,6 +17,7 @@ package crio
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -25,6 +26,8 @@ import (
 	"syscall"
 	"time"
 )
+
+var crioClientTimeout = flag.Duration("crio_client_timeout", time.Duration(0), "CRI-O client timeout. Default is no timeout.")
 
 const (
 	CrioSocket            = "/var/run/crio/crio.sock"
@@ -89,6 +92,7 @@ func Client() (CrioClient, error) {
 		theClient = &crioClientImpl{
 			client: &http.Client{
 				Transport: tr,
+				Timeout:   *crioClientTimeout,
 			},
 		}
 	})
