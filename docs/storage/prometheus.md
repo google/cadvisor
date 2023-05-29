@@ -66,10 +66,10 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | memory |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | memory |
 `container_network_advance_tcp_stats_total` | Gauge | advanced tcp connections statistic for container | | advtcp |
-`container_network_receive_bytes_total` | Counter | Cumulative count of bytes received | bytes | network |
-`container_network_receive_errors_total` | Counter | Cumulative count of errors encountered while receiving | | network |
-`container_network_receive_packets_dropped_total` | Counter | Cumulative count of packets dropped while receiving | | network |
-`container_network_receive_packets_total` | Counter | Cumulative count of packets received | | network |
+`container_network_receive_bytes_total` | Counter | Cumulative count of bytes received*  | bytes | network |
+`container_network_receive_errors_total` | Counter | Cumulative count of errors encountered while receiving* | | network |
+`container_network_receive_packets_dropped_total` | Counter | Cumulative count of packets dropped while receiving* | | network |
+`container_network_receive_packets_total` | Counter | Cumulative count of packets received* | | network |
 `container_network_tcp6_usage_total` | Gauge | tcp6 connection usage statistic for container | | tcp |
 `container_network_tcp_usage_total` | Gauge | tcp connection usage statistic for container | | tcp |
 `container_network_transmit_bytes_total` | Counter | Cumulative count of bytes transmitted | bytes | network |
@@ -97,6 +97,8 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_threads` | Gauge | Number of threads running inside the container | | process |
 `container_threads_max` | Gauge | Maximum number of threads allowed inside the container | | process |
 `container_ulimits_soft` | Gauge | Soft ulimit values for the container root process. Unlimited if -1, except priority and nice | | process |
+
+* `*`This metrics can be misleading for pod with `hostNetwork: true` ([Details](https://github.com/google/cadvisor/issues/2615)).
 
 ## Prometheus hardware metrics
 
