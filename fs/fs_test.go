@@ -118,7 +118,7 @@ func TestDirDiskUsage(t *testing.T) {
 	as := assert.New(t)
 	fsInfo, err := NewFsInfo(Context{})
 	as.NoError(err)
-	dir, err := os.MkdirTemp(os.TempDir(), "")
+	dir := t.TempDir()
 	as.NoError(err)
 	defer os.RemoveAll(dir)
 	dataSize := 1024 * 100 //100 KB
@@ -138,8 +138,7 @@ func TestDirInodeUsage(t *testing.T) {
 	as := assert.New(t)
 	fsInfo, err := NewFsInfo(Context{})
 	as.NoError(err)
-	dir, err := os.MkdirTemp(os.TempDir(), "")
-	as.NoError(err)
+	dir := t.TempDir()
 	defer os.RemoveAll(dir)
 	numFiles := 1000
 	for i := 0; i < numFiles; i++ {

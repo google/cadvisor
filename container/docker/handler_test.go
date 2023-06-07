@@ -37,8 +37,7 @@ func TestStorageDirDetectionWithOldVersions(t *testing.T) {
 
 func TestStorageDirDetectionWithNewVersions(t *testing.T) {
 	as := assert.New(t)
-	testDir, err := os.MkdirTemp(os.TempDir(), "")
-	as.Nil(err)
+	testDir := t.TempDir()
 	containerID := "abcd"
 	randomizedID := "xyz"
 	randomIDPath := path.Join(testDir, "image/aufs/layerdb/mounts/", containerID)
