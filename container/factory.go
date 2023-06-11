@@ -59,6 +59,7 @@ const (
 	NetworkUdpUsageMetrics         MetricKind = "udp"
 	AppMetrics                     MetricKind = "app"
 	ProcessMetrics                 MetricKind = "process"
+	ProcessSocketCountMetrics      MetricKind = "process_socket_count"
 	HugetlbUsageMetrics            MetricKind = "hugetlb"
 	PerfMetrics                    MetricKind = "perf_event"
 	ReferencedMemoryMetrics        MetricKind = "referenced_memory"
@@ -83,6 +84,7 @@ var AllMetrics = MetricSet{
 	NetworkAdvancedTcpUsageMetrics: struct{}{},
 	NetworkUdpUsageMetrics:         struct{}{},
 	ProcessMetrics:                 struct{}{},
+	ProcessSocketCountMetrics:      struct{}{},
 	AppMetrics:                     struct{}{},
 	HugetlbUsageMetrics:            struct{}{},
 	PerfMetrics:                    struct{}{},

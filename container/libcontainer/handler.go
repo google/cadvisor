@@ -174,7 +174,7 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 		if !ok {
 			klog.V(4).Infof("Could not find cgroups CPU for container %d", h.pid)
 		} else {
-			stats.Processes, err = processStatsFromProcs(h.rootFs, path, h.pid)
+			stats.Processes, err = processStatsFromProcs(h.rootFs, path, h.pid, h.includedMetrics.Has(container.ProcessSocketCountMetrics))
 			if err != nil {
 				klog.V(4).Infof("Unable to get Process Stats: %v", err)
 			}
@@ -261,7 +261,37 @@ func processRootProcUlimits(rootFs string, rootPid int) []info.UlimitSpec {
 	return processLimitsFile(string(out))
 }
 
-func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.ProcessStats, error) {
+func countFdAndSocket(dirPath string, includeSocketCount bool) (fdCount, socketCount uint64, err error) {
+	d, err := os.Open(dirPath)
+	if err != nil {
+		return fdCount, socketCount, err
+	}
+	defer d.Close()
+
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return fdCount, socketCount, err
+	}
+	fdCount = uint64(len(names))
+
+	if includeSocketCount {
+		for _, name := range names {
+			fdPath := path.Join(dirPath, name)
+			linkName, err := os.Readlink(fdPath)
+			if err != nil {
+				klog.V(4).Infof("error while reading %q link: %v", fdPath, err)
+				continue
+			}
+			if strings.HasPrefix(linkName, "socket") {
+				socketCount++
+			}
+		}
+	}
+
+	return fdCount, socketCount, nil
+}
+
+func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int, includeSocketCount bool) (info.ProcessStats, error) {
 	var fdCount, socketCount uint64
 	filePath := path.Join(cgroupPath, "cgroup.procs")
 	out, err := ioutil.ReadFile(filePath)
@@ -280,23 +310,14 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 
 	for _, pid := range pids {
 		dirPath := path.Join(rootFs, "/proc", pid, "fd")
-		fds, err := ioutil.ReadDir(dirPath)
+
+		dirFds, dirSockets, err := countFdAndSocket(dirPath, includeSocketCount)
 		if err != nil {
 			klog.V(4).Infof("error while listing directory %q to measure fd count: %v", dirPath, err)
 			continue
 		}
-		fdCount += uint64(len(fds))
-		for _, fd := range fds {
-			fdPath := path.Join(dirPath, fd.Name())
-			linkName, err := os.Readlink(fdPath)
-			if err != nil {
-				klog.V(4).Infof("error while reading %q link: %v", fdPath, err)
-				continue
-			}
-			if strings.HasPrefix(linkName, "socket") {
-				socketCount++
-			}
-		}
+		fdCount += dirFds
+		socketCount += dirSockets
 	}
 
 	processStats := info.ProcessStats{
