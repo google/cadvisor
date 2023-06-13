@@ -88,7 +88,7 @@ func (c *collector) setup() error {
 					}
 				}
 				c.mu.Unlock()
-				time.Sleep(c.interval - time.Now().Sub(tStart))
+				time.Sleep(c.interval - time.Since(tStart))
 			}
 		}()
 	} else {
