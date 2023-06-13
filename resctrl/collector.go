@@ -20,6 +20,7 @@ package resctrl
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,12 +63,14 @@ func (c *collector) setup() error {
 			c.running = true
 		}
 		go func() {
+			time.Sleep(time.Duration(rand.Float64() * float64(1*c.interval)))
+			var tStart time.Time
 			for {
-				time.Sleep(c.interval)
 				c.mu.Lock()
 				if c.destroyed {
 					break
 				}
+				tStart = time.Now()
 				klog.V(5).Infof("Trying to check %q containers control group.", c.id)
 				if c.running {
 					err = c.checkMonitoringGroup()
@@ -80,9 +83,12 @@ func (c *collector) setup() error {
 					if err != nil {
 						c.running = false
 						klog.Errorf("Failed to setup container %q resctrl collector: %s \n Trying again in next intervals.", c.id, err)
+					} else {
+						c.running = true
 					}
 				}
 				c.mu.Unlock()
+				time.Sleep(c.interval - time.Now().Sub(tStart))
 			}
 		}()
 	} else {

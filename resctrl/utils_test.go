@@ -406,15 +406,6 @@ func TestGetAllProcessThreads(t *testing.T) {
 				filepath.Join(path, "4215", processTask, "4218"),
 				touchDir,
 			},
-			// invalid
-			{
-				filepath.Join(path, "301", processTask, "301"),
-				touchDir,
-			},
-			{
-				filepath.Join(path, "301", processTask, "incorrect"),
-				touchDir,
-			},
 		}
 
 		for _, file := range files {
@@ -429,18 +420,13 @@ func TestGetAllProcessThreads(t *testing.T) {
 
 	var testCases = []struct {
 		path     string
-		expected []int
+		expected []string
 		err      string
 	}{
 		{
 			filepath.Join(mockedProcFs, "4215", processTask),
-			[]int{4215, 4216, 4217, 4218},
+			[]string{"4215", "4216", "4217", "4218"},
 			"",
-		},
-		{
-			filepath.Join(mockedProcFs, "301", processTask),
-			nil,
-			"couldn't parse \"incorrect\" dir: strconv.Atoi: parsing \"incorrect\": invalid syntax",
 		},
 	}
 
@@ -516,7 +502,7 @@ func TestFindGroup(t *testing.T) {
 			[]string{"7"},
 			false,
 			true,
-			"",
+			filepath.Join(rootResctrl, "m1", monGroupsDirName, "test"),
 			"group should have container pids only",
 		},
 	}

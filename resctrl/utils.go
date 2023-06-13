@@ -77,6 +77,9 @@ var (
 		modeFileName:     {},
 		sizeFileName:     {},
 	}
+
+	errNotEnoughPIDs = fmt.Errorf("there should be all pids in group")
+	errTooManyPIDs   = fmt.Errorf("group should have container pids only")
 )
 
 func Setup() error {
@@ -105,7 +108,7 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 		return rootResctrl, nil
 	}
 
-	pids, err := getContainerPids()
+	pids, err := getPids(containerName)
 	if err != nil {
 		return "", err
 	}
@@ -114,60 +117,79 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 		return "", fmt.Errorf("couldn't obtain %q container pids: there is no pids in cgroup", containerName)
 	}
 
+	if !inHostNamespace {
+		processPath = "/rootfs/proc"
+	}
+	var processThreads []string
+	for _, pid := range pids {
+		processThreads, err = getAllProcessThreads(filepath.Join(processPath, strconv.Itoa(pid), processTask))
+		if err != nil {
+			return "", err
+		}
+	}
+
 	// Firstly, find the control group to which the container belongs.
 	// Consider the root group.
-	controlGroupPath, err := findGroup(rootResctrl, pids, true, false)
-	if err != nil {
+	controlGroupPath, err := findGroup(rootResctrl, processThreads, true, false)
+	if err != nil && err != errNotEnoughPIDs && err != errTooManyPIDs {
 		return "", fmt.Errorf("%q %q: %q", noControlGroupFoundError, containerName, err)
 	}
 	if controlGroupPath == "" {
 		return "", fmt.Errorf("%q %q", noControlGroupFoundError, containerName)
 	}
 
+	// Remove leading prefix.
+	// e.g. /my/container -> my/container
+	if len(containerName) >= minContainerNameLen && containerName[0] == containerPrefix {
+		containerName = containerName[1:]
+	}
+	// Add own prefix and use `-` instead `/`.
+	// e.g. my/container -> cadvisor-my-container
+	properContainerName := fmt.Sprintf("%s-%s", monGroupPrefix, strings.Replace(containerName, "/", "-", -1))
+	monGroupPath := filepath.Join(controlGroupPath, monitoringGroupDir, properContainerName)
+
+	createNew := false
+
 	// Check if there is any monitoring group.
-	monGroupPath, err := findGroup(filepath.Join(controlGroupPath, monGroupsDirName), pids, false, true)
+	existingPath, err := findGroup(filepath.Join(controlGroupPath, monGroupsDirName), processThreads, false, true)
 	if err != nil {
-		return "", fmt.Errorf("couldn't find monitoring group matching %q container: %v", containerName, err)
+		if err != errNotEnoughPIDs && err != errTooManyPIDs {
+			return "", fmt.Errorf("couldn't find monitoring group matching %q container: %v", containerName, err)
+		}
+
+		rmErr := os.Remove(monGroupPath)
+		if rmErr != nil && !os.IsNotExist(rmErr) {
+			return "", fmt.Errorf("couldn't clean up monitoring group matching %q container: %v", containerName, rmErr)
+		}
+		if existingPath != monGroupPath {
+			rmErr = os.Remove(existingPath)
+			if rmErr != nil && !os.IsNotExist(rmErr) {
+				return "", fmt.Errorf("couldn't clean up monitoring group matching %q container: %v", containerName, rmErr)
+			}
+		}
+		createNew = true
 	}
 
 	// Prepare new one if not exists.
-	if monGroupPath == "" {
-		// Remove leading prefix.
-		// e.g. /my/container -> my/container
-		if len(containerName) >= minContainerNameLen && containerName[0] == containerPrefix {
-			containerName = containerName[1:]
-		}
-
-		// Add own prefix and use `-` instead `/`.
-		// e.g. my/container -> cadvisor-my-container
-		properContainerName := fmt.Sprintf("%s-%s", monGroupPrefix, strings.Replace(containerName, "/", "-", -1))
-		monGroupPath = filepath.Join(controlGroupPath, monitoringGroupDir, properContainerName)
-
+	if createNew || existingPath == "" {
 		err = os.MkdirAll(monGroupPath, os.ModePerm)
 		if err != nil {
 			return "", fmt.Errorf("couldn't create monitoring group directory for %q container: %w", containerName, err)
 		}
-
-		if !inHostNamespace {
-			processPath = "/rootfs/proc"
-		}
-
-		for _, pid := range pids {
-			processThreads, err := getAllProcessThreads(filepath.Join(processPath, pid, processTask))
+		for _, thread := range processThreads {
+			treadInt, err := strconv.Atoi(thread)
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("couldn't parse %q: %w", thread, err)
 			}
-			for _, thread := range processThreads {
-				err = intelrdt.WriteIntelRdtTasks(monGroupPath, thread)
-				if err != nil {
-					secondError := os.Remove(monGroupPath)
-					if secondError != nil {
-						return "", fmt.Errorf(
-							"coudn't assign pids to %q container monitoring group: %w \n couldn't clear %q monitoring group: %v",
-							containerName, err, containerName, secondError)
-					}
-					return "", fmt.Errorf("coudn't assign pids to %q container monitoring group: %w", containerName, err)
+			err = intelrdt.WriteIntelRdtTasks(monGroupPath, treadInt)
+			if err != nil {
+				secondError := os.Remove(monGroupPath)
+				if secondError != nil {
+					return "", fmt.Errorf(
+						"coudn't assign pids to %q container monitoring group: %w \n couldn't clear %q monitoring group: %v",
+						containerName, err, containerName, secondError)
 				}
+				return "", fmt.Errorf("coudn't assign pids to %q container monitoring group: %w", containerName, err)
 			}
 		}
 	}
@@ -190,8 +212,8 @@ func getPids(containerName string) ([]int, error) {
 // getAllProcessThreads obtains all available processes from directory.
 // e.g. ls /proc/4215/task/ -> 4215, 4216, 4217, 4218
 // func will return [4215, 4216, 4217, 4218].
-func getAllProcessThreads(path string) ([]int, error) {
-	processThreads := make([]int, 0)
+func getAllProcessThreads(path string) ([]string, error) {
+	processThreads := make([]string, 0)
 
 	threadDirs, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -199,11 +221,7 @@ func getAllProcessThreads(path string) ([]int, error) {
 	}
 
 	for _, dir := range threadDirs {
-		pid, err := strconv.Atoi(dir.Name())
-		if err != nil {
-			return nil, fmt.Errorf("couldn't parse %q dir: %v", dir.Name(), err)
-		}
-		processThreads = append(processThreads, pid)
+		processThreads = append(processThreads, dir.Name())
 	}
 
 	return processThreads, nil
@@ -233,7 +251,7 @@ func findGroup(group string, pids []string, includeGroup bool, exclusive bool) (
 	for _, path := range availablePaths {
 		groupFound, err := arePIDsInGroup(path, pids, exclusive)
 		if err != nil {
-			return "", err
+			return path, err
 		}
 		if groupFound {
 			return path, nil
@@ -260,7 +278,7 @@ func arePIDsInGroup(path string, pids []string, exclusive bool) (bool, error) {
 		if !ok {
 			// There are missing pids within group.
 			if any {
-				return false, fmt.Errorf("there should be all pids in group")
+				return false, errNotEnoughPIDs
 			}
 			return false, nil
 		}
@@ -270,7 +288,7 @@ func arePIDsInGroup(path string, pids []string, exclusive bool) (bool, error) {
 	// Check if there should be only passed pids in group.
 	if exclusive {
 		if len(tasks) != len(pids) {
-			return false, fmt.Errorf("group should have container pids only")
+			return false, errTooManyPIDs
 		}
 	}
 
