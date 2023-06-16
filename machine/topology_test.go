@@ -16,7 +16,6 @@ package machine
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -33,7 +32,7 @@ import (
 func TestPhysicalCores(t *testing.T) {
 	testfile := "./testdata/cpuinfo"
 
-	testcpuinfo, err := ioutil.ReadFile(testfile)
+	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
 	assert.NotNil(t, testcpuinfo)
 
@@ -49,7 +48,7 @@ func TestPhysicalCoresReadingFromCpuBus(t *testing.T) {
 	cpuBusPath = "./testdata/sysfs_cpus/" // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm"  // mock cpuinfo without core id
 
-	testcpuinfo, err := ioutil.ReadFile(testfile)
+	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
 	assert.NotNil(t, testcpuinfo)
 
@@ -65,7 +64,7 @@ func TestPhysicalCoresFromWrongSysFs(t *testing.T) {
 	cpuBusPath = "./testdata/wrongsysfs" // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without core id
 
-	testcpuinfo, err := ioutil.ReadFile(testfile)
+	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
 	assert.NotNil(t, testcpuinfo)
 
@@ -76,7 +75,7 @@ func TestPhysicalCoresFromWrongSysFs(t *testing.T) {
 func TestSockets(t *testing.T) {
 	testfile := "./testdata/cpuinfo"
 
-	testcpuinfo, err := ioutil.ReadFile(testfile)
+	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
 	assert.NotNil(t, testcpuinfo)
 
@@ -92,7 +91,7 @@ func TestSocketsReadingFromCpuBus(t *testing.T) {
 	cpuBusPath = "./testdata/wrongsysfs" // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without physical id
 
-	testcpuinfo, err := ioutil.ReadFile(testfile)
+	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
 	assert.NotNil(t, testcpuinfo)
 
@@ -111,7 +110,7 @@ func TestSocketsReadingFromWrongSysFs(t *testing.T) {
 	cpuBusPath = path                    // overwriting package variable to mock sysfs
 	testfile := "./testdata/cpuinfo_arm" // mock cpuinfo without physical id
 
-	testcpuinfo, err := ioutil.ReadFile(testfile)
+	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
 	assert.NotNil(t, testcpuinfo)
 
@@ -459,7 +458,7 @@ func TestClockSpeedOnCpuUpperCase(t *testing.T) {
 	machineArch = ""                            // overwrite package variable
 	testfile := "./testdata/cpuinfo_upper_case" // mock cpuinfo with CPU MHz
 
-	testcpuinfo, err := ioutil.ReadFile(testfile)
+	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
 	assert.NotNil(t, testcpuinfo)
 
@@ -474,7 +473,7 @@ func TestClockSpeedOnCpuLowerCase(t *testing.T) {
 	machineArch = ""                            // overwrite package variable
 	testfile := "./testdata/cpuinfo_lower_case" // mock cpuinfo with cpu MHz
 
-	testcpuinfo, err := ioutil.ReadFile(testfile)
+	testcpuinfo, err := os.ReadFile(testfile)
 	assert.Nil(t, err)
 	assert.NotNil(t, testcpuinfo)
 
@@ -500,7 +499,7 @@ func TestGetCPUVendorID(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		testcpuinfo, err := ioutil.ReadFile(test.file)
+		testcpuinfo, err := os.ReadFile(test.file)
 		assert.Nil(t, err)
 		assert.NotNil(t, testcpuinfo)
 		cpuVendorID := GetCPUVendorID(testcpuinfo)

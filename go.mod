@@ -1,6 +1,6 @@
 module github.com/google/cadvisor
 
-go 1.17
+go 1.19
 
 replace golang.org/x/net => golang.org/x/net v0.7.0
 

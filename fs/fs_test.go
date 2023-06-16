@@ -16,7 +16,6 @@ package fs
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -119,14 +118,14 @@ func TestDirDiskUsage(t *testing.T) {
 	as := assert.New(t)
 	fsInfo, err := NewFsInfo(Context{})
 	as.NoError(err)
-	dir, err := ioutil.TempDir(os.TempDir(), "")
+	dir := t.TempDir()
 	as.NoError(err)
 	defer os.RemoveAll(dir)
 	dataSize := 1024 * 100 //100 KB
 	b := make([]byte, dataSize)
-	f, err := ioutil.TempFile(dir, "")
+	f, err := os.CreateTemp(dir, "")
 	as.NoError(err)
-	as.NoError(ioutil.WriteFile(f.Name(), b, 0700))
+	as.NoError(os.WriteFile(f.Name(), b, 0700))
 	fi, err := f.Stat()
 	as.NoError(err)
 	expectedSize := uint64(fi.Size())
@@ -139,12 +138,11 @@ func TestDirInodeUsage(t *testing.T) {
 	as := assert.New(t)
 	fsInfo, err := NewFsInfo(Context{})
 	as.NoError(err)
-	dir, err := ioutil.TempDir(os.TempDir(), "")
-	as.NoError(err)
+	dir := t.TempDir()
 	defer os.RemoveAll(dir)
 	numFiles := 1000
 	for i := 0; i < numFiles; i++ {
-		_, err := ioutil.TempFile(dir, "")
+		_, err := os.MkdirTemp(dir, "")
 		require.NoError(t, err)
 	}
 	usage, err := fsInfo.GetDirUsage(dir)

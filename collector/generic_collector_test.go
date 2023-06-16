@@ -16,7 +16,6 @@ package collector
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -40,9 +39,9 @@ func TestEmptyConfig(t *testing.T) {
         `
 
 	// Create a temporary config file 'temp.json' with invalid json format
-	assert.NoError(ioutil.WriteFile("temp.json", []byte(emptyConfig), 0777))
+	assert.NoError(os.WriteFile("temp.json", []byte(emptyConfig), 0777))
 
-	configFile, err := ioutil.ReadFile("temp.json")
+	configFile, err := os.ReadFile("temp.json")
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
@@ -72,8 +71,8 @@ func TestConfigWithErrors(t *testing.T) {
 	`
 
 	// Create a temporary config file 'temp.json' with invalid json format
-	assert.NoError(ioutil.WriteFile("temp.json", []byte(invalid), 0777))
-	configFile, err := ioutil.ReadFile("temp.json")
+	assert.NoError(os.WriteFile("temp.json", []byte(invalid), 0777))
+	configFile, err := os.ReadFile("temp.json")
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
@@ -110,9 +109,9 @@ func TestConfigWithRegexErrors(t *testing.T) {
         `
 
 	// Create a temporary config file 'temp.json'
-	assert.NoError(ioutil.WriteFile("temp.json", []byte(invalid), 0777))
+	assert.NoError(os.WriteFile("temp.json", []byte(invalid), 0777))
 
-	configFile, err := ioutil.ReadFile("temp.json")
+	configFile, err := os.ReadFile("temp.json")
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
@@ -126,7 +125,7 @@ func TestConfig(t *testing.T) {
 	assert := assert.New(t)
 
 	// Create an nginx collector using the config file 'sample_config.json'
-	configFile, err := ioutil.ReadFile("config/sample_config.json")
+	configFile, err := os.ReadFile("config/sample_config.json")
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
@@ -139,7 +138,7 @@ func TestConfig(t *testing.T) {
 
 func TestEndpointConfig(t *testing.T) {
 	assert := assert.New(t)
-	configFile, err := ioutil.ReadFile("config/sample_config_endpoint_config.json")
+	configFile, err := os.ReadFile("config/sample_config_endpoint_config.json")
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
@@ -158,7 +157,7 @@ func TestMetricCollection(t *testing.T) {
 	assert := assert.New(t)
 
 	// Collect nginx metrics from a fake nginx endpoint
-	configFile, err := ioutil.ReadFile("config/sample_config.json")
+	configFile, err := os.ReadFile("config/sample_config.json")
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
@@ -194,7 +193,7 @@ func TestMetricCollectionLimit(t *testing.T) {
 	assert := assert.New(t)
 
 	// Collect nginx metrics from a fake nginx endpoint
-	configFile, err := ioutil.ReadFile("config/sample_config.json")
+	configFile, err := os.ReadFile("config/sample_config.json")
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
