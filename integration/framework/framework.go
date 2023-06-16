@@ -213,7 +213,7 @@ func (f *realFramework) ClientV2() *v2.Client {
 
 func (a dockerActions) RunPause() string {
 	return a.Run(DockerRunArgs{
-		Image: "kubernetes/pause",
+		Image: "registry.k8s.io/pause",
 	})
 }
 
