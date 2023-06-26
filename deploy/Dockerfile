@@ -40,7 +40,7 @@ ADD . .
 ARG VERSION
 
 # libipmctl only works on x86_64 CPUs.
-RUN export GO_TAGS="-tags=libfpm,netgo"; \
+RUN export GO_TAGS="libpfm,netgo"; \
     if [ "$(uname --machine)" = "x86_64" ]; then \
           export GO_TAGS="$GO_TAGS,libipmctl"; \
     fi; \
