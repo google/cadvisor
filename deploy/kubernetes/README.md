@@ -1,13 +1,20 @@
 # cAdvisor Kubernetes Daemonset
 
-cAdvisor uses [Kustomize](https://github.com/kubernetes-sigs/kustomize) to manage kubernetes yaml files.  See the [Kustomize](https://github.com/kubernetes-sigs/kustomize) readme for installation instructions, and for a description of how it works.
+cAdvisor uses [Kustomize](https://github.com/kubernetes-sigs/kustomize) to manage Kubernetes manifests. See the [Install Kustomize](https://kubectl.docs.kubernetes.io/installation/kustomize/) for installation instructions, and for a description of how it works.
 
-## Usage
+## Deploy
 
 Pick a [cAdvisor release](https://github.com/google/cadvisor/releases)
 ```
 VERSION=v0.42.0
 ```
+
+Deploy to Kubernetes cluster with [remote build](https://github.com/kubernetes-sigs/kustomize/blob/master/examples/remoteBuild.md):
+```
+kustomize build "https://github.com/google/cadvisor/deploy/kubernetes/base?ref=${VERSION}" | kubectl apply -f -
+```
+
+## Usage
 
 To update the image version([reference](https://github.com/kubernetes-sigs/kustomize/blob/master/examples/image.md)):
 ```
