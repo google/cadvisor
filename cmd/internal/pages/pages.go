@@ -99,15 +99,29 @@ func dockerHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFu
 	}
 }
 
+func podmanHandlerNoAuth(containerManager manager.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		servePodmanPage(containerManager, w, r.URL)
+	}
+}
+
+func podmanHandler(containerManager manager.Manager) auth.AuthenticatedHandlerFunc {
+	return func(w http.ResponseWriter, r *auth.AuthenticatedRequest) {
+		servePodmanPage(containerManager, w, r.URL)
+	}
+}
+
 // Register http handlers
 func RegisterHandlersDigest(mux httpmux.Mux, containerManager manager.Manager, authenticator *auth.DigestAuth, urlBasePrefix string) error {
 	// Register the handler for the containers page.
 	if authenticator != nil {
 		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
 		mux.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
+		mux.HandleFunc(PodmanPage, authenticator.Wrap(podmanHandler(containerManager)))
 	} else {
 		mux.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
 		mux.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
+		mux.HandleFunc(PodmanPage, podmanHandlerNoAuth(containerManager))
 	}
 
 	if ContainersPage[len(ContainersPage)-1] == '/' {
@@ -118,6 +132,10 @@ func RegisterHandlersDigest(mux httpmux.Mux, containerManager manager.Manager, a
 		redirectHandler := http.RedirectHandler(urlBasePrefix+DockerPage, http.StatusMovedPermanently)
 		mux.Handle(DockerPage[0:len(DockerPage)-1], redirectHandler)
 	}
+	if PodmanPage[len(PodmanPage)-1] == '/' {
+		redirectHandler := http.RedirectHandler(urlBasePrefix+PodmanPage, http.StatusMovedPermanently)
+		mux.Handle(PodmanPage[0:len(PodmanPage)-1], redirectHandler)
+	}
 
 	return nil
 }
@@ -127,9 +145,11 @@ func RegisterHandlersBasic(mux httpmux.Mux, containerManager manager.Manager, au
 	if authenticator != nil {
 		mux.HandleFunc(ContainersPage, authenticator.Wrap(containerHandler(containerManager)))
 		mux.HandleFunc(DockerPage, authenticator.Wrap(dockerHandler(containerManager)))
+		mux.HandleFunc(PodmanPage, authenticator.Wrap(podmanHandler(containerManager)))
 	} else {
 		mux.HandleFunc(ContainersPage, containerHandlerNoAuth(containerManager))
 		mux.HandleFunc(DockerPage, dockerHandlerNoAuth(containerManager))
+		mux.HandleFunc(PodmanPage, podmanHandlerNoAuth(containerManager))
 	}
 
 	if ContainersPage[len(ContainersPage)-1] == '/' {
