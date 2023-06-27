@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
 	"golang.org/x/net/context"
 
-	"time"
-
+	"github.com/google/cadvisor/container/docker/utils"
 	v1 "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/machine"
 )
@@ -88,34 +88,47 @@ func Images() ([]v1.DockerImage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	images, err := client.ImageList(defaultContext(), dockertypes.ImageListOptions{All: false})
+	summaries, err := client.ImageList(defaultContext(), dockertypes.ImageListOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
-
-	out := []v1.DockerImage{}
-	const unknownTag = "<none>:<none>"
-	for _, image := range images {
-		if len(image.RepoTags) == 1 && image.RepoTags[0] == unknownTag {
-			// images with repo or tags are uninteresting.
-			continue
-		}
-		di := v1.DockerImage{
-			ID:          image.ID,
-			RepoTags:    image.RepoTags,
-			Created:     image.Created,
-			VirtualSize: image.VirtualSize,
-			Size:        image.Size,
-		}
-		out = append(out, di)
-	}
-	return out, nil
-
+	return utils.SummariesToImages(summaries)
 }
 
 // Checks whether the dockerInfo reflects a valid docker setup, and returns it if it does, or an
 // error otherwise.
-func ValidateInfo() (*dockertypes.Info, error) {
+func ValidateInfo(GetInfo func() (*dockertypes.Info, error), ServerVersion func() (string, error)) (*dockertypes.Info, error) {
+	info, err := GetInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	// Fall back to version API if ServerVersion is not set in info.
+	if info.ServerVersion == "" {
+		var err error
+		info.ServerVersion, err = ServerVersion()
+		if err != nil {
+			return nil, fmt.Errorf("unable to get runtime version: %v", err)
+		}
+	}
+
+	version, err := ParseVersion(info.ServerVersion, VersionRe, 3)
+	if err != nil {
+		return nil, err
+	}
+
+	if version[0] < 1 {
+		return nil, fmt.Errorf("cAdvisor requires runtime version %v or above but we have found version %v reported as %q", []int{1, 0, 0}, version, info.ServerVersion)
+	}
+
+	if info.Driver == "" {
+		return nil, fmt.Errorf("failed to find runtime storage driver")
+	}
+
+	return info, nil
+}
+
+func Info() (*dockertypes.Info, error) {
 	client, err := Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
@@ -126,27 +139,6 @@ func ValidateInfo() (*dockertypes.Info, error) {
 		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
 	}
 
-	// Fall back to version API if ServerVersion is not set in info.
-	if dockerInfo.ServerVersion == "" {
-		version, err := client.ServerVersion(defaultContext())
-		if err != nil {
-			return nil, fmt.Errorf("unable to get docker version: %v", err)
-		}
-		dockerInfo.ServerVersion = version.Version
-	}
-	version, err := parseVersion(dockerInfo.ServerVersion, versionRe, 3)
-	if err != nil {
-		return nil, err
-	}
-
-	if version[0] < 1 {
-		return nil, fmt.Errorf("cAdvisor requires docker version %v or above but we have found version %v reported as %q", []int{1, 0, 0}, version, dockerInfo.ServerVersion)
-	}
-
-	if dockerInfo.Driver == "" {
-		return nil, fmt.Errorf("failed to find docker storage driver")
-	}
-
 	return &dockerInfo, nil
 }
 
@@ -155,7 +147,7 @@ func APIVersion() ([]int, error) {
 	if err != nil {
 		return nil, err
 	}
-	return parseVersion(ver, apiVersionRe, 2)
+	return ParseVersion(ver, apiVersionRe, 2)
 }
 
 func VersionString() (string, error) {
@@ -182,7 +174,7 @@ func APIVersionString() (string, error) {
 	return apiVersion, err
 }
 
-func parseVersion(versionString string, regex *regexp.Regexp, length int) ([]int, error) {
+func ParseVersion(versionString string, regex *regexp.Regexp, length int) ([]int, error) {
 	matches := regex.FindAllStringSubmatch(versionString, -1)
 	if len(matches) != 1 {
 		return nil, fmt.Errorf("version string \"%v\" doesn't match expected regular expression: \"%v\"", versionString, regex.String())

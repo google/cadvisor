@@ -30,7 +30,7 @@ import (
 
 func TestStorageDirDetectionWithOldVersions(t *testing.T) {
 	as := assert.New(t)
-	rwLayer, err := getRwLayerID("abcd", "/", aufsStorageDriver, []int{1, 9, 0})
+	rwLayer, err := getRwLayerID("abcd", "/", AufsStorageDriver, []int{1, 9, 0})
 	as.Nil(err)
 	as.Equal(rwLayer, "abcd")
 }
