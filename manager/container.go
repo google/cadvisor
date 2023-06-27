@@ -482,7 +482,7 @@ func (cd *containerData) nextHousekeepingInterval() time.Duration {
 		stats, err := cd.memoryCache.RecentStats(cd.info.Name, empty, empty, 2)
 		if err != nil {
 			if cd.allowErrorLogging() {
-				klog.Warningf("Failed to get RecentStats(%q) while determining the next housekeeping: %v", cd.info.Name, err)
+				klog.V(4).Infof("Failed to get RecentStats(%q) while determining the next housekeeping: %v", cd.info.Name, err)
 			}
 		} else if len(stats) == 2 {
 			// TODO(vishnuk): Use no processes as a signal.
