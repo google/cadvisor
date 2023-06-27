@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/google/cadvisor/container/docker"
+	dockerutil "github.com/google/cadvisor/container/docker/utils"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
 
@@ -39,12 +40,12 @@ func toStatusKV(status info.DockerStatus) ([]keyVal, []keyVal) {
 		ds = append(ds, keyVal{Key: k, Value: v})
 	}
 	return []keyVal{
-		{Key: "Docker Version", Value: status.Version},
-		{Key: "Docker API Version", Value: status.APIVersion},
+		{Key: "Version", Value: status.Version},
+		{Key: "API Version", Value: status.APIVersion},
 		{Key: "Kernel Version", Value: status.KernelVersion},
 		{Key: "OS Version", Value: status.OS},
 		{Key: "Host Name", Value: status.Hostname},
-		{Key: "Docker Root Directory", Value: status.RootDir},
+		{Key: "Root Directory", Value: status.RootDir},
 		{Key: "Execution  Driver", Value: status.ExecDriver},
 		{Key: "Number of Images", Value: strconv.Itoa(status.NumImages)},
 		{Key: "Number of Containers", Value: strconv.Itoa(status.NumContainers)},
@@ -73,7 +74,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		for _, cont := range conts {
 			subcontainers = append(subcontainers, link{
 				Text: getContainerDisplayName(cont.ContainerReference),
-				Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerId(cont.ContainerReference.Name)),
+				Link: path.Join(rootDir, DockerPage, dockerutil.ContainerNameToId(cont.ContainerReference.Name)),
 			})
 		}
 
@@ -126,7 +127,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		})
 		parentContainers = append(parentContainers, link{
 			Text: displayName,
-			Link: path.Join(rootDir, DockerPage, docker.ContainerNameToDockerId(cont.Name)),
+			Link: path.Join(rootDir, DockerPage, dockerutil.ContainerNameToId(cont.Name)),
 		})
 
 		// Get the MachineInfo
