@@ -122,10 +122,11 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 	}
 	var processThreads []string
 	for _, pid := range pids {
-		processThreads, err = getAllProcessThreads(filepath.Join(processPath, strconv.Itoa(pid), processTask))
+		pt, err := getAllProcessThreads(filepath.Join(processPath, strconv.Itoa(pid), processTask))
 		if err != nil {
 			return "", err
 		}
+		processThreads = append(processThreads, pt...)
 	}
 
 	// Firstly, find the control group to which the container belongs.

@@ -406,6 +406,11 @@ func TestGetAllProcessThreads(t *testing.T) {
 				filepath.Join(path, "4215", processTask, "4218"),
 				touchDir,
 			},
+			// invalid
+			{
+				filepath.Join(path, "301", processTask, "301"),
+				touchDir,
+			},
 		}
 
 		for _, file := range files {
