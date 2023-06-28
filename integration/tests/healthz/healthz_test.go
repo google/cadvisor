@@ -15,7 +15,7 @@
 package healthz
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -32,7 +32,7 @@ func TestHealthzOk(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
 	}

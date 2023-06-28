@@ -19,7 +19,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -110,7 +109,7 @@ func generateTLSConfig() (*tls.Config, error) {
 			return nil, err
 		}
 
-		caCert, err := ioutil.ReadFile(*caFile)
+		caCert, err := os.ReadFile(*caFile)
 		if err != nil {
 			return nil, err
 		}

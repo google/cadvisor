@@ -16,7 +16,7 @@ package metrics
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -46,7 +46,7 @@ func TestPrometheusMachineCollector(t *testing.T) {
 	}
 	collectedMetrics := metricBuffer.String()
 
-	expectedMetrics, err := ioutil.ReadFile(machineMetricsFile)
+	expectedMetrics, err := os.ReadFile(machineMetricsFile)
 	assert.Nil(t, err)
 	assert.Equal(t, string(expectedMetrics), collectedMetrics)
 }
@@ -69,7 +69,7 @@ func TestPrometheusMachineCollectorWithFailure(t *testing.T) {
 		assert.Nil(t, err)
 	}
 	collectedMetrics := metricBuffer.String()
-	expectedMetrics, err := ioutil.ReadFile(machineMetricsFailureFile)
+	expectedMetrics, err := os.ReadFile(machineMetricsFailureFile)
 	assert.Nil(t, err)
 	assert.Equal(t, string(expectedMetrics), collectedMetrics)
 }

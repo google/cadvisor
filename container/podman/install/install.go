@@ -1,4 +1,4 @@
-// Copyright 2019 Google Inc. All Rights Reserved.
+// Copyright 2021 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The install package registers all included container providers when imported
 package install
 
 import (
-	// Register all included container providers.
-	_ "github.com/google/cadvisor/cmd/internal/container/mesos/install"
-	_ "github.com/google/cadvisor/container/containerd/install"
-	_ "github.com/google/cadvisor/container/crio/install"
-	_ "github.com/google/cadvisor/container/docker/install"
-	_ "github.com/google/cadvisor/container/podman/install"
-	_ "github.com/google/cadvisor/container/systemd/install"
+	"k8s.io/klog/v2"
+
+	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/podman"
 )
+
+func init() {
+	err := container.RegisterPlugin("podman", podman.NewPlugin())
+	if err != nil {
+		klog.Fatalf("Failed to register podman plugin: %v", err)
+	}
+}

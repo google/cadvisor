@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2021 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,53 +19,43 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"strconv"
 	"time"
 
-	"github.com/google/cadvisor/container/docker"
 	dockerutil "github.com/google/cadvisor/container/docker/utils"
+	"github.com/google/cadvisor/container/podman"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/manager"
 
 	"k8s.io/klog/v2"
 )
 
-const DockerPage = "/docker/"
+const PodmanPage = "/podman/"
 
-func toStatusKV(status info.DockerStatus) ([]keyVal, []keyVal) {
-	ds := []keyVal{
-		{Key: "Driver", Value: status.Driver},
-	}
-	for k, v := range status.DriverStatus {
-		ds = append(ds, keyVal{Key: k, Value: v})
-	}
-	return []keyVal{
-		{Key: "Version", Value: status.Version},
-		{Key: "API Version", Value: status.APIVersion},
-		{Key: "Kernel Version", Value: status.KernelVersion},
-		{Key: "OS Version", Value: status.OS},
-		{Key: "Host Name", Value: status.Hostname},
-		{Key: "Root Directory", Value: status.RootDir},
-		{Key: "Execution  Driver", Value: status.ExecDriver},
-		{Key: "Number of Images", Value: strconv.Itoa(status.NumImages)},
-		{Key: "Number of Containers", Value: strconv.Itoa(status.NumContainers)},
-	}, ds
-}
-
-func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
+func servePodmanPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 	start := time.Now()
 
-	// The container name is the path after the handler
-	containerName := u.Path[len(DockerPage)-1:]
+	containerName := u.Path[len(PodmanPage)-1:]
 	rootDir := getRootDir(containerName)
 
 	var data *pageData
+
 	if containerName == "/" {
-		// Get the containers.
+		// Scenario for all containers.
+		status, err := podman.Status()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to get podman info: %v", err), http.StatusInternalServerError)
+			return
+		}
+		images, err := podman.Images()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to get podman images: %v", err), http.StatusInternalServerError)
+			return
+		}
+
 		reqParams := info.ContainerInfoRequest{
 			NumStats: 0,
 		}
-		conts, err := m.AllDockerContainers(&reqParams)
+		conts, err := m.AllPodmanContainers(&reqParams)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to get container %q with error: %v", containerName, err), http.StatusNotFound)
 			return
@@ -74,68 +64,54 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		for _, cont := range conts {
 			subcontainers = append(subcontainers, link{
 				Text: getContainerDisplayName(cont.ContainerReference),
-				Link: path.Join(rootDir, DockerPage, dockerutil.ContainerNameToId(cont.ContainerReference.Name)),
+				Link: path.Join(rootDir, PodmanPage, dockerutil.ContainerNameToId(cont.ContainerReference.Name)),
 			})
 		}
 
-		// Get Docker status
-		status, err := docker.Status()
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to get docker info: %v", err), http.StatusInternalServerError)
-			return
-		}
+		podmanStatus, driverStatus := toStatusKV(status)
 
-		dockerStatus, driverStatus := toStatusKV(status)
-		// Get Docker Images
-		images, err := docker.Images()
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to get docker images: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		dockerContainersText := "Docker Containers"
+		podmanContainerText := "Podman Containers"
 		data = &pageData{
-			DisplayName: dockerContainersText,
+			DisplayName: podmanContainerText,
 			ParentContainers: []link{
 				{
-					Text: dockerContainersText,
-					Link: path.Join(rootDir, DockerPage),
+					Text: podmanContainerText,
+					Link: path.Join(rootDir, PodmanPage),
 				}},
 			Subcontainers:      subcontainers,
 			Root:               rootDir,
-			DockerStatus:       dockerStatus,
+			DockerStatus:       podmanStatus,
 			DockerDriverStatus: driverStatus,
 			DockerImages:       images,
 		}
 	} else {
-		// Get the container.
-		reqParams := info.ContainerInfoRequest{
-			NumStats: 60,
-		}
-		cont, err := m.DockerContainer(containerName[1:], &reqParams)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to get container %q with error: %v", containerName, err), http.StatusNotFound)
-			return
-		}
-		displayName := getContainerDisplayName(cont.ContainerReference)
-
-		// Make a list of the parent containers and their links
-		var parentContainers []link
-		parentContainers = append(parentContainers, link{
-			Text: "Docker Containers",
-			Link: path.Join(rootDir, DockerPage),
-		})
-		parentContainers = append(parentContainers, link{
-			Text: displayName,
-			Link: path.Join(rootDir, DockerPage, dockerutil.ContainerNameToId(cont.Name)),
-		})
-
-		// Get the MachineInfo
+		// Scenario for specific container.
 		machineInfo, err := m.GetMachineInfo()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to get machine info: %v", err), http.StatusInternalServerError)
 			return
 		}
+
+		reqParams := info.ContainerInfoRequest{
+			NumStats: 60,
+		}
+		cont, err := m.PodmanContainer(containerName[1:], &reqParams)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to get container %v with error: %v", containerName, err), http.StatusNotFound)
+			return
+		}
+		displayName := getContainerDisplayName(cont.ContainerReference)
+
+		var parentContainers []link
+		parentContainers = append(parentContainers, link{
+			Text: "Podman Containers",
+			Link: path.Join(rootDir, PodmanPage),
+		})
+		parentContainers = append(parentContainers, link{
+			Text: displayName,
+			Link: path.Join(rootDir, PodmanPage, dockerutil.ContainerNameToId(cont.Name)),
+		})
+
 		data = &pageData{
 			DisplayName:            displayName,
 			ContainerName:          escapeContainerName(cont.Name),

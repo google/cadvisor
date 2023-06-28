@@ -156,6 +156,10 @@ func main() {
 	containerLabelFunc := metrics.DefaultContainerLabels
 	if !*storeContainerLabels {
 		whitelistedLabels := strings.Split(*whitelistedContainerLabels, ",")
+		// Trim spacing in labels
+		for i := range whitelistedLabels {
+			whitelistedLabels[i] = strings.TrimSpace(whitelistedLabels[i])
+		}
 		containerLabelFunc = metrics.BaseContainerLabels(whitelistedLabels)
 	}
 

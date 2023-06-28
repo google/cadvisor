@@ -21,7 +21,6 @@ package fs
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -146,7 +145,7 @@ func getFsUUIDToDeviceNameMap() (map[string]string, error) {
 		return make(map[string]string), nil
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
