@@ -399,6 +399,8 @@ type MemoryStats struct {
 	// Units: Bytes.
 	KernelUsage uint64 `json:"kernel"`
 
+	MemoryEvents map[string]uint64 `json:"memory_events"`
+
 	ContainerData    MemoryStatsMemoryData `json:"container_data,omitempty"`
 	HierarchicalData MemoryStatsMemoryData `json:"hierarchical_data,omitempty"`
 }

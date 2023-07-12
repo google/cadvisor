@@ -93,7 +93,7 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 	libcontainerStats := &libcontainer.Stats{
 		CgroupStats: cgroupStats,
 	}
-	stats := newContainerStats(libcontainerStats, h.includedMetrics)
+	stats := newContainerStats(libcontainerStats, h.includedMetrics, h.cgroupManager.GetPaths())
 
 	if h.includedMetrics.Has(container.ProcessSchedulerMetrics) {
 		stats.Cpu.Schedstat, err = h.schedulerStatsFromProcs()
@@ -797,17 +797,26 @@ func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.DiskIo.IoTime = diskStatsCopy(s.BlkioStats.IoTimeRecursive)
 }
 
-func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
+func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats, cgroupPaths map[string]string) {
 	ret.Memory.Usage = s.MemoryStats.Usage.Usage
 	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
 	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
 	ret.Memory.KernelUsage = s.MemoryStats.KernelUsage.Usage
-
+	klog.V(4).Info("Unable to get Process Scheduler Stats: Hi")
 	if cgroups.IsCgroup2UnifiedMode() {
 		ret.Memory.Cache = s.MemoryStats.Stats["file"]
 		ret.Memory.RSS = s.MemoryStats.Stats["anon"]
 		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage - s.MemoryStats.Usage.Usage
 		ret.Memory.MappedFile = s.MemoryStats.Stats["file_mapped"]
+		testPath, ok := common.GetControllerPath(cgroupPaths, "cpu", cgroups.IsCgroup2UnifiedMode())
+		if !ok {
+			klog.V(4).Info("Could not find cgroups CPU for container ")
+		}
+
+		klog.V(4).Infof("Printing test path: %s", testPath)
+
+		// /sys/fs/cgroup/user.slice/user-653073.slice/user@653073.service/app.slice/gnome-session-monitor.service/memory.events
+		ret.Memory.MemoryEvents = getMemoryEvents(cgroupPaths[""])
 	} else if s.MemoryStats.UseHierarchy {
 		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["total_rss"]
@@ -907,17 +916,16 @@ func setThreadsStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	}
 }
 
-func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics container.MetricSet) *info.ContainerStats {
+func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics container.MetricSet, cgroupPaths map[string]string) *info.ContainerStats {
 	ret := &info.ContainerStats{
 		Timestamp: time.Now(),
 	}
-
 	if s := libcontainerStats.CgroupStats; s != nil {
 		setCPUStats(s, ret, includedMetrics.Has(container.PerCpuUsageMetrics))
 		if includedMetrics.Has(container.DiskIOMetrics) {
 			setDiskIoStats(s, ret)
 		}
-		setMemoryStats(s, ret)
+		setMemoryStats(s, ret, cgroupPaths)
 		if includedMetrics.Has(container.MemoryNumaMetrics) {
 			setMemoryNumaStats(s, ret)
 		}
