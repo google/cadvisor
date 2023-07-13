@@ -71,6 +71,9 @@ machine_nvm_capacity{boot_id="boot-id-test",machine_id="machine-id-test",mode="m
 # HELP machine_scrape_error 1 if there was an error while getting machine metrics, 0 otherwise.
 # TYPE machine_scrape_error gauge
 machine_scrape_error 0
+# HELP machine_swap_bytes Amount of swap memory available on the machine.
+# TYPE machine_swap_bytes gauge
+machine_swap_bytes{boot_id="boot-id-test",machine_id="machine-id-test",system_uuid="system-uuid-test"} 0 1395066363000
 # HELP machine_thread_siblings_count Number of CPU thread siblings.
 # TYPE machine_thread_siblings_count gauge
 machine_thread_siblings_count{boot_id="boot-id-test",core_id="0",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test",thread_id="0"} 2 1395066363000

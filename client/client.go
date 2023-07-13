@@ -25,7 +25,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"path"
 	"strings"
@@ -187,7 +186,7 @@ func (c *Client) httpGetJSONData(data, postData interface{}, url, infoName strin
 		return fmt.Errorf("received empty response for %q from %q", infoName, url)
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		err = fmt.Errorf("unable to read all %q from %q: %v", infoName, url, err)
 		return err

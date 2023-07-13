@@ -16,13 +16,16 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
 )
@@ -192,4 +195,55 @@ func TestGetSpecCgroupV2Max(t *testing.T) {
 	assert.EqualValues(t, spec.Cpu.Quota, 0)
 
 	assert.EqualValues(t, spec.Processes.Limit, max)
+}
+
+func TestRemoveNetMetrics(t *testing.T) {
+	for _, ts := range []struct {
+		desc    string
+		in, out container.MetricSet
+	}{
+		{
+			desc: "nil set",
+			in:   nil,
+		},
+		{
+			desc: "empty set",
+			in:   container.MetricSet{},
+		},
+		{
+			desc: "nothing to remove",
+			in:   container.MetricSet{container.MemoryUsageMetrics: struct{}{}, container.PerfMetrics: struct{}{}},
+		},
+		{
+			desc: "also nothing to remove",
+			in:   container.AllMetrics.Difference(container.AllNetworkMetrics),
+		},
+		{
+			desc: "remove net from all",
+			in:   container.AllMetrics,
+			out:  container.AllMetrics.Difference(container.AllNetworkMetrics),
+		},
+		{
+			desc: "remove net from some",
+			in:   container.MetricSet{container.MemoryUsageMetrics: struct{}{}, container.NetworkTcpUsageMetrics: struct{}{}},
+			out:  container.MetricSet{container.MemoryUsageMetrics: struct{}{}},
+		},
+	} {
+		for _, remove := range []bool{true, false} {
+			ts, remove := ts, remove
+			desc := fmt.Sprintf("%s, remove: %v", ts.desc, remove)
+			t.Run(desc, func(t *testing.T) {
+				out := RemoveNetMetrics(ts.in, remove)
+				if !remove || ts.out == nil {
+					// Compare the actual underlying pointers. Can't use assert.Same
+					// because it checks for pointer type, and these are maps.
+					if reflect.ValueOf(ts.in) != reflect.ValueOf(out) {
+						t.Errorf("expected original map %p, got %p", ts.in, out)
+					}
+				} else {
+					assert.Equal(t, ts.out, out)
+				}
+			})
+		}
+	}
 }

@@ -1387,7 +1387,7 @@ func TestGetNetworkDevices(t *testing.T) {
 
 func TestIgnoredNetworkDevices(t *testing.T) {
 	fakeSys := fakesysfs.FakeSysFs{}
-	ignoredDevices := []string{"veth1234", "lo", "docker0"}
+	ignoredDevices := []string{"veth1234", "lo", "docker0", "nerdctl0"}
 	for _, name := range ignoredDevices {
 		fakeSys.SetEntryName(name)
 		devs, err := GetNetworkDevices(&fakeSys)

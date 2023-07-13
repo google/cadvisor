@@ -17,14 +17,13 @@ package docker
 import (
 	"flag"
 	"fmt"
-	"path"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/blang/semver"
+	"github.com/blang/semver/v4"
 	dockertypes "github.com/docker/docker/api/types"
 
 	"github.com/google/cadvisor/container"
@@ -59,10 +58,6 @@ const rootDirRetries = 5
 // The retry period for getting docker root dir, Millisecond
 const rootDirRetryPeriod time.Duration = 1000 * time.Millisecond
 
-// Regexp that identifies docker cgroups, containers started with
-// --cgroup-parent have another prefix than 'docker'
-var dockerCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
-
 var (
 	// Basepath to all container specific information that libcontainer stores.
 	dockerRootDir string
@@ -96,21 +91,21 @@ func RootDir() string {
 	return dockerRootDir
 }
 
-type storageDriver string
+type StorageDriver string
 
 const (
-	devicemapperStorageDriver storageDriver = "devicemapper"
-	aufsStorageDriver         storageDriver = "aufs"
-	overlayStorageDriver      storageDriver = "overlay"
-	overlay2StorageDriver     storageDriver = "overlay2"
-	zfsStorageDriver          storageDriver = "zfs"
-	vfsStorageDriver          storageDriver = "vfs"
+	DevicemapperStorageDriver StorageDriver = "devicemapper"
+	AufsStorageDriver         StorageDriver = "aufs"
+	OverlayStorageDriver      StorageDriver = "overlay"
+	Overlay2StorageDriver     StorageDriver = "overlay2"
+	ZfsStorageDriver          StorageDriver = "zfs"
+	VfsStorageDriver          StorageDriver = "vfs"
 )
 
 type dockerFactory struct {
 	machineInfoFactory info.MachineInfoFactory
 
-	storageDriver storageDriver
+	storageDriver StorageDriver
 	storageDir    string
 
 	client *docker.Client
@@ -169,36 +164,15 @@ func (f *dockerFactory) NewContainerHandler(name string, metadataEnvAllowList []
 	return
 }
 
-// Returns the Docker ID from the full container name.
-func ContainerNameToDockerId(name string) string {
-	id := path.Base(name)
-
-	if matches := dockerCgroupRegexp.FindStringSubmatch(id); matches != nil {
-		return matches[1]
-	}
-
-	return id
-}
-
-// isContainerName returns true if the cgroup with associated name
-// corresponds to a docker container.
-func isContainerName(name string) bool {
-	// always ignore .mount cgroup even if associated with docker and delegate to systemd
-	if strings.HasSuffix(name, ".mount") {
-		return false
-	}
-	return dockerCgroupRegexp.MatchString(path.Base(name))
-}
-
 // Docker handles all containers under /docker
 func (f *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	// if the container is not associated with docker, we can't handle it or accept it.
-	if !isContainerName(name) {
+	if !dockerutil.IsContainerName(name) {
 		return false, false, nil
 	}
 
 	// Check if the container is known to docker and it is active.
-	id := ContainerNameToDockerId(name)
+	id := dockerutil.ContainerNameToId(name)
 
 	// We assume that if Inspect fails then the container is not known to docker.
 	ctnr, err := f.client.ContainerInspect(context.Background(), id)
@@ -215,12 +189,12 @@ func (f *dockerFactory) DebugInfo() map[string][]string {
 
 var (
 	versionRegexpString    = `(\d+)\.(\d+)\.(\d+)`
-	versionRe              = regexp.MustCompile(versionRegexpString)
+	VersionRe              = regexp.MustCompile(versionRegexpString)
 	apiVersionRegexpString = `(\d+)\.(\d+)`
 	apiVersionRe           = regexp.MustCompile(apiVersionRegexpString)
 )
 
-func startThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolWatcher, error) {
+func StartThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolWatcher, error) {
 	_, err := devicemapper.ThinLsBinaryPresent()
 	if err != nil {
 		return nil, err
@@ -253,7 +227,7 @@ func startThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolW
 	return thinPoolWatcher, nil
 }
 
-func startZfsWatcher(dockerInfo *dockertypes.Info) (*zfs.ZfsWatcher, error) {
+func StartZfsWatcher(dockerInfo *dockertypes.Info) (*zfs.ZfsWatcher, error) {
 	filesystem, err := dockerutil.DockerZfsFilesystem(*dockerInfo)
 	if err != nil {
 		return nil, err
@@ -275,7 +249,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 	// thin_ls to work without corrupting the thin pool
 	minRhel7KernelVersion := semver.MustParse("3.10.0")
 
-	matches := versionRe.FindStringSubmatch(kernelVersion)
+	matches := VersionRe.FindStringSubmatch(kernelVersion)
 	if len(matches) < 4 {
 		return fmt.Errorf("error parsing kernel version: %q is not a semver", kernelVersion)
 	}
@@ -335,13 +309,13 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
 
-	dockerInfo, err := ValidateInfo()
+	dockerInfo, err := ValidateInfo(Info, VersionString)
 	if err != nil {
 		return fmt.Errorf("failed to validate Docker info: %v", err)
 	}
 
 	// Version already validated above, assume no error here.
-	dockerVersion, _ := parseVersion(dockerInfo.ServerVersion, versionRe, 3)
+	dockerVersion, _ := ParseVersion(dockerInfo.ServerVersion, VersionRe, 3)
 
 	dockerAPIVersion, _ := APIVersion()
 
@@ -356,8 +330,8 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		zfsWatcher      *zfs.ZfsWatcher
 	)
 	if includedMetrics.Has(container.DiskUsageMetrics) {
-		if storageDriver(dockerInfo.Driver) == devicemapperStorageDriver {
-			thinPoolWatcher, err = startThinPoolWatcher(dockerInfo)
+		if StorageDriver(dockerInfo.Driver) == DevicemapperStorageDriver {
+			thinPoolWatcher, err = StartThinPoolWatcher(dockerInfo)
 			if err != nil {
 				klog.Errorf("devicemapper filesystem stats will not be reported: %v", err)
 			}
@@ -367,8 +341,8 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 			thinPoolName = status.DriverStatus[dockerutil.DriverStatusPoolName]
 		}
 
-		if storageDriver(dockerInfo.Driver) == zfsStorageDriver {
-			zfsWatcher, err = startZfsWatcher(dockerInfo)
+		if StorageDriver(dockerInfo.Driver) == ZfsStorageDriver {
+			zfsWatcher, err = StartZfsWatcher(dockerInfo)
 			if err != nil {
 				klog.Errorf("zfs filesystem stats will not be reported: %v", err)
 			}
@@ -383,7 +357,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		dockerAPIVersion:   dockerAPIVersion,
 		fsInfo:             fsInfo,
 		machineInfoFactory: factory,
-		storageDriver:      storageDriver(dockerInfo.Driver),
+		storageDriver:      StorageDriver(dockerInfo.Driver),
 		storageDir:         RootDir(),
 		includedMetrics:    includedMetrics,
 		thinPoolName:       thinPoolName,

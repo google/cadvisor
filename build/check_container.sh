@@ -28,7 +28,7 @@
 target_image=$1
 
 # Architectures officially supported by cadvisor
-arches=( "amd64" "arm" "arm64" )
+arches=( "amd64" "arm" "arm64" "s390x" )
 
 # Docker doesn't handle images with different architectures but the same tag.
 # Remove the container and the image use by it to avoid problems.

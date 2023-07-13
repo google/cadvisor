@@ -17,9 +17,12 @@ package utils
 import (
 	"fmt"
 	"os"
+	"path"
+	"regexp"
 	"strings"
 
 	dockertypes "github.com/docker/docker/api/types"
+	v1 "github.com/google/cadvisor/info/v1"
 )
 
 const (
@@ -27,6 +30,10 @@ const (
 	DriverStatusMetadataFile  = "Metadata file"
 	DriverStatusParentDataset = "Parent Dataset"
 )
+
+// Regexp that identifies docker cgroups, containers started with
+// --cgroup-parent have another prefix than 'docker'
+var cgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
 
 func DriverStatusValue(status [][2]string, target string) string {
 	for _, v := range status {
@@ -74,4 +81,45 @@ func DockerZfsFilesystem(info dockertypes.Info) (string, error) {
 	}
 
 	return filesystem, nil
+}
+
+func SummariesToImages(summaries []dockertypes.ImageSummary) ([]v1.DockerImage, error) {
+	var out []v1.DockerImage
+	const unknownTag = "<none>:<none>"
+	for _, summary := range summaries {
+		if len(summary.RepoTags) == 1 && summary.RepoTags[0] == unknownTag {
+			// images with repo or tags are uninteresting.
+			continue
+		}
+		di := v1.DockerImage{
+			ID:          summary.ID,
+			RepoTags:    summary.RepoTags,
+			Created:     summary.Created,
+			VirtualSize: summary.VirtualSize,
+			Size:        summary.Size,
+		}
+		out = append(out, di)
+	}
+	return out, nil
+}
+
+// Returns the ID from the full container name.
+func ContainerNameToId(name string) string {
+	id := path.Base(name)
+
+	if matches := cgroupRegexp.FindStringSubmatch(id); matches != nil {
+		return matches[1]
+	}
+
+	return id
+}
+
+// IsContainerName returns true if the cgroup with associated name
+// corresponds to a container.
+func IsContainerName(name string) bool {
+	// always ignore .mount cgroup even if associated with docker and delegate to systemd
+	if strings.HasSuffix(name, ".mount") {
+		return false
+	}
+	return cgroupRegexp.MatchString(path.Base(name))
 }

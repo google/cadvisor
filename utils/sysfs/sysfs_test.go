@@ -125,7 +125,9 @@ func TestGetHugePagesNrWhenFileIsMissing(t *testing.T) {
 }
 
 func TestIsCPUOnline(t *testing.T) {
-	sysFs := NewRealSysFs()
+	sysFs := &realSysFs{
+		cpuPath: "./testdata_epyc7402_nohyperthreading",
+	}
 	online := sysFs.IsCPUOnline("./testdata_epyc7402_nohyperthreading/cpu14")
 	assert.True(t, online)
 
@@ -141,7 +143,9 @@ func TestIsCPUOnlineNoFileAndCPU0MustBeOnline(t *testing.T) {
 	}()
 	isX86 = false
 
-	sysFs := NewRealSysFs()
+	sysFs := &realSysFs{
+		cpuPath: "./testdata/missing_online/node0",
+	}
 	online := sysFs.IsCPUOnline("./testdata/missing_online/node0/cpu33")
 	assert.True(t, online)
 }
@@ -167,7 +171,9 @@ func TestCPU0OfflineOnNotx86(t *testing.T) {
 	}()
 	isX86 = false
 
-	sysFs := NewRealSysFs()
+	sysFs := &realSysFs{
+		cpuPath: "./testdata_graviton2",
+	}
 	online := sysFs.IsCPUOnline("./testdata_graviton2/cpu0")
 	assert.False(t, online)
 }
@@ -180,7 +186,9 @@ func TestIsCpuOnlineRaspberryPi4(t *testing.T) {
 	}()
 	isX86 = false
 
-	sysFS := NewRealSysFs()
+	sysFS := &realSysFs{
+		cpuPath: "./testdata_rpi4",
+	}
 	online := sysFS.IsCPUOnline("./testdata_rpi4/cpu0")
 	assert.True(t, online)
 
@@ -202,7 +210,9 @@ func TestIsCpuOnlineGraviton2(t *testing.T) {
 	}()
 	isX86 = false
 
-	sysFS := NewRealSysFs()
+	sysFS := &realSysFs{
+		cpuPath: "./testdata_graviton2",
+	}
 	online := sysFS.IsCPUOnline("./testdata_graviton2/cpu0")
 	assert.False(t, online)
 

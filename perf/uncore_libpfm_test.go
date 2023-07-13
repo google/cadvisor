@@ -21,7 +21,6 @@ package perf
 import (
 	"bytes"
 	"encoding/binary"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,7 +33,7 @@ import (
 )
 
 func mockSystemDevices() (string, error) {
-	testDir, err := ioutil.TempDir("", "uncore_imc_test")
+	testDir, err := os.MkdirTemp("", "uncore_imc_test")
 	if err != nil {
 		return "", err
 	}
@@ -45,11 +44,11 @@ func mockSystemDevices() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(firstPMUPath, "cpumask"), []byte("0-1"), 0777)
+	err = os.WriteFile(filepath.Join(firstPMUPath, "cpumask"), []byte("0-1"), 0777)
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(firstPMUPath, "type"), []byte("18"), 0777)
+	err = os.WriteFile(filepath.Join(firstPMUPath, "type"), []byte("18"), 0777)
 	if err != nil {
 		return "", err
 	}
@@ -60,11 +59,11 @@ func mockSystemDevices() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(secondPMUPath, "cpumask"), []byte("0,1"), 0777)
+	err = os.WriteFile(filepath.Join(secondPMUPath, "cpumask"), []byte("0,1"), 0777)
 	if err != nil {
 		return "", err
 	}
-	err = ioutil.WriteFile(filepath.Join(secondPMUPath, "type"), []byte("19"), 0777)
+	err = os.WriteFile(filepath.Join(secondPMUPath, "type"), []byte("19"), 0777)
 	if err != nil {
 		return "", err
 	}

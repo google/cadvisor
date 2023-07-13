@@ -17,7 +17,7 @@ package docker
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -33,10 +33,8 @@ import (
 	"github.com/google/cadvisor/zfs"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 
-	dockercontainer "github.com/docker/docker/api/types/container"
 	docker "github.com/docker/docker/client"
 	"golang.org/x/net/context"
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -58,7 +56,7 @@ type dockerContainerHandler struct {
 	cgroupPaths map[string]string
 
 	// the docker storage driver
-	storageDriver    storageDriver
+	storageDriver    StorageDriver
 	fsInfo           fs.FsInfo
 	rootfsStorageDir string
 
@@ -71,9 +69,6 @@ type dockerContainerHandler struct {
 
 	// Image name used for this container.
 	image string
-
-	// The network mode of the container
-	networkMode dockercontainer.NetworkMode
 
 	// Filesystem handler.
 	fsHandler common.FsHandler
@@ -97,7 +92,7 @@ type dockerContainerHandler struct {
 
 var _ container.ContainerHandler = &dockerContainerHandler{}
 
-func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersion []int) (string, error) {
+func getRwLayerID(containerID, storageDir string, sd StorageDriver, dockerVersion []int) (string, error) {
 	const (
 		// Docker version >=1.10.0 have a randomized ID for the root fs of a container.
 		randomizedRWLayerMinorVersion = 10
@@ -107,7 +102,7 @@ func getRwLayerID(containerID, storageDir string, sd storageDriver, dockerVersio
 		return containerID, nil
 	}
 
-	bytes, err := ioutil.ReadFile(path.Join(storageDir, "image", string(sd), "layerdb", "mounts", containerID, rwLayerIDFile))
+	bytes, err := os.ReadFile(path.Join(storageDir, "image", string(sd), "layerdb", "mounts", containerID, rwLayerIDFile))
 	if err != nil {
 		return "", fmt.Errorf("failed to identify the read-write layer ID for container %q. - %v", containerID, err)
 	}
@@ -120,7 +115,7 @@ func newDockerContainerHandler(
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
-	storageDriver storageDriver,
+	storageDriver StorageDriver,
 	storageDir string,
 	cgroupSubsystems map[string]string,
 	inHostNamespace bool,
@@ -146,7 +141,7 @@ func newDockerContainerHandler(
 		storageDir = path.Join(rootFs, storageDir)
 	}
 
-	id := ContainerNameToDockerId(name)
+	id := dockerutil.ContainerNameToId(name)
 
 	// Add the Containers dir where the log files are stored.
 	// FIXME: Give `otherStorageDir` a more descriptive name.
@@ -159,27 +154,9 @@ func newDockerContainerHandler(
 
 	// Determine the rootfs storage dir OR the pool name to determine the device.
 	// For devicemapper, we only need the thin pool name, and that is passed in to this call
-	var (
-		rootfsStorageDir string
-		zfsFilesystem    string
-		zfsParent        string
-	)
-	switch storageDriver {
-	case aufsStorageDriver:
-		rootfsStorageDir = path.Join(storageDir, string(aufsStorageDriver), aufsRWLayer, rwLayerID)
-	case overlayStorageDriver:
-		rootfsStorageDir = path.Join(storageDir, string(storageDriver), rwLayerID, overlayRWLayer)
-	case overlay2StorageDriver:
-		rootfsStorageDir = path.Join(storageDir, string(storageDriver), rwLayerID, overlay2RWLayer)
-	case vfsStorageDriver:
-		rootfsStorageDir = path.Join(storageDir)
-	case zfsStorageDriver:
-		status, err := Status()
-		if err != nil {
-			return nil, fmt.Errorf("unable to determine docker status: %v", err)
-		}
-		zfsParent = status.DriverStatus[dockerutil.DriverStatusParentDataset]
-		zfsFilesystem = path.Join(zfsParent, rwLayerID)
+	rootfsStorageDir, zfsFilesystem, zfsParent, err := DetermineDeviceStorage(storageDriver, storageDir, rwLayerID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to determine device storage: %v", err)
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
@@ -187,6 +164,9 @@ func newDockerContainerHandler(
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 	}
+
+	// Do not report network metrics for containers that share netns with another container.
+	metrics := common.RemoveNetMetrics(includedMetrics, ctnr.HostConfig.NetworkMode.IsContainer())
 
 	// TODO: extract object mother method
 	handler := &dockerContainerHandler{
@@ -198,7 +178,7 @@ func newDockerContainerHandler(
 		rootfsStorageDir:   rootfsStorageDir,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
-		includedMetrics:    includedMetrics,
+		includedMetrics:    metrics,
 		zfsParent:          zfsParent,
 	}
 	// Timestamp returned by Docker is in time.RFC3339Nano format.
@@ -207,7 +187,7 @@ func newDockerContainerHandler(
 		// This should not happen, report the error just in case
 		return nil, fmt.Errorf("failed to parse the create timestamp %q for container %q: %v", ctnr.Created, id, err)
 	}
-	handler.libcontainerHandler = containerlibcontainer.NewHandler(cgroupManager, rootFs, ctnr.State.Pid, includedMetrics)
+	handler.libcontainerHandler = containerlibcontainer.NewHandler(cgroupManager, rootFs, ctnr.State.Pid, metrics)
 
 	// Add the name and bare ID as aliases of the container.
 	handler.reference = info.ContainerReference{
@@ -217,7 +197,6 @@ func newDockerContainerHandler(
 		Namespace: DockerNamespace,
 	}
 	handler.image = ctnr.Config.Image
-	handler.networkMode = ctnr.HostConfig.NetworkMode
 	// Only adds restartcount label if it's greater than 0
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
@@ -240,12 +219,12 @@ func newDockerContainerHandler(
 	handler.ipAddress = ipAddress
 
 	if includedMetrics.Has(container.DiskUsageMetrics) {
-		handler.fsHandler = &dockerFsHandler{
-			fsHandler:       common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, otherStorageDir, fsInfo),
-			thinPoolWatcher: thinPoolWatcher,
-			zfsWatcher:      zfsWatcher,
-			deviceID:        ctnr.GraphDriver.Data["DeviceId"],
-			zfsFilesystem:   zfsFilesystem,
+		handler.fsHandler = &FsHandler{
+			FsHandler:       common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, otherStorageDir, fsInfo),
+			ThinPoolWatcher: thinPoolWatcher,
+			ZfsWatcher:      zfsWatcher,
+			DeviceID:        ctnr.GraphDriver.Data["DeviceId"],
+			ZfsFilesystem:   zfsFilesystem,
 		}
 	}
 
@@ -269,63 +248,27 @@ func newDockerContainerHandler(
 	return handler, nil
 }
 
-// dockerFsHandler is a composite FsHandler implementation the incorporates
-// the common fs handler, a devicemapper ThinPoolWatcher, and a zfsWatcher
-type dockerFsHandler struct {
-	fsHandler common.FsHandler
-
-	// thinPoolWatcher is the devicemapper thin pool watcher
-	thinPoolWatcher *devicemapper.ThinPoolWatcher
-	// deviceID is the id of the container's fs device
-	deviceID string
-
-	// zfsWatcher is the zfs filesystem watcher
-	zfsWatcher *zfs.ZfsWatcher
-	// zfsFilesystem is the docker zfs filesystem
-	zfsFilesystem string
-}
-
-var _ common.FsHandler = &dockerFsHandler{}
-
-func (h *dockerFsHandler) Start() {
-	h.fsHandler.Start()
-}
-
-func (h *dockerFsHandler) Stop() {
-	h.fsHandler.Stop()
-}
-
-func (h *dockerFsHandler) Usage() common.FsUsage {
-	usage := h.fsHandler.Usage()
-
-	// When devicemapper is the storage driver, the base usage of the container comes from the thin pool.
-	// We still need the result of the fsHandler for any extra storage associated with the container.
-	// To correctly factor in the thin pool usage, we should:
-	// * Usage the thin pool usage as the base usage
-	// * Calculate the overall usage by adding the overall usage from the fs handler to the thin pool usage
-	if h.thinPoolWatcher != nil {
-		thinPoolUsage, err := h.thinPoolWatcher.GetUsage(h.deviceID)
+func DetermineDeviceStorage(storageDriver StorageDriver, storageDir string, rwLayerID string) (
+	rootfsStorageDir string, zfsFilesystem string, zfsParent string, err error) {
+	switch storageDriver {
+	case AufsStorageDriver:
+		rootfsStorageDir = path.Join(storageDir, string(AufsStorageDriver), aufsRWLayer, rwLayerID)
+	case OverlayStorageDriver:
+		rootfsStorageDir = path.Join(storageDir, string(storageDriver), rwLayerID, overlayRWLayer)
+	case Overlay2StorageDriver:
+		rootfsStorageDir = path.Join(storageDir, string(storageDriver), rwLayerID, overlay2RWLayer)
+	case VfsStorageDriver:
+		rootfsStorageDir = path.Join(storageDir)
+	case ZfsStorageDriver:
+		var status info.DockerStatus
+		status, err = Status()
 		if err != nil {
-			// TODO: ideally we should keep track of how many times we failed to get the usage for this
-			// device vs how many refreshes of the cache there have been, and display an error e.g. if we've
-			// had at least 1 refresh and we still can't find the device.
-			klog.V(5).Infof("unable to get fs usage from thin pool for device %s: %v", h.deviceID, err)
-		} else {
-			usage.BaseUsageBytes = thinPoolUsage
-			usage.TotalUsageBytes += thinPoolUsage
+			return
 		}
+		zfsParent = status.DriverStatus[dockerutil.DriverStatusParentDataset]
+		zfsFilesystem = path.Join(zfsParent, rwLayerID)
 	}
-
-	if h.zfsWatcher != nil {
-		zfsUsage, err := h.zfsWatcher.GetUsage(h.zfsFilesystem)
-		if err != nil {
-			klog.V(5).Infof("unable to get fs usage from zfs for filesystem %s: %v", h.zfsFilesystem, err)
-		} else {
-			usage.BaseUsageBytes = zfsUsage
-			usage.TotalUsageBytes += zfsUsage
-		}
-	}
-	return usage
+	return
 }
 
 func (h *dockerContainerHandler) Start() {
@@ -344,16 +287,10 @@ func (h *dockerContainerHandler) ContainerReference() (info.ContainerReference, 
 	return h.reference, nil
 }
 
-func (h *dockerContainerHandler) needNet() bool {
-	if h.includedMetrics.Has(container.NetworkUsageMetrics) {
-		return !h.networkMode.IsContainer()
-	}
-	return false
-}
-
 func (h *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := h.includedMetrics.Has(container.DiskUsageMetrics)
-	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, h.needNet(), hasFilesystem)
+	hasNetwork := h.includedMetrics.Has(container.NetworkUsageMetrics)
+	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, hasNetwork, hasFilesystem)
 
 	spec.Labels = h.labels
 	spec.Envs = h.envs
@@ -363,115 +300,16 @@ func (h *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	return spec, err
 }
 
-func (h *dockerContainerHandler) getFsStats(stats *info.ContainerStats) error {
-	mi, err := h.machineInfoFactory.GetMachineInfo()
-	if err != nil {
-		return err
-	}
-
-	if h.includedMetrics.Has(container.DiskIOMetrics) {
-		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
-	}
-
-	if !h.includedMetrics.Has(container.DiskUsageMetrics) {
-		return nil
-	}
-	var device string
-	switch h.storageDriver {
-	case devicemapperStorageDriver:
-		// Device has to be the pool name to correlate with the device name as
-		// set in the machine info filesystems.
-		device = h.poolName
-	case aufsStorageDriver, overlayStorageDriver, overlay2StorageDriver, vfsStorageDriver:
-		deviceInfo, err := h.fsInfo.GetDirFsDevice(h.rootfsStorageDir)
-		if err != nil {
-			return fmt.Errorf("unable to determine device info for dir: %v: %v", h.rootfsStorageDir, err)
-		}
-		device = deviceInfo.Device
-	case zfsStorageDriver:
-		device = h.zfsParent
-	default:
-		return nil
-	}
-
-	var (
-		limit  uint64
-		fsType string
-	)
-
-	var fsInfo *info.FsInfo
-
-	// Docker does not impose any filesystem limits for containers. So use capacity as limit.
-	for _, fs := range mi.Filesystems {
-		if fs.Device == device {
-			limit = fs.Capacity
-			fsType = fs.Type
-			fsInfo = &fs
-			break
-		}
-	}
-
-	fsStat := info.FsStats{Device: device, Type: fsType, Limit: limit}
-	usage := h.fsHandler.Usage()
-	fsStat.BaseUsage = usage.BaseUsageBytes
-	fsStat.Usage = usage.TotalUsageBytes
-	fsStat.Inodes = usage.InodeUsage
-
-	if fsInfo != nil {
-		fileSystems, err := h.fsInfo.GetGlobalFsInfo()
-
-		if err == nil {
-			addDiskStats(fileSystems, fsInfo, &fsStat)
-		} else {
-			klog.Errorf("Unable to obtain diskstats for filesystem %s: %v", fsStat.Device, err)
-		}
-	}
-
-	stats.Filesystem = append(stats.Filesystem, fsStat)
-
-	return nil
-}
-
-func addDiskStats(fileSystems []fs.Fs, fsInfo *info.FsInfo, fsStats *info.FsStats) {
-	if fsInfo == nil {
-		return
-	}
-
-	for _, fileSys := range fileSystems {
-		if fsInfo.DeviceMajor == fileSys.DiskStats.Major &&
-			fsInfo.DeviceMinor == fileSys.DiskStats.Minor {
-			fsStats.ReadsCompleted = fileSys.DiskStats.ReadsCompleted
-			fsStats.ReadsMerged = fileSys.DiskStats.ReadsMerged
-			fsStats.SectorsRead = fileSys.DiskStats.SectorsRead
-			fsStats.ReadTime = fileSys.DiskStats.ReadTime
-			fsStats.WritesCompleted = fileSys.DiskStats.WritesCompleted
-			fsStats.WritesMerged = fileSys.DiskStats.WritesMerged
-			fsStats.SectorsWritten = fileSys.DiskStats.SectorsWritten
-			fsStats.WriteTime = fileSys.DiskStats.WriteTime
-			fsStats.IoInProgress = fileSys.DiskStats.IoInProgress
-			fsStats.IoTime = fileSys.DiskStats.IoTime
-			fsStats.WeightedIoTime = fileSys.DiskStats.WeightedIoTime
-			break
-		}
-	}
-}
-
 // TODO(vmarmol): Get from libcontainer API instead of cgroup manager when we don't have to support older Dockers.
 func (h *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 	stats, err := h.libcontainerHandler.GetStats()
 	if err != nil {
 		return stats, err
 	}
-	// Clean up stats for containers that don't have their own network - this
-	// includes containers running in Kubernetes pods that use the network of the
-	// infrastructure container. This stops metrics being reported multiple times
-	// for each container in a pod.
-	if !h.needNet() {
-		stats.Network = info.NetworkStats{}
-	}
 
 	// Get filesystem stats.
-	err = h.getFsStats(stats)
+	err = FsStats(stats, h.machineInfoFactory, h.includedMetrics, h.storageDriver,
+		h.fsHandler, h.fsInfo, h.poolName, h.rootfsStorageDir, h.zfsParent)
 	if err != nil {
 		return stats, err
 	}

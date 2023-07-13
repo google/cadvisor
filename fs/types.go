@@ -22,9 +22,16 @@ type Context struct {
 	// docker root directory.
 	Docker DockerContext
 	Crio   CrioContext
+	Podman PodmanContext
 }
 
 type DockerContext struct {
+	Root         string
+	Driver       string
+	DriverStatus map[string]string
+}
+
+type PodmanContext struct {
 	Root         string
 	Driver       string
 	DriverStatus map[string]string

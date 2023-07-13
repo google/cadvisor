@@ -73,7 +73,7 @@ Please reach out and get involved in the project, we're actively looking for mor
 ### Core Team
 * [@bobbypage, Google](https://github.com/bobbypage)
 * [@iwankgb, Independent](https://github.com/iwankgb)
-* [@creatone, Intel](https://github.com/creatone)
+* [@creatone, Independent](https://github.com/creatone)
 * [@dims, VMWare](https://github.com/dims)
 * [@mrunalp, RedHat](https://github.com/mrunalp)
 

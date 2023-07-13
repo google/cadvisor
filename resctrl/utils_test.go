@@ -24,7 +24,6 @@ package resctrl
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -86,7 +85,7 @@ func fillPids(path string, pids []int) error {
 }
 
 func mockResctrl() string {
-	path, _ := ioutil.TempDir("", "resctrl")
+	path, _ := os.MkdirTemp("", "resctrl")
 
 	var files = []struct {
 		path  string
@@ -115,6 +114,14 @@ func mockResctrl() string {
 		},
 		{
 			filepath.Join(path, schemataFileName),
+			touch,
+		},
+		{
+			filepath.Join(path, modeFileName),
+			touch,
+		},
+		{
+			filepath.Join(path, sizeFileName),
 			touch,
 		},
 		{
@@ -223,12 +230,12 @@ func mockResctrlMonData(path string) {
 
 	for _, file := range files {
 		_ = touch(file.path)
-		_ = ioutil.WriteFile(file.path, []byte(file.value), os.ModePerm)
+		_ = os.WriteFile(file.path, []byte(file.value), os.ModePerm)
 	}
 }
 
 func mockContainersPids() string {
-	path, _ := ioutil.TempDir("", "cgroup")
+	path, _ := os.MkdirTemp("", "cgroup")
 	// container
 	_ = touchDir(filepath.Join(path, "container"))
 	_ = touch(filepath.Join(path, "container", cgroups.CgroupProcesses))
@@ -248,7 +255,7 @@ func mockContainersPids() string {
 }
 
 func mockProcFs() string {
-	path, _ := ioutil.TempDir("", "proc")
+	path, _ := os.MkdirTemp("", "proc")
 
 	var files = []struct {
 		path  string
@@ -375,7 +382,7 @@ func TestGetPids(t *testing.T) {
 
 func TestGetAllProcessThreads(t *testing.T) {
 	mockProcFs := func() string {
-		path, _ := ioutil.TempDir("", "proc")
+		path, _ := os.MkdirTemp("", "proc")
 
 		var files = []struct {
 			path  string

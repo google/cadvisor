@@ -15,7 +15,7 @@
 package cloudinfo
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -48,7 +48,7 @@ func (provider) IsActiveProvider() bool {
 }
 
 func fileContainsAmazonIdentifier(filename string) bool {
-	fileContent, err := ioutil.ReadFile(filename)
+	fileContent, err := os.ReadFile(filename)
 	if err != nil {
 		return false
 	}

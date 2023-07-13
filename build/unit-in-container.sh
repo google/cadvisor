@@ -40,5 +40,5 @@ function run_tests() {
 
 GO_FLAGS=${GO_FLAGS:-"-tags=netgo -race"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
-GOLANG_VERSION=${GOLANG_VERSION:-"1.19"}
+GOLANG_VERSION=${GOLANG_VERSION:-"1.20"}
 run_tests

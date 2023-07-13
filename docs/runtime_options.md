@@ -63,6 +63,12 @@ From [glog](https://github.com/golang/glog) here are some flags we find useful:
 --docker-tls-ca="ca.pem": trusted CA for TLS-connection with docker
 ```
 
+## Podman
+
+```bash
+--podman="unix:///var/run/podman/podman.sock": podman endpoint (default "unix:///var/run/podman/podman.sock")
+```
+
 ## Housekeeping
 
 Housekeeping is the periodic actions cAdvisor takes. During these actions, cAdvisor will gather container stats. These flags control how and when cAdvisor performs housekeeping.
