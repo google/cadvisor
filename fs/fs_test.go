@@ -40,6 +40,9 @@ func TestMountInfoFromDir(t *testing.T) {
 }
 
 func TestGetDiskStatsMap(t *testing.T) {
+	origBufSize := bufSize
+	bufSize = 100
+	defer func() { bufSize = origBufSize }()
 	diskStatsMap, err := getDiskStatsMap("test_resources/diskstats")
 	if err != nil {
 		t.Errorf("Error calling getDiskStatsMap %s", err)
@@ -92,6 +95,9 @@ func TestGetDiskStatsMap(t *testing.T) {
 }
 
 func TestGetDiskStatsMapMajorMinorNum(t *testing.T) {
+	origBufSize := bufSize
+	bufSize = 100
+	defer func() { bufSize = origBufSize }()
 	diskStatsMap, err := getDiskStatsMap("test_resources/diskstats")
 	if err != nil {
 		t.Errorf("Error calling getDiskStatsMap %s", err)
@@ -108,6 +114,9 @@ func TestGetDiskStatsMapMajorMinorNum(t *testing.T) {
 }
 
 func TestFileNotExist(t *testing.T) {
+	origBufSize := bufSize
+	bufSize = 100
+	defer func() { bufSize = origBufSize }()
 	_, err := getDiskStatsMap("/file_does_not_exist")
 	if err != nil {
 		t.Fatalf("getDiskStatsMap must not error for absent file: %s", err)
