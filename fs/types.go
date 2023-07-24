@@ -57,6 +57,7 @@ const (
 	ZFS          FsType = "zfs"
 	DeviceMapper FsType = "devicemapper"
 	VFS          FsType = "vfs"
+	NFS          FsType = "nfs"
 )
 
 type Fs struct {
