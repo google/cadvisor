@@ -469,7 +469,7 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 	for {
 		buf := make([]byte, bufSize)
 		count, err := file.Read(buf)
-		buf = append(leftover, buf...)
+		buf = append(leftover, bytes.Trim(buf, "\x00")...)
 		klog.V(10).Infof("read %d bytes in getDiskStatsMap()", count)
 		if err == io.EOF {
 			break
