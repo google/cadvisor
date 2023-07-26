@@ -413,10 +413,6 @@ func (i *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error
 				// if /dev/zfs is not present default to VFS
 				fallthrough
 			case NFS.String():
-				if !utils.FileExists(partition.mountpoint) {
-					klog.V(4).Infof("the file system type is %s, partition mountpoint does not exist: %v", partition.fsType, partition.mountpoint)
-					break
-				}
 				devId := fmt.Sprintf("%d:%d", partition.major, partition.minor)
 				if v, ok := nfsInfo[devId]; ok {
 					fs = v
@@ -424,6 +420,10 @@ func (i *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error
 				}
 				var inodes, inodesFree uint64
 				fs.Capacity, fs.Free, fs.Available, inodes, inodesFree, err = getVfsStats(partition.mountpoint)
+				if err != nil {
+					klog.V(4).Infof("the file system type is %s, partition mountpoint does not exist: %v, error: %v", partition.fsType, partition.mountpoint, err)
+					break
+				}
 				fs.Inodes = &inodes
 				fs.InodesFree = &inodesFree
 				fs.Type = VFS
