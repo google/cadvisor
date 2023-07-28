@@ -295,7 +295,7 @@ func (m *manager) Start() error {
 		klog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
 
-	rawWatcher, err := raw.NewRawContainerWatcher()
+	rawWatcher, err := raw.NewRawContainerWatcher(m.includedMetrics)
 	if err != nil {
 		return err
 	}
