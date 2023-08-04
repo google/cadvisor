@@ -128,6 +128,10 @@ func (fs *FakeSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 	return "8:0\n", nil
 }
 
+func (fs *FakeSysFs) IsBlockDeviceHidden(name string) (bool, error) {
+	return false, nil
+}
+
 func (fs *FakeSysFs) GetNetworkDevices() ([]os.FileInfo, error) {
 	return []os.FileInfo{&fs.info}, nil
 }
