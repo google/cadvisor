@@ -216,7 +216,9 @@ func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includ
 	for name, plugin := range plugins {
 		watcher, err := plugin.Register(factory, fsInfo, includedMetrics)
 		if err != nil {
-			klog.V(5).Infof("Registration of the %s container factory failed: %v", name, err)
+			klog.Infof("Registration of the %s container factory failed: %v", name, err)
+		} else {
+			klog.Infof("Registration of the %s container factory successfully", name)
 		}
 		if watcher != nil {
 			containerWatchers = append(containerWatchers, watcher)
