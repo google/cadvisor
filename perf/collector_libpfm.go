@@ -209,11 +209,11 @@ func (c *collector) setup() error {
 
 		// Group is prepared so we should reset and enable counting.
 		for _, fd := range leaderFileDescriptors {
-			err = c.ioctlSetInt(fd, unix.PERF_EVENT_IOC_RESET, 0)
+			err = c.ioctlSetInt(fd, unix.PERF_EVENT_IOC_RESET, unix.PERF_IOC_FLAG_GROUP)
 			if err != nil {
 				return err
 			}
-			err = c.ioctlSetInt(fd, unix.PERF_EVENT_IOC_ENABLE, 0)
+			err = c.ioctlSetInt(fd, unix.PERF_EVENT_IOC_ENABLE, unix.PERF_IOC_FLAG_GROUP)
 			if err != nil {
 				return err
 			}
@@ -289,14 +289,8 @@ type eventInfo struct {
 
 func (c *collector) registerEvent(event eventInfo, leaderFileDescriptors map[int]int) (map[int]int, error) {
 	newLeaderFileDescriptors := make(map[int]int, len(c.onlineCPUs))
-	var pid, flags int
-	if event.isGroupLeader {
-		pid = event.pid
-		flags = unix.PERF_FLAG_FD_CLOEXEC | unix.PERF_FLAG_PID_CGROUP
-	} else {
-		pid = -1
-		flags = unix.PERF_FLAG_FD_CLOEXEC
-	}
+	pid := event.pid
+	flags := unix.PERF_FLAG_FD_CLOEXEC | unix.PERF_FLAG_PID_CGROUP
 
 	setAttributes(event.config, event.isGroupLeader)
 
