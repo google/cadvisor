@@ -88,7 +88,6 @@ lint:
 	fi
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
 	@golangci-lint run
-	@cd cmd && golangci-lint run
 
 clean:
 	@rm -f *.test cadvisor
