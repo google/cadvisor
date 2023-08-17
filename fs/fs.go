@@ -636,7 +636,7 @@ func GetDirUsage(dir string) (UsageInfo, error) {
 
 	rootStat, ok := rootInfo.Sys().(*syscall.Stat_t)
 	if !ok {
-		return usage, fmt.Errorf("unsuported fileinfo for getting inode usage of %q", dir)
+		return usage, fmt.Errorf("unsupported fileinfo for getting inode usage of %q", dir)
 	}
 
 	rootDevID := rootStat.Dev
