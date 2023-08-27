@@ -4,7 +4,7 @@ jobs:
   test:
     strategy:
       matrix:
-        go-versions: ['1.20', '1.19']
+        go-versions: ['1.20', '1.21']
         platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
@@ -14,6 +14,7 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go-versions }}
+        check-latest: true
     - name: Checkout code
       uses: actions/checkout@v4
     - name: Run presubmit checks
@@ -30,7 +31,7 @@ jobs:
   test-integration:
     strategy:
       matrix:
-        go-versions: ['1.20', '1.19']
+        go-versions: ['1.20', '1.21']
         platform: [ubuntu-20.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
