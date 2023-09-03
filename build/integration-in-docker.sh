@@ -36,9 +36,7 @@ function run_tests() {
     env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/healthz"
 
   if [ "$BUILD_PACKAGES" != "" ]; then
-    BUILD_CMD="echo 'deb http://deb.debian.org/debian bullseye-backports main'>/etc/apt/sources.list.d/bullseye.list && \
-    apt update && \
-    apt install -y -t bullseye-backports $BUILD_PACKAGES && \
+    BUILD_CMD="apt update && apt install $BUILD_PACKAGES && \
     $BUILD_CMD"
   fi
   docker run --rm \

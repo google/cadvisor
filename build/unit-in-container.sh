@@ -24,9 +24,7 @@ fi
 function run_tests() {
   BUILD_CMD="make test"
   if [ "$BUILD_PACKAGES" != "" ]; then
-    BUILD_CMD="echo 'deb http://deb.debian.org/debian bullseye-backports main'>/etc/apt/sources.list.d/bullseye.list
-    apt update
-    apt install -y -t bullseye-backports $BUILD_PACKAGES
+    BUILD_CMD="apt update && apt install $BUILD_PACKAGES
     $BUILD_CMD"
   fi
 
