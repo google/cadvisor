@@ -61,10 +61,10 @@ function run_tests() {
     --cap-add="sys_admin" \
     --entrypoint="" \
     gcr.io/k8s-testimages/bootstrap \
-    bash -c "echo 'deb http://deb.debian.org/debian bullseye-backports main'>/etc/apt/sources.list.d/bullseye.list && \
-    cat /etc/apt/sources.list.d/bullseye.list && \
+    bash -c "echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
+    cat /etc/apt/sources.list.d/buster.list && \
     apt update && \
-    apt install -y -t bullseye-backports $PACKAGES && \
+    apt install -y -t buster-backports $PACKAGES && \
     CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
 }
 
