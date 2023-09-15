@@ -311,3 +311,13 @@ func BenchmarkProcessLimitsFile(b *testing.B) {
 	// Ensure the compiler doesn't optimize away the benchmark
 	_ = ulimits
 }
+
+func TestProcessMaxOpenFileLimitLine(t *testing.T) {
+	line := "            1073741816           1073741816           files     "
+
+	ulimit, err := processMaxOpenFileLimitLine("max_open_files", line)
+	assert.Nil(t, err)
+	assert.Equal(t, "max_open_files", ulimit.Name)
+	assert.Equal(t, int64(1073741816), ulimit.SoftLimit)
+	assert.Equal(t, int64(1073741816), ulimit.HardLimit)
+}
