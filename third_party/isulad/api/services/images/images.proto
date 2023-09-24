@@ -1,0 +1,155 @@
+// #######################################################################
+// ##- Copyright (c) Huawei Technologies Co., Ltd. 2019-2022. All rights reserved.
+// # - iSulad licensed under the Mulan PSL v2.
+// # - You can use this software according to the terms and conditions of the Mulan PSL v2.
+// # - You may obtain a copy of Mulan PSL v2 at:
+// # -     http://license.coscl.org.cn/MulanPSL2
+// # - THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+// # - IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+// # - PURPOSE.
+// # - See the Mulan PSL v2 for more details.
+// ##- @Description: generate grpc
+// ##- @Author: lifeng
+// ##- @Create: 2019-04-25
+// #######################################################################
+
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+
+import "google/protobuf/timestamp.proto";
+
+package images;
+
+service ImagesService {
+	rpc List(ListImagesRequest) returns (ListImagesResponse);
+	rpc Delete(DeleteImageRequest) returns (DeleteImageResponse);
+	rpc Load(LoadImageRequest) returns (LoadImageResponse);
+	rpc Inspect(InspectImageRequest) returns (InspectImageResponse);
+	rpc Login(LoginRequest) returns (LoginResponse);
+	rpc Logout(LogoutRequest) returns (LogoutResponse);
+	rpc Tag(TagImageRequest) returns (TagImageResponse);
+	rpc Import(ImportRequest) returns (ImportResponse);
+	rpc Search(SearchRequest) returns (SearchResponse);
+}
+
+message Descriptor {
+	string media_type = 1;
+	string digest = 2;
+	int64 size = 3;
+}
+
+message Image {
+	string name = 1;
+	map<string, string> labels = 2;
+	Descriptor target = 3;
+	google.protobuf.Timestamp created_at = 4;
+	google.protobuf.Timestamp updated_at = 5;
+}
+
+message ListImagesRequest {
+	map<string, string>  filters = 1;
+}
+
+message ListImagesResponse {
+	repeated Image images = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message DeleteImageRequest {
+	string name = 1;
+	bool force = 2;
+}
+
+message DeleteImageResponse {
+	string name = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message TagImageRequest {
+	string src_name = 1;
+	string dest_name = 2;
+}
+
+message TagImageResponse {
+	uint32 cc = 1;
+	string errmsg = 2;
+}
+
+message LoadImageRequest {
+	string file = 1;
+	string type = 2;
+	string tag = 3;
+}
+
+message LoadImageResponse {
+	uint32 cc = 1;
+	string errmsg = 2;
+}
+
+message ImportRequest {
+	string file = 1;
+	string tag = 2;
+}
+
+message ImportResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message InspectImageRequest {
+	string id = 1;
+	bool bformat = 2;
+	int32 timeout = 3;
+}
+
+message InspectImageResponse {
+	string ImageJSON = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message LoginRequest {
+	string username = 1;
+	string password = 2;
+	string server = 3;
+	string type = 4;
+}
+
+message LoginResponse {
+	uint32 cc = 1;
+	string errmsg = 2;
+}
+
+message LogoutRequest {
+	string server = 1;
+	string type = 2;
+}
+
+message LogoutResponse {
+	uint32 cc = 1;
+	string errmsg = 2;
+}
+
+message SearchImage {
+	int64 star_count = 1;
+	bool is_official = 2;
+	string name = 3;
+	bool is_automated = 4;
+	string description = 5;
+}
+
+message SearchRequest {
+	string search_name = 1;
+	uint32 limit = 2;
+	map<string, string>  filters = 3;
+}
+
+message SearchResponse {
+	uint32 result_num = 1;
+	repeated SearchImage search_result = 2;
+	uint32 cc = 3;
+	string errmsg = 4;
+}
