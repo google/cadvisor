@@ -296,3 +296,28 @@ func TestClearReferencedBytesWhenClearRefsMissing(t *testing.T) {
 	err := clearReferencedBytes(pids, 0, 1)
 	assert.Nil(t, err)
 }
+
+var ulimits []info.UlimitSpec
+
+func BenchmarkProcessLimitsFile(b *testing.B) {
+	content, err := os.ReadFile("testdata/limits")
+	assert.Nil(b, err)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		ulimits = processLimitsFile(string(content))
+	}
+
+	// Ensure the compiler doesn't optimize away the benchmark
+	_ = ulimits
+}
+
+func TestProcessMaxOpenFileLimitLine(t *testing.T) {
+	line := "            1073741816           1073741816           files     "
+
+	ulimit, err := processMaxOpenFileLimitLine("max_open_files", line)
+	assert.Nil(t, err)
+	assert.Equal(t, "max_open_files", ulimit.Name)
+	assert.Equal(t, int64(1073741816), ulimit.SoftLimit)
+	assert.Equal(t, int64(1073741816), ulimit.HardLimit)
+}
