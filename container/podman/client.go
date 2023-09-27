@@ -33,8 +33,8 @@ type Connection struct {
 	Client *http.Client
 }
 
-func client(ctx *context.Context) (*Connection, error) {
-	url, err := urllib.Parse(*endpointFlag)
+func (opts *Options) client(ctx *context.Context) (*Connection, error) {
+	url, err := urllib.Parse(opts.podmanEndpoint)
 	if err != nil {
 		return nil, err
 	}

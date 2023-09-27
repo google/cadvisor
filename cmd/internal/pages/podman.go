@@ -21,6 +21,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/google/cadvisor/container/docker"
 	dockerutil "github.com/google/cadvisor/container/docker/utils"
 	"github.com/google/cadvisor/container/podman"
 	info "github.com/google/cadvisor/info/v1"
@@ -41,12 +42,12 @@ func servePodmanPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 
 	if containerName == "/" {
 		// Scenario for all containers.
-		status, err := podman.Status()
+		status, err := docker.DefaultOptions().Status()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to get podman info: %v", err), http.StatusInternalServerError)
 			return
 		}
-		images, err := podman.Images()
+		images, err := podman.DefaultOptions().Images()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to get podman images: %v", err), http.StatusInternalServerError)
 			return

@@ -132,22 +132,22 @@ func (f *crioFactory) DebugInfo() map[string][]string {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (container.Factories, error) {
 	client, err := Client()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	info, err := client.Info()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// TODO determine crio version so we can work differently w/ future versions if needed
 
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems(includedMetrics)
 	if err != nil {
-		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
+		return nil, fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
 
 	klog.V(1).Infof("Registering CRI-O factory")
@@ -161,6 +161,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		includedMetrics:    includedMetrics,
 	}
 
-	container.RegisterContainerHandlerFactory(f, []watcher.ContainerWatchSource{watcher.Raw})
-	return nil
+	return container.Factories{
+		watcher.Raw: []container.ContainerHandlerFactory{f},
+	}, nil
 }

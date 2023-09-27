@@ -15,49 +15,75 @@
 package docker
 
 import (
+	"sync"
 	"time"
 
 	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
 
+	dclient "github.com/docker/docker/client"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/watcher"
 )
 
 const dockerClientTimeout = 10 * time.Second
 
-// NewPlugin returns an implementation of container.Plugin suitable for passing to container.RegisterPlugin()
-func NewPlugin() container.Plugin {
-	return &plugin{}
+func NewPluginWithOptions(o *Options) container.Plugin {
+	return &plugin{options: o}
 }
 
-type plugin struct{}
+type Options struct {
+	DockerEndpoint string
+	DockerTLS      bool
+	DockerCert     string
+	DockerKey      string
+	DockerCA       string
+
+	dockerClientOnce sync.Once
+	dockerClient     *dclient.Client
+	dockerClientErr  error
+
+	dockerRootDirOnce sync.Once
+	dockerRootDir     string
+}
+
+func DefaultOptions() *Options {
+	return &Options{
+		DockerEndpoint: "unix:///var/run/docker.sock",
+		DockerTLS:      false,
+		DockerCert:     "cert.pem",
+		DockerKey:      "key.pem",
+		DockerCA:       "ca.pem",
+	}
+}
+
+type plugin struct {
+	options *Options
+}
 
 func (p *plugin) InitializeFSContext(context *fs.Context) error {
 	SetTimeout(dockerClientTimeout)
 	// Try to connect to docker indefinitely on startup.
-	dockerStatus := retryDockerStatus()
+	dockerStatus := p.retryDockerStatus()
 	context.Docker = fs.DockerContext{
-		Root:         RootDir(),
+		Root:         p.options.RootDir(),
 		Driver:       dockerStatus.Driver,
 		DriverStatus: dockerStatus.DriverStatus,
 	}
 	return nil
 }
 
-func (p *plugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
-	err := Register(factory, fsInfo, includedMetrics)
-	return nil, err
+func (p *plugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (container.Factories, error) {
+	return Register(p.options, factory, fsInfo, includedMetrics)
 }
 
-func retryDockerStatus() info.DockerStatus {
+func (p *plugin) retryDockerStatus() info.DockerStatus {
 	startupTimeout := dockerClientTimeout
 	maxTimeout := 4 * startupTimeout
 	for {
 		ctx, _ := context.WithTimeout(context.Background(), startupTimeout)
-		dockerStatus, err := StatusWithContext(ctx)
+		dockerStatus, err := p.options.StatusWithContext(ctx)
 		if err == nil {
 			return dockerStatus
 		}

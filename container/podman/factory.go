@@ -15,10 +15,8 @@
 package podman
 
 import (
-	"flag"
 	"fmt"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/google/cadvisor/container"
@@ -35,30 +33,6 @@ const (
 	rootDirRetryPeriod = time.Second
 	containerBaseName  = "container"
 )
-
-var (
-	endpointFlag = flag.String("podman", "unix:///var/run/podman/podman.sock", "podman endpoint")
-)
-
-var (
-	rootDir     string
-	rootDirOnce sync.Once
-)
-
-func RootDir() string {
-	rootDirOnce.Do(func() {
-		for i := 0; i < rootDirRetries; i++ {
-			status, err := Status()
-			if err == nil && status.RootDir != "" {
-				rootDir = status.RootDir
-				break
-			} else {
-				time.Sleep(rootDirRetryPeriod)
-			}
-		}
-	})
-	return rootDir
-}
 
 type podmanFactory struct {
 	// Information about the mounted cgroup subsystems.
@@ -77,6 +51,20 @@ type podmanFactory struct {
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
 
 	zfsWatcher *zfs.ZfsWatcher
+
+	podmanOptions *Options
+}
+
+type Options struct {
+	podmanEndpoint string
+	dockerOptions  *docker.Options
+}
+
+func DefaultOptions() *Options {
+	return &Options{
+		podmanEndpoint: "unix:///var/run/podman/podman.sock",
+		dockerOptions:  docker.DefaultOptions(),
+	}
 }
 
 func (f *podmanFactory) CanHandleAndAccept(name string) (handle bool, accept bool, err error) {
@@ -90,7 +78,7 @@ func (f *podmanFactory) CanHandleAndAccept(name string) (handle bool, accept boo
 
 	id := dockerutil.ContainerNameToId(name)
 
-	ctnr, err := InspectContainer(id)
+	ctnr, err := f.podmanOptions.InspectContainer(id)
 	if err != nil || !ctnr.State.Running {
 		return false, true, fmt.Errorf("error inspecting container: %v", err)
 	}
@@ -109,5 +97,5 @@ func (f *podmanFactory) String() string {
 func (f *podmanFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
 	return newPodmanContainerHandler(name, f.machineInfoFactory, f.fsInfo,
 		f.storageDriver, f.storageDir, f.cgroupSubsystem, inHostNamespace,
-		metadataEnvAllowList, f.metrics, f.thinPoolName, f.thinPoolWatcher, f.zfsWatcher)
+		metadataEnvAllowList, f.metrics, f.thinPoolName, f.thinPoolWatcher, f.zfsWatcher, f.podmanOptions)
 }

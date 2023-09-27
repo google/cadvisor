@@ -25,7 +25,6 @@ import (
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/pkg/errors"
 
-	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/docker/utils"
 	v1 "github.com/google/cadvisor/info/v1"
 )
@@ -56,11 +55,11 @@ func validateResponse(gotError error, response *http.Response) error {
 	return err
 }
 
-func apiGetRequest(url string, item interface{}) error {
+func (opts *Options) apiGetRequest(url string, item interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	conn, err := client(&ctx)
+	conn, err := opts.client(&ctx)
 	if err != nil {
 		return err
 	}
@@ -91,33 +90,33 @@ func apiGetRequest(url string, item interface{}) error {
 	return ctx.Err()
 }
 
-func Images() ([]v1.DockerImage, error) {
+func (opts *Options) Images() ([]v1.DockerImage, error) {
 	var summaries []dockertypes.ImageSummary
-	err := apiGetRequest("http://d/v1.0.0/images/json", &summaries)
+	err := opts.apiGetRequest("http://d/v1.0.0/images/json", &summaries)
 	if err != nil {
 		return nil, err
 	}
 	return utils.SummariesToImages(summaries)
 }
 
-func Status() (v1.DockerStatus, error) {
-	podmanInfo, err := GetInfo()
+func (p *plugin) Status() (v1.DockerStatus, error) {
+	podmanInfo, err := p.options.GetInfo()
 	if err != nil {
 		return v1.DockerStatus{}, err
 	}
 
-	return docker.StatusFromDockerInfo(*podmanInfo)
+	return p.options.dockerOptions.StatusFromDockerInfo(*podmanInfo)
 }
 
-func GetInfo() (*dockertypes.Info, error) {
+func (opts *Options) GetInfo() (*dockertypes.Info, error) {
 	var info dockertypes.Info
-	err := apiGetRequest("http://d/v1.0.0/info", &info)
+	err := opts.apiGetRequest("http://d/v1.0.0/info", &info)
 	return &info, err
 }
 
-func VersionString() (string, error) {
+func (opts *Options) VersionString() (string, error) {
 	var version dockertypes.Version
-	err := apiGetRequest("http://d/v1.0.0/version", &version)
+	err := opts.apiGetRequest("http://d/v1.0.0/version", &version)
 	if err != nil {
 		return "Unknown", err
 	}
@@ -125,8 +124,8 @@ func VersionString() (string, error) {
 	return version.Version, nil
 }
 
-func InspectContainer(id string) (dockertypes.ContainerJSON, error) {
+func (opts *Options) InspectContainer(id string) (dockertypes.ContainerJSON, error) {
 	var data dockertypes.ContainerJSON
-	err := apiGetRequest(fmt.Sprintf("http://d/v1.0.0/containers/%s/json", id), &data)
+	err := opts.apiGetRequest(fmt.Sprintf("http://d/v1.0.0/containers/%s/json", id), &data)
 	return data, err
 }

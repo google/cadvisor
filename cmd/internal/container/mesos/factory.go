@@ -31,6 +31,7 @@ import (
 	"github.com/google/cadvisor/watcher"
 )
 
+// TODO(@tpaschalis) Expose these as options instead of globals.
 var MesosAgentAddress = flag.String("mesos_agent", "127.0.0.1:5051", "Mesos agent address")
 var MesosAgentTimeout = flag.Duration("mesos_agent_timeout", 10*time.Second, "Mesos agent timeout")
 
@@ -125,16 +126,16 @@ func Register(
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
 	includedMetrics container.MetricSet,
-) error {
+) (container.Factories, error) {
 	client, err := newClient()
 
 	if err != nil {
-		return fmt.Errorf("unable to create mesos agent client: %v", err)
+		return nil, fmt.Errorf("unable to create mesos agent client: %v", err)
 	}
 
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems(includedMetrics)
 	if err != nil {
-		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
+		return nil, fmt.Errorf("failed to get cgroup subsystems: %v", err)
 	}
 
 	klog.V(1).Infof("Registering mesos factory")
@@ -145,6 +146,7 @@ func Register(
 		includedMetrics:    includedMetrics,
 		client:             client,
 	}
-	container.RegisterContainerHandlerFactory(factory, []watcher.ContainerWatchSource{watcher.Raw})
-	return nil
+	return container.Factories{
+		watcher.Raw: []container.ContainerHandlerFactory{factory},
+	}, nil
 }

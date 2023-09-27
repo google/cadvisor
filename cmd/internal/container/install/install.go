@@ -15,12 +15,10 @@
 // The install package registers all included container providers when imported
 package install
 
-import (
-	// Register all included container providers.
-	_ "github.com/google/cadvisor/cmd/internal/container/mesos/install"
-	_ "github.com/google/cadvisor/container/containerd/install"
-	_ "github.com/google/cadvisor/container/crio/install"
-	_ "github.com/google/cadvisor/container/docker/install"
-	_ "github.com/google/cadvisor/container/podman/install"
-	_ "github.com/google/cadvisor/container/systemd/install"
-)
+// Register all included container providers.
+// _ "github.com/google/cadvisor/cmd/internal/container/mesos/install"
+// _ "github.com/google/cadvisor/container/containerd/install"
+// _ "github.com/google/cadvisor/container/crio/install"
+//_ "github.com/google/cadvisor/container/docker/install"
+// _ "github.com/google/cadvisor/container/podman/install"
+// _ "github.com/google/cadvisor/container/systemd/install"

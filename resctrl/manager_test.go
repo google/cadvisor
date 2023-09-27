@@ -107,7 +107,7 @@ func TestNewManager(t *testing.T) {
 			enabledMBM = test.enabledMBM
 			return nil
 		}
-		got, err := NewManager(0, setup, "", test.inHostNamespace)
+		got, err := NewManager(0, setup, "", test.inHostNamespace, false)
 		assert.Equal(t, got, test.expected)
 		checkError(t, err, test.err)
 	}
@@ -131,7 +131,7 @@ func TestGetCollector(t *testing.T) {
 		enabledMBM = true
 		return nil
 	}
-	manager, err := NewManager(0, setup, "", true)
+	manager, err := NewManager(0, setup, "", true, false)
 	assert.NoError(t, err)
 
 	_, err = manager.GetCollector(expectedID, mockGetContainerPids, 2)

@@ -79,7 +79,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 		}
 
 		// Get Docker status
-		status, err := docker.Status()
+		status, err := docker.DefaultOptions().Status()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to get docker info: %v", err), http.StatusInternalServerError)
 			return
@@ -87,7 +87,7 @@ func serveDockerPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
 
 		dockerStatus, driverStatus := toStatusKV(status)
 		// Get Docker Images
-		images, err := docker.Images()
+		images, err := docker.DefaultOptions().Images()
 		if err != nil {
 			http.Error(w, fmt.Sprintf("failed to get docker images: %v", err), http.StatusInternalServerError)
 			return

@@ -125,6 +125,7 @@ func newDockerContainerHandler(
 	thinPoolName string,
 	thinPoolWatcher *devicemapper.ThinPoolWatcher,
 	zfsWatcher *zfs.ZfsWatcher,
+	opts *Options,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems, name)
@@ -154,7 +155,7 @@ func newDockerContainerHandler(
 
 	// Determine the rootfs storage dir OR the pool name to determine the device.
 	// For devicemapper, we only need the thin pool name, and that is passed in to this call
-	rootfsStorageDir, zfsFilesystem, zfsParent, err := DetermineDeviceStorage(storageDriver, storageDir, rwLayerID)
+	rootfsStorageDir, zfsFilesystem, zfsParent, err := DetermineDeviceStorage(opts, storageDriver, storageDir, rwLayerID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to determine device storage: %v", err)
 	}
@@ -248,7 +249,7 @@ func newDockerContainerHandler(
 	return handler, nil
 }
 
-func DetermineDeviceStorage(storageDriver StorageDriver, storageDir string, rwLayerID string) (
+func DetermineDeviceStorage(opts *Options, storageDriver StorageDriver, storageDir string, rwLayerID string) (
 	rootfsStorageDir string, zfsFilesystem string, zfsParent string, err error) {
 	switch storageDriver {
 	case AufsStorageDriver:
@@ -261,7 +262,7 @@ func DetermineDeviceStorage(storageDriver StorageDriver, storageDir string, rwLa
 		rootfsStorageDir = path.Join(storageDir)
 	case ZfsStorageDriver:
 		var status info.DockerStatus
-		status, err = Status()
+		status, err = opts.Status()
 		if err != nil {
 			return
 		}

@@ -28,6 +28,12 @@ import (
 
 	cadvisorhttp "github.com/google/cadvisor/cmd/internal/http"
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/containerd"
+	"github.com/google/cadvisor/container/crio"
+	"github.com/google/cadvisor/container/docker"
+	"github.com/google/cadvisor/container/podman"
+	"github.com/google/cadvisor/container/raw"
+	"github.com/google/cadvisor/container/systemd"
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/utils/sysfs"
@@ -74,6 +80,25 @@ var rawCgroupPrefixWhiteList = flag.String("raw_cgroup_prefix_whitelist", "", "A
 var perfEvents = flag.String("perf_events_config", "", "Path to a JSON file containing configuration of perf events to measure. Empty value disabled perf events measuring.")
 
 var resctrlInterval = flag.Duration("resctrl_interval", 0, "Resctrl mon groups updating interval. Zero value disables updating mon groups.")
+
+var (
+	// Docker arguments
+	ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
+	ArgDockerTLS      = flag.Bool("docker-tls", false, "use TLS to connect to docker")
+	ArgDockerCert     = flag.String("docker-tls-cert", "cert.pem", "path to client certificate")
+	ArgDockerKey      = flag.String("docker-tls-key", "key.pem", "path to private key")
+	ArgDockerCA       = flag.String("docker-tls-ca", "ca.pem", "path to trusted CA")
+
+	// containerd arguments
+	ArgContainerdEndpoint  = flag.String("containerd", "/run/containerd/containerd.sock", "containerd endpoint")
+	ArgContainerdNamespace = flag.String("containerd-namespace", "k8s.io", "containerd namespace")
+
+	// podman argument
+	ArgPodmanEndpoint = flag.String("podman", "unix:///var/run/podman/podman.sock", "podman endpoint")
+
+	// raw arguments
+	DockerOnly = flag.Bool("docker_only", false, "Only report docker containers in addition to root stats")
+)
 
 var (
 	// Metrics to be ignored.
@@ -124,6 +149,31 @@ func main() {
 	klog.V(1).Infof("enabled metrics: %s", includedMetrics.String())
 	setMaxProcs()
 
+	plugins := map[string]container.Plugin{
+		"containerd": containerd.NewPluginWithOptions(&containerd.Options{  options
+			ContainerdEndpoint:  *ArgContainerdEndpoint,
+			ContainerdNamespace: *ArgContainerdNamespace,
+		}),
+		"docker": docker.NewPluginWithOptions(&docker.Options{
+			DockerEndpoint: *ArgDockerEndpoint,
+			DockerTLS:      *ArgDockerTLS,
+			DockerCert:     *ArgDockerCert,
+			DockerKey:      *ArgDockerKey,
+			DockerCA:       *ArgDockerCA,
+		}),
+		"crio": crio.NewPlugin(),
+		"podman": podman.NewPluginWithOptions(
+			*ArgPodmanEndpoint,
+			&docker.Options{
+				DockerEndpoint: *ArgDockerEndpoint,
+				DockerTLS:      *ArgDockerTLS,
+				DockerCert:     *ArgDockerCert,
+				DockerKey:      *ArgDockerKey,
+				DockerCA:       *ArgDockerCA,
+			}),
+		"systemd": systemd.NewPlugin(),
+	}
+
 	memoryStorage, err := NewMemoryStorage()
 	if err != nil {
 		klog.Fatalf("Failed to initialize storage driver: %s", err)
@@ -133,7 +183,7 @@ func main() {
 
 	collectorHTTPClient := createCollectorHTTPClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHTTPClient, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval)
+	resourceManager, err := manager.New(plugins, memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHTTPClient, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval, raw.Options{DockerOnly: *DockerOnly})
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}

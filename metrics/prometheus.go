@@ -100,6 +100,7 @@ type PrometheusCollector struct {
 	containerLabelsFunc ContainerLabelsFunc
 	includedMetrics     container.MetricSet
 	opts                v2.RequestOptions
+	constDesc           []*prometheus.Desc
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector. The passed
@@ -110,6 +111,16 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 	if f == nil {
 		f = DefaultContainerLabels
 	}
+
+	// Constant metrics descriptors.
+	var (
+		versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
+		startTimeDesc   = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
+		cpuPeriodDesc   = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
+		cpuQuotaDesc    = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
+		cpuSharesDesc   = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
+	)
+
 	c := &PrometheusCollector{
 		infoProvider:        i,
 		containerLabelsFunc: f,
@@ -134,6 +145,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		includedMetrics: includedMetrics,
 		opts:            opts,
 	}
+	c.constDesc = append(c.constDesc,
+		versionInfoDesc,
+		startTimeDesc,
+		cpuPeriodDesc,
+		cpuQuotaDesc,
+		cpuSharesDesc)
+
 	if includedMetrics.Has(container.CpuUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
@@ -1726,14 +1744,6 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 	return c
 }
 
-var (
-	versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
-	startTimeDesc   = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
-	cpuPeriodDesc   = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
-	cpuQuotaDesc    = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
-	cpuSharesDesc   = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
-)
-
 // Describe describes all the metrics ever exported by cadvisor. It
 // implements prometheus.PrometheusCollector.
 func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -1741,11 +1751,9 @@ func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, cm := range c.containerMetrics {
 		ch <- cm.desc([]string{})
 	}
-	ch <- startTimeDesc
-	ch <- cpuPeriodDesc
-	ch <- cpuQuotaDesc
-	ch <- cpuSharesDesc
-	ch <- versionInfoDesc
+	for _, cd := range c.constDesc {
+		ch <- cd
+	}
 }
 
 // Collect fetches the stats from all containers and delivers them as
@@ -1918,7 +1926,8 @@ func (c *PrometheusCollector) collectVersionInfo(ch chan<- prometheus.Metric) {
 		klog.Warningf("Couldn't get version info: %s", err)
 		return
 	}
-	ch <- prometheus.MustNewConstMetric(versionInfoDesc, prometheus.GaugeValue, 1, []string{versionInfo.KernelVersion, versionInfo.ContainerOsVersion, versionInfo.DockerVersion, versionInfo.CadvisorVersion, versionInfo.CadvisorRevision}...)
+	// TODO(@tpaschalis) A better way to refer to the version Descriptor?
+	ch <- prometheus.MustNewConstMetric(c.constDesc[0], prometheus.GaugeValue, 1, []string{versionInfo.KernelVersion, versionInfo.ContainerOsVersion, versionInfo.DockerVersion, versionInfo.CadvisorVersion, versionInfo.CadvisorRevision}...)
 }
 
 // Size after which we consider memory to be "unlimited". This is not

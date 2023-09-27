@@ -153,7 +153,7 @@ type HouskeepingConfig = struct {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
+func New(plugins map[string]container.Plugin, memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration, rawOptions raw.Options) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -172,8 +172,11 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 
 	context := fs.Context{}
 
-	if err := container.InitializeFSContext(&context); err != nil {
-		return nil, err
+	for name, plugin := range plugins {
+		if err := plugin.InitializeFSContext(&context); err != nil {
+			klog.V(5).Infof("Initialization of the %s context failed: %v", name, err)
+			return nil, err
+		}
 	}
 
 	fsInfo, err := fs.NewFsInfo(context)
@@ -192,6 +195,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 	eventsChannel := make(chan watcher.ContainerEvent, 16)
 
 	newManager := &manager{
+		plugins:                               plugins,
 		containers:                            make(map[namespacedContainerName]*containerData),
 		quitChannels:                          make([]chan error, 0, 2),
 		memoryCache:                           memoryCache,
@@ -208,6 +212,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		collectorHTTPClient:                   collectorHTTPClient,
 		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
 		containerEnvMetadataWhiteList:         containerEnvMetadataWhiteList,
+		rawOptions:                            rawOptions,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -222,7 +227,7 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		return nil, err
 	}
 
-	newManager.resctrlManager, err = resctrl.NewManager(resctrlInterval, resctrl.Setup, machineInfo.CPUVendorID, inHostNamespace)
+	newManager.resctrlManager, err = resctrl.NewManager(resctrlInterval, resctrl.Setup, machineInfo.CPUVendorID, inHostNamespace, rawOptions.DockerOnly)
 	if err != nil {
 		klog.V(4).Infof("Cannot gather resctrl metrics: %v", err)
 	}
@@ -247,6 +252,7 @@ type namespacedContainerName struct {
 }
 
 type manager struct {
+	plugins                  map[string]container.Plugin
 	containers               map[namespacedContainerName]*containerData
 	containersLock           sync.RWMutex
 	memoryCache              *memory.InMemoryCache
@@ -263,6 +269,7 @@ type manager struct {
 	allowDynamicHousekeeping bool
 	includedMetrics          container.MetricSet
 	containerWatchers        []watcher.ContainerWatcher
+	containerFactories       container.Factories
 	eventsChannel            chan watcher.ContainerEvent
 	collectorHTTPClient      *http.Client
 	perfManager              stats.Manager
@@ -271,6 +278,7 @@ type manager struct {
 	rawContainerCgroupPathPrefixWhiteList []string
 	// List of container env prefix whitelist, the matched container envs would be collected into metrics as extra labels.
 	containerEnvMetadataWhiteList []string
+	rawOptions                    raw.Options
 }
 
 func (m *manager) PodmanContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
@@ -288,11 +296,16 @@ func (m *manager) PodmanContainer(containerName string, query *info.ContainerInf
 
 // Start the container manager.
 func (m *manager) Start() error {
-	m.containerWatchers = container.InitializePlugins(m, m.fsInfo, m.includedMetrics)
+	m.containerFactories = container.InitializePlugins(m, m.plugins, m.fsInfo, m.includedMetrics)
 
-	err := raw.Register(m, m.fsInfo, m.includedMetrics, m.rawContainerCgroupPathPrefixWhiteList)
+	rawFactories, err := raw.Register(m, m.fsInfo, m.rawOptions, m.includedMetrics, m.rawContainerCgroupPathPrefixWhiteList)
 	if err != nil {
 		klog.Errorf("Registration of the raw container factory failed: %v", err)
+	}
+
+	// TODO(@tpaschalis) Do we need anything else to handle rawFactories other than passing the rawOptions above?
+	for watchType, list := range rawFactories {
+		m.containerFactories[watchType] = append(m.containerFactories[watchType], list...)
 	}
 
 	rawWatcher, err := raw.NewRawContainerWatcher(m.includedMetrics)
@@ -308,7 +321,7 @@ func (m *manager) Start() error {
 	}
 
 	// If there are no factories, don't start any housekeeping and serve the information we do have.
-	if !container.HasFactories() {
+	if len(m.containerFactories) == 0 {
 		return nil
 	}
 
@@ -921,7 +934,7 @@ func (m *manager) createContainerLocked(containerName string, watchSource watche
 		return nil
 	}
 
-	handler, accept, err := container.NewContainerHandler(containerName, watchSource, m.containerEnvMetadataWhiteList, m.inHostNamespace)
+	handler, accept, err := container.NewContainerHandler(m.containerFactories, containerName, watchSource, m.containerEnvMetadataWhiteList, m.inHostNamespace)
 	if err != nil {
 		return err
 	}
@@ -1317,7 +1330,7 @@ func parseEventsStoragePolicy() events.StoragePolicy {
 }
 
 func (m *manager) DebugInfo() map[string][]string {
-	debugInfo := container.DebugInfo()
+	debugInfo := container.DebugInfo(m.containerFactories)
 
 	// Get unique containers.
 	var conts map[*containerData]struct{}

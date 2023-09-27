@@ -34,13 +34,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	clock "k8s.io/utils/clock/testing"
-
 	// install all the container runtimes included in the library version for testing.
 	// as these are moved to cmd/internal/container, remove them from here.
-	_ "github.com/google/cadvisor/container/containerd/install"
-	_ "github.com/google/cadvisor/container/crio/install"
-	_ "github.com/google/cadvisor/container/docker/install"
-	_ "github.com/google/cadvisor/container/systemd/install"
+	// _ "github.com/google/cadvisor/container/containerd/install"
+	// _ "github.com/google/cadvisor/container/crio/install"
+	//_ "github.com/google/cadvisor/container/docker/install"
+	// _ "github.com/google/cadvisor/container/systemd/install"
 )
 
 // TODO(vmarmol): Refactor these tests.
@@ -52,7 +51,6 @@ func createManagerAndAddContainers(
 	f func(*containertest.MockContainerHandler),
 	t *testing.T,
 ) *manager {
-	container.ClearContainerHandlerFactories()
 	mif := &manager{
 		containers:   make(map[namespacedContainerName]*containerData),
 		quitChannels: make([]chan error, 0, 2),
@@ -91,7 +89,6 @@ func createManagerAndAddSubContainers(
 	f func(*containertest.MockContainerHandler),
 	t *testing.T,
 ) *manager {
-	container.ClearContainerHandlerFactories()
 	mif := &manager{
 		containers:   make(map[namespacedContainerName]*containerData),
 		quitChannels: make([]chan error, 0, 2),

@@ -27,6 +27,7 @@ import (
 	"time"
 )
 
+// TODO(@tpaschalis) Do we need to set this as a configurable value via an Options struct?
 var crioClientTimeout = flag.Duration("crio_client_timeout", time.Duration(0), "CRI-O client timeout. Default is no timeout.")
 
 const (
