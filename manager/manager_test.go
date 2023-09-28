@@ -65,7 +65,7 @@ func createManagerAndAddContainers(
 			spec,
 			nil,
 		).Once()
-		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true, clock.NewFakeClock(time.Now()))
+		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, time.Second, 60*time.Second, true, clock.NewFakeClock(time.Now()))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,7 +128,7 @@ func createManagerAndAddSubContainers(
 			subcontainerList[idx],
 			nil,
 		)
-		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true, clock.NewFakeClock(time.Now()))
+		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, time.Second, 60*time.Second, true, clock.NewFakeClock(time.Now()))
 		if err != nil {
 			t.Fatal(err)
 		}
