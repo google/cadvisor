@@ -83,6 +83,7 @@ var supportedSubsystems = map[string]container.MetricKind{
 	"cpuacct":    container.CpuUsageMetrics,
 	"memory":     container.MemoryUsageMetrics,
 	"hugetlb":    container.HugetlbUsageMetrics,
+	"misc":       container.MiscMetrics,
 	"pids":       container.ProcessMetrics,
 	"cpuset":     container.CPUSetMetrics,
 	"blkio":      container.DiskIOMetrics,
