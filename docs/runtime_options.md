@@ -134,8 +134,8 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --application_metrics_count_limit=100: Max number of application metrics to store (per container) (default 100)
 --collector_cert="": Collector's certificate, exposed to endpoints for certificate based authentication.
 --collector_key="": Key for the collector's certificate
---disable_metrics=<metrics>: comma-separated list of metrics to be disabled. Options are advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp. (default advtcp,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,tcp,udp)
---enable_metrics=<metrics>: comma-separated list of metrics to be enabled. If set, overrides 'disable_metrics'. Options are advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp.
+--disable_metrics=<metrics>: comma-separated list of metrics to be disabled. Options are advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,misc,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp. (default advtcp,cpu_topology,cpuset,hugetlb,memory_numa,misc,process,referenced_memory,resctrl,sched,tcp,udp)
+--enable_metrics=<metrics>: comma-separated list of metrics to be enabled. If set, overrides 'disable_metrics'. Options are advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,misc,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp.
 --prometheus_endpoint="/metrics": Endpoint to expose Prometheus metrics on (default "/metrics")
 --disable_root_cgroup_stats=false: Disable collecting root Cgroup stats
 ```
