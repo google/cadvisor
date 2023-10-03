@@ -50,6 +50,8 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_hugetlb_failcnt` | Counter | Number of hugepage usage hits limits | | hugetlb |
 `container_hugetlb_max_usage_bytes` | Gauge | Maximum hugepage usages recorded | bytes | hugetlb |
 `container_hugetlb_usage_bytes` | Gauge | Current hugepage usage | bytes | hugetlb |
+`container_misc_usage` | Gauge | Current usage of the misc scalar resource specified by the label | | misc |
+`container_misc_events` | Counter | Number of times the usage for the misc scalar resource specified by the label was about to go over the max boundary | | misc |
 `container_last_seen` | Gauge | Last time a container was seen by the exporter | timestamp | - |
 `container_llc_occupancy_bytes` | Gauge | Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_bandwidth_bytes` | Gauge | Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
