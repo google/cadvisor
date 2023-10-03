@@ -136,6 +136,14 @@ container_hugetlb_max_usage_bytes{container_env_foo_env="prod",container_label_f
 # TYPE container_hugetlb_usage_bytes gauge
 container_hugetlb_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="1Gi",zone_name="hello"} 0 1395066363000
 container_hugetlb_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="2Mi",zone_name="hello"} 4 1395066363000
+# HELP container_misc_usage Current usage of the resource
+# TYPE container_misc_usage gauge
+container_misc_usage{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",resource="res_a",zone_name="hello"} 1 1395066363000
+container_misc_usage{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",resource="res_b",zone_name="hello"} 2 1395066363000
+# HELP container_misc_events Number of times the usage for the resource was about to go over the max boundary
+# TYPE container_misc_events counter
+container_misc_events{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",resource="res_a",zone_name="hello"} 42 1395066363000
+container_misc_events{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",resource="res_b",zone_name="hello"} 42 1395066363000
 # HELP container_last_seen Last time a container was seen by the exporter
 # TYPE container_last_seen gauge
 container_last_seen{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.395066363e+09 1395066363000
