@@ -15,7 +15,9 @@
 package common
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"path"
@@ -277,21 +279,57 @@ func parseUint64String(strValue string) uint64 {
 }
 
 func readUInt64(dirpath string, file string) uint64 {
-	out := readString(dirpath, file)
-	if out == "max" {
+	fullPath := path.Join(dirpath, file)
+	out := readNBytesFromFile(fullPath, 20)
+	if bytes.Equal(out, []byte("max")) {
 		return math.MaxUint64
 	}
-	if out == "" {
+	if len(out) == 0 {
 		return 0
 	}
 
-	val, err := strconv.ParseUint(out, 10, 64)
+	val, err := parseBase10Uint64(out)
 	if err != nil {
 		klog.Errorf("readUInt64: Failed to parse int %q from file %q: %s", out, path.Join(dirpath, file), err)
 		return 0
 	}
 
 	return val
+}
+
+func parseBase10Uint64(buf []byte) (uint64, error) {
+	res := uint64(0)
+
+	for i, b := range buf {
+		if b < '0' || b > '9' {
+			return 0, fmt.Errorf("parseBase10Uint64: invalid byte %q at position %d", b, i)
+		}
+		res += uint64(b-'0') * uint64(math.Pow10(len(buf)-i-1))
+	}
+
+	return res, nil
+}
+
+func readNBytesFromFile(file string, i int) []byte {
+	f, err := os.Open(file)
+	if err != nil {
+		// Ignore non-existent files
+		if !os.IsNotExist(err) {
+			klog.Warningf("readNBytesFromFile: Failed to open %q: %s", file, err)
+		}
+		return nil
+	}
+	defer f.Close()
+
+	buf := make([]byte, i)
+	n, err := io.ReadFull(f, buf)
+	if err != nil {
+		if err != io.EOF && err != io.ErrUnexpectedEOF {
+			klog.Warningf("readNBytesFromFile: Failed to read %q: %s", file, err)
+		}
+	}
+
+	return bytes.TrimSpace(buf[:n])
 }
 
 // Lists all directories under "path" and outputs the results as children of "parent".
