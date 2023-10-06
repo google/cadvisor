@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -246,4 +247,31 @@ func TestRemoveNetMetrics(t *testing.T) {
 			})
 		}
 	}
+}
+
+func BenchmarkReadUint64(b *testing.B) {
+	files := []string{}
+
+	err := filepath.Walk("test_resources", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() && !strings.Contains(path, "cpuset") && !strings.Contains(path, "cpu.max") && !strings.Contains(path, "container_hints.json") {
+			files = append(files, path)
+		}
+
+		return nil
+	})
+	assert.Nil(b, err)
+
+	var val uint64
+	for _, file := range files {
+		b.Run(file, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				val = readUInt64("", file)
+			}
+		})
+	}
+	_ = val
 }
