@@ -100,14 +100,13 @@ func init() {
 	optstr := container.AllMetrics.String()
 	flag.Var(&ignoreMetrics, "disable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be disabled. Options are %s.", optstr))
 	flag.Var(&enableMetrics, "enable_metrics", fmt.Sprintf("comma-separated list of `metrics` to be enabled. If set, overrides 'disable_metrics'. Options are %s.", optstr))
-
-	// Default logging verbosity to V(2)
-	_ = flag.Set("v", "2")
 }
 
 func main() {
 	klog.InitFlags(nil)
 	defer klog.Flush()
+	// Default logging verbosity to V(2)
+	_ = flag.Set("v", "2")
 	flag.Parse()
 
 	if *versionFlag {
