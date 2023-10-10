@@ -698,7 +698,7 @@ func (m *manager) GetRequestedContainersInfo(containerName string, options v2.Re
 		info, err := m.containerDataToContainerInfo(data, &query)
 		if err != nil {
 			if err == memory.ErrDataNotFound {
-				klog.Warningf("Error getting data for container %s because of race condition", name)
+				klog.V(4).Infof("Error getting data for container %s because of race condition", name)
 				continue
 			}
 			errs.append(name, "containerDataToContainerInfo", err)
@@ -1375,7 +1375,7 @@ func (m *manager) containersInfo(containers map[string]*containerData, query *in
 		if err != nil {
 			// Ignore the error because of race condition and return best-effort result.
 			if err == memory.ErrDataNotFound {
-				klog.Warningf("Error getting data for container %s because of race condition", name)
+				klog.V(4).Infof("Error getting data for container %s because of race condition", name)
 				continue
 			}
 			return nil, err
