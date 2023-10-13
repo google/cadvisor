@@ -15,6 +15,7 @@
 package metrics
 
 import (
+	"context"
 	"errors"
 	"os"
 	"testing"
@@ -123,7 +124,9 @@ func TestNewPrometheusCollectorWithPerf(t *testing.T) {
 }
 
 func TestNewPrometheusCollectorWithRequestOptions(t *testing.T) {
-	p := mockInfoProvider{}
+	p := mockInfoProvider{
+		containerInfo: map[string]*info.ContainerInfo{},
+	}
 	opts := v2.RequestOptions{
 		IdType: "docker",
 	}
@@ -134,16 +137,17 @@ func TestNewPrometheusCollectorWithRequestOptions(t *testing.T) {
 }
 
 type mockInfoProvider struct {
-	options v2.RequestOptions
+	containerInfo map[string]*info.ContainerInfo
+	options       v2.RequestOptions
 }
 
 func (m *mockInfoProvider) GetRequestedContainersInfo(containerName string, options v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
 	m.options = options
-	return map[string]*info.ContainerInfo{}, nil
+	return m.containerInfo, nil
 }
 
 func (m *mockInfoProvider) GetVersionInfo() (*info.VersionInfo, error) {
-	return nil, errors.New("not supported")
+	return &info.VersionInfo{}, nil
 }
 
 func (m *mockInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
@@ -334,4 +338,79 @@ func TestGetMinCoreScalingRatio(t *testing.T) {
 	}
 	assert.Contains(t, values, 0.5)
 	assert.Contains(t, values, 0.3)
+}
+
+func BenchmarkPrometheusCollector(b *testing.B) {
+	p := mockInfoProvider{
+		containerInfo: map[string]*info.ContainerInfo{
+			"8cb3438991e90a4b415fd7920bd8b67f59e90c62ae82b89c081ac320f31cf427": {
+				ContainerReference: info.ContainerReference{
+					Id:        "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod3d0df1aa_a48c_4cff_88be_9222491bdcb7.slice/cri-containerd-8cb3438991e90a4b415fd7920bd8b67f59e90c62ae82b89c081ac320f31cf427.scope",
+					Name:      "alertmanager",
+					Namespace: "observability",
+				},
+				Spec: info.ContainerSpec{
+					Image: "quay.io/prometheus/alertmanager:v0.26.0",
+				},
+				Stats: []*info.ContainerStats{{
+					Timestamp: time.Now(),
+					Cpu: info.CpuStats{
+						Usage: info.CpuUsage{
+							Total:  1000000000,
+							User:   100000000,
+							System: 900000000,
+							PerCpu: []uint64{100000000, 900000000},
+						},
+						CFS: info.CpuCFS{
+							Periods:          100,
+							ThrottledPeriods: 10,
+							ThrottledTime:    100000000,
+						},
+						Schedstat: info.CpuSchedstat{
+							RunTime:      100000000,
+							RunqueueTime: 100000000,
+							RunPeriods:   100,
+						},
+						LoadAverage: 5,
+					},
+				}},
+			}},
+	}
+	opts := v2.RequestOptions{
+		IdType: "docker",
+	}
+
+	labels := map[string]string{
+		"container": "alertmanager",
+		"id":        "/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod3d0df1aa_a48c_4cff_88be_9222491bdcb7.slice/cri-containerd-8cb3438991e90a4b415fd7920bd8b67f59e90c62ae82b89c081ac320f31cf427.scope",
+		"image":     "quay.io/prometheus/alertmanager:v0.26.0",
+		"name":      "8cb3438991e90a4b415fd7920bd8b67f59e90c62ae82b89c081ac320f31cf427",
+		"namespace": "observability",
+		"pod":       "alertmanager-main-1",
+	}
+
+	labelFunc := func(*info.ContainerInfo) map[string]string {
+		return labels
+	}
+
+	c := NewPrometheusCollector(&p, labelFunc, container.AllMetrics, now, opts)
+	ch := make(chan prometheus.Metric)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case m := <-ch:
+				_ = m
+			}
+		}
+	}()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c.Collect(ch)
+	}
 }
