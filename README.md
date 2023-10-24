@@ -11,7 +11,7 @@ cAdvisor has native support for [Docker](https://github.com/docker/docker) conta
 To quickly tryout cAdvisor on your machine with Docker, we have a Docker image that includes everything you need to get started. You can run a single cAdvisor to monitor the whole machine. Simply run:
 
 ```
-VERSION=v0.36.0 # use the latest release version from https://github.com/google/cadvisor/releases
+VERSION=v0.47.0 # use the latest release version from https://github.com/google/cadvisor/releases
 sudo docker run \
   --volume=/:/rootfs:ro \
   --volume=/var/run:/var/run:ro \
