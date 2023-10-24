@@ -1,4 +1,4 @@
-# This patch adds the required hostpath mounts and privilages to initialize NVML, as well as to access devices.
+# This patch adds the required hostpath mounts and privileges to initialize NVML, as well as to access devices.
 # This patch meets the requirements described in the accellerator docs: 
 # https://github.com/google/cadvisor/blob/master/docs/running.md#hardware-accelerator-monitoring
 apiVersion: apps/v1
