@@ -247,3 +247,40 @@ func TestRemoveNetMetrics(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkGetSpecCgroupV2(b *testing.B) {
+	root, err := os.Getwd()
+	if err != nil {
+		b.Fatalf("getwd: %s", err)
+	}
+
+	cgroupPaths := map[string]string{
+		"": filepath.Join(root, "test_resources/cgroup_v2/test1"),
+	}
+
+	for i := 0; i < b.N; i++ {
+		_, err := getSpecInternal(cgroupPaths, &mockInfoProvider{}, false, false, true)
+		assert.Nil(b, err)
+	}
+
+}
+
+func BenchmarkGetSpecCgroupV1(b *testing.B) {
+	root, err := os.Getwd()
+	if err != nil {
+		b.Fatalf("getwd: %s", err)
+	}
+
+	cgroupPaths := map[string]string{
+		"memory": filepath.Join(root, "test_resources/cgroup_v1/test1/memory"),
+		"cpu":    filepath.Join(root, "test_resources/cgroup_v1/test1/cpu"),
+		"cpuset": filepath.Join(root, "test_resources/cgroup_v1/test1/cpuset"),
+		"pids":   filepath.Join(root, "test_resources/cgroup_v1/test1/pids"),
+	}
+
+	for i := 0; i < b.N; i++ {
+		_, err := getSpecInternal(cgroupPaths, &mockInfoProvider{}, false, false, false)
+		assert.Nil(b, err)
+	}
+
+}
