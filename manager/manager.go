@@ -30,7 +30,6 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/podman"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
@@ -274,7 +273,7 @@ type manager struct {
 }
 
 func (m *manager) PodmanContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
-	container, err := m.namespacedContainer(containerName, podman.Namespace)
+	container, err := m.namespacedContainer(containerName, PodmanNamespace)
 	if err != nil {
 		return info.ContainerInfo{}, err
 	}
@@ -1386,7 +1385,7 @@ func (m *manager) containersInfo(containers map[string]*containerData, query *in
 }
 
 func (m *manager) AllPodmanContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
-	containers := m.getAllNamespacedContainers(podman.Namespace)
+	containers := m.getAllNamespacedContainers(PodmanNamespace)
 	return m.containersInfo(containers, query)
 }
 
