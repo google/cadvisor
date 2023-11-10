@@ -15,7 +15,6 @@
 package raw
 
 import (
-	"flag"
 	"fmt"
 	"strings"
 
@@ -27,10 +26,6 @@ import (
 	"github.com/google/cadvisor/watcher"
 
 	"k8s.io/klog/v2"
-)
-
-var (
-	disableRootCgroupStats = flag.Bool("disable_root_cgroup_stats", false, "Disable collecting root Cgroup stats")
 )
 
 type rawFactory struct {
@@ -56,7 +51,11 @@ type rawFactory struct {
 }
 
 type Options struct {
+	// Only report docker containers in addition to root stats
 	DockerOnly bool
+
+	// Disable collecting root Cgroup stats
+	DisableRootCgroupStats bool
 }
 
 func (f *rawFactory) String() string {
@@ -68,7 +67,7 @@ func (f *rawFactory) NewContainerHandler(name string, metadataEnvAllowList []str
 	if !inHostNamespace {
 		rootFs = "/rootfs"
 	}
-	return newRawContainerHandler(name, f.cgroupSubsystems, f.machineInfoFactory, f.fsInfo, f.watcher, rootFs, f.includedMetrics)
+	return newRawContainerHandler(name, f.cgroupSubsystems, f.machineInfoFactory, f.fsInfo, f.watcher, rootFs, f.includedMetrics, f.options.DisableRootCgroupStats)
 }
 
 // The raw factory can handle any container. If --docker_only is set to true, non-docker containers are ignored except for "/" and those whitelisted by raw_cgroup_prefix_whitelist flag.

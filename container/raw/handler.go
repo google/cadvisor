@@ -43,13 +43,15 @@ type rawContainerHandler struct {
 	includedMetrics container.MetricSet
 
 	libcontainerHandler *libcontainer.Handler
+
+	disableRootCgroupStats bool
 }
 
 func isRootCgroup(name string) bool {
 	return name == "/"
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems map[string]string, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems map[string]string, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet, disableRootCgroupStats bool) (container.ContainerHandler, error) {
 	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
 	if err != nil {
 		return nil, err
@@ -81,13 +83,14 @@ func newRawContainerHandler(name string, cgroupSubsystems map[string]string, mac
 	handler := libcontainer.NewHandler(cgroupManager, rootFs, pid, includedMetrics)
 
 	return &rawContainerHandler{
-		name:                name,
-		machineInfoFactory:  machineInfoFactory,
-		cgroupPaths:         cgroupPaths,
-		fsInfo:              fsInfo,
-		externalMounts:      externalMounts,
-		includedMetrics:     includedMetrics,
-		libcontainerHandler: handler,
+		name:                   name,
+		machineInfoFactory:     machineInfoFactory,
+		cgroupPaths:            cgroupPaths,
+		fsInfo:                 fsInfo,
+		externalMounts:         externalMounts,
+		includedMetrics:        includedMetrics,
+		libcontainerHandler:    handler,
+		disableRootCgroupStats: disableRootCgroupStats,
 	}, nil
 }
 
@@ -227,7 +230,7 @@ func (h *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 }
 
 func (h *rawContainerHandler) GetStats() (*info.ContainerStats, error) {
-	if *disableRootCgroupStats && isRootCgroup(h.name) {
+	if h.disableRootCgroupStats && isRootCgroup(h.name) {
 		return nil, nil
 	}
 	stats, err := h.libcontainerHandler.GetStats()
