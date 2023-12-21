@@ -520,6 +520,116 @@ func TestAddDockerImagesLabel(t *testing.T) {
 	}
 }
 
+func TestAddCrioImagesLabel(t *testing.T) {
+	tests := []struct {
+		name                   string
+		driver                 string
+		driverStatus           map[string]string
+		dmsetupTable           string
+		mounts                 []*mount.Info
+		imageStore             string
+		expectedCrioImages     string
+		expectedCrioContainers string
+		expectedPartition      *partition
+	}{
+		{
+			name:   "single partition, no dedicated image fs",
+			driver: "overlay2",
+			mounts: []*mount.Info{
+				{
+					Source:     "/dev/root",
+					Mountpoint: "/",
+					FSType:     "ext4",
+				},
+				{
+					Source:     "/sys/fs/cgroup",
+					Mountpoint: "/sys/fs/cgroup",
+					FSType:     "tmpfs",
+				},
+			},
+			expectedCrioImages:     "/dev/root",
+			expectedCrioContainers: "",
+		},
+		{
+			name:   "root fs inside container, docker-images bindmount",
+			driver: "overlay2",
+			mounts: []*mount.Info{
+				{
+					Source:     "overlay",
+					Mountpoint: "/",
+					FSType:     "overlay",
+				},
+				{
+					Source:     "/dev/sda1",
+					Mountpoint: "/var/lib/container",
+					FSType:     "ext4",
+				},
+			},
+			expectedCrioImages: "/dev/sda1",
+		},
+		{
+			name:   "[overlay2] image and container separate",
+			driver: "overlay2",
+			mounts: []*mount.Info{
+				{
+					Source:     "/dev/sdb1",
+					Mountpoint: "/imagestore",
+					FSType:     "ext4",
+				},
+				{
+					Source:     "/dev/sdb2",
+					Mountpoint: "/var/lib/container",
+					FSType:     "ext4",
+				},
+			},
+			expectedCrioImages:     "/dev/sdb1",
+			expectedCrioContainers: "/dev/sdb2",
+			imageStore:             "/imagestore",
+		},
+	}
+
+	for _, tt := range tests {
+		fsInfo := &RealFsInfo{
+			labels:     map[string]string{},
+			partitions: map[string]partition{},
+			dmsetup: &testDmsetup{
+				data: []byte(tt.dmsetupTable),
+			},
+		}
+
+		context := Context{
+			Crio: CrioContext{
+				Root:       "/var/lib/container",
+				ImageStore: tt.imageStore,
+				Driver:     "overlay",
+			},
+		}
+
+		fsInfo.addCrioImagesLabel(context, tt.mounts)
+
+		if tt.imageStore != "" {
+			if e, a := tt.expectedCrioImages, fsInfo.labels[LabelCrioImages]; e != a {
+				t.Errorf("%s: docker device: expected %q, got %q", tt.name, e, a)
+			}
+
+			if e, a := tt.expectedCrioContainers, fsInfo.labels[LabelCrioContainers]; e != a {
+				t.Errorf("%s: docker device: expected %q, got %q", tt.name, e, a)
+			}
+
+		}
+		if tt.imageStore == "" {
+			if e, a := tt.expectedCrioImages, fsInfo.labels[LabelCrioImages]; e != a {
+				t.Errorf("%s: docker device: expected %q, got %q", tt.name, e, a)
+			}
+
+		}
+
+		if tt.expectedPartition == nil {
+			continue
+		}
+	}
+}
+
 func TestProcessMounts(t *testing.T) {
 	tests := []struct {
 		name             string
