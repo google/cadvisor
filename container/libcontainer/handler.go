@@ -507,7 +507,7 @@ func scanInterfaceStats(netStatsFile string) ([]info.InterfaceStats, error) {
 			return nil, fmt.Errorf("invalid interface stats line: %v", line)
 		}
 
-		devName := fields[0]
+		devName := strings.Clone(fields[0])
 		if isIgnoredDevice(devName) {
 			continue
 		}
