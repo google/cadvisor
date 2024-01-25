@@ -393,6 +393,11 @@ type MemoryStats struct {
 	// Units: Bytes.
 	WorkingSet uint64 `json:"working_set"`
 
+	// The amount of non-evictable memory, this gives an aproximate figure
+	// to determine when a container near OOM-ing.
+	// Units: Bytes.
+	NonEvictableSet uint64 `json:"non_evictable_set"`
+
 	Failcnt uint64 `json:"failcnt"`
 
 	// Size of kernel memory allocated in bytes.

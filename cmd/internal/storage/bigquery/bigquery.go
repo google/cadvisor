@@ -50,6 +50,8 @@ const (
 	colMemoryUsage string = "memory_usage"
 	// Working set size
 	colMemoryWorkingSet string = "memory_working_set"
+	// Non-evictable set size
+	colMemoryNonEvictableSet string = "memory_non_evictable_set"
 	// Container page fault
 	colMemoryContainerPgfault string = "memory_container_pgfault"
 	// Constainer major page fault
@@ -225,6 +227,9 @@ func (s *bigqueryStorage) containerStatsToRows(
 
 	// Working set size
 	row[colMemoryWorkingSet] = stats.Memory.WorkingSet
+
+	// Non-evictable set size
+	row[colMemoryNonEvictableSet] = stats.Memory.NonEvictableSet
 
 	// container page fault
 	row[colMemoryContainerPgfault] = stats.Memory.ContainerData.Pgfault

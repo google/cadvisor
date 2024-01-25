@@ -70,6 +70,8 @@ const (
 	serMemoryMappedFile string = "memory_mapped_file"
 	// Working set size
 	serMemoryWorkingSet string = "memory_working_set"
+	// Non-evictable set size
+	serMemoryNonEvictableSet string = "memory_non_evictable_set"
 	// Number of memory usage hits limits
 	serMemoryFailcnt string = "memory_failcnt"
 	// Cumulative count of memory allocation failures
@@ -256,6 +258,8 @@ func (s *influxdbStorage) memoryStatsToPoints(
 	points = append(points, makePoint(serMemoryMappedFile, stats.Memory.MappedFile))
 	// Working Set Size
 	points = append(points, makePoint(serMemoryWorkingSet, stats.Memory.WorkingSet))
+	// Non-evictable Set Size
+	points = append(points, makePoint(serMemoryNonEvictableSet, stats.Memory.NonEvictableSet))
 	// Number of memory usage hits limits
 	points = append(points, makePoint(serMemoryFailcnt, stats.Memory.Failcnt))
 
