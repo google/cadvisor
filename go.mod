@@ -30,7 +30,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/net v0.10.0
 	golang.org/x/sys v0.8.0
-	google.golang.org/grpc v1.57.0
+	google.golang.org/grpc v1.57.1
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 )
