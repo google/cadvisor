@@ -59,7 +59,8 @@ function run_tests() {
     --cap-add="sys_admin" \
     --entrypoint="" \
     gcr.io/k8s-testimages/bootstrap \
-    bash -c "echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
+    bash -c "export DEBIAN_FRONTEND=noninteractive && \
+    echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
     cat /etc/apt/sources.list.d/buster.list && \
     apt update && \
     apt install -y -t buster-backports $PACKAGES && \
