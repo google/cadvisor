@@ -18,14 +18,16 @@ RUN export DBG="-g -Wall" && \
 
 # ipmctl only supports Intel x86_64 processors.
 # https://github.com/intel/ipmctl/issues/163
-RUN if [ "$(uname --machine)" = "x86_64" ]; then \
-    git clone -b v02.00.00.3885 https://github.com/intel/ipmctl/ && \
-    cd ipmctl && \
-    mkdir output && \
-    cd output && \
-    cmake -DRELEASE=ON -DCMAKE_INSTALL_PREFIX=/ -DCMAKE_INSTALL_LIBDIR=/usr/local/lib .. && \
-    make -j all && \
-    make install; fi
+
+# Disable libipmctl due to https://github.com/google/cadvisor/issues/3482
+#RUN if [ "$(uname --machine)" = "x86_64" ]; then \
+    #git clone -b v02.00.00.3885 https://github.com/intel/ipmctl/ && \
+    #cd ipmctl && \
+    #mkdir output && \
+    #cd output && \
+    #cmake -DRELEASE=ON -DCMAKE_INSTALL_PREFIX=/ -DCMAKE_INSTALL_LIBDIR=/usr/local/lib .. && \
+    #make -j all && \
+    #make install; fi
 
 WORKDIR /go/src/github.com/google/cadvisor
 
@@ -42,11 +44,13 @@ ARG VERSION
 # libipmctl only works on x86_64 CPUs.
 RUN export GO_TAGS="libpfm,netgo"; \
     if [ "$(uname --machine)" = "x86_64" ]; then \
-          export GO_TAGS="$GO_TAGS,libipmctl"; \
+          # Disable libipmctl due to https://github.com/google/cadvisor/issues/3482
+          #export GO_TAGS="$GO_TAGS,libipmctl"; \
+          export GO_TAGS="$GO_TAGS"; \
     fi; \
     GO_FLAGS="-tags=$GO_TAGS" ./build/build.sh
 
-FROM mirror.gcr.io/library/alpine:3.16
+FROM mirror.gcr.io/library/alpine:3.18
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
 RUN apk --no-cache add libc6-compat device-mapper findutils ndctl zfs && \
