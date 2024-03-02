@@ -1712,16 +1712,6 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
-	if includedMetrics.Has(container.OOMMetrics) {
-		c.containerMetrics = append(c.containerMetrics, containerMetric{
-			name:      "container_oom_events_total",
-			help:      "Count of out of memory events observed for the container",
-			valueType: prometheus.CounterValue,
-			getValues: func(s *info.ContainerStats) metricValues {
-				return metricValues{{value: float64(s.OOMEvents), timestamp: s.Timestamp}}
-			},
-		})
-	}
 
 	return c
 }
@@ -1832,24 +1822,21 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		}
 	}
 
-	for _, cont := range containers {
-		values := make([]string, 0, len(rawLabels))
-		labels := make([]string, 0, len(rawLabels))
-		containerLabels := c.containerLabelsFunc(cont)
-		for l := range rawLabels {
-			duplicate := false
-			sl := sanitizeLabelName(l)
-			for _, x := range labels {
-				if sl == x {
-					duplicate = true
-					break
-				}
-			}
-			if !duplicate {
-				labels = append(labels, sl)
-				values = append(values, containerLabels[l])
-			}
+	if c.includedMetrics.Has(container.OOMMetrics) {
+		for _, oomInfo := range c.infoProvider.GetOOMInfos() {
+			labels, values := genLabelValues(rawLabels, oomInfo.MetricLabels)
+			ch <- prometheus.NewMetricWithTimestamp(oomInfo.TimeOfDeath, prometheus.MustNewConstMetric(
+				prometheus.NewDesc("container_oom_events_total", "Count of out of memory events observed for the container", labels, nil),
+				prometheus.CounterValue,
+				float64(oomInfo.OomEvents),
+				values...,
+			))
 		}
+	}
+
+	for _, cont := range containers {
+		containerLabels := c.containerLabelsFunc(cont)
+		labels, values := genLabelValues(rawLabels, containerLabels)
 
 		// Container spec
 		desc := prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
@@ -1938,6 +1925,26 @@ var invalidNameCharRE = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 // client_label.LabelNameRE with an underscore.
 func sanitizeLabelName(name string) string {
 	return invalidNameCharRE.ReplaceAllString(name, "_")
+}
+
+func genLabelValues(rawLabels map[string]struct{}, sourceLabels map[string]string) ([]string, []string) {
+	values := make([]string, 0, len(rawLabels))
+	labels := make([]string, 0, len(rawLabels))
+	for l := range rawLabels {
+		duplicate := false
+		sl := sanitizeLabelName(l)
+		for _, x := range labels {
+			if sl == x {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			labels = append(labels, sl)
+			values = append(values, sourceLabels[l])
+		}
+	}
+	return labels, values
 }
 
 func getNumaStatsPerNode(nodeStats map[uint8]uint64, labels []string, timestamp time.Time) metricValues {

@@ -27,7 +27,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/google/cadvisor/cache/memory"
@@ -65,7 +64,6 @@ type containerInfo struct {
 }
 
 type containerData struct {
-	oomEvents                uint64
 	handler                  container.ContainerHandler
 	info                     containerInfo
 	memoryCache              *memory.InMemoryCache
@@ -668,8 +666,6 @@ func (cd *containerData) updateStats() error {
 			klog.V(2).Infof("Failed to add summary stats for %q: %v", cd.info.Name, err)
 		}
 	}
-
-	stats.OOMEvents = atomic.LoadUint64(&cd.oomEvents)
 
 	var customStatsErr error
 	cm := cd.collectorManager.(*collector.GenericCollectorManager)
