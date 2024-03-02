@@ -69,8 +69,12 @@ func checkMemoryStats(t *testing.T, stat info.MemoryStats) {
 
 	assert.NotEqual(0, stat.Usage, "Memory usage should not be zero")
 	assert.NotEqual(0, stat.WorkingSet, "Memory working set should not be zero")
+	assert.NotEqual(0, stat.NonEvictableSet, "Memory non-evictable set should not be zero")
 	if stat.WorkingSet > stat.Usage {
 		t.Errorf("Memory working set (%d) should be at most equal to memory usage (%d)", stat.WorkingSet, stat.Usage)
+	}
+	if stat.NonEvictableSet > stat.Usage {
+		t.Errorf("Memory non-evictable set (%d) should be at most equal to memory usage (%d)", stat.NonEvictableSet, stat.Usage)
 	}
 	// TODO(vmarmol): Add checks for ContainerData and HierarchicalData
 }

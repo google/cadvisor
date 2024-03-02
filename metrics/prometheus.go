@@ -432,6 +432,14 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 			{
+				name:      "container_memory_non_evictable_set_bytes",
+				help:      "Current non-evictable set in bytes.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.NonEvictableSet), timestamp: s.Timestamp}}
+				},
+			},
+			{
 				name:        "container_memory_failures_total",
 				help:        "Cumulative count of memory allocation failures.",
 				valueType:   prometheus.CounterValue,

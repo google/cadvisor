@@ -834,15 +834,26 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		inactiveFileKeyName = "inactive_file"
 	}
 
-	workingSet := ret.Memory.Usage
-	if v, ok := s.MemoryStats.Stats[inactiveFileKeyName]; ok {
-		if workingSet < v {
-			workingSet = 0
-		} else {
-			workingSet -= v
+	activeFileKeyName := "total_active_file"
+	if cgroups.IsCgroup2UnifiedMode() {
+		activeFileKeyName = "active_file"
+	}
+
+	ret.Memory.WorkingSet = subtractStats(ret.Memory.Usage, s.MemoryStats.Stats, []string{inactiveFileKeyName})
+	ret.Memory.NonEvictableSet = subtractStats(ret.Memory.Usage, s.MemoryStats.Stats, []string{inactiveFileKeyName, activeFileKeyName})
+}
+
+func subtractStats(value uint64, stats map[string]uint64, keys []string) uint64 {
+	for _, key := range keys {
+		if v, ok := stats[key]; ok {
+			if value < v {
+				value = 0
+			} else {
+				value -= v
+			}
 		}
 	}
-	ret.Memory.WorkingSet = workingSet
+	return value
 }
 
 func setCPUSetStats(s *cgroups.Stats, ret *info.ContainerStats) {

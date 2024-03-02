@@ -329,9 +329,10 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 						LoadAverage: 2,
 					},
 					Memory: info.MemoryStats{
-						Usage:      8,
-						MaxUsage:   8,
-						WorkingSet: 9,
+						Usage:           8,
+						MaxUsage:        8,
+						WorkingSet:      9,
+						NonEvictableSet: 7,
 						ContainerData: info.MemoryStatsMemoryData{
 							Pgfault:    10,
 							Pgmajfault: 11,

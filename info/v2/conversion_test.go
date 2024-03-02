@@ -137,11 +137,12 @@ func TestContainerStatsFromV1(t *testing.T) {
 	v1Stats := v1.ContainerStats{
 		Timestamp: timestamp,
 		Memory: v1.MemoryStats{
-			Usage:      1,
-			Cache:      2,
-			RSS:        3,
-			WorkingSet: 4,
-			Failcnt:    5,
+			Usage:           1,
+			Cache:           2,
+			RSS:             3,
+			WorkingSet:      4,
+			Failcnt:         5,
+			NonEvictableSet: 6,
 			ContainerData: v1.MemoryStatsMemoryData{
 				Pgfault:    1,
 				Pgmajfault: 2,
