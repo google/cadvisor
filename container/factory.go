@@ -60,6 +60,7 @@ const (
 	AppMetrics                     MetricKind = "app"
 	ProcessMetrics                 MetricKind = "process"
 	HugetlbUsageMetrics            MetricKind = "hugetlb"
+	MiscMetrics                    MetricKind = "misc"
 	PerfMetrics                    MetricKind = "perf_event"
 	ReferencedMemoryMetrics        MetricKind = "referenced_memory"
 	CPUTopologyMetrics             MetricKind = "cpu_topology"
@@ -85,6 +86,7 @@ var AllMetrics = MetricSet{
 	ProcessMetrics:                 struct{}{},
 	AppMetrics:                     struct{}{},
 	HugetlbUsageMetrics:            struct{}{},
+	MiscMetrics:                    struct{}{},
 	PerfMetrics:                    struct{}{},
 	ReferencedMemoryMetrics:        struct{}{},
 	CPUTopologyMetrics:             struct{}{},
