@@ -271,28 +271,15 @@ func (cd *containerData) getPsOutput(inHostNamespace bool, format string) ([]byt
 // Get pids of processes in this container.
 // A slightly lighterweight call than GetProcessList if other details are not required.
 func (cd *containerData) getContainerPids(inHostNamespace bool) ([]string, error) {
-	format := "pid,cgroup"
-	out, err := cd.getPsOutput(inHostNamespace, format)
+	pidss, err := cd.handler.ListProcesses(0)
 	if err != nil {
 		return nil, err
 	}
-	expectedFields := 2
-	lines := strings.Split(string(out), "\n")
-	pids := []string{}
-	for _, line := range lines[1:] {
-		if len(line) == 0 {
-			continue
-		}
-		fields := strings.Fields(line)
-		if len(fields) < expectedFields {
-			return nil, fmt.Errorf("expected at least %d fields, found %d: output: %q", expectedFields, len(fields), line)
-		}
-		pid := fields[0]
-		cgroup := cd.getCgroupPath(fields[1])
-		if cd.info.Name == cgroup {
-			pids = append(pids, pid)
-		}
+	pids := make([]string, 0, len(pidss))
+	for _, pid := range pidss {
+		pids = append(pids, strconv.Itoa(pid))
 	}
+
 	return pids, nil
 }
 
