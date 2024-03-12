@@ -20,7 +20,7 @@ sudo docker run \
 cAdvisor is now running (in the background) on `http://localhost:8080/`. The setup includes directories with Docker state cAdvisor needs to observe.
 
 **Note**:
-- If docker daemon is running with [user namespace enabled](https://docs.docker.com/engine/reference/commandline/dockerd/#starting-the-daemon-with-user-namespaces-enabled),
+- If docker daemon is running with [user namespace enabled](https://docs.docker.com/reference/cli/dockerd/#daemon-user-namespace-options),
 you need to add `--userns=host` option in order for cAdvisor to monitor Docker containers,
 otherwise cAdvisor can not connect to docker daemon.
 - If cadvisor scrapes `process` metrics due to `--disable_metrics` or `--enable_metrics` options, you need to add `--pid=host` and `--privileged` for `docker run` to get `/proc/pid/fd` path in host.
