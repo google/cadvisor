@@ -299,8 +299,9 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 		}
 	}
 
+	processCount := common.ReadUInt64(cgroupPath, "pids.current")
 	processStats := info.ProcessStats{
-		ProcessCount: uint64(len(pids)),
+		ProcessCount: processCount,
 		FdCount:      fdCount,
 		SocketCount:  socketCount,
 	}

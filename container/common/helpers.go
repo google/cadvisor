@@ -114,7 +114,7 @@ func getSpecInternal(cgroupPaths map[string]string, machineInfoFactory info.Mach
 			if cgroup2UnifiedMode {
 				spec.HasCpu = true
 
-				weight := readUInt64(cpuRoot, "cpu.weight")
+				weight := ReadUInt64(cpuRoot, "cpu.weight")
 				if weight > 0 {
 					limit, err := convertCPUWeightToCPULimit(weight)
 					if err != nil {
@@ -137,8 +137,8 @@ func getSpecInternal(cgroupPaths map[string]string, machineInfoFactory info.Mach
 				}
 			} else {
 				spec.HasCpu = true
-				spec.Cpu.Limit = readUInt64(cpuRoot, "cpu.shares")
-				spec.Cpu.Period = readUInt64(cpuRoot, "cpu.cfs_period_us")
+				spec.Cpu.Limit = ReadUInt64(cpuRoot, "cpu.shares")
+				spec.Cpu.Period = ReadUInt64(cpuRoot, "cpu.cfs_period_us")
 				quota := readString(cpuRoot, "cpu.cfs_quota_us")
 
 				if quota != "" && quota != "-1" {
@@ -175,16 +175,16 @@ func getSpecInternal(cgroupPaths map[string]string, machineInfoFactory info.Mach
 		if cgroup2UnifiedMode {
 			if utils.FileExists(path.Join(memoryRoot, "memory.max")) {
 				spec.HasMemory = true
-				spec.Memory.Reservation = readUInt64(memoryRoot, "memory.min")
-				spec.Memory.Limit = readUInt64(memoryRoot, "memory.max")
-				spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.swap.max")
+				spec.Memory.Reservation = ReadUInt64(memoryRoot, "memory.min")
+				spec.Memory.Limit = ReadUInt64(memoryRoot, "memory.max")
+				spec.Memory.SwapLimit = ReadUInt64(memoryRoot, "memory.swap.max")
 			}
 		} else {
 			if utils.FileExists(memoryRoot) {
 				spec.HasMemory = true
-				spec.Memory.Limit = readUInt64(memoryRoot, "memory.limit_in_bytes")
-				spec.Memory.SwapLimit = readUInt64(memoryRoot, "memory.memsw.limit_in_bytes")
-				spec.Memory.Reservation = readUInt64(memoryRoot, "memory.soft_limit_in_bytes")
+				spec.Memory.Limit = ReadUInt64(memoryRoot, "memory.limit_in_bytes")
+				spec.Memory.SwapLimit = ReadUInt64(memoryRoot, "memory.memsw.limit_in_bytes")
+				spec.Memory.Reservation = ReadUInt64(memoryRoot, "memory.soft_limit_in_bytes")
 			}
 		}
 	}
@@ -202,7 +202,7 @@ func getSpecInternal(cgroupPaths map[string]string, machineInfoFactory info.Mach
 	if ok {
 		if utils.FileExists(pidsRoot) {
 			spec.HasProcesses = true
-			spec.Processes.Limit = readUInt64(pidsRoot, "pids.max")
+			spec.Processes.Limit = ReadUInt64(pidsRoot, "pids.max")
 		}
 	}
 
@@ -280,7 +280,7 @@ func parseUint64String(strValue string) uint64 {
 	return val
 }
 
-func readUInt64(dirpath string, file string) uint64 {
+func ReadUInt64(dirpath string, file string) uint64 {
 	out := readString(dirpath, file)
 	if out == "max" {
 		return math.MaxUint64
