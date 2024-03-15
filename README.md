@@ -1,6 +1,12 @@
 ![cAdvisor](logo.png "cAdvisor")
 
 ![test status](https://github.com/google/cadvisor/workflows/Test/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/google/cadvisor)](https://goreportcard.com/report/github.com/google/cadvisor)
+[![GoDoc](https://pkg.go.dev/badge/github.com/google/cadvisor?status.svg)](https://pkg.go.dev/github.com/google/cadvisor?tab=doc)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/google/cadvisor)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/google/cadvisor)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 
 cAdvisor (Container Advisor) provides container users an understanding of the resource usage and performance characteristics of their running containers. It is a running daemon that collects, aggregates, processes, and exports information about running containers. Specifically, for each container it keeps resource isolation parameters, historical resource usage, histograms of complete historical resource usage and network statistics. This data is exported by container and machine-wide.
 
