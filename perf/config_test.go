@@ -29,7 +29,7 @@ func TestConfigParsing(t *testing.T) {
 	events, err := parseConfig(file)
 
 	assert.Nil(t, err)
-	assert.Len(t, events.Core.Events, 2)
+	assert.Len(t, events.Core.Events, 3)
 	assert.Len(t, events.Core.Events[0].events, 2)
 	assert.Equal(t, true, events.Core.Events[0].array)
 	assert.Equal(t, Event("instructions"), events.Core.Events[0].events[0])
@@ -37,15 +37,20 @@ func TestConfigParsing(t *testing.T) {
 	assert.Len(t, events.Core.Events[1].events, 1)
 	assert.Equal(t, false, events.Core.Events[1].array)
 	assert.Equal(t, Event("cycles"), events.Core.Events[1].events[0])
+	assert.Len(t, events.Core.Events[2].events, 2)
+	assert.Equal(t, true, events.Core.Events[2].array)
+	assert.Equal(t, Event("instructions"), events.Core.Events[2].events[0])
+	assert.Equal(t, Event("cycles"), events.Core.Events[2].events[1])
+	assert.Equal(t, "my_group", events.Core.Events[2].id)
 
 	assert.Len(t, events.Uncore.Events, 3)
 	assert.Equal(t, Event("cas_count_write"), events.Uncore.Events[0].events[0])
-	assert.Equal(t, Event("uncore_imc_0/UNC_M_CAS_COUNT:RD"), events.Uncore.Events[1].events[0])
+	assert.Equal(t, Event("uncore_imc/UNC_M_CAS_COUNT:RD"), events.Uncore.Events[1].events[0])
+	assert.Equal(t, Event("uncore_imc/UNC_M_CAS_COUNT:WR"), events.Uncore.Events[1].events[1])
 	assert.Equal(t, Event("uncore_ubox/UNC_U_EVENT_MSG"), events.Uncore.Events[2].events[0])
 
 	assert.Len(t, events.Uncore.CustomEvents, 1)
 	assert.Equal(t, Config{0x5300}, events.Uncore.CustomEvents[0].Config)
 	assert.Equal(t, uint32(0x12), events.Uncore.CustomEvents[0].Type)
 	assert.Equal(t, Event("cas_count_write"), events.Uncore.CustomEvents[0].Name)
-
 }
