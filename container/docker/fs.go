@@ -64,13 +64,13 @@ func FsStats(
 			return nil
 		}
 
-		for _, fs := range mi.Filesystems {
-			if fs.Device == device {
+		for _, fileSystem := range mi.Filesystems {
+			if fileSystem.Device == device {
 				usage := fsHandler.Usage()
 				fsStat := info.FsStats{
 					Device:    device,
-					Type:      fs.Type,
-					Limit:     fs.Capacity,
+					Type:      fileSystem.Type,
+					Limit:     fileSystem.Capacity,
 					BaseUsage: usage.BaseUsageBytes,
 					Usage:     usage.TotalUsageBytes,
 					Inodes:    usage.InodeUsage,
@@ -79,7 +79,7 @@ func FsStats(
 				if err != nil {
 					return fmt.Errorf("unable to obtain diskstats for filesystem %s: %v", fsStat.Device, err)
 				}
-				addDiskStats(fileSystems, &fs, &fsStat)
+				fs.AddDiskStats(fileSystems, &fileSystem, &fsStat)
 				stats.Filesystem = append(stats.Filesystem, fsStat)
 				break
 			}
@@ -87,30 +87,6 @@ func FsStats(
 	}
 
 	return nil
-}
-
-func addDiskStats(fileSystems []fs.Fs, fsInfo *info.FsInfo, fsStats *info.FsStats) {
-	if fsInfo == nil {
-		return
-	}
-
-	for _, fileSys := range fileSystems {
-		if fsInfo.DeviceMajor == fileSys.DiskStats.Major &&
-			fsInfo.DeviceMinor == fileSys.DiskStats.Minor {
-			fsStats.ReadsCompleted = fileSys.DiskStats.ReadsCompleted
-			fsStats.ReadsMerged = fileSys.DiskStats.ReadsMerged
-			fsStats.SectorsRead = fileSys.DiskStats.SectorsRead
-			fsStats.ReadTime = fileSys.DiskStats.ReadTime
-			fsStats.WritesCompleted = fileSys.DiskStats.WritesCompleted
-			fsStats.WritesMerged = fileSys.DiskStats.WritesMerged
-			fsStats.SectorsWritten = fileSys.DiskStats.SectorsWritten
-			fsStats.WriteTime = fileSys.DiskStats.WriteTime
-			fsStats.IoInProgress = fileSys.DiskStats.IoInProgress
-			fsStats.IoTime = fileSys.DiskStats.IoTime
-			fsStats.WeightedIoTime = fileSys.DiskStats.WeightedIoTime
-			break
-		}
-	}
 }
 
 // FsHandler is a composite FsHandler implementation the incorporates

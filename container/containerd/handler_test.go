@@ -121,7 +121,8 @@ func TestHandler(t *testing.T) {
 			map[string]string{"TEST_REGION": "FRA", "TEST_ZONE": "A"},
 		},
 	} {
-		handler, err := newContainerdContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvAllowList, ts.includedMetrics)
+		rootfsDir, _ := ts.client.RootfsDir(nil)
+		handler, err := newContainerdContainerHandler(ts.client, ts.name, ts.machineInfoFactory, ts.fsInfo, ts.cgroupSubsystems, ts.inHostNamespace, ts.metadataEnvAllowList, ts.includedMetrics, rootfsDir)
 		if ts.hasErr {
 			as.NotNil(err)
 			if ts.errContains != "" {
