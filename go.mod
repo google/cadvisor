@@ -30,6 +30,7 @@ require (
 	golang.org/x/sys v0.21.0
 	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.1
+	k8s.io/cri-api v0.29.3
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 )
