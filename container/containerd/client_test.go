@@ -66,6 +66,10 @@ func (c *containerdClientMock) TaskExitStatus(ctx context.Context, id string) (u
 	return c.exitStatus, nil
 }
 
+func (c *containerdClientMock) RootfsDir(ctx context.Context) (string, error) {
+	return "/run/containerd/io.containerd.runtime.v2.task", nil
+}
+
 func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr error) ContainerdClient {
 	tasks := make(map[string]*task.Process)
 

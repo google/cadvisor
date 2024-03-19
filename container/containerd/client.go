@@ -16,9 +16,12 @@ package containerd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,6 +34,9 @@ import (
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	"github.com/google/cadvisor/container/containerd/config"
 
 	"github.com/google/cadvisor/container/containerd/containers"
 	"github.com/google/cadvisor/container/containerd/pkg/dialer"
@@ -40,6 +46,7 @@ type client struct {
 	containerService containersapi.ContainersClient
 	taskService      tasksapi.TasksClient
 	versionService   versionapi.VersionClient
+	runtimeService   runtimeapi.RuntimeServiceClient
 }
 
 type ContainerdClient interface {
@@ -48,10 +55,16 @@ type ContainerdClient interface {
 	LoadTaskProcess(ctx context.Context, id string) (*tasktypes.Process, error)
 	TaskExitStatus(ctx context.Context, id string) (uint32, error)
 	Version(ctx context.Context) (string, error)
+	RootfsDir(ctx context.Context) (string, error)
 }
 
 var (
 	ErrTaskIsInUnknownState = errors.New("containerd task is in unknown state") // used when process reported in containerd task is in Unknown State
+)
+
+var (
+	statePlugin       = "io.containerd.grpc.v1.cri"
+	taskRuntimePlugin = "io.containerd.runtime.v2.task"
 )
 
 var once sync.Once
@@ -106,6 +119,7 @@ func Client(address, namespace string) (ContainerdClient, error) {
 			containerService: containersapi.NewContainersClient(conn),
 			taskService:      tasksapi.NewTasksClient(conn),
 			versionService:   versionapi.NewVersionClient(conn),
+			runtimeService:   runtimeapi.NewRuntimeServiceClient(conn),
 		}
 	})
 	return ctrdClient, ctrdClientErr
@@ -164,6 +178,19 @@ func (c *client) Version(ctx context.Context) (string, error) {
 		return "", errgrpc.ToNative(err)
 	}
 	return response.Version, nil
+}
+
+func (c *client) RootfsDir(ctx context.Context) (string, error) {
+	r, err := c.runtimeService.Status(ctx, &runtimeapi.StatusRequest{Verbose: true})
+	if err != nil {
+		return "", err
+	}
+	configStr := r.Info["config"]
+	config := config.Config{}
+	if err := json.Unmarshal([]byte(configStr), &config); err != nil {
+		return "", err
+	}
+	return path.Join(strings.TrimSuffix(config.StateDir, statePlugin), taskRuntimePlugin), nil
 }
 
 func containerFromProto(containerpb *containersapi.Container) *containers.Container {

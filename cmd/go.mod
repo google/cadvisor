@@ -128,4 +128,5 @@ require (
 	google.golang.org/grpc v1.72.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/cri-api v0.34.3 // indirect
 )

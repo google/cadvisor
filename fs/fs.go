@@ -35,6 +35,7 @@ import (
 	mount "github.com/moby/sys/mountinfo"
 
 	"github.com/google/cadvisor/devicemapper"
+	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils"
 
 	"k8s.io/klog/v2"
@@ -878,4 +879,28 @@ func getBtrfsMajorMinorIds(mount *mount.Info) (int, int, error) {
 		return int(major(uint64(buf.Dev))), int(minor(uint64(buf.Dev))), nil // nolint: unconvert
 	}
 	return 0, 0, fmt.Errorf("%s is not a block device", mount.Source)
+}
+
+func AddDiskStats(fileSystems []Fs, fsInfo *info.FsInfo, fsStats *info.FsStats) {
+	if fsInfo == nil {
+		return
+	}
+
+	for _, fileSys := range fileSystems {
+		if fsInfo.DeviceMajor == fileSys.DiskStats.Major &&
+			fsInfo.DeviceMinor == fileSys.DiskStats.Minor {
+			fsStats.ReadsCompleted = fileSys.DiskStats.ReadsCompleted
+			fsStats.ReadsMerged = fileSys.DiskStats.ReadsMerged
+			fsStats.SectorsRead = fileSys.DiskStats.SectorsRead
+			fsStats.ReadTime = fileSys.DiskStats.ReadTime
+			fsStats.WritesCompleted = fileSys.DiskStats.WritesCompleted
+			fsStats.WritesMerged = fileSys.DiskStats.WritesMerged
+			fsStats.SectorsWritten = fileSys.DiskStats.SectorsWritten
+			fsStats.WriteTime = fileSys.DiskStats.WriteTime
+			fsStats.IoInProgress = fileSys.DiskStats.IoInProgress
+			fsStats.IoTime = fileSys.DiskStats.IoTime
+			fsStats.WeightedIoTime = fileSys.DiskStats.WeightedIoTime
+			break
+		}
+	}
 }
