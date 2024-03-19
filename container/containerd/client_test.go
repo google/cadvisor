@@ -45,6 +45,10 @@ func (c *containerdClientMock) TaskPid(ctx context.Context, id string) (uint32, 
 	return 2389, nil
 }
 
+func (c *containerdClientMock) RootfsDir(ctx context.Context) (string, error) {
+	return "/run/containerd/io.containerd.runtime.v2.task", nil
+}
+
 func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr error) ContainerdClient {
 	return &containerdClientMock{
 		cntrs:     cntrs,
