@@ -169,7 +169,7 @@ func TestAddDiskStatsCheck(t *testing.T) {
 	fileSystems := []fs.Fs{fileSystem}
 
 	var fsStats info.FsStats
-	addDiskStats(fileSystems, nil, &fsStats)
+	fs.AddDiskStats(fileSystems, nil, &fsStats)
 }
 
 func TestAddDiskStats(t *testing.T) {
@@ -203,7 +203,7 @@ func TestAddDiskStats(t *testing.T) {
 	fileSystems := []fs.Fs{fileSystem}
 
 	// Act
-	addDiskStats(fileSystems, &fsInfo, &fsStats)
+	fs.AddDiskStats(fileSystems, &fsInfo, &fsStats)
 
 	// Assert
 	as.Equal(readsCompleted, fileSystem.DiskStats.ReadsCompleted, "ReadsCompleted metric should be %d but was %d", readsCompleted, fileSystem.DiskStats.ReadsCompleted)

@@ -16,9 +16,12 @@ package containerd
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"path"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,22 +37,34 @@ import (
 	tasksapi "github.com/google/cadvisor/third_party/containerd/api/services/tasks/v1"
 	versionapi "github.com/google/cadvisor/third_party/containerd/api/services/version/v1"
 	tasktypes "github.com/google/cadvisor/third_party/containerd/api/types/task"
+	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 type client struct {
 	containerService containersapi.ContainersClient
 	taskService      tasksapi.TasksClient
 	versionService   versionapi.VersionClient
+	runtimeService   runtimeapi.RuntimeServiceClient
 }
 
 type ContainerdClient interface {
 	LoadContainer(ctx context.Context, id string) (*containers.Container, error)
 	TaskPid(ctx context.Context, id string) (uint32, error)
 	Version(ctx context.Context) (string, error)
+	RootfsDir(ctx context.Context) (string, error)
 }
 
 var (
 	ErrTaskIsInUnknownState = errors.New("containerd task is in unknown state") // used when process reported in containerd task is in Unknown State
+)
+
+var (
+	statePlugin       = "io.containerd.grpc.v1.cri"
+	taskRuntimePlugin = "io.containerd.runtime.v2.task"
+)
+
+var (
+	stateDirKey = "stateDir"
 )
 
 var once sync.Once
@@ -102,6 +117,7 @@ func Client(address, namespace string) (ContainerdClient, error) {
 			containerService: containersapi.NewContainersClient(conn),
 			taskService:      tasksapi.NewTasksClient(conn),
 			versionService:   versionapi.NewVersionClient(conn),
+			runtimeService:   runtimeapi.NewRuntimeServiceClient(conn),
 		}
 	})
 	return ctrdClient, retErr
@@ -128,6 +144,23 @@ func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
 		return 0, ErrTaskIsInUnknownState
 	}
 	return response.Process.Pid, nil
+}
+
+func (c *client) RootfsDir(ctx context.Context) (string, error) {
+	r, err := c.runtimeService.Status(ctx, &runtimeapi.StatusRequest{Verbose: true})
+	if err != nil {
+		return "", err
+	}
+	configStr := r.Info["config"]
+	config := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(configStr), &config); err != nil {
+		return "", err
+	}
+	stateDir, ok := config[stateDirKey].(string)
+	if !ok {
+		return "", fmt.Errorf("stateDir not found in containerd config")
+	}
+	return path.Join(strings.TrimSuffix(stateDir, statePlugin), taskRuntimePlugin), nil
 }
 
 func (c *client) Version(ctx context.Context) (string, error) {
