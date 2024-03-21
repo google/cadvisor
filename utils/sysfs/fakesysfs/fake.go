@@ -67,6 +67,12 @@ type FakeSysFs struct {
 	physicalPackageIDs   map[string]string
 	physicalPackageIDErr map[string]error
 
+	bookIDs   map[string]string
+	bookIDErr map[string]error
+
+	drawerIDs   map[string]string
+	drawerIDErr map[string]error
+
 	memTotal string
 	memErr   error
 
@@ -96,6 +102,14 @@ func (fs *FakeSysFs) GetCoreID(coreIDPath string) (string, error) {
 
 func (fs *FakeSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
 	return fs.physicalPackageIDs[cpuPath], fs.physicalPackageIDErr[cpuPath]
+}
+
+func (fs *FakeSysFs) GetBookID(coreIDPath string) (string, error) {
+	return fs.bookIDs[coreIDPath], fs.bookIDErr[coreIDPath]
+}
+
+func (fs *FakeSysFs) GetDrawerID(coreIDPath string) (string, error) {
+	return fs.drawerIDs[coreIDPath], fs.drawerIDErr[coreIDPath]
 }
 
 func (fs *FakeSysFs) GetMemInfo(nodePath string) (string, error) {
