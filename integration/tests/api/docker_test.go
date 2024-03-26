@@ -165,7 +165,7 @@ func TestBasicDockerContainer(t *testing.T) {
 	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
 	require.NoError(t, err)
 
-	// Check that the contianer is known by both its name and ID.
+	// Check that the container is known by both its name and ID.
 	sanityCheck(containerID, containerInfo, t)
 	sanityCheck(containerName, containerInfo, t)
 
@@ -213,7 +213,7 @@ func TestDockerContainerSpec(t *testing.T) {
 
 	assert.True(containerInfo.Spec.HasCpu, "CPU should be isolated")
 	if cgroups.IsCgroup2UnifiedMode() {
-		// cpu shares are rounded slighly on cgroupv2 due to conversion between cgroupv1 (cpu.shares) and cgroupv2 (cpu.weight)
+		// cpu shares are rounded slightly on cgroupv2 due to conversion between cgroupv1 (cpu.shares) and cgroupv2 (cpu.weight)
 		// When container is created via docker, runc will convert cpu shares to cpu.weight https://github.com/opencontainers/runc/blob/d11f4d756e85ece5cdba8bb69f8bd4db3cdcbeab/libcontainer/cgroups/utils.go#L423-L428
 		// And cAdvisor will convert cpu.weight back to cpu shares in https://github.com/google/cadvisor/blob/24e7a9883d12f944fd4403861707f4bafcaf4f3d/container/common/helpers.go#L249-L260
 		// Worked example:
