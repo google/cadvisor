@@ -95,7 +95,7 @@ func SummariesToImages(summaries []dockertypes.ImageSummary) ([]v1.DockerImage, 
 			ID:          summary.ID,
 			RepoTags:    summary.RepoTags,
 			Created:     summary.Created,
-			VirtualSize: summary.VirtualSize,
+			VirtualSize: summary.Size,
 			Size:        summary.Size,
 		}
 		out = append(out, di)
