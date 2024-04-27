@@ -238,6 +238,9 @@ type MachineInfo struct {
 
 	// ID of cloud instance (e.g. instance-1) given to it by the cloud provider.
 	InstanceID InstanceID `json:"instance_id"`
+
+	// hostname
+	Hostname string `json:"hostname"`
 }
 
 func (m *MachineInfo) Clone() *MachineInfo {
@@ -277,6 +280,7 @@ func (m *MachineInfo) Clone() *MachineInfo {
 		CloudProvider:    m.CloudProvider,
 		InstanceType:     m.InstanceType,
 		InstanceID:       m.InstanceID,
+		Hostname:         m.Hostname,
 	}
 	return &copy
 }
