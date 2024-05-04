@@ -8,18 +8,17 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.24
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.9
 	github.com/blang/semver/v4 v4.0.0
+	github.com/containerd/containerd/api v1.8.0-rc.2
 	github.com/containerd/ttrpc v1.2.4
 	github.com/containerd/typeurl v1.0.2
 	github.com/docker/docker v26.1.4+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
-	github.com/gogo/googleapis v1.4.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/karrick/godirwalk v1.17.0
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
 	github.com/moby/sys/mountinfo v0.7.1
-	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/runc v1.1.13
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/pkg/errors v0.9.1
@@ -67,7 +66,8 @@ require (
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/mrunalp/fileutils v0.5.1 // indirect
-	github.com/opencontainers/image-spec v1.0.2 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opencontainers/selinux v1.10.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect

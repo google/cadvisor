@@ -27,13 +27,13 @@ import (
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 
+	containersapi "github.com/containerd/containerd/api/services/containers/v1"
+	tasksapi "github.com/containerd/containerd/api/services/tasks/v1"
+	versionapi "github.com/containerd/containerd/api/services/version/v1"
+	tasktypes "github.com/containerd/containerd/api/types/task"
 	"github.com/google/cadvisor/container/containerd/containers"
 	"github.com/google/cadvisor/container/containerd/errdefs"
 	"github.com/google/cadvisor/container/containerd/pkg/dialer"
-	containersapi "github.com/google/cadvisor/third_party/containerd/api/services/containers/v1"
-	tasksapi "github.com/google/cadvisor/third_party/containerd/api/services/tasks/v1"
-	versionapi "github.com/google/cadvisor/third_party/containerd/api/services/version/v1"
-	tasktypes "github.com/google/cadvisor/third_party/containerd/api/types/task"
 )
 
 type client struct {
