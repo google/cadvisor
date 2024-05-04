@@ -18,7 +18,9 @@ package containerd
 import (
 	"testing"
 
-	"github.com/containerd/typeurl"
+	"github.com/containerd/typeurl/v2"
+	"google.golang.org/protobuf/types/known/anypb"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
 
@@ -40,6 +42,36 @@ func (m *mockedMachineInfo) GetMachineInfo() (*info.MachineInfo, error) {
 
 func (m *mockedMachineInfo) GetVersionInfo() (*info.VersionInfo, error) {
 	return &info.VersionInfo{}, nil
+}
+
+// Copied from https://github.com/containerd/containerd/blob/main/pkg/protobuf/any.go
+// FromAny converts typeurl.Any to github.com/containerd/containerd/protobuf/types.Any.
+//
+// TODO: vendor these functions once they are moved to github.com/containerd/typeurl.
+//
+//	Currently they are copied over so as not to introduce a dependency on containerd/containerd again
+func FromAny(from typeurl.Any) *anypb.Any {
+	if from == nil {
+		return nil
+	}
+
+	if pbany, ok := from.(*anypb.Any); ok {
+		return pbany
+	}
+
+	return &anypb.Any{
+		TypeUrl: from.GetTypeUrl(),
+		Value:   from.GetValue(),
+	}
+}
+
+// MarshalAnyToProto converts an arbitrary interface to github.com/containerd/containerd/protobuf/types.Any.
+func MarshalAnyToProto(from interface{}) (*anypb.Any, error) {
+	anyType, err := typeurl.MarshalAny(from)
+	if err != nil {
+		return nil, err
+	}
+	return FromAny(anyType), nil
 }
 
 func TestHandler(t *testing.T) {
@@ -65,7 +97,7 @@ func TestHandler(t *testing.T) {
 		Labels: map[string]string{"io.cri-containerd.kind": "sandbox"},
 	}
 	spec := &specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{Env: []string{"TEST_REGION=FRA", "TEST_ZONE=A", "HELLO=WORLD"}}}
-	testContainer.Spec, _ = typeurl.MarshalAny(spec)
+	testContainer.Spec, _ = MarshalAnyToProto(spec)
 	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainer
 	for _, ts := range []testCase{
 		{

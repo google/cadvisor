@@ -9,12 +9,11 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/containerd/containerd/api v1.8.0-rc.2
 	github.com/containerd/ttrpc v1.2.4
-	github.com/containerd/typeurl v1.0.2
+	github.com/containerd/typeurl/v2 v2.1.1
 	github.com/docker/docker v26.1.4+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
-	github.com/gogo/protobuf v1.3.2
 	github.com/karrick/godirwalk v1.17.0
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
 	github.com/moby/sys/mountinfo v0.7.1
@@ -28,6 +27,7 @@ require (
 	golang.org/x/net v0.26.0
 	golang.org/x/sys v0.21.0
 	google.golang.org/grpc v1.64.0
+	google.golang.org/protobuf v1.34.1
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2
 )
@@ -48,6 +48,7 @@ require (
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2 // indirect
@@ -74,7 +75,6 @@ require (
 	go.opentelemetry.io/otel/trace v1.27.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240515191416-fc5f0ca64291 // indirect
-	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.0.2 // indirect
 )

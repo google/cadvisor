@@ -17,7 +17,6 @@ package containerd
 import (
 	"testing"
 
-	"github.com/containerd/typeurl"
 	"github.com/google/cadvisor/container/containerd/containers"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
@@ -52,7 +51,7 @@ func TestCanHandleAndAccept(t *testing.T) {
 		Labels: map[string]string{"io.cri-containerd.kind": "sandbox"},
 	}
 	spec := &specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{}}
-	testContainer.Spec, _ = typeurl.MarshalAny(spec)
+	testContainer.Spec, _ = MarshalAnyToProto(spec)
 	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainer
 
 	f := &containerdFactory{
