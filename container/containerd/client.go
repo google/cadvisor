@@ -22,10 +22,10 @@ import (
 	"sync"
 	"time"
 
-	ptypes "github.com/gogo/protobuf/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
 	containersapi "github.com/containerd/containerd/api/services/containers/v1"
 	tasksapi "github.com/containerd/containerd/api/services/tasks/v1"
@@ -126,22 +126,23 @@ func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
 	if err != nil {
 		return 0, errdefs.FromGRPC(err)
 	}
-	if response.Process.Status == tasktypes.StatusUnknown {
+	if response.Process.Status == tasktypes.Status_UNKNOWN {
 		return 0, ErrTaskIsInUnknownState
 	}
 	return response.Process.Pid, nil
 }
 
 func (c *client) Version(ctx context.Context) (string, error) {
-	response, err := c.versionService.Version(ctx, &ptypes.Empty{})
+	response, err := c.versionService.Version(ctx, &emptypb.Empty{})
 	if err != nil {
 		return "", errdefs.FromGRPC(err)
 	}
 	return response.Version, nil
 }
 
-func containerFromProto(containerpb containersapi.Container) *containers.Container {
+func containerFromProto(containerpb *containersapi.Container) *containers.Container {
 	var runtime containers.RuntimeInfo
+	// TODO: is nil check required for containerpb
 	if containerpb.Runtime != nil {
 		runtime = containers.RuntimeInfo{
 			Name:    containerpb.Runtime.Name,
