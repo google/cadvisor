@@ -58,12 +58,12 @@ function run_tests() {
     --privileged \
     --cap-add="sys_admin" \
     --entrypoint="" \
-    gcr.io/k8s-testimages/bootstrap \
+    gcr.io/k8s-staging-test-infra/bootstrap \
     bash -c "export DEBIAN_FRONTEND=noninteractive && \
-    echo 'deb http://deb.debian.org/debian buster-backports main'>/etc/apt/sources.list.d/buster.list && \
-    cat /etc/apt/sources.list.d/buster.list && \
+    echo 'deb http://deb.debian.org/debian bookworm-backports main'>/etc/apt/sources.list.d/bookworm.list && \
+    cat /etc/apt/sources.list.d/bookworm.list && \
     apt update && \
-    apt install -y -t buster-backports $PACKAGES && \
+    apt install -y -t bookworm-backports $PACKAGES && \
     CADVISOR_ARGS="$CADVISOR_ARGS" /usr/local/bin/runner.sh build/integration.sh"
 }
 
