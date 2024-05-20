@@ -42,7 +42,7 @@ function run_tests() {
   docker run --rm \
     -w /go/src/github.com/google/cadvisor \
     -v ${PWD}:/go/src/github.com/google/cadvisor \
-    golang:"$GOLANG_VERSION-bullseye" \
+    golang:"$GOLANG_VERSION-bookworm" \
     bash -c "$BUILD_CMD"
 
   EXTRA_DOCKER_OPTS="-e DOCKER_IN_DOCKER_ENABLED=true"
