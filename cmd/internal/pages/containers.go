@@ -164,6 +164,10 @@ func printUnit(bytes uint64) string {
 }
 
 func serveContainersPage(m manager.Manager, w http.ResponseWriter, u *url.URL) {
+
+        w.Header().Set("Content-Security-Policy", "default-src 'self'")
+        w.Header().Set("X-Frame-Options", "DENY")
+
 	start := time.Now()
 
 	// The container name is the path after the handler
