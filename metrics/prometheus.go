@@ -135,6 +135,24 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					}}
 				},
 			},
+			{
+				name:      "container_health_state",
+				help:      "The result of the container's health check",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{
+						// inline if to check if s.health.status = healthy
+						value: func(s *info.ContainerStats) float64 {
+							if s.Health.Status == "healthy" {
+								return 1
+							} else {
+								return 0
+							}
+						}(s),
+						timestamp: s.Timestamp,
+					}}
+				},
+			},
 		},
 		includedMetrics: includedMetrics,
 		opts:            opts,
