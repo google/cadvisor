@@ -930,6 +930,11 @@ type ProcessStats struct {
 	Ulimits []UlimitSpec `json:"ulimits,omitempty"`
 }
 
+type Health struct {
+	// Health status of the container
+	Status string `json:"status"`
+}
+
 type ContainerStats struct {
 	// The time of this stat point.
 	Timestamp time.Time               `json:"timestamp"`
@@ -969,6 +974,8 @@ type ContainerStats struct {
 	CpuSet CPUSetStats `json:"cpuset,omitempty"`
 
 	OOMEvents uint64 `json:"oom_events,omitempty"`
+
+	Health Health `json:"health,omitempty"`
 }
 
 func timeEq(t1, t2 time.Time, tolerance time.Duration) bool {

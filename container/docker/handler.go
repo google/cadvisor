@@ -64,8 +64,9 @@ type dockerContainerHandler struct {
 	creationTime time.Time
 
 	// Metadata associated with the container.
-	envs   map[string]string
-	labels map[string]string
+	envs         map[string]string
+	labels       map[string]string
+	healthStatus string
 
 	// Image name used for this container.
 	image string
@@ -178,6 +179,7 @@ func newDockerContainerHandler(
 		rootfsStorageDir:   rootfsStorageDir,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
+		healthStatus:       ctnr.State.Health.Status,
 		includedMetrics:    metrics,
 		zfsParent:          zfsParent,
 	}
@@ -303,6 +305,9 @@ func (h *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 // TODO(vmarmol): Get from libcontainer API instead of cgroup manager when we don't have to support older Dockers.
 func (h *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 	stats, err := h.libcontainerHandler.GetStats()
+
+	stats.Health.Status = h.healthStatus
+
 	if err != nil {
 		return stats, err
 	}
