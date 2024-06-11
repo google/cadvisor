@@ -177,7 +177,7 @@ func (fs *realSysFs) GetBookID(cpuPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(bookID)), err
+	return strings.TrimSpace(string(bookID)), nil
 }
 
 func (fs *realSysFs) GetDrawerID(cpuPath string) (string, error) {
@@ -186,7 +186,7 @@ func (fs *realSysFs) GetDrawerID(cpuPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(drawerID)), err
+	return strings.TrimSpace(string(drawerID)), nil
 }
 
 func (fs *realSysFs) GetMemInfo(nodePath string) (string, error) {

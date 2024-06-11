@@ -199,6 +199,16 @@ func (fs *FakeSysFs) SetPhysicalPackageIDs(physicalPackageIDs map[string]string,
 	fs.physicalPackageIDErr = physicalPackageIDErrors
 }
 
+func (fs *FakeSysFs) SetBookIDs(bookIDs map[string]string, bookIDErrors map[string]error) {
+	fs.bookIDs = bookIDs
+	fs.bookIDErr = bookIDErrors
+}
+
+func (fs *FakeSysFs) SetDrawerIDs(drawerIDs map[string]string, drawerIDErrors map[string]error) {
+	fs.drawerIDs = drawerIDs
+	fs.drawerIDErr = drawerIDErrors
+}
+
 func (fs *FakeSysFs) SetMemory(memTotal string, err error) {
 	fs.memTotal = memTotal
 	fs.memErr = err
