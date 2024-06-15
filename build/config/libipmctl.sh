@@ -13,6 +13,6 @@
 # limitations under the License.
 
 export GO_FLAGS="-tags=libipmctl,cgo -race"
-export PACKAGES="sudo libipmctl4"
-export BUILD_PACKAGES="libipmctl4 libipmctl-dev"
+export PACKAGES="sudo libipmctl5"
+export BUILD_PACKAGES="libipmctl5 libipmctl-dev"
 export CADVISOR_ARGS="-perf_events_config=perf/testing/perf-non-hardware.json"
