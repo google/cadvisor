@@ -78,6 +78,7 @@ func Client(address, namespace string) (ContainerdClient, error) {
 		}
 		connParams.Backoff.BaseDelay = baseBackoffDelay
 		connParams.Backoff.MaxDelay = maxBackoffDelay
+		//nolint:staticcheck // SA1019
 		gopts := []grpc.DialOption{
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithContextDialer(dialer.ContextDialer),
@@ -93,6 +94,7 @@ func Client(address, namespace string) (ContainerdClient, error) {
 
 		ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
 		defer cancel()
+		//nolint:staticcheck // SA1019
 		conn, err := grpc.DialContext(ctx, dialer.DialAddress(address), gopts...)
 		if err != nil {
 			retErr = err
