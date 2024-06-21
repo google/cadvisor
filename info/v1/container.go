@@ -629,7 +629,7 @@ type TcpAdvancedStat struct {
 	// The number of retransmits failed, including FastRetrans, SlowStartRetrans
 	TCPRetransFail uint64
 
-	// he number of packets collapsed in receive queue due to low socket buffer
+	// The number of packets collapsed in receive queue due to low socket buffer
 	TCPRcvCollapsed uint64
 	// The number of DSACKs sent for old packets
 	TCPDSACKOldSent uint64
