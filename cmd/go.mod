@@ -23,7 +23,7 @@ require (
 	github.com/onsi/gomega v1.24.1 // indirect
 	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7 // indirect
 	github.com/prometheus/client_golang v1.14.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.10.0
 	google.golang.org/api v0.126.0
 	gopkg.in/olivere/elastic.v2 v2.0.61
@@ -59,7 +59,7 @@ require (
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/s2a-go v0.1.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -93,7 +93,6 @@ require (
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
-	github.com/rogpeppe/go-internal v1.6.1 // indirect
 	github.com/seccomp/libseccomp-golang v0.9.2-0.20220502022130-f33da4d89646 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
@@ -109,8 +108,9 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230807174057-1744710a1577 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230803162519-f966b187b2e5 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230803162519-f966b187b2e5 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/grpc v1.58.3 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/cri-api v0.29.3 // indirect
 )
