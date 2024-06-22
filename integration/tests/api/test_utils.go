@@ -69,6 +69,8 @@ func checkMemoryStats(t *testing.T, stat info.MemoryStats) {
 
 	assert.NotEqual(0, stat.Usage, "Memory usage should not be zero")
 	assert.NotEqual(0, stat.WorkingSet, "Memory working set should not be zero")
+	assert.NotEqual(0, stat.TotalActiveFile, "Memory total active file should not be zero")
+	assert.NotEqual(0, stat.TotalInactiveFile, "Memory total inactive file should not be zero")
 	if stat.WorkingSet > stat.Usage {
 		t.Errorf("Memory working set (%d) should be at most equal to memory usage (%d)", stat.WorkingSet, stat.Usage)
 	}

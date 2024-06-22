@@ -393,6 +393,14 @@ type MemoryStats struct {
 	// Units: Bytes.
 	WorkingSet uint64 `json:"working_set"`
 
+	// The total amount of active file memory.
+	// Units: Bytes.
+	TotalActiveFile uint64 `json:"total_active_file"`
+
+	// The total amount of inactive file memory.
+	// Units: Bytes.
+	TotalInactiveFile uint64 `json:"total_inactive_file"`
+
 	Failcnt uint64 `json:"failcnt"`
 
 	// Size of kernel memory allocated in bytes.

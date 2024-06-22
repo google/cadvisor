@@ -180,6 +180,12 @@ container_memory_rss{container_env_foo_env="prod",container_label_foo_label="bar
 # HELP container_memory_swap Container swap usage in bytes.
 # TYPE container_memory_swap gauge
 container_memory_swap{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8192 1395066363000
+# HELP container_memory_total_active_file_bytes Current total active file in bytes.
+# TYPE container_memory_total_active_file_bytes gauge
+container_memory_total_active_file_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 7 1395066363000
+# HELP container_memory_total_inactive_file_bytes Current total inactive file in bytes.
+# TYPE container_memory_total_inactive_file_bytes gauge
+container_memory_total_inactive_file_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 6 1395066363000
 # HELP container_memory_usage_bytes Current memory usage in bytes, including all memory regardless of when it was accessed
 # TYPE container_memory_usage_bytes gauge
 container_memory_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8 1395066363000
