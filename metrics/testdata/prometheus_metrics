@@ -21,6 +21,9 @@ container_cpu_cfs_throttled_seconds_total{container_env_foo_env="prod",container
 # HELP container_cpu_load_average_10s Value of container cpu load average over the last 10 seconds.
 # TYPE container_cpu_load_average_10s gauge
 container_cpu_load_average_10s{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2 1395066363000
+# HELP container_cpu_load_d_average_10s Value of container cpu load.d average over the last 10 seconds.
+# TYPE container_cpu_load_d_average_10s gauge
+container_cpu_load_d_average_10s{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2 1395066363000
 # HELP container_cpu_schedstat_run_periods_total Number of times processes of the cgroup have run on the cpu
 # TYPE container_cpu_schedstat_run_periods_total counter
 container_cpu_schedstat_run_periods_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 984285 1395066363000
