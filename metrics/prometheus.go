@@ -15,9 +15,12 @@
 package metrics
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/google/cadvisor/container"
@@ -100,6 +103,22 @@ type PrometheusCollector struct {
 	containerLabelsFunc ContainerLabelsFunc
 	includedMetrics     container.MetricSet
 	opts                v2.RequestOptions
+
+	labelKeyMtx *sync.RWMutex
+	labelKey    []byte
+	descs       *descriptions
+}
+
+type descriptions struct {
+	startTimeSeconds       *prometheus.Desc
+	cpuPeriod              *prometheus.Desc
+	cpuQuota               *prometheus.Desc
+	cpuShares              *prometheus.Desc
+	memoryLimit            *prometheus.Desc
+	memorySwapLimit        *prometheus.Desc
+	memoryReservationLimit *prometheus.Desc
+
+	containerMetricDescs []*prometheus.Desc
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector. The passed
@@ -133,6 +152,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		},
 		includedMetrics: includedMetrics,
 		opts:            opts,
+		labelKeyMtx:     &sync.RWMutex{},
 	}
 	if includedMetrics.Has(container.CpuUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
@@ -1832,6 +1852,62 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		}
 	}
 
+	keyLength := 0
+	labelNames := make([]string, 0, len(rawLabels))
+	for l := range rawLabels {
+		keyLength += len(l)
+		labelNames = append(labelNames, l)
+	}
+	sort.Strings(labelNames)
+
+	key := make([]byte, 0, keyLength)
+	for _, l := range labelNames {
+		key = append(key, l...)
+	}
+
+	c.labelKeyMtx.RLock()
+	prevKey := c.labelKey
+	descs := c.descs
+	c.labelKeyMtx.RUnlock()
+
+	if !bytes.Equal(prevKey, key) {
+		labels := make([]string, 0, len(rawLabels))
+		for l := range rawLabels {
+			duplicate := false
+			sl := sanitizeLabelName(l)
+			for _, x := range labels {
+				if sl == x {
+					duplicate = true
+					break
+				}
+			}
+			if !duplicate {
+				labels = append(labels, sl)
+			}
+		}
+		// recompute descs
+		descs = &descriptions{
+			startTimeSeconds:       prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil),
+			cpuPeriod:              prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil),
+			cpuQuota:               prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", labels, nil),
+			cpuShares:              prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", labels, nil),
+			memoryLimit:            prometheus.NewDesc("container_spec_memory_limit_bytes", "Memory limit for the container.", labels, nil),
+			memorySwapLimit:        prometheus.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil),
+			memoryReservationLimit: prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil),
+		}
+
+		descs.containerMetricDescs = make([]*prometheus.Desc, 0, len(c.containerMetrics))
+		for _, cm := range c.containerMetrics {
+			desc := cm.desc(labels)
+			descs.containerMetricDescs = append(descs.containerMetricDescs, desc)
+		}
+
+		c.labelKeyMtx.Lock()
+		c.labelKey = key
+		c.descs = descs
+		c.labelKeyMtx.Unlock()
+	}
+
 	for _, cont := range containers {
 		values := make([]string, 0, len(rawLabels))
 		labels := make([]string, 0, len(rawLabels))
@@ -1852,26 +1928,26 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		}
 
 		// Container spec
-		desc := prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
+		desc := descs.startTimeSeconds
 		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), values...)
 
 		if cont.Spec.HasCpu {
-			desc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil)
+			desc = descs.cpuPeriod
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Period), values...)
 			if cont.Spec.Cpu.Quota != 0 {
-				desc = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", labels, nil)
+				desc = descs.cpuQuota
 				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Quota), values...)
 			}
-			desc := prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", labels, nil)
+			desc := descs.cpuShares
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Limit), values...)
 
 		}
 		if cont.Spec.HasMemory {
-			desc := prometheus.NewDesc("container_spec_memory_limit_bytes", "Memory limit for the container.", labels, nil)
+			desc := descs.memoryLimit
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Limit), values...)
-			desc = prometheus.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil)
+			desc = descs.memorySwapLimit
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), values...)
-			desc = prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil)
+			desc = descs.memoryReservationLimit
 			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Reservation), values...)
 		}
 
@@ -1880,11 +1956,11 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			continue
 		}
 		stats := cont.Stats[0]
-		for _, cm := range c.containerMetrics {
+		for i, cm := range c.containerMetrics {
 			if cm.condition != nil && !cm.condition(cont.Spec) {
 				continue
 			}
-			desc := cm.desc(labels)
+			desc := descs.containerMetricDescs[i]
 			for _, metricValue := range cm.getValues(stats) {
 				ch <- prometheus.NewMetricWithTimestamp(
 					metricValue.timestamp,
