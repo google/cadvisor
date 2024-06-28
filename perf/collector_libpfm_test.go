@@ -85,22 +85,22 @@ func TestCollector_UpdateStats(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	collector.cpuFiles = map[int]group{
-		1: {
+	collector.cpuFiles = map[string]group{
+		"1": {
 			cpuFiles: map[string]map[int]readerCloser{
 				"instructions": {0: notScaledBuffer},
 			},
 			names:      []string{"instructions"},
 			leaderName: "instructions",
 		},
-		2: {
+		"2": {
 			cpuFiles: map[string]map[int]readerCloser{
 				"cycles": {11: scaledBuffer},
 			},
 			names:      []string{"cycles"},
 			leaderName: "cycles",
 		},
-		3: {
+		"3": {
 			cpuFiles: map[string]map[int]readerCloser{
 				"cache-misses": {
 					0: groupedBuffer,
@@ -123,7 +123,8 @@ func TestCollector_UpdateStats(t *testing.T) {
 			Value:        999999999,
 			Name:         "cycles",
 		},
-		Cpu: 11,
+		Cpu:     11,
+		GroupID: "2",
 	})
 	assert.Contains(t, stats.PerfStats, info.PerfStat{
 		PerfValue: info.PerfValue{
@@ -131,7 +132,8 @@ func TestCollector_UpdateStats(t *testing.T) {
 			Value:        123456789,
 			Name:         "instructions",
 		},
-		Cpu: 0,
+		Cpu:     0,
+		GroupID: "1",
 	})
 	assert.Contains(t, stats.PerfStats, info.PerfStat{
 		PerfValue: info.PerfValue{
@@ -139,7 +141,8 @@ func TestCollector_UpdateStats(t *testing.T) {
 			Value:        123456,
 			Name:         "cache-misses",
 		},
-		Cpu: 0,
+		Cpu:     0,
+		GroupID: "3",
 	})
 	assert.Contains(t, stats.PerfStats, info.PerfStat{
 		PerfValue: info.PerfValue{
@@ -147,7 +150,8 @@ func TestCollector_UpdateStats(t *testing.T) {
 			Value:        654321,
 			Name:         "cache-references",
 		},
-		Cpu: 0,
+		Cpu:     0,
+		GroupID: "3",
 	})
 }
 
@@ -189,7 +193,7 @@ func TestSetGroupAttributes(t *testing.T) {
 func TestNewCollector(t *testing.T) {
 	perfCollector := newCollector("cgroup", PerfEvents{
 		Core: Events{
-			Events: []Group{{[]Event{"event_1"}, false}, {[]Event{"event_2"}, false}},
+			Events: []Group{{[]Event{"event_1"}, false, "1"}, {[]Event{"event_2"}, false, "2"}},
 			CustomEvents: []CustomEvent{{
 				Type:   0,
 				Config: []uint64{1, 2, 3},
@@ -212,8 +216,8 @@ func TestCollectorSetup(t *testing.T) {
 	events := PerfEvents{
 		Core: Events{
 			Events: []Group{
-				{[]Event{"cache-misses"}, false},
-				{[]Event{"non-existing-event"}, false},
+				{[]Event{"cache-misses"}, false, "1"},
+				{[]Event{"non-existing-event"}, false, "2"},
 			},
 		},
 	}
@@ -227,7 +231,7 @@ func TestCollectorSetup(t *testing.T) {
 	err = c.setup()
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(c.cpuFiles))
-	assert.Equal(t, []string{"cache-misses"}, c.cpuFiles[0].names)
+	assert.Equal(t, []string{"cache-misses"}, c.cpuFiles["1"].names)
 }
 
 var readGroupPerfStatCases = []struct {
@@ -258,7 +262,8 @@ var readGroupPerfStatCases = []struct {
 				Value:        5,
 				Name:         "some metric",
 			},
-			Cpu: 1,
+			Cpu:     1,
+			GroupID: "1",
 		}},
 		err: nil,
 	},
@@ -281,7 +286,8 @@ var readGroupPerfStatCases = []struct {
 				Value:        5,
 				Name:         "some metric",
 			},
-			Cpu: 1,
+			Cpu:     1,
+			GroupID: "1",
 		}},
 		err: nil,
 	},
@@ -304,7 +310,8 @@ var readGroupPerfStatCases = []struct {
 				Value:        8,
 				Name:         "some metric",
 			},
-			Cpu: 2,
+			Cpu:     2,
+			GroupID: "1",
 		}},
 		err: nil,
 	},
@@ -327,7 +334,8 @@ var readGroupPerfStatCases = []struct {
 				Value:        4,
 				Name:         "some metric",
 			},
-			Cpu: 3,
+			Cpu:     3,
+			GroupID: "1",
 		}},
 		err: nil,
 	},
@@ -350,7 +358,8 @@ var readGroupPerfStatCases = []struct {
 				Value:        4,
 				Name:         "some metric",
 			},
-			Cpu: 3,
+			Cpu:     3,
+			GroupID: "1",
 		}},
 		err: nil,
 	},
@@ -373,7 +382,8 @@ var readGroupPerfStatCases = []struct {
 				Value:        0,
 				Name:         "some metric",
 			},
-			Cpu: 4,
+			Cpu:     4,
+			GroupID: "1",
 		}},
 		err: nil,
 	},
@@ -396,7 +406,8 @@ var readGroupPerfStatCases = []struct {
 				Value:        0,
 				Name:         "some metric",
 			},
-			Cpu: 4,
+			Cpu:     4,
+			GroupID: "1",
 		}},
 		err: nil,
 	},
@@ -414,7 +425,7 @@ func TestReadPerfStat(t *testing.T) {
 				cpuFiles:   nil,
 				names:      []string{test.name},
 				leaderName: test.name,
-			}, test.cpu, "/")
+			}, test.cpu, "/", "1")
 			assert.Equal(tt, test.perfStat, stat)
 			assert.Equal(tt, test.err, err)
 		})
