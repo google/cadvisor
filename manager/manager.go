@@ -30,7 +30,6 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/podman"
 	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
@@ -65,7 +64,7 @@ const (
 	PodmanNamespace = "podman"
 )
 
-var HousekeepingConfigFlags = HouskeepingConfig{
+var HousekeepingConfigFlags = HousekeepingConfig{
 	flag.Duration("max_housekeeping_interval", 60*time.Second, "Largest interval to allow between container housekeepings"),
 	flag.Bool("allow_dynamic_housekeeping", true, "Whether to allow the housekeeping interval to be dynamic"),
 }
@@ -147,13 +146,13 @@ type Manager interface {
 }
 
 // Housekeeping configuration for the manager
-type HouskeepingConfig = struct {
+type HousekeepingConfig = struct {
 	Interval     *time.Duration
 	AllowDynamic *bool
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig HouskeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfig HousekeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -200,8 +199,8 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, houskeepingConfig
 		cadvisorContainer:                     selfContainer,
 		inHostNamespace:                       inHostNamespace,
 		startupTime:                           time.Now(),
-		maxHousekeepingInterval:               *houskeepingConfig.Interval,
-		allowDynamicHousekeeping:              *houskeepingConfig.AllowDynamic,
+		maxHousekeepingInterval:               *HousekeepingConfig.Interval,
+		allowDynamicHousekeeping:              *HousekeepingConfig.AllowDynamic,
 		includedMetrics:                       includedMetricsSet,
 		containerWatchers:                     []watcher.ContainerWatcher{},
 		eventsChannel:                         eventsChannel,
@@ -274,7 +273,7 @@ type manager struct {
 }
 
 func (m *manager) PodmanContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
-	container, err := m.namespacedContainer(containerName, podman.Namespace)
+	container, err := m.namespacedContainer(containerName, PodmanNamespace)
 	if err != nil {
 		return info.ContainerInfo{}, err
 	}
@@ -295,7 +294,7 @@ func (m *manager) Start() error {
 		klog.Errorf("Registration of the raw container factory failed: %v", err)
 	}
 
-	rawWatcher, err := raw.NewRawContainerWatcher()
+	rawWatcher, err := raw.NewRawContainerWatcher(m.includedMetrics)
 	if err != nil {
 		return err
 	}
@@ -698,7 +697,7 @@ func (m *manager) GetRequestedContainersInfo(containerName string, options v2.Re
 		info, err := m.containerDataToContainerInfo(data, &query)
 		if err != nil {
 			if err == memory.ErrDataNotFound {
-				klog.Warningf("Error getting data for container %s because of race condition", name)
+				klog.V(4).Infof("Error getting data for container %s because of race condition", name)
 				continue
 			}
 			errs.append(name, "containerDataToContainerInfo", err)
@@ -1375,7 +1374,7 @@ func (m *manager) containersInfo(containers map[string]*containerData, query *in
 		if err != nil {
 			// Ignore the error because of race condition and return best-effort result.
 			if err == memory.ErrDataNotFound {
-				klog.Warningf("Error getting data for container %s because of race condition", name)
+				klog.V(4).Infof("Error getting data for container %s because of race condition", name)
 				continue
 			}
 			return nil, err
@@ -1386,7 +1385,7 @@ func (m *manager) containersInfo(containers map[string]*containerData, query *in
 }
 
 func (m *manager) AllPodmanContainers(query *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error) {
-	containers := m.getAllNamespacedContainers(podman.Namespace)
+	containers := m.getAllNamespacedContainers(PodmanNamespace)
 	return m.containersInfo(containers, query)
 }
 

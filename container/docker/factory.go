@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/blang/semver/v4"
-	dockertypes "github.com/docker/docker/api/types"
+	dockersystem "github.com/docker/docker/api/types/system"
 
 	"github.com/google/cadvisor/container"
 	dockerutil "github.com/google/cadvisor/container/docker/utils"
@@ -194,7 +194,7 @@ var (
 	apiVersionRe           = regexp.MustCompile(apiVersionRegexpString)
 )
 
-func StartThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolWatcher, error) {
+func StartThinPoolWatcher(dockerInfo *dockersystem.Info) (*devicemapper.ThinPoolWatcher, error) {
 	_, err := devicemapper.ThinLsBinaryPresent()
 	if err != nil {
 		return nil, err
@@ -227,7 +227,7 @@ func StartThinPoolWatcher(dockerInfo *dockertypes.Info) (*devicemapper.ThinPoolW
 	return thinPoolWatcher, nil
 }
 
-func StartZfsWatcher(dockerInfo *dockertypes.Info) (*zfs.ZfsWatcher, error) {
+func StartZfsWatcher(dockerInfo *dockersystem.Info) (*zfs.ZfsWatcher, error) {
 	filesystem, err := dockerutil.DockerZfsFilesystem(*dockerInfo)
 	if err != nil {
 		return nil, err

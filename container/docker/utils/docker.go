@@ -21,7 +21,8 @@ import (
 	"regexp"
 	"strings"
 
-	dockertypes "github.com/docker/docker/api/types"
+	dockerimage "github.com/docker/docker/api/types/image"
+	dockersystem "github.com/docker/docker/api/types/system"
 	v1 "github.com/google/cadvisor/info/v1"
 )
 
@@ -45,7 +46,7 @@ func DriverStatusValue(status [][2]string, target string) string {
 	return ""
 }
 
-func DockerThinPoolName(info dockertypes.Info) (string, error) {
+func DockerThinPoolName(info dockersystem.Info) (string, error) {
 	poolName := DriverStatusValue(info.DriverStatus, DriverStatusPoolName)
 	if len(poolName) == 0 {
 		return "", fmt.Errorf("Could not get devicemapper pool name")
@@ -54,7 +55,7 @@ func DockerThinPoolName(info dockertypes.Info) (string, error) {
 	return poolName, nil
 }
 
-func DockerMetadataDevice(info dockertypes.Info) (string, error) {
+func DockerMetadataDevice(info dockersystem.Info) (string, error) {
 	metadataDevice := DriverStatusValue(info.DriverStatus, DriverStatusMetadataFile)
 	if len(metadataDevice) != 0 {
 		return metadataDevice, nil
@@ -74,7 +75,7 @@ func DockerMetadataDevice(info dockertypes.Info) (string, error) {
 	return metadataDevice, nil
 }
 
-func DockerZfsFilesystem(info dockertypes.Info) (string, error) {
+func DockerZfsFilesystem(info dockersystem.Info) (string, error) {
 	filesystem := DriverStatusValue(info.DriverStatus, DriverStatusParentDataset)
 	if len(filesystem) == 0 {
 		return "", fmt.Errorf("Could not get zfs filesystem")
@@ -83,7 +84,7 @@ func DockerZfsFilesystem(info dockertypes.Info) (string, error) {
 	return filesystem, nil
 }
 
-func SummariesToImages(summaries []dockertypes.ImageSummary) ([]v1.DockerImage, error) {
+func SummariesToImages(summaries []dockerimage.Summary) ([]v1.DockerImage, error) {
 	var out []v1.DockerImage
 	const unknownTag = "<none>:<none>"
 	for _, summary := range summaries {
@@ -95,7 +96,7 @@ func SummariesToImages(summaries []dockertypes.ImageSummary) ([]v1.DockerImage, 
 			ID:          summary.ID,
 			RepoTags:    summary.RepoTags,
 			Created:     summary.Created,
-			VirtualSize: summary.VirtualSize,
+			VirtualSize: summary.Size,
 			Size:        summary.Size,
 		}
 		out = append(out, di)

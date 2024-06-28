@@ -20,6 +20,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type canHandleAndAccept struct {
+	canHandle bool
+	canAccept bool
+}
+
 func TestCanHandleAndAccept(t *testing.T) {
 	as := assert.New(t)
 	f := &crioFactory{
@@ -31,16 +36,18 @@ func TestCanHandleAndAccept(t *testing.T) {
 		storageDir:         "",
 		includedMetrics:    nil,
 	}
-	for k, v := range map[string]bool{
-		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f":           true,
-		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f.mount":     false,
-		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-conmon-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f":    false,
-		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/no-crio-conmon-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f": false,
-		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75":                    false,
+	for k, v := range map[string]canHandleAndAccept{
+		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f":           {true, false},
+		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f.scope":     {true, true},
+		"/system.slice/system-systemd\\\\x2dcoredump.slice":                                                                                 {true, false},
+		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f.mount":     {false, false},
+		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-conmon-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f":    {false, false},
+		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/no-crio-conmon-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f": {false, false},
+		"/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75":                    {false, false},
 	} {
 		b1, b2, err := f.CanHandleAndAccept(k)
 		as.Nil(err)
-		as.Equal(b1, v)
-		as.Equal(b2, v)
+		as.Equal(b1, v.canHandle)
+		as.Equal(b2, v.canAccept)
 	}
 }

@@ -4,18 +4,19 @@ jobs:
   test:
     strategy:
       matrix:
-        go-versions: ['1.20', '1.19']
-        platform: [ubuntu-20.04]
+        go-versions: ['1.22', '1.21']
+        platform: [ubuntu-22.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
     steps:
     - name: Install Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v5
       with:
         go-version: ${{ matrix.go-versions }}
+        check-latest: true
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Run presubmit checks
       run: |
         source ${{ matrix.environment-variables }}
@@ -30,14 +31,14 @@ jobs:
   test-integration:
     strategy:
       matrix:
-        go-versions: ['1.20', '1.19']
-        platform: [ubuntu-20.04]
+        go-versions: ['1.22', '1.21']
+        platform: [ubuntu-22.04]
         environment-variables: [build/config/plain.sh, build/config/libpfm4.sh, build/config/libipmctl.sh]
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Run integration tests
       env:
         GOLANG_VERSION: ${{ matrix.go-versions }}
@@ -46,7 +47,7 @@ jobs:
         source ${{ matrix.environment-variables }}
         make docker-test-integration
     - name: Upload cAdvisor log file
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: cadvisor.log

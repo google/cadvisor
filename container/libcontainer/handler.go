@@ -39,7 +39,6 @@ import (
 )
 
 var (
-	whitelistedUlimits      = [...]string{"max_open_files"}
 	referencedResetInterval = flag.Uint64("referenced_reset_interval", 0,
 		"Reset interval for referenced bytes (container_referenced_bytes metric), number of measurement cycles after which referenced bytes are cleared, if set to 0 referenced bytes are never cleared (default: 0)")
 
@@ -205,49 +204,51 @@ func parseUlimit(value string) (int64, error) {
 	return num, nil
 }
 
-func isUlimitWhitelisted(name string) bool {
-	for _, whitelist := range whitelistedUlimits {
-		if name == whitelist {
-			return true
-		}
-	}
-	return false
-}
-
 func processLimitsFile(fileData string) []info.UlimitSpec {
+	const maxOpenFilesLinePrefix = "Max open files"
+
 	limits := strings.Split(fileData, "\n")
 	ulimits := make([]info.UlimitSpec, 0, len(limits))
 	for _, lim := range limits {
 		// Skip any headers/footers
-		if strings.HasPrefix(lim, "Max") {
-
-			// Line format: Max open files            16384                16384                files
-			fields := regexp.MustCompile(`[\s]{2,}`).Split(lim, -1)
-			name := strings.Replace(strings.ToLower(strings.TrimSpace(fields[0])), " ", "_", -1)
-
-			found := isUlimitWhitelisted(name)
-			if !found {
-				continue
-			}
-
-			soft := strings.TrimSpace(fields[1])
-			softNum, softErr := parseUlimit(soft)
-
-			hard := strings.TrimSpace(fields[2])
-			hardNum, hardErr := parseUlimit(hard)
-
-			// Omit metric if there were any parsing errors
-			if softErr == nil && hardErr == nil {
-				ulimitSpec := info.UlimitSpec{
-					Name:      name,
-					SoftLimit: int64(softNum),
-					HardLimit: int64(hardNum),
-				}
-				ulimits = append(ulimits, ulimitSpec)
+		if strings.HasPrefix(lim, "Max open files") {
+			// Remove line prefix
+			ulimit, err := processMaxOpenFileLimitLine(
+				"max_open_files",
+				lim[len(maxOpenFilesLinePrefix):],
+			)
+			if err == nil {
+				ulimits = append(ulimits, ulimit)
 			}
 		}
 	}
 	return ulimits
+}
+
+// Any caller of processMaxOpenFileLimitLine must ensure that the name prefix is already removed from the limit line.
+// with the "Max open files" prefix.
+func processMaxOpenFileLimitLine(name, line string) (info.UlimitSpec, error) {
+	// Remove any leading whitespace
+	line = strings.TrimSpace(line)
+	// Split on whitespace
+	fields := strings.Fields(line)
+	if len(fields) != 3 {
+		return info.UlimitSpec{}, fmt.Errorf("unable to parse max open files line: %s", line)
+	}
+	// The first field is the soft limit, the second is the hard limit
+	soft, err := parseUlimit(fields[0])
+	if err != nil {
+		return info.UlimitSpec{}, err
+	}
+	hard, err := parseUlimit(fields[1])
+	if err != nil {
+		return info.UlimitSpec{}, err
+	}
+	return info.UlimitSpec{
+		Name:      name,
+		SoftLimit: soft,
+		HardLimit: hard,
+	}, nil
 }
 
 func processRootProcUlimits(rootFs string, rootPid int) []info.UlimitSpec {
@@ -467,7 +468,7 @@ func networkStatsFromProc(rootFs string, pid int) ([]info.InterfaceStats, error)
 	return ifaceStats, nil
 }
 
-var ignoredDevicePrefixes = []string{"lo", "veth", "docker"}
+var ignoredDevicePrefixes = []string{"lo", "veth", "docker", "nerdctl"}
 
 func isIgnoredDevice(ifName string) bool {
 	for _, prefix := range ignoredDevicePrefixes {

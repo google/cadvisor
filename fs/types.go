@@ -38,7 +38,9 @@ type PodmanContext struct {
 }
 
 type CrioContext struct {
-	Root string
+	Root       string
+	ImageStore string
+	Driver     string
 }
 
 type DeviceInfo struct {
@@ -57,6 +59,7 @@ const (
 	ZFS          FsType = "zfs"
 	DeviceMapper FsType = "devicemapper"
 	VFS          FsType = "vfs"
+	NFS          FsType = "nfs"
 )
 
 type Fs struct {

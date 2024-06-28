@@ -75,7 +75,11 @@ func getSpecInternal(cgroupPaths map[string]string, machineInfoFactory info.Mach
 		dir, err := os.Stat(cgroupPathDir)
 		if err == nil && dir.ModTime().Before(lowestTime) {
 			lowestTime = dir.ModTime()
+		} else if os.IsNotExist(err) {
+			// Directory does not exist, skip checking for files within.
+			continue
 		}
+
 		// The modified time of the cgroup directory sometimes changes whenever a subcontainer is created.
 		// eg. /docker will have creation time matching the creation of latest docker container.
 		// Use clone_children/events as a workaround as it isn't usually modified. It is only likely changed

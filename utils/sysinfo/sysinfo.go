@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -55,6 +56,16 @@ func GetBlockDeviceInfo(sysfs sysfs.SysFs) (map[string]info.DiskInfo, error) {
 		// Ignore non-disk devices.
 		// TODO(rjnagal): Maybe just match hd, sd, and dm prefixes.
 		if strings.HasPrefix(name, "loop") || strings.HasPrefix(name, "ram") || strings.HasPrefix(name, "sr") {
+			continue
+		}
+		// Ignore "hidden" devices (i.e. nvme path device sysfs entries).
+		// These devices are in the form of /dev/nvme$Xc$Yn$Z and will
+		// not have a device handle (i.e. "hidden")
+		isHidden, err := sysfs.IsBlockDeviceHidden(name)
+		if err != nil {
+			return nil, err
+		}
+		if isHidden {
 			continue
 		}
 		diskInfo := info.DiskInfo{
@@ -454,12 +465,35 @@ func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 			return nil, err
 		}
 
+		var bookID, drawerID string
+		// s390/s390x additional cpu topology levels
+		if runtime.GOARCH == "s390x" {
+			bookID, err = sysFs.GetBookID(cpuDir)
+			if os.IsNotExist(err) {
+				klog.Warningf("Cannot read book id for %s, book_id file does not exist, err: %s", cpuDir, err)
+				continue
+			} else if err != nil {
+				return nil, err
+			}
+			drawerID, err = sysFs.GetDrawerID(cpuDir)
+			if os.IsNotExist(err) {
+				klog.Warningf("Cannot read drawer id for %s, drawer_id file does not exist, err: %s", cpuDir, err)
+				continue
+			} else if err != nil {
+				return nil, err
+			}
+		}
+
 		coreIDx := -1
 		for id, core := range cores {
 			if core.Id == physicalID && core.SocketID == physicalPackageID {
-				coreIDx = id
+				// For s390x, we need to check the BookID and DrawerID match as well.
+				if runtime.GOARCH != "s390x" || (core.BookID == bookID && core.DrawerID == drawerID) {
+					coreIDx = id
+				}
 			}
 		}
+
 		if coreIDx == -1 {
 			cores = append(cores, info.Core{})
 			coreIDx = len(cores) - 1
@@ -468,6 +502,8 @@ func getCoresInfo(sysFs sysfs.SysFs, cpuDirs []string) ([]info.Core, error) {
 
 		desiredCore.Id = physicalID
 		desiredCore.SocketID = physicalPackageID
+		desiredCore.BookID = bookID
+		desiredCore.DrawerID = drawerID
 
 		if len(desiredCore.Threads) == 0 {
 			desiredCore.Threads = []int{cpuID}

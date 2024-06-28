@@ -21,6 +21,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -50,6 +51,8 @@ const (
 
 	coreIDFilePath    = "/" + sysFsCPUTopology + "/core_id"
 	packageIDFilePath = "/" + sysFsCPUTopology + "/physical_package_id"
+	bookIDFilePath    = "/" + sysFsCPUTopology + "/book_id"
+	drawerIDFilePath  = "/" + sysFsCPUTopology + "/drawer_id"
 
 	// memory size calculations
 
@@ -87,6 +90,10 @@ type SysFs interface {
 	GetCoreID(coreIDFilePath string) (string, error)
 	// Get physical package id for specified CPU
 	GetCPUPhysicalPackageID(cpuPath string) (string, error)
+	// Get book id for specified CPU
+	GetBookID(cpuPath string) (string, error)
+	// Get drawer id for specified CPU
+	GetDrawerID(cpuPath string) (string, error)
 	// Get total memory for specified NUMA node
 	GetMemInfo(nodeDir string) (string, error)
 	// Get hugepages from specified directory
@@ -101,6 +108,9 @@ type SysFs interface {
 	GetBlockDeviceScheduler(string) (string, error)
 	// Get device major:minor number string.
 	GetBlockDeviceNumbers(string) (string, error)
+	// Is the device "hidden" (meaning will not have a device handle)
+	// This is the case with native nvme multipathing.
+	IsBlockDeviceHidden(string) (bool, error)
 
 	GetNetworkDevices() ([]os.FileInfo, error)
 	GetNetworkAddress(string) (string, error)
@@ -161,6 +171,24 @@ func (fs *realSysFs) GetCPUPhysicalPackageID(cpuPath string) (string, error) {
 	return strings.TrimSpace(string(packageID)), err
 }
 
+func (fs *realSysFs) GetBookID(cpuPath string) (string, error) {
+	bookIDFilePath := fmt.Sprintf("%s%s", cpuPath, bookIDFilePath)
+	bookID, err := os.ReadFile(bookIDFilePath)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(bookID)), nil
+}
+
+func (fs *realSysFs) GetDrawerID(cpuPath string) (string, error) {
+	drawerIDFilePath := fmt.Sprintf("%s%s", cpuPath, drawerIDFilePath)
+	drawerID, err := os.ReadFile(drawerIDFilePath)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(drawerID)), nil
+}
+
 func (fs *realSysFs) GetMemInfo(nodePath string) (string, error) {
 	meminfoPath := fmt.Sprintf("%s/%s", nodePath, meminfoFile)
 	meminfo, err := os.ReadFile(meminfoPath)
@@ -210,6 +238,26 @@ func (fs *realSysFs) GetBlockDeviceNumbers(name string) (string, error) {
 		return "", err
 	}
 	return string(dev), nil
+}
+
+func (fs *realSysFs) IsBlockDeviceHidden(name string) (bool, error) {
+	// See: https://www.kernel.org/doc/Documentation/ABI/stable/sysfs-block
+	//      https://git.kernel.org/pub/scm/utils/util-linux/util-linux.git
+	//        - c8487d854ba5 ("lsblk: Ignore hidden devices")
+	devHiddenPath := path.Join(blockDir, name, "/hidden")
+	hidden, err := os.ReadFile(devHiddenPath)
+	if err != nil && os.IsNotExist(err) {
+		// older OS may not have /hidden sysfs entry, so for sure
+		// it is not a hidden device...
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to read %s: %w", devHiddenPath, err)
+	}
+	if string(hidden) == "1" {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (fs *realSysFs) GetBlockDeviceScheduler(name string) (string, error) {
@@ -342,22 +390,24 @@ func getCPUCount(cache string) (count int, err error) {
 
 func (fs *realSysFs) GetCacheInfo(cpu int, name string) (CacheInfo, error) {
 	cachePath := fmt.Sprintf("%s%d/cache/%s", cacheDir, cpu, name)
-	out, err := os.ReadFile(path.Join(cachePath, "/id"))
-	if err != nil {
-		return CacheInfo{}, err
-	}
 	var id int
-	n, err := fmt.Sscanf(string(out), "%d", &id)
-	if err != nil || n != 1 {
-		return CacheInfo{}, err
+	if runtime.GOARCH != "s390x" {
+		out, err := os.ReadFile(path.Join(cachePath, "/id"))
+		if err != nil {
+			return CacheInfo{}, err
+		}
+		n, err := fmt.Sscanf(string(out), "%d", &id)
+		if err != nil || n != 1 {
+			return CacheInfo{}, err
+		}
 	}
 
-	out, err = os.ReadFile(path.Join(cachePath, "/size"))
+	out, err := os.ReadFile(path.Join(cachePath, "/size"))
 	if err != nil {
 		return CacheInfo{}, err
 	}
 	var size uint64
-	n, err = fmt.Sscanf(string(out), "%dK", &size)
+	n, err := fmt.Sscanf(string(out), "%dK", &size)
 	if err != nil || n != 1 {
 		return CacheInfo{}, err
 	}
