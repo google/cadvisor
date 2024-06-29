@@ -8,9 +8,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.24
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.9
 	github.com/blang/semver/v4 v4.0.0
-	github.com/containerd/containerd/api v1.8.0-rc.2
+	github.com/containerd/containerd/api v1.7.19
 	github.com/containerd/errdefs v0.1.0
-	github.com/containerd/ttrpc v1.2.4
+	github.com/containerd/ttrpc v1.2.5
 	github.com/containerd/typeurl/v2 v2.1.2-0.20240708140135-933576d917b1
 	github.com/docker/docker v26.1.4+incompatible
 	github.com/docker/go-connections v0.5.0
