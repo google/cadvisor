@@ -7,9 +7,9 @@ require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/aws/aws-sdk-go v1.35.24
 	github.com/blang/semver/v4 v4.0.0
-	github.com/containerd/containerd/api v1.8.0-rc.2
+	github.com/containerd/containerd/api v1.7.19
 	github.com/containerd/errdefs v0.1.0
-	github.com/containerd/ttrpc v1.2.4
+	github.com/containerd/ttrpc v1.2.5
 	github.com/containerd/typeurl/v2 v2.1.1
 	github.com/docker/docker v26.1.4+incompatible
 	github.com/docker/go-connections v0.5.0
