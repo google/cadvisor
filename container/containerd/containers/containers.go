@@ -33,7 +33,7 @@ import (
 	"context"
 	"time"
 
-	anypb "google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // Container represents the set of data pinned by a container. Unless otherwise
