@@ -113,8 +113,19 @@ func Status() (v1.DockerStatus, error) {
 		return v1.DockerStatus{}, err
 	}
 
-	status.Version, _ = VersionString()
-	status.APIVersion, _ = APIVersionString()
+	podmanVersion, err := VersionString()
+	if err != nil {
+		// status.Version will be "Unknown"
+		return status, err
+	}
+	status.Version = podmanVersion
+
+	podmanAPIVersion, err := APIVersionString()
+	if err != nil {
+		// status.APIVersion will be "Unknown"
+		return status, err
+	}
+	status.APIVersion = podmanAPIVersion
 
 	return status, nil
 }
