@@ -108,7 +108,7 @@ func Status() (v1.DockerStatus, error) {
 		return v1.DockerStatus{}, err
 	}
 
-	status, err := docker.StatusFromDockerInfo(*podmanInfo);
+	status, err := docker.StatusFromDockerInfo(*podmanInfo)
 	if err != nil {
 		return v1.DockerStatus{}, err
 	}
