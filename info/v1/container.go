@@ -333,6 +333,8 @@ type CpuStats struct {
 	// Load is smoothed over the last 10 seconds. Instantaneous value can be read
 	// from LoadStats.NrRunning.
 	LoadAverage int32 `json:"load_average"`
+	// from LoadStats.NrUninterruptible
+	LoadDAverage int32 `json:"load_d_average"`
 }
 
 type PerDiskStats struct {
