@@ -91,10 +91,12 @@ func (f *podmanFactory) CanHandleAndAccept(name string) (handle bool, accept boo
 	id := dockerutil.ContainerNameToId(name)
 
 	ctnr, err := InspectContainer(id)
-	if err != nil || !ctnr.State.Running {
+	if err != nil {
 		return false, true, fmt.Errorf("error inspecting container: %v", err)
 	}
-
+	if ctnr.State == nil || !ctnr.State.Running {
+		return false, true, fmt.Errorf("container not running")
+	}
 	return true, true, nil
 }
 
