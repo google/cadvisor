@@ -50,6 +50,10 @@ const (
 	colMemoryUsage string = "memory_usage"
 	// Working set size
 	colMemoryWorkingSet string = "memory_working_set"
+	// Total active file size
+	colMemoryTotalActiveFile string = "memory_total_active_file"
+	// Total inactive file size
+	colMemoryTotalInactiveFile string = "memory_total_inactive_file"
 	// Container page fault
 	colMemoryContainerPgfault string = "memory_container_pgfault"
 	// Constainer major page fault
@@ -131,6 +135,16 @@ func (s *bigqueryStorage) GetSchema() *bigquery.TableSchema {
 	fields[i] = &bigquery.TableFieldSchema{
 		Type: typeInteger,
 		Name: colMemoryWorkingSet,
+	}
+	i++
+	fields[i] = &bigquery.TableFieldSchema{
+		Type: typeInteger,
+		Name: colMemoryTotalActiveFile,
+	}
+	i++
+	fields[i] = &bigquery.TableFieldSchema{
+		Type: typeInteger,
+		Name: colMemoryTotalInactiveFile,
 	}
 	i++
 	fields[i] = &bigquery.TableFieldSchema{
@@ -225,6 +239,12 @@ func (s *bigqueryStorage) containerStatsToRows(
 
 	// Working set size
 	row[colMemoryWorkingSet] = stats.Memory.WorkingSet
+
+	// Total active file size
+	row[colMemoryTotalActiveFile] = stats.Memory.TotalActiveFile
+
+	// Total inactive file size
+	row[colMemoryTotalInactiveFile] = stats.Memory.TotalInactiveFile
 
 	// container page fault
 	row[colMemoryContainerPgfault] = stats.Memory.ContainerData.Pgfault
