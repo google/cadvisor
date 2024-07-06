@@ -108,7 +108,26 @@ func Status() (v1.DockerStatus, error) {
 		return v1.DockerStatus{}, err
 	}
 
-	return docker.StatusFromDockerInfo(*podmanInfo)
+	status, err := docker.StatusFromDockerInfo(*podmanInfo)
+	if err != nil {
+		return v1.DockerStatus{}, err
+	}
+
+	podmanVersion, err := VersionString()
+	if err != nil {
+		// status.Version will be "Unknown"
+		return status, err
+	}
+	status.Version = podmanVersion
+
+	podmanAPIVersion, err := APIVersionString()
+	if err != nil {
+		// status.APIVersion will be "Unknown"
+		return status, err
+	}
+	status.APIVersion = podmanAPIVersion
+
+	return status, nil
 }
 
 func GetInfo() (*dockersystem.Info, error) {
@@ -125,6 +144,16 @@ func VersionString() (string, error) {
 	}
 
 	return version.Version, nil
+}
+
+func APIVersionString() (string, error) {
+	var version dockertypes.Version
+	err := apiGetRequest("http://d/v1.0.0/version", &version)
+	if err != nil {
+		return "Unknown", err
+	}
+
+	return version.APIVersion, nil
 }
 
 func InspectContainer(id string) (dockertypes.ContainerJSON, error) {
