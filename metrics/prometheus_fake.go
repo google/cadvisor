@@ -326,7 +326,8 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							RunqueueTime: 479424566378,
 							RunPeriods:   984285,
 						},
-						LoadAverage: 2,
+						LoadAverage:  2,
+						LoadDAverage: 2,
 					},
 					Memory: info.MemoryStats{
 						Usage:             8,
