@@ -15,12 +15,13 @@
 package containerd
 
 import (
-	"github.com/containerd/typeurl/v2"
 	"testing"
 
-	"github.com/google/cadvisor/container/containerd/containers"
+	"github.com/containerd/typeurl/v2"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/google/cadvisor/container/containerd/containers"
 )
 
 func TestIsContainerName(t *testing.T) {
