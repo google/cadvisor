@@ -11,7 +11,7 @@ require (
 	github.com/containerd/containerd/api v1.7.19
 	github.com/containerd/errdefs v0.1.0
 	github.com/containerd/ttrpc v1.2.5
-	github.com/containerd/typeurl/v2 v2.1.2-0.20240708140135-933576d917b1
+	github.com/containerd/typeurl/v2 v2.2.0
 	github.com/docker/docker v26.1.4+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/docker/go-units v0.5.0
