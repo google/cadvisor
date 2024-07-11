@@ -15,12 +15,13 @@
 package cloudinfo
 
 import (
+	"context"
+	"io"
 	"os"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/utils/cloudinfo"
@@ -57,16 +58,25 @@ func fileContainsAmazonIdentifier(filename string) bool {
 }
 
 func getAwsMetadata(name string) string {
-	sess, err := session.NewSession(&aws.Config{})
+	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return info.UnknownInstance
 	}
-	client := ec2metadata.New(sess)
-	data, err := client.GetMetadata(name)
+
+	client := imds.NewFromConfig(cfg)
+	data, err := client.GetMetadata(context.TODO(), &imds.GetMetadataInput{
+		Path: name,
+	})
 	if err != nil {
 		return info.UnknownInstance
 	}
-	return data
+
+	raw, err := io.ReadAll(data.Content)
+	if err != nil {
+		return info.UnknownInstance
+	}
+
+	return string(raw)
 }
 
 func (provider) GetInstanceType() info.InstanceType {
