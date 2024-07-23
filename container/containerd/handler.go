@@ -27,6 +27,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"golang.org/x/net/context"
 
+	snapshotsapi "github.com/containerd/containerd/api/services/snapshots/v1"
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
@@ -46,6 +47,9 @@ type containerdContainerHandler struct {
 	labels    map[string]string
 	// Image name used for this container.
 	image string
+	// Snapshot key used for this container.
+	Snapshotter string
+	SnapshotKey string
 	// Filesystem handler.
 	includedMetrics container.MetricSet
 
@@ -146,6 +150,9 @@ func newContainerdContainerHandler(
 	}
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
+	// Add the snapshot key of the container.
+	handler.Snapshotter = cntr.Snapshotter
+	handler.SnapshotKey = cntr.SnapshotKey
 
 	for _, exposedEnv := range metadataEnvAllowList {
 		if exposedEnv == "" {
@@ -171,9 +178,7 @@ func (h *containerdContainerHandler) ContainerReference() (info.ContainerReferen
 }
 
 func (h *containerdContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	// TODO: Since we dont collect disk usage stats for containerd, we set hasFilesystem
-	// to false. Revisit when we support disk usage stats for containerd
-	hasFilesystem := false
+	hasFilesystem := true
 	hasNet := h.includedMetrics.Has(container.NetworkUsageMetrics)
 	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, hasNet, hasFilesystem)
 	spec.Labels = h.labels
@@ -192,6 +197,23 @@ func (h *containerdContainerHandler) getFsStats(stats *info.ContainerStats) erro
 	if h.includedMetrics.Has(container.DiskIOMetrics) {
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
 	}
+
+	if h.includedMetrics.Has(container.DiskUsageMetrics) && ctrdSnapshotsClient != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		usage, err := ctrdSnapshotsClient.Usage(ctx, &snapshotsapi.UsageRequest{
+			Snapshotter: h.Snapshotter,
+			Key:         h.SnapshotKey,
+		})
+		if err == nil {
+			stats.Filesystem = append(stats.Filesystem, info.FsStats{
+				BaseUsage: uint64(usage.Size),
+				Usage:     uint64(usage.Size),
+				Inodes:    uint64(usage.Inodes),
+			})
+		}
+	}
+
 	return nil
 }
 

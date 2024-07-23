@@ -23,6 +23,7 @@ import (
 	"time"
 
 	containersapi "github.com/containerd/containerd/api/services/containers/v1"
+	snapshotsapi "github.com/containerd/containerd/api/services/snapshots/v1"
 	tasksapi "github.com/containerd/containerd/api/services/tasks/v1"
 	versionapi "github.com/containerd/containerd/api/services/version/v1"
 	tasktypes "github.com/containerd/containerd/api/types/task"
@@ -54,6 +55,7 @@ var (
 
 var once sync.Once
 var ctrdClient ContainerdClient = nil
+var ctrdSnapshotsClient snapshotsapi.SnapshotsClient = nil
 
 const (
 	maxBackoffDelay   = 3 * time.Second
@@ -105,6 +107,7 @@ func Client(address, namespace string) (ContainerdClient, error) {
 			taskService:      tasksapi.NewTasksClient(conn),
 			versionService:   versionapi.NewVersionClient(conn),
 		}
+		ctrdSnapshotsClient = snapshotsapi.NewSnapshotsClient(conn)
 	})
 	return ctrdClient, retErr
 }
