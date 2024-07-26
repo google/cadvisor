@@ -21,7 +21,8 @@ import (
 	"strconv"
 	"time"
 
-	dockertypes "github.com/docker/docker/api/types"
+	dockerimage "github.com/docker/docker/api/types/image"
+	dockersystem "github.com/docker/docker/api/types/system"
 	"golang.org/x/net/context"
 
 	"github.com/google/cadvisor/container/docker/utils"
@@ -56,7 +57,7 @@ func (opts *Options) StatusWithContext(ctx context.Context) (v1.DockerStatus, er
 	return opts.StatusFromDockerInfo(dockerInfo)
 }
 
-func (opts *Options) StatusFromDockerInfo(dockerInfo dockertypes.Info) (v1.DockerStatus, error) {
+func (opts *Options) StatusFromDockerInfo(dockerInfo dockersystem.Info) (v1.DockerStatus, error) {
 	out := v1.DockerStatus{}
 	out.KernelVersion = machine.KernelVersion()
 	out.OS = dockerInfo.OperatingSystem
@@ -88,7 +89,7 @@ func (opts *Options) Images() ([]v1.DockerImage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	summaries, err := client.ImageList(defaultContext(), dockertypes.ImageListOptions{All: false})
+	summaries, err := client.ImageList(defaultContext(), dockerimage.ListOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func (opts *Options) Images() ([]v1.DockerImage, error) {
 
 // Checks whether the dockerInfo reflects a valid docker setup, and returns it if it does, or an
 // error otherwise.
-func ValidateInfo(GetInfo func() (*dockertypes.Info, error), ServerVersion func() (string, error)) (*dockertypes.Info, error) {
+func ValidateInfo(GetInfo func() (*dockersystem.Info, error), ServerVersion func() (string, error)) (*dockersystem.Info, error) {
 	info, err := GetInfo()
 	if err != nil {
 		return nil, err
@@ -128,7 +129,7 @@ func ValidateInfo(GetInfo func() (*dockertypes.Info, error), ServerVersion func(
 	return info, nil
 }
 
-func (opts *Options) Info() (*dockertypes.Info, error) {
+func (opts *Options) Info() (*dockersystem.Info, error) {
 	client, err := opts.Client()
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)

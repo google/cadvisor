@@ -23,6 +23,8 @@ import (
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
+	dockerimage "github.com/docker/docker/api/types/image"
+	dockersystem "github.com/docker/docker/api/types/system"
 	"github.com/pkg/errors"
 
 	"github.com/google/cadvisor/container/docker/utils"
@@ -91,7 +93,7 @@ func (opts *Options) apiGetRequest(url string, item interface{}) error {
 }
 
 func (opts *Options) Images() ([]v1.DockerImage, error) {
-	var summaries []dockertypes.ImageSummary
+	var summaries []dockerimage.Summary
 	err := opts.apiGetRequest("http://d/v1.0.0/images/json", &summaries)
 	if err != nil {
 		return nil, err
@@ -108,8 +110,8 @@ func (p *plugin) Status() (v1.DockerStatus, error) {
 	return p.options.dockerOptions.StatusFromDockerInfo(*podmanInfo)
 }
 
-func (opts *Options) GetInfo() (*dockertypes.Info, error) {
-	var info dockertypes.Info
+func (opts *Options) GetInfo() (*dockersystem.Info, error) {
+	var info dockersystem.Info
 	err := opts.apiGetRequest("http://d/v1.0.0/info", &info)
 	return &info, err
 }
