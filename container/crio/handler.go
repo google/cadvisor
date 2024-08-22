@@ -148,13 +148,13 @@ func newCrioContainerHandler(
 		Namespace: CrioNamespace,
 	}
 
-	// Find out if we need network metrics reported for this container.
-	// Containers that don't have their own network -- this includes
-	// containers running in Kubernetes pods that use the network of the
-	// infrastructure container -- does not need their stats to be
-	// reported. This stops metrics being reported multiple times for each
-	// container in a pod.
-	metrics := common.RemoveNetMetrics(includedMetrics, cInfo.Labels["io.kubernetes.container.name"] != "POD")
+	// In a Kubernetes pod, all containers share the same network namespace.
+	// If the infrastructure container has empty network metrics, the CRI-O
+	// handler uses a running container in the pod to gather the necessary
+	// metrics. Therefore, it is essential to collect network metrics from
+	// all containers to ensure that if there is any running container in
+	// the pod, we capture the required network metrics for accurate reporting.
+	metrics := includedMetrics
 
 	libcontainerHandler := containerlibcontainer.NewHandler(cgroupManager, rootFs, cInfo.Pid, metrics)
 
