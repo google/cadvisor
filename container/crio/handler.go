@@ -148,13 +148,22 @@ func newCrioContainerHandler(
 		Namespace: CrioNamespace,
 	}
 
-	// Find out if we need network metrics reported for this container.
-	// Containers that don't have their own network -- this includes
-	// containers running in Kubernetes pods that use the network of the
-	// infrastructure container -- does not need their stats to be
-	// reported. This stops metrics being reported multiple times for each
-	// container in a pod.
-	metrics := common.RemoveNetMetrics(includedMetrics, cInfo.Labels["io.kubernetes.container.name"] != "POD")
+	nonNetworkMetrics := common.RemoveNetMetrics(includedMetrics, true)
+	// If it's a non-infra container, then we can exclude network metrics,
+	// because in kubernetes a container always shares the network namespace
+	// with the infra container.
+	metrics := nonNetworkMetrics
+	// If this is the infra container cgroup, then we only need to collect network metrics
+	// as the rest will be discarded.
+	if cInfo.Labels["io.kubernetes.container.name"] == "POD" {
+		// Only include the non-non-network metrics. This way, we can tell if there are no network metrics
+		metrics = includedMetrics.Difference(nonNetworkMetrics)
+	}
+
+	// No metrics are being collected, no need to create a handler.
+	if len(metrics) == 0 {
+		return nil, nil
+	}
 
 	libcontainerHandler := containerlibcontainer.NewHandler(cgroupManager, rootFs, cInfo.Pid, metrics)
 
