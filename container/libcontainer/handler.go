@@ -809,16 +809,31 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		ret.Memory.RSS = s.MemoryStats.Stats["anon"]
 		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage - s.MemoryStats.Usage.Usage
 		ret.Memory.MappedFile = s.MemoryStats.Stats["file_mapped"]
+		ret.Memory.ActiveAnon = s.MemoryStats.Stats["active_anon"]
+		ret.Memory.InactiveAnon = s.MemoryStats.Stats["inactive_anon"]
+		ret.Memory.ActiveFile = s.MemoryStats.Stats["active_file"]
+		ret.Memory.InactiveFile = s.MemoryStats.Stats["inactive_file"]
+		ret.Memory.SlabReclaimable = s.MemoryStats.Stats["slab_reclaimable"]
+		ret.Memory.SlabUnreclaimable = s.MemoryStats.Stats["slab_unreclaimable"]
+		ret.Memory.Slab = s.MemoryStats.Stats["slab"]
 	} else if s.MemoryStats.UseHierarchy {
 		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["total_rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["total_swap"]
 		ret.Memory.MappedFile = s.MemoryStats.Stats["total_mapped_file"]
+		ret.Memory.ActiveAnon = s.MemoryStats.Stats["total_active_anon"]
+		ret.Memory.InactiveAnon = s.MemoryStats.Stats["total_inactive_anon"]
+		ret.Memory.ActiveFile = s.MemoryStats.Stats["total_active_file"]
+		ret.Memory.InactiveFile = s.MemoryStats.Stats["total_inactive_file"]
 	} else {
 		ret.Memory.Cache = s.MemoryStats.Stats["cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["swap"]
 		ret.Memory.MappedFile = s.MemoryStats.Stats["mapped_file"]
+		ret.Memory.ActiveAnon = s.MemoryStats.Stats["total_active_anon"]
+		ret.Memory.InactiveAnon = s.MemoryStats.Stats["total_inactive_anon"]
+		ret.Memory.ActiveFile = s.MemoryStats.Stats["total_active_file"]
+		ret.Memory.InactiveFile = s.MemoryStats.Stats["total_inactive_file"]
 	}
 	if v, ok := s.MemoryStats.Stats["pgfault"]; ok {
 		ret.Memory.ContainerData.Pgfault = v

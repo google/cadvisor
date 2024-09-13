@@ -152,7 +152,6 @@ type ContainerInfo struct {
 // ContainerInfo and its encode-then-decode version.  Eq() is used to compare
 // two ContainerInfo accepting small difference (<10ms) of Time fields.
 func (ci *ContainerInfo) Eq(b *ContainerInfo) bool {
-
 	// If both ci and b are nil, then Eq() returns true
 	if ci == nil {
 		return b == nil
@@ -382,6 +381,36 @@ type MemoryStats struct {
 	// hugepages).
 	// Units: Bytes.
 	RSS uint64 `json:"rss"`
+
+	// The amount of active anonymous memory
+	// // Units: Bytes.
+	ActiveAnon uint64 `json:"active_anon,omitempty"`
+
+	// The amount of inactive anonymous memory
+	// Units: Bytes.
+	InactiveAnon uint64 `json:"inactive_anon,omitempty"`
+
+	// The amount of active file memory
+	// Units: Bytes.
+	ActiveFile uint64 `json:"active_file,omitempty"`
+
+	// The amount of inactive file memory
+	// Units: Bytes.
+	InactiveFile uint64 `json:"inactive_file,omitempty"`
+
+	// The amount of slab reclaimable memory, that is part of the Slab, in
+	// kernel memory.
+	// Units: Bytes.
+	SlabReclaimable uint64 `json:"slab_reclaimable,omitempty"`
+
+	// The amount of slab unreclaimable memory, that is part of the Slab, in
+	// kernel memory.
+	// Units: Bytes.
+	SlabUnreclaimable uint64 `json:"slab_unreclaimable,omitempty"`
+
+	// The amount of slab memory, that is part of the kernel usage,
+	// Units: Bytes.
+	Slab uint64 `json:"slab,omitempty"`
 
 	// The amount of swap currently used by the processes in this cgroup
 	// Units: Bytes.
