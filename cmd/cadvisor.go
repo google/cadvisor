@@ -25,6 +25,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 
 	cadvisorhttp "github.com/google/cadvisor/cmd/internal/http"
 	"github.com/google/cadvisor/container"
@@ -74,6 +75,8 @@ var rawCgroupPrefixWhiteList = flag.String("raw_cgroup_prefix_whitelist", "", "A
 var perfEvents = flag.String("perf_events_config", "", "Path to a JSON file containing configuration of perf events to measure. Empty value disabled perf events measuring.")
 
 var resctrlInterval = flag.Duration("resctrl_interval", 0, "Resctrl mon groups updating interval. Zero value disables updating mon groups.")
+
+var oomEventRetainDuration = flag.Duration("oom_event_retain_time", 5*time.Minute, "Duration for which to retain OOM events. Zero value disables retaining OOM events.")
 
 var (
 	// Metrics to be ignored.
@@ -132,7 +135,17 @@ func main() {
 
 	collectorHTTPClient := createCollectorHTTPClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHTTPClient, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval)
+	containerLabelFunc := metrics.DefaultContainerLabels
+	if !*storeContainerLabels {
+		whitelistedLabels := strings.Split(*whitelistedContainerLabels, ",")
+		// Trim spacing in labels
+		for i := range whitelistedLabels {
+			whitelistedLabels[i] = strings.TrimSpace(whitelistedLabels[i])
+		}
+		containerLabelFunc = metrics.BaseContainerLabels(whitelistedLabels)
+	}
+
+	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHTTPClient, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval, containerLabelFunc, oomEventRetainDuration)
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
@@ -150,16 +163,6 @@ func main() {
 	err = cadvisorhttp.RegisterHandlers(mux, resourceManager, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm, *urlBasePrefix)
 	if err != nil {
 		klog.Fatalf("Failed to register HTTP handlers: %v", err)
-	}
-
-	containerLabelFunc := metrics.DefaultContainerLabels
-	if !*storeContainerLabels {
-		whitelistedLabels := strings.Split(*whitelistedContainerLabels, ",")
-		// Trim spacing in labels
-		for i := range whitelistedLabels {
-			whitelistedLabels[i] = strings.TrimSpace(whitelistedLabels[i])
-		}
-		containerLabelFunc = metrics.BaseContainerLabels(whitelistedLabels)
 	}
 
 	// Register Prometheus collector to gather information about containers, Go runtime, processes, and machine
