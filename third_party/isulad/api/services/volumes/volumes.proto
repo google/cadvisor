@@ -1,0 +1,59 @@
+// #######################################################################
+// ##- Copyright (c) Huawei Technologies Co., Ltd. 2020. All rights reserved.
+// # - iSulad licensed under the Mulan PSL v2.
+// # - You can use this software according to the terms and conditions of the Mulan PSL v2.
+// # - You may obtain a copy of Mulan PSL v2 at:
+// # -     http://license.coscl.org.cn/MulanPSL2
+// # - THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+// # - IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+// # - PURPOSE.
+// # - See the Mulan PSL v2 for more details.
+// ##- @Description: generate grpc
+// ##- @Author: wangfengtu
+// ##- @Create: 2020-09-02
+// #######################################################################
+
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+
+package volume;
+
+service VolumeService {
+	rpc List(ListVolumeRequest) returns (ListVolumeResponse);
+
+	rpc Remove(RemoveVolumeRequest) returns (RemoveVolumeResponse);
+
+	rpc Prune(PruneVolumeRequest) returns (PruneVolumeResponse);
+}
+
+message Volume {
+	string driver = 1;
+	string name = 2;
+}
+
+message ListVolumeRequest {
+}
+
+message ListVolumeResponse {
+	repeated Volume volumes = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message RemoveVolumeRequest {
+	string name = 1;
+}
+
+message RemoveVolumeResponse {
+	uint32 cc = 1;
+	string errmsg = 2;
+}
+
+message PruneVolumeRequest {
+}
+
+message PruneVolumeResponse {
+	repeated string volumes = 2;
+	uint32 cc = 3;
+	string errmsg = 4;
+}
