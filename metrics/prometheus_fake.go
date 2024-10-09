@@ -667,7 +667,8 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								Value:        123,
 								Name:         "instructions",
 							},
-							Cpu: 0,
+							Cpu:     0,
+							GroupID: "1",
 						},
 						{
 							PerfValue: info.PerfValue{
@@ -675,7 +676,8 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								Value:        456,
 								Name:         "instructions",
 							},
-							Cpu: 1,
+							Cpu:     1,
+							GroupID: "1",
 						},
 						{
 							PerfValue: info.PerfValue{
@@ -683,7 +685,8 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								Value:        321,
 								Name:         "instructions_retired",
 							},
-							Cpu: 0,
+							Cpu:     0,
+							GroupID: "2",
 						},
 						{
 							PerfValue: info.PerfValue{
@@ -691,7 +694,8 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								Value:        789,
 								Name:         "instructions_retired",
 							},
-							Cpu: 1,
+							Cpu:     1,
+							GroupID: "2",
 						},
 					},
 					PerfUncoreStats: []info.PerfUncoreStat{
@@ -701,8 +705,9 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								Value:        1231231512.0,
 								Name:         "cas_count_read",
 							},
-							Socket: 0,
-							PMU:    "uncore_imc_0",
+							Socket:  0,
+							PMU:     "uncore_imc_0",
+							GroupID: "1",
 						},
 						{
 							PerfValue: info.PerfValue{
@@ -710,8 +715,9 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								Value:        1111231331.0,
 								Name:         "cas_count_read",
 							},
-							Socket: 1,
-							PMU:    "uncore_imc_0",
+							Socket:  1,
+							PMU:     "uncore_imc_0",
+							GroupID: "1",
 						},
 					},
 					ReferencedMemory: 1234,
