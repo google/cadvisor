@@ -37,6 +37,7 @@ func (p testSubcontainersInfoProvider) GetVersionInfo() (*info.VersionInfo, erro
 func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
 	return &info.MachineInfo{
 		Timestamp:        time.Unix(1395066363, 0),
+		CpuFrequency:     4.8e+06,
 		NumCores:         4,
 		NumPhysicalCores: 1,
 		NumSockets:       1,
