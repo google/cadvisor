@@ -15,7 +15,9 @@
 package libcontainer
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 
 	info "github.com/google/cadvisor/info/v1"
 
@@ -25,6 +27,7 @@ import (
 
 	fs "github.com/opencontainers/runc/libcontainer/cgroups/fs"
 	fs2 "github.com/opencontainers/runc/libcontainer/cgroups/fs2"
+	"github.com/opencontainers/runc/libcontainer/cgroups/fscommon"
 	configs "github.com/opencontainers/runc/libcontainer/configs"
 	"k8s.io/klog/v2"
 )
@@ -167,4 +170,35 @@ func NewCgroupManager(name string, paths map[string]string) (cgroups.Manager, er
 	}
 
 	return fs.NewManager(config, paths)
+}
+
+func getMemoryEvents(path string) map[string]uint64 {
+	const file = "memory.events"
+	memoryEventsFile, err := cgroups.OpenFile(path, file, os.O_RDONLY)
+	if err != nil {
+		klog.V(4).Infof("Could not open %s/%s cgroup file: %v", path, file, err)
+		return nil
+	}
+
+	defer memoryEventsFile.Close()
+
+	memoryEvents := make(map[string]uint64)
+	sc := bufio.NewScanner(memoryEventsFile)
+	for sc.Scan() {
+		t, v, err := fscommon.ParseKeyValue(sc.Text())
+		if err != nil {
+			klog.V(4).Infof("Could not parse line from %s/%s cgroups file: %v", path, file, err)
+			return nil
+		}
+		memoryEvents[t] = v
+	}
+
+	klog.V(4).Infof("File Path %s/%s cgroup file: %v", path, file, err)
+
+	if err = cgroups.WriteFile(path, file, "high 100"); err != nil {
+		klog.V(4).Infof("Could not open %s/%s cgroup file: %v", path, file, err)
+	}
+	
+
+	return memoryEvents
 }
