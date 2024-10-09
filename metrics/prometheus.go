@@ -368,6 +368,43 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.MiscMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_misc_usage",
+				help:        "Current usage of the misc scalar resource specified by the label",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"resource"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Misc))
+					for k, v := range s.Misc {
+						values = append(values, metricValue{
+							value:     float64(v.Usage),
+							labels:    []string{k},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			}, {
+				name:        "container_misc_events",
+				help:        "Number of times the usage for the misc scalar resource specified by the label was about to go over the max boundary",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"resource"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Misc))
+					for k, v := range s.Misc {
+						values = append(values, metricValue{
+							value:     float64(v.Events),
+							labels:    []string{k},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
+				},
+			},
+		}...)
+	}
 	if includedMetrics.Has(container.MemoryUsageMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{

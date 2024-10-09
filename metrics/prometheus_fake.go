@@ -371,6 +371,16 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							Failcnt:  0,
 						},
 					},
+					Misc: map[string]info.MiscStats{
+						"res_a": {
+							Usage:  1,
+							Events: 42,
+						},
+						"res_b": {
+							Usage:  2,
+							Events: 42,
+						},
+					},
 					Network: info.NetworkStats{
 						InterfaceStats: info.InterfaceStats{
 							Name:      "eth0",

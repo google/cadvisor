@@ -888,6 +888,16 @@ func setHugepageStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	}
 }
 
+func setMiscStats(s *cgroups.Stats, ret *info.ContainerStats) {
+	ret.Misc = make(map[string]info.MiscStats)
+	for k, v := range s.MiscStats {
+		ret.Misc[k] = info.MiscStats{
+			Usage:  v.Usage,
+			Events: v.Events,
+		}
+	}
+}
+
 func setNetworkStats(libcontainerStats *libcontainer.Stats, ret *info.ContainerStats) {
 	ret.Network.Interfaces = make([]info.InterfaceStats, len(libcontainerStats.Interfaces))
 	for i := range libcontainerStats.Interfaces {
@@ -934,6 +944,9 @@ func newContainerStats(libcontainerStats *libcontainer.Stats, includedMetrics co
 		}
 		if includedMetrics.Has(container.HugetlbUsageMetrics) {
 			setHugepageStats(s, ret)
+		}
+		if includedMetrics.Has(container.MiscMetrics) {
+			setMiscStats(s, ret)
 		}
 		if includedMetrics.Has(container.CPUSetMetrics) {
 			setCPUSetStats(s, ret)

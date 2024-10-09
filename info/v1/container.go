@@ -62,6 +62,8 @@ type ContainerSpec struct {
 
 	HasHugetlb bool `json:"has_hugetlb"`
 
+	HasMisc bool `json:"has_misc"`
+
 	HasNetwork bool `json:"has_network"`
 
 	HasProcesses bool        `json:"has_processes"`
@@ -203,6 +205,9 @@ func (s *ContainerSpec) Eq(b *ContainerSpec) bool {
 		return false
 	}
 	if s.HasHugetlb != b.HasHugetlb {
+		return false
+	}
+	if s.HasMisc != b.HasMisc {
 		return false
 	}
 	if s.HasNetwork != b.HasNetwork {
@@ -362,6 +367,13 @@ type HugetlbStats struct {
 	MaxUsage uint64 `json:"max_usage,omitempty"`
 	// number of times hugetlb usage allocation failure.
 	Failcnt uint64 `json:"failcnt"`
+}
+
+type MiscStats struct {
+	// current resource usage for a key in misc
+	Usage uint64 `json:"usage,omitempty"`
+	// number of times the resource was about to go over the max boundary
+	Events uint64 `json:"events,omitempty"`
 }
 
 type MemoryStats struct {
@@ -947,6 +959,7 @@ type ContainerStats struct {
 	DiskIo    DiskIoStats             `json:"diskio,omitempty"`
 	Memory    MemoryStats             `json:"memory,omitempty"`
 	Hugetlb   map[string]HugetlbStats `json:"hugetlb,omitempty"`
+	Misc      map[string]MiscStats    `json:"misc,omitempty"`
 	Network   NetworkStats            `json:"network,omitempty"`
 	// Filesystem statistics
 	Filesystem []FsStats `json:"filesystem,omitempty"`
@@ -1014,6 +1027,9 @@ func (a *ContainerStats) StatsEq(b *ContainerStats) bool {
 		return false
 	}
 	if !reflect.DeepEqual(a.Hugetlb, b.Hugetlb) {
+		return false
+	}
+	if !reflect.DeepEqual(a.Misc, b.Misc) {
 		return false
 	}
 	if !reflect.DeepEqual(a.DiskIo, b.DiskIo) {

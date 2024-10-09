@@ -197,6 +197,14 @@ func getSpecInternal(cgroupPaths map[string]string, machineInfoFactory info.Mach
 		}
 	}
 
+	// Misc controller
+	miscRoot, ok := cgroupPaths["misc"]
+	if ok {
+		if utils.FileExists(miscRoot) {
+			spec.HasMisc = true
+		}
+	}
+
 	// Processes, read it's value from pids path directly
 	pidsRoot, ok := GetControllerPath(cgroupPaths, "pids", cgroup2UnifiedMode)
 	if ok {
