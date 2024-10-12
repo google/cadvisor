@@ -129,6 +129,10 @@ func (c *InMemoryCache) RemoveContainer(containerName string) error {
 	return nil
 }
 
+func (c *InMemoryCache) GetMaxAge() time.Duration {
+	return c.maxAge
+}
+
 func New(
 	maxAge time.Duration,
 	backend []storage.StorageDriver,
