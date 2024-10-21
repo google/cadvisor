@@ -42,6 +42,8 @@ func getFakeMachineInfo() MachineInfo {
 		NumCores:         1,
 		NumPhysicalCores: 2,
 		NumSockets:       3,
+		NumBooks:         1,
+		NumDrawers:       1,
 		CpuFrequency:     4,
 		MemoryCapacity:   5,
 		SwapCapacity:     6,
