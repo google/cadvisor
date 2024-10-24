@@ -3,7 +3,7 @@
 ### 0.39.0 (2021-03-08)
 
 - [do not initialize libipmctl package when getting an error from nvm_init()](https://github.com/google/cadvisor/pull/2723)
-- [Don't fail permenantly when nvml isn't installed](https://github.com/google/cadvisor/pull/2732)
+- [Don't fail permanently when nvml isn't installed](https://github.com/google/cadvisor/pull/2732)
 - [Update libpfm to 4.11.0](https://github.com/google/cadvisor/pull/2746)
 - [Fix race between `OnDemandHousekeeping` and `housekeepingTick`](https://github.com/google/cadvisor/pull/2755)
 - [Fix timeout flooding issue after containerd restart](https://github.com/google/cadvisor/pull/2749)
@@ -352,12 +352,12 @@
 - Fix UI on newest Chrome.
 
 ## 0.15.0 (2015-06-08)
-- Expose multiple network intefaces in UI and API.
+- Expose multiple network interfaces in UI and API.
 - Add support for XFS.
 - Fixes in inotify watches.
 - Fixes on PowerPC machines.
 - Fixes for newer systems with systemd.
-- Extra debuging informaiton in /validate.
+- Extra debuging information in /validate.
 
 ## 0.14.0 (2015-05-21)
 - Add process stats to container pages in the UI.
