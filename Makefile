@@ -13,7 +13,7 @@
 # limitations under the License.
 
 GO := go
-GOLANGCI_VER := v1.56.2
+GOLANGCI_VER := 1.56.2
 GO_TEST ?= $(GO) test $(or $(GO_FLAGS),-race)
 arch ?= $(shell go env GOARCH)
 
@@ -82,9 +82,15 @@ presubmit: lint
 
 lint:
 	@# This assumes GOPATH/bin is in $PATH -- if not, the target will fail.
-	@if ! golangci-lint version | grep $(GOLANGCI_VER); then \
-		echo ">> installing golangci-lint $(GOLANGCI_VER)"; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_VER); \
+	@# Extract the current golangci-lint version (empty if not installed),
+	@# then use GNU sort to check if GOT >= GOLANGCI_VER.
+	@GOT=$$(golangci-lint version 2>/dev/null | sed 's/^.* version \([^ ]*\) .*$$/\1/'); \
+	if ! printf $(GOLANGCI_VER)\\n$$GOT\\n | sort --version-sort --check=quiet; then \
+		echo ">> upgrading golangci-lint from $$GOT to $(GOLANGCI_VER)"; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v$(GOLANGCI_VER); \
+		GOT=$(GOLANGCI_VER); \
+	else \
+		echo ">> using installed golangci-lint $$GOT >= $(GOLANGCI_VER)"; \
 	fi
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
 	@golangci-lint run
