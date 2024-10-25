@@ -717,10 +717,7 @@ func scanUDPStats(r io.Reader) (info.UdpStat, error) {
 		return stats, scanner.Err()
 	}
 
-	listening := uint64(0)
-	dropped := uint64(0)
-	rxQueued := uint64(0)
-	txQueued := uint64(0)
+	var listening, dropped, rxQueued, txQueued uint64
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -733,8 +730,11 @@ func scanUDPStats(r io.Reader) (info.UdpStat, error) {
 			continue
 		}
 
-		rx, tx := uint64(0), uint64(0)
-		fmt.Sscanf(fs[4], "%X:%X", &rx, &tx)
+		var rx, tx uint64
+		_, err := fmt.Sscanf(fs[4], "%X:%X", &rx, &tx)
+		if err != nil {
+			continue
+		}
 		rxQueued += rx
 		txQueued += tx
 
