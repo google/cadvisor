@@ -18,6 +18,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -51,6 +52,8 @@ var (
 	argIndexName     = flag.String("storage_driver_es_index", "cadvisor", "ElasticSearch index name")
 	argTypeName      = flag.String("storage_driver_es_type", "stats", "ElasticSearch type name")
 	argEnableSniffer = flag.Bool("storage_driver_es_enable_sniffer", false, "ElasticSearch uses a sniffing process to find all nodes of your cluster by default, automatically")
+	argUserName      = flag.String("storage_driver_es_username", "", "ElasticSearch basic auth username")
+	argPassword      = flag.String("storage_driver_es_password", "", "ElasticSearch basic auth password")
 )
 
 func new() (storage.StorageDriver, error) {
@@ -64,6 +67,8 @@ func new() (storage.StorageDriver, error) {
 		*argTypeName,
 		*argElasticHost,
 		*argEnableSniffer,
+		*argUserName,
+		*argPassword,
 	)
 }
 
@@ -124,7 +129,13 @@ func newStorage(
 	typeName,
 	elasticHost string,
 	enableSniffer bool,
+	username string,
+	password string,
 ) (storage.StorageDriver, error) {
+	// Remove all spaces to help user to configure
+	elasticHost = strings.ReplaceAll(elasticHost, " ", "")
+	hosts := strings.Split(elasticHost, ",")
+
 	// Obtain a client and connect to the default Elasticsearch installation
 	// on 127.0.0.1:9200. Of course you can configure your client to connect
 	// to other hosts and configure it in various other ways.
@@ -132,7 +143,8 @@ func newStorage(
 		elastic.SetHealthcheck(true),
 		elastic.SetSniff(enableSniffer),
 		elastic.SetHealthcheckInterval(30*time.Second),
-		elastic.SetURL(elasticHost),
+		elastic.SetURL(hosts...),
+		elastic.SetBasicAuth(username, password),
 	)
 	if err != nil {
 		// Handle error
@@ -140,13 +152,20 @@ func newStorage(
 	}
 
 	// Ping the Elasticsearch server to get e.g. the version number
-	info, code, err := client.Ping().URL(elasticHost).Do()
-	if err != nil {
-		// Handle error
-		return nil, fmt.Errorf("failed to ping the elasticsearch - %s", err)
-
+	// Just ping anyone of hosts successfully will be ok
+	var res *elastic.PingResult
+	var code int
+	for _, host := range hosts {
+		res, code, err = client.Ping().URL(host).Do()
+		if err == nil {
+			break
+		}
+		fmt.Printf("ping host %s failed, code: %d, err: %s", host, code, err)
 	}
-	fmt.Printf("Elasticsearch returned with code %d and version %s", code, info.Version.Number)
+	if res == nil {
+		return nil, fmt.Errorf("failed to ping any host of the elasticsearch")
+	}
+	fmt.Printf("Elasticsearch returned with code %d and version %s", code, res.Version.Number)
 
 	ret := &elasticStorage{
 		client:      client,
