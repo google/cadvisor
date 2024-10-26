@@ -51,6 +51,7 @@ RUN export GO_TAGS="libpfm,netgo"; \
     GO_FLAGS="-tags=$GO_TAGS" ./build/build.sh
 
 FROM mirror.gcr.io/library/alpine:3.18
+LABEL org.opencontainers.image.source="https://github.com/google/cadvisor"
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
 RUN apk --no-cache add libc6-compat device-mapper findutils ndctl zfs && \
