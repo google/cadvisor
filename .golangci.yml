@@ -22,19 +22,3 @@ linters:
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-case-sensitive: true
-  exclude:
-#   integration/tests/api/event_test.go:66:6: func `waitForStaticEvent` is unused (unused)
-#   Flaky test skipped.
-    - waitForStaticEvent
-#   Initialism or acronyms for fields, vars and types:
-    - "(struct field|var|type|const) `[A-Z].*` should be `.*`"
-#   Initialism or acronyms - renaming exported methods and functions can be tricky:
-    - "(method|func) [A-Z].* should be .*"
-#   Stuttering affects exported names:
-    - "type name will be used as .*\\.[A-Z]{1}.* by other packages, and that stutters"
-  exclude-rules:
-#   utils/cpuload/netlink/netlink.go:102:15: Error return value of `binary.Write` is not checked (errcheck)
-#   There are more similar issues in this file
-    - path: utils/cpuload/netlink/netlink.go
-      text: "Error return value of `binary.Write` is not checked"
