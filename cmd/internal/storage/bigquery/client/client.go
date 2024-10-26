@@ -16,6 +16,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -228,7 +229,7 @@ func (c *Client) InsertRow(rowData map[string]interface{}) error {
 				errstr += fmt.Sprintf("Error inserting row %d: %+v\n", errors.Index, errorproto)
 			}
 		}
-		return fmt.Errorf(errstr)
+		return errors.New(errstr)
 	}
 	return nil
 }

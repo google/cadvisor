@@ -21,6 +21,7 @@ package resctrl
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -177,7 +178,7 @@ func prepareMonitoringGroup(containerName string, getContainerPids func() ([]str
 func getPids(containerName string) ([]int, error) {
 	if len(containerName) == 0 {
 		// No container name passed.
-		return nil, fmt.Errorf(noContainerNameError)
+		return nil, errors.New(noContainerNameError)
 	}
 	pids, err := cgroups.GetAllPids(filepath.Join(pidsPath, containerName))
 	if err != nil {
@@ -211,7 +212,7 @@ func getAllProcessThreads(path string) ([]int, error) {
 // findGroup returns the path of a control/monitoring group in which the pids are.
 func findGroup(group string, pids []string, includeGroup bool, exclusive bool) (string, error) {
 	if len(pids) == 0 {
-		return "", fmt.Errorf(noPidsPassedError)
+		return "", errors.New(noPidsPassedError)
 	}
 
 	availablePaths := make([]string, 0)
