@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/opencontainers/runc/libcontainer/cgroups"
+
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
 	dockerutil "github.com/google/cadvisor/container/docker/utils"
@@ -31,7 +33,6 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/zfs"
-	"github.com/opencontainers/runc/libcontainer/cgroups"
 
 	docker "github.com/docker/docker/client"
 	"golang.org/x/net/context"
