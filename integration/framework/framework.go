@@ -220,7 +220,7 @@ func (a dockerActions) RunPause() string {
 // Run the specified command in a Docker busybox container.
 func (a dockerActions) RunBusybox(cmd ...string) string {
 	return a.Run(DockerRunArgs{
-		Image: "registry.k8s.io/busybox",
+		Image: "registry.k8s.io/busybox:1.27",
 	}, cmd...)
 }
 
