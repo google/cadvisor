@@ -570,6 +570,7 @@ func TestProcessMounts(t *testing.T) {
 				{Root: "/", Mountpoint: "/g", Source: "127.0.0.1:/nfs", FSType: "nfs4", Major: 253, Minor: 6},
 				{Root: "/", Mountpoint: "/test1", Source: "tmpfs", FSType: "tmpfs", Major: 253, Minor: 4},
 				{Root: "/", Mountpoint: "/test2", Source: "tmpfs", FSType: "tmpfs", Major: 253, Minor: 4},
+				{Root: "/", Mountpoint: "/h", Source: "/dev/sdh", FSType: "f2fs", Major: 253, Minor: 7},
 			},
 			expected: map[string]partition{
 				"/dev/sda":       {fsType: "ext3", mountpoint: "/a", major: 253, minor: 0},
@@ -581,6 +582,7 @@ func TestProcessMounts(t *testing.T) {
 				"127.0.0.1:/nfs": {fsType: "nfs4", mountpoint: "/g", major: 253, minor: 6},
 				"/test1":         {fsType: "tmpfs", mountpoint: "/test1", major: 253, minor: 4},
 				"/test2":         {fsType: "tmpfs", mountpoint: "/test2", major: 253, minor: 4},
+				"/dev/sdh":       {fsType: "f2fs", mountpoint: "/h", major: 253, minor: 7},
 			},
 		},
 	}
