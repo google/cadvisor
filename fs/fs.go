@@ -180,7 +180,7 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 		"tmpfs":   true,
 		"xfs":     true,
 		"zfs":     true,
-                "f2fs":    true,
+		"f2fs":    true,
 	}
 
 	for _, mnt := range mounts {
