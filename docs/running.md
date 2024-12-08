@@ -103,6 +103,31 @@ If you are using Docker with the LXC exec driver, then you need to manually spec
 
 This is a problem seen in older versions of Docker. To fix, start cAdvisor without the `--volume=/:/rootfs:ro` mount. cAdvisor will degrade gracefully by dropping stats that depend on access to the machine root.
 
+### Rootless (Docker / Podman)
+
+Running cAdivsor on rootless container runtimes works for the most part. However granting access to the host kernel message buffer (`--device /dev/kmsg`) for OOM (out of memory) detection does not work.
+
+Based on the container runtime used the socket needs to be changed appriopriately. Additionally the container storage volume, must be changed to the corresponding container runtime user directory. When using Podman you must also include `--volume=/sys/fs/cgroup:/sys/fs/cgroup:ro`.
+
+```sh
+VERSION=v0.49.1 # use the latest release version from https://github.com/google/cadvisor/releases
+docker run \
+  --volume=/:/rootfs:ro \
+  --volume=/var/run:/var/run:ro \
+  --volume=/sys:/sys:ro \
+  # --volume=/sys/fs/cgroup:/sys/fs/cgroup:ro \ # Required for Podman subcontainers
+  --volume=$HOME/.local/share/docker/:/var/lib/docker:ro \ # Docker Rootless
+  # --volume=$HOME/.local/share/containers:/var/lib/containers:ro # Podman Rootless
+  --volume=/dev/disk/:/dev/disk:ro \
+  --docker=unix:///var/run/user/$(id -u)/docker.sock \
+  # --podman=unix:///var/run/user/$(id -u)/podman/podman.sock \ # Podman Rootless
+  --publish=8080:8080 \
+  --detach=true \
+  --name=cadvisor \
+  --privileged \
+  gcr.io/cadvisor/cadvisor:$VERSION
+```
+
 ## Standalone
 
 cAdvisor is a static Go binary with no external dependencies. To run it standalone all you should need to do is run it! Note that some data sources may require root privileges. cAdvisor will gracefully degrade its features to those it can expose with the access given.
