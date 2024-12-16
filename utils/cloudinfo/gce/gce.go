@@ -15,6 +15,7 @@
 package gce
 
 import (
+	"context"
 	"os"
 	"strings"
 
@@ -48,7 +49,7 @@ func (provider) IsActiveProvider() bool {
 }
 
 func (provider) GetInstanceType() info.InstanceType {
-	machineType, err := metadata.Get("instance/machine-type")
+	machineType, err := metadata.GetWithContext(context.TODO(), "instance/machine-type")
 	if err != nil {
 		return info.UnknownInstance
 	}
@@ -58,7 +59,7 @@ func (provider) GetInstanceType() info.InstanceType {
 }
 
 func (provider) GetInstanceID() info.InstanceID {
-	instanceID, err := metadata.Get("instance/id")
+	instanceID, err := metadata.GetWithContext(context.TODO(), "instance/id")
 	if err != nil {
 		return info.UnknownInstance
 	}
