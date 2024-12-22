@@ -55,6 +55,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_bandwidth_bytes` | Gauge | Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_bandwidth_local_bytes` | Gauge | Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_cache` | Gauge | Total page cache memory | bytes | memory |
+`container_memory_dirty` | Gauge | Size of memory that are waiting to get written back to the disk | bytes | memory |
 `container_memory_failcnt` | Counter | Number of memory usage hits limits | | memory |
 `container_memory_failures_total` | Counter | Cumulative count of memory allocation failures | | memory |
 `container_memory_mapped_file` | Gauge | Size of memory mapped files | bytes | memory |
@@ -62,9 +63,13 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_migrate` | Gauge | Memory migrate status | | cpuset |
 `container_memory_numa_pages` | Gauge | Number of used pages per NUMA node | | memory_numa |
 `container_memory_rss` | Gauge | Size of RSS | bytes | memory |
+`container_memory_shmem` | Gauge | Size of shmem | bytes | memory |
+`container_memory_sock` | Gauge | Size of memory used in network transmission buffers (cgroupv2-only) | bytes | memory |
 `container_memory_swap` | Gauge | Container swap usage | bytes | memory |
+`container_memory_unevictable` | Gauge | Size of unevictable memory | bytes | memory |
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | memory |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | memory |
+`container_memory_writeback` | Gauge | Size of file/anon cache that are queued for syncing to disk | bytes | memory |
 `container_network_advance_tcp_stats_total` | Gauge | advanced tcp connections statistic for container | | advtcp |
 `container_network_receive_bytes_total` | Counter | Cumulative count of bytes received | bytes | network |
 `container_network_receive_errors_total` | Counter | Cumulative count of errors encountered while receiving | | network |

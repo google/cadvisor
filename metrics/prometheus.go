@@ -23,6 +23,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -397,6 +398,42 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				valueType: prometheus.GaugeValue,
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.MappedFile), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_shmem",
+				help:      "Size of shmem in bytes.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Shmem), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_dirty",
+				help:      "Size of memory that are waiting to get written back to the disk in bytes.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Dirty), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_writeback",
+				help:      "Size of file/anon cache that are queued for syncing to disk in bytes.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Writeback), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_unevictable",
+				help:      "Size of unevictable memory in bytes.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Unevictable), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_sock",
+				help:      "Size of memory used in network transmission buffers in bytes.",
+				valueType: prometheus.GaugeValue,
+				condition: func(s info.ContainerSpec) bool { return cgroups.IsCgroup2UnifiedMode() },
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Sock), timestamp: s.Timestamp}}
 				},
 			}, {
 				name:      "container_memory_swap",

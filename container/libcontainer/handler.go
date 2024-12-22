@@ -805,16 +805,29 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		ret.Memory.RSS = s.MemoryStats.Stats["anon"]
 		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage - s.MemoryStats.Usage.Usage
 		ret.Memory.MappedFile = s.MemoryStats.Stats["file_mapped"]
+		ret.Memory.Shmem = s.MemoryStats.Stats["shmem"]
+		ret.Memory.Dirty = s.MemoryStats.Stats["file_dirty"]
+		ret.Memory.Writeback = s.MemoryStats.Stats["file_writeback"]
+		ret.Memory.Unevictable = s.MemoryStats.Stats["unevictable"]
+		ret.Memory.Sock = s.MemoryStats.Stats["sock"]
 	} else if s.MemoryStats.UseHierarchy {
 		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["total_rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["total_swap"]
 		ret.Memory.MappedFile = s.MemoryStats.Stats["total_mapped_file"]
+		ret.Memory.Shmem = s.MemoryStats.Stats["total_shmem"]
+		ret.Memory.Dirty = s.MemoryStats.Stats["total_dirty"]
+		ret.Memory.Writeback = s.MemoryStats.Stats["total_writeback"]
+		ret.Memory.Unevictable = s.MemoryStats.Stats["total_unevictable"]
 	} else {
 		ret.Memory.Cache = s.MemoryStats.Stats["cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["swap"]
 		ret.Memory.MappedFile = s.MemoryStats.Stats["mapped_file"]
+		ret.Memory.Shmem = s.MemoryStats.Stats["shmem"]
+		ret.Memory.Dirty = s.MemoryStats.Stats["dirty"]
+		ret.Memory.Writeback = s.MemoryStats.Stats["writeback"]
+		ret.Memory.Unevictable = s.MemoryStats.Stats["unevictable"]
 	}
 	if v, ok := s.MemoryStats.Stats["pgfault"]; ok {
 		ret.Memory.ContainerData.Pgfault = v

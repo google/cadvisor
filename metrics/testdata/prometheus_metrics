@@ -142,6 +142,9 @@ container_last_seen{container_env_foo_env="prod",container_label_foo_label="bar"
 # HELP container_memory_cache Number of bytes of page cache memory.
 # TYPE container_memory_cache gauge
 container_memory_cache{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 14 1395066363000
+# HELP container_memory_dirty Size of memory that are waiting to get written back to the disk in bytes.
+# TYPE container_memory_dirty gauge
+container_memory_dirty{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 19 1395066363000
 # HELP container_memory_failcnt Number of memory usage hits limits
 # TYPE container_memory_failcnt counter
 container_memory_failcnt{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0 1395066363000
@@ -180,6 +183,12 @@ container_memory_numa_pages{container_env_foo_env="prod",container_label_foo_lab
 # HELP container_memory_rss Size of RSS in bytes.
 # TYPE container_memory_rss gauge
 container_memory_rss{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 15 1395066363000
+# HELP container_memory_shmem Size of shmem in bytes.
+# TYPE container_memory_shmem gauge
+container_memory_shmem{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 18 1395066363000
+# HELP container_memory_sock Size of memory used in network transmission buffers in bytes.
+# TYPE container_memory_sock gauge
+container_memory_sock{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 22 1395066363000
 # HELP container_memory_swap Container swap usage in bytes.
 # TYPE container_memory_swap gauge
 container_memory_swap{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8192 1395066363000
@@ -189,12 +198,18 @@ container_memory_total_active_file_bytes{container_env_foo_env="prod",container_
 # HELP container_memory_total_inactive_file_bytes Current total inactive file in bytes.
 # TYPE container_memory_total_inactive_file_bytes gauge
 container_memory_total_inactive_file_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 6 1395066363000
+# HELP container_memory_unevictable Size of unevictable memory in bytes.
+# TYPE container_memory_unevictable gauge
+container_memory_unevictable{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 21 1395066363000
 # HELP container_memory_usage_bytes Current memory usage in bytes, including all memory regardless of when it was accessed
 # TYPE container_memory_usage_bytes gauge
 container_memory_usage_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8 1395066363000
 # HELP container_memory_working_set_bytes Current working set in bytes.
 # TYPE container_memory_working_set_bytes gauge
 container_memory_working_set_bytes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 9 1395066363000
+# HELP container_memory_writeback Size of file/anon cache that are queued for syncing to disk in bytes.
+# TYPE container_memory_writeback gauge
+container_memory_writeback{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 20 1395066363000
 # HELP container_network_advance_tcp_stats_total advance tcp connections statistic for container
 # TYPE container_network_advance_tcp_stats_total gauge
 container_network_advance_tcp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="activeopens",zone_name="hello"} 1.1038621e+07 1395066363000

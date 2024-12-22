@@ -390,6 +390,27 @@ type MemoryStats struct {
 	// The amount of memory used for mapped files (includes tmpfs/shmem)
 	MappedFile uint64 `json:"mapped_file"`
 
+	// The amount of cached filesystem data that is swap-backed, such as tmpfs,
+	// shm segments, shared anonymous mmap()s
+	// Units: Bytes.
+	Shmem uint64 `json:"shmem"`
+
+	// The amount of bytes that are waiting to get written back to the disk
+	// Units: Bytes.
+	Dirty uint64 `json:"dirty"`
+
+	// The amount of bytes of file/anon cache that are queued for syncing to disk
+	// Units: Bytes.
+	Writeback uint64 `json:"writeback"`
+
+	// The amount of bytes of memory that cannot be reclaimed (mlocked etc)
+	// Units: Bytes.
+	Unevictable uint64 `json:"unevictable"`
+
+	// The amount of memory used in network transmission buffers
+	// Units: Bytes.
+	Sock uint64 `json:"sock"`
+
 	// The amount of working set memory, this includes recently accessed memory,
 	// dirty memory, and kernel memory. Working set is <= "usage".
 	// Units: Bytes.
