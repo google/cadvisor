@@ -18,7 +18,7 @@ package containerd
 import (
 	"testing"
 
-	"github.com/containerd/typeurl"
+	"github.com/containerd/typeurl/v2"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
 
@@ -65,7 +65,7 @@ func TestHandler(t *testing.T) {
 		Labels: map[string]string{"io.cri-containerd.kind": "sandbox"},
 	}
 	spec := &specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{Env: []string{"TEST_REGION=FRA", "TEST_ZONE=A", "HELLO=WORLD"}}}
-	testContainer.Spec, _ = typeurl.MarshalAny(spec)
+	testContainer.Spec, _ = typeurl.MarshalAnyToProto(spec)
 	testContainers["40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"] = testContainer
 	for _, ts := range []testCase{
 		{

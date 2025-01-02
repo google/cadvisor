@@ -59,6 +59,10 @@ const (
 	serMemoryMappedFile string = "memory_mapped_file"
 	// Working set size
 	serMemoryWorkingSet string = "memory_working_set"
+	// Total active file
+	serMemoryTotalActiveFile string = "memory_total_active_file"
+	// Total inactive file
+	serMemoryTotalInactiveFile string = "memory_total_inactive_file"
 	// Number of memory usage hits limits
 	serMemoryFailcnt string = "memory_failcnt"
 	// Cumulative count of memory allocation failures
@@ -164,6 +168,10 @@ func (driver *stdoutStorage) memoryStatsToValues(series *map[string]uint64, stat
 	(*series)[serMemoryMappedFile] = stats.Memory.MappedFile
 	// Working Set Size
 	(*series)[serMemoryWorkingSet] = stats.Memory.WorkingSet
+	// Total Active File
+	(*series)[serMemoryTotalActiveFile] = stats.Memory.TotalActiveFile
+	// Total Inactive File
+	(*series)[serMemoryTotalInactiveFile] = stats.Memory.TotalInactiveFile
 	// Number of memory usage hits limits
 	(*series)[serMemoryFailcnt] = stats.Memory.Failcnt
 
