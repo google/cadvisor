@@ -110,12 +110,13 @@ func TestPrometheusCollector_scrapeFailure(t *testing.T) {
 
 func TestNewPrometheusCollectorWithPerf(t *testing.T) {
 	c := NewPrometheusCollector(&mockInfoProvider{}, mockLabelFunc, container.MetricSet{container.PerfMetrics: struct{}{}}, now, v2.RequestOptions{})
-	assert.Len(t, c.containerMetrics, 5)
+	assert.Len(t, c.containerMetrics, 6)
 	names := []string{}
 	for _, m := range c.containerMetrics {
 		names = append(names, m.name)
 	}
 	assert.Contains(t, names, "container_last_seen")
+	assert.Contains(t, names, "container_health_state")
 	assert.Contains(t, names, "container_perf_events_total")
 	assert.Contains(t, names, "container_perf_events_scaling_ratio")
 	assert.Contains(t, names, "container_perf_uncore_events_total")

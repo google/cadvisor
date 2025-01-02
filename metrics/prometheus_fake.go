@@ -733,6 +733,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 						},
 					},
 					CpuSet: info.CPUSetStats{MemoryMigrate: 1},
+					Health: info.Health{Status: "healthy"},
 				},
 			},
 		},

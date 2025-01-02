@@ -121,6 +121,9 @@ container_fs_writes_merged_total{container_env_foo_env="prod",container_label_fo
 # TYPE container_fs_writes_total counter
 container_fs_writes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 28 1395066363000
 container_fs_writes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 43 1395066363000
+# HELP container_health_state The result of the container's health check
+# TYPE container_health_state gauge
+container_health_state{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
 # HELP container_hugetlb_failcnt Number of hugepage usage hits limits
 # TYPE container_hugetlb_failcnt counter
 container_hugetlb_failcnt{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="1Gi",zone_name="hello"} 0 1395066363000
