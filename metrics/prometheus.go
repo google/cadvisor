@@ -399,6 +399,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return metricValues{{value: float64(s.Memory.MappedFile), timestamp: s.Timestamp}}
 				},
 			}, {
+				name:      "container_memory_socket",
+				help:      "Size of kernel memory allocated by sockets.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Socket), timestamp: s.Timestamp}}
+				},
+			}, {
 				name:      "container_memory_swap",
 				help:      "Container swap usage in bytes.",
 				valueType: prometheus.GaugeValue,

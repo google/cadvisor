@@ -55,6 +55,8 @@ const (
 	serMemorySwap string = "memory_swap"
 	// Size of memory mapped files in bytes
 	serMemoryMappedFile string = "memory_mapped_file"
+	// Size of socket memory in bytes
+	serMemorySocket string = "memory_socket"
 	// Working set size
 	serMemoryWorkingSet string = "memory_working_set"
 	// Total active file size
@@ -161,6 +163,8 @@ func (s *statsdStorage) memoryStatsToValues(series *map[string]uint64, stats *in
 	(*series)[serMemorySwap] = stats.Memory.Swap
 	// Size of memory mapped files in bytes
 	(*series)[serMemoryMappedFile] = stats.Memory.MappedFile
+	// Size of socket memory in bytes.
+	(*series)[serMemorySocket] = stats.Memory.Socket
 	// Working Set Size
 	(*series)[serMemoryWorkingSet] = stats.Memory.WorkingSet
 	// Total Active File Size
