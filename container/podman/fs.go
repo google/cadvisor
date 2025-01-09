@@ -25,6 +25,7 @@ import (
 
 const (
 	containersJSONFilename = "containers.json"
+	volatileContainersJSONFilename = "volatile-containers.json"
 )
 
 type containersJSON struct {
@@ -34,20 +35,34 @@ type containersJSON struct {
 }
 
 func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerID string) (string, error) {
-	data, err := os.ReadFile(filepath.Join(storageDir, string(storageDriver)+"-containers", containersJSONFilename))
-	if err != nil {
-		return "", err
-	}
-	var containers []containersJSON
-	err = json.Unmarshal(data, &containers)
-	if err != nil {
-		return "", err
+	searchInFile := func(filename string) (string, error) {
+		data, err := os.ReadFile(filepath.Join(storageDir, string(storageDriver)+"-containers", filename))
+		if err != nil {
+			return "", err
+		}
+		var containers []containersJSON
+		err = json.Unmarshal(data, &containers)
+		if err != nil {
+			return "", err
+		}
+
+		for _, c := range containers {
+			if c.ID == containerID {
+				return c.Layer, nil
+			}
+		}
+
+		return "", nil
 	}
 
-	for _, c := range containers {
-		if c.ID == containerID {
-			return c.Layer, nil
-		}
+	layer, err := searchInFile(containersJSONFilename)
+	if err == nil && layer != "" {
+		return layer, nil
+	}
+
+	layer, err = searchInFile(volatileContainersJSONFilename)
+	if err == nil && layer != "" {
+		return layer, nil
 	}
 
 	return "", fmt.Errorf("unable to determine %v rw layer id", containerID)
