@@ -119,13 +119,13 @@ docker run \
   --volume=$HOME/.local/share/docker/:/var/lib/docker:ro \ # Docker Rootless
   # --volume=$HOME/.local/share/containers:/var/lib/containers:ro # Podman Rootless
   --volume=/dev/disk/:/dev/disk:ro \
-  --docker=unix:///var/run/user/$(id -u)/docker.sock \
-  # --podman=unix:///var/run/user/$(id -u)/podman/podman.sock \ # Podman Rootless
   --publish=8080:8080 \
   --detach=true \
   --name=cadvisor \
   --privileged \
-  gcr.io/cadvisor/cadvisor:$VERSION
+  gcr.io/cadvisor/cadvisor:$VERSION \
+  --docker=unix:///var/run/user/$(id -u)/docker.sock
+  # --podman=unix:///var/run/user/$(id -u)/podman/podman.sock # Podman Rootless
 ```
 
 ## Standalone
