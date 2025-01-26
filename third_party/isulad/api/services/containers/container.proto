@@ -1,0 +1,475 @@
+// #######################################################################
+// ##- Copyright (c) Huawei Technologies Co., Ltd. 2019. All rights reserved.
+// # - iSulad licensed under the Mulan PSL v2.
+// # - You can use this software according to the terms and conditions of the Mulan PSL v2.
+// # - You may obtain a copy of Mulan PSL v2 at:
+// # -     http://license.coscl.org.cn/MulanPSL2
+// # - THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+// # - IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+// # - PURPOSE.
+// # - See the Mulan PSL v2 for more details.
+// ##- @Description: generate grpc
+// ##- @Author: wujing
+// ##- @Create: 2019-04-25
+// #######################################################################
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+
+import "google/protobuf/timestamp.proto";
+
+package containers;
+
+enum ContainerStatus {
+	UNKNOWN = 0;
+	CREATED = 1;
+	STARTING = 2;
+	RUNNING = 3;
+	STOPPED = 4;
+	PAUSED = 5;
+	RESTARTING = 6;
+}
+
+enum EventType {
+	EXIT = 0;
+	STOPPED1 = 1;
+	STARTING1 = 2;
+	RUNNING1 = 3;
+	STOPPING = 4;
+	ABORTING = 5;
+	FREEZING = 6;
+	FROZEN = 7;
+	THAWED = 8;
+	OOM = 9;
+	CREATE = 10;
+	START = 11;
+	EXEC_ADDED = 12;
+	PAUSED1 = 13;
+}
+
+message Container {
+	string id = 1;
+	int32 pid = 2;
+	ContainerStatus status = 3;
+	string interface = 4;
+	string ipv4 = 5;
+	string ipv6 = 6;
+	string image = 7;
+	string command = 8;
+	double ram = 9;
+	double swap = 10;
+	uint32 exit_code = 11;
+	uint64 restartcount = 12;
+	string startat = 13;
+	string finishat = 14;
+	string runtime = 15;
+	string name = 16;
+	string health_state = 17;
+	int64 created = 18;
+}
+
+message Container_info {
+	string id = 1;
+	uint64 pids_current = 2;
+	uint64 cpu_use_nanos = 3;
+	uint64 cpu_use_user = 4;
+	uint64 cpu_use_kernel = 5;
+	uint64 cpu_system_use = 6;
+	uint32 online_cpus = 7;
+	uint64 blkio_read = 8;
+	uint64 blkio_write = 9;
+	uint64 mem_used = 10;
+	uint64 mem_limit = 11;
+	uint64 kmem_used = 12;
+	uint64 kmem_limit = 13;
+	string name = 14;
+	string status = 15;
+	uint64 cache = 16;
+	uint64 cache_total = 17;
+	uint64 inactive_file_total = 18;
+	uint64 avaliable_bytes = 19;
+	uint64 workingset_bytes = 20;
+	uint64 rss_bytes = 21;
+	uint64 page_faults = 22;
+	uint64 major_page_faults = 23;
+}
+
+message Event {
+	google.protobuf.Timestamp timestamp = 1;
+	string opt = 2;
+	string id = 3;
+	map<string, string> annotations= 4;
+}
+
+service ContainerService {
+    rpc Create(CreateRequest) returns (CreateResponse);
+    rpc Start(StartRequest) returns (StartResponse);
+    rpc RemoteStart(stream RemoteStartRequest) returns (stream RemoteStartResponse);
+    rpc Top(TopRequest) returns (TopResponse);
+    rpc Stop(StopRequest) returns (StopResponse);
+    rpc Kill(KillRequest) returns (KillResponse);
+    rpc Delete(DeleteRequest) returns (DeleteResponse);
+    rpc Pause(PauseRequest) returns (PauseResponse);
+    rpc Resume(ResumeRequest) returns (ResumeResponse);
+    rpc Inspect(InspectContainerRequest) returns (InspectContainerResponse);
+    rpc List(ListRequest) returns (ListResponse);
+    rpc Stats(StatsRequest) returns (StatsResponse);
+    rpc Wait(WaitRequest) returns (WaitResponse);
+    rpc Events(EventsRequest) returns (stream Event);
+    rpc Exec(ExecRequest) returns (ExecResponse);
+    rpc RemoteExec(stream RemoteExecRequest) returns (stream RemoteExecResponse);
+    rpc Version(VersionRequest) returns (VersionResponse);
+    rpc Info(InfoRequest) returns (InfoResponse);
+    rpc Update(UpdateRequest) returns (UpdateResponse);
+    rpc Attach(stream AttachRequest) returns (stream AttachResponse);
+    rpc Restart(RestartRequest) returns (RestartResponse);
+    rpc Export(ExportRequest) returns (ExportResponse);
+    rpc CopyFromContainer(CopyFromContainerRequest) returns (stream CopyFromContainerResponse);
+    rpc CopyToContainer(stream CopyToContainerRequest) returns (stream CopyToContainerResponse);
+    rpc Rename(RenameRequest) returns (RenameResponse);
+    rpc Logs(LogsRequest) returns (stream LogsResponse);
+    rpc Resize(ResizeRequest) returns (ResizeResponse);
+}
+
+message CreateRequest {
+	string id = 1;
+	string rootfs = 2;
+	// Image contains the reference of the image used to build the
+	// specification and snapshots for running this container.
+	//
+	string image = 3;
+	string runtime = 4;
+	string hostconfig = 5;
+	string customconfig = 6;
+}
+
+message CreateResponse {
+	string id = 1;
+	int32 pid = 2;
+	uint32 cc = 3;
+	string errmsg = 4;
+}
+
+message StartRequest {
+	string id = 1;
+	string stdin = 2;
+	bool attach_stdin = 3;
+	string stdout = 4;
+	bool attach_stdout = 5;
+	string stderr = 6;
+	bool attach_stderr = 7;
+}
+
+message StartResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message RemoteStartRequest {
+	bytes stdin = 1;
+	bool finish = 2;
+}
+
+message RemoteStartResponse {
+	bytes stdout = 1;
+	bytes stderr = 2;
+	bool finish = 3;
+}
+
+message TopRequest {
+        string id = 1;
+        repeated string args = 2;
+}
+
+message TopResponse {
+        bytes titles = 1;
+        repeated bytes processes = 2;
+        uint32 cc = 3;
+        string errmsg = 4;
+}
+
+message StopRequest {
+	string id = 1;
+	bool force = 2;
+	int32 timeout = 3;
+}
+
+message StopResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message RestartRequest {
+	string id = 1;
+	int32 timeout = 2;
+}
+
+message RestartResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message KillRequest {
+	string id = 1;
+	uint32 signal = 2;
+}
+
+message KillResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message DeleteRequest {
+	string id = 1;
+	bool force = 2;
+	bool volumes = 3;
+}
+
+message DeleteResponse {
+	string id = 1;
+	uint32 exit_status = 2;
+	uint32 cc = 3;
+	string errmsg = 4;
+}
+
+message PauseRequest {
+	string id = 1;
+}
+
+message PauseResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message ResumeRequest {
+	string id = 1;
+}
+
+message ResumeResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message InspectContainerRequest {
+	string id = 1;
+	bool bformat = 2;
+	int32 timeout = 3;
+}
+
+message InspectContainerResponse {
+	string ContainerJSON = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message ListRequest {
+	map<string, string>  filters = 1;
+	bool all = 2;
+}
+
+message ListResponse {
+	repeated Container containers = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message StatsRequest {
+	repeated string containers = 2;
+	bool all = 3;
+}
+
+message StatsResponse {
+	repeated Container_info containers = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message WaitRequest {
+	string id = 1;
+	uint32 condition = 2;
+}
+
+message WaitResponse {
+	uint32 cc = 1;
+	uint32 exit_code = 2;
+	string errmsg = 3;
+}
+
+message EventsRequest {
+	google.protobuf.Timestamp since = 1;
+	google.protobuf.Timestamp until = 2;
+	bool storeOnly = 3;
+	string id = 4;
+}
+message ExecRequest {
+	// ContainerID specifies the container in which to exec the process.
+	string container_id = 1;
+	bool tty = 2;
+	bool open_stdin = 3;
+	bool attach_stdin = 4;
+	bool attach_stdout = 5;
+	bool attach_stderr = 6;
+	string stdin = 7;
+	string stdout = 8;
+	string stderr = 9;
+	repeated string argv = 10;
+	repeated string env = 11;
+	string user = 12;
+	string suffix = 13;
+	string workdir = 14;
+}
+message ExecResponse {
+	int32 pid = 1;
+	uint32 exit_code = 2;
+	uint32 cc = 3;
+	string errmsg = 4;
+}
+
+message RemoteExecRequest {
+    repeated bytes cmd = 1;
+    bool finish = 2;
+}
+message RemoteExecResponse {
+	bytes stdout = 1;
+	bytes stderr = 2;
+	bool finish = 3;
+}
+
+message AttachRequest {
+	bytes stdin = 1;
+	bool finish = 2;
+}
+
+message AttachResponse {
+	bytes stdout = 1;
+	bytes stderr = 2;
+	bool finish = 3;
+}
+
+message VersionRequest {
+}
+
+message VersionResponse {
+	string version = 1;
+	string git_commit = 2;
+	string build_time = 3;
+	string root_path = 4;
+	uint32 cc = 5;
+	string errmsg = 6;
+}
+message InfoRequest {
+}
+
+message InfoResponse {
+    uint32 cc = 1;
+    string errmsg = 2;
+    string version = 3;
+    uint32 containers_num = 4;
+    uint32 c_running = 5;
+    uint32 c_paused = 6;
+    uint32 c_stopped = 7;
+    uint32 images_num = 8;
+    string kversion = 9;
+    string os_type = 10;
+    string architecture = 11;
+    string nodename = 12;
+    uint32 cpus = 13;
+    string operating_system = 14;
+    string cgroup_driver = 15;
+    string logging_driver = 16;
+    string huge_page_size = 17;
+    string isulad_root_dir = 18;
+    uint32 total_mem = 19;
+    string http_proxy = 20;
+    string https_proxy = 21;
+    string no_proxy = 22;
+    string driver_name = 23;
+    string driver_status = 24;
+}
+
+message UpdateRequest {
+	string id = 1;
+	string hostconfig = 2;
+}
+
+message UpdateResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message ExportRequest {
+	string id = 1;
+	string file = 2;
+}
+
+message ExportResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message CopyFromContainerRequest {
+	string id = 1;
+	string runtime = 2;
+	string srcpath = 3;
+}
+
+message CopyFromContainerResponse {
+	bytes data = 1;
+}
+
+message CopyToContainerRequest {
+	bytes data = 1;
+}
+
+message CopyToContainerResponse {
+	bool finish = 1;
+}
+
+message RenameRequest {
+	string oldname = 1;
+	string newname = 2;
+}
+
+message RenameResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message LogsRequest {
+    string id = 1;
+    string runtime = 2;
+    string since = 3;
+    string until = 4;
+    bool timestamps = 5;
+    bool follow = 6;
+    int64 tail = 7;
+    bool details = 8;
+}
+
+message LogsResponse {
+    bytes data = 1;
+    string stream = 2;
+    string time = 3;
+    bytes attrs = 4;
+}
+
+message ResizeRequest {
+	string id = 1;
+	string suffix = 2;
+	uint32 height = 3;
+	uint32 width = 4;
+}
+
+message ResizeResponse {
+	string id = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
