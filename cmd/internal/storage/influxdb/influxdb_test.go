@@ -259,6 +259,7 @@ func TestContainerStatsToPoints(t *testing.T) {
 	assertContainsPointWithValue(t, points, serMemoryRss, stats.Memory.RSS)
 	assertContainsPointWithValue(t, points, serMemorySwap, stats.Memory.Swap)
 	assertContainsPointWithValue(t, points, serMemoryMappedFile, stats.Memory.MappedFile)
+	assertContainsPointWithValue(t, points, serMemorySocket, stats.Memory.Socket)
 	assertContainsPointWithValue(t, points, serMemoryUsage, stats.Memory.Usage)
 	assertContainsPointWithValue(t, points, serMemoryWorkingSet, stats.Memory.WorkingSet)
 	assertContainsPointWithValue(t, points, serMemoryTotalActiveFile, stats.Memory.TotalActiveFile)
@@ -362,6 +363,7 @@ func createTestStats() (*info.ContainerInfo, *info.ContainerStats) {
 			RSS:               18930020352,
 			Swap:              1024,
 			MappedFile:        1025327104,
+			Socket:            1025327104,
 			WorkingSet:        23630012416,
 			TotalActiveFile:   29459246253,
 			TotalInactiveFile: 28364536434,
