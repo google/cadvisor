@@ -261,16 +261,24 @@ func (ci *ContainerInfo) StatsEndTime() time.Time {
 	return ret
 }
 
-type PSIData struct {
-	Avg10  float64 `json:"avg10"`
-	Avg60  float64 `json:"avg60"`
-	Avg300 float64 `json:"avg300"`
-	Total  uint64  `json:"total"`
+// PSI statistics for an individual resource.
+type PSIStats struct {
+	// PSI data for all tasks of in the cgroup.
+	Full PSIData `json:"full,omitempty"`
+	// PSI data for some tasks in the cgroup.
+	Some PSIData `json:"some,omitempty"`
 }
 
-type PSIStats struct {
-	Some PSIData `json:"some,omitempty"`
-	Full PSIData `json:"full,omitempty"`
+type PSIData struct {
+	// Total time duration for tasks in the cgroup have waited due to congestion.
+	// Unit: nanoseconds.
+	Total uint64 `json:"total"`
+	// The average (in %) tasks have waited due to congestion over a 10 second window.
+	Avg10 float64 `json:"avg10"`
+	// The average (in %) tasks have waited due to congestion over a 60 second window.
+	Avg60 float64 `json:"avg60"`
+	// The average (in %) tasks have waited due to congestion over a 300 second window.
+	Avg300 float64 `json:"avg300"`
 }
 
 // This mirrors kernel internal structure.
@@ -346,9 +354,8 @@ type CpuStats struct {
 	// from LoadStats.NrRunning.
 	LoadAverage int32 `json:"load_average"`
 	// from LoadStats.NrUninterruptible
-	LoadDAverage int32 `json:"load_d_average"`
-
-	PSI PSIStats `json:"psi,omitempty"`
+	LoadDAverage int32    `json:"load_d_average"`
+	PSI          PSIStats `json:"psi"`
 }
 
 type PerDiskStats struct {
@@ -367,8 +374,7 @@ type DiskIoStats struct {
 	IoWaitTime     []PerDiskStats `json:"io_wait_time,omitempty"`
 	IoMerged       []PerDiskStats `json:"io_merged,omitempty"`
 	IoTime         []PerDiskStats `json:"io_time,omitempty"`
-
-	PSI PSIStats `json:"psi,omitempty"`
+	PSI            PSIStats       `json:"psi"`
 }
 
 type HugetlbStats struct {
@@ -428,7 +434,7 @@ type MemoryStats struct {
 	ContainerData    MemoryStatsMemoryData `json:"container_data,omitempty"`
 	HierarchicalData MemoryStatsMemoryData `json:"hierarchical_data,omitempty"`
 
-	PSI PSIStats `json:"psi,omitempty"`
+	PSI PSIStats `json:"psi"`
 }
 
 type CPUSetStats struct {

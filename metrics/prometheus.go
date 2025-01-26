@@ -1746,62 +1746,52 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		})
 	}
 
-	if includedMetrics.Has(container.PSITotalMetrics) {
+	if includedMetrics.Has(container.PressureMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{
-				name:        "container_cpu_psi_total_seconds",
-				help:        "Total time spent under cpu pressure in seconds.",
-				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"kind"},
+				name:      "container_pressure_cpu_stalled_seconds_total",
+				help:      "Total time duration no tasks in the container could make progress due to CPU congestion.",
+				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return getPSIValues(s, &s.Cpu.PSI, "total")
+					return metricValues{{value: float64(s.Cpu.PSI.Full.Total) / 1000.0 / 1000.0, timestamp: s.Timestamp}}
 				},
 			}, {
-				name:        "container_memory_psi_total_seconds",
-				help:        "Total container time spent under memory pressure in seconds.",
-				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"kind"},
+				name:      "container_pressure_cpu_waiting_seconds_total",
+				help:      "Total time duration tasks in the container have waited due to CPU congestion.",
+				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return getPSIValues(s, &s.Memory.PSI, "total")
+					return metricValues{{value: float64(s.Cpu.PSI.Some.Total) / 1000.0 / 1000.0, timestamp: s.Timestamp}}
 				},
 			}, {
-				name:        "container_io_psi_total_seconds",
-				help:        "Total time spent under io pressure in seconds.",
-				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"kind"},
+				name:      "container_pressure_memory_stalled_seconds_total",
+				help:      "Total time duration no tasks in the container could make progress due to memory congestion.",
+				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return getPSIValues(s, &s.DiskIo.PSI, "total")
+					return metricValues{{value: float64(s.Memory.PSI.Full.Total) / 1000.0 / 1000.0, timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_pressure_memory_waiting_seconds_total",
+				help:      "Total time duration tasks in the container have waited due to memory congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.PSI.Some.Total) / 1000.0 / 1000.0, timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_pressure_io_stalled_seconds_total",
+				help:      "Total time duration no tasks in the container could make progress due to IO congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.DiskIo.PSI.Full.Total) / 1000.0 / 1000.0, timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_pressure_io_waiting_seconds_total",
+				help:      "Total time duration tasks in the container have waited due to IO congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.DiskIo.PSI.Some.Total) / 1000.0 / 1000.0, timestamp: s.Timestamp}}
 				},
 			},
 		}...)
-	}
-
-	if includedMetrics.Has(container.PSIAvgMetrics) {
-		makePSIAvgMetric := func(controller, window string) containerMetric {
-			return containerMetric{
-				name:        fmt.Sprintf("container_%s_psi_avg%s_ratio", controller, window),
-				help:        fmt.Sprintf("Ratio of time spent under %s pressure over time window of %s seconds", controller, window),
-				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"kind"},
-				getValues: func(s *info.ContainerStats) metricValues {
-					switch controller {
-					case "cpu":
-						return getPSIValues(s, &s.Cpu.PSI, "avg"+window)
-					case "memory":
-						return getPSIValues(s, &s.Memory.PSI, "avg"+window)
-					case "io":
-						return getPSIValues(s, &s.DiskIo.PSI, "avg"+window)
-					default:
-						return nil
-					}
-				},
-			}
-		}
-		for _, controller := range []string{"cpu", "memory", "io"} {
-			for _, window := range []string{"10", "60", "300"} {
-				c.containerMetrics = append(c.containerMetrics, makePSIAvgMetric(controller, window))
-			}
-		}
 	}
 
 	return c
@@ -2095,24 +2085,4 @@ func getMinCoreScalingRatio(s *info.ContainerStats) metricValues {
 		})
 	}
 	return values
-}
-
-func getPSIValues(s *info.ContainerStats, psi *info.PSIStats, psiMetric string) metricValues {
-	v := make(metricValues, 0, 2)
-	switch psiMetric {
-	case "avg10":
-		v = append(v, metricValue{value: psi.Some.Avg10, timestamp: s.Timestamp, labels: []string{"some"}})
-		v = append(v, metricValue{value: psi.Full.Avg10, timestamp: s.Timestamp, labels: []string{"full"}})
-	case "avg60":
-		v = append(v, metricValue{value: psi.Some.Avg60, timestamp: s.Timestamp, labels: []string{"some"}})
-		v = append(v, metricValue{value: psi.Full.Avg60, timestamp: s.Timestamp, labels: []string{"full"}})
-	case "avg300":
-		v = append(v, metricValue{value: psi.Some.Avg300, timestamp: s.Timestamp, labels: []string{"some"}})
-		v = append(v, metricValue{value: psi.Full.Avg300, timestamp: s.Timestamp, labels: []string{"full"}})
-	case "total":
-		// total is measured as microseconds
-		v = append(v, metricValue{value: float64(time.Duration(psi.Some.Total)*time.Microsecond) / float64(time.Second), timestamp: s.Timestamp, labels: []string{"some"}})
-		v = append(v, metricValue{value: float64(time.Duration(psi.Full.Total)*time.Microsecond) / float64(time.Second), timestamp: s.Timestamp, labels: []string{"full"}})
-	}
-	return v
 }

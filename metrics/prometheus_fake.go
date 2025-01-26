@@ -329,16 +329,16 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 						LoadAverage:  2,
 						LoadDAverage: 2,
 						PSI: info.PSIStats{
-							Some: info.PSIData{
-								Avg10:  0.1,
+							Full: info.PSIData{
+								Avg10:  0.3,
 								Avg60:  0.2,
-								Avg300: 0.3,
+								Avg300: 0.1,
 								Total:  100,
 							},
-							Full: info.PSIData{
-								Avg10:  0.4,
-								Avg60:  0.5,
-								Avg300: 0.6,
+							Some: info.PSIData{
+								Avg10:  0.6,
+								Avg60:  0.4,
+								Avg300: 0.2,
 								Total:  200,
 							},
 						},
@@ -373,16 +373,16 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 						KernelUsage: 17,
 						Swap:        8192,
 						PSI: info.PSIStats{
-							Some: info.PSIData{
-								Avg10:  0.01,
-								Avg60:  0.02,
-								Avg300: 0.03,
+							Full: info.PSIData{
+								Avg10:  0.3,
+								Avg60:  0.2,
+								Avg300: 0.1,
 								Total:  1000,
 							},
-							Full: info.PSIData{
-								Avg10:  0.04,
-								Avg60:  0.05,
-								Avg300: 0.06,
+							Some: info.PSIData{
+								Avg10:  0.6,
+								Avg60:  0.4,
+								Avg300: 0.2,
 								Total:  2000,
 							},
 						},
@@ -579,17 +579,17 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							},
 						}},
 						PSI: info.PSIStats{
-							Some: info.PSIData{
-								Avg10:  0.11,
-								Avg60:  0.12,
-								Avg300: 0.13,
-								Total:  1111,
-							},
 							Full: info.PSIData{
-								Avg10:  0.14,
-								Avg60:  0.15,
-								Avg300: 0.16,
-								Total:  2222,
+								Avg10:  0.3,
+								Avg60:  0.2,
+								Avg300: 0.1,
+								Total:  1100,
+							},
+							Some: info.PSIData{
+								Avg10:  0.6,
+								Avg60:  0.4,
+								Avg300: 0.2,
+								Total:  2200,
 							},
 						},
 					},
