@@ -381,9 +381,6 @@ container_perf_uncore_events_total{container_env_foo_env="prod",container_label_
 # TYPE container_perf_uncore_events_scaling_ratio gauge
 container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="0",zone_name="hello"} 1 1395066363000
 container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="1",zone_name="hello"} 1 1395066363000
-# HELP container_pressure_cpu_stalled_seconds_total Total time duration no tasks in the container could make progress due to CPU congestion.
-# TYPE container_pressure_cpu_stalled_seconds_total counter
-container_pressure_cpu_stalled_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.0001 1395066363000
 # HELP container_pressure_cpu_waiting_seconds_total Total time duration tasks in the container have waited due to CPU congestion.
 # TYPE container_pressure_cpu_waiting_seconds_total counter
 container_pressure_cpu_waiting_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.0002 1395066363000

@@ -35,12 +35,12 @@ func asFloat64(v uint64) float64 { return float64(v) }
 
 // asMicrosecondsToSeconds converts nanoseconds into a float64 representing seconds.
 func asMicrosecondsToSeconds(v uint64) float64 {
-	return float64(v) / float64(time.Millisecond)
+	return float64(v) / 1e6
 }
 
 // asNanosecondsToSeconds converts nanoseconds into a float64 representing seconds.
 func asNanosecondsToSeconds(v uint64) float64 {
-	return float64(v) / float64(time.Second)
+	return float64(v) / 1e9
 }
 
 // fsValues is a helper method for assembling per-filesystem stats.
