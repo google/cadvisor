@@ -278,6 +278,7 @@ func (cd *containerData) getContainerPids(inHostNamespace bool) ([]string, error
 		return nil, err
 	}
 	expectedFields := 2
+	relativeName := "/../" + cd.info.Id
 	lines := strings.Split(string(out), "\n")
 	pids := []string{}
 	for _, line := range lines[1:] {
@@ -290,7 +291,7 @@ func (cd *containerData) getContainerPids(inHostNamespace bool) ([]string, error
 		}
 		pid := fields[0]
 		cgroup := cd.getCgroupPath(fields[1])
-		if cd.info.Name == cgroup {
+		if cd.info.Name == cgroup || relativeName == cgroup {
 			pids = append(pids, pid)
 		}
 	}
