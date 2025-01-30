@@ -1,6 +1,5 @@
-bases:
-- ../../base
 resources:
-- configmap.yaml
+- ../../base
+- ./configmap.yaml
 patches:
-- cadvisor-perf.yaml
+- path: ./cadvisor-perf.yaml

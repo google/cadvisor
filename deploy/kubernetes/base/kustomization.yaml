@@ -1,8 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: cadvisor
-commonLabels:
-  app: cadvisor
+labels:
+- includeSelectors: false
+  includeTemplates: true
+  pairs:
+    app.kubernetes.io/name: cadvisor
 resources:
 - daemonset.yaml
 - namespace.yaml
