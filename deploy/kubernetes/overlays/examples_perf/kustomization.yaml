@@ -3,4 +3,4 @@ bases:
 resources:
 - configmap.yaml
 patches:
-- cadvisor-perf.yaml
+- path: ./cadvisor-perf.yaml
