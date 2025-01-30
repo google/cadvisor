@@ -1,4 +1,4 @@
-bases:
+resources:
 - ../../base
 patches:
 - path: ./stackdriver-sidecar.yaml
