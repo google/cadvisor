@@ -4,4 +4,3 @@ patches:
 - path: ./stackdriver-sidecar.yaml
 - path: ./critical-priority.yaml
 - path: ./cadvisor-args.yaml
-- path: ./gpu-privilages.yaml
