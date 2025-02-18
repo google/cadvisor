@@ -535,6 +535,16 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							RxQueued: 0,
 							TxQueued: 0,
 						},
+						UdpAdvanced: info.UdpAdvancedStat{
+							InDatagrams:  174675874,
+							NoPorts:      8996,
+							InErrors:     8,
+							OutDatagrams: 174697410,
+							RcvbufErrors: 8,
+							SndbufErrors: 0,
+							InCsumErrors: 0,
+							IgnoredMulti: 0,
+						},
 					},
 					DiskIo: info.DiskIoStats{
 						IoServiceBytes: []info.PerDiskStats{{

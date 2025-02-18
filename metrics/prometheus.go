@@ -1515,6 +1515,60 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 			},
 		}...)
 	}
+	if includedMetrics.Has(container.NetworkAdvancedUdpUsageMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:        "container_network_advance_udp_stats_total",
+				help:        "advance udp statistic for container",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"udp_state"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{
+						{
+							value:     float64(s.Network.UdpAdvanced.InDatagrams),
+							labels:    []string{"indatagrams"},
+							timestamp: s.Timestamp,
+						},
+						{
+							value:     float64(s.Network.UdpAdvanced.NoPorts),
+							labels:    []string{"noports"},
+							timestamp: s.Timestamp,
+						},
+						{
+							value:     float64(s.Network.UdpAdvanced.InErrors),
+							labels:    []string{"inerrors"},
+							timestamp: s.Timestamp,
+						},
+						{
+							value:     float64(s.Network.UdpAdvanced.OutDatagrams),
+							labels:    []string{"outdatagrams"},
+							timestamp: s.Timestamp,
+						},
+						{
+							value:     float64(s.Network.UdpAdvanced.RcvbufErrors),
+							labels:    []string{"rcvbuferrors"},
+							timestamp: s.Timestamp,
+						},
+						{
+							value:     float64(s.Network.UdpAdvanced.SndbufErrors),
+							labels:    []string{"sndbuferrors"},
+							timestamp: s.Timestamp,
+						},
+						{
+							value:     float64(s.Network.UdpAdvanced.InCsumErrors),
+							labels:    []string{"incsumerrors"},
+							timestamp: s.Timestamp,
+						},
+						{
+							value:     float64(s.Network.UdpAdvanced.IgnoredMulti),
+							labels:    []string{"ignoredmulti"},
+							timestamp: s.Timestamp,
+						},
+					}
+				},
+			},
+		}...)
+	}
 	if includedMetrics.Has(container.ProcessMetrics) {
 		c.containerMetrics = append(c.containerMetrics, []containerMetric{
 			{

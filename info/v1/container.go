@@ -463,6 +463,8 @@ type NetworkStats struct {
 	Udp6 UdpStat `json:"udp6"`
 	// TCP advanced stats
 	TcpAdvanced TcpAdvancedStat `json:"tcp_advanced"`
+	// UDP advanced stats
+	UdpAdvanced UdpAdvancedStat `json:"udp_advanced"`
 }
 
 type TcpStat struct {
@@ -741,6 +743,34 @@ type UdpStat struct {
 
 	// Count of packets Queued for Transmit
 	TxQueued uint64
+}
+
+type UdpAdvancedStat struct {
+	// The total number of datagrams successfully received, excluding those
+	// discarded due to no ports, errors, etc.
+	InDatagrams uint64
+
+	// The number of datagrams discarded because no listening ports were available.
+	NoPorts uint64
+
+	// The number of datagrams discarded due to errors, including checksum errors,
+	// receive buffer errors, and other related issues.
+	InErrors uint64
+
+	// The total number of datagrams successfully transmitted.
+	OutDatagrams uint64
+
+	// The number of datagrams dropped due to insufficient memory in the received buffer.
+	RcvbufErrors uint64
+
+	// The number of datagrams dropped due to insufficient memory in the send buffer.
+	SndbufErrors uint64
+
+	// The number of datagrams discarded due to invalid checksums.
+	InCsumErrors uint64
+
+	// The number of datagrams discarded because multicast packets were ignored.
+	IgnoredMulti uint64
 }
 
 type FsStats struct {

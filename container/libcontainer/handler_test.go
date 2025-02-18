@@ -144,6 +144,21 @@ func TestScanAdvancedTCPStats(t *testing.T) {
 	}
 }
 
+func TestScanAdvanceUDPStats(t *testing.T) {
+	snmpFile := "testdata/snmp"
+	advancedStats := info.UdpAdvancedStat{}
+	err := scanAdvancedUDPStats(&advancedStats, snmpFile)
+	if err != nil {
+		t.Error(err)
+	}
+	if advancedStats.InErrors != 8 {
+		t.Errorf("Expected InErrors 0, got %d", advancedStats.InErrors)
+	}
+	if advancedStats.NoPorts != 8996 {
+		t.Errorf("Expected NoPorts 0, got %d", advancedStats.NoPorts)
+	}
+}
+
 // https://github.com/docker/libcontainer/blob/v2.2.1/cgroups/fs/cpuacct.go#L19
 const nanosecondsInSeconds = 1000000000
 

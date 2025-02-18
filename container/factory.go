@@ -57,6 +57,7 @@ const (
 	NetworkTcpUsageMetrics         MetricKind = "tcp"
 	NetworkAdvancedTcpUsageMetrics MetricKind = "advtcp"
 	NetworkUdpUsageMetrics         MetricKind = "udp"
+	NetworkAdvancedUdpUsageMetrics MetricKind = "advudp"
 	AppMetrics                     MetricKind = "app"
 	ProcessMetrics                 MetricKind = "process"
 	HugetlbUsageMetrics            MetricKind = "hugetlb"
@@ -82,6 +83,7 @@ var AllMetrics = MetricSet{
 	NetworkTcpUsageMetrics:         struct{}{},
 	NetworkAdvancedTcpUsageMetrics: struct{}{},
 	NetworkUdpUsageMetrics:         struct{}{},
+	NetworkAdvancedUdpUsageMetrics: struct{}{},
 	ProcessMetrics:                 struct{}{},
 	AppMetrics:                     struct{}{},
 	HugetlbUsageMetrics:            struct{}{},
@@ -99,6 +101,7 @@ var AllNetworkMetrics = MetricSet{
 	NetworkTcpUsageMetrics:         struct{}{},
 	NetworkAdvancedTcpUsageMetrics: struct{}{},
 	NetworkUdpUsageMetrics:         struct{}{},
+	NetworkAdvancedUdpUsageMetrics: struct{}{},
 }
 
 func (mk MetricKind) String() string {
