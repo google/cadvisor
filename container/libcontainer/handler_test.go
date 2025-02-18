@@ -91,6 +91,18 @@ func TestScanUDPStats(t *testing.T) {
 	}
 }
 
+func TestScanAdvancedTCPStats(t *testing.T) {
+	snmpFile := "testdata/snmp"
+	advancedStats := info.TcpAdvancedStat{}
+	err := scanAdvancedTCPStats(&advancedStats, snmpFile)
+	if err != nil {
+		t.Error(err)
+	}
+	if advancedStats.RtoAlgorithm != 1 {
+		t.Errorf("Expected RtoAlgorithm 1, got %d", advancedStats.RtoAlgorithm)
+	}
+}
+
 // https://github.com/docker/libcontainer/blob/v2.2.1/cgroups/fs/cpuacct.go#L19
 const nanosecondsInSeconds = 1000000000
 
