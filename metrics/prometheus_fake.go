@@ -371,6 +371,11 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 						RSS:         15,
 						MappedFile:  16,
 						KernelUsage: 17,
+						Shmem:       18,
+						Dirty:       19,
+						Writeback:   20,
+						Unevictable: 21,
+						Sock:        22,
 						Swap:        8192,
 						PSI: info.PSIStats{
 							Full: info.PSIData{
