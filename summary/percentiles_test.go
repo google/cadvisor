@@ -46,6 +46,14 @@ func TestPercentile(t *testing.T) {
 	assertPercentile(t, s, 0.2, 21)
 	assertPercentile(t, s, 0.7, 74)
 	assertPercentile(t, s, 0.9, 95)
+
+	// boundary value
+	assertPercentile(t, s[:5], 0.9, 5)
+	assertPercentile(t, s[:5], 1.1, 0)
+	assertPercentile(t, []uint64{}, 0, 0)
+	assertPercentile(t, s, 0, 1)
+	assertPercentile(t, s[:11], 1, 11)
+	assertPercentile(t, s, 1.0, 105)
 }
 
 func TestMean(t *testing.T) {
