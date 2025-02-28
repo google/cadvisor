@@ -22,8 +22,8 @@ require (
 	github.com/karrick/godirwalk v1.17.0
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
 	github.com/moby/sys/mountinfo v0.7.2
-	github.com/opencontainers/cgroups v0.0.0-20250228075113-afa9f8f3e672
-	github.com/opencontainers/runc v1.2.4
+	github.com/opencontainers/cgroups v0.0.1
+	github.com/opencontainers/runc v1.2.5
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5

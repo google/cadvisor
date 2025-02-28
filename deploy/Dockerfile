@@ -1,4 +1,4 @@
-FROM registry.hub.docker.com/library/golang:1.22-alpine3.18 AS build
+FROM registry.hub.docker.com/library/golang:1.24-alpine3.21 AS build
 
 # Install build depdencies for all supported arches
 RUN apk --no-cache add bash build-base cmake device-mapper findutils git \
