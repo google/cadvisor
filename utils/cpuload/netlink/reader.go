@@ -36,6 +36,7 @@ func New() (*NetlinkReader, error) {
 
 	id, err := getFamilyID(conn)
 	if err != nil {
+		conn.Close()
 		return nil, fmt.Errorf("failed to get netlink family id for task stats: %s", err)
 	}
 	klog.V(4).Infof("Family id for taskstats: %d", id)
