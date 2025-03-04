@@ -1,8 +1,8 @@
 module github.com/google/cadvisor
 
-go 1.22
+go 1.23.0
 
-toolchain go1.22.10
+toolchain go1.24.0
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.0
@@ -21,8 +21,9 @@ require (
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/karrick/godirwalk v1.17.0
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
-	github.com/moby/sys/mountinfo v0.7.1
-	github.com/opencontainers/runc v1.2.4
+	github.com/moby/sys/mountinfo v0.7.2
+	github.com/opencontainers/cgroups v0.0.1
+	github.com/opencontainers/runc v1.2.5
 	github.com/opencontainers/runtime-spec v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.20.5
@@ -30,7 +31,7 @@ require (
 	github.com/prometheus/common v0.62.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/net v0.33.0
-	golang.org/x/sys v0.28.0
+	golang.org/x/sys v0.30.0
 	google.golang.org/grpc v1.67.0
 	google.golang.org/protobuf v1.36.1
 	k8s.io/klog/v2 v2.100.1
@@ -53,7 +54,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
-	github.com/cyphar/filepath-securejoin v0.3.5 // indirect
+	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect

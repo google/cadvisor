@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/cgroups"
 	"github.com/stretchr/testify/assert"
 
 	info "github.com/google/cadvisor/info/v1"
