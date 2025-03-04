@@ -22,7 +22,7 @@ import (
 	"time"
 
 	dockercontainer "github.com/docker/docker/api/types/container"
-	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/cgroups"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"

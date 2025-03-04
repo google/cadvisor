@@ -31,7 +31,7 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/zfs"
-	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/cgroups"
 
 	docker "github.com/docker/docker/client"
 	"golang.org/x/net/context"

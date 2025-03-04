@@ -29,7 +29,7 @@ import (
 	"github.com/google/cadvisor/manager"
 	"github.com/google/cadvisor/utils"
 
-	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/cgroups"
 )
 
 const (
