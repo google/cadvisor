@@ -16,7 +16,7 @@
 // limitations under the License.
 
 // Collector of resctrl for a container.
-package resctrl
+package intel
 
 import (
 	"fmt"

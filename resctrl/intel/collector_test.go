@@ -16,7 +16,7 @@
 // limitations under the License.
 
 // Collector tests.
-package resctrl
+package intel
 
 import (
 	"fmt"

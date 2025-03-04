@@ -41,6 +41,9 @@ import (
 	_ "github.com/google/cadvisor/utils/cloudinfo/azure"
 	_ "github.com/google/cadvisor/utils/cloudinfo/gce"
 
+	// Register resctrl plugin
+	_ "github.com/google/cadvisor/resctrl/intel/install"
+
 	"k8s.io/klog/v2"
 )
 
