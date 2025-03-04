@@ -15,8 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Manager of resctrl for containers.
-package resctrl
+// ResControlManager of resctrl for containers.
+package intel
 
 import (
 	"errors"
@@ -25,13 +25,9 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container/raw"
+	"github.com/google/cadvisor/resctrl"
 	"github.com/google/cadvisor/stats"
 )
-
-type Manager interface {
-	Destroy()
-	GetCollector(containerName string, getContainerPids func() ([]string, error), numberOfNUMANodes int) (stats.Collector, error)
-}
 
 type manager struct {
 	stats.NoopDestroy
@@ -50,7 +46,7 @@ func (m *manager) GetCollector(containerName string, getContainerPids func() ([]
 	return collector, nil
 }
 
-func NewManager(interval time.Duration, setup func() error, vendorID string, inHostNamespace bool) (Manager, error) {
+func NewManager(interval time.Duration, setup func() error, vendorID string, inHostNamespace bool) (resctrl.ResControlManager, error) {
 	err := setup()
 	if err != nil {
 		return &NoopManager{}, err

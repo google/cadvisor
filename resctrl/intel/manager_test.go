@@ -15,13 +15,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Manager tests.
-package resctrl
+// ResControlManager tests.
+package intel
 
 import (
 	"os"
 	"testing"
 
+	"github.com/google/cadvisor/resctrl"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +33,7 @@ func TestNewManager(t *testing.T) {
 		enabledMBM           bool
 		inHostNamespace      bool
 		err                  string
-		expected             Manager
+		expected             resctrl.ResControlManager
 	}{
 		{
 			true,

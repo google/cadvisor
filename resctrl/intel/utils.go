@@ -16,7 +16,7 @@
 // limitations under the License.
 
 // Utilities.
-package resctrl
+package intel
 
 import (
 	"bufio"
