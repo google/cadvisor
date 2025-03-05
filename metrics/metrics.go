@@ -19,6 +19,7 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/utils/oomparser"
 )
 
 // metricValue describes a single metric value for a given set of label values
@@ -39,4 +40,6 @@ type infoProvider interface {
 	GetVersionInfo() (*info.VersionInfo, error)
 	// GetMachineInfo provides information about the machine.
 	GetMachineInfo() (*info.MachineInfo, error)
+	// GetOOMInfos provides information about OOMs.
+	GetOOMInfos() map[string]*oomparser.ContainerOomInfo
 }
