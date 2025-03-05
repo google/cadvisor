@@ -541,8 +541,10 @@ func (m *manager) GetContainerInfoV2(containerName string, options v2.RequestOpt
 }
 
 func (m *manager) containerDataToContainerInfo(cont *containerData, query *info.ContainerInfoRequest) (*info.ContainerInfo, error) {
-	// Get the info from the container.
-	cinfo, err := cont.GetInfo(true)
+	// Get the info from the container. When GetInfo is set to false,
+	// it reads cgroups once every 5 seconds and gets data from containerData cache at other times,
+	// reducing the frequency of reading cgroups to avoid kernel kernfs clock pressure that could cause Linux machine to hang
+	cinfo, err := cont.GetInfo(false)
 	if err != nil {
 		return nil, err
 	}
