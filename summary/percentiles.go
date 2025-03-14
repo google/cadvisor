@@ -44,9 +44,17 @@ func (s Uint64Slice) GetPercentile(d float64) uint64 {
 		return 0
 	}
 	sort.Sort(s)
+	if d == 1.0 {
+		return s[count-1]
+	}
 	n := float64(d * (float64(count) + 1))
 	idx, frac := math.Modf(n)
 	index := int(idx)
+
+	if index < 1 {
+		index = 1
+	}
+
 	percentile := float64(s[index-1])
 	if index > 1 && index < count {
 		percentile += frac * float64(s[index]-s[index-1])
