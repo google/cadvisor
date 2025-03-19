@@ -821,10 +821,14 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	}
 	if v, ok := s.MemoryStats.Stats["pgfault"]; ok {
 		ret.Memory.ContainerData.Pgfault = v
+	}
+	if v, ok := s.MemoryStats.Stats["total_pgfault"]; ok {
 		ret.Memory.HierarchicalData.Pgfault = v
 	}
 	if v, ok := s.MemoryStats.Stats["pgmajfault"]; ok {
 		ret.Memory.ContainerData.Pgmajfault = v
+	}
+	if v, ok := s.MemoryStats.Stats["total_pgmajfault"]; ok {
 		ret.Memory.HierarchicalData.Pgmajfault = v
 	}
 
