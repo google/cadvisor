@@ -220,7 +220,7 @@ func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includ
 		if err != nil {
 			klog.Infof("Registration of the %s container factory failed: %v", name, err)
 		} else {
-			klog.Infof("Registration of the %s container factory successfully", name)
+			klog.Infof("Registration of the %s container factory succeeded", name)
 		}
 		if watcher != nil {
 			containerWatchers = append(containerWatchers, watcher)
