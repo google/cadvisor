@@ -1,3 +1,5 @@
+//Portions Copyright (c) Microsoft Corporation.
+
 module github.com/google/cadvisor
 
 go 1.23.0
