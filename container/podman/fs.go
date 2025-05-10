@@ -26,7 +26,8 @@ import (
 )
 
 const (
-	containersJSONFilename = "containers.json"
+	containersJSONFilename         = "containers.json"
+	volatileContainersJSONFilename = "volatile-containers.json"
 )
 
 type containersJSON struct {
@@ -44,6 +45,25 @@ func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerI
 	err = json.Unmarshal(data, &containers)
 	if err != nil {
 		return "", err
+	}
+
+	// Read volatile-containers.json if it exists.
+	// This is important for Podman Quadlets since they are not presented in the containers.json file.
+	volatileData, err := os.ReadFile(filepath.Join(
+		storageDir,
+		string(storageDriver)+"-containers",
+		volatileContainersJSONFilename,
+	))
+	if err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+	if volatileData != nil {
+		var volatileContainers []containersJSON
+		err = json.Unmarshal(volatileData, &volatileContainers)
+		if err != nil {
+			return "", err
+		}
+		containers = append(containers, volatileContainers...)
 	}
 
 	for _, c := range containers {
