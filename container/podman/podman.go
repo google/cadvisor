@@ -25,7 +25,6 @@ import (
 	dockertypes "github.com/docker/docker/api/types"
 	dockerimage "github.com/docker/docker/api/types/image"
 	dockersystem "github.com/docker/docker/api/types/system"
-	"github.com/pkg/errors"
 
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/docker/utils"
@@ -52,7 +51,7 @@ func validateResponse(gotError error, response *http.Response) error {
 	}
 
 	if gotError != nil {
-		err = errors.Wrap(gotError, err.Error())
+		err = fmt.Errorf("%s: %w", err.Error(), gotError)
 	}
 
 	return err
