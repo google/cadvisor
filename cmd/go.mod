@@ -96,8 +96,8 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mistifyio/go-zfs v2.1.2-0.20190413222219-f784269be439+incompatible // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
+	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/cgroups v0.0.2 // indirect
