@@ -521,13 +521,6 @@ func checkResponseForErrors(response *influxdb.Response) error {
 			if result.Err != nil {
 				return fmt.Errorf(msg, result.Err)
 			}
-			if result.Series != nil {
-				for _, row := range result.Series {
-					if row.Err != nil {
-						return fmt.Errorf(msg, row.Err)
-					}
-				}
-			}
 		}
 	}
 	return nil
