@@ -23,6 +23,7 @@ import (
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
+	dockercontainer "github.com/docker/docker/api/types/container"
 	dockerimage "github.com/docker/docker/api/types/image"
 	dockersystem "github.com/docker/docker/api/types/system"
 
@@ -155,8 +156,8 @@ func APIVersionString() (string, error) {
 	return version.APIVersion, nil
 }
 
-func InspectContainer(id string) (dockertypes.ContainerJSON, error) {
-	var data dockertypes.ContainerJSON
+func InspectContainer(id string) (dockercontainer.InspectResponse, error) {
+	var data dockercontainer.InspectResponse
 	err := apiGetRequest(fmt.Sprintf("http://d/v1.0.0/containers/%s/json", id), &data)
 	return data, err
 }
