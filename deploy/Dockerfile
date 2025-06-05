@@ -58,9 +58,11 @@ RUN apk --no-cache add libc6-compat device-mapper findutils ndctl zfs && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
 
-# Grab cadvisor,libpfm4 and libipmctl from "build" container if they exist (libipmctl only works on amd64/x86_64).
+# Disable libipmctl due to https://github.com/google/cadvisor/issues/3482
+# COPY --from=build /usr/local/lib/libipmctl.so* /usr/local/lib/
+
+# Grab cadvisor and libpfm4 from stage "build" container
 COPY --from=build /usr/local/lib/libpfm.so* /usr/local/lib/
-COPY --from=build /usr/local/lib/libipmctl.so* /usr/local/lib/
 COPY --from=build /go/src/github.com/google/cadvisor/_output/cadvisor /usr/bin/cadvisor
 
 EXPOSE 8080
