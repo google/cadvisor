@@ -15,8 +15,10 @@
 package libcontainer
 
 import (
+	"bufio"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/opencontainers/cgroups"
@@ -88,6 +90,72 @@ func TestScanUDPStats(t *testing.T) {
 
 	if stats != udpstats {
 		t.Errorf("Expected %#v, got %#v", udpstats, stats)
+	}
+}
+
+func TestParseStatsFile(t *testing.T) {
+	snmpFile := "testdata/snmp"
+	data, err := os.ReadFile(snmpFile)
+	if err != nil {
+		t.Errorf("failure opening %s: %v", snmpFile, err)
+	}
+
+	reader := strings.NewReader(string(data))
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(bufio.ScanLines)
+
+	stats, err := ParseStatsFile(scanner, map[string]struct{}{"Tcp": {}})
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if RtoAlgorithm, ok := stats["RtoAlgorithm"].(uint64); ok {
+		if RtoAlgorithm != 1 {
+			t.Errorf("Expected Tcp stats RtoAlgorithm 1, got %d", RtoAlgorithm)
+		}
+	} else {
+		t.Errorf("Expected Tcp stats RtoAlgorithm, got nil")
+	}
+
+	if _, ok := stats["Forwarding"]; ok {
+		t.Errorf("Expected Ip stats Forwarding to be nil, got %v", stats["Forwarding"])
+	}
+	if _, ok := stats["InDatagrams"]; ok {
+		t.Errorf("Expected Udp stats InDatagrams to be nil, got %v", stats["InDatagrams"])
+	}
+	if _, ok := stats["InType0"]; ok {
+		t.Errorf("Expected Icmp stats InType0 to be nil, got %v", stats["InType0"])
+	}
+}
+
+func TestScanAdvancedTCPStats(t *testing.T) {
+	snmpFile := "testdata/snmp"
+	advancedStats := info.TcpAdvancedStat{}
+	err := scanAdvancedTCPStats(&advancedStats, snmpFile)
+	if err != nil {
+		t.Error(err)
+	}
+	if advancedStats.RtoAlgorithm != 1 {
+		t.Errorf("Expected RtoAlgorithm 1, got %d", advancedStats.RtoAlgorithm)
+	}
+	if advancedStats.MaxConn != -1 {
+		t.Errorf("Expected MaxConn -1, got %d", advancedStats.RtoMin)
+	}
+}
+
+func TestScanAdvanceUDPStats(t *testing.T) {
+	snmpFile := "testdata/snmp"
+	advancedStats := info.UdpAdvancedStat{}
+	err := scanAdvancedUDPStats(&advancedStats, snmpFile)
+	if err != nil {
+		t.Error(err)
+	}
+	if advancedStats.InErrors != 8 {
+		t.Errorf("Expected InErrors 0, got %d", advancedStats.InErrors)
+	}
+	if advancedStats.NoPorts != 8996 {
+		t.Errorf("Expected NoPorts 0, got %d", advancedStats.NoPorts)
 	}
 }
 
