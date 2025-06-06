@@ -36,6 +36,7 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/machine"
+	"github.com/google/cadvisor/metrics"
 	"github.com/google/cadvisor/nvm"
 	"github.com/google/cadvisor/perf"
 	"github.com/google/cadvisor/resctrl"
@@ -143,6 +144,8 @@ type Manager interface {
 	AllPodmanContainers(c *info.ContainerInfoRequest) (map[string]info.ContainerInfo, error)
 
 	PodmanContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error)
+
+	GetOOMInfos() map[string]*oomparser.ContainerOomInfo
 }
 
 // Housekeeping configuration for the manager
@@ -152,7 +155,9 @@ type HousekeepingConfig = struct {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfig HousekeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfig HousekeepingConfig, includedMetricsSet container.MetricSet,
+	collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string,
+	perfEventsFile string, resctrlInterval time.Duration, f metrics.ContainerLabelsFunc, oomRetainDuration *time.Duration) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -207,6 +212,9 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfi
 		collectorHTTPClient:                   collectorHTTPClient,
 		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
 		containerEnvMetadataWhiteList:         containerEnvMetadataWhiteList,
+		oomInfos:                              map[string]*oomparser.ContainerOomInfo{},
+		containerLabelFunc:                    f,
+		oomRetainDuration:                     oomRetainDuration,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -246,6 +254,7 @@ type namespacedContainerName struct {
 }
 
 type manager struct {
+	oomInfos                 map[string]*oomparser.ContainerOomInfo
 	containers               map[namespacedContainerName]*containerData
 	containersLock           sync.RWMutex
 	memoryCache              *memory.InMemoryCache
@@ -270,6 +279,8 @@ type manager struct {
 	rawContainerCgroupPathPrefixWhiteList []string
 	// List of container env prefix whitelist, the matched container envs would be collected into metrics as extra labels.
 	containerEnvMetadataWhiteList []string
+	containerLabelFunc            metrics.ContainerLabelsFunc
+	oomRetainDuration             *time.Duration
 }
 
 func (m *manager) PodmanContainer(containerName string, query *info.ContainerInfoRequest) (info.ContainerInfo, error) {
@@ -317,7 +328,7 @@ func (m *manager) Start() error {
 		return err
 	}
 	klog.V(2).Infof("Starting recovery of all containers")
-	err = m.detectSubcontainers("/")
+	err = m.detectSubContainers("/")
 	if err != nil {
 		return err
 	}
@@ -339,6 +350,7 @@ func (m *manager) Start() error {
 	quitUpdateMachineInfo := make(chan error)
 	m.quitChannels = append(m.quitChannels, quitUpdateMachineInfo)
 	go m.updateMachineInfo(quitUpdateMachineInfo)
+	go m.cleanUpOomInfos()
 
 	return nil
 }
@@ -359,6 +371,61 @@ func (m *manager) Stop() error {
 	m.quitChannels = make([]chan error, 0, 2)
 	nvm.Finalize()
 	perf.Finalize()
+	return nil
+}
+
+func (m *manager) GetOOMInfos() map[string]*oomparser.ContainerOomInfo {
+	m.containersLock.RLock()
+	defer m.containersLock.RUnlock()
+	oomInfos := make(map[string]*oomparser.ContainerOomInfo)
+	for k, v := range m.oomInfos {
+		if time.Since(v.TimeOfDeath) > *m.oomRetainDuration {
+			continue
+		}
+		oomInfos[k] = v
+	}
+	return oomInfos
+}
+
+func (m *manager) cleanUpOomInfos() {
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			m.containersLock.Lock()
+			for k, v := range m.oomInfos {
+				if time.Since(v.TimeOfDeath) > *m.oomRetainDuration {
+					delete(m.oomInfos, k)
+				}
+			}
+			m.containersLock.Unlock()
+		}
+	}
+}
+
+func (m *manager) addOrUpdateOomInfo(cont *containerData, timeOfDeath time.Time) error {
+	m.containersLock.Lock()
+	defer m.containersLock.Unlock()
+
+	contInfo, err := m.containerDataToContainerInfo(cont, &info.ContainerInfoRequest{
+		NumStats: 60,
+	})
+	if err != nil {
+		return err
+	}
+	if oomInfo, ok := m.oomInfos[contInfo.Id]; ok {
+		atomic.AddUint64(&oomInfo.OomEvents, 1)
+		return nil
+	}
+	containerLabels := m.containerLabelFunc(contInfo)
+	newOomInfo := &oomparser.ContainerOomInfo{
+		MetricLabels: containerLabels,
+		TimeOfDeath:  timeOfDeath,
+	}
+	atomic.AddUint64(&newOomInfo.OomEvents, 1)
+	m.oomInfos[contInfo.Id] = newOomInfo
 	return nil
 }
 
@@ -405,7 +472,7 @@ func (m *manager) globalHousekeeping(quit chan error) {
 			start := time.Now()
 
 			// Check for new containers.
-			err := m.detectSubcontainers("/")
+			err := m.detectSubContainers("/")
 			if err != nil {
 				klog.Errorf("Failed to detect containers: %s", err)
 			}
@@ -1058,7 +1125,7 @@ func (m *manager) destroyContainerLocked(containerName string) error {
 
 // Detect all containers that have been added or deleted from the specified container.
 func (m *manager) getContainersDiff(containerName string) (added []info.ContainerReference, removed []info.ContainerReference, err error) {
-	// Get all subcontainers recursively.
+	// Get all subContainers recursively.
 	m.containersLock.RLock()
 	cont, ok := m.containers[namespacedContainerName{
 		Name: containerName,
@@ -1105,8 +1172,8 @@ func (m *manager) getContainersDiff(containerName string) (added []info.Containe
 	return
 }
 
-// Detect the existing subcontainers and reflect the setup here.
-func (m *manager) detectSubcontainers(containerName string) error {
+// Detect the existing subContainers and reflect the setup here.
+func (m *manager) detectSubContainers(containerName string) error {
 	added, removed, err := m.getContainersDiff(containerName)
 	if err != nil {
 		return err
@@ -1149,7 +1216,7 @@ func (m *manager) watchForNewContainers(quit chan error) error {
 	}
 
 	// There is a race between starting the watch and new container creation so we do a detection before we read new containers.
-	err := m.detectSubcontainers("/")
+	err := m.detectSubContainers("/")
 	if err != nil {
 		return err
 	}
@@ -1249,7 +1316,9 @@ func (m *manager) watchForNewOoms() error {
 				continue
 			}
 			for _, cont := range conts {
-				atomic.AddUint64(&cont.oomEvents, 1)
+				if err := m.addOrUpdateOomInfo(cont, oomInstance.TimeOfDeath); err != nil {
+					klog.Errorf("failed to add OOM info for %q: %v", oomInstance.ContainerName, err)
+				}
 			}
 		}
 	}()
