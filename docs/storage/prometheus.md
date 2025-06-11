@@ -57,12 +57,15 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_cache` | Gauge | Total page cache memory | bytes | memory |
 `container_memory_failcnt` | Counter | Number of memory usage hits limits | | memory |
 `container_memory_failures_total` | Counter | Cumulative count of memory allocation failures | | memory |
+`container_memory_kernel_usage` | Gauge | Size of kernel memory allocated in bytes | bytes | memory |
 `container_memory_mapped_file` | Gauge | Size of memory mapped files | bytes | memory |
 `container_memory_max_usage_bytes` | Gauge | Maximum memory usage recorded | bytes | memory |
 `container_memory_migrate` | Gauge | Memory migrate status | | cpuset |
 `container_memory_numa_pages` | Gauge | Number of used pages per NUMA node | | memory_numa |
 `container_memory_rss` | Gauge | Size of RSS | bytes | memory |
 `container_memory_swap` | Gauge | Container swap usage | bytes | memory |
+`container_memory_total_active_file_bytes` | Gauge | Current total active file in bytes | bytes | memory |Add commentMore actions
+`container_memory_total_inactive_file_bytes` | Gauge | Current total inactive file in bytes | bytes | memory |
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | memory |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | memory |
 `container_network_advance_tcp_stats_total` | Gauge | advanced tcp connections statistic for container | | advtcp |
