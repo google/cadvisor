@@ -64,7 +64,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_numa_pages` | Gauge | Number of used pages per NUMA node | | memory_numa |
 `container_memory_rss` | Gauge | Size of RSS | bytes | memory |
 `container_memory_swap` | Gauge | Container swap usage | bytes | memory |
-`container_memory_total_active_file_bytes` | Gauge | Current total active file in bytes | bytes | memory |Add commentMore actions
+`container_memory_total_active_file_bytes` | Gauge | Current total active file in bytes | bytes | memory |
 `container_memory_total_inactive_file_bytes` | Gauge | Current total inactive file in bytes | bytes | memory |
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | memory |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | memory |
