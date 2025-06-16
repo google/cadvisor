@@ -12,17 +12,11 @@ on:
         type: string
 
 jobs:
-  build-and-release:
+  build-linux-binaries:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Needed for creating GitHub releases
-      packages: read
-
     strategy:
       matrix:
-        goos: [linux]
-        goarch: [amd64, arm64]
-
+        arch: [amd64, arm64]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,11 +24,13 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           fetch-depth: 0  # Fetch all history for proper versioning
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
         with:
-          go-version: '1.24'
-          cache: true
+          platforms: linux/amd64,linux/arm64
 
       - name: Set VERSION environment variable
         run: |
@@ -44,31 +40,36 @@ jobs:
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           fi
 
-      - name: Build binary
+      - name: Build Linux ${{ matrix.arch }} binary
         env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
+          GOARCH: ${{ matrix.arch }}
           OUTPUT_NAME_WITH_ARCH: "true"
-          BUILD_USER: "github-actions"
-          BUILD_DATE: ${{ github.event.repository.updated_at }}
-          GO_FLAGS: "-tags=netgo"
-        run: ./build/build.sh
+          VERSION: ${{ env.VERSION }}
+        run: |
+          # Create a Docker container with the appropriate architecture
+          docker run --rm -v ${PWD}:/go/src/github.com/google/cadvisor \
+            --platform linux/${{ matrix.arch }} \
+            golang:1.24 \
+            /bin/bash -c "cd /go/src/github.com/google/cadvisor && GOARCH=${{ matrix.arch }} OUTPUT_NAME_WITH_ARCH=true VERSION=${{ env.VERSION }} ./build/build.sh"
 
-      - name: Prepare binary for upload
+      - name: Generate SHA256 checksums
         run: |
           cd _output
-          sha256sum cadvisor-${{ env.VERSION }}-${{ matrix.goos }}-${{ matrix.goarch }} > cadvisor-${{ env.VERSION }}-${{ matrix.goos }}-${{ matrix.goarch }}.sha256
+          # List all files in the output directory
+          ls -la
+          # Generate SHA256 checksums for all binaries
+          find . -name "cadvisor*" -type f -not -name "*.sha256" -exec sh -c 'sha256sum "$1" > "$1.sha256"' _ {} \;
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: cadvisor-${{ env.VERSION }}-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: cadvisor-linux-${{ matrix.arch }}
           path: |
-            _output/cadvisor-${{ env.VERSION }}-${{ matrix.goos }}-${{ matrix.goarch }}*
+            _output/cadvisor*
           retention-days: 1
 
   create-release:
-    needs: build-and-release
+    needs: build-linux-binaries
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Needed for creating GitHub releases
