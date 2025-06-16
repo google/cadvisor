@@ -50,7 +50,7 @@ jobs:
           docker run --rm -v ${PWD}:/go/src/github.com/google/cadvisor \
             --platform linux/${{ matrix.arch }} \
             golang:1.24 \
-            /bin/bash -c "cd /go/src/github.com/google/cadvisor && GOARCH=${{ matrix.arch }} OUTPUT_NAME_WITH_ARCH=true VERSION=${{ env.VERSION }} ./build/build.sh"
+            /bin/bash -c "cd /go/src/github.com/google/cadvisor && GOARCH=${{ matrix.arch }} OUTPUT_NAME_WITH_ARCH=true VERSION=${{ env.VERSION }} GO_FLAGS='-buildvcs=false -tags=netgo' ./build/build.sh"
 
       - name: Generate SHA256 checksums
         run: |
