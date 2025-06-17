@@ -159,6 +159,14 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 				stats.Network.Udp6 = u6
 			}
 		}
+		if h.includedMetrics.Has(container.NetworkAdvancedUdpUsageMetrics) {
+			ua, err := advancedUDPStatsFromProc(h.rootFs, h.pid, "net/snmp")
+			if err != nil {
+				klog.V(4).Infof("Unable to get advanced udp stats from pid %d: %v", h.pid, err)
+			} else {
+				stats.Network.UdpAdvanced = ua
+			}
+		}
 	}
 	// some process metrics are per container ( number of processes, number of
 	// file descriptors etc.) and not required a proper container's
@@ -580,35 +588,9 @@ func scanAdvancedTCPStats(advancedStats *info.TcpAdvancedStat, advancedTCPStatsF
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(bufio.ScanLines)
 
-	advancedTCPStats := make(map[string]interface{})
-	for scanner.Scan() {
-		nameParts := strings.Split(scanner.Text(), " ")
-		scanner.Scan()
-		valueParts := strings.Split(scanner.Text(), " ")
-		// Remove trailing :. and ignore non-tcp
-		protocol := nameParts[0][:len(nameParts[0])-1]
-		if protocol != "TcpExt" && protocol != "Tcp" {
-			continue
-		}
-		if len(nameParts) != len(valueParts) {
-			return fmt.Errorf("mismatch field count mismatch in %s: %s",
-				advancedTCPStatsFile, protocol)
-		}
-		for i := 1; i < len(nameParts); i++ {
-			if strings.Contains(valueParts[i], "-") {
-				vInt64, err := strconv.ParseInt(valueParts[i], 10, 64)
-				if err != nil {
-					return fmt.Errorf("decode value: %s to int64 error: %s", valueParts[i], err)
-				}
-				advancedTCPStats[nameParts[i]] = vInt64
-			} else {
-				vUint64, err := strconv.ParseUint(valueParts[i], 10, 64)
-				if err != nil {
-					return fmt.Errorf("decode value: %s to uint64 error: %s", valueParts[i], err)
-				}
-				advancedTCPStats[nameParts[i]] = vUint64
-			}
-		}
+	advancedTCPStats, err := ParseStatsFile(scanner, map[string]struct{}{"Tcp": {}, "TcpExt": {}})
+	if err != nil {
+		return fmt.Errorf("failure parsing stats file %s: %v", advancedTCPStatsFile, err)
 	}
 
 	b, err := json.Marshal(advancedTCPStats)
@@ -622,6 +604,39 @@ func scanAdvancedTCPStats(advancedStats *info.TcpAdvancedStat, advancedTCPStatsF
 	}
 
 	return scanner.Err()
+}
+
+func ParseStatsFile(scanner *bufio.Scanner, protocols map[string]struct{}) (map[string]interface{}, error) {
+	stats := make(map[string]interface{})
+	for scanner.Scan() {
+		nameParts := strings.Split(scanner.Text(), " ")
+		scanner.Scan()
+		valueParts := strings.Split(scanner.Text(), " ")
+		// Remove trailing :. and ignore other protocols
+		protocol := nameParts[0][:len(nameParts[0])-1]
+		if _, ok := protocols[protocol]; !ok {
+			continue
+		}
+		if len(nameParts) != len(valueParts) {
+			return nil, fmt.Errorf("mismatch field count mismatch in %s", protocol)
+		}
+		for i := 1; i < len(nameParts); i++ {
+			if strings.Contains(valueParts[i], "-") {
+				vInt64, err := strconv.ParseInt(valueParts[i], 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("decode value: %s to int64 error: %s", valueParts[i], err)
+				}
+				stats[nameParts[i]] = vInt64
+			} else {
+				vUint64, err := strconv.ParseUint(valueParts[i], 10, 64)
+				if err != nil {
+					return nil, fmt.Errorf("decode value: %s to uint64 error: %s", valueParts[i], err)
+				}
+				stats[nameParts[i]] = vUint64
+			}
+		}
+	}
+	return stats, nil
 }
 
 func scanTCPStats(tcpStatsFile string) (info.TcpStat, error) {
@@ -704,6 +719,47 @@ func udpStatsFromProc(rootFs string, pid int, file string) (info.UdpStat, error)
 	}
 
 	return udpStats, nil
+}
+
+func advancedUDPStatsFromProc(rootFs string, pid int, file string) (info.UdpAdvancedStat, error) {
+	var advancedStats info.UdpAdvancedStat
+	var err error
+
+	netstatFile := path.Join(rootFs, "proc", strconv.Itoa(pid), file)
+	err = scanAdvancedUDPStats(&advancedStats, netstatFile)
+	if err != nil {
+		return advancedStats, err
+	}
+
+	return advancedStats, nil
+}
+
+func scanAdvancedUDPStats(advancedStats *info.UdpAdvancedStat, advancedUDPStatsFile string) error {
+	data, err := os.ReadFile(advancedUDPStatsFile)
+	if err != nil {
+		return fmt.Errorf("failure opening %s: %v", advancedUDPStatsFile, err)
+	}
+
+	reader := strings.NewReader(string(data))
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(bufio.ScanLines)
+
+	advancedUDPStats, err := ParseStatsFile(scanner, map[string]struct{}{"Udp": {}})
+	if err != nil {
+		return fmt.Errorf("failure parsing stats file %s: %v", advancedUDPStats, err)
+	}
+
+	b, err := json.Marshal(advancedUDPStats)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(b, advancedStats)
+	if err != nil {
+		return err
+	}
+
+	return scanner.Err()
 }
 
 func scanUDPStats(r io.Reader) (info.UdpStat, error) {

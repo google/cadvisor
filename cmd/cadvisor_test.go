@@ -41,6 +41,12 @@ func TestUdpMetricsAreDisabledByDefault(t *testing.T) {
 	assert.True(t, ignoreMetrics.Has(container.NetworkUdpUsageMetrics))
 }
 
+func TestAdvancedUdpMetricsAreDisabledByDefault(t *testing.T) {
+	assert.True(t, ignoreMetrics.Has(container.NetworkAdvancedUdpUsageMetrics))
+	flag.Parse()
+	assert.True(t, ignoreMetrics.Has(container.NetworkAdvancedUdpUsageMetrics))
+}
+
 func TestReferencedMemoryMetricsIsDisabledByDefault(t *testing.T) {
 	assert.True(t, ignoreMetrics.Has(container.ReferencedMemoryMetrics))
 	flag.Parse()
@@ -103,6 +109,7 @@ func TestToIncludedMetrics(t *testing.T) {
 			container.NetworkTcpUsageMetrics:         struct{}{},
 			container.NetworkAdvancedTcpUsageMetrics: struct{}{},
 			container.NetworkUdpUsageMetrics:         struct{}{},
+			container.NetworkAdvancedUdpUsageMetrics: struct{}{},
 			container.ProcessMetrics:                 struct{}{},
 			container.AppMetrics:                     struct{}{},
 			container.HugetlbUsageMetrics:            struct{}{},

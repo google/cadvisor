@@ -296,6 +296,16 @@ container_network_advance_tcp_stats_total{container_env_foo_env="prod",container
 container_network_advance_tcp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="tw",zone_name="hello"} 1.0436427e+07 1395066363000
 container_network_advance_tcp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="twkilled",zone_name="hello"} 0 1395066363000
 container_network_advance_tcp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",tcp_state="twrecycled",zone_name="hello"} 0 1395066363000
+# HELP container_network_advance_udp_stats_total advance udp statistic for container
+# TYPE container_network_advance_udp_stats_total counter
+container_network_advance_udp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="ignoredmulti",zone_name="hello"} 0 1395066363000
+container_network_advance_udp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="incsumerrors",zone_name="hello"} 0 1395066363000
+container_network_advance_udp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="indatagrams",zone_name="hello"} 1.74675874e+08 1395066363000
+container_network_advance_udp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="inerrors",zone_name="hello"} 8 1395066363000
+container_network_advance_udp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="noports",zone_name="hello"} 8996 1395066363000
+container_network_advance_udp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="outdatagrams",zone_name="hello"} 1.7469741e+08 1395066363000
+container_network_advance_udp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="rcvbuferrors",zone_name="hello"} 8 1395066363000
+container_network_advance_udp_stats_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",udp_state="sndbuferrors",zone_name="hello"} 0 1395066363000
 # HELP container_network_receive_bytes_total Cumulative count of bytes received
 # TYPE container_network_receive_bytes_total counter
 container_network_receive_bytes_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",interface="eth0",name="testcontaineralias",zone_name="hello"} 14 1395066363000
