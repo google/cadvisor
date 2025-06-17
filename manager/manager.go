@@ -175,6 +175,10 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfi
 		return nil, err
 	}
 
+	if *HousekeepingInterval >= memoryCache.GetMaxAge() {
+		return nil, fmt.Errorf("invalid housekeeping_interval setting, it must be less than memory's maxAge('storage_duration'), which is set to 2 minutes by default.")
+	}
+
 	fsInfo, err := fs.NewFsInfo(context)
 	if err != nil {
 		return nil, err
