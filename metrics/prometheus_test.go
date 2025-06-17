@@ -23,6 +23,7 @@ import (
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/utils/oomparser"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -148,6 +149,10 @@ func (m *mockInfoProvider) GetVersionInfo() (*info.VersionInfo, error) {
 
 func (m *mockInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
 	return nil, errors.New("not supported")
+}
+
+func (m *mockInfoProvider) GetOOMInfos() map[string]*oomparser.ContainerOomInfo {
+	return nil
 }
 
 func mockLabelFunc(*info.ContainerInfo) map[string]string {

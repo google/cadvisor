@@ -20,6 +20,7 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/utils/oomparser"
 )
 
 type testSubcontainersInfoProvider struct{}
@@ -784,6 +785,23 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 	}, nil
 }
 
+func (p testSubcontainersInfoProvider) GetOOMInfos() map[string]*oomparser.ContainerOomInfo {
+	return map[string]*oomparser.ContainerOomInfo{
+		"testcontainer": {
+			OomEvents:   0,
+			TimeOfDeath: time.Unix(1395066363, 0),
+			MetricLabels: map[string]string{
+				"container_env_foo+env":     "prod",
+				"container_label_foo.label": "bar",
+				"id":                        "testcontainer",
+				"image":                     "test",
+				"name":                      "testcontaineralias",
+				"zone.name":                 "hello",
+			},
+		},
+	}
+}
+
 type erroringSubcontainersInfoProvider struct {
 	successfulProvider testSubcontainersInfoProvider
 	shouldFail         bool
@@ -809,4 +827,11 @@ func (p *erroringSubcontainersInfoProvider) GetRequestedContainersInfo(
 		return map[string]*info.ContainerInfo{}, errors.New("Oops 3")
 	}
 	return p.successfulProvider.GetRequestedContainersInfo(a, opt)
+}
+
+func (p *erroringSubcontainersInfoProvider) GetOOMInfos() map[string]*oomparser.ContainerOomInfo {
+	if p.shouldFail {
+		return map[string]*oomparser.ContainerOomInfo{}
+	}
+	return p.successfulProvider.GetOOMInfos()
 }
