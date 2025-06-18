@@ -1,0 +1,75 @@
+// #######################################################################
+// ##- Copyright (c) Huawei Technologies Co., Ltd. 2020. All rights reserved.
+// # - iSulad licensed under the Mulan PSL v2.
+// # - You can use this software according to the terms and conditions of the Mulan PSL v2.
+// # - You may obtain a copy of Mulan PSL v2 at:
+// # -     http://license.coscl.org.cn/MulanPSL2
+// # - THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+// # - IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+// # - PURPOSE.
+// # - See the Mulan PSL v2 for more details.
+// ##- @Description: generate grpc
+// ##- @Author: zhangxiaoyu
+// ##- @Create: 2020-09-07
+// #######################################################################
+syntax = "proto3";
+option optimize_for = CODE_SIZE;
+
+package network;
+
+message NetworkInfo {
+    string name = 1;
+    string version = 2;
+    repeated string plugins = 3;
+}
+
+service NetworkService {
+    rpc Create(NetworkCreateRequest) returns (NetworkCreateResponse);
+    rpc Inspect(NetworkInspectRequest) returns (NetworkInspectResponse);
+    rpc List(NetworkListRequest) returns (NetworkListResponse);
+    rpc Remove(NetworkRemoveRequest) returns (NetworkRemoveResponse);
+}
+
+message NetworkCreateRequest {
+	string name = 1;
+	string driver = 2;
+	string gateway = 3;
+	bool internal = 4;
+	string subnet = 5;
+}
+
+message NetworkCreateResponse {
+	string name = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message NetworkInspectRequest {
+	string name = 1;
+}
+
+message NetworkInspectResponse {
+	string NetworkJSON = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message NetworkListRequest {
+	map<string, string>  filters = 1;
+}
+
+message NetworkListResponse {
+	repeated NetworkInfo networks = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
+
+message NetworkRemoveRequest {
+	string name = 1;
+}
+
+message NetworkRemoveResponse {
+	string name = 1;
+	uint32 cc = 2;
+	string errmsg = 3;
+}
