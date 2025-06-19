@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -146,6 +147,16 @@ func newContainerdContainerHandler(
 	}
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
+
+	// ignore err and get zero as default, this happens with sandboxes, not sure why...
+	// kube isn't sending restart count in labels for sandboxes.
+	if spec.Annotations != nil {
+		restartCount, _ := strconv.Atoi(spec.Annotations["io.kubernetes.container.restartCount"])
+		// Only adds restartcount label if it's greater than 0
+		if restartCount > 0 {
+			handler.labels["restartcount"] = strconv.Itoa(restartCount)
+		}
+	}
 
 	for _, exposedEnv := range metadataEnvAllowList {
 		if exposedEnv == "" {
