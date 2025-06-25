@@ -54,7 +54,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			false,
 			nil,
-			nil,
+			container.AllMetrics,
 
 			true,
 			"no client returned",
@@ -70,7 +70,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			false,
 			nil,
-			nil,
+			container.AllMetrics,
 
 			true,
 			"no container with id 81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f",
@@ -90,7 +90,7 @@ func TestHandler(t *testing.T) {
 			nil,
 			false,
 			nil,
-			nil,
+			container.AllMetrics,
 
 			false,
 			"",
