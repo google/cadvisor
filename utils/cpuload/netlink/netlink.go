@@ -208,7 +208,7 @@ func verifyHeader(msg syscall.NetlinkMessage) error {
 	case syscall.NLMSG_ERROR:
 		buf := bytes.NewBuffer(msg.Data)
 		var errno int32
-		err := binary.Read(buf, Endian, errno)
+		err := binary.Read(buf, Endian, &errno)
 		if err != nil {
 			return err
 		}
