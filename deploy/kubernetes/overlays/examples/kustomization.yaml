@@ -1,7 +1,7 @@
 bases:
 - ../../base
 patches:
-- stackdriver-sidecar.yaml
-- critical-priority.yaml
-- cadvisor-args.yaml
-- gpu-privilages.yaml
+- path: stackdriver-sidecar.yaml
+- path: critical-priority.yaml
+- path: cadvisor-args.yaml
+- path: gpu-privilages.yaml
