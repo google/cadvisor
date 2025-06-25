@@ -15,6 +15,8 @@
 package summary
 
 import (
+	"runtime"
+
 	info "github.com/google/cadvisor/info/v2"
 )
 
@@ -53,6 +55,9 @@ func (s *SamplesBuffer) Add(stat info.Usage) {
 	}
 	s.index = (s.index + 1) % s.maxSize
 	s.samples[s.index] = stat
+	if s.index == 0 {
+		runtime.GC()
+	}
 }
 
 // Returns pointers to the last 'n' stats.
