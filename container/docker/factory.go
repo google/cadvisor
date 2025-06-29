@@ -25,6 +25,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	dockersystem "github.com/docker/docker/api/types/system"
+	"github.com/google/cadvisor/container/containerd"
 
 	"github.com/google/cadvisor/container"
 	dockerutil "github.com/google/cadvisor/container/docker/utils"
@@ -94,12 +95,13 @@ func RootDir() string {
 type StorageDriver string
 
 const (
-	DevicemapperStorageDriver StorageDriver = "devicemapper"
-	AufsStorageDriver         StorageDriver = "aufs"
-	OverlayStorageDriver      StorageDriver = "overlay"
-	Overlay2StorageDriver     StorageDriver = "overlay2"
-	ZfsStorageDriver          StorageDriver = "zfs"
-	VfsStorageDriver          StorageDriver = "vfs"
+	DevicemapperStorageDriver          StorageDriver = "devicemapper"
+	AufsStorageDriver                  StorageDriver = "aufs"
+	OverlayStorageDriver               StorageDriver = "overlay"
+	Overlay2StorageDriver              StorageDriver = "overlay2"
+	ContainerdSnapshotterStorageDriver StorageDriver = "overlayfs"
+	ZfsStorageDriver                   StorageDriver = "zfs"
+	VfsStorageDriver                   StorageDriver = "vfs"
 )
 
 type dockerFactory struct {
@@ -108,7 +110,8 @@ type dockerFactory struct {
 	storageDriver StorageDriver
 	storageDir    string
 
-	client *docker.Client
+	client           *docker.Client
+	containerdClient containerd.ContainerdClient
 
 	// Information about the mounted cgroup subsystems.
 	cgroupSubsystems map[string]string
@@ -147,6 +150,7 @@ func (f *dockerFactory) NewContainerHandler(name string, metadataEnvAllowList []
 
 	handler, err = newDockerContainerHandler(
 		client,
+		f.containerdClient,
 		name,
 		f.machineInfoFactory,
 		f.fsInfo,
@@ -349,10 +353,16 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		}
 	}
 
+	containerdClient, err := containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
+	if err != nil {
+		return fmt.Errorf("unable to create containerd client: %v", err)
+	}
+
 	klog.V(1).Infof("Registering Docker factory")
 	f := &dockerFactory{
 		cgroupSubsystems:   cgroupSubsystems,
 		client:             client,
+		containerdClient:   containerdClient,
 		dockerVersion:      dockerVersion,
 		dockerAPIVersion:   dockerAPIVersion,
 		fsInfo:             fsInfo,
