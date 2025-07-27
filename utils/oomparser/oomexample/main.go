@@ -34,7 +34,7 @@ func main() {
 	var oomLog *oomparser.OomParser
 	var err error
 	if *ignoreOldOOMs {
-		oomLog, err = oomparser.NewFromEndOfFile()
+		oomLog, err = oomparser.NewFromNow()
 	} else {
 		oomLog, err = oomparser.New()
 	}
