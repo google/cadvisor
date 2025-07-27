@@ -149,6 +149,21 @@ func (p *OomParser) StreamOoms(outStream chan<- *OomInstance) {
 	klog.Errorf("exiting analyzeLines. OOM events will not be reported.")
 }
 
+// NewFromEndOfFile initializes an OomParser object that starts reading from the end of the kernel log.
+// This will ignore any OOM events that occurred before the parser was created.
+func NewFromEndOfFile() (*OomParser, error) {
+	parser, err := New()
+	if err != nil {
+		return nil, err
+	}
+
+	// seek to and set the offset at the end of /dev/kmsg to avoid reporting old OOM events
+	if err := parser.parser.SeekEnd(); err != nil {
+		return nil, err
+	}
+	return parser, nil
+}
+
 // initializes an OomParser object. Returns an OomParser object and an error.
 func New() (*OomParser, error) {
 	parser, err := kmsgparser.NewParser()
