@@ -82,11 +82,6 @@ docker run
 google/cadvisor:latest
 ```
 
-
-### Debian
-
-By default, Debian disables the memory cgroup which does not allow cAdvisor to gather memory stats. To enable the memory cgroup take a look at [these instructions](https://github.com/google/cadvisor/issues/432).
-
 ### LXC Docker exec driver
 
 If you are using Docker with the LXC exec driver, then you need to manually specify all cgroup mounts by adding the:
