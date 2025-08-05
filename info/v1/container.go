@@ -525,7 +525,7 @@ type TcpAdvancedStat struct {
 	// retransmission timeout, measured in milliseconds, default 120s
 	RtoMax uint64
 	// The limit on the total number of TCP connections the entity
-	// can support., default -1, i.e. infinity
+	// can support., default -1, i.e. dynamic limit
 	MaxConn int64
 
 	// The number of times TCP connections have made a direct
