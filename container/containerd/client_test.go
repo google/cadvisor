@@ -18,12 +18,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/containerd/containerd/api/types/task"
 	"github.com/google/cadvisor/container/containerd/containers"
 )
 
 type containerdClientMock struct {
 	cntrs     map[string]*containers.Container
 	returnErr error
+	tasks     map[string]*task.Process
 }
 
 func (c *containerdClientMock) LoadContainer(ctx context.Context, id string) (*containers.Container, error) {
@@ -45,9 +47,27 @@ func (c *containerdClientMock) TaskPid(ctx context.Context, id string) (uint32, 
 	return 2389, nil
 }
 
+func (c *containerdClientMock) LoadTaskProcess(ctx context.Context, id string) (*task.Process, error) {
+	if c.returnErr != nil {
+		return nil, c.returnErr
+	}
+	task, ok := c.tasks[id]
+	if !ok {
+		return nil, fmt.Errorf("unable to find task for container %q", id)
+	}
+	return task, nil
+}
+
 func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr error) ContainerdClient {
+	tasks := make(map[string]*task.Process)
+
+	for _, cntr := range cntrs {
+		tasks[cntr.ID] = &task.Process{}
+	}
+
 	return &containerdClientMock{
 		cntrs:     cntrs,
 		returnErr: returnErr,
+		tasks:     tasks,
 	}
 }
