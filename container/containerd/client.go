@@ -45,6 +45,7 @@ type client struct {
 type ContainerdClient interface {
 	LoadContainer(ctx context.Context, id string) (*containers.Container, error)
 	TaskPid(ctx context.Context, id string) (uint32, error)
+	LoadTaskProcess(ctx context.Context, id string) (*tasktypes.Process, error)
 	Version(ctx context.Context) (string, error)
 }
 
@@ -130,6 +131,17 @@ func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
 		return 0, ErrTaskIsInUnknownState
 	}
 	return response.Process.Pid, nil
+}
+
+func (c *client) LoadTaskProcess(ctx context.Context, id string) (*tasktypes.Process, error) {
+	response, err := c.taskService.Get(ctx, &tasksapi.GetRequest{
+		ContainerID: id,
+	})
+	if err != nil {
+		return nil, errgrpc.ToNative(err)
+	}
+
+	return response.Process, nil
 }
 
 func (c *client) Version(ctx context.Context) (string, error) {
