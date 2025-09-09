@@ -25,10 +25,10 @@ import (
 	"github.com/google/cadvisor/container/docker"
 )
 
-const (
-	containersJSONFilename         = "containers.json"
-	volatileContainersJSONFilename = "volatile-containers.json"
-)
+var containersJsonFilnames = []string{
+	"containers.json",
+	"volatile-containers.json",
+}
 
 type containersJSON struct {
 	ID    string `json:"id"`
@@ -37,33 +37,26 @@ type containersJSON struct {
 }
 
 func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerID string) (string, error) {
-	data, err := os.ReadFile(filepath.Join(storageDir, string(storageDriver)+"-containers", containersJSONFilename))
-	if err != nil {
-		return "", err
-	}
 	var containers []containersJSON
-	err = json.Unmarshal(data, &containers)
-	if err != nil {
-		return "", err
-	}
 
-	// Read volatile-containers.json if it exists.
-	// This is important for Podman Quadlets since they are not presented in the containers.json file.
-	volatileData, err := os.ReadFile(filepath.Join(
-		storageDir,
-		string(storageDriver)+"-containers",
-		volatileContainersJSONFilename,
-	))
-	if err != nil && !os.IsNotExist(err) {
-		return "", err
-	}
-	if volatileData != nil {
-		var volatileContainers []containersJSON
-		err = json.Unmarshal(volatileData, &volatileContainers)
-		if err != nil {
+	for _, filename := range containersJsonFilnames {
+		data, err := os.ReadFile(filepath.Join(storageDir, string(storageDriver)+"-containers", filename))
+		if err != nil && !os.IsNotExist(err) {
 			return "", err
 		}
-		containers = append(containers, volatileContainers...)
+
+		if data != nil {
+			var buffer []containersJSON
+			err = json.Unmarshal(data, &buffer)
+			if err != nil {
+				return "", err
+			}
+			containers = append(containers, buffer...)
+		}
+	}
+
+	if len(containers) == 0 {
+		return "", fmt.Errorf("no containers found in containers.json or volatile-containers.json in %q", filepath.Join(storageDir, string(storageDriver)+"-containers"))
 	}
 
 	for _, c := range containers {
