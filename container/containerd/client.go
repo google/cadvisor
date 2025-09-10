@@ -23,6 +23,7 @@ import (
 	"time"
 
 	containersapi "github.com/containerd/containerd/api/services/containers/v1"
+	snaptshotapi "github.com/containerd/containerd/api/services/snapshots/v1"
 	tasksapi "github.com/containerd/containerd/api/services/tasks/v1"
 	versionapi "github.com/containerd/containerd/api/services/version/v1"
 	tasktypes "github.com/containerd/containerd/api/types/task"
@@ -32,6 +33,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
+	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/container/containerd/containers"
 	"github.com/google/cadvisor/container/containerd/pkg/dialer"
 )
@@ -40,12 +42,14 @@ type client struct {
 	containerService containersapi.ContainersClient
 	taskService      tasksapi.TasksClient
 	versionService   versionapi.VersionClient
+	snapshotsService snaptshotapi.SnapshotsClient
 }
 
 type ContainerdClient interface {
 	LoadContainer(ctx context.Context, id string) (*containers.Container, error)
 	TaskPid(ctx context.Context, id string) (uint32, error)
 	Version(ctx context.Context) (string, error)
+	ContainerFsUsage(ctx context.Context, snapshotter, snapshotkey string) (*common.FsUsage, error)
 }
 
 var (
@@ -104,6 +108,7 @@ func Client(address, namespace string) (ContainerdClient, error) {
 			containerService: containersapi.NewContainersClient(conn),
 			taskService:      tasksapi.NewTasksClient(conn),
 			versionService:   versionapi.NewVersionClient(conn),
+			snapshotsService: snaptshotapi.NewSnapshotsClient(conn),
 		}
 	})
 	return ctrdClient, retErr
@@ -138,6 +143,21 @@ func (c *client) Version(ctx context.Context) (string, error) {
 		return "", errgrpc.ToNative(err)
 	}
 	return response.Version, nil
+}
+
+func (c *client) ContainerFsUsage(ctx context.Context, snapshotter, snapshotkey string) (*common.FsUsage, error) {
+	usage, err := c.snapshotsService.Usage(ctx, &snaptshotapi.UsageRequest{
+		Snapshotter: snapshotter,
+		Key:         snapshotkey,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &common.FsUsage{
+		BaseUsageBytes:  uint64(usage.Size),
+		TotalUsageBytes: uint64(usage.Size),
+		InodeUsage:      uint64(usage.Inodes),
+	}, nil
 }
 
 func containerFromProto(containerpb *containersapi.Container) *containers.Container {

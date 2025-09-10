@@ -136,10 +136,11 @@ func newPodmanContainerHandler(
 		labels:             ctnr.Config.Labels,
 		image:              ctnr.Config.Image,
 		networkMode:        ctnr.HostConfig.NetworkMode,
-		fsHandler:          common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, otherStorageDir, fsInfo),
-		metrics:            metrics,
-		thinPoolName:       thinPoolName,
-		zfsParent:          zfsParent,
+		fsHandler: common.NewFsHandler(common.DefaultPeriod, common.NewGeneralFsUsageProvider(
+			fsInfo, rootfsStorageDir, otherStorageDir)),
+		metrics:      metrics,
+		thinPoolName: thinPoolName,
+		zfsParent:    zfsParent,
 		reference: info.ContainerReference{
 			Id:        id,
 			Name:      name,
@@ -173,7 +174,8 @@ func newPodmanContainerHandler(
 
 	if metrics.Has(container.DiskUsageMetrics) {
 		handler.fsHandler = &docker.FsHandler{
-			FsHandler:       common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, otherStorageDir, fsInfo),
+			FsHandler: common.NewFsHandler(common.DefaultPeriod, common.NewGeneralFsUsageProvider(
+				fsInfo, rootfsStorageDir, otherStorageDir)),
 			ThinPoolWatcher: thinPoolWatcher,
 			ZfsWatcher:      zfsWatcher,
 			DeviceID:        ctnr.GraphDriver.Data["DeviceId"],

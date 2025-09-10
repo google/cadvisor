@@ -220,7 +220,8 @@ func newDockerContainerHandler(
 
 	if includedMetrics.Has(container.DiskUsageMetrics) {
 		handler.fsHandler = &FsHandler{
-			FsHandler:       common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, otherStorageDir, fsInfo),
+			FsHandler: common.NewFsHandler(common.DefaultPeriod, common.NewGeneralFsUsageProvider(
+				fsInfo, rootfsStorageDir, otherStorageDir)),
 			ThinPoolWatcher: thinPoolWatcher,
 			ZfsWatcher:      zfsWatcher,
 			DeviceID:        ctnr.GraphDriver.Data["DeviceId"],
