@@ -1,8 +1,8 @@
 module github.com/google/cadvisor/cmd
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.24.0
+toolchain go1.24.2
 
 // Record that the cmd module requires the cadvisor library module.
 // The github.com/google/cadvisor/cmd module is built using the Makefile
@@ -29,6 +29,7 @@ require (
 	golang.org/x/oauth2 v0.30.0
 	google.golang.org/api v0.235.0
 	gopkg.in/olivere/elastic.v2 v2.0.61
+	k8s.io/cri-api v0.34.1 // indirect
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 )

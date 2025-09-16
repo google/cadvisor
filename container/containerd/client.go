@@ -31,6 +31,7 @@ import (
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 
 	"github.com/google/cadvisor/container/containerd/containers"
 	"github.com/google/cadvisor/container/containerd/pkg/dialer"
@@ -40,12 +41,14 @@ type client struct {
 	containerService containersapi.ContainersClient
 	taskService      tasksapi.TasksClient
 	versionService   versionapi.VersionClient
+	runtimeService   runtimeapi.RuntimeServiceClient
 }
 
 type ContainerdClient interface {
 	LoadContainer(ctx context.Context, id string) (*containers.Container, error)
 	TaskPid(ctx context.Context, id string) (uint32, error)
 	Version(ctx context.Context) (string, error)
+	ContainerStats(ctx context.Context, id string) (*runtimeapi.ContainerStats, error)
 }
 
 var (
@@ -104,6 +107,7 @@ func Client(address, namespace string) (ContainerdClient, error) {
 			containerService: containersapi.NewContainersClient(conn),
 			taskService:      tasksapi.NewTasksClient(conn),
 			versionService:   versionapi.NewVersionClient(conn),
+			runtimeService:   runtimeapi.NewRuntimeServiceClient(conn),
 		}
 	})
 	return ctrdClient, retErr
@@ -138,6 +142,16 @@ func (c *client) Version(ctx context.Context) (string, error) {
 		return "", errgrpc.ToNative(err)
 	}
 	return response.Version, nil
+}
+
+func (c *client) ContainerStats(ctx context.Context, id string) (*runtimeapi.ContainerStats, error) {
+	resp, err := c.runtimeService.ContainerStats(ctx, &runtimeapi.ContainerStatsRequest{
+		ContainerId: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Stats, nil
 }
 
 func containerFromProto(containerpb *containersapi.Container) *containers.Container {
