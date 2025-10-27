@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -25,6 +26,9 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+
+	// Listen on VSOCK sockets
+	"github.com/mdlayher/vsock"
 
 	cadvisorhttp "github.com/google/cadvisor/cmd/internal/http"
 	"github.com/google/cadvisor/container"
@@ -48,7 +52,7 @@ import (
 )
 
 var argIP = flag.String("listen_ip", "", "IP to listen on, defaults to all IPs")
-var argPort = flag.Int("port", 8080, "port to listen")
+var argPort = flag.Uint("port", 8080, "port to listen")
 var maxProcs = flag.Int("max_procs", 0, "max number of CPUs that can be used simultaneously. Less than 1 for default (number of cores).")
 
 var versionFlag = flag.Bool("version", false, "print cAdvisor version and exit")
@@ -181,8 +185,33 @@ func main() {
 	rootMux := http.NewServeMux()
 	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, mux))
 
-	addr := fmt.Sprintf("%s:%d", *argIP, *argPort)
-	klog.Fatal(http.ListenAndServe(addr, rootMux))
+	scheme_and_host := strings.SplitN(*argIP, "://", 2)
+
+	host := scheme_and_host[len(scheme_and_host) - 1]
+
+	scheme := scheme_and_host[0]
+	if len(scheme_and_host) == 1 || scheme == "http" || scheme == "https" {
+		scheme = "tcp"
+	}
+
+	var listener net.Listener
+	if scheme == "vsock" {
+		port := uint32(*argPort)
+		vsock_listener, err := vsock.Listen(port, nil)
+		if err != nil {
+			klog.Fatalf("Failed listen to VSOCK port %d: %s", port, err)
+		}
+		listener = vsock_listener
+	} else {
+		address := fmt.Sprintf("%s:%d", host, *argPort)
+		tcp_listener, err := net.Listen(scheme, address)
+		if err != nil {
+			klog.Fatalf("Failed listen to HTTP address '%s': %s", address, err)
+		}
+		listener = tcp_listener
+	}
+
+	klog.Fatal(http.Serve(listener, rootMux))
 }
 
 func setMaxProcs() {
