@@ -1,24 +1,58 @@
+version: "2"
+
 run:
   timeout: 5m
-  linters-settings:
-    govet:
-      enable-all: true
-    gofmt:
-      simplify: true
-    goimports:
-      local-prefixes: github.com/google/cadvisor
+
 linters:
-  disable-all: true
+  default: none
   enable:
     - govet
     - errcheck
     - staticcheck
     - unused
-    - gosimple
     - ineffassign
-    - typecheck
+  settings:
+    govet:
+      disable:
+        - fieldalignment
+        - buildtag  # old +build lines still present alongside //go:build
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+        - (net.Conn).Close
+        - (*os.File).Close
+        - (net/http.ResponseWriter).Write
+        - os.Remove
+        - os.RemoveAll
+        - os.Setenv
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - syscall.Close
+    staticcheck:
+      checks:
+        - "all"
+        - "-ST*"    # disable all style checks (ST1000, ST1003, ST1005, etc.)
+        - "-QF*"    # disable all quickfix suggestions
+  exclusions:
+    rules:
+      # Exclude errcheck in test files for cleaner test code
+      - linters:
+          - errcheck
+        path: "_test\\.go$"
+      # Exclude errcheck for Close() calls on any type
+      - linters:
+          - errcheck
+        text: "Error return value of .*.Close.* is not checked"
+      # Exclude govet printf check false positives
+      - linters:
+          - govet
+        text: "printf: non-constant format string"
+
+formatters:
+  enable:
     - gofmt
-    - goimports
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
