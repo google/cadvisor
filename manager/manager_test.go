@@ -30,8 +30,9 @@ import (
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
 	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/metrics"
+	"github.com/google/cadvisor/utils/oomparser"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
-
 	"github.com/stretchr/testify/assert"
 	clock "k8s.io/utils/clock/testing"
 
@@ -530,4 +531,51 @@ func TestDockerContainersInfo(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error %q but received %q", expectedError, err)
 	}
+}
+
+func Test_addOrUpdateOomInfo(t *testing.T) {
+	m := manager{
+		oomInfos:           map[string]*oomparser.ContainerOomInfo{},
+		memoryCache:        memory.New(2*time.Minute, nil),
+		containerLabelFunc: metrics.DefaultContainerLabels,
+	}
+	contReference := info.ContainerReference{
+		Name: "testcontainer",
+		Id:   "testcontainer1",
+	}
+	contInfo := &info.ContainerInfo{
+		ContainerReference: contReference,
+	}
+	spec := info.ContainerSpec{}
+	mockHandler := containertest.NewMockContainerHandler("testcontainer")
+	mockHandler.On("GetSpec").Return(
+		spec,
+		nil,
+	).Times(2)
+	mockHandler.On("ListContainers", container.ListSelf).Return(
+		[]info.ContainerReference{contReference},
+		nil,
+	).Times(2)
+	collectorManager, _ := collector.NewCollectorManager()
+	cont := &containerData{
+		info: containerInfo{
+			ContainerReference: contReference,
+		},
+		handler:             mockHandler,
+		collectorManager:    collectorManager,
+		infoLastUpdatedTime: time.Now(),
+		clock:               clock.NewFakeClock(time.Now()),
+	}
+	m.memoryCache.AddStats(contInfo, &info.ContainerStats{
+		Timestamp: time.Now(),
+	})
+
+	err := m.addOrUpdateOomInfo(cont, time.Now())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(m.oomInfos))
+	assert.Equal(t, uint64(1), m.oomInfos["testcontainer1"].OomEvents)
+
+	// update oom info, increase oom event counts
+	assert.NoError(t, m.addOrUpdateOomInfo(cont, time.Now()))
+	assert.Equal(t, uint64(2), m.oomInfos["testcontainer1"].OomEvents)
 }
