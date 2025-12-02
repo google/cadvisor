@@ -199,9 +199,12 @@ func newDockerContainerHandler(
 		rootfsStorageDir:   rootfsStorageDir,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
-		healthStatus:       ctnr.State.Health.Status,
 		includedMetrics:    metrics,
 		zfsParent:          zfsParent,
+	}
+	// Health status may be nil if no health check is configured
+	if ctnr.State.Health != nil {
+		handler.healthStatus = ctnr.State.Health.Status
 	}
 	// Timestamp returned by Docker is in time.RFC3339Nano format.
 	handler.creationTime, err = time.Parse(time.RFC3339Nano, ctnr.Created)
