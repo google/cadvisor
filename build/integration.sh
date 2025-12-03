@@ -54,6 +54,13 @@ echo "=== Kernel version ==="
 uname -r
 echo "=== End diagnostic information ==="
 
+# Detect containerd socket path - Docker-in-Docker uses a different path
+CONTAINERD_SOCK="/run/containerd/containerd.sock"
+if [ -S "/run/docker/containerd/containerd.sock" ]; then
+  CONTAINERD_SOCK="/run/docker/containerd/containerd.sock"
+  echo ">> Using Docker-embedded containerd socket: $CONTAINERD_SOCK"
+fi
+
 function start {
   set +e  # We want to handle errors if cAdvisor crashes.
   echo ">> starting cAdvisor locally"
@@ -62,7 +69,7 @@ function start {
     cadvisor_prereqs=sudo
   fi
   # cpu, cpuset, percpu, memory, disk, diskIO, network, perf_event metrics should be enabled.
-  GORACE="halt_on_error=1" $cadvisor_prereqs $cadvisor_bin --enable_metrics="cpu,cpuset,percpu,memory,disk,diskIO,network,perf_event" --env_metadata_whitelist=TEST_VAR --v=6 --logtostderr $CADVISOR_ARGS &> "$log_file"
+  GORACE="halt_on_error=1" $cadvisor_prereqs $cadvisor_bin --enable_metrics="cpu,cpuset,percpu,memory,disk,diskIO,network,perf_event" --env_metadata_whitelist=TEST_VAR --containerd="$CONTAINERD_SOCK" --v=6 --logtostderr $CADVISOR_ARGS &> "$log_file"
   exit_code=$?
   if [ $exit_code != 0 ]; then
     echo "!! cAdvisor exited unexpectedly with Exit $exit_code"
