@@ -34,7 +34,6 @@ const (
 	ContainerTypeDocker
 	ContainerTypeCrio
 	ContainerTypeContainerd
-	ContainerTypeMesos
 	ContainerTypePodman
 )
 
