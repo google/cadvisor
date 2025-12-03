@@ -54,7 +54,6 @@ func createManagerAndAddContainers(
 ) *manager {
 	container.ClearContainerHandlerFactories()
 	mif := &manager{
-		containers:   make(map[namespacedContainerName]*containerData),
 		quitChannels: make([]chan error, 0, 2),
 		memoryCache:  memoryCache,
 	}
@@ -69,15 +68,15 @@ func createManagerAndAddContainers(
 		if err != nil {
 			t.Fatal(err)
 		}
-		mif.containers[namespacedContainerName{
+		mif.containers.Store(namespacedContainerName{
 			Name: name,
-		}] = cont
+		}, cont)
 		// Add Docker containers under their namespace.
 		if strings.HasPrefix(name, "/docker") {
-			mif.containers[namespacedContainerName{
+			mif.containers.Store(namespacedContainerName{
 				Namespace: DockerNamespace,
 				Name:      strings.TrimPrefix(name, "/docker/"),
-			}] = cont
+			}, cont)
 		}
 		f(mockHandler)
 	}
@@ -93,7 +92,6 @@ func createManagerAndAddSubContainers(
 ) *manager {
 	container.ClearContainerHandlerFactories()
 	mif := &manager{
-		containers:   make(map[namespacedContainerName]*containerData),
 		quitChannels: make([]chan error, 0, 2),
 		memoryCache:  memoryCache,
 	}
@@ -132,15 +130,15 @@ func createManagerAndAddSubContainers(
 		if err != nil {
 			t.Fatal(err)
 		}
-		mif.containers[namespacedContainerName{
+		mif.containers.Store(namespacedContainerName{
 			Name: name,
-		}] = cont
+		}, cont)
 		// Add Docker containers under their namespace.
 		if strings.HasPrefix(name, "/docker") {
-			mif.containers[namespacedContainerName{
+			mif.containers.Store(namespacedContainerName{
 				Namespace: DockerNamespace,
 				Name:      strings.TrimPrefix(name, "/docker/"),
-			}] = cont
+			}, cont)
 		}
 		f(mockHandler)
 	}
