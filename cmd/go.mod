@@ -14,16 +14,13 @@ require github.com/google/cadvisor v0.0.0
 replace github.com/google/cadvisor => ../
 
 require (
-	github.com/Rican7/retry v0.3.1
 	github.com/SeanDolphin/bqschema v1.0.0
 	github.com/Shopify/sarama v1.38.1
 	github.com/abbot/go-http-auth v0.4.0
 	github.com/gomodule/redigo v1.9.2
 	github.com/influxdb/influxdb v1.7.9
-	github.com/mesos/mesos-go v0.0.11
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.24.1 // indirect
-	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7 // indirect
 	github.com/prometheus/client_golang v1.22.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/oauth2 v0.30.0
