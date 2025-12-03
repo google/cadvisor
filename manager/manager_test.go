@@ -384,7 +384,10 @@ func TestGetContainerInfoV2Failure(t *testing.T) {
 	assert.NoError(t, err) // Use up default GetSpec call, and replace below
 	handlerMap[failing].On("GetSpec").Return(info.ContainerSpec{}, mockErr)
 	handlerMap[failing].On("Exists").Return(true)
-	m.containers[namespacedContainerName{Name: failing}].infoLastUpdatedTime = time.Time{} // Force GetSpec.
+	// Force GetSpec by resetting infoLastUpdatedTime to zero.
+	if v, ok := m.containers.Load(namespacedContainerName{Name: failing}); ok {
+		v.(*containerData).infoLastUpdatedTime.Store(0)
+	}
 
 	infos, err := m.GetContainerInfoV2("/", options)
 	if err == nil {

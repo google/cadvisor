@@ -77,8 +77,8 @@ type containerData struct {
 	housekeepingInterval     time.Duration
 	maxHousekeepingInterval  time.Duration
 	allowDynamicHousekeeping bool
-	infoLastUpdatedTime      time.Time
-	statsLastUpdatedTime     time.Time
+	infoLastUpdatedTime      atomic.Int64 // Unix nano
+	statsLastUpdatedTime     atomic.Int64 // Unix nano
 	lastErrorTime            time.Time
 	//  used to track time
 	clock clock.Clock
@@ -145,9 +145,8 @@ func (cd *containerData) allowErrorLogging() bool {
 // periodic housekeeping to reset.  This should be used sparingly, as calling OnDemandHousekeeping frequently
 // can have serious performance costs.
 func (cd *containerData) OnDemandHousekeeping(maxAge time.Duration) {
-	cd.lock.Lock()
-	timeSinceStatsLastUpdate := cd.clock.Since(cd.statsLastUpdatedTime)
-	cd.lock.Unlock()
+	lastUpdatedTime := time.Unix(0, cd.statsLastUpdatedTime.Load())
+	timeSinceStatsLastUpdate := cd.clock.Since(lastUpdatedTime)
 	if timeSinceStatsLastUpdate > maxAge {
 		housekeepingFinishedChan := make(chan struct{})
 		cd.onDemandChan <- housekeepingFinishedChan
@@ -172,7 +171,8 @@ func (cd *containerData) notifyOnDemand() {
 
 func (cd *containerData) GetInfo(shouldUpdateSubcontainers bool) (*containerInfo, error) {
 	// Get spec and subcontainers.
-	if cd.clock.Since(cd.infoLastUpdatedTime) > 5*time.Second || shouldUpdateSubcontainers {
+	infoLastUpdatedTime := time.Unix(0, cd.infoLastUpdatedTime.Load())
+	if cd.clock.Since(infoLastUpdatedTime) > 5*time.Second || shouldUpdateSubcontainers {
 		err := cd.updateSpec()
 		if err != nil {
 			return nil, err
@@ -183,7 +183,7 @@ func (cd *containerData) GetInfo(shouldUpdateSubcontainers bool) (*containerInfo
 				return nil, err
 			}
 		}
-		cd.infoLastUpdatedTime = cd.clock.Now()
+		cd.infoLastUpdatedTime.Store(cd.clock.Now().UnixNano())
 	}
 	cd.lock.Lock()
 	defer cd.lock.Unlock()
@@ -594,9 +594,7 @@ func (cd *containerData) housekeepingTick(timer <-chan time.Time, longHousekeepi
 		klog.V(3).Infof("[%s] Housekeeping took %s", cd.info.Name, duration)
 	}
 	cd.notifyOnDemand()
-	cd.lock.Lock()
-	defer cd.lock.Unlock()
-	cd.statsLastUpdatedTime = cd.clock.Now()
+	cd.statsLastUpdatedTime.Store(cd.clock.Now().UnixNano())
 	return true
 }
 
