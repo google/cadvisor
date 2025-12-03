@@ -171,8 +171,10 @@ func (cd *containerData) notifyOnDemand() {
 }
 
 func (cd *containerData) GetInfo(shouldUpdateSubcontainers bool) (*containerInfo, error) {
+	cd.lock.Lock()
 	// Get spec and subcontainers.
 	if cd.clock.Since(cd.infoLastUpdatedTime) > 5*time.Second || shouldUpdateSubcontainers {
+		cd.lock.Unlock() // Update functions expect the struct to be unlocked.
 		err := cd.updateSpec()
 		if err != nil {
 			return nil, err
@@ -183,9 +185,9 @@ func (cd *containerData) GetInfo(shouldUpdateSubcontainers bool) (*containerInfo
 				return nil, err
 			}
 		}
+		cd.lock.Lock()
 		cd.infoLastUpdatedTime = cd.clock.Now()
 	}
-	cd.lock.Lock()
 	defer cd.lock.Unlock()
 	cInfo := containerInfo{
 		Subcontainers: cd.info.Subcontainers,
