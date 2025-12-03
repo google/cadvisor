@@ -573,19 +573,21 @@ func (m *manager) getContainer(containerName string) (*containerData, error) {
 }
 
 func (m *manager) getSubcontainers(containerName string) map[string]*containerData {
+	matchedName := path.Join(containerName, "/")
+
 	m.containersLock.RLock()
 	defer m.containersLock.RUnlock()
+
 	containersMap := make(map[string]*containerData, len(m.containers))
 
 	// Get all the unique subcontainers of the specified container
-	matchedName := path.Join(containerName, "/")
-	for i := range m.containers {
-		if m.containers[i] == nil {
+	for _, cont := range m.containers {
+		if cont == nil {
 			continue
 		}
-		name := m.containers[i].info.Name
+		name := cont.info.Name
 		if name == containerName || strings.HasPrefix(name, matchedName) {
-			containersMap[m.containers[i].info.Name] = m.containers[i]
+			containersMap[name] = cont
 		}
 	}
 	return containersMap
