@@ -903,6 +903,16 @@ func setPSIStats(s *cgroups.PSIStats, ret *info.PSIStats) {
 	}
 }
 
+func setMiscStats(s *cgroups.Stats, ret *info.ContainerStats) {
+	ret.Misc = make(map[string]info.MiscStats)
+	for k, v := range s.MiscStats {
+		ret.Misc[k] = info.MiscStats{
+			Usage:  v.Usage,
+			Events: v.Events,
+		}
+	}
+}
+
 // read from pids path not cpu
 func setThreadsStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	if s != nil {
@@ -927,6 +937,9 @@ func newContainerStats(cgroupStats *cgroups.Stats, includedMetrics container.Met
 		}
 		if includedMetrics.Has(container.HugetlbUsageMetrics) {
 			setHugepageStats(s, ret)
+		}
+		if includedMetrics.Has(container.MiscMetrics) {
+			setMiscStats(s, ret)
 		}
 		if includedMetrics.Has(container.CPUSetMetrics) {
 			setCPUSetStats(s, ret)
