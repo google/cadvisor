@@ -311,7 +311,7 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 func (h *Handler) schedulerStatsFromProcs() (info.CpuSchedstat, error) {
 	pids, err := h.cgroupManager.GetAllPids()
 	if err != nil {
-		return info.CpuSchedstat{}, fmt.Errorf("Could not get PIDs for container %d: %w", h.pid, err)
+		return info.CpuSchedstat{}, fmt.Errorf("could not get PIDs for container %d: %w", h.pid, err)
 	}
 	alivePids := make(map[int]struct{}, len(pids))
 	for _, pid := range pids {
