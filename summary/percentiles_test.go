@@ -84,6 +84,8 @@ func TestAggregates(t *testing.T) {
 		Fifty:      1000,
 		Ninety:     1000,
 		NinetyFive: 1000,
+		// Since cpu is calculated between samples, we lose 1 sample.
+		Count: N - 2,
 	}
 	if usage.Cpu != cpuExpected {
 		t.Errorf("cpu stats are %+v. Expected %+v", usage.Cpu, cpuExpected)
@@ -95,6 +97,7 @@ func TestAggregates(t *testing.T) {
 		Fifty:      50 * 1024,
 		Ninety:     90 * 1024,
 		NinetyFive: 95 * 1024,
+		Count:      N - 1,
 	}
 	if usage.Memory != memExpected {
 		t.Errorf("memory stats are mean %+v. Expected %+v", usage.Memory, memExpected)
@@ -133,6 +136,8 @@ func TestSamplesCloseInTimeIgnored(t *testing.T) {
 		Fifty:      1000,
 		Ninety:     1000,
 		NinetyFive: 1000,
+		// Since cpu is calculated between samples, we lose 1 sample.
+		Count: N - 2,
 	}
 	if usage.Cpu != cpuExpected {
 		t.Errorf("cpu stats are %+v. Expected %+v", usage.Cpu, cpuExpected)
@@ -144,6 +149,7 @@ func TestSamplesCloseInTimeIgnored(t *testing.T) {
 		Fifty:      50 * 1024,
 		Ninety:     90 * 1024,
 		NinetyFive: 95 * 1024,
+		Count:      N - 1,
 	}
 	if usage.Memory != memExpected {
 		t.Errorf("memory stats are mean %+v. Expected %+v", usage.Memory, memExpected)
@@ -184,6 +190,8 @@ func TestDerivedStats(t *testing.T) {
 		Fifty:      50 * Nanosecond,
 		Ninety:     90 * Nanosecond,
 		NinetyFive: 95 * Nanosecond,
+		// GetDerivedPercentiles calculates directly from samples, hence we don't lose any samples.
+		Count: N - 1,
 	}
 	if usage.Cpu != cpuExpected {
 		t.Errorf("cpu stats are %+v. Expected %+v", usage.Cpu, cpuExpected)
@@ -195,6 +203,7 @@ func TestDerivedStats(t *testing.T) {
 		Fifty:      50 * 1024,
 		Ninety:     90 * 1024,
 		NinetyFive: 95 * 1024,
+		Count:      N - 1,
 	}
 	if usage.Memory != memExpected {
 		t.Errorf("memory stats are mean %+v. Expected %+v", usage.Memory, memExpected)
