@@ -792,14 +792,14 @@ type erroringSubcontainersInfoProvider struct {
 
 func (p *erroringSubcontainersInfoProvider) GetVersionInfo() (*info.VersionInfo, error) {
 	if p.shouldFail {
-		return nil, errors.New("Oops 1")
+		return nil, errors.New("oops 1")
 	}
 	return p.successfulProvider.GetVersionInfo()
 }
 
 func (p *erroringSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
 	if p.shouldFail {
-		return nil, errors.New("Oops 2")
+		return nil, errors.New("oops 2")
 	}
 	return p.successfulProvider.GetMachineInfo()
 }
@@ -807,7 +807,7 @@ func (p *erroringSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo,
 func (p *erroringSubcontainersInfoProvider) GetRequestedContainersInfo(
 	a string, opt v2.RequestOptions) (map[string]*info.ContainerInfo, error) {
 	if p.shouldFail {
-		return map[string]*info.ContainerInfo{}, errors.New("Oops 3")
+		return map[string]*info.ContainerInfo{}, errors.New("oops 3")
 	}
 	return p.successfulProvider.GetRequestedContainersInfo(a, opt)
 }

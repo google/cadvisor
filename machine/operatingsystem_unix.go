@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build freebsd || darwin || linux
-// +build freebsd darwin linux
 
 package machine
 

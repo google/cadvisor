@@ -14,8 +14,7 @@ linters:
   settings:
     govet:
       disable:
-        - fieldalignment
-        - buildtag  # old +build lines still present alongside //go:build
+        - fieldalignment  # too noisy, requires significant refactoring
     errcheck:
       exclude-functions:
         - (io.Closer).Close
@@ -32,8 +31,12 @@ linters:
     staticcheck:
       checks:
         - "all"
-        - "-ST*"    # disable all style checks (ST1000, ST1003, ST1005, etc.)
-        - "-QF*"    # disable all quickfix suggestions
+        - "-ST1000" # package comments - too noisy for existing codebase
+        - "-ST1003" # naming conventions (e.g., CrioId vs CrioID) - would break public API
+        - "-ST1020" # comment format on exported methods - too many to fix
+        - "-ST1021" # comment format on exported types - too many to fix
+        - "-ST1022" # comment format on exported consts - too many to fix
+        - "-QF*"    # disable quickfix suggestions
   exclusions:
     rules:
       # Exclude errcheck in test files for cleaner test code
@@ -52,6 +55,7 @@ linters:
 formatters:
   enable:
     - gofmt
+    - goimports
 
 issues:
   max-issues-per-linter: 0

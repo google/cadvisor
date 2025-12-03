@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build linux
-// +build linux
 
 // Provides Filesystem Stats
 package fs
@@ -760,7 +759,7 @@ func getVfsStats(path string) (total uint64, free uint64, avail uint64, inodes u
 func dockerDMDevice(driverStatus map[string]string, dmsetup devicemapper.DmsetupClient) (string, uint, uint, uint, error) {
 	poolName, ok := driverStatus[DriverStatusPoolName]
 	if !ok || len(poolName) == 0 {
-		return "", 0, 0, 0, fmt.Errorf("Could not get dm pool name")
+		return "", 0, 0, 0, fmt.Errorf("could not get dm pool name")
 	}
 
 	out, err := dmsetup.Table(poolName)
@@ -783,7 +782,7 @@ func parseDMTable(dmTable string) (uint, uint, uint, error) {
 	dmFields := strings.Fields(dmTable)
 
 	if len(dmFields) < 8 {
-		return 0, 0, 0, fmt.Errorf("Invalid dmsetup status output: %s", dmTable)
+		return 0, 0, 0, fmt.Errorf("invalid dmsetup status output: %s", dmTable)
 	}
 
 	major, err := strconv.ParseUint(dmFields[5], 10, 32)
@@ -825,7 +824,7 @@ func parseDMStatus(dmStatus string) (uint64, uint64, error) {
 	dmFields := strings.Fields(dmStatus)
 
 	if len(dmFields) < 8 {
-		return 0, 0, fmt.Errorf("Invalid dmsetup status output: %s", dmStatus)
+		return 0, 0, fmt.Errorf("invalid dmsetup status output: %s", dmStatus)
 	}
 
 	used, err := strconv.ParseUint(dmFields[6], 10, 64)

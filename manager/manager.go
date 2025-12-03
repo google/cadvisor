@@ -858,7 +858,7 @@ func (m *manager) GetProcessList(containerName string, options v2.RequestOptions
 		return nil, err
 	}
 	if len(conts) != 1 {
-		return nil, fmt.Errorf("Expected the request to match only one container")
+		return nil, fmt.Errorf("expected the request to match only one container")
 	}
 	// TODO(rjnagal): handle count? Only if we can do count by type (eg. top 5 cpu users)
 	ps := []v2.ProcessInfo{}
