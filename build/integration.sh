@@ -33,6 +33,27 @@ fi
 
 TEST_PID=$$
 printf "" # Refresh sudo credentials if necessary.
+
+# Diagnostic logging for docker/containerd debugging
+echo ">> Diagnostic information:"
+echo "=== Docker version ==="
+docker version || echo "docker version failed"
+echo "=== Docker info ==="
+docker info || echo "docker info failed"
+echo "=== Containerd socket check ==="
+ls -la /run/containerd/ 2>/dev/null || echo "/run/containerd/ not found"
+ls -la /var/run/containerd/ 2>/dev/null || echo "/var/run/containerd/ not found"
+ls -la /var/run/docker/containerd/ 2>/dev/null || echo "/var/run/docker/containerd/ not found"
+echo "=== Find all containerd sockets ==="
+find /var/run /run -name "*.sock" 2>/dev/null | head -20 || echo "No sockets found"
+echo "=== Docker socket check ==="
+ls -la /var/run/docker.sock 2>/dev/null || echo "/var/run/docker.sock not found"
+echo "=== Running processes (docker/containerd) ==="
+ps aux | grep -E "(docker|containerd)" | grep -v grep || echo "No docker/containerd processes found"
+echo "=== Kernel version ==="
+uname -r
+echo "=== End diagnostic information ==="
+
 function start {
   set +e  # We want to handle errors if cAdvisor crashes.
   echo ">> starting cAdvisor locally"
