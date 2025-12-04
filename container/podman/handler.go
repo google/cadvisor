@@ -35,7 +35,7 @@ import (
 	"github.com/google/cadvisor/zfs"
 )
 
-type podmanContainerHandler struct {
+type containerHandler struct {
 	// machineInfoFactory provides info.MachineInfo
 	machineInfoFactory info.MachineInfoFactory
 
@@ -72,7 +72,7 @@ type podmanContainerHandler struct {
 	libcontainerHandler *containerlibcontainer.Handler
 }
 
-func newPodmanContainerHandler(
+func newContainerHandler(
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
 	fsInfo fs.FsInfo,
@@ -125,7 +125,7 @@ func newPodmanContainerHandler(
 
 	otherStorageDir := filepath.Join(storageDir, string(storageDriver)+"-containers", id)
 
-	handler := &podmanContainerHandler{
+	handler := &containerHandler{
 		machineInfoFactory: machineInfoFactory,
 		cgroupPaths:        cgroupPaths,
 		storageDriver:      storageDriver,
@@ -212,46 +212,46 @@ func determineDeviceStorage(storageDriver docker.StorageDriver, storageDir strin
 	}
 }
 
-func (p podmanContainerHandler) ContainerReference() (info.ContainerReference, error) {
-	return p.reference, nil
+func (h containerHandler) ContainerReference() (info.ContainerReference, error) {
+	return h.reference, nil
 }
 
-func (p podmanContainerHandler) needNet() bool {
-	if p.metrics.Has(container.NetworkUsageMetrics) {
-		p.networkMode.IsContainer()
-		return !p.networkMode.IsContainer()
+func (h containerHandler) needNet() bool {
+	if h.metrics.Has(container.NetworkUsageMetrics) {
+		h.networkMode.IsContainer()
+		return !h.networkMode.IsContainer()
 	}
 	return false
 }
 
-func (p podmanContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	hasFilesystem := p.metrics.Has(container.DiskUsageMetrics)
+func (h containerHandler) GetSpec() (info.ContainerSpec, error) {
+	hasFilesystem := h.metrics.Has(container.DiskUsageMetrics)
 
-	spec, err := common.GetSpec(p.cgroupPaths, p.machineInfoFactory, p.needNet(), hasFilesystem)
+	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, h.needNet(), hasFilesystem)
 	if err != nil {
 		return info.ContainerSpec{}, err
 	}
 
-	spec.Labels = p.labels
-	spec.Envs = p.envs
-	spec.Image = p.image
-	spec.CreationTime = p.creationTime
+	spec.Labels = h.labels
+	spec.Envs = h.envs
+	spec.Image = h.image
+	spec.CreationTime = h.creationTime
 
 	return spec, nil
 }
 
-func (p podmanContainerHandler) GetStats() (*info.ContainerStats, error) {
-	stats, err := p.libcontainerHandler.GetStats()
+func (h containerHandler) GetStats() (*info.ContainerStats, error) {
+	stats, err := h.libcontainerHandler.GetStats()
 	if err != nil {
 		return stats, err
 	}
 
-	if !p.needNet() {
+	if !h.needNet() {
 		stats.Network = info.NetworkStats{}
 	}
 
-	err = docker.FsStats(stats, p.machineInfoFactory, p.metrics, p.storageDriver,
-		p.fsHandler, p.fsInfo, p.thinPoolName, p.rootfsStorageDir, p.zfsParent)
+	err = docker.FsStats(stats, h.machineInfoFactory, h.metrics, h.storageDriver,
+		h.fsHandler, h.fsInfo, h.thinPoolName, h.rootfsStorageDir, h.zfsParent)
 	if err != nil {
 		return stats, err
 	}
@@ -259,51 +259,51 @@ func (p podmanContainerHandler) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
-func (p podmanContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
+func (h containerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	return []info.ContainerReference{}, nil
 }
 
-func (p podmanContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	return p.libcontainerHandler.GetProcesses()
+func (h containerHandler) ListProcesses(listType container.ListType) ([]int, error) {
+	return h.libcontainerHandler.GetProcesses()
 }
 
-func (p podmanContainerHandler) GetCgroupPath(resource string) (string, error) {
+func (h containerHandler) GetCgroupPath(resource string) (string, error) {
 	var res string
 	if !cgroups.IsCgroup2UnifiedMode() {
 		res = resource
 	}
-	path, ok := p.cgroupPaths[res]
+	path, ok := h.cgroupPaths[res]
 	if !ok {
-		return "", fmt.Errorf("couldn't find path for resource %q for container %q", resource, p.reference.Name)
+		return "", fmt.Errorf("couldn't find path for resource %q for container %q", resource, h.reference.Name)
 	}
 
 	return path, nil
 }
 
-func (p podmanContainerHandler) GetContainerLabels() map[string]string {
-	return p.labels
+func (h containerHandler) GetContainerLabels() map[string]string {
+	return h.labels
 }
 
-func (p podmanContainerHandler) GetContainerIPAddress() string {
-	return p.ipAddress
+func (h containerHandler) GetContainerIPAddress() string {
+	return h.ipAddress
 }
 
-func (p podmanContainerHandler) Exists() bool {
-	return common.CgroupExists(p.cgroupPaths)
+func (h containerHandler) Exists() bool {
+	return common.CgroupExists(h.cgroupPaths)
 }
 
-func (p podmanContainerHandler) Cleanup() {
-	if p.fsHandler != nil {
-		p.fsHandler.Stop()
+func (h containerHandler) Cleanup() {
+	if h.fsHandler != nil {
+		h.fsHandler.Stop()
 	}
 }
 
-func (p podmanContainerHandler) Start() {
-	if p.fsHandler != nil {
-		p.fsHandler.Start()
+func (h containerHandler) Start() {
+	if h.fsHandler != nil {
+		h.fsHandler.Start()
 	}
 }
 
-func (p podmanContainerHandler) Type() container.ContainerType {
+func (h containerHandler) Type() container.ContainerType {
 	return container.ContainerTypePodman
 }
