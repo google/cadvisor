@@ -24,8 +24,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/docker/docker/api/types/container"
-	dclient "github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	dclient "github.com/moby/moby/client"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/cadvisor/fs"
@@ -34,11 +34,11 @@ import (
 
 type mockDockerClientForExitCode struct {
 	dclient.APIClient
-	inspectResp container.InspectResponse
+	inspectResp dclient.ContainerInspectResult
 	inspectErr  error
 }
 
-func (m *mockDockerClientForExitCode) ContainerInspect(ctx context.Context, containerID string) (container.InspectResponse, error) {
+func (m *mockDockerClientForExitCode) ContainerInspect(ctx context.Context, containerID string, options dclient.ContainerInspectOptions) (dclient.ContainerInspectResult, error) {
 	return m.inspectResp, m.inspectErr
 }
 
@@ -283,18 +283,16 @@ func TestGetExitCode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			as := assert.New(t)
 
-			inspectResp := container.InspectResponse{
-				ContainerJSONBase: &container.ContainerJSONBase{
-					State: &container.State{
-						Running:  tt.running,
-						ExitCode: tt.exitCode,
+			mockClient := &mockDockerClientForExitCode{
+				inspectResp: dclient.ContainerInspectResult{
+					Container: container.InspectResponse{
+						State: &container.State{
+							Running:  tt.running,
+							ExitCode: tt.exitCode,
+						},
 					},
 				},
-			}
-
-			mockClient := &mockDockerClientForExitCode{
-				inspectResp: inspectResp,
-				inspectErr:  tt.inspectErr,
+				inspectErr: tt.inspectErr,
 			}
 
 			h := &containerHandler{
