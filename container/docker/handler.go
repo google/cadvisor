@@ -315,13 +315,16 @@ func (h *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := h.includedMetrics.Has(container.DiskUsageMetrics)
 	hasNetwork := h.includedMetrics.Has(container.NetworkUsageMetrics)
 	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, hasNetwork, hasFilesystem)
+	if err != nil {
+		return info.ContainerSpec{}, err
+	}
 
 	spec.Labels = h.labels
 	spec.Envs = h.envs
 	spec.Image = h.image
 	spec.CreationTime = h.creationTime
 
-	return spec, err
+	return spec, nil
 }
 
 func (h *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
