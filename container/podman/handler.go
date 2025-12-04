@@ -113,12 +113,12 @@ func newContainerHandler(
 		return nil, err
 	}
 
-	rwLayerID, err := rwLayerID(storageDriver, storageDir, id)
+	layerID, err := rwLayerID(storageDriver, storageDir, id)
 	if err != nil {
 		return nil, err
 	}
 
-	rootfsStorageDir, zfsFilesystem, zfsParent, err := determineDeviceStorage(storageDriver, storageDir, rwLayerID)
+	rootfsStorageDir, zfsFilesystem, zfsParent, err := determineDeviceStorage(storageDriver, storageDir, layerID)
 	if err != nil {
 		return nil, err
 	}
@@ -163,12 +163,12 @@ func newContainerHandler(
 	// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
 	networkMode := string(handler.networkMode)
 	if handler.ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
-		id := strings.TrimPrefix(networkMode, "container:")
-		ctnr, err := InspectContainer(id)
+		containerID := strings.TrimPrefix(networkMode, "container:")
+		c, err := InspectContainer(containerID)
 		if err != nil {
 			return nil, err
 		}
-		handler.ipAddress = ctnr.NetworkSettings.IPAddress
+		handler.ipAddress = c.NetworkSettings.IPAddress
 	}
 
 	if metrics.Has(container.DiskUsageMetrics) {
@@ -272,12 +272,12 @@ func (h *containerHandler) GetCgroupPath(resource string) (string, error) {
 	if !cgroups.IsCgroup2UnifiedMode() {
 		res = resource
 	}
-	path, ok := h.cgroupPaths[res]
+	cgroupPath, ok := h.cgroupPaths[res]
 	if !ok {
 		return "", fmt.Errorf("couldn't find path for resource %q for container %q", resource, h.reference.Name)
 	}
 
-	return path, nil
+	return cgroupPath, nil
 }
 
 func (h *containerHandler) GetContainerLabels() map[string]string {

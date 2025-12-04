@@ -364,11 +364,11 @@ func (h *containerHandler) GetCgroupPath(resource string) (string, error) {
 	if !cgroups.IsCgroup2UnifiedMode() {
 		res = resource
 	}
-	path, ok := h.cgroupPaths[res]
+	cgroupPath, ok := h.cgroupPaths[res]
 	if !ok {
 		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.reference.Name)
 	}
-	return path, nil
+	return cgroupPath, nil
 }
 
 func (h *containerHandler) GetContainerLabels() map[string]string {
