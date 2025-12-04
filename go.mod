@@ -16,7 +16,7 @@ require (
 	github.com/containerd/ttrpc v1.2.7
 	github.com/containerd/typeurl/v2 v2.2.3
 	github.com/docker/docker v28.3.3+incompatible
-	github.com/docker/go-connections v0.5.0
+	github.com/docker/go-connections v0.6.0
 	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/karrick/godirwalk v1.17.0
