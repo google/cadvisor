@@ -64,6 +64,18 @@ type containerInfo struct {
 	Spec          info.ContainerSpec
 }
 
+// atomicTime is a lock-free wrapper for storing and retrieving time values.
+// It stores time as Unix nanoseconds in an atomic.Int64, enabling concurrent
+// reads and writes without mutex contention.
+type atomicTime struct {
+	atomic.Int64
+}
+
+// Time returns the stored time value as a time.Time.
+func (t *atomicTime) Time() time.Time {
+	return time.Unix(0, t.Load())
+}
+
 type containerData struct {
 	oomEvents                uint64
 	handler                  container.ContainerHandler
@@ -77,8 +89,8 @@ type containerData struct {
 	housekeepingInterval     time.Duration
 	maxHousekeepingInterval  time.Duration
 	allowDynamicHousekeeping bool
-	infoLastUpdatedTime      atomic.Int64 // Unix nano
-	statsLastUpdatedTime     atomic.Int64 // Unix nano
+	infoLastUpdatedTime      atomicTime // Unix nano
+	statsLastUpdatedTime     atomicTime // Unix nano
 	lastErrorTime            time.Time
 	//  used to track time
 	clock clock.Clock
@@ -145,8 +157,7 @@ func (cd *containerData) allowErrorLogging() bool {
 // periodic housekeeping to reset.  This should be used sparingly, as calling OnDemandHousekeeping frequently
 // can have serious performance costs.
 func (cd *containerData) OnDemandHousekeeping(maxAge time.Duration) {
-	lastUpdatedTime := time.Unix(0, cd.statsLastUpdatedTime.Load())
-	timeSinceStatsLastUpdate := cd.clock.Since(lastUpdatedTime)
+	timeSinceStatsLastUpdate := cd.clock.Since(cd.statsLastUpdatedTime.Time())
 	if timeSinceStatsLastUpdate > maxAge {
 		housekeepingFinishedChan := make(chan struct{})
 		cd.onDemandChan <- housekeepingFinishedChan
@@ -171,8 +182,7 @@ func (cd *containerData) notifyOnDemand() {
 
 func (cd *containerData) GetInfo(shouldUpdateSubcontainers bool) (*containerInfo, error) {
 	// Get spec and subcontainers.
-	infoLastUpdatedTime := time.Unix(0, cd.infoLastUpdatedTime.Load())
-	if cd.clock.Since(infoLastUpdatedTime) > 5*time.Second || shouldUpdateSubcontainers {
+	if cd.clock.Since(cd.infoLastUpdatedTime.Time()) > 5*time.Second || shouldUpdateSubcontainers {
 		err := cd.updateSpec()
 		if err != nil {
 			return nil, err
