@@ -147,7 +147,7 @@ func (f *dockerFactory) NewContainerHandler(name string, metadataEnvAllowList []
 		dockerMetadataEnvAllowList = metadataEnvAllowList
 	}
 
-	handler, err = newDockerContainerHandler(
+	handler, err = newContainerHandler(
 		client,
 		f.containerdClient,
 		name,

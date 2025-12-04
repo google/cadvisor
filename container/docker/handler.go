@@ -51,7 +51,7 @@ const (
 	pathToContainersDir = "containers"
 )
 
-type dockerContainerHandler struct {
+type containerHandler struct {
 	// machineInfoFactory provides info.MachineInfo
 	machineInfoFactory info.MachineInfoFactory
 
@@ -97,7 +97,7 @@ type dockerContainerHandler struct {
 	client docker.APIClient
 }
 
-var _ container.ContainerHandler = &dockerContainerHandler{}
+var _ container.ContainerHandler = &containerHandler{}
 
 func getRwLayerID(containerID, storageDir string, sd StorageDriver, dockerVersion []int) (string, error) {
 	const (
@@ -116,8 +116,8 @@ func getRwLayerID(containerID, storageDir string, sd StorageDriver, dockerVersio
 	return string(bytes), err
 }
 
-// newDockerContainerHandler returns a new container.ContainerHandler
-func newDockerContainerHandler(
+// newContainerHandler returns a new container.ContainerHandler
+func newContainerHandler(
 	client *dclient.Client,
 	containerdClient containerd.ContainerdClient,
 	name string,
@@ -192,7 +192,7 @@ func newDockerContainerHandler(
 	metrics := common.RemoveNetMetrics(includedMetrics, ctnr.HostConfig.NetworkMode.IsContainer())
 
 	// TODO: extract object mother method
-	handler := &dockerContainerHandler{
+	handler := &containerHandler{
 		machineInfoFactory: machineInfoFactory,
 		cgroupPaths:        cgroupPaths,
 		fsInfo:             fsInfo,
@@ -295,23 +295,23 @@ func DetermineDeviceStorage(storageDriver StorageDriver, storageDir string, rwLa
 	return
 }
 
-func (h *dockerContainerHandler) Start() {
+func (h *containerHandler) Start() {
 	if h.fsHandler != nil {
 		h.fsHandler.Start()
 	}
 }
 
-func (h *dockerContainerHandler) Cleanup() {
+func (h *containerHandler) Cleanup() {
 	if h.fsHandler != nil {
 		h.fsHandler.Stop()
 	}
 }
 
-func (h *dockerContainerHandler) ContainerReference() (info.ContainerReference, error) {
+func (h *containerHandler) ContainerReference() (info.ContainerReference, error) {
 	return h.reference, nil
 }
 
-func (h *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
+func (h *containerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := h.includedMetrics.Has(container.DiskUsageMetrics)
 	hasNetwork := h.includedMetrics.Has(container.NetworkUsageMetrics)
 	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, hasNetwork, hasFilesystem)
@@ -327,7 +327,7 @@ func (h *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	return spec, nil
 }
 
-func (h *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
+func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 	// TODO(vmarmol): Get from libcontainer API instead of cgroup manager when we don't have to support older Dockers.
 	stats, err := h.libcontainerHandler.GetStats()
 	if err != nil {
@@ -354,12 +354,12 @@ func (h *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
-func (h *dockerContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
+func (h *containerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	// No-op for Docker driver.
 	return []info.ContainerReference{}, nil
 }
 
-func (h *dockerContainerHandler) GetCgroupPath(resource string) (string, error) {
+func (h *containerHandler) GetCgroupPath(resource string) (string, error) {
 	var res string
 	if !cgroups.IsCgroup2UnifiedMode() {
 		res = resource
@@ -371,22 +371,22 @@ func (h *dockerContainerHandler) GetCgroupPath(resource string) (string, error) 
 	return path, nil
 }
 
-func (h *dockerContainerHandler) GetContainerLabels() map[string]string {
+func (h *containerHandler) GetContainerLabels() map[string]string {
 	return h.labels
 }
 
-func (h *dockerContainerHandler) GetContainerIPAddress() string {
+func (h *containerHandler) GetContainerIPAddress() string {
 	return h.ipAddress
 }
 
-func (h *dockerContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {
+func (h *containerHandler) ListProcesses(listType container.ListType) ([]int, error) {
 	return h.libcontainerHandler.GetProcesses()
 }
 
-func (h *dockerContainerHandler) Exists() bool {
+func (h *containerHandler) Exists() bool {
 	return common.CgroupExists(h.cgroupPaths)
 }
 
-func (h *dockerContainerHandler) Type() container.ContainerType {
+func (h *containerHandler) Type() container.ContainerType {
 	return container.ContainerTypeDocker
 }
