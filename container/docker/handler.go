@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Handler for Docker containers.
+// Package docker implements a handler for Docker containers.
 package docker
 
 import (
@@ -80,10 +80,10 @@ type containerHandler struct {
 	// The IP address of the container
 	ipAddress string
 
-	includedMetrics container.MetricSet
+	metrics container.MetricSet
 
 	// the devicemapper poolname
-	poolName string
+	thinPoolName string
 
 	// zfsParent is the parent for docker zfs
 	zfsParent string
@@ -129,7 +129,7 @@ func newContainerHandler(
 	inHostNamespace bool,
 	metadataEnvAllowList []string,
 	dockerVersion []int,
-	includedMetrics container.MetricSet,
+	metrics container.MetricSet,
 	thinPoolName string,
 	thinPoolWatcher *devicemapper.ThinPoolWatcher,
 	zfsWatcher *zfs.ZfsWatcher,
@@ -189,26 +189,24 @@ func newContainerHandler(
 	}
 
 	// Do not report network metrics for containers that share netns with another container.
-	metrics := common.RemoveNetMetrics(includedMetrics, ctnr.HostConfig.NetworkMode.IsContainer())
+	includedMetrics := common.RemoveNetMetrics(metrics, ctnr.HostConfig.NetworkMode.IsContainer())
 
-	// TODO: extract object mother method
 	handler := &containerHandler{
 		machineInfoFactory: machineInfoFactory,
 		cgroupPaths:        cgroupPaths,
-		fsInfo:             fsInfo,
 		storageDriver:      storageDriver,
-		poolName:           thinPoolName,
+		fsInfo:             fsInfo,
 		rootfsStorageDir:   rootfsStorageDir,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
-		includedMetrics:    metrics,
+		metrics:            includedMetrics,
+		thinPoolName:       thinPoolName,
 		zfsParent:          zfsParent,
 		client:             client,
 	}
 	// Timestamp returned by Docker is in time.RFC3339Nano format.
 	handler.creationTime, err = time.Parse(time.RFC3339Nano, ctnr.Created)
 	if err != nil {
-		// This should not happen, report the error just in case
 		return nil, fmt.Errorf("failed to parse the create timestamp %q for container %q: %v", ctnr.Created, id, err)
 	}
 	handler.libcontainerHandler = containerlibcontainer.NewHandler(cgroupManager, rootFs, ctnr.State.Pid, metrics)
@@ -221,7 +219,7 @@ func newContainerHandler(
 		Namespace: DockerNamespace,
 	}
 	handler.image = ctnr.Config.Image
-	// Only adds restartcount label if it's greater than 0
+
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
 	}
@@ -235,11 +233,10 @@ func newContainerHandler(
 		containerID := strings.TrimPrefix(networkMode, "container:")
 		c, err := client.ContainerInspect(context.Background(), containerID)
 		if err != nil {
-			return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
+			return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
 		}
 		ipAddress = c.NetworkSettings.IPAddress
 	}
-
 	handler.ipAddress = ipAddress
 
 	if includedMetrics.Has(container.DiskUsageMetrics) {
@@ -252,7 +249,7 @@ func newContainerHandler(
 		}
 	}
 
-	// split env vars to get metadata map.
+	// Split env vars to get metadata map.
 	for _, exposedEnv := range metadataEnvAllowList {
 		if exposedEnv == "" {
 			// if no dockerEnvWhitelist provided, len(metadataEnvAllowList) == 1, metadataEnvAllowList[0] == ""
@@ -295,25 +292,13 @@ func DetermineDeviceStorage(storageDriver StorageDriver, storageDir string, rwLa
 	return
 }
 
-func (h *containerHandler) Start() {
-	if h.fsHandler != nil {
-		h.fsHandler.Start()
-	}
-}
-
-func (h *containerHandler) Cleanup() {
-	if h.fsHandler != nil {
-		h.fsHandler.Stop()
-	}
-}
-
 func (h *containerHandler) ContainerReference() (info.ContainerReference, error) {
 	return h.reference, nil
 }
 
 func (h *containerHandler) GetSpec() (info.ContainerSpec, error) {
-	hasFilesystem := h.includedMetrics.Has(container.DiskUsageMetrics)
-	hasNetwork := h.includedMetrics.Has(container.NetworkUsageMetrics)
+	hasFilesystem := h.metrics.Has(container.DiskUsageMetrics)
+	hasNetwork := h.metrics.Has(container.NetworkUsageMetrics)
 	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, hasNetwork, hasFilesystem)
 	if err != nil {
 		return info.ContainerSpec{}, err
@@ -345,8 +330,8 @@ func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 	}
 
 	// Get filesystem stats.
-	err = FsStats(stats, h.machineInfoFactory, h.includedMetrics, h.storageDriver,
-		h.fsHandler, h.fsInfo, h.poolName, h.rootfsStorageDir, h.zfsParent)
+	err = FsStats(stats, h.machineInfoFactory, h.metrics, h.storageDriver,
+		h.fsHandler, h.fsInfo, h.thinPoolName, h.rootfsStorageDir, h.zfsParent)
 	if err != nil {
 		return stats, err
 	}
@@ -354,9 +339,12 @@ func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
-func (h *containerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	// No-op for Docker driver.
+func (h *containerHandler) ListContainers(container.ListType) ([]info.ContainerReference, error) {
 	return []info.ContainerReference{}, nil
+}
+
+func (h *containerHandler) ListProcesses(container.ListType) ([]int, error) {
+	return h.libcontainerHandler.GetProcesses()
 }
 
 func (h *containerHandler) GetCgroupPath(resource string) (string, error) {
@@ -379,12 +367,20 @@ func (h *containerHandler) GetContainerIPAddress() string {
 	return h.ipAddress
 }
 
-func (h *containerHandler) ListProcesses(listType container.ListType) ([]int, error) {
-	return h.libcontainerHandler.GetProcesses()
-}
-
 func (h *containerHandler) Exists() bool {
 	return common.CgroupExists(h.cgroupPaths)
+}
+
+func (h *containerHandler) Cleanup() {
+	if h.fsHandler != nil {
+		h.fsHandler.Stop()
+	}
+}
+
+func (h *containerHandler) Start() {
+	if h.fsHandler != nil {
+		h.fsHandler.Start()
+	}
 }
 
 func (h *containerHandler) Type() container.ContainerType {

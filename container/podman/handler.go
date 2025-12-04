@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package podman implements a handler for Podman containers.
 package podman
 
 import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,30 +45,38 @@ type containerHandler struct {
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
 	cgroupPaths map[string]string
 
+	// the docker storage driver
 	storageDriver    docker.StorageDriver
 	fsInfo           fs.FsInfo
 	rootfsStorageDir string
 
+	// Time at which this container was created.
 	creationTime time.Time
 
 	// Metadata associated with the container.
 	envs   map[string]string
 	labels map[string]string
 
+	// Image name used for this container.
 	image string
 
 	networkMode dockercontainer.NetworkMode
 
+	// Filesystem handler.
 	fsHandler common.FsHandler
 
+	// The IP address of the container
 	ipAddress string
 
 	metrics container.MetricSet
 
+	// the devicemapper poolname
 	thinPoolName string
 
+	// zfsParent is the parent for docker zfs
 	zfsParent string
 
+	// Reference to the container
 	reference info.ContainerReference
 
 	libcontainerHandler *containerlibcontainer.Handler
@@ -89,6 +99,7 @@ func newContainerHandler(
 	// Create the cgroup paths.
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems, name)
 
+	// Generate the equivalent cgroup manager for this container.
 	cgroupManager, err := containerlibcontainer.NewCgroupManager(name, cgroupPaths)
 	if err != nil {
 		return nil, err
@@ -118,6 +129,8 @@ func newContainerHandler(
 		return nil, err
 	}
 
+	// Determine the rootfs storage dir OR the pool name to determine the device.
+	// For devicemapper, we only need the thin pool name, and that is passed in to this call
 	rootfsStorageDir, zfsFilesystem, zfsParent, err := determineDeviceStorage(storageDriver, storageDir, layerID)
 	if err != nil {
 		return nil, err
@@ -131,7 +144,6 @@ func newContainerHandler(
 		storageDriver:      storageDriver,
 		fsInfo:             fsInfo,
 		rootfsStorageDir:   rootfsStorageDir,
-		ipAddress:          ctnr.NetworkSettings.IPAddress,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
 		image:              ctnr.Config.Image,
@@ -155,21 +167,23 @@ func newContainerHandler(
 	}
 
 	if ctnr.RestartCount > 0 {
-		handler.labels["restartcount"] = fmt.Sprint(ctnr.RestartCount)
+		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
 	}
 
 	// Obtain the IP address for the container.
 	// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
 	// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
-	networkMode := string(handler.networkMode)
-	if handler.ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
+	ipAddress := ctnr.NetworkSettings.IPAddress
+	networkMode := string(ctnr.HostConfig.NetworkMode)
+	if ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
 		containerID := strings.TrimPrefix(networkMode, "container:")
 		c, err := InspectContainer(containerID)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
 		}
-		handler.ipAddress = c.NetworkSettings.IPAddress
+		ipAddress = c.NetworkSettings.IPAddress
 	}
+	handler.ipAddress = ipAddress
 
 	if metrics.Has(container.DiskUsageMetrics) {
 		handler.fsHandler = &docker.FsHandler{
@@ -250,6 +264,7 @@ func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 		stats.Network = info.NetworkStats{}
 	}
 
+	// Get filesystem stats.
 	err = docker.FsStats(stats, h.machineInfoFactory, h.metrics, h.storageDriver,
 		h.fsHandler, h.fsInfo, h.thinPoolName, h.rootfsStorageDir, h.zfsParent)
 	if err != nil {
@@ -259,11 +274,11 @@ func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
-func (h *containerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
+func (h *containerHandler) ListContainers(container.ListType) ([]info.ContainerReference, error) {
 	return []info.ContainerReference{}, nil
 }
 
-func (h *containerHandler) ListProcesses(listType container.ListType) ([]int, error) {
+func (h *containerHandler) ListProcesses(container.ListType) ([]int, error) {
 	return h.libcontainerHandler.GetProcesses()
 }
 
@@ -274,7 +289,7 @@ func (h *containerHandler) GetCgroupPath(resource string) (string, error) {
 	}
 	cgroupPath, ok := h.cgroupPaths[res]
 	if !ok {
-		return "", fmt.Errorf("couldn't find path for resource %q for container %q", resource, h.reference.Name)
+		return "", fmt.Errorf("could not find path for resource %q for container %q", resource, h.reference.Name)
 	}
 
 	return cgroupPath, nil
