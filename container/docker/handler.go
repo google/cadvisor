@@ -24,6 +24,11 @@ import (
 	"strings"
 	"time"
 
+	dclient "github.com/docker/docker/client"
+	"github.com/opencontainers/cgroups"
+	"github.com/opencontainers/runtime-spec/specs-go"
+	"golang.org/x/net/context"
+
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/container/containerd"
@@ -34,11 +39,6 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/zfs"
-	"github.com/opencontainers/cgroups"
-	"github.com/opencontainers/runtime-spec/specs-go"
-
-	docker "github.com/docker/docker/client"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -118,7 +118,7 @@ func getRwLayerID(containerID, storageDir string, sd StorageDriver, dockerVersio
 
 // newDockerContainerHandler returns a new container.ContainerHandler
 func newDockerContainerHandler(
-	client *docker.Client,
+	client *dclient.Client,
 	containerdClient containerd.ContainerdClient,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
