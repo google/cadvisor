@@ -118,7 +118,7 @@ func newPodmanContainerHandler(
 		return nil, err
 	}
 
-	rootfsStorageDir, zfsParent, zfsFilesystem, err := determineDeviceStorage(storageDriver, storageDir, rwLayerID)
+	rootfsStorageDir, zfsFilesystem, zfsParent, err := determineDeviceStorage(storageDriver, storageDir, rwLayerID)
 	if err != nil {
 		return nil, err
 	}
