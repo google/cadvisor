@@ -24,8 +24,8 @@ import (
 	"strconv"
 	"time"
 
-	dockerimage "github.com/docker/docker/api/types/image"
-	dockersystem "github.com/docker/docker/api/types/system"
+	dockersystem "github.com/moby/moby/api/types/system"
+	dclient "github.com/moby/moby/client"
 
 	"github.com/google/cadvisor/container/docker/utils"
 	v1 "github.com/google/cadvisor/info/v1"
@@ -49,11 +49,11 @@ func StatusWithContext(ctx context.Context) (v1.DockerStatus, error) {
 	if err != nil {
 		return v1.DockerStatus{}, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	dockerInfo, err := client.Info(ctx)
+	res, err := client.Info(ctx, dclient.InfoOptions{})
 	if err != nil {
 		return v1.DockerStatus{}, err
 	}
-	return StatusFromDockerInfo(dockerInfo)
+	return StatusFromDockerInfo(res.Info)
 }
 
 func StatusFromDockerInfo(dockerInfo dockersystem.Info) (v1.DockerStatus, error) {
@@ -90,14 +90,14 @@ func Images() ([]v1.DockerImage, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
 	defer cancel()
-	summaries, err := client.ImageList(ctx, dockerimage.ListOptions{All: false})
+	summaries, err := client.ImageList(ctx, dclient.ImageListOptions{All: false})
 	if err != nil {
 		return nil, err
 	}
-	return utils.SummariesToImages(summaries)
+	return utils.SummariesToImages(summaries.Items)
 }
 
-// Checks whether the dockerInfo reflects a valid docker setup, and returns it if it does, or an
+// ValidateInfo checks whether the dockerInfo reflects a valid docker setup, and returns it if it does, or an
 // error otherwise.
 func ValidateInfo(GetInfo func() (*dockersystem.Info, error), ServerVersion func() (string, error)) (*dockersystem.Info, error) {
 	info, err := GetInfo()
@@ -138,12 +138,12 @@ func Info() (*dockersystem.Info, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
 	defer cancel()
-	dockerInfo, err := client.Info(ctx)
+	res, err := client.Info(ctx, dclient.InfoOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect Docker info: %v", err)
 	}
 
-	return &dockerInfo, nil
+	return &res.Info, nil
 }
 
 func APIVersion() ([]int, error) {
@@ -160,7 +160,7 @@ func VersionString() (string, error) {
 	if err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
 		defer cancel()
-		version, err := client.ServerVersion(ctx)
+		version, err := client.ServerVersion(ctx, dclient.ServerVersionOptions{})
 		if err == nil {
 			dockerVersion = version.Version
 		}
@@ -174,7 +174,7 @@ func APIVersionString() (string, error) {
 	if err == nil {
 		ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
 		defer cancel()
-		version, err := client.ServerVersion(ctx)
+		version, err := client.Ping(ctx, dclient.PingOptions{NegotiateAPIVersion: true})
 		if err == nil {
 			apiVersion = version.APIVersion
 		}

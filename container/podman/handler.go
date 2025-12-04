@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	dockercontainer "github.com/docker/docker/api/types/container"
+	dockercontainer "github.com/moby/moby/api/types/container"
 	"github.com/opencontainers/cgroups"
 
 	"github.com/google/cadvisor/container"
@@ -140,7 +140,9 @@ func newContainerHandler(
 			}
 		}
 		if nw, ok := c.NetworkSettings.Networks[c.HostConfig.NetworkMode.NetworkName()]; ok {
-			ipAddress = nw.IPAddress
+			if nw.IPAddress.IsValid() {
+				ipAddress = nw.IPAddress.String()
+			}
 		}
 	}
 

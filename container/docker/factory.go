@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"github.com/blang/semver/v4"
-	dockersystem "github.com/docker/docker/api/types/system"
-	dclient "github.com/docker/docker/client"
+	dockersystem "github.com/moby/moby/api/types/system"
+	dclient "github.com/moby/moby/client"
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"
@@ -180,8 +180,8 @@ func (f *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	id := dockerutil.ContainerNameToId(name)
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	ctnr, err := f.client.ContainerInspect(context.Background(), id)
-	if err != nil || !ctnr.State.Running {
+	res, err := f.client.ContainerInspect(context.Background(), id, dclient.ContainerInspectOptions{})
+	if err != nil || !res.Container.State.Running {
 		return false, true, fmt.Errorf("error inspecting container: %v", err)
 	}
 
