@@ -24,10 +24,9 @@ import (
 	"net/http"
 	"time"
 
-	dockertypes "github.com/docker/docker/api/types"
-	dockercontainer "github.com/docker/docker/api/types/container"
-	dockerimage "github.com/docker/docker/api/types/image"
-	dockersystem "github.com/docker/docker/api/types/system"
+	dockercontainer "github.com/moby/moby/api/types/container"
+	dockerimage "github.com/moby/moby/api/types/image"
+	dockersystem "github.com/moby/moby/api/types/system"
 
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/docker/utils"
@@ -139,7 +138,7 @@ func GetInfo() (*dockersystem.Info, error) {
 }
 
 func VersionString() (string, error) {
-	var version dockertypes.Version
+	var version dockersystem.VersionResponse
 	err := apiGetRequest("http://d/v1.0.0/version", &version)
 	if err != nil {
 		return "Unknown", err
@@ -149,7 +148,7 @@ func VersionString() (string, error) {
 }
 
 func APIVersionString() (string, error) {
-	var version dockertypes.Version
+	var version dockersystem.VersionResponse
 	err := apiGetRequest("http://d/v1.0.0/version", &version)
 	if err != nil {
 		return "Unknown", err
