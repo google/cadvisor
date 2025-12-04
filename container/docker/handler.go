@@ -325,15 +325,13 @@ func (h *dockerContainerHandler) GetSpec() (info.ContainerSpec, error) {
 	return spec, err
 }
 
-// TODO(vmarmol): Get from libcontainer API instead of cgroup manager when we don't have to support older Dockers.
 func (h *dockerContainerHandler) GetStats() (*info.ContainerStats, error) {
+	// TODO(vmarmol): Get from libcontainer API instead of cgroup manager when we don't have to support older Dockers.
 	stats, err := h.libcontainerHandler.GetStats()
-
-	stats.Health.Status = h.healthStatus
-
 	if err != nil {
 		return stats, err
 	}
+	stats.Health.Status = h.healthStatus
 
 	// Get filesystem stats.
 	err = FsStats(stats, h.machineInfoFactory, h.includedMetrics, h.storageDriver,
