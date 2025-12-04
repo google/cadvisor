@@ -398,3 +398,34 @@ func TestDockerFilesystemStats(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestDockerHealthState(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	containerID := fm.Docker().Run(framework.DockerRunArgs{
+		Image: "registry.k8s.io/busybox:1.27",
+		Args: []string{
+			"--health-cmd", "exit 0",
+			"--health-interval", "1s",
+		},
+	}, "sh", "-c", "sleep 10")
+
+	// Wait for the container to show up.
+	waitForContainer(containerID, fm)
+
+	getHealth := func() string {
+		containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, &info.ContainerInfoRequest{NumStats: 1})
+		require.NoError(t, err)
+		require.Len(t, containerInfo.Stats, 1)
+		return containerInfo.Stats[0].Health.Status
+	}
+
+	// Initially the container is in starting state.
+	require.Equal(t, "starting", getHealth())
+
+	// Eventually the container should be in healthy state.
+	require.Eventually(t, func() bool {
+		return getHealth() == "healthy"
+	}, 10*time.Second, 100*time.Millisecond)
+}

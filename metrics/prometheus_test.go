@@ -336,3 +336,23 @@ func TestGetMinCoreScalingRatio(t *testing.T) {
 	assert.Contains(t, values, 0.5)
 	assert.Contains(t, values, 0.3)
 }
+
+func TestGetContainerHealthState(t *testing.T) {
+	testCases := []struct {
+		name           string
+		containerStats *info.ContainerStats
+		expectedValue  float64
+	}{
+		{name: "healthy", expectedValue: 1.0, containerStats: &info.ContainerStats{Health: info.Health{Status: "healthy"}}},
+		{name: "unhealthy", expectedValue: 0.0, containerStats: &info.ContainerStats{Health: info.Health{Status: "unhealthy"}}},
+		{name: "starting", expectedValue: 0.0, containerStats: &info.ContainerStats{Health: info.Health{Status: "unknown"}}},
+		{name: "empty", expectedValue: -1.0, containerStats: &info.ContainerStats{}},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			metricVals := getContainerHealthState(tc.containerStats)
+			assert.Equal(t, 1, len(metricVals))
+			assert.Equal(t, tc.expectedValue, metricVals[0].value)
+		})
+	}
+}

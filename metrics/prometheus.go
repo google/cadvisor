@@ -139,19 +139,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:      "container_health_state",
 				help:      "The result of the container's health check",
 				valueType: prometheus.GaugeValue,
-				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{
-						// inline if to check if s.health.status = healthy
-						value: func(s *info.ContainerStats) float64 {
-							if s.Health.Status == "healthy" {
-								return 1
-							} else {
-								return 0
-							}
-						}(s),
-						timestamp: s.Timestamp,
-					}}
-				},
+				getValues: getContainerHealthState,
 			},
 		},
 		includedMetrics: includedMetrics,
@@ -2108,4 +2096,19 @@ func getMinCoreScalingRatio(s *info.ContainerStats) metricValues {
 		})
 	}
 	return values
+}
+
+func getContainerHealthState(s *info.ContainerStats) metricValues {
+	value := float64(0)
+	switch s.Health.Status {
+	case "healthy":
+		value = 1
+	case "": // if container has no health check defined
+		value = -1
+	default: // starting or unhealthy
+	}
+	return metricValues{{
+		value:     value,
+		timestamp: s.Timestamp,
+	}}
 }
