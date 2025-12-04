@@ -153,6 +153,7 @@ func newContainerHandler(
 		thinPoolName:       thinPoolName,
 		zfsParent:          zfsParent,
 		reference: info.ContainerReference{
+			// Add the name and bare ID as aliases of the container.
 			Id:        id,
 			Name:      name,
 			Aliases:   []string{strings.TrimPrefix(ctnr.Name, "/"), id},
