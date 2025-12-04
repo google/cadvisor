@@ -212,11 +212,11 @@ func determineDeviceStorage(storageDriver docker.StorageDriver, storageDir strin
 	}
 }
 
-func (h containerHandler) ContainerReference() (info.ContainerReference, error) {
+func (h *containerHandler) ContainerReference() (info.ContainerReference, error) {
 	return h.reference, nil
 }
 
-func (h containerHandler) needNet() bool {
+func (h *containerHandler) needNet() bool {
 	if h.metrics.Has(container.NetworkUsageMetrics) {
 		h.networkMode.IsContainer()
 		return !h.networkMode.IsContainer()
@@ -224,7 +224,7 @@ func (h containerHandler) needNet() bool {
 	return false
 }
 
-func (h containerHandler) GetSpec() (info.ContainerSpec, error) {
+func (h *containerHandler) GetSpec() (info.ContainerSpec, error) {
 	hasFilesystem := h.metrics.Has(container.DiskUsageMetrics)
 
 	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, h.needNet(), hasFilesystem)
@@ -240,7 +240,7 @@ func (h containerHandler) GetSpec() (info.ContainerSpec, error) {
 	return spec, nil
 }
 
-func (h containerHandler) GetStats() (*info.ContainerStats, error) {
+func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 	stats, err := h.libcontainerHandler.GetStats()
 	if err != nil {
 		return stats, err
@@ -259,15 +259,15 @@ func (h containerHandler) GetStats() (*info.ContainerStats, error) {
 	return stats, nil
 }
 
-func (h containerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
+func (h *containerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
 	return []info.ContainerReference{}, nil
 }
 
-func (h containerHandler) ListProcesses(listType container.ListType) ([]int, error) {
+func (h *containerHandler) ListProcesses(listType container.ListType) ([]int, error) {
 	return h.libcontainerHandler.GetProcesses()
 }
 
-func (h containerHandler) GetCgroupPath(resource string) (string, error) {
+func (h *containerHandler) GetCgroupPath(resource string) (string, error) {
 	var res string
 	if !cgroups.IsCgroup2UnifiedMode() {
 		res = resource
@@ -280,30 +280,30 @@ func (h containerHandler) GetCgroupPath(resource string) (string, error) {
 	return path, nil
 }
 
-func (h containerHandler) GetContainerLabels() map[string]string {
+func (h *containerHandler) GetContainerLabels() map[string]string {
 	return h.labels
 }
 
-func (h containerHandler) GetContainerIPAddress() string {
+func (h *containerHandler) GetContainerIPAddress() string {
 	return h.ipAddress
 }
 
-func (h containerHandler) Exists() bool {
+func (h *containerHandler) Exists() bool {
 	return common.CgroupExists(h.cgroupPaths)
 }
 
-func (h containerHandler) Cleanup() {
+func (h *containerHandler) Cleanup() {
 	if h.fsHandler != nil {
 		h.fsHandler.Stop()
 	}
 }
 
-func (h containerHandler) Start() {
+func (h *containerHandler) Start() {
 	if h.fsHandler != nil {
 		h.fsHandler.Start()
 	}
 }
 
-func (h containerHandler) Type() container.ContainerType {
+func (h *containerHandler) Type() container.ContainerType {
 	return container.ContainerTypePodman
 }
