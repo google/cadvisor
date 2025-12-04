@@ -94,7 +94,7 @@ type containerHandler struct {
 	libcontainerHandler *containerlibcontainer.Handler
 
 	// the docker client is needed to inspect the container and get the health status
-	client docker.APIClient
+	client dclient.APIClient
 }
 
 var _ container.ContainerHandler = &containerHandler{}
@@ -199,26 +199,26 @@ func newContainerHandler(
 		rootfsStorageDir:   rootfsStorageDir,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
+		image:              ctnr.Config.Image,
 		metrics:            includedMetrics,
 		thinPoolName:       thinPoolName,
 		zfsParent:          zfsParent,
 		client:             client,
+		reference: info.ContainerReference{
+			// Add the name and bare ID as aliases of the container.
+			Id:        id,
+			Name:      name,
+			Aliases:   []string{strings.TrimPrefix(ctnr.Name, "/"), id},
+			Namespace: DockerNamespace,
+		},
+		libcontainerHandler: containerlibcontainer.NewHandler(cgroupManager, rootFs, ctnr.State.Pid, metrics),
 	}
+
 	// Timestamp returned by Docker is in time.RFC3339Nano format.
 	handler.creationTime, err = time.Parse(time.RFC3339Nano, ctnr.Created)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse the create timestamp %q for container %q: %v", ctnr.Created, id, err)
 	}
-	handler.libcontainerHandler = containerlibcontainer.NewHandler(cgroupManager, rootFs, ctnr.State.Pid, metrics)
-
-	// Add the name and bare ID as aliases of the container.
-	handler.reference = info.ContainerReference{
-		Id:        id,
-		Name:      name,
-		Aliases:   []string{strings.TrimPrefix(ctnr.Name, "/"), id},
-		Namespace: DockerNamespace,
-	}
-	handler.image = ctnr.Config.Image
 
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
