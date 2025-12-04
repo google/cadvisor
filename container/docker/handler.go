@@ -188,6 +188,24 @@ func newContainerHandler(
 		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 	}
 
+	// Obtain the IP address for the container.
+	var ipAddress string
+	if ctnr.NetworkSettings != nil && ctnr.HostConfig != nil {
+		c := ctnr
+		if ctnr.HostConfig.NetworkMode.IsContainer() {
+			// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
+			// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
+			containerID := ctnr.HostConfig.NetworkMode.ConnectedContainer()
+			c, err = client.ContainerInspect(context.Background(), containerID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
+			}
+		}
+		if nw, ok := c.NetworkSettings.Networks[c.HostConfig.NetworkMode.NetworkName()]; ok {
+			ipAddress = nw.IPAddress
+		}
+	}
+
 	// Do not report network metrics for containers that share netns with another container.
 	includedMetrics := common.RemoveNetMetrics(metrics, ctnr.HostConfig.NetworkMode.IsContainer())
 
@@ -197,6 +215,7 @@ func newContainerHandler(
 		storageDriver:      storageDriver,
 		fsInfo:             fsInfo,
 		rootfsStorageDir:   rootfsStorageDir,
+		ipAddress:          ipAddress,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
 		image:              ctnr.Config.Image,
@@ -223,21 +242,6 @@ func newContainerHandler(
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
 	}
-
-	// Obtain the IP address for the container.
-	// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
-	// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
-	ipAddress := ctnr.NetworkSettings.IPAddress
-	networkMode := string(ctnr.HostConfig.NetworkMode)
-	if ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
-		containerID := strings.TrimPrefix(networkMode, "container:")
-		c, err := client.ContainerInspect(context.Background(), containerID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
-		}
-		ipAddress = c.NetworkSettings.IPAddress
-	}
-	handler.ipAddress = ipAddress
 
 	if includedMetrics.Has(container.DiskUsageMetrics) {
 		handler.fsHandler = &FsHandler{
