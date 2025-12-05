@@ -58,7 +58,7 @@ function run_tests() {
     --privileged \
     --cap-add="sys_admin" \
     --entrypoint="" \
-    gcr.io/k8s-staging-test-infra/bootstrap \
+    gcr.io/k8s-staging-test-infra/bootstrap:v20250702-52f5173c3a \
     bash -c "export DEBIAN_FRONTEND=noninteractive && \
     apt update && \
     apt install -y $PACKAGES && \
