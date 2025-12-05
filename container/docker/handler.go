@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	dclient "github.com/docker/docker/client"
+	dclient "github.com/moby/moby/client"
 	"github.com/opencontainers/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"golang.org/x/net/context"
@@ -183,9 +183,31 @@ func newContainerHandler(
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	ctnr, err := client.ContainerInspect(context.Background(), id)
+	res, err := client.ContainerInspect(context.Background(), id, dclient.ContainerInspectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
+	}
+	ctnr := res.Container
+
+	// Obtain the IP address for the container.
+	var ipAddress string
+	if ctnr.NetworkSettings != nil && ctnr.HostConfig != nil {
+		c := ctnr
+		if ctnr.HostConfig.NetworkMode.IsContainer() {
+			// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
+			// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
+			containerID := ctnr.HostConfig.NetworkMode.ConnectedContainer()
+			res, err := client.ContainerInspect(context.Background(), containerID, dclient.ContainerInspectOptions{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
+			}
+			c = res.Container
+		}
+		if nw, ok := c.NetworkSettings.Networks[c.HostConfig.NetworkMode.NetworkName()]; ok {
+			if nw.IPAddress.IsValid() {
+				ipAddress = nw.IPAddress.String()
+			}
+		}
 	}
 
 	// Do not report network metrics for containers that share netns with another container.
@@ -197,6 +219,7 @@ func newContainerHandler(
 		storageDriver:      storageDriver,
 		fsInfo:             fsInfo,
 		rootfsStorageDir:   rootfsStorageDir,
+		ipAddress:          ipAddress,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
 		image:              ctnr.Config.Image,
@@ -223,21 +246,6 @@ func newContainerHandler(
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
 	}
-
-	// Obtain the IP address for the container.
-	// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
-	// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
-	ipAddress := ctnr.NetworkSettings.IPAddress
-	networkMode := string(ctnr.HostConfig.NetworkMode)
-	if ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
-		containerID := strings.TrimPrefix(networkMode, "container:")
-		c, err := client.ContainerInspect(context.Background(), containerID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
-		}
-		ipAddress = c.NetworkSettings.IPAddress
-	}
-	handler.ipAddress = ipAddress
 
 	if includedMetrics.Has(container.DiskUsageMetrics) {
 		handler.fsHandler = &FsHandler{
@@ -320,13 +328,14 @@ func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	ctnr, err := h.client.ContainerInspect(context.Background(), h.reference.Id)
+	res, err := h.client.ContainerInspect(context.Background(), h.reference.Id, dclient.ContainerInspectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %q: %v", h.reference.Id, err)
 	}
+	ctnr := res.Container
 
 	if ctnr.State.Health != nil {
-		stats.Health.Status = ctnr.State.Health.Status
+		stats.Health.Status = string(ctnr.State.Health.Status)
 	}
 
 	// Get filesystem stats.
