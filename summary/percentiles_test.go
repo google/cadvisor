@@ -30,22 +30,48 @@ func assertPercentile(t *testing.T, s Uint64Slice, f float64, want uint64) {
 }
 
 func TestPercentile(t *testing.T) {
-	N := 100
-	s := make(Uint64Slice, 0, N)
-	for i := N; i > 0; i-- {
-		s = append(s, uint64(i))
+	tests := []struct {
+		name string
+		data Uint64Slice
+		p    float64
+		want uint64
+	}{
+
+		{"20p of 100 elements", generateSlice(100, true), 0.2, 20},
+		{"70p of 100 elements", generateSlice(100, true), 0.7, 70},
+		{"90p of 100 elements", generateSlice(100, true), 0.9, 90},
+
+		// 90p should be between 94 and 95. Promoted to 95.
+		{"20p of 105 elements", generateSlice(105, true), 0.2, 21},
+		{"70p of 105 elements", generateSlice(105, true), 0.7, 74},
+		{"90p of 105 elements", generateSlice(105, true), 0.9, 95},
+
+		// boundary value
+		{"90p of 5 elements", Uint64Slice{1, 2, 3, 4, 5}, 0.9, 5},
+		{"Out of range p > 1", Uint64Slice{1, 2, 3, 4, 5}, 1.1, 0},
+		{"Empty slice", Uint64Slice{}, 0, 0},
+		{"Zero percentile", generateSlice(100, true), 0, 1},
+		{"100p of 11 elements", Uint64Slice{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, 1.0, 11},
+		{"100p of 105 elements", generateSlice(105, true), 1.0, 105},
 	}
-	assertPercentile(t, s, 0.2, 20)
-	assertPercentile(t, s, 0.7, 70)
-	assertPercentile(t, s, 0.9, 90)
-	N = 105
-	for i := 101; i <= N; i++ {
-		s = append(s, uint64(i))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assertPercentile(t, tt.data, tt.p, tt.want)
+		})
 	}
-	// 90p should be between 94 and 95. Promoted to 95.
-	assertPercentile(t, s, 0.2, 21)
-	assertPercentile(t, s, 0.7, 74)
-	assertPercentile(t, s, 0.9, 95)
+}
+
+func generateSlice(n int, descending bool) Uint64Slice {
+	s := make(Uint64Slice, 0, n)
+	for i := 1; i <= n; i++ {
+		if descending {
+			s = append(s, uint64(n-i+1))
+		} else {
+			s = append(s, uint64(i))
+		}
+	}
+	return s
 }
 
 func TestMean(t *testing.T) {
