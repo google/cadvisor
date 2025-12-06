@@ -21,8 +21,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/cadvisor/resctrl"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/google/cadvisor/resctrl"
 )
 
 func TestNewManager(t *testing.T) {

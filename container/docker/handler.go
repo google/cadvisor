@@ -16,6 +16,7 @@
 package docker
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -27,7 +28,6 @@ import (
 	dclient "github.com/docker/docker/client"
 	"github.com/opencontainers/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"golang.org/x/net/context"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
