@@ -21,7 +21,8 @@ import (
 	"regexp"
 	"strings"
 
-	"golang.org/x/net/context"
+	"context"
+
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"

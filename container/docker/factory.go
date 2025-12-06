@@ -23,10 +23,11 @@ import (
 	"sync"
 	"time"
 
+	"context"
+
 	"github.com/blang/semver/v4"
 	dockersystem "github.com/docker/docker/api/types/system"
 	dclient "github.com/docker/docker/client"
-	"golang.org/x/net/context"
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"

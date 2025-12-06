@@ -21,9 +21,10 @@ import (
 	"strconv"
 	"time"
 
+	"context"
+
 	dockerimage "github.com/docker/docker/api/types/image"
 	dockersystem "github.com/docker/docker/api/types/system"
-	"golang.org/x/net/context"
 
 	"github.com/google/cadvisor/container/docker/utils"
 	v1 "github.com/google/cadvisor/info/v1"
