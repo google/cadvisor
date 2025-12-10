@@ -19,10 +19,11 @@ package machine
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
+
+	"golang.org/x/sys/unix"
 )
 
 var rex = regexp.MustCompile("(PRETTY_NAME)=(.*)")
@@ -30,12 +31,12 @@ var rex = regexp.MustCompile("(PRETTY_NAME)=(.*)")
 // getOperatingSystem gets the name of the current operating system.
 func getOperatingSystem() (string, error) {
 	if runtime.GOOS == "darwin" || runtime.GOOS == "freebsd" {
-		cmd := exec.Command("uname", "-s")
-		osName, err := cmd.Output()
+		uname := unix.Utsname{}
+		err := unix.Uname(&uname)
 		if err != nil {
 			return "", err
 		}
-		return string(osName), nil
+		return unix.ByteSliceToString(uname.Sysname[:]), nil
 	}
 	bytes, err := os.ReadFile("/etc/os-release")
 	if err != nil && os.IsNotExist(err) {
