@@ -23,9 +23,10 @@ import (
 )
 
 type containerdClientMock struct {
-	cntrs     map[string]*containers.Container
-	returnErr error
-	tasks     map[string]*task.Process
+	cntrs      map[string]*containers.Container
+	returnErr  error
+	tasks      map[string]*task.Process
+	exitStatus uint32
 }
 
 func (c *containerdClientMock) LoadContainer(ctx context.Context, id string) (*containers.Container, error) {
@@ -56,6 +57,13 @@ func (c *containerdClientMock) LoadTaskProcess(ctx context.Context, id string) (
 		return nil, fmt.Errorf("unable to find task for container %q", id)
 	}
 	return task, nil
+}
+
+func (c *containerdClientMock) TaskExitStatus(ctx context.Context, id string) (uint32, error) {
+	if c.returnErr != nil {
+		return 0, c.returnErr
+	}
+	return c.exitStatus, nil
 }
 
 func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr error) ContainerdClient {

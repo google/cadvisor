@@ -16,17 +16,29 @@
 package docker
 
 import (
+	"context"
 	"os"
 	"path"
 	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types/container"
+	dclient "github.com/docker/docker/client"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 )
+
+type mockDockerClientForExitCode struct {
+	dclient.APIClient
+	inspectResp container.InspectResponse
+	inspectErr  error
+}
+
+func (m *mockDockerClientForExitCode) ContainerInspect(ctx context.Context, containerID string) (container.InspectResponse, error) {
+	return m.inspectResp, m.inspectErr
+}
 
 func TestStorageDirDetectionWithOldVersions(t *testing.T) {
 	as := assert.New(t)
@@ -217,4 +229,91 @@ func TestAddDiskStats(t *testing.T) {
 	as.Equal(ioInProgress, fileSystem.DiskStats.IoInProgress, "IoInProgress metric should be %d but was %d", ioInProgress, fileSystem.DiskStats.IoInProgress)
 	as.Equal(ioTime, fileSystem.DiskStats.IoTime, "IoTime metric should be %d but was %d", ioTime, fileSystem.DiskStats.IoTime)
 	as.Equal(weightedIoTime, fileSystem.DiskStats.WeightedIoTime, "WeightedIoTime metric should be %d but was %d", weightedIoTime, fileSystem.DiskStats.WeightedIoTime)
+}
+
+func TestGetExitCode(t *testing.T) {
+	tests := []struct {
+		name         string
+		running      bool
+		exitCode     int
+		inspectErr   error
+		expectErr    bool
+		errContains  string
+		expectedCode int
+	}{
+		{
+			name:         "successful exit code 0",
+			running:      false,
+			exitCode:     0,
+			inspectErr:   nil,
+			expectErr:    false,
+			expectedCode: 0,
+		},
+		{
+			name:         "successful exit code 1",
+			running:      false,
+			exitCode:     1,
+			inspectErr:   nil,
+			expectErr:    false,
+			expectedCode: 1,
+		},
+		{
+			name:         "container still running",
+			running:      true,
+			exitCode:     0,
+			inspectErr:   nil,
+			expectErr:    true,
+			errContains:  "still running",
+			expectedCode: -1,
+		},
+		{
+			name:         "inspect fails",
+			running:      false,
+			exitCode:     0,
+			inspectErr:   assert.AnError,
+			expectErr:    true,
+			errContains:  "failed to inspect",
+			expectedCode: -1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			as := assert.New(t)
+
+			inspectResp := container.InspectResponse{
+				ContainerJSONBase: &container.ContainerJSONBase{
+					State: &container.State{
+						Running:  tt.running,
+						ExitCode: tt.exitCode,
+					},
+				},
+			}
+
+			mockClient := &mockDockerClientForExitCode{
+				inspectResp: inspectResp,
+				inspectErr:  tt.inspectErr,
+			}
+
+			h := &containerHandler{
+				client: mockClient,
+				reference: info.ContainerReference{
+					Id: "test-container-id",
+				},
+			}
+
+			code, err := h.GetExitCode()
+
+			if tt.expectErr {
+				as.Error(err)
+				if tt.errContains != "" {
+					as.Contains(err.Error(), tt.errContains)
+				}
+				as.Equal(tt.expectedCode, code)
+			} else {
+				as.NoError(err)
+				as.Equal(tt.expectedCode, code)
+			}
+		})
+	}
 }

@@ -1028,8 +1028,13 @@ func (m *manager) destroyContainer(containerName string) error {
 		return nil
 	}
 
-	// Tell the container to stop.
-	err := cont.Stop()
+	exitCode, err := cont.handler.GetExitCode()
+	if err != nil {
+		klog.V(4).Infof("Could not retrieve exit code for container %q: %v (using -1)", containerName, err)
+		exitCode = -1
+	}
+
+	err = cont.Stop()
 	if err != nil {
 		return err
 	}
@@ -1042,7 +1047,7 @@ func (m *manager) destroyContainer(containerName string) error {
 			Name:      alias,
 		})
 	}
-	klog.V(3).Infof("Destroyed container: %q (aliases: %v, namespace: %q)", containerName, cont.info.Aliases, cont.info.Namespace)
+	klog.V(3).Infof("Destroyed container: %q (aliases: %v, namespace: %q, exit_code: %d)", containerName, cont.info.Aliases, cont.info.Namespace, exitCode)
 
 	contRef, err := cont.handler.ContainerReference()
 	if err != nil {
@@ -1053,6 +1058,11 @@ func (m *manager) destroyContainer(containerName string) error {
 		ContainerName: contRef.Name,
 		Timestamp:     time.Now(),
 		EventType:     info.EventContainerDeletion,
+		EventData: info.EventData{
+			ContainerDeletion: &info.ContainerDeletionEventData{
+				ExitCode: exitCode,
+			},
+		},
 	}
 	err = m.eventHandler.AddEvent(newEvent)
 	if err != nil {

@@ -101,6 +101,11 @@ func (h *MockContainerHandler) GetContainerIPAddress() string {
 	return args.Get(0).(string)
 }
 
+func (h *MockContainerHandler) GetExitCode() (int, error) {
+	args := h.Called()
+	return args.Int(0), args.Error(1)
+}
+
 type FactoryForMockContainerHandler struct {
 	Name                        string
 	PrepareContainerHandlerFunc func(name string, handler *MockContainerHandler)

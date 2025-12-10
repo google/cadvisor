@@ -15,6 +15,8 @@
 package api
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -77,4 +79,53 @@ func waitForStaticEvent(containerID string, urlRequest string, t *testing.T, fm 
 		}
 	}
 	require.True(t, found)
+}
+
+func TestContainerDeletionExitCode(t *testing.T) {
+	tests := []struct {
+		name     string
+		exitCode int
+	}{
+		{
+			name:     "successful exit",
+			exitCode: 0,
+		},
+		{
+			name:     "error exit",
+			exitCode: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fm := framework.New(t)
+			defer fm.Cleanup()
+
+			containerID := fm.Docker().RunBusybox("sh", "-c", "exit "+strconv.Itoa(tt.exitCode))
+
+			err := framework.RetryForDuration(func() error {
+				events, err := fm.Cadvisor().Client().EventStaticInfo("?deletion_events=true&subcontainers=true")
+				if err != nil {
+					return err
+				}
+
+				for _, ev := range events {
+					if ev.EventType == info.EventContainerDeletion &&
+						strings.Contains(ev.ContainerName, containerID) {
+						if ev.EventData.ContainerDeletion == nil {
+							return fmt.Errorf("deletion event data is nil")
+						}
+						if ev.EventData.ContainerDeletion.ExitCode != tt.exitCode {
+							t.Errorf("expected exit code %d, got %d",
+								tt.exitCode, ev.EventData.ContainerDeletion.ExitCode)
+						}
+						return nil
+					}
+				}
+				return fmt.Errorf("deletion event not found for container %s", containerID)
+			}, 30*time.Second)
+
+			require.NoError(t, err)
+		})
+	}
 }
