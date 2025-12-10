@@ -27,9 +27,11 @@ import (
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
 	containertest "github.com/google/cadvisor/container/testing"
+	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
 	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/stats"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 
 	"github.com/stretchr/testify/assert"
@@ -531,4 +533,114 @@ func TestDockerContainersInfo(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error %q but received %q", expectedError, err)
 	}
+}
+
+func TestDestroyContainerWithExitCode(t *testing.T) {
+	mockHandler := containertest.NewMockContainerHandler("/test")
+	mockHandler.On("GetExitCode").Return(42, nil)
+
+	memoryCache := memory.New(60*time.Second, nil)
+	m := &manager{
+		quitChannels: make([]chan error, 0, 2),
+		memoryCache:  memoryCache,
+	}
+
+	cont := &containerData{
+		handler:          mockHandler,
+		memoryCache:      memoryCache,
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test",
+			},
+		},
+		stop: make(chan struct{}),
+	}
+
+	m.containers.Store(namespacedContainerName{Name: "/test"}, cont)
+
+	mockEventHandler := &mockEventHandler{
+		events: make([]*info.Event, 0),
+	}
+	m.eventHandler = mockEventHandler
+
+	err := m.destroyContainer("/test")
+	if err != nil {
+		t.Logf("destroyContainer error: %v", err)
+	}
+	assert.Nil(t, err)
+
+	assert.Len(t, mockEventHandler.events, 1)
+	event := mockEventHandler.events[0]
+	assert.Equal(t, info.EventContainerDeletion, event.EventType)
+	assert.NotNil(t, event.EventData.ContainerDeletion)
+	assert.Equal(t, 42, event.EventData.ContainerDeletion.ExitCode)
+
+	mockHandler.AssertExpectations(t)
+}
+
+func TestDestroyContainerExitCodeUnavailable(t *testing.T) {
+	mockHandler := containertest.NewMockContainerHandler("/test")
+	mockHandler.On("GetExitCode").Return(-1, fmt.Errorf("container not found"))
+
+	memoryCache := memory.New(60*time.Second, nil)
+	m := &manager{
+		quitChannels: make([]chan error, 0, 2),
+		memoryCache:  memoryCache,
+	}
+
+	cont := &containerData{
+		handler:          mockHandler,
+		memoryCache:      memoryCache,
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test",
+			},
+		},
+		stop: make(chan struct{}),
+	}
+
+	m.containers.Store(namespacedContainerName{Name: "/test"}, cont)
+
+	mockEventHandler := &mockEventHandler{
+		events: make([]*info.Event, 0),
+	}
+	m.eventHandler = mockEventHandler
+
+	err := m.destroyContainer("/test")
+	if err != nil {
+		t.Logf("destroyContainer error: %v", err)
+	}
+	assert.Nil(t, err)
+
+	assert.Len(t, mockEventHandler.events, 1)
+	event := mockEventHandler.events[0]
+	assert.Equal(t, info.EventContainerDeletion, event.EventType)
+	assert.NotNil(t, event.EventData.ContainerDeletion)
+	assert.Equal(t, -1, event.EventData.ContainerDeletion.ExitCode)
+
+	mockHandler.AssertExpectations(t)
+}
+
+type mockEventHandler struct {
+	events []*info.Event
+}
+
+func (m *mockEventHandler) AddEvent(e *info.Event) error {
+	m.events = append(m.events, e)
+	return nil
+}
+
+func (m *mockEventHandler) WatchEvents(request *events.Request) (*events.EventChannel, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockEventHandler) GetEvents(request *events.Request) ([]*info.Event, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockEventHandler) StopWatch(watchID int) {
 }

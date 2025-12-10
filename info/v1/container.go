@@ -1104,6 +1104,9 @@ const (
 type EventData struct {
 	// Information about an OOM kill event.
 	OomKill *OomKillEventData `json:"oom,omitempty"`
+
+	// Information about a container deletion event.
+	ContainerDeletion *ContainerDeletionEventData `json:"container_deletion,omitempty"`
 }
 
 // Information related to an OOM kill instance
@@ -1113,4 +1116,11 @@ type OomKillEventData struct {
 
 	// The name of the killed process
 	ProcessName string `json:"process_name"`
+}
+
+// Information related to a container deletion event
+type ContainerDeletionEventData struct {
+	// ExitCode is the exit code of the container.
+	// A value of -1 indicates the exit code was not available or not applicable.
+	ExitCode int `json:"exit_code"`
 }

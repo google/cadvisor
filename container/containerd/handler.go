@@ -50,6 +50,7 @@ type containerdContainerHandler struct {
 	includedMetrics container.MetricSet
 
 	libcontainerHandler *containerlibcontainer.Handler
+	client              ContainerdClient
 }
 
 var _ container.ContainerHandler = &containerdContainerHandler{}
@@ -143,6 +144,7 @@ func newContainerdContainerHandler(
 		includedMetrics:     metrics,
 		reference:           containerReference,
 		libcontainerHandler: libcontainerHandler,
+		client:              client,
 	}
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
@@ -247,4 +249,13 @@ func (h *containerdContainerHandler) Cleanup() {
 func (h *containerdContainerHandler) GetContainerIPAddress() string {
 	// containerd doesnt take care of networking.So it doesnt maintain networking states
 	return ""
+}
+
+func (h *containerdContainerHandler) GetExitCode() (int, error) {
+	ctx := context.Background()
+	exitStatus, err := h.client.TaskExitStatus(ctx, h.reference.Id)
+	if err != nil {
+		return -1, err
+	}
+	return int(exitStatus), nil
 }

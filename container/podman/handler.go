@@ -323,3 +323,20 @@ func (h *containerHandler) Start() {
 func (h *containerHandler) Type() container.ContainerType {
 	return container.ContainerTypePodman
 }
+
+func (h *containerHandler) GetExitCode() (int, error) {
+	ctnr, err := InspectContainer(h.reference.Id)
+	if err != nil {
+		return -1, fmt.Errorf("failed to inspect container %s: %w", h.reference.Id, err)
+	}
+
+	if ctnr.State == nil {
+		return -1, fmt.Errorf("container state not available for %s", h.reference.Id)
+	}
+
+	if ctnr.State.Running {
+		return -1, fmt.Errorf("container %s is still running", h.reference.Id)
+	}
+
+	return ctnr.State.ExitCode, nil
+}
