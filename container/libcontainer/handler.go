@@ -771,6 +771,8 @@ func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 	ret.Cpu.CFS.Periods = s.CpuStats.ThrottlingData.Periods
 	ret.Cpu.CFS.ThrottledPeriods = s.CpuStats.ThrottlingData.ThrottledPeriods
 	ret.Cpu.CFS.ThrottledTime = s.CpuStats.ThrottlingData.ThrottledTime
+	ret.Cpu.CFS.BurstsPeriods = s.CpuStats.BurstData.BurstsPeriods
+	ret.Cpu.CFS.BurstTime = s.CpuStats.BurstData.BurstTime
 	setPSIStats(s.CpuStats.PSI, &ret.Cpu.PSI)
 
 	if !withPerCPU {

@@ -428,3 +428,39 @@ func TestIOCostMetrics(t *testing.T) {
 		})
 	}
 }
+
+func TestCPUBurstMetrics(t *testing.T) {
+	containerStats := &info.ContainerStats{
+		Timestamp: time.Unix(1395066363, 0),
+		Cpu: info.CpuStats{
+			CFS: info.CpuCFS{
+				BurstsPeriods: 25,
+				BurstTime:     500000000,
+			},
+		},
+	}
+
+	testCases := []struct {
+		name          string
+		getValue      func() float64
+		expectedValue float64
+	}{
+		{
+			name:          "BurstsPeriods",
+			getValue:      func() float64 { return float64(containerStats.Cpu.CFS.BurstsPeriods) },
+			expectedValue: 25.0,
+		},
+		{
+			name:          "BurstTime",
+			getValue:      func() float64 { return float64(containerStats.Cpu.CFS.BurstTime) / float64(time.Second) },
+			expectedValue: 0.5,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := tc.getValue()
+			assert.Equal(t, tc.expectedValue, result)
+		})
+	}
+}

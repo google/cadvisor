@@ -234,6 +234,30 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 							timestamp: s.Timestamp,
 						}}
 				},
+			}, {
+				name:      "container_cpu_cfs_burst_periods_total",
+				help:      "Number of periods when burst occurs.",
+				valueType: prometheus.CounterValue,
+				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{
+						{
+							value:     float64(s.Cpu.CFS.BurstsPeriods),
+							timestamp: s.Timestamp,
+						}}
+				},
+			}, {
+				name:      "container_cpu_cfs_burst_seconds_total",
+				help:      "Total time duration the container has been bursted.",
+				valueType: prometheus.CounterValue,
+				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{
+						{
+							value:     float64(s.Cpu.CFS.BurstTime) / float64(time.Second),
+							timestamp: s.Timestamp,
+						}}
+				},
 			},
 		}...)
 	}

@@ -329,6 +329,13 @@ type CpuCFS struct {
 	// Total time duration for which tasks in the cgroup have been throttled.
 	// Unit: nanoseconds.
 	ThrottledTime uint64 `json:"throttled_time"`
+
+	// Total number of periods when CPU burst occurs.
+	BurstsPeriods uint64 `json:"bursts_periods"`
+
+	// Total time duration when CPU burst occurs.
+	// Unit: nanoseconds.
+	BurstTime uint64 `json:"burst_time"`
 }
 
 // Cpu Aggregated scheduler statistics
