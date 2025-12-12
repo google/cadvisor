@@ -320,6 +320,8 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							Periods:          723,
 							ThrottledPeriods: 18,
 							ThrottledTime:    1724314000,
+							BurstsPeriods:    25,
+							BurstTime:        500000000,
 						},
 						Schedstat: info.CpuSchedstat{
 							RunTime:      53643567,
