@@ -36,7 +36,8 @@ function run_tests() {
   # Add safe.directory as workaround for https://github.com/actions/runner/issues/2033
   # Build for amd64 to match the test container
   BUILD_CMD="git config --global safe.directory /go/src/github.com/google/cadvisor && env GOOS=linux GOARCH=amd64 GO_FLAGS='$GO_FLAGS' CGO_ENABLED=0 ./build/build.sh && \
-    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c github.com/google/cadvisor/integration/tests/crio"
+    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c github.com/google/cadvisor/integration/tests/crio && \
+    env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go test -c github.com/google/cadvisor/integration/tests/common"
 
   if [ "$BUILD_PACKAGES" != "" ]; then
     BUILD_CMD="apt update && apt install -y $BUILD_PACKAGES && \

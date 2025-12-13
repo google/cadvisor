@@ -117,10 +117,10 @@ if [[ "${DOCKER_IN_DOCKER_ENABLED:-}" == "true" ]]; then
 fi
 
 echo ">> running integration tests against local cAdvisor"
-if ! [ -f ./api.test ] || ! [ -f ./healthz.test ]; then
-  echo You must compile the ./api.test binary and ./healthz.test binary before
+if ! [ -f ./api.test ] || ! [ -f ./common.test ]; then
+  echo You must compile the ./api.test binary and ./common.test binary before
   echo running the integration tests.
   exit 1
 fi
 ./api.test --vmodule=*=2 -test.v
-./healthz.test --vmodule=*=2 -test.v
+./common.test -test.v
