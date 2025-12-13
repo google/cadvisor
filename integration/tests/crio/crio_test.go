@@ -72,10 +72,10 @@ func findSubstring(s, substr string) bool {
 }
 
 // Sanity check the container by:
-// - Checking that the specified ID is associated with this container.
+// - Checking that the specified ID is a valid alias for this container.
 // - Verifying that stats are not empty.
 func sanityCheck(containerID string, containerInfo info.ContainerInfo, t *testing.T) {
-	// Check that the container has stats
+	assert.Contains(t, containerInfo.Aliases, containerID, "Alias %q should be in list of aliases %v", containerID, containerInfo.Aliases)
 	assert.NotEmpty(t, containerInfo.Stats, "Expected container to have stats")
 }
 
@@ -147,6 +147,43 @@ func TestCrioContainerByName(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "Container with ID %q should be found in cAdvisor", containerID)
+}
+
+// TestGetAllCrioContainers tests that cAdvisor can find multiple CRI-O containers.
+func TestGetAllCrioContainers(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	// Start two containers
+	containerID1 := fm.Crio().RunPause()
+	containerID2 := fm.Crio().RunPause()
+
+	// Wait for both containers to show up
+	waitForCrioContainer(containerID1, fm)
+	waitForCrioContainer(containerID2, fm)
+
+	// Query all containers via SubcontainersInfo
+	allInfo, err := fm.Cadvisor().Client().SubcontainersInfo("/", &info.ContainerInfoRequest{
+		NumStats: 1,
+	})
+	require.NoError(t, err)
+
+	// Find both containers
+	var found1, found2 bool
+	for _, container := range allInfo {
+		for _, alias := range container.Aliases {
+			if alias == containerID1 {
+				sanityCheck(containerID1, container, t)
+				found1 = true
+			}
+			if alias == containerID2 {
+				sanityCheck(containerID2, container, t)
+				found2 = true
+			}
+		}
+	}
+	assert.True(t, found1, "Container %q should be found in cAdvisor", containerID1)
+	assert.True(t, found2, "Container %q should be found in cAdvisor", containerID2)
 }
 
 // TestBasicCrioContainer tests basic container properties.
@@ -420,6 +457,14 @@ func TestCrioContainerDeletionExitCode(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+// TestCrioHealthState tests health state reporting for CRI-O containers.
+// Docker-style health checks (HEALTHCHECK instruction) are not supported by CRI-O.
+// CRI-O containers rely on Kubernetes liveness/readiness probes instead,
+// which are managed by the kubelet, not the container runtime.
+func TestCrioHealthState(t *testing.T) {
+	t.Skip("Skipping: Docker-style health checks are not supported by CRI-O (use Kubernetes probes instead)")
 }
 
 // TestCrioFilesystemStats tests filesystem statistics collection for CRI-O containers.
