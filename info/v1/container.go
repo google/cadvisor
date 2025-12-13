@@ -374,6 +374,10 @@ type DiskIoStats struct {
 	IoWaitTime     []PerDiskStats `json:"io_wait_time,omitempty"`
 	IoMerged       []PerDiskStats `json:"io_merged,omitempty"`
 	IoTime         []PerDiskStats `json:"io_time,omitempty"`
+	IoCostUsage    []PerDiskStats `json:"io_cost_usage,omitempty"`
+	IoCostWait     []PerDiskStats `json:"io_cost_wait,omitempty"`
+	IoCostIndebt   []PerDiskStats `json:"io_cost_indebt,omitempty"`
+	IoCostIndelay  []PerDiskStats `json:"io_cost_indelay,omitempty"`
 	PSI            PSIStats       `json:"psi"`
 }
 

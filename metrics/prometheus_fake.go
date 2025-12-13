@@ -578,6 +578,30 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								"Write":   6,
 							},
 						}},
+						IoCostUsage: []info.PerDiskStats{{
+							Device: "sda1",
+							Major:  8,
+							Minor:  1,
+							Stats:  map[string]uint64{"Count": 1500000},
+						}},
+						IoCostWait: []info.PerDiskStats{{
+							Device: "sda1",
+							Major:  8,
+							Minor:  1,
+							Stats:  map[string]uint64{"Count": 2500000},
+						}},
+						IoCostIndebt: []info.PerDiskStats{{
+							Device: "sda1",
+							Major:  8,
+							Minor:  1,
+							Stats:  map[string]uint64{"Count": 500000},
+						}},
+						IoCostIndelay: []info.PerDiskStats{{
+							Device: "sda1",
+							Major:  8,
+							Minor:  1,
+							Stats:  map[string]uint64{"Count": 750000},
+						}},
 						PSI: info.PSIStats{
 							Full: info.PSIData{
 								Avg10:  0.3,
