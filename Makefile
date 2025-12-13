@@ -38,7 +38,7 @@ docker-test: container-test
 test-integration:
 	GO_FLAGS=$(or $(GO_FLAGS),-race) ./build/build.sh
 	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/api
-	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/healthz
+	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/common
 	@./build/integration.sh
 
 docker-test-integration:
@@ -50,6 +50,7 @@ docker-test-integration-crio:
 test-integration-crio:
 	GO_FLAGS=$(or $(GO_FLAGS),-race) ./build/build.sh
 	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/crio
+	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/common
 	@./build/integration-crio.sh
 
 test-runner:

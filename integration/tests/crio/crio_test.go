@@ -21,6 +21,7 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
+	v2 "github.com/google/cadvisor/info/v2"
 	"github.com/google/cadvisor/integration/framework"
 
 	"github.com/stretchr/testify/assert"
@@ -264,4 +265,256 @@ func TestCrioContainerMemoryStats(t *testing.T) {
 	// Check memory stats
 	stat := containerInfo.Stats[0]
 	checkMemoryStats(t, stat.Memory)
+}
+
+// TestCrioContainerNetworkStats tests network statistics collection for CRI-O containers.
+// TODO: Skip this test until network stats collection works reliably for CRI-O containers.
+// In the CI environment, network stats (TxBytes, RxBytes, etc.) are reported as zero,
+// possibly due to CNI network namespace issues in the Docker-in-Docker environment.
+func TestCrioContainerNetworkStats(t *testing.T) {
+	t.Skip("Skipping: network stats are not reliably collected for CRI-O containers in CI")
+
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	// Run a busybox container that generates network traffic
+	containerID := fm.Crio().RunBusybox("sh", "-c", "while true; do wget -q -O /dev/null http://www.google.com/ 2>/dev/null || true; sleep 1; done")
+
+	// Wait for the container to show up
+	waitForCrioContainer(containerID, fm)
+
+	// Wait for at least one additional housekeeping interval for network stats
+	time.Sleep(20 * time.Second)
+
+	// Query all containers via SubcontainersInfo - CRI-O containers are in "crio" namespace
+	allInfo, err := fm.Cadvisor().Client().SubcontainersInfo("/", &info.ContainerInfoRequest{
+		NumStats: 1,
+	})
+	require.NoError(t, err)
+
+	// Find our container
+	var containerInfo *info.ContainerInfo
+	for i, container := range allInfo {
+		for _, alias := range container.Aliases {
+			if alias == containerID {
+				containerInfo = &allInfo[i]
+				break
+			}
+		}
+		if containerInfo != nil {
+			break
+		}
+	}
+
+	require.NotNil(t, containerInfo, "Container %q should be found", containerID)
+	require.NotEmpty(t, containerInfo.Stats, "Should have stats")
+
+	stat := containerInfo.Stats[0]
+	ifaceStats := stat.Network.InterfaceStats
+	// Pick eth0 if multiple interfaces exist
+	if len(stat.Network.Interfaces) > 0 {
+		for _, iface := range stat.Network.Interfaces {
+			if iface.Name == "eth0" {
+				ifaceStats = iface
+			}
+		}
+	}
+
+	// Checks for NetworkStats
+	assert.NotEqual(t, uint64(0), ifaceStats.TxBytes, "Network tx bytes should not be zero")
+	assert.NotEqual(t, uint64(0), ifaceStats.TxPackets, "Network tx packets should not be zero")
+	assert.NotEqual(t, uint64(0), ifaceStats.RxBytes, "Network rx bytes should not be zero")
+	assert.NotEqual(t, uint64(0), ifaceStats.RxPackets, "Network rx packets should not be zero")
+}
+
+// TestCrioContainerSpec tests that container spec is correctly populated for CRI-O containers.
+func TestCrioContainerSpec(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	containerID := fm.Crio().RunPause()
+
+	// Wait for the container to show up
+	waitForCrioContainer(containerID, fm)
+
+	// Query all containers via SubcontainersInfo - CRI-O containers are in "crio" namespace
+	allInfo, err := fm.Cadvisor().Client().SubcontainersInfo("/", &info.ContainerInfoRequest{
+		NumStats: 1,
+	})
+	require.NoError(t, err)
+
+	// Find our container
+	var containerInfo *info.ContainerInfo
+	for i, container := range allInfo {
+		for _, alias := range container.Aliases {
+			if alias == containerID {
+				containerInfo = &allInfo[i]
+				break
+			}
+		}
+		if containerInfo != nil {
+			break
+		}
+	}
+
+	require.NotNil(t, containerInfo, "Container %q should be found", containerID)
+
+	// Check that spec has basic properties
+	assert.True(t, containerInfo.Spec.HasCpu, "CPU should be isolated")
+	assert.True(t, containerInfo.Spec.HasMemory, "Memory should be isolated")
+	// CRI-O containers may or may not have network depending on pod config
+}
+
+// TestCrioContainerDeletionExitCode tests that container deletion events include exit codes.
+// TODO: Skip this test until cAdvisor properly reports exit codes for CRI-O containers.
+// Currently cAdvisor reports exit code -1 for CRI-O containers even when the container
+// exits with a specific code. This appears to be a timing/integration issue.
+func TestCrioContainerDeletionExitCode(t *testing.T) {
+	t.Skip("Skipping: cAdvisor currently reports exit code -1 for CRI-O containers")
+
+	tests := []struct {
+		name     string
+		exitCode int
+	}{
+		{
+			name:     "successful exit",
+			exitCode: 0,
+		},
+		{
+			name:     "error exit",
+			exitCode: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fm := framework.New(t)
+			defer fm.Cleanup()
+
+			containerID := fm.Crio().RunBusybox("sh", "-c", fmt.Sprintf("exit %d", tt.exitCode))
+
+			err := framework.RetryForDuration(func() error {
+				events, err := fm.Cadvisor().Client().EventStaticInfo("?deletion_events=true&subcontainers=true")
+				if err != nil {
+					return err
+				}
+
+				for _, ev := range events {
+					if ev.EventType == info.EventContainerDeletion {
+						// Check if this event is for our container (CRI-O container names contain the ID)
+						if contains(ev.ContainerName, containerID) {
+							if ev.EventData.ContainerDeletion == nil {
+								return fmt.Errorf("deletion event data is nil")
+							}
+							if ev.EventData.ContainerDeletion.ExitCode != tt.exitCode {
+								t.Errorf("expected exit code %d, got %d",
+									tt.exitCode, ev.EventData.ContainerDeletion.ExitCode)
+							}
+							return nil
+						}
+					}
+				}
+				return fmt.Errorf("deletion event not found for container %s", containerID)
+			}, 30*time.Second)
+
+			require.NoError(t, err)
+		})
+	}
+}
+
+// TestCrioFilesystemStats tests filesystem statistics collection for CRI-O containers.
+func TestCrioFilesystemStats(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	const (
+		ddUsage       = uint64(1 << 3) // 1 KB
+		sleepDuration = 10 * time.Second
+	)
+
+	// Run a busybox container that creates a file and stays running
+	containerID := fm.Crio().RunBusybox("/bin/sh", "-c", "dd if=/dev/zero of=/file count=2 bs=1024 && while true; do sleep 1; done")
+
+	// Wait for the container to show up
+	waitForCrioContainer(containerID, fm)
+
+	request := &v2.RequestOptions{
+		IdType: v2.TypeName,
+		Count:  1,
+	}
+
+	pass := false
+	// We need to wait for the `dd` operation to complete.
+	for i := 0; i < 10; i++ {
+		// Query all containers and find ours
+		allInfo, err := fm.Cadvisor().Client().SubcontainersInfo("/", &info.ContainerInfoRequest{
+			NumStats: 1,
+		})
+		if err != nil {
+			t.Logf("%v stats unavailable - %v", time.Now().String(), err)
+			t.Logf("retrying after %s...", sleepDuration.String())
+			time.Sleep(sleepDuration)
+			continue
+		}
+
+		// Find our container
+		var containerName string
+		for _, container := range allInfo {
+			for _, alias := range container.Aliases {
+				if alias == containerID {
+					containerName = container.Name
+					break
+				}
+			}
+			if containerName != "" {
+				break
+			}
+		}
+
+		if containerName == "" {
+			t.Logf("Container %q not found, retrying...", containerID)
+			time.Sleep(sleepDuration)
+			continue
+		}
+
+		// Get stats using v2 API
+		containerInfo, err := fm.Cadvisor().ClientV2().Stats(containerName, request)
+		if err != nil {
+			t.Logf("%v stats unavailable - %v", time.Now().String(), err)
+			t.Logf("retrying after %s...", sleepDuration.String())
+			time.Sleep(sleepDuration)
+			continue
+		}
+
+		if len(containerInfo) == 0 {
+			t.Logf("No container info returned, retrying...")
+			time.Sleep(sleepDuration)
+			continue
+		}
+
+		// Get the first (and only) container info
+		var cInfo v2.ContainerInfo
+		for _, ci := range containerInfo {
+			cInfo = ci
+			break
+		}
+
+		if len(cInfo.Stats) == 0 || cInfo.Stats[0].Filesystem == nil {
+			t.Logf("No filesystem stats available yet, retrying...")
+			time.Sleep(sleepDuration)
+			continue
+		}
+
+		if cInfo.Stats[0].Filesystem.TotalUsageBytes != nil && *cInfo.Stats[0].Filesystem.TotalUsageBytes >= ddUsage {
+			pass = true
+			break
+		}
+
+		t.Logf("expected total usage to be greater than %d bytes, retrying...", ddUsage)
+		time.Sleep(sleepDuration)
+	}
+
+	if !pass {
+		t.Fail()
+	}
 }

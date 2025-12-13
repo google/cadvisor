@@ -251,3 +251,10 @@ if ! [ -f ./crio.test ]; then
   exit 1
 fi
 ./crio.test --vmodule=*=2 -test.v
+
+echo ">> running common integration tests against local cAdvisor"
+if [ -f ./common.test ]; then
+  ./common.test -test.v
+else
+  echo "Skipping common tests (./common.test not found)"
+fi
