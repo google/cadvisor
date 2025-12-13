@@ -44,6 +44,14 @@ test-integration:
 docker-test-integration:
 	@./build/integration-in-docker.sh
 
+docker-test-integration-crio:
+	@./build/integration-in-docker-crio.sh
+
+test-integration-crio:
+	GO_FLAGS=$(or $(GO_FLAGS),-race) ./build/build.sh
+	$(GO_TEST) -c github.com/google/cadvisor/integration/tests/crio
+	@./build/integration-crio.sh
+
 test-runner:
 	@$(GO) build github.com/google/cadvisor/integration/runner
 
@@ -100,4 +108,4 @@ clean:
 	@rm -f *.test cadvisor
 	@rm -rf _output/
 
-.PHONY: all build docker format release test test-integration lint presubmit tidy
+.PHONY: all build docker format release test test-integration test-integration-crio lint presubmit tidy
