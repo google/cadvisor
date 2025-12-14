@@ -58,14 +58,19 @@ RUN apk --no-cache add libc6-compat device-mapper findutils ndctl thin-provision
 
 # Grab cadvisor,libpfm4 and libipmctl from "build" container if they exist (libipmctl only works on amd64/x86_64).
 COPY --from=build /usr/local/lib/libpfm.so* /usr/local/lib/
-COPY --from=build /usr/local/lib/libipmctl.so* /usr/local/lib/
+# Disable libipmctl due to https://github.com/google/cadvisor/issues/3482
+#COPY --from=build /usr/local/lib/libipmctl.so* /usr/local/lib/
 COPY --from=build /go/src/github.com/google/cadvisor/_output/cadvisor /usr/bin/cadvisor
 
-EXPOSE 8080
+COPY deploy/entrypoint.sh /usr/bin/entrypoint.sh
+RUN chmod +x /usr/bin/entrypoint.sh
 
-ENV CADVISOR_HEALTHCHECK_URL=http://localhost:8080/healthz
+COPY deploy/healthcheck.sh /usr/bin/healthcheck.sh
+RUN chmod +x /usr/bin/healthcheck.sh
 
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD wget --quiet --tries=1 --spider $CADVISOR_HEALTHCHECK_URL || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
+  CMD /usr/bin/healthcheck.sh
 
-ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr"]
+# Use entrypoint wrapper
+ENTRYPOINT ["/usr/bin/entrypoint.sh"]
+
