@@ -68,6 +68,10 @@ RUN chmod +x /usr/bin/entrypoint.sh
 COPY deploy/healthcheck.sh /usr/bin/healthcheck.sh
 RUN chmod +x /usr/bin/healthcheck.sh
 
+# Default port is 8080, but can be changed with -port flag
+# Users should expose their custom port with: docker run -p <custom>:<custom>
+EXPOSE 8080
+
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
   CMD /usr/bin/healthcheck.sh
 
