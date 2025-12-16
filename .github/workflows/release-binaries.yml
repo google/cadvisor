@@ -19,7 +19,7 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           fetch-depth: 0  # Fetch all history for proper versioning
@@ -61,7 +61,7 @@ jobs:
           find . -name "cadvisor*" -type f -not -name "*.sha256" -exec sh -c 'sha256sum "$1" > "$1.sha256"' _ {} \;
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cadvisor-linux-${{ matrix.arch }}
           path: |
@@ -75,7 +75,7 @@ jobs:
       contents: write  # Needed for creating GitHub releases
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
@@ -88,7 +88,7 @@ jobs:
           fi
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
 
