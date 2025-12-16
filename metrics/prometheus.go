@@ -755,6 +755,54 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 						return float64(fs.WeightedIoTime) / float64(time.Second)
 					}, s.Timestamp)
 				},
+			}, {
+				name:        "container_fs_io_cost_usage_seconds_total",
+				help:        "Cumulative IOCost usage in seconds",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return ioValues(
+						s.DiskIo.IoCostUsage, "Count", asMicrosecondsToSeconds,
+						[]info.FsStats{}, nil,
+						s.Timestamp,
+					)
+				},
+			}, {
+				name:        "container_fs_io_cost_wait_seconds_total",
+				help:        "Cumulative IOCost wait in seconds",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return ioValues(
+						s.DiskIo.IoCostWait, "Count", asMicrosecondsToSeconds,
+						[]info.FsStats{}, nil,
+						s.Timestamp,
+					)
+				},
+			}, {
+				name:        "container_fs_io_cost_indebt_seconds_total",
+				help:        "Cumulative IOCost debt in seconds",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return ioValues(
+						s.DiskIo.IoCostIndebt, "Count", asMicrosecondsToSeconds,
+						[]info.FsStats{}, nil,
+						s.Timestamp,
+					)
+				},
+			}, {
+				name:        "container_fs_io_cost_indelay_seconds_total",
+				help:        "Cumulative IOCost delay in seconds",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return ioValues(
+						s.DiskIo.IoCostIndelay, "Count", asMicrosecondsToSeconds,
+						[]info.FsStats{}, nil,
+						s.Timestamp,
+					)
+				},
 			},
 			{
 				name:        "container_blkio_device_usage_total",

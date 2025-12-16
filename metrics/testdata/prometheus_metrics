@@ -78,6 +78,18 @@ container_fs_io_time_seconds_total{container_env_foo_env="prod",container_label_
 # TYPE container_fs_io_time_weighted_seconds_total counter
 container_fs_io_time_weighted_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4.4e-08 1395066363000
 container_fs_io_time_weighted_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4.9e-08 1395066363000
+# HELP container_fs_io_cost_usage_seconds_total Cumulative IOCost usage in seconds
+# TYPE container_fs_io_cost_usage_seconds_total counter
+container_fs_io_cost_usage_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.5 1395066363000
+# HELP container_fs_io_cost_wait_seconds_total Cumulative IOCost wait in seconds
+# TYPE container_fs_io_cost_wait_seconds_total counter
+container_fs_io_cost_wait_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2.5 1395066363000
+# HELP container_fs_io_cost_indebt_seconds_total Cumulative IOCost debt in seconds
+# TYPE container_fs_io_cost_indebt_seconds_total counter
+container_fs_io_cost_indebt_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.5 1395066363000
+# HELP container_fs_io_cost_indelay_seconds_total Cumulative IOCost delay in seconds
+# TYPE container_fs_io_cost_indelay_seconds_total counter
+container_fs_io_cost_indelay_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.75 1395066363000
 # HELP container_fs_limit_bytes Number of bytes that can be consumed by the container on this filesystem.
 # TYPE container_fs_limit_bytes gauge
 container_fs_limit_bytes{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 22 1395066363000

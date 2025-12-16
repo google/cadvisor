@@ -356,3 +356,75 @@ func TestGetContainerHealthState(t *testing.T) {
 		})
 	}
 }
+
+func TestIOCostMetrics(t *testing.T) {
+	containerStats := &info.ContainerStats{
+		Timestamp: time.Unix(1395066363, 0),
+		DiskIo: info.DiskIoStats{
+			IoCostUsage: []info.PerDiskStats{{
+				Device: "sda1",
+				Major:  8,
+				Minor:  1,
+				Stats:  map[string]uint64{"Count": 1500000},
+			}},
+			IoCostWait: []info.PerDiskStats{{
+				Device: "sda1",
+				Major:  8,
+				Minor:  1,
+				Stats:  map[string]uint64{"Count": 2500000},
+			}},
+			IoCostIndebt: []info.PerDiskStats{{
+				Device: "sda1",
+				Major:  8,
+				Minor:  1,
+				Stats:  map[string]uint64{"Count": 500000},
+			}},
+			IoCostIndelay: []info.PerDiskStats{{
+				Device: "sda1",
+				Major:  8,
+				Minor:  1,
+				Stats:  map[string]uint64{"Count": 750000},
+			}},
+		},
+	}
+
+	testCases := []struct {
+		name          string
+		stats         []info.PerDiskStats
+		expectedValue float64
+	}{
+		{
+			name:          "IoCostUsage",
+			stats:         containerStats.DiskIo.IoCostUsage,
+			expectedValue: 1.5,
+		},
+		{
+			name:          "IoCostWait",
+			stats:         containerStats.DiskIo.IoCostWait,
+			expectedValue: 2.5,
+		},
+		{
+			name:          "IoCostIndebt",
+			stats:         containerStats.DiskIo.IoCostIndebt,
+			expectedValue: 0.5,
+		},
+		{
+			name:          "IoCostIndelay",
+			stats:         containerStats.DiskIo.IoCostIndelay,
+			expectedValue: 0.75,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			values := ioValues(
+				tc.stats, "Count", asMicrosecondsToSeconds,
+				[]info.FsStats{}, nil,
+				containerStats.Timestamp,
+			)
+			assert.Equal(t, 1, len(values))
+			assert.Equal(t, tc.expectedValue, values[0].value)
+			assert.Equal(t, []string{"sda1"}, values[0].labels)
+		})
+	}
+}

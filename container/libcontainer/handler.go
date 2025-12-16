@@ -793,6 +793,10 @@ func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.DiskIo.IoWaitTime = diskStatsCopy(s.BlkioStats.IoWaitTimeRecursive)
 	ret.DiskIo.IoMerged = diskStatsCopy(s.BlkioStats.IoMergedRecursive)
 	ret.DiskIo.IoTime = diskStatsCopy(s.BlkioStats.IoTimeRecursive)
+	ret.DiskIo.IoCostUsage = diskStatsCopy(s.BlkioStats.IoCostUsage)
+	ret.DiskIo.IoCostWait = diskStatsCopy(s.BlkioStats.IoCostWait)
+	ret.DiskIo.IoCostIndebt = diskStatsCopy(s.BlkioStats.IoCostIndebt)
+	ret.DiskIo.IoCostIndelay = diskStatsCopy(s.BlkioStats.IoCostIndelay)
 	setPSIStats(s.BlkioStats.PSI, &ret.DiskIo.PSI)
 }
 
