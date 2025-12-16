@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 	"time"
 
@@ -38,8 +39,10 @@ type containerdContainerHandler struct {
 	machineInfoFactory info.MachineInfoFactory
 	// Absolute path to the cgroup hierarchies of this container.
 	// (e.g.: "cpu" -> "/sys/fs/cgroup/cpu/test")
-	cgroupPaths map[string]string
-	fsInfo      fs.FsInfo
+	cgroupPaths      map[string]string
+	fsInfo           fs.FsInfo
+	fsHandler        common.FsHandler
+	rootfsStorageDir string
 	// Metadata associated with the container.
 	reference info.ContainerReference
 	envs      map[string]string
@@ -65,6 +68,7 @@ func newContainerdContainerHandler(
 	inHostNamespace bool,
 	metadataEnvAllowList []string,
 	includedMetrics container.MetricSet,
+	rootfsDir string,
 ) (container.ContainerHandler, error) {
 	// Create the cgroup paths.
 	cgroupPaths := common.MakeCgroupPaths(cgroupSubsystems, name)
@@ -148,6 +152,10 @@ func newContainerdContainerHandler(
 	}
 	// Add the name and bare ID as aliases of the container.
 	handler.image = cntr.Image
+	if handler.includedMetrics.Has(container.DiskUsageMetrics) {
+		handler.rootfsStorageDir = path.Join(rootfsDir, *ArgContainerdNamespace, id, "rootfs")
+		handler.fsHandler = common.NewFsHandler(common.DefaultPeriod, handler.rootfsStorageDir, "", fsInfo)
+	}
 
 	for _, exposedEnv := range metadataEnvAllowList {
 		if exposedEnv == "" {
@@ -173,9 +181,7 @@ func (h *containerdContainerHandler) ContainerReference() (info.ContainerReferen
 }
 
 func (h *containerdContainerHandler) GetSpec() (info.ContainerSpec, error) {
-	// TODO: Since we dont collect disk usage stats for containerd, we set hasFilesystem
-	// to false. Revisit when we support disk usage stats for containerd
-	hasFilesystem := false
+	hasFilesystem := h.includedMetrics.Has(container.DiskUsageMetrics)
 	hasNet := h.includedMetrics.Has(container.NetworkUsageMetrics)
 	spec, err := common.GetSpec(h.cgroupPaths, h.machineInfoFactory, hasNet, hasFilesystem)
 	spec.Labels = h.labels
@@ -193,6 +199,34 @@ func (h *containerdContainerHandler) getFsStats(stats *info.ContainerStats) erro
 
 	if h.includedMetrics.Has(container.DiskIOMetrics) {
 		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
+	}
+
+	if h.includedMetrics.Has(container.DiskUsageMetrics) {
+		deviceInfo, err := h.fsInfo.GetDirFsDevice(h.rootfsStorageDir)
+		if err != nil {
+			return fmt.Errorf("unable to determine device info for dir: %v: %v", h.rootfsStorageDir, err)
+		}
+		for _, fileSystem := range mi.Filesystems {
+			if fileSystem.Device == deviceInfo.Device {
+				usage := h.fsHandler.Usage()
+				fsStat := info.FsStats{
+					Device:    deviceInfo.Device,
+					Type:      fileSystem.Type,
+					Limit:     fileSystem.Capacity,
+					BaseUsage: usage.BaseUsageBytes,
+					Usage:     usage.TotalUsageBytes,
+					Inodes:    usage.InodeUsage,
+				}
+				fileSystems, err := h.fsInfo.GetGlobalFsInfo()
+				if err != nil {
+					return fmt.Errorf("unable to obtain diskstats for filesystem %s: %v", fsStat.Device, err)
+				}
+				fs.AddDiskStats(fileSystems, &fileSystem, &fsStat)
+				stats.Filesystem = append(stats.Filesystem, fsStat)
+				break
+			}
+		}
+
 	}
 	return nil
 }
@@ -241,9 +275,15 @@ func (h *containerdContainerHandler) Type() container.ContainerType {
 }
 
 func (h *containerdContainerHandler) Start() {
+	if h.fsHandler != nil {
+		h.fsHandler.Start()
+	}
 }
 
 func (h *containerdContainerHandler) Cleanup() {
+	if h.fsHandler != nil {
+		h.fsHandler.Stop()
+	}
 }
 
 func (h *containerdContainerHandler) GetContainerIPAddress() string {

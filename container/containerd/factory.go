@@ -64,6 +64,13 @@ func (f *containerdFactory) NewContainerHandler(name string, metadataEnvAllowLis
 		return
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+	defer cancel()
+	rootfsDir, err := client.RootfsDir(ctx)
+	if err != nil {
+		klog.Warningf("unable to get containerd rootfs dir, err: %v, continue register", err)
+	}
+
 	containerdMetadataEnvAllowList := strings.Split(*containerdEnvMetadataWhiteList, ",")
 
 	// prefer using the unified metadataEnvAllowList
@@ -80,6 +87,7 @@ func (f *containerdFactory) NewContainerHandler(name string, metadataEnvAllowLis
 		inHostNamespace,
 		containerdMetadataEnvAllowList,
 		f.includedMetrics,
+		rootfsDir,
 	)
 }
 

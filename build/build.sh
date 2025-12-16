@@ -61,7 +61,7 @@ fi
 
 # Since github.com/google/cadvisor/cmd is a submodule, we must build from inside that directory
 pushd cmd > /dev/null
-  go build ${GO_FLAGS} -ldflags "${ldflags}" -o "${output_file}" "${repo_path}/cmd"
+  go mod tidy && go build ${GO_FLAGS} -ldflags "${ldflags}" -o "${output_file}" "${repo_path}/cmd"
 popd > /dev/null
 
 exit 0

@@ -1,6 +1,6 @@
 module github.com/google/cadvisor
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.25.5
 
@@ -32,6 +32,7 @@ require (
 	golang.org/x/sys v0.33.0
 	google.golang.org/grpc v1.72.2
 	google.golang.org/protobuf v1.36.6
+	k8s.io/cri-api v0.34.3
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 )
