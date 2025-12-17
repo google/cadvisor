@@ -333,6 +333,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		thinPoolWatcher *devicemapper.ThinPoolWatcher
 		thinPoolName    string
 		zfsWatcher      *zfs.ZfsWatcher
+		containerdClient *containerd.ContainerdClient
 	)
 	if includedMetrics.Has(container.DiskUsageMetrics) {
 		if StorageDriver(dockerInfo.Driver) == DevicemapperStorageDriver {
@@ -354,9 +355,6 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		}
 	}
 	
-	var (
-		containerdClient *containerd.ContainerdClient
-	)
 	if StorageDriver(dockerInfo.Driver) == ContainerdSnapshotterStorageDriver {
 		containerdClient, err := containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
 		if err != nil {
