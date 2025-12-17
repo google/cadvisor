@@ -351,7 +351,10 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 			}
 		}
 	}
-
+	
+	var (
+		containerdClient *containerd.ContainerdClient
+	)
 	if StorageDriver(dockerInfo.Driver) == ContainerdSnapshotterStorageDriver {
 		containerdClient, err := containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
 		if err != nil {
