@@ -15,13 +15,21 @@
 package summary
 
 import (
+	"math"
 	"testing"
 	"time"
 
 	info "github.com/google/cadvisor/info/v2"
 )
 
-const Nanosecond = 1000000000
+const (
+	Nanosecond = 1000000000
+	N          = 100
+	// Standard deviation of the sequence [1..99] using sample standard deviation formula.
+	// N = 100 in every test
+	// This is sqrt(Σ(i - 50)² / 98) where i ∈ [1,99], mean = 50, n = 99.
+	StdDevFactor = 28.722813232
+)
 
 func assertPercentile(t *testing.T, s Uint64Slice, f float64, want uint64) {
 	if got := s.GetPercentile(f); got != want {
@@ -30,7 +38,6 @@ func assertPercentile(t *testing.T, s Uint64Slice, f float64, want uint64) {
 }
 
 func TestPercentile(t *testing.T) {
-	N := 100
 	s := make(Uint64Slice, 0, N)
 	for i := N; i > 0; i-- {
 		s = append(s, uint64(i))
@@ -38,8 +45,7 @@ func TestPercentile(t *testing.T) {
 	assertPercentile(t, s, 0.2, 20)
 	assertPercentile(t, s, 0.7, 70)
 	assertPercentile(t, s, 0.9, 90)
-	N = 105
-	for i := 101; i <= N; i++ {
+	for i := 101; i <= N+5; i++ {
 		s = append(s, uint64(i))
 	}
 	// 90p should be between 94 and 95. Promoted to 95.
@@ -49,8 +55,7 @@ func TestPercentile(t *testing.T) {
 }
 
 func TestMean(t *testing.T) {
-	var i, N uint64
-	N = 100
+	var i uint64
 	mean := mean{count: 0, Mean: 0}
 	for i = 1; i < N; i++ {
 		mean.Add(i)
@@ -61,7 +66,6 @@ func TestMean(t *testing.T) {
 }
 
 func TestAggregates(t *testing.T) {
-	N := uint64(100)
 	var i uint64
 	ct := time.Now()
 	stats := make([]*secondSample, 0, N)
@@ -80,6 +84,7 @@ func TestAggregates(t *testing.T) {
 	cpuExpected := info.Percentiles{
 		Present:    true,
 		Mean:       1000,
+		Std:        0,
 		Max:        1000,
 		Fifty:      1000,
 		Ninety:     1000,
@@ -93,6 +98,7 @@ func TestAggregates(t *testing.T) {
 	memExpected := info.Percentiles{
 		Present:    true,
 		Mean:       50 * 1024,
+		Std:        uint64(math.Round(StdDevFactor * 1024)),
 		Max:        99 * 1024,
 		Fifty:      50 * 1024,
 		Ninety:     90 * 1024,
@@ -104,7 +110,6 @@ func TestAggregates(t *testing.T) {
 	}
 }
 func TestSamplesCloseInTimeIgnored(t *testing.T) {
-	N := uint64(100)
 	var i uint64
 	ct := time.Now()
 	stats := make([]*secondSample, 0, N*2)
@@ -132,6 +137,7 @@ func TestSamplesCloseInTimeIgnored(t *testing.T) {
 	cpuExpected := info.Percentiles{
 		Present:    true,
 		Mean:       1000,
+		Std:        0,
 		Max:        1000,
 		Fifty:      1000,
 		Ninety:     1000,
@@ -145,6 +151,7 @@ func TestSamplesCloseInTimeIgnored(t *testing.T) {
 	memExpected := info.Percentiles{
 		Present:    true,
 		Mean:       50 * 1024,
+		Std:        uint64(math.Round(StdDevFactor * 1024)),
 		Max:        99 * 1024,
 		Fifty:      50 * 1024,
 		Ninety:     90 * 1024,
@@ -157,7 +164,6 @@ func TestSamplesCloseInTimeIgnored(t *testing.T) {
 }
 
 func TestDerivedStats(t *testing.T) {
-	N := uint64(100)
 	var i uint64
 	stats := make([]*info.Usage, 0, N)
 	for i = 1; i < N; i++ {
@@ -186,6 +192,7 @@ func TestDerivedStats(t *testing.T) {
 	cpuExpected := info.Percentiles{
 		Present:    true,
 		Mean:       50 * Nanosecond,
+		Std:        uint64(math.Round(StdDevFactor * Nanosecond)),
 		Max:        99 * Nanosecond,
 		Fifty:      50 * Nanosecond,
 		Ninety:     90 * Nanosecond,
@@ -199,6 +206,7 @@ func TestDerivedStats(t *testing.T) {
 	memExpected := info.Percentiles{
 		Present:    true,
 		Mean:       50 * 1024,
+		Std:        uint64(math.Round(StdDevFactor * 1024)),
 		Max:        99 * 1024,
 		Fifty:      50 * 1024,
 		Ninety:     90 * 1024,
