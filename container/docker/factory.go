@@ -330,10 +330,10 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 	}
 
 	var (
-		thinPoolWatcher *devicemapper.ThinPoolWatcher
-		thinPoolName    string
-		zfsWatcher      *zfs.ZfsWatcher
-		containerdClient *containerd.ContainerdClient
+		thinPoolWatcher  *devicemapper.ThinPoolWatcher
+		thinPoolName     string
+		zfsWatcher       *zfs.ZfsWatcher
+		containerdClient containerd.ContainerdClient
 	)
 	if includedMetrics.Has(container.DiskUsageMetrics) {
 		if StorageDriver(dockerInfo.Driver) == DevicemapperStorageDriver {
