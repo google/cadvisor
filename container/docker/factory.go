@@ -354,9 +354,11 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		}
 	}
 
-	containerdClient, err := containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
-	if err != nil {
-		return fmt.Errorf("unable to create containerd client: %v", err)
+	if StorageDriver(dockerInfo.Driver) == ContainerdSnapshotterStorageDriver {
+		containerdClient, err := containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
+		if err != nil {
+			return fmt.Errorf("unable to create containerd client: %v", err)
+		}
 	}
 
 	klog.V(1).Infof("Registering Docker factory")
