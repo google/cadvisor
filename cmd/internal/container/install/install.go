@@ -22,4 +22,13 @@ import (
 	_ "github.com/google/cadvisor/container/docker/install"
 	_ "github.com/google/cadvisor/container/podman/install"
 	_ "github.com/google/cadvisor/container/systemd/install"
+
+	// Register all filesystem plugins.
+	_ "github.com/google/cadvisor/fs/btrfs/install"
+	_ "github.com/google/cadvisor/fs/devicemapper/install"
+	_ "github.com/google/cadvisor/fs/nfs/install"
+	_ "github.com/google/cadvisor/fs/overlay/install"
+	_ "github.com/google/cadvisor/fs/tmpfs/install"
+	_ "github.com/google/cadvisor/fs/vfs/install"
+	_ "github.com/google/cadvisor/fs/zfs/install"
 )
