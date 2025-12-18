@@ -32,7 +32,6 @@ import (
 	"github.com/google/cadvisor/cache/memory"
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/events"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
@@ -321,19 +320,8 @@ func (m *manager) PodmanContainer(containerName string, query *info.ContainerInf
 func (m *manager) Start() error {
 	m.containerWatchers = container.InitializePlugins(m, m.fsInfo, m.includedMetrics)
 
-	err := raw.Register(m, m.fsInfo, m.includedMetrics, m.rawContainerCgroupPathPrefixWhiteList)
-	if err != nil {
-		klog.Errorf("Registration of the raw container factory failed: %v", err)
-	}
-
-	rawWatcher, err := raw.NewRawContainerWatcher(m.includedMetrics)
-	if err != nil {
-		return err
-	}
-	m.containerWatchers = append(m.containerWatchers, rawWatcher)
-
 	// Watch for OOMs.
-	err = m.watchForNewOoms()
+	err := m.watchForNewOoms()
 	if err != nil {
 		klog.Warningf("Could not configure a source for OOM detection, disabling OOM events: %v", err)
 	}

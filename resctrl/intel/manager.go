@@ -21,9 +21,6 @@ import (
 	"errors"
 	"time"
 
-	"k8s.io/klog/v2"
-
-	"github.com/google/cadvisor/container/raw"
 	"github.com/google/cadvisor/resctrl"
 	"github.com/google/cadvisor/stats"
 )
@@ -56,10 +53,6 @@ func NewManager(interval time.Duration, setup func() error, vendorID string, inH
 	}
 	if !(enabledCMT || enabledMBM) {
 		return &NoopManager{}, errors.New("there are no monitoring features available")
-	}
-
-	if !*raw.DockerOnly {
-		klog.Warning("--docker_only should be set when collecting Resctrl metrics! See the runtime docs.")
 	}
 
 	return &manager{interval: interval, vendorID: vendorID, inHostNamespace: inHostNamespace}, nil
