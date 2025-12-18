@@ -19,7 +19,6 @@ require (
 	github.com/docker/go-connections v0.6.0
 	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
-	github.com/karrick/godirwalk v1.17.0
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
 	github.com/moby/sys/mountinfo v0.7.2
 	github.com/opencontainers/cgroups v0.0.6

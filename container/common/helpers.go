@@ -27,7 +27,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/karrick/godirwalk"
 	"github.com/opencontainers/cgroups"
 	"golang.org/x/sys/unix"
 
@@ -303,16 +302,11 @@ func readUInt64(dirpath string, file string) uint64 {
 
 // Lists all directories under "path" and outputs the results as children of "parent".
 func ListDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}) error {
-	buf := make([]byte, godirwalk.MinimumScratchBufferSize)
-	return listDirectories(dirpath, parent, recursive, output, buf)
-}
-
-func listDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}, buf []byte) error {
-	dirents, err := godirwalk.ReadDirents(dirpath, buf)
+	dirents, err := os.ReadDir(dirpath)
 	if err != nil {
 		// Ignore if this hierarchy does not exist.
 		if errors.Is(err, fs.ErrNotExist) {
-			err = nil
+			return nil
 		}
 		return err
 	}
@@ -328,8 +322,7 @@ func listDirectories(dirpath string, parent string, recursive bool, output map[s
 
 		// List subcontainers if asked to.
 		if recursive {
-			err := listDirectories(path.Join(dirpath, dirname), name, true, output, buf)
-			if err != nil {
+			if err := ListDirectories(path.Join(dirpath, dirname), name, true, output); err != nil {
 				return err
 			}
 		}
