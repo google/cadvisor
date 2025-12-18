@@ -356,7 +356,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 	}
 	
 	if StorageDriver(dockerInfo.Driver) == ContainerdSnapshotterStorageDriver {
-		containerdClient, err := containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
+		containerdClient, err = containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
 		if err != nil {
 			return fmt.Errorf("unable to create containerd client: %v", err)
 		}
