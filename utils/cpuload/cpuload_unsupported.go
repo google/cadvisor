@@ -12,31 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:build linux
+//go:build !linux
 
-package main
+package cpuload
 
 import (
-	"log"
+	"fmt"
 
-	"github.com/google/cadvisor/utils/cpuload/netlink"
+	info "github.com/google/cadvisor/info/v1"
 )
 
-func main() {
-	n, err := netlink.New()
-	if err != nil {
-		log.Printf("Failed to create cpu load util: %s", err)
-		return
-	}
-	defer n.Stop()
+type CpuLoadReader interface {
+	// Start the reader.
+	Start() error
 
-	paths := []string{"/sys/fs/cgroup/cpu", "/sys/fs/cgroup/cpu/docker"}
-	names := []string{"/", "/docker"}
-	for i, path := range paths {
-		stats, err := n.GetCpuLoad(names[i], path)
-		if err != nil {
-			log.Printf("Error getting cpu load for %q: %s", path, err)
-		}
-		log.Printf("Task load for %s: %+v", path, stats)
-	}
+	// Stop the reader and clean up internal state.
+	Stop()
+
+	// Retrieve Cpu load for a given group.
+	// name is the full hierarchical name of the container.
+	// Path is an absolute filesystem path for a container under CPU cgroup hierarchy.
+	GetCpuLoad(name string, path string) (info.LoadStats, error)
+}
+
+func New() (CpuLoadReader, error) {
+	return nil, fmt.Errorf("cpuload is not supported on this platform")
 }
