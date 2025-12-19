@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -625,6 +626,94 @@ func TestDestroyContainerExitCodeUnavailable(t *testing.T) {
 	assert.Equal(t, -1, event.EventData.ContainerDeletion.ExitCode)
 
 	mockHandler.AssertExpectations(t)
+}
+
+// TestDestroyContainerConcurrent verifies that concurrent calls to destroyContainer
+// for the same container do not cause a panic. This is a regression test for a race
+// condition where multiple goroutines could call Stop() on the same containerData,
+// causing a "close of closed channel" panic.
+func TestDestroyContainerConcurrent(t *testing.T) {
+	memoryCache := memory.New(60*time.Second, nil)
+	m := &manager{
+		quitChannels: make([]chan error, 0, 2),
+		memoryCache:  memoryCache,
+	}
+
+	// Create a mock handler that can be called multiple times
+	mockHandler := containertest.NewMockContainerHandler("/test-concurrent")
+	// Use Maybe() since GetExitCode may be called 0 or 1 times depending on race
+	mockHandler.On("GetExitCode").Return(-1, nil).Maybe()
+
+	cont := &containerData{
+		handler:          mockHandler,
+		memoryCache:      memoryCache,
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test-concurrent",
+			},
+		},
+		stop: make(chan struct{}),
+	}
+
+	m.containers.Store(namespacedContainerName{Name: "/test-concurrent"}, cont)
+
+	// Use a thread-safe event handler for concurrent access
+	mockEventHandler := &threadSafeEventHandler{
+		events: make([]*info.Event, 0),
+	}
+	m.eventHandler = mockEventHandler
+
+	// Launch multiple goroutines that all try to destroy the same container
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	// Use a channel to synchronize the start of all goroutines
+	start := make(chan struct{})
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			<-start // Wait for the signal to start
+			// This should not panic even when called concurrently
+			_ = m.destroyContainer("/test-concurrent")
+		}()
+	}
+
+	// Signal all goroutines to start simultaneously
+	close(start)
+
+	// Wait for all goroutines to complete
+	wg.Wait()
+
+	// Verify only one destruction event was recorded
+	assert.LessOrEqual(t, len(mockEventHandler.events), 1, "at most one destruction event should be recorded")
+}
+
+// threadSafeEventHandler is a thread-safe version of mockEventHandler for concurrent tests
+type threadSafeEventHandler struct {
+	mu     sync.Mutex
+	events []*info.Event
+}
+
+func (m *threadSafeEventHandler) AddEvent(e *info.Event) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.events = append(m.events, e)
+	return nil
+}
+
+func (m *threadSafeEventHandler) WatchEvents(request *events.Request) (*events.EventChannel, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *threadSafeEventHandler) GetEvents(request *events.Request) ([]*info.Event, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *threadSafeEventHandler) StopWatch(watchID int) {
 }
 
 type mockEventHandler struct {

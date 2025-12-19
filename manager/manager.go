@@ -271,6 +271,17 @@ func (c *containerMap) Delete(name namespacedContainerName) {
 	c.m.Delete(name)
 }
 
+// LoadAndDelete atomically loads and deletes the containerData for the given name.
+// This prevents race conditions where multiple goroutines might try to destroy
+// the same container simultaneously.
+func (c *containerMap) LoadAndDelete(name namespacedContainerName) (*containerData, bool) {
+	v, loaded := c.m.LoadAndDelete(name)
+	if !loaded {
+		return nil, false
+	}
+	return v.(*containerData), true
+}
+
 // Range calls f for each container in the map. If f returns false, iteration stops.
 func (c *containerMap) Range(f func(name namespacedContainerName, data *containerData) bool) {
 	c.m.Range(func(key, value any) bool {
@@ -1024,7 +1035,11 @@ func (m *manager) destroyContainer(containerName string) error {
 	namespacedName := namespacedContainerName{
 		Name: containerName,
 	}
-	cont, ok := m.containers.Load(namespacedName)
+	// Use LoadAndDelete to atomically remove the container from the map.
+	// This prevents race conditions where multiple goroutines might try to
+	// destroy the same container simultaneously, which would cause a panic
+	// when Stop() tries to close an already-closed channel.
+	cont, ok := m.containers.LoadAndDelete(namespacedName)
 	if !ok {
 		// Already destroyed, done.
 		return nil
@@ -1041,8 +1056,7 @@ func (m *manager) destroyContainer(containerName string) error {
 		return err
 	}
 
-	// Remove the container from our records (and all its aliases).
-	m.containers.Delete(namespacedName)
+	// Remove aliases from our records.
 	for _, alias := range cont.info.Aliases {
 		m.containers.Delete(namespacedContainerName{
 			Namespace: cont.info.Namespace,
