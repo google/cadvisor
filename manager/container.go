@@ -104,7 +104,8 @@ type containerData struct {
 	logUsage bool
 
 	// Tells the container to stop.
-	stop chan struct{}
+	stop     chan struct{}
+	stopOnce sync.Once
 
 	// Tells the container to immediately collect stats
 	onDemandChan chan chan struct{}
@@ -140,7 +141,12 @@ func (cd *containerData) Stop() error {
 	if err != nil {
 		return err
 	}
-	close(cd.stop)
+	// Use sync.Once to ensure the channel is only closed once, preventing
+	// panic from concurrent calls to Stop() when multiple goroutines try
+	// to destroy the same container simultaneously.
+	cd.stopOnce.Do(func() {
+		close(cd.stop)
+	})
 	cd.perfCollector.Destroy()
 	cd.resctrlCollector.Destroy()
 	return nil
