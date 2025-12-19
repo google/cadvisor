@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -645,4 +646,134 @@ func (m *mockEventHandler) GetEvents(request *events.Request) ([]*info.Event, er
 }
 
 func (m *mockEventHandler) StopWatch(watchID int) {
+}
+
+// threadSafeEventHandler is a thread-safe version of mockEventHandler for concurrent tests.
+type threadSafeEventHandler struct {
+	mu     sync.Mutex
+	events []*info.Event
+}
+
+func (m *threadSafeEventHandler) AddEvent(e *info.Event) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.events = append(m.events, e)
+	return nil
+}
+
+func (m *threadSafeEventHandler) WatchEvents(request *events.Request) (*events.EventChannel, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *threadSafeEventHandler) GetEvents(request *events.Request) ([]*info.Event, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *threadSafeEventHandler) StopWatch(watchID int) {
+}
+
+// TestContainerDataStopConcurrent verifies that concurrent calls to Stop()
+// do not cause a panic. This is a regression test for a race condition where
+// multiple goroutines could call Stop() on the same containerData, causing a
+// "close of closed channel" panic.
+func TestContainerDataStopConcurrent(t *testing.T) {
+	memoryCache := memory.New(60*time.Second, nil)
+
+	// Create a minimal containerData with the fields needed for Stop()
+	cd := &containerData{
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test-concurrent",
+			},
+		},
+		memoryCache:      memoryCache,
+		stop:             make(chan struct{}),
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+	}
+
+	// Launch multiple goroutines that all try to call Stop() simultaneously
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	// Use a channel to synchronize goroutines to start at the same time
+	start := make(chan struct{})
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			<-start // Wait for signal to start
+			// This should not panic even if called multiple times concurrently
+			_ = cd.Stop()
+		}()
+	}
+
+	// Signal all goroutines to start simultaneously
+	close(start)
+
+	// Wait for all goroutines to complete - if there's a panic, the test will fail
+	wg.Wait()
+}
+
+// TestDestroyContainerConcurrent verifies that concurrent calls to destroyContainer
+// for the same container do not cause a panic.
+func TestDestroyContainerConcurrent(t *testing.T) {
+	memoryCache := memory.New(60*time.Second, nil)
+	m := &manager{
+		quitChannels: make([]chan error, 0, 2),
+		memoryCache:  memoryCache,
+	}
+
+	mockEventHandler := &threadSafeEventHandler{}
+	mockHandler := containertest.NewMockContainerHandler("/test-concurrent")
+	mockHandler.On("Start").Return(nil)
+	mockHandler.On("Cleanup").Return()
+	mockHandler.On("Stop").Return()
+	// GetExitCode may be called multiple times due to concurrent access
+	mockHandler.On("GetExitCode").Return(-1, nil).Maybe()
+
+	// Create the container
+	cd := &containerData{
+		handler: mockHandler,
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test-concurrent",
+			},
+		},
+		memoryCache:      memoryCache,
+		stop:             make(chan struct{}),
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+	}
+
+	// Add to manager's container map
+	m.containers.Store(namespacedContainerName{Name: "/test-concurrent"}, cd)
+
+	// Register event handler
+	m.eventHandler = mockEventHandler
+
+	// Launch multiple goroutines that all try to destroy the same container
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	start := make(chan struct{})
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			<-start
+			_ = m.destroyContainer("/test-concurrent")
+		}()
+	}
+
+	close(start)
+	wg.Wait()
+
+	// With sync.Once protecting only the channel close, multiple goroutines
+	// can still process the container and add events. The key assertion is
+	// that no panic occurred (test would fail otherwise).
+	// At least one event should be recorded.
+	assert.GreaterOrEqual(t, len(mockEventHandler.events), 1, "at least one destruction event should be recorded")
 }
