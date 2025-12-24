@@ -42,9 +42,25 @@ func TestGetHugePagesInfo(t *testing.T) {
 	}
 	fakeSys.SetHugePagesNr(hugePageNr, nil)
 
+	hugePageFree := map[string]string{
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-2048kB/free_hugepages":    "1",
+		"/fakeSysfs/devices/system/node/node0/hugepages/hugepages-1048576kB/free_hugepages": "0",
+	}
+	fakeSys.SetHugePagesFree(hugePageFree, nil)
+
 	hugePagesInfo, err := GetHugePagesInfo(&fakeSys, "/fakeSysfs/devices/system/node/node0/hugepages/")
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(hugePagesInfo))
+	// Verify FreePages is correctly read
+	for _, hp := range hugePagesInfo {
+		if hp.PageSize == 2048 {
+			assert.NotNil(t, hp.FreePages)
+			assert.Equal(t, uint64(1), *hp.FreePages)
+		} else if hp.PageSize == 1048576 {
+			assert.NotNil(t, hp.FreePages)
+			assert.Equal(t, uint64(0), *hp.FreePages)
+		}
+	}
 }
 
 func TestGetHugePagesInfoWithHugePagesDirectory(t *testing.T) {
