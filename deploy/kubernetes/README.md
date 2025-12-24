@@ -18,7 +18,7 @@ kustomize build "https://github.com/google/cadvisor/deploy/kubernetes/base?ref=$
 
 To update the image version([reference](https://github.com/kubernetes-sigs/kustomize/blob/master/examples/image.md)):
 ```
-cd deploy/kubernetes/base && kustomize edit set image gcr.io/cadvisor/cadvisor:${VERSION} && cd ../../..
+cd deploy/kubernetes/base && kustomize edit set image ghcr.io/google/cadvisor:${VERSION} && cd ../../..
 ```
 
 To generate the base daemonset:
