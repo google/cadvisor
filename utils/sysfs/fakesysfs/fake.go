@@ -82,6 +82,9 @@ type FakeSysFs struct {
 	hugePagesNr    map[string]string
 	hugePagesNrErr error
 
+	hugePagesFree    map[string]string
+	hugePagesFreeErr error
+
 	distances    map[string]string
 	distancesErr error
 
@@ -123,6 +126,11 @@ func (fs *FakeSysFs) GetHugePagesInfo(hugepagesDirectory string) ([]os.FileInfo,
 func (fs *FakeSysFs) GetHugePagesNr(hugepagesDirectory string, hugePageName string) (string, error) {
 	hugePageFile := fmt.Sprintf("%s%s/%s", hugepagesDirectory, hugePageName, sysfs.HugePagesNrFile)
 	return fs.hugePagesNr[hugePageFile], fs.hugePagesNrErr
+}
+
+func (fs *FakeSysFs) GetHugePagesFree(hugepagesDirectory string, hugePageName string) (string, error) {
+	hugePageFile := fmt.Sprintf("%s%s/%s", hugepagesDirectory, hugePageName, sysfs.HugePagesFreeFile)
+	return fs.hugePagesFree[hugePageFile], fs.hugePagesFreeErr
 }
 
 func (fs *FakeSysFs) GetBlockDevices() ([]os.FileInfo, error) {
@@ -222,6 +230,11 @@ func (fs *FakeSysFs) SetHugePages(hugePages []os.FileInfo, err error) {
 func (fs *FakeSysFs) SetHugePagesNr(hugePagesNr map[string]string, err error) {
 	fs.hugePagesNr = hugePagesNr
 	fs.hugePagesNrErr = err
+}
+
+func (fs *FakeSysFs) SetHugePagesFree(hugePagesFree map[string]string, err error) {
+	fs.hugePagesFree = hugePagesFree
+	fs.hugePagesFreeErr = err
 }
 
 func (fs *FakeSysFs) SetEntryName(name string) {
