@@ -1,40 +1,62 @@
+version: "2"
+
 run:
   timeout: 5m
-  linters-settings:
-    govet:
-      enable-all: true
-    gofmt:
-      simplify: true
-    goimports:
-      local-prefixes: github.com/google/cadvisor
+
 linters:
-  disable-all: true
+  default: none
   enable:
     - govet
     - errcheck
     - staticcheck
     - unused
-    - gosimple
     - ineffassign
-    - typecheck
+  settings:
+    govet:
+      disable:
+        - fieldalignment  # too noisy, requires significant refactoring
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+        - (net.Conn).Close
+        - (*os.File).Close
+        - (net/http.ResponseWriter).Write
+        - os.Remove
+        - os.RemoveAll
+        - os.Setenv
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - syscall.Close
+    staticcheck:
+      checks:
+        - "all"
+        - "-ST1000" # package comments - too noisy for existing codebase
+        - "-ST1003" # naming conventions (e.g., CrioId vs CrioID) - would break public API
+        - "-ST1020" # comment format on exported methods - too many to fix
+        - "-ST1021" # comment format on exported types - too many to fix
+        - "-ST1022" # comment format on exported consts - too many to fix
+        - "-QF*"    # disable quickfix suggestions
+  exclusions:
+    rules:
+      # Exclude errcheck in test files for cleaner test code
+      - linters:
+          - errcheck
+        path: "_test\\.go$"
+      # Exclude errcheck for Close() calls on any type
+      - linters:
+          - errcheck
+        text: "Error return value of .*.Close.* is not checked"
+      # Exclude govet printf check false positives
+      - linters:
+          - govet
+        text: "printf: non-constant format string"
+
+formatters:
+  enable:
     - gofmt
     - goimports
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-case-sensitive: true
-  exclude:
-#   integration/tests/api/event_test.go:66:6: func `waitForStaticEvent` is unused (unused)
-#   Flaky test skipped.
-    - waitForStaticEvent
-#   Initialism or acronyms for fields, vars and types:
-    - "(struct field|var|type|const) `[A-Z].*` should be `.*`"
-#   Initialism or acronyms - renaming exported methods and functions can be tricky:
-    - "(method|func) [A-Z].* should be .*"
-#   Stuttering affects exported names:
-    - "type name will be used as .*\\.[A-Z]{1}.* by other packages, and that stutters"
-  exclude-rules:
-#   utils/cpuload/netlink/netlink.go:102:15: Error return value of `binary.Write` is not checked (errcheck)
-#   There are more similar issues in this file
-    - path: utils/cpuload/netlink/netlink.go
-      text: "Error return value of `binary.Write` is not checked"

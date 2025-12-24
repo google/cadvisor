@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package podman
 
 import (
@@ -109,7 +111,7 @@ func (f *podmanFactory) String() string {
 }
 
 func (f *podmanFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (handler container.ContainerHandler, err error) {
-	return newPodmanContainerHandler(name, f.machineInfoFactory, f.fsInfo,
+	return newContainerHandler(name, f.machineInfoFactory, f.fsInfo,
 		f.storageDriver, f.storageDir, f.cgroupSubsystem, inHostNamespace,
 		metadataEnvAllowList, f.metrics, f.thinPoolName, f.thinPoolWatcher, f.zfsWatcher)
 }

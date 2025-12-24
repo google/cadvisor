@@ -13,7 +13,6 @@
 // limitations under the License.
 
 //go:build influxdb_test
-// +build influxdb_test
 
 // To run unit test: go test -tags influxdb_test
 

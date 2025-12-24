@@ -23,6 +23,7 @@ import (
 
 	dockerimage "github.com/docker/docker/api/types/image"
 	dockersystem "github.com/docker/docker/api/types/system"
+
 	v1 "github.com/google/cadvisor/info/v1"
 )
 
@@ -49,7 +50,7 @@ func DriverStatusValue(status [][2]string, target string) string {
 func DockerThinPoolName(info dockersystem.Info) (string, error) {
 	poolName := DriverStatusValue(info.DriverStatus, DriverStatusPoolName)
 	if len(poolName) == 0 {
-		return "", fmt.Errorf("Could not get devicemapper pool name")
+		return "", fmt.Errorf("could not get devicemapper pool name")
 	}
 
 	return poolName, nil
@@ -78,7 +79,7 @@ func DockerMetadataDevice(info dockersystem.Info) (string, error) {
 func DockerZfsFilesystem(info dockersystem.Info) (string, error) {
 	filesystem := DriverStatusValue(info.DriverStatus, DriverStatusParentDataset)
 	if len(filesystem) == 0 {
-		return "", fmt.Errorf("Could not get zfs filesystem")
+		return "", fmt.Errorf("could not get zfs filesystem")
 	}
 
 	return filesystem, nil

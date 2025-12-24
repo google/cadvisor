@@ -1,9 +1,8 @@
-FROM registry.hub.docker.com/library/golang:1.22-alpine3.18 AS build
+FROM registry.hub.docker.com/library/golang:1.25-alpine3.22 AS build
 
 # Install build depdencies for all supported arches
 RUN apk --no-cache add bash build-base cmake device-mapper findutils git \
-                       libc6-compat linux-headers ndctl-dev pkgconfig python3 wget zfs && \
-    apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
+                       libc6-compat linux-headers ndctl-dev pkgconfig python3 thin-provisioning-tools wget zfs && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
 
@@ -50,11 +49,10 @@ RUN export GO_TAGS="libpfm,netgo"; \
     fi; \
     GO_FLAGS="-tags=$GO_TAGS" ./build/build.sh
 
-FROM mirror.gcr.io/library/alpine:3.18
+FROM mirror.gcr.io/library/alpine:3.22
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
-RUN apk --no-cache add libc6-compat device-mapper findutils ndctl zfs && \
-    apk --no-cache add thin-provisioning-tools --repository http://dl-3.alpinelinux.org/alpine/edge/main/ && \
+RUN apk --no-cache add libc6-compat device-mapper findutils ndctl thin-provisioning-tools zfs && \
     echo 'hosts: files mdns4_minimal [NOTFOUND=return] dns mdns4' >> /etc/nsswitch.conf && \
     rm -rf /var/cache/apk/*
 

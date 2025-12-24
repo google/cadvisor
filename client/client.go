@@ -211,11 +211,11 @@ func (c *Client) getEventStreamingData(url string, einfo chan *v1.Event) error {
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Status code is not OK: %v (%s)", resp.StatusCode, resp.Status)
+		return fmt.Errorf("status code is not OK: %v (%s)", resp.StatusCode, resp.Status)
 	}
 
 	dec := json.NewDecoder(resp.Body)
-	var m *v1.Event = &v1.Event{}
+	m := &v1.Event{}
 	for {
 		err := dec.Decode(m)
 		if err != nil {

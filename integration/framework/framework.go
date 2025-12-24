@@ -16,9 +16,12 @@ package framework
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -46,6 +49,9 @@ type Framework interface {
 
 	// Returns the Docker actions for the test framework.
 	Docker() DockerActions
+
+	// Returns the CRI-O actions for the test framework.
+	Crio() CrioActions
 
 	// Returns the shell actions for the test framework.
 	Shell() ShellActions
@@ -85,6 +91,10 @@ func New(t *testing.T) Framework {
 	fm.dockerActions = dockerActions{
 		fm: fm,
 	}
+	fm.crioActions = crioActions{
+		fm:        fm,
+		podSeqNum: 0,
+	}
 
 	return fm
 }
@@ -117,6 +127,30 @@ type DockerActions interface {
 	StorageDriver() string
 }
 
+// CrioActions provides methods for managing CRI-O containers in tests.
+// CRI-O containers run inside pod sandboxes, so each container requires
+// a pod to be created first.
+type CrioActions interface {
+	// Run the no-op pause CRI-O container and return its ID.
+	RunPause() string
+
+	// Run the specified command in a CRI-O busybox container and return its ID.
+	RunBusybox(cmd ...string) string
+
+	// Runs a CRI-O container in the background. Uses the specified CrioRunArgs and command.
+	// Returns the ID of the new container.
+	Run(args CrioRunArgs, cmd ...string) string
+}
+
+// CrioRunArgs contains arguments for running a CRI-O container.
+type CrioRunArgs struct {
+	// Image to use.
+	Image string
+
+	// Container name (optional, auto-generated if empty).
+	Name string
+}
+
 type ShellActions interface {
 	// Runs a specified command and arguments. Returns the stdout and stderr.
 	Run(cmd string, args ...string) (string, string)
@@ -137,6 +171,7 @@ type realFramework struct {
 
 	shellActions  shellActions
 	dockerActions dockerActions
+	crioActions   crioActions
 
 	// Cleanup functions to call on Cleanup()
 	cleanups []func()
@@ -148,6 +183,11 @@ type shellActions struct {
 
 type dockerActions struct {
 	fm *realFramework
+}
+
+type crioActions struct {
+	fm        *realFramework
+	podSeqNum int // For generating unique pod names
 }
 
 type HostnameInfo struct {
@@ -174,6 +214,10 @@ func (f *realFramework) Shell() ShellActions {
 
 func (f *realFramework) Docker() DockerActions {
 	return f.dockerActions
+}
+
+func (f *realFramework) Crio() CrioActions {
+	return &f.crioActions
 }
 
 func (f *realFramework) Cadvisor() CadvisorActions {
@@ -373,4 +417,131 @@ func RetryForDuration(retryFunc func() error, dur time.Duration) error {
 		}
 	}
 	return err
+}
+
+// CRI-O pod sandbox configuration for crictl
+type crioPodConfig struct {
+	Metadata struct {
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+		UID       string `json:"uid"`
+	} `json:"metadata"`
+	Linux struct{} `json:"linux"`
+}
+
+// CRI-O container configuration for crictl
+type crioContainerConfig struct {
+	Metadata struct {
+		Name string `json:"name"`
+	} `json:"metadata"`
+	Image struct {
+		Image string `json:"image"`
+	} `json:"image"`
+	Command []string `json:"command,omitempty"`
+	Args    []string `json:"args,omitempty"`
+	Linux   struct{} `json:"linux"`
+}
+
+func (a *crioActions) RunPause() string {
+	return a.Run(CrioRunArgs{
+		Image: "registry.k8s.io/pause:3.9",
+	})
+}
+
+func (a *crioActions) RunBusybox(cmd ...string) string {
+	return a.Run(CrioRunArgs{
+		Image: "registry.k8s.io/busybox:1.27",
+	}, cmd...)
+}
+
+func (a *crioActions) Run(args CrioRunArgs, cmd ...string) string {
+	// Generate unique names for pod and container
+	a.podSeqNum++
+	podName := fmt.Sprintf("test-pod-%d-%d", os.Getpid(), a.podSeqNum)
+	containerName := args.Name
+	if containerName == "" {
+		containerName = fmt.Sprintf("test-container-%d-%d", os.Getpid(), a.podSeqNum)
+	}
+
+	// Create temporary directory for config files
+	tmpDir, err := os.MkdirTemp("", "crio-test-")
+	if err != nil {
+		a.fm.T().Fatalf("Failed to create temp directory: %v", err)
+	}
+
+	// Create pod config JSON
+	podConfig := crioPodConfig{}
+	podConfig.Metadata.Name = podName
+	podConfig.Metadata.Namespace = "default"
+	podConfig.Metadata.UID = fmt.Sprintf("uid-%d-%d", os.Getpid(), a.podSeqNum)
+
+	podConfigPath := filepath.Join(tmpDir, "pod-config.json")
+	podConfigData, err := json.Marshal(podConfig)
+	if err != nil {
+		a.fm.T().Fatalf("Failed to marshal pod config: %v", err)
+	}
+	if err := os.WriteFile(podConfigPath, podConfigData, 0644); err != nil {
+		a.fm.T().Fatalf("Failed to write pod config: %v", err)
+	}
+
+	// Create container config JSON
+	containerConfig := crioContainerConfig{}
+	containerConfig.Metadata.Name = containerName
+	containerConfig.Image.Image = args.Image
+	if len(cmd) > 0 {
+		containerConfig.Command = cmd[:1]
+		if len(cmd) > 1 {
+			containerConfig.Args = cmd[1:]
+		}
+	}
+
+	containerConfigPath := filepath.Join(tmpDir, "container-config.json")
+	containerConfigData, err := json.Marshal(containerConfig)
+	if err != nil {
+		a.fm.T().Fatalf("Failed to marshal container config: %v", err)
+	}
+	if err := os.WriteFile(containerConfigPath, containerConfigData, 0644); err != nil {
+		a.fm.T().Fatalf("Failed to write container config: %v", err)
+	}
+
+	// Pull the image first
+	klog.Infof("Pulling image %s", args.Image)
+	a.fm.Shell().Run("sudo", "crictl", "pull", args.Image)
+
+	// Create pod sandbox
+	klog.Infof("Creating pod sandbox %s", podName)
+	podOutput, _ := a.fm.Shell().Run("sudo", "crictl", "runp", podConfigPath)
+	podID := strings.TrimSpace(podOutput)
+	if podID == "" {
+		a.fm.T().Fatalf("Failed to create pod sandbox, got empty pod ID")
+	}
+	klog.Infof("Created pod sandbox with ID: %s", podID)
+
+	// Create container
+	klog.Infof("Creating container %s in pod %s", containerName, podID)
+	containerOutput, _ := a.fm.Shell().Run("sudo", "crictl", "create", podID, containerConfigPath, podConfigPath)
+	containerID := strings.TrimSpace(containerOutput)
+	if containerID == "" {
+		a.fm.T().Fatalf("Failed to create container, got empty container ID")
+	}
+	klog.Infof("Created container with ID: %s", containerID)
+
+	// Start container
+	klog.Infof("Starting container %s", containerID)
+	a.fm.Shell().Run("sudo", "crictl", "start", containerID)
+
+	// Register cleanup function (in reverse order: container first, then pod)
+	a.fm.cleanups = append(a.fm.cleanups, func() {
+		klog.Infof("Cleaning up container %s and pod %s", containerID, podID)
+		// Stop and remove container
+		a.fm.Shell().Run("sudo", "crictl", "stop", containerID)
+		a.fm.Shell().Run("sudo", "crictl", "rm", containerID)
+		// Stop and remove pod
+		a.fm.Shell().Run("sudo", "crictl", "stopp", podID)
+		a.fm.Shell().Run("sudo", "crictl", "rmp", podID)
+		// Clean up temp directory
+		os.RemoveAll(tmpDir)
+	})
+
+	return containerID
 }

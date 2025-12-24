@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 // Handler for containerd containers.
 package containerd
 
@@ -138,5 +140,66 @@ func TestHandler(t *testing.T) {
 			as.Nil(err)
 			as.Equal(ts.checkEnvVars, sp.Envs)
 		}
+	}
+}
+
+func TestGetExitCode(t *testing.T) {
+	tests := []struct {
+		name         string
+		exitStatus   uint32
+		returnErr    error
+		expectErr    bool
+		errContains  string
+		expectedCode int
+	}{
+		{
+			name:         "successful exit code 0",
+			exitStatus:   0,
+			returnErr:    nil,
+			expectErr:    false,
+			expectedCode: 0,
+		},
+		{
+			name:         "successful exit code 1",
+			exitStatus:   1,
+			returnErr:    nil,
+			expectErr:    false,
+			expectedCode: 1,
+		},
+		{
+			name:         "task not stopped",
+			exitStatus:   0,
+			returnErr:    assert.AnError,
+			expectErr:    true,
+			expectedCode: -1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			as := assert.New(t)
+
+			mockClient := &containerdClientMock{
+				returnErr:  tt.returnErr,
+				exitStatus: tt.exitStatus,
+			}
+
+			h := &containerdContainerHandler{
+				client: mockClient,
+				reference: info.ContainerReference{
+					Id: "test-container-id",
+				},
+			}
+
+			code, err := h.GetExitCode()
+
+			if tt.expectErr {
+				as.Error(err)
+				as.Equal(tt.expectedCode, code)
+			} else {
+				as.NoError(err)
+				as.Equal(tt.expectedCode, code)
+			}
+		})
 	}
 }

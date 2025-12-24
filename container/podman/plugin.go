@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package podman
 
 import (
 	"fmt"
 
-	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/cgroups"
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"

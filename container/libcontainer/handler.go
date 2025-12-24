@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package libcontainer
 
 import (
@@ -28,8 +30,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opencontainers/runc/libcontainer/cgroups"
-	"github.com/opencontainers/runc/libcontainer/cgroups/fs2"
+	"github.com/opencontainers/cgroups"
+	"github.com/opencontainers/cgroups/fs2"
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"
@@ -311,7 +313,7 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 func (h *Handler) schedulerStatsFromProcs() (info.CpuSchedstat, error) {
 	pids, err := h.cgroupManager.GetAllPids()
 	if err != nil {
-		return info.CpuSchedstat{}, fmt.Errorf("Could not get PIDs for container %d: %w", h.pid, err)
+		return info.CpuSchedstat{}, fmt.Errorf("could not get PIDs for container %d: %w", h.pid, err)
 	}
 	alivePids := make(map[int]struct{}, len(pids))
 	for _, pid := range pids {
@@ -717,10 +719,7 @@ func scanUDPStats(r io.Reader) (info.UdpStat, error) {
 		return stats, scanner.Err()
 	}
 
-	listening := uint64(0)
-	dropped := uint64(0)
-	rxQueued := uint64(0)
-	txQueued := uint64(0)
+	var listening, dropped, rxQueued, txQueued uint64
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -733,8 +732,11 @@ func scanUDPStats(r io.Reader) (info.UdpStat, error) {
 			continue
 		}
 
-		rx, tx := uint64(0), uint64(0)
-		fmt.Sscanf(fs[4], "%X:%X", &rx, &tx)
+		var rx, tx uint64
+		_, err := fmt.Sscanf(fs[4], "%X:%X", &rx, &tx)
+		if err != nil {
+			continue
+		}
 		rxQueued += rx
 		txQueued += tx
 
@@ -771,6 +773,9 @@ func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 	ret.Cpu.CFS.Periods = s.CpuStats.ThrottlingData.Periods
 	ret.Cpu.CFS.ThrottledPeriods = s.CpuStats.ThrottlingData.ThrottledPeriods
 	ret.Cpu.CFS.ThrottledTime = s.CpuStats.ThrottlingData.ThrottledTime
+	ret.Cpu.CFS.BurstsPeriods = s.CpuStats.BurstData.BurstsPeriods
+	ret.Cpu.CFS.BurstTime = s.CpuStats.BurstData.BurstTime
+	setPSIStats(s.CpuStats.PSI, &ret.Cpu.PSI)
 
 	if !withPerCPU {
 		return
@@ -792,6 +797,11 @@ func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.DiskIo.IoWaitTime = diskStatsCopy(s.BlkioStats.IoWaitTimeRecursive)
 	ret.DiskIo.IoMerged = diskStatsCopy(s.BlkioStats.IoMergedRecursive)
 	ret.DiskIo.IoTime = diskStatsCopy(s.BlkioStats.IoTimeRecursive)
+	ret.DiskIo.IoCostUsage = diskStatsCopy(s.BlkioStats.IoCostUsage)
+	ret.DiskIo.IoCostWait = diskStatsCopy(s.BlkioStats.IoCostWait)
+	ret.DiskIo.IoCostIndebt = diskStatsCopy(s.BlkioStats.IoCostIndebt)
+	ret.DiskIo.IoCostIndelay = diskStatsCopy(s.BlkioStats.IoCostIndelay)
+	setPSIStats(s.BlkioStats.PSI, &ret.DiskIo.PSI)
 }
 
 func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
@@ -799,6 +809,7 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.Memory.MaxUsage = s.MemoryStats.Usage.MaxUsage
 	ret.Memory.Failcnt = s.MemoryStats.Usage.Failcnt
 	ret.Memory.KernelUsage = s.MemoryStats.KernelUsage.Usage
+	setPSIStats(s.MemoryStats.PSI, &ret.Memory.PSI)
 
 	if cgroups.IsCgroup2UnifiedMode() {
 		ret.Memory.Cache = s.MemoryStats.Stats["file"]
@@ -881,6 +892,22 @@ func setHugepageStats(s *cgroups.Stats, ret *info.ContainerStats) {
 			MaxUsage: v.MaxUsage,
 			Failcnt:  v.Failcnt,
 		}
+	}
+}
+
+func setPSIData(d *cgroups.PSIData, ret *info.PSIData) {
+	if d != nil {
+		ret.Total = d.Total
+		ret.Avg10 = d.Avg10
+		ret.Avg60 = d.Avg60
+		ret.Avg300 = d.Avg300
+	}
+}
+
+func setPSIStats(s *cgroups.PSIStats, ret *info.PSIStats) {
+	if s != nil {
+		setPSIData(&s.Full, &ret.Full)
+		setPSIData(&s.Some, &ret.Some)
 	}
 }
 

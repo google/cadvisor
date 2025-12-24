@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package podman
 
 import (
@@ -23,9 +25,9 @@ import (
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
+	dockercontainer "github.com/docker/docker/api/types/container"
 	dockerimage "github.com/docker/docker/api/types/image"
 	dockersystem "github.com/docker/docker/api/types/system"
-	"github.com/pkg/errors"
 
 	"github.com/google/cadvisor/container/docker"
 	"github.com/google/cadvisor/container/docker/utils"
@@ -52,7 +54,7 @@ func validateResponse(gotError error, response *http.Response) error {
 	}
 
 	if gotError != nil {
-		err = errors.Wrap(gotError, err.Error())
+		err = fmt.Errorf("%s: %w", err.Error(), gotError)
 	}
 
 	return err
@@ -156,8 +158,8 @@ func APIVersionString() (string, error) {
 	return version.APIVersion, nil
 }
 
-func InspectContainer(id string) (dockertypes.ContainerJSON, error) {
-	var data dockertypes.ContainerJSON
+func InspectContainer(id string) (dockercontainer.InspectResponse, error) {
+	var data dockercontainer.InspectResponse
 	err := apiGetRequest(fmt.Sprintf("http://d/v1.0.0/containers/%s/json", id), &data)
 	return data, err
 }

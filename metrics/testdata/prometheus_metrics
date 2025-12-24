@@ -18,6 +18,12 @@ container_cpu_cfs_throttled_periods_total{container_env_foo_env="prod",container
 # HELP container_cpu_cfs_throttled_seconds_total Total time duration the container has been throttled.
 # TYPE container_cpu_cfs_throttled_seconds_total counter
 container_cpu_cfs_throttled_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.724314 1395066363000
+# HELP container_cpu_cfs_burst_periods_total Number of periods when burst occurs.
+# TYPE container_cpu_cfs_burst_periods_total counter
+container_cpu_cfs_burst_periods_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 25 1395066363000
+# HELP container_cpu_cfs_burst_seconds_total Total time duration the container has been bursted.
+# TYPE container_cpu_cfs_burst_seconds_total counter
+container_cpu_cfs_burst_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.5 1395066363000
 # HELP container_cpu_load_average_10s Value of container cpu load average over the last 10 seconds.
 # TYPE container_cpu_load_average_10s gauge
 container_cpu_load_average_10s{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2 1395066363000
@@ -78,6 +84,18 @@ container_fs_io_time_seconds_total{container_env_foo_env="prod",container_label_
 # TYPE container_fs_io_time_weighted_seconds_total counter
 container_fs_io_time_weighted_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4.4e-08 1395066363000
 container_fs_io_time_weighted_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4.9e-08 1395066363000
+# HELP container_fs_io_cost_usage_seconds_total Cumulative IOCost usage in seconds
+# TYPE container_fs_io_cost_usage_seconds_total counter
+container_fs_io_cost_usage_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.5 1395066363000
+# HELP container_fs_io_cost_wait_seconds_total Cumulative IOCost wait in seconds
+# TYPE container_fs_io_cost_wait_seconds_total counter
+container_fs_io_cost_wait_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2.5 1395066363000
+# HELP container_fs_io_cost_indebt_seconds_total Cumulative IOCost debt in seconds
+# TYPE container_fs_io_cost_indebt_seconds_total counter
+container_fs_io_cost_indebt_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.5 1395066363000
+# HELP container_fs_io_cost_indelay_seconds_total Cumulative IOCost delay in seconds
+# TYPE container_fs_io_cost_indelay_seconds_total counter
+container_fs_io_cost_indelay_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.75 1395066363000
 # HELP container_fs_limit_bytes Number of bytes that can be consumed by the container on this filesystem.
 # TYPE container_fs_limit_bytes gauge
 container_fs_limit_bytes{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 22 1395066363000
@@ -124,6 +142,9 @@ container_fs_writes_merged_total{container_env_foo_env="prod",container_label_fo
 # TYPE container_fs_writes_total counter
 container_fs_writes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 28 1395066363000
 container_fs_writes_total{container_env_foo_env="prod",container_label_foo_label="bar",device="sda2",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 43 1395066363000
+# HELP container_health_state The result of the container's health check
+# TYPE container_health_state gauge
+container_health_state{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000
 # HELP container_hugetlb_failcnt Number of hugepage usage hits limits
 # TYPE container_hugetlb_failcnt counter
 container_hugetlb_failcnt{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",pagesize="1Gi",zone_name="hello"} 0 1395066363000
@@ -381,6 +402,24 @@ container_perf_uncore_events_total{container_env_foo_env="prod",container_label_
 # TYPE container_perf_uncore_events_scaling_ratio gauge
 container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="0",zone_name="hello"} 1 1395066363000
 container_perf_uncore_events_scaling_ratio{container_env_foo_env="prod",container_label_foo_label="bar",event="cas_count_read",id="testcontainer",image="test",name="testcontaineralias",pmu="uncore_imc_0",socket="1",zone_name="hello"} 1 1395066363000
+# HELP container_pressure_cpu_stalled_seconds_total Total time duration no tasks in the container could make progress due to CPU congestion.
+# TYPE container_pressure_cpu_stalled_seconds_total counter
+container_pressure_cpu_stalled_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.0001 1395066363000
+# HELP container_pressure_cpu_waiting_seconds_total Total time duration tasks in the container have waited due to CPU congestion.
+# TYPE container_pressure_cpu_waiting_seconds_total counter
+container_pressure_cpu_waiting_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.0002 1395066363000
+# HELP container_pressure_io_stalled_seconds_total Total time duration no tasks in the container could make progress due to IO congestion.
+# TYPE container_pressure_io_stalled_seconds_total counter
+container_pressure_io_stalled_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.0011 1395066363000
+# HELP container_pressure_io_waiting_seconds_total Total time duration tasks in the container have waited due to IO congestion.
+# TYPE container_pressure_io_waiting_seconds_total counter
+container_pressure_io_waiting_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.0022 1395066363000
+# HELP container_pressure_memory_stalled_seconds_total Total time duration no tasks in the container could make progress due to memory congestion.
+# TYPE container_pressure_memory_stalled_seconds_total counter
+container_pressure_memory_stalled_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.001 1395066363000
+# HELP container_pressure_memory_waiting_seconds_total Total time duration tasks in the container have waited due to memory congestion.
+# TYPE container_pressure_memory_waiting_seconds_total counter
+container_pressure_memory_waiting_seconds_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0.002 1395066363000
 # HELP container_processes Number of processes running inside the container.
 # TYPE container_processes gauge
 container_processes{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1 1395066363000

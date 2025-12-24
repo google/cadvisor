@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package docker
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"regexp"
@@ -25,8 +28,11 @@ import (
 
 	"github.com/blang/semver/v4"
 	dockersystem "github.com/docker/docker/api/types/system"
+	dclient "github.com/docker/docker/client"
+	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"
+	"github.com/google/cadvisor/container/containerd"
 	dockerutil "github.com/google/cadvisor/container/docker/utils"
 	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/devicemapper"
@@ -35,10 +41,6 @@ import (
 	"github.com/google/cadvisor/machine"
 	"github.com/google/cadvisor/watcher"
 	"github.com/google/cadvisor/zfs"
-
-	docker "github.com/docker/docker/client"
-	"golang.org/x/net/context"
-	"k8s.io/klog/v2"
 )
 
 var ArgDockerEndpoint = flag.String("docker", "unix:///var/run/docker.sock", "docker endpoint")
@@ -94,12 +96,13 @@ func RootDir() string {
 type StorageDriver string
 
 const (
-	DevicemapperStorageDriver StorageDriver = "devicemapper"
-	AufsStorageDriver         StorageDriver = "aufs"
-	OverlayStorageDriver      StorageDriver = "overlay"
-	Overlay2StorageDriver     StorageDriver = "overlay2"
-	ZfsStorageDriver          StorageDriver = "zfs"
-	VfsStorageDriver          StorageDriver = "vfs"
+	DevicemapperStorageDriver          StorageDriver = "devicemapper"
+	AufsStorageDriver                  StorageDriver = "aufs"
+	OverlayStorageDriver               StorageDriver = "overlay"
+	Overlay2StorageDriver              StorageDriver = "overlay2"
+	ContainerdSnapshotterStorageDriver StorageDriver = "overlayfs"
+	ZfsStorageDriver                   StorageDriver = "zfs"
+	VfsStorageDriver                   StorageDriver = "vfs"
 )
 
 type dockerFactory struct {
@@ -108,7 +111,8 @@ type dockerFactory struct {
 	storageDriver StorageDriver
 	storageDir    string
 
-	client *docker.Client
+	client           *dclient.Client
+	containerdClient containerd.ContainerdClient
 
 	// Information about the mounted cgroup subsystems.
 	cgroupSubsystems map[string]string
@@ -145,8 +149,9 @@ func (f *dockerFactory) NewContainerHandler(name string, metadataEnvAllowList []
 		dockerMetadataEnvAllowList = metadataEnvAllowList
 	}
 
-	handler, err = newDockerContainerHandler(
+	handler, err = newContainerHandler(
 		client,
+		f.containerdClient,
 		name,
 		f.machineInfoFactory,
 		f.fsInfo,
@@ -349,10 +354,16 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		}
 	}
 
+	containerdClient, err := containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
+	if err != nil {
+		return fmt.Errorf("unable to create containerd client: %v", err)
+	}
+
 	klog.V(1).Infof("Registering Docker factory")
 	f := &dockerFactory{
 		cgroupSubsystems:   cgroupSubsystems,
 		client:             client,
+		containerdClient:   containerdClient,
 		dockerVersion:      dockerVersion,
 		dockerAPIVersion:   dockerAPIVersion,
 		fsInfo:             fsInfo,

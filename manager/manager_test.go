@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 // Per-container manager.
 
 package manager
@@ -20,6 +22,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -27,9 +30,11 @@ import (
 	"github.com/google/cadvisor/collector"
 	"github.com/google/cadvisor/container"
 	containertest "github.com/google/cadvisor/container/testing"
+	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
 	itest "github.com/google/cadvisor/info/v1/test"
 	v2 "github.com/google/cadvisor/info/v2"
+	"github.com/google/cadvisor/stats"
 	"github.com/google/cadvisor/utils/sysfs/fakesysfs"
 
 	"github.com/stretchr/testify/assert"
@@ -54,7 +59,6 @@ func createManagerAndAddContainers(
 ) *manager {
 	container.ClearContainerHandlerFactories()
 	mif := &manager{
-		containers:   make(map[namespacedContainerName]*containerData),
 		quitChannels: make([]chan error, 0, 2),
 		memoryCache:  memoryCache,
 	}
@@ -69,15 +73,15 @@ func createManagerAndAddContainers(
 		if err != nil {
 			t.Fatal(err)
 		}
-		mif.containers[namespacedContainerName{
+		mif.containers.Store(namespacedContainerName{
 			Name: name,
-		}] = cont
+		}, cont)
 		// Add Docker containers under their namespace.
 		if strings.HasPrefix(name, "/docker") {
-			mif.containers[namespacedContainerName{
+			mif.containers.Store(namespacedContainerName{
 				Namespace: DockerNamespace,
 				Name:      strings.TrimPrefix(name, "/docker/"),
-			}] = cont
+			}, cont)
 		}
 		f(mockHandler)
 	}
@@ -93,7 +97,6 @@ func createManagerAndAddSubContainers(
 ) *manager {
 	container.ClearContainerHandlerFactories()
 	mif := &manager{
-		containers:   make(map[namespacedContainerName]*containerData),
 		quitChannels: make([]chan error, 0, 2),
 		memoryCache:  memoryCache,
 	}
@@ -132,15 +135,15 @@ func createManagerAndAddSubContainers(
 		if err != nil {
 			t.Fatal(err)
 		}
-		mif.containers[namespacedContainerName{
+		mif.containers.Store(namespacedContainerName{
 			Name: name,
-		}] = cont
+		}, cont)
 		// Add Docker containers under their namespace.
 		if strings.HasPrefix(name, "/docker") {
-			mif.containers[namespacedContainerName{
+			mif.containers.Store(namespacedContainerName{
 				Namespace: DockerNamespace,
 				Name:      strings.TrimPrefix(name, "/docker/"),
-			}] = cont
+			}, cont)
 		}
 		f(mockHandler)
 	}
@@ -384,7 +387,10 @@ func TestGetContainerInfoV2Failure(t *testing.T) {
 	assert.NoError(t, err) // Use up default GetSpec call, and replace below
 	handlerMap[failing].On("GetSpec").Return(info.ContainerSpec{}, mockErr)
 	handlerMap[failing].On("Exists").Return(true)
-	m.containers[namespacedContainerName{Name: failing}].infoLastUpdatedTime = time.Time{} // Force GetSpec.
+	// Force GetSpec by resetting infoLastUpdatedTime to zero.
+	if cont, ok := m.containers.Load(namespacedContainerName{Name: failing}); ok {
+		cont.infoLastUpdatedTime.Store(0)
+	}
 
 	infos, err := m.GetContainerInfoV2("/", options)
 	if err == nil {
@@ -530,4 +536,244 @@ func TestDockerContainersInfo(t *testing.T) {
 	if err == nil {
 		t.Errorf("expected error %q but received %q", expectedError, err)
 	}
+}
+
+func TestDestroyContainerWithExitCode(t *testing.T) {
+	mockHandler := containertest.NewMockContainerHandler("/test")
+	mockHandler.On("GetExitCode").Return(42, nil)
+
+	memoryCache := memory.New(60*time.Second, nil)
+	m := &manager{
+		quitChannels: make([]chan error, 0, 2),
+		memoryCache:  memoryCache,
+	}
+
+	cont := &containerData{
+		handler:          mockHandler,
+		memoryCache:      memoryCache,
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test",
+			},
+		},
+		stop: make(chan struct{}),
+	}
+
+	m.containers.Store(namespacedContainerName{Name: "/test"}, cont)
+
+	mockEventHandler := &mockEventHandler{
+		events: make([]*info.Event, 0),
+	}
+	m.eventHandler = mockEventHandler
+
+	err := m.destroyContainer("/test")
+	if err != nil {
+		t.Logf("destroyContainer error: %v", err)
+	}
+	assert.Nil(t, err)
+
+	assert.Len(t, mockEventHandler.events, 1)
+	event := mockEventHandler.events[0]
+	assert.Equal(t, info.EventContainerDeletion, event.EventType)
+	assert.NotNil(t, event.EventData.ContainerDeletion)
+	assert.Equal(t, 42, event.EventData.ContainerDeletion.ExitCode)
+
+	mockHandler.AssertExpectations(t)
+}
+
+func TestDestroyContainerExitCodeUnavailable(t *testing.T) {
+	mockHandler := containertest.NewMockContainerHandler("/test")
+	mockHandler.On("GetExitCode").Return(-1, fmt.Errorf("container not found"))
+
+	memoryCache := memory.New(60*time.Second, nil)
+	m := &manager{
+		quitChannels: make([]chan error, 0, 2),
+		memoryCache:  memoryCache,
+	}
+
+	cont := &containerData{
+		handler:          mockHandler,
+		memoryCache:      memoryCache,
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test",
+			},
+		},
+		stop: make(chan struct{}),
+	}
+
+	m.containers.Store(namespacedContainerName{Name: "/test"}, cont)
+
+	mockEventHandler := &mockEventHandler{
+		events: make([]*info.Event, 0),
+	}
+	m.eventHandler = mockEventHandler
+
+	err := m.destroyContainer("/test")
+	if err != nil {
+		t.Logf("destroyContainer error: %v", err)
+	}
+	assert.Nil(t, err)
+
+	assert.Len(t, mockEventHandler.events, 1)
+	event := mockEventHandler.events[0]
+	assert.Equal(t, info.EventContainerDeletion, event.EventType)
+	assert.NotNil(t, event.EventData.ContainerDeletion)
+	assert.Equal(t, -1, event.EventData.ContainerDeletion.ExitCode)
+
+	mockHandler.AssertExpectations(t)
+}
+
+type mockEventHandler struct {
+	events []*info.Event
+}
+
+func (m *mockEventHandler) AddEvent(e *info.Event) error {
+	m.events = append(m.events, e)
+	return nil
+}
+
+func (m *mockEventHandler) WatchEvents(request *events.Request) (*events.EventChannel, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockEventHandler) GetEvents(request *events.Request) ([]*info.Event, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *mockEventHandler) StopWatch(watchID int) {
+}
+
+// threadSafeEventHandler is a thread-safe version of mockEventHandler for concurrent tests.
+type threadSafeEventHandler struct {
+	mu     sync.Mutex
+	events []*info.Event
+}
+
+func (m *threadSafeEventHandler) AddEvent(e *info.Event) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.events = append(m.events, e)
+	return nil
+}
+
+func (m *threadSafeEventHandler) WatchEvents(request *events.Request) (*events.EventChannel, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *threadSafeEventHandler) GetEvents(request *events.Request) ([]*info.Event, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (m *threadSafeEventHandler) StopWatch(watchID int) {
+}
+
+// TestContainerDataStopConcurrent verifies that concurrent calls to Stop()
+// do not cause a panic. This is a regression test for a race condition where
+// multiple goroutines could call Stop() on the same containerData, causing a
+// "close of closed channel" panic.
+func TestContainerDataStopConcurrent(t *testing.T) {
+	memoryCache := memory.New(60*time.Second, nil)
+
+	// Create a minimal containerData with the fields needed for Stop()
+	cd := &containerData{
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test-concurrent",
+			},
+		},
+		memoryCache:      memoryCache,
+		stop:             make(chan struct{}),
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+	}
+
+	// Launch multiple goroutines that all try to call Stop() simultaneously
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	// Use a channel to synchronize goroutines to start at the same time
+	start := make(chan struct{})
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			<-start // Wait for signal to start
+			// This should not panic even if called multiple times concurrently
+			_ = cd.Stop()
+		}()
+	}
+
+	// Signal all goroutines to start simultaneously
+	close(start)
+
+	// Wait for all goroutines to complete - if there's a panic, the test will fail
+	wg.Wait()
+}
+
+// TestDestroyContainerConcurrent verifies that concurrent calls to destroyContainer
+// for the same container do not cause a panic.
+func TestDestroyContainerConcurrent(t *testing.T) {
+	memoryCache := memory.New(60*time.Second, nil)
+	m := &manager{
+		quitChannels: make([]chan error, 0, 2),
+		memoryCache:  memoryCache,
+	}
+
+	mockEventHandler := &threadSafeEventHandler{}
+	mockHandler := containertest.NewMockContainerHandler("/test-concurrent")
+	mockHandler.On("Start").Return(nil)
+	mockHandler.On("Cleanup").Return()
+	mockHandler.On("Stop").Return()
+	// GetExitCode may be called multiple times due to concurrent access
+	mockHandler.On("GetExitCode").Return(-1, nil).Maybe()
+
+	// Create the container
+	cd := &containerData{
+		handler: mockHandler,
+		info: containerInfo{
+			ContainerReference: info.ContainerReference{
+				Name: "/test-concurrent",
+			},
+		},
+		memoryCache:      memoryCache,
+		stop:             make(chan struct{}),
+		perfCollector:    &stats.NoopCollector{},
+		resctrlCollector: &stats.NoopCollector{},
+	}
+
+	// Add to manager's container map
+	m.containers.Store(namespacedContainerName{Name: "/test-concurrent"}, cd)
+
+	// Register event handler
+	m.eventHandler = mockEventHandler
+
+	// Launch multiple goroutines that all try to destroy the same container
+	const numGoroutines = 10
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	start := make(chan struct{})
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			<-start
+			_ = m.destroyContainer("/test-concurrent")
+		}()
+	}
+
+	close(start)
+	wg.Wait()
+
+	// With sync.Once protecting only the channel close, multiple goroutines
+	// can still process the container and add events. The key assertion is
+	// that no panic occurred (test would fail otherwise).
+	// At least one event should be recorded.
+	assert.GreaterOrEqual(t, len(mockEventHandler.events), 1, "at least one destruction event should be recorded")
 }

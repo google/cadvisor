@@ -33,9 +33,14 @@ import (
 // asFloat64 converts a uint64 into a float64.
 func asFloat64(v uint64) float64 { return float64(v) }
 
+// asMicrosecondsToSeconds converts nanoseconds into a float64 representing seconds.
+func asMicrosecondsToSeconds(v uint64) float64 {
+	return float64(v) / 1e6
+}
+
 // asNanosecondsToSeconds converts nanoseconds into a float64 representing seconds.
 func asNanosecondsToSeconds(v uint64) float64 {
-	return float64(v) / float64(time.Second)
+	return float64(v) / 1e9
 }
 
 // fsValues is a helper method for assembling per-filesystem stats.
@@ -130,6 +135,12 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					}}
 				},
 			},
+			{
+				name:      "container_health_state",
+				help:      "The result of the container's health check",
+				valueType: prometheus.GaugeValue,
+				getValues: getContainerHealthState,
+			},
 		},
 		includedMetrics: includedMetrics,
 		opts:            opts,
@@ -220,6 +231,30 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return metricValues{
 						{
 							value:     float64(s.Cpu.CFS.ThrottledTime) / float64(time.Second),
+							timestamp: s.Timestamp,
+						}}
+				},
+			}, {
+				name:      "container_cpu_cfs_burst_periods_total",
+				help:      "Number of periods when burst occurs.",
+				valueType: prometheus.CounterValue,
+				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{
+						{
+							value:     float64(s.Cpu.CFS.BurstsPeriods),
+							timestamp: s.Timestamp,
+						}}
+				},
+			}, {
+				name:      "container_cpu_cfs_burst_seconds_total",
+				help:      "Total time duration the container has been bursted.",
+				valueType: prometheus.CounterValue,
+				condition: func(s info.ContainerSpec) bool { return s.Cpu.Quota != 0 },
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{
+						{
+							value:     float64(s.Cpu.CFS.BurstTime) / float64(time.Second),
 							timestamp: s.Timestamp,
 						}}
 				},
@@ -743,6 +778,54 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return fsValues(s.Filesystem, func(fs *info.FsStats) float64 {
 						return float64(fs.WeightedIoTime) / float64(time.Second)
 					}, s.Timestamp)
+				},
+			}, {
+				name:        "container_fs_io_cost_usage_seconds_total",
+				help:        "Cumulative IOCost usage in seconds",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return ioValues(
+						s.DiskIo.IoCostUsage, "Count", asMicrosecondsToSeconds,
+						[]info.FsStats{}, nil,
+						s.Timestamp,
+					)
+				},
+			}, {
+				name:        "container_fs_io_cost_wait_seconds_total",
+				help:        "Cumulative IOCost wait in seconds",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return ioValues(
+						s.DiskIo.IoCostWait, "Count", asMicrosecondsToSeconds,
+						[]info.FsStats{}, nil,
+						s.Timestamp,
+					)
+				},
+			}, {
+				name:        "container_fs_io_cost_indebt_seconds_total",
+				help:        "Cumulative IOCost debt in seconds",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return ioValues(
+						s.DiskIo.IoCostIndebt, "Count", asMicrosecondsToSeconds,
+						[]info.FsStats{}, nil,
+						s.Timestamp,
+					)
+				},
+			}, {
+				name:        "container_fs_io_cost_indelay_seconds_total",
+				help:        "Cumulative IOCost delay in seconds",
+				valueType:   prometheus.CounterValue,
+				extraLabels: []string{"device"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					return ioValues(
+						s.DiskIo.IoCostIndelay, "Count", asMicrosecondsToSeconds,
+						[]info.FsStats{}, nil,
+						s.Timestamp,
+					)
 				},
 			},
 			{
@@ -1746,6 +1829,54 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 		})
 	}
 
+	if includedMetrics.Has(container.PressureMetrics) {
+		c.containerMetrics = append(c.containerMetrics, []containerMetric{
+			{
+				name:      "container_pressure_cpu_stalled_seconds_total",
+				help:      "Total time duration no tasks in the container could make progress due to CPU congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: asMicrosecondsToSeconds(s.Cpu.PSI.Full.Total), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_pressure_cpu_waiting_seconds_total",
+				help:      "Total time duration tasks in the container have waited due to CPU congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: asMicrosecondsToSeconds(s.Cpu.PSI.Some.Total), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_pressure_memory_stalled_seconds_total",
+				help:      "Total time duration no tasks in the container could make progress due to memory congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: asMicrosecondsToSeconds(s.Memory.PSI.Full.Total), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_pressure_memory_waiting_seconds_total",
+				help:      "Total time duration tasks in the container have waited due to memory congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: asMicrosecondsToSeconds(s.Memory.PSI.Some.Total), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_pressure_io_stalled_seconds_total",
+				help:      "Total time duration no tasks in the container could make progress due to IO congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: asMicrosecondsToSeconds(s.DiskIo.PSI.Full.Total), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_pressure_io_waiting_seconds_total",
+				help:      "Total time duration tasks in the container have waited due to IO congestion.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: asMicrosecondsToSeconds(s.DiskIo.PSI.Some.Total), timestamp: s.Timestamp}}
+				},
+			},
+		}...)
+	}
+
 	return c
 }
 
@@ -2037,4 +2168,19 @@ func getMinCoreScalingRatio(s *info.ContainerStats) metricValues {
 		})
 	}
 	return values
+}
+
+func getContainerHealthState(s *info.ContainerStats) metricValues {
+	value := float64(0)
+	switch s.Health.Status {
+	case "healthy":
+		value = 1
+	case "": // if container has no health check defined
+		value = -1
+	default: // starting or unhealthy
+	}
+	return metricValues{{
+		value:     value,
+		timestamp: s.Timestamp,
+	}}
 }

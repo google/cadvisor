@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package api
 
 import (
@@ -20,7 +22,7 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 
-	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/cgroups"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/klog/v2"
 )

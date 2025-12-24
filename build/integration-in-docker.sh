@@ -33,7 +33,7 @@ function run_tests() {
   # Add safe.directory as workaround for https://github.com/actions/runner/issues/2033
   BUILD_CMD="git config --global safe.directory /go/src/github.com/google/cadvisor && env GOOS=linux GOARCH=amd64 GO_FLAGS='$GO_FLAGS' ./build/build.sh && \
     env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/api && \
-    env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/healthz"
+    env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/common"
 
   if [ "$BUILD_PACKAGES" != "" ]; then
     BUILD_CMD="apt update && apt install -y $BUILD_PACKAGES && \
@@ -58,7 +58,7 @@ function run_tests() {
     --privileged \
     --cap-add="sys_admin" \
     --entrypoint="" \
-    gcr.io/k8s-staging-test-infra/bootstrap \
+    gcr.io/k8s-staging-test-infra/bootstrap:v20250702-52f5173c3a \
     bash -c "export DEBIAN_FRONTEND=noninteractive && \
     apt update && \
     apt install -y $PACKAGES && \
@@ -69,5 +69,5 @@ GO_FLAGS=${GO_FLAGS:-"-tags=netgo -race"}
 PACKAGES=${PACKAGES:-"sudo"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
 CADVISOR_ARGS=${CADVISOR_ARGS:-}
-GOLANG_VERSION=${GOLANG_VERSION:-"1.22"}
-run_tests "$GO_FLAGS" "$PACKAGES" "$BUILD_PACKAGES" "$CADVISOR_ARGS"
+GOLANG_VERSION=${GOLANG_VERSION:-"1.25"}
+run_tests

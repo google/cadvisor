@@ -47,6 +47,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_fs_write_seconds_total` | Counter | Cumulative count of seconds spent writing | seconds | diskIO |
 `container_fs_writes_merged_total` | Counter | Cumulative count of writes merged | | diskIO |
 `container_fs_writes_total` | Counter | Cumulative count of writes completed | | diskIO |
+`container_health_state` | Gauge | State of the health check probe | | - |
 `container_hugetlb_failcnt` | Counter | Number of hugepage usage hits limits | | hugetlb |
 `container_hugetlb_max_usage_bytes` | Gauge | Maximum hugepage usages recorded | bytes | hugetlb |
 `container_hugetlb_usage_bytes` | Gauge | Current hugepage usage | bytes | hugetlb |
