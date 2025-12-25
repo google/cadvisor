@@ -330,9 +330,10 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 	}
 
 	var (
-		thinPoolWatcher *devicemapper.ThinPoolWatcher
-		thinPoolName    string
-		zfsWatcher      *zfs.ZfsWatcher
+		thinPoolWatcher  *devicemapper.ThinPoolWatcher
+		thinPoolName     string
+		zfsWatcher       *zfs.ZfsWatcher
+		containerdClient containerd.ContainerdClient
 	)
 	if includedMetrics.Has(container.DiskUsageMetrics) {
 		if StorageDriver(dockerInfo.Driver) == DevicemapperStorageDriver {
@@ -354,9 +355,11 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		}
 	}
 
-	containerdClient, err := containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
-	if err != nil {
-		return fmt.Errorf("unable to create containerd client: %v", err)
+	if StorageDriver(dockerInfo.Driver) == ContainerdSnapshotterStorageDriver {
+		containerdClient, err = containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
+		if err != nil {
+			return fmt.Errorf("unable to create containerd client: %v", err)
+		}
 	}
 
 	klog.V(1).Infof("Registering Docker factory")
