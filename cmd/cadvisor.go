@@ -16,8 +16,10 @@ package main
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -57,6 +59,11 @@ var httpAuthFile = flag.String("http_auth_file", "", "HTTP auth file for the web
 var httpAuthRealm = flag.String("http_auth_realm", "localhost", "HTTP auth realm for the web UI")
 var httpDigestFile = flag.String("http_digest_file", "", "HTTP digest file for the web UI")
 var httpDigestRealm = flag.String("http_digest_realm", "localhost", "HTTP digest file for the web UI")
+
+var tlsCertPath = flag.String("tls_cert_path", "", "TLS certificate file path to serve cadvisor HTTPS with. Must be specified along with -tls_key_path")
+var tlsKeyPath = flag.String("tls_key_path", "", "TLS key file path to serve cadvisor HTTPS with. Must be specified along with -tls_cert_path")
+var tlsCAPath = flag.String("tls_ca_path", "", "TLS certificate authority file path. Used to verify TLS clients connecting to cadvisor. System CA roots will be used if this is not specified.")
+var tlsClientAuth = flag.String("tls_client_auth", "require", "TLS authentication mode, must be one of request, optional, requireany, require or none.")
 
 var prometheusEndpoint = flag.String("prometheus_endpoint", "/metrics", "Endpoint to expose Prometheus metrics on")
 
@@ -155,6 +162,9 @@ func main() {
 		klog.Fatalf("Failed to register HTTP handlers: %v", err)
 	}
 
+	// Generate tls.Config if it was requested by flags
+	tlsConfig := createTLSConfig(*tlsCertPath, *tlsKeyPath, *tlsCAPath, *tlsClientAuth)
+
 	containerLabelFunc := metrics.DefaultContainerLabels
 	if !*storeContainerLabels {
 		whitelistedLabels := strings.Split(*whitelistedContainerLabels, ",")
@@ -182,7 +192,23 @@ func main() {
 	rootMux.Handle(*urlBasePrefix+"/", http.StripPrefix(*urlBasePrefix, mux))
 
 	addr := fmt.Sprintf("%s:%d", *argIP, *argPort)
-	klog.Fatal(http.ListenAndServe(addr, rootMux))
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		klog.Fatal(err)
+	}
+
+	// Wrap in a TLS listener if any TLS configuration was specified
+	if tlsConfig != nil {
+		listener = tls.NewListener(listener, tlsConfig)
+		klog.V(1).Infof("Listening for TLS connections")
+	}
+
+	server := &http.Server{
+		Addr:      addr,
+		Handler:   rootMux,
+		TLSConfig: tlsConfig,
+	}
+	klog.Fatal(server.Serve(listener))
 }
 
 func setMaxProcs() {
@@ -242,4 +268,65 @@ func createCollectorHTTPClient(collectorCert, collectorKey string) http.Client {
 	}
 
 	return http.Client{Transport: transport}
+}
+
+func createTLSConfig(tlsCertPath, tlsKeyPath, tlsCAPath, tlsClientAuth string) *tls.Config {
+	var tlsConfig *tls.Config
+
+	if tlsCertPath != "" || tlsKeyPath != "" {
+		if tlsCertPath == "" || tlsKeyPath == "" {
+			// Fail if one is set but not the other
+			klog.Fatal("Both tls_cert_path and tls_key_path are required at the same time")
+		}
+
+		// Verify that the key/certificate load and are valid before starting up
+		_, err := tls.LoadX509KeyPair(tlsCertPath, tlsKeyPath)
+		if err != nil {
+			klog.Fatalf("Failed to load TLS certificate/key pair: %v", err)
+		}
+
+		tlsConfig = &tls.Config{
+			GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+				cert, err := tls.LoadX509KeyPair(tlsCertPath, tlsKeyPath)
+				if err != nil {
+					return nil, err
+				}
+				return &cert, nil
+			},
+		}
+	}
+
+	if tlsCAPath != "" {
+		clientCAPool := x509.NewCertPool()
+		clientCAFile, err := os.ReadFile(tlsCAPath)
+		if err != nil {
+			klog.Fatalf("Failed to load TLS CA file: %v", err)
+		}
+		clientCAPool.AppendCertsFromPEM(clientCAFile)
+
+		if tlsConfig == nil {
+			tlsConfig = new(tls.Config)
+		}
+		tlsConfig.ClientCAs = clientCAPool
+	}
+
+	// This is only meaningful if we have TLS server certs, a CA cert to verify clients, or both.
+	if tlsConfig != nil {
+		switch tlsClientAuth {
+		case "request":
+			tlsConfig.ClientAuth = tls.RequestClientCert
+		case "optional":
+			tlsConfig.ClientAuth = tls.VerifyClientCertIfGiven
+		case "requireany":
+			tlsConfig.ClientAuth = tls.RequireAnyClientCert
+		case "require":
+			tlsConfig.ClientAuth = tls.RequireAndVerifyClientCert
+		case "none":
+			tlsConfig.ClientAuth = tls.NoClientCert
+		default:
+			klog.Fatalf("Invalid tls_client_auth: %s", tlsClientAuth)
+		}
+	}
+
+	return tlsConfig
 }
