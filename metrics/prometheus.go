@@ -474,6 +474,22 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			},
 			{
+				name:      "container_memory_total_inactive_anon_bytes",
+				help:      "Current total inactive anonymous in bytes.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.TotalInactiveAnon), timestamp: s.Timestamp}}
+				},
+			},
+			{
+				name:      "container_memory_total_active_anon_bytes",
+				help:      "Current total active anonymous in bytes.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.TotalActiveAnon), timestamp: s.Timestamp}}
+				},
+			},
+			{
 				name:      "container_memory_total_active_file_bytes",
 				help:      "Current total active file in bytes.",
 				valueType: prometheus.GaugeValue,
@@ -489,6 +505,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return metricValues{{value: float64(s.Memory.TotalInactiveFile), timestamp: s.Timestamp}}
 				},
 			},
+
 			{
 				name:        "container_memory_failures_total",
 				help:        "Cumulative count of memory allocation failures.",
