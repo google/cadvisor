@@ -151,6 +151,21 @@ func (p *OomParser) StreamOoms(outStream chan<- *OomInstance) {
 	klog.Errorf("exiting analyzeLines. OOM events will not be reported.")
 }
 
+// NewFromNow initializes an OomParser object that returns current OOM events only. In this mode the OomParser object
+// will not send OOM events that occurred before the OomParser object was constructed.
+func NewFromNow() (*OomParser, error) {
+	parser, err := New()
+	if err != nil {
+		return nil, err
+	}
+
+	// seek to and set the offset at the end of /dev/kmsg to avoid reporting old OOM events
+	if err := parser.parser.SeekEnd(); err != nil {
+		return nil, err
+	}
+	return parser, nil
+}
+
 // initializes an OomParser object. Returns an OomParser object and an error.
 func New() (*OomParser, error) {
 	parser, err := kmsgparser.NewParser()
