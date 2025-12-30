@@ -103,6 +103,7 @@ const (
 	Aufs         string = "aufs"
 	Overlay      string = "overlay"
 	Overlay2     string = "overlay2"
+	OverlayFS    string = "overlayfs" // containerd overlayfs snapshotter
 	DeviceMapper string = "devicemapper"
 	Unknown      string = ""
 )
@@ -312,26 +313,17 @@ func (a dockerActions) Version() []string {
 }
 
 func (a dockerActions) StorageDriver() string {
-	dockerCommand := []string{"docker", "info"}
-	output, _ := a.fm.Shell().Run("sudo", dockerCommand...)
-	if len(output) < 1 {
+	output, _ := a.fm.Shell().Run("sudo", "docker", "info", "--format", "{{.Driver}}")
+	driver := strings.TrimSpace(output)
+	if driver == "" {
 		a.fm.T().Fatalf("failed to find docker storage driver - %v", output)
 	}
-	for _, line := range strings.Split(output, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "Storage Driver: ") {
-			idx := strings.LastIndex(line, ": ") + 2
-			driver := line[idx:]
-			switch driver {
-			case Aufs, Overlay, Overlay2, DeviceMapper:
-				return driver
-			default:
-				return Unknown
-			}
-		}
+	switch driver {
+	case Aufs, Overlay, Overlay2, OverlayFS, DeviceMapper:
+		return driver
+	default:
+		return Unknown
 	}
-	a.fm.T().Fatalf("failed to find docker storage driver from info - %v", output)
-	return Unknown
 }
 
 func (a dockerActions) RunStress(args DockerRunArgs, cmd ...string) string {
