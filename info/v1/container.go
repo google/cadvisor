@@ -436,6 +436,14 @@ type MemoryStats struct {
 	// Units: Bytes.
 	TotalInactiveFile uint64 `json:"total_inactive_file"`
 
+	// The total amount of active anonymous memory.
+	// Units: Bytes.
+	TotalActiveAnon uint64 `json:"total_active_anon"`
+
+	// The total amount of inactive anonymous memory.
+	// Units: Bytes.
+	TotalInactiveAnon uint64 `json:"total_inactive_anon"`
+
 	Failcnt uint64 `json:"failcnt"`
 
 	// Size of kernel memory allocated in bytes.
