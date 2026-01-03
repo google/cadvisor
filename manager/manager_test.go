@@ -69,6 +69,10 @@ func createManagerAndAddContainers(
 			spec,
 			nil,
 		).Once()
+		mockHandler.On("ListContainers", container.ListSelf).Return(
+			[]info.ContainerReference(nil),
+			nil,
+		).Once()
 		cont, err := newContainerData(name, memoryCache, mockHandler, false, &collector.GenericCollectorManager{}, 60*time.Second, true, clock.NewFakeClock(time.Now()))
 		if err != nil {
 			t.Fatal(err)
@@ -184,10 +188,6 @@ func expectManagerWithContainers(containers []string, query *info.ContainerInfoR
 			}
 			spec := cinfo.Spec
 
-			h.On("ListContainers", container.ListSelf).Return(
-				[]info.ContainerReference(nil),
-				nil,
-			)
 			h.On("GetSpec").Return(
 				spec,
 				nil,
