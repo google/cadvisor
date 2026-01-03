@@ -587,9 +587,9 @@ type TcpAdvancedStat struct {
 	// The number of invalid SYN cookies received
 	SyncookiesFailed uint64
 
-	// The number of packets pruned from receive queue because of socket buffer overrun
+	// The number of times the TCP stack tries to reclaim memory for a socket
 	PruneCalled uint64
-	// The number of packets pruned from receive queue
+	// The number of packets pruned from receive queue because of socket buffer overrun
 	RcvPruned uint64
 	// The number of packets dropped from out-of-order queue because of socket buffer overrun
 	OfoPruned uint64
