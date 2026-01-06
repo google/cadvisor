@@ -299,6 +299,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 					Limit: 100,
 				},
 				CreationTime: time.Unix(1257894000, 0),
+				StartTime:    time.Unix(1257895000, 0),
 				Labels: map[string]string{
 					"foo.label": "bar",
 				},

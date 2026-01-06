@@ -1881,11 +1881,12 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 }
 
 var (
-	versionInfoDesc = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
-	startTimeDesc   = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
-	cpuPeriodDesc   = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
-	cpuQuotaDesc    = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
-	cpuSharesDesc   = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
+	versionInfoDesc  = prometheus.NewDesc("cadvisor_version_info", "A metric with a constant '1' value labeled by kernel version, OS version, docker version, cadvisor version & cadvisor revision.", []string{"kernelVersion", "osVersion", "dockerVersion", "cadvisorVersion", "cadvisorRevision"}, nil)
+	creationTimeDesc = prometheus.NewDesc("container_creation_time_seconds", "Container creation time since unix epoch in seconds.", nil, nil)
+	startTimeDesc    = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", nil, nil)
+	cpuPeriodDesc    = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", nil, nil)
+	cpuQuotaDesc     = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", nil, nil)
+	cpuSharesDesc    = prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", nil, nil)
 )
 
 // Describe describes all the metrics ever exported by cadvisor. It
@@ -1895,6 +1896,7 @@ func (c *PrometheusCollector) Describe(ch chan<- *prometheus.Desc) {
 	for _, cm := range c.containerMetrics {
 		ch <- cm.desc([]string{})
 	}
+	ch <- creationTimeDesc
 	ch <- startTimeDesc
 	ch <- cpuPeriodDesc
 	ch <- cpuQuotaDesc
@@ -2006,8 +2008,15 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		}
 
 		// Container spec
-		desc := prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
+		desc := prometheus.NewDesc("container_creation_time_seconds", "Container creation time since unix epoch in seconds.", labels, nil)
 		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), values...)
+
+		desc = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
+		startTime := cont.Spec.CreationTime
+		if !cont.Spec.StartTime.IsZero() {
+			startTime = cont.Spec.StartTime
+		}
+		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(startTime.Unix()), values...)
 
 		if cont.Spec.HasCpu {
 			desc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil)
