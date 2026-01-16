@@ -41,6 +41,8 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/zfs"
+
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -260,11 +262,17 @@ func newContainerHandler(
 	}
 
 	if includedMetrics.Has(container.DiskUsageMetrics) {
+		var deviceID string
+		if ctnr.GraphDriver != nil {
+			deviceID = ctnr.GraphDriver.Data["DeviceId"]
+		} else {
+			klog.V(4).Infof("GraphDriver not found for container %q", id)
+		}
 		handler.fsHandler = &FsHandler{
 			FsHandler:       common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, otherStorageDir, fsInfo),
 			ThinPoolWatcher: thinPoolWatcher,
 			ZfsWatcher:      zfsWatcher,
-			DeviceID:        ctnr.GraphDriver.Data["DeviceId"],
+			DeviceID:        deviceID,
 			ZfsFilesystem:   zfsFilesystem,
 		}
 	}
