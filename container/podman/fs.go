@@ -36,6 +36,7 @@ type containersJSON struct {
 
 func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerID string) (string, error) {
 	var containers []containersJSON
+	fileExists := false
 
 	for _, filename := range containersJsonFilnames {
 		data, err := os.ReadFile(filepath.Join(storageDir, string(storageDriver)+"-containers", filename))
@@ -44,6 +45,7 @@ func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerI
 		}
 
 		if data != nil {
+			fileExists = true
 			var buffer []containersJSON
 			err = json.Unmarshal(data, &buffer)
 			if err != nil {
@@ -53,8 +55,8 @@ func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerI
 		}
 	}
 
-	if len(containers) == 0 {
-		return "", fmt.Errorf("no containers found in containers.json or volatile-containers.json in %q", filepath.Join(storageDir, string(storageDriver)+"-containers"))
+	if !fileExists {
+		return "", os.ErrNotExist
 	}
 
 	for _, c := range containers {
