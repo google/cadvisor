@@ -40,9 +40,10 @@ function run_tests() {
     $BUILD_CMD"
   fi
   docker run --rm \
+    --platform linux/amd64 \
     -w /go/src/github.com/google/cadvisor \
     -v ${PWD}:/go/src/github.com/google/cadvisor \
-    golang:"$GOLANG_VERSION-bookworm" \
+    golang:"$GOLANG_VERSION-$DEBIAN_VERSION" \
     bash -c "$BUILD_CMD"
 
   EXTRA_DOCKER_OPTS="-e DOCKER_IN_DOCKER_ENABLED=true"
@@ -52,6 +53,7 @@ function run_tests() {
 
   mkdir ${TMPDIR}/docker-graph
   docker run --rm \
+    --platform linux/amd64 \
     -w /go/src/github.com/google/cadvisor \
     -v ${ROOT}:/go/src/github.com/google/cadvisor \
     ${EXTRA_DOCKER_OPTS} \
@@ -70,4 +72,5 @@ PACKAGES=${PACKAGES:-"sudo"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
 CADVISOR_ARGS=${CADVISOR_ARGS:-}
 GOLANG_VERSION=${GOLANG_VERSION:-"1.25"}
+DEBIAN_VERSION=${DEBIAN_VERSION:-"trixie"}
 run_tests
