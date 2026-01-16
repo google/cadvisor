@@ -192,9 +192,21 @@ func GetHugePagesInfo(sysFs sysfs.SysFs, hugepagesDirectory string) ([]info.Huge
 			return hugePagesInfo, fmt.Errorf("could not parse file nr_hugepage for %s, contents %q", st.Name(), string(val))
 		}
 
+		// Read free_hugepages (optional - nil if unavailable)
+		var freePages *uint64
+		freeVal, err := sysFs.GetHugePagesFree(hugepagesDirectory, st.Name())
+		if err == nil && freeVal != "" {
+			var fp uint64
+			n, err = fmt.Sscanf(string(freeVal), "%d", &fp)
+			if err == nil && n == 1 {
+				freePages = &fp
+			}
+		}
+
 		hugePagesInfo = append(hugePagesInfo, info.HugePagesInfo{
-			NumPages: numPages,
-			PageSize: pageSize,
+			NumPages:  numPages,
+			PageSize:  pageSize,
+			FreePages: freePages,
 		})
 	}
 	return hugePagesInfo, nil

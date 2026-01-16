@@ -123,6 +123,9 @@ type HugePagesInfo struct {
 
 	// number of huge pages
 	NumPages uint64 `json:"num_pages"`
+
+	// number of free huge pages (nil if unavailable)
+	FreePages *uint64 `json:"free_pages,omitempty"`
 }
 
 type DiskInfo struct {
