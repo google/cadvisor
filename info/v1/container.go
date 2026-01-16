@@ -49,6 +49,10 @@ type ContainerSpec struct {
 	// Time at which the container was created.
 	CreationTime time.Time `json:"creation_time,omitempty"`
 
+	// Time at which the container was started.
+	// This may be unset if the runtime does not provide it.
+	StartTime time.Time `json:"start_time,omitempty"`
+
 	// Metadata labels associated with this container.
 	Labels map[string]string `json:"labels,omitempty"`
 	// Metadata envs associated with this container. Only whitelisted envs are added.
@@ -187,6 +191,12 @@ func (s *ContainerSpec) Eq(b *ContainerSpec) bool {
 	// Creation within 1s of each other.
 	diff := s.CreationTime.Sub(b.CreationTime)
 	if (diff > time.Second) || (diff < -time.Second) {
+		return false
+	}
+
+	// Start time within 1s of each other.
+	startDiff := s.StartTime.Sub(b.StartTime)
+	if (startDiff > time.Second) || (startDiff < -time.Second) {
 		return false
 	}
 
