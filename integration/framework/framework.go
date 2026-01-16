@@ -668,22 +668,24 @@ func (a *containerdActions) Run(args ContainerdRunArgs, cmd ...string) string {
 	klog.Infof("Created containerd container with ID: %s", containerID)
 
 	// Register cleanup function
+	// Use RunStress for cleanup commands to avoid test failures when containers have already exited
 	a.fm.cleanups = append(a.fm.cleanups, func() {
 		klog.Infof("Cleaning up containerd container %s", containerID)
 		// Kill the task with SIGKILL to ensure it stops immediately
+		// Use RunStress so we don't fail if the task has already exited
 		killArgs := append([]string{"ctr", "--address", a.socket, "--namespace", a.namespace},
 			"task", "kill", "--signal", "SIGKILL", containerID)
-		a.fm.Shell().Run("sudo", killArgs...)
+		a.fm.Shell().RunStress("sudo", killArgs...)
 		// Wait a moment for the task to stop
 		time.Sleep(500 * time.Millisecond)
 		// Delete the task (with force flag)
 		deleteTaskArgs := append([]string{"ctr", "--address", a.socket, "--namespace", a.namespace},
 			"task", "delete", "-f", containerID)
-		a.fm.Shell().Run("sudo", deleteTaskArgs...)
+		a.fm.Shell().RunStress("sudo", deleteTaskArgs...)
 		// Delete the container
 		deleteArgs := append([]string{"ctr", "--address", a.socket, "--namespace", a.namespace},
 			"container", "delete", containerID)
-		a.fm.Shell().Run("sudo", deleteArgs...)
+		a.fm.Shell().RunStress("sudo", deleteArgs...)
 	})
 
 	return containerID
