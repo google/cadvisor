@@ -53,6 +53,9 @@ type Framework interface {
 	// Returns the CRI-O actions for the test framework.
 	Crio() CrioActions
 
+	// Returns the containerd actions for the test framework.
+	Containerd() ContainerdActions
+
 	// Returns the shell actions for the test framework.
 	Shell() ShellActions
 
@@ -95,8 +98,23 @@ func New(t *testing.T) Framework {
 		fm:        fm,
 		podSeqNum: 0,
 	}
+	fm.containerdActions = containerdActions{
+		fm:          fm,
+		seqNum:      0,
+		namespace:   "k8s.io",
+		socket:      getContainerdSocket(),
+		snapshotter: "native",
+	}
 
 	return fm
+}
+
+// getContainerdSocket returns the containerd socket path from CONTAINERD_SOCK env var.
+func getContainerdSocket() string {
+	if sock := os.Getenv("CONTAINERD_SOCK"); sock != "" {
+		return sock
+	}
+	return "/run/containerd/containerd.sock"
 }
 
 const (
@@ -151,6 +169,32 @@ type CrioRunArgs struct {
 	Name string
 }
 
+// ContainerdActions provides methods for managing containerd containers in tests.
+// Containerd containers are created directly using the ctr CLI tool.
+type ContainerdActions interface {
+	// Run the no-op pause containerd container and return its ID.
+	RunPause() string
+
+	// Run the specified command in a containerd busybox container and return its ID.
+	RunBusybox(cmd ...string) string
+
+	// Runs a containerd container in the background. Uses the specified ContainerdRunArgs and command.
+	// Returns the ID of the new container.
+	Run(args ContainerdRunArgs, cmd ...string) string
+}
+
+// ContainerdRunArgs contains arguments for running a containerd container.
+type ContainerdRunArgs struct {
+	// Image to use.
+	Image string
+
+	// Container name (optional, auto-generated if empty).
+	Name string
+
+	// Labels to add to the container.
+	Labels map[string]string
+}
+
 type ShellActions interface {
 	// Runs a specified command and arguments. Returns the stdout and stderr.
 	Run(cmd string, args ...string) (string, string)
@@ -169,9 +213,10 @@ type realFramework struct {
 	cadvisorClient   *client.Client
 	cadvisorClientV2 *v2.Client
 
-	shellActions  shellActions
-	dockerActions dockerActions
-	crioActions   crioActions
+	shellActions      shellActions
+	dockerActions     dockerActions
+	crioActions       crioActions
+	containerdActions containerdActions
 
 	// Cleanup functions to call on Cleanup()
 	cleanups []func()
@@ -188,6 +233,14 @@ type dockerActions struct {
 type crioActions struct {
 	fm        *realFramework
 	podSeqNum int // For generating unique pod names
+}
+
+type containerdActions struct {
+	fm          *realFramework
+	seqNum      int    // For generating unique container names
+	namespace   string // containerd namespace (default: k8s.io)
+	socket      string // containerd socket path
+	snapshotter string // containerd snapshotter (default: native)
 }
 
 type HostnameInfo struct {
@@ -218,6 +271,10 @@ func (f *realFramework) Docker() DockerActions {
 
 func (f *realFramework) Crio() CrioActions {
 	return &f.crioActions
+}
+
+func (f *realFramework) Containerd() ContainerdActions {
+	return &f.containerdActions
 }
 
 func (f *realFramework) Cadvisor() CadvisorActions {
@@ -541,6 +598,92 @@ func (a *crioActions) Run(args CrioRunArgs, cmd ...string) string {
 		a.fm.Shell().Run("sudo", "crictl", "rmp", podID)
 		// Clean up temp directory
 		os.RemoveAll(tmpDir)
+	})
+
+	return containerID
+}
+
+// Containerd actions implementation
+
+func (a *containerdActions) RunPause() string {
+	return a.Run(ContainerdRunArgs{
+		Image: "registry.k8s.io/pause:3.9",
+	})
+}
+
+func (a *containerdActions) RunBusybox(cmd ...string) string {
+	return a.Run(ContainerdRunArgs{
+		Image: "registry.k8s.io/busybox:1.27",
+	}, cmd...)
+}
+
+// Run creates and starts a containerd container using the ctr CLI.
+// It uses the configured namespace (default "moby" for Docker-in-Docker environments).
+func (a *containerdActions) Run(args ContainerdRunArgs, cmd ...string) string {
+	a.seqNum++
+	containerName := args.Name
+	if containerName == "" {
+		// Generate a unique 64-char hex container ID
+		// cAdvisor's containerd handler expects container IDs to match this format
+		// Use timestamp in nanoseconds to ensure uniqueness across test runs
+		containerName = fmt.Sprintf("%016x%016x%016x%016x", os.Getpid(), a.seqNum, time.Now().UnixNano(), time.Now().UnixNano()%1000000)
+	}
+
+	// Build the ctr command
+	// ctr -a <socket> -n <namespace> run -d <image> <container-id> [cmd...]
+	ctrArgs := []string{
+		"ctr",
+		"--address", a.socket,
+		"--namespace", a.namespace,
+	}
+
+	// Pull the image first
+	klog.Infof("Pulling containerd image %s", args.Image)
+	pullArgs := append(ctrArgs, "image", "pull", args.Image)
+	a.fm.Shell().Run("sudo", pullArgs...)
+
+	// Build the run command
+	// Use the configured snapshotter (from CONTAINERD_SNAPSHOTTER env var, default overlayfs)
+	runArgs := append(ctrArgs, "run", "-d", "--snapshotter", a.snapshotter)
+
+	// Add labels if specified
+	for key, value := range args.Labels {
+		runArgs = append(runArgs, "--label", fmt.Sprintf("%s=%s", key, value))
+	}
+
+	// Add the image and container name
+	runArgs = append(runArgs, args.Image, containerName)
+
+	// Add the command if specified
+	if len(cmd) > 0 {
+		runArgs = append(runArgs, cmd...)
+	}
+
+	klog.Infof("Creating containerd container %s", containerName)
+	a.fm.Shell().Run("sudo", runArgs...)
+
+	// ctr run returns the container ID (which is the same as the name we provided)
+	containerID := containerName
+
+	klog.Infof("Created containerd container with ID: %s", containerID)
+
+	// Register cleanup function
+	a.fm.cleanups = append(a.fm.cleanups, func() {
+		klog.Infof("Cleaning up containerd container %s", containerID)
+		// Kill the task with SIGKILL to ensure it stops immediately
+		killArgs := append([]string{"ctr", "--address", a.socket, "--namespace", a.namespace},
+			"task", "kill", "--signal", "SIGKILL", containerID)
+		a.fm.Shell().Run("sudo", killArgs...)
+		// Wait a moment for the task to stop
+		time.Sleep(500 * time.Millisecond)
+		// Delete the task (with force flag)
+		deleteTaskArgs := append([]string{"ctr", "--address", a.socket, "--namespace", a.namespace},
+			"task", "delete", "-f", containerID)
+		a.fm.Shell().Run("sudo", deleteTaskArgs...)
+		// Delete the container
+		deleteArgs := append([]string{"ctr", "--address", a.socket, "--namespace", a.namespace},
+			"container", "delete", containerID)
+		a.fm.Shell().Run("sudo", deleteArgs...)
 	})
 
 	return containerID
