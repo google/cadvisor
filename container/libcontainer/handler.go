@@ -836,6 +836,20 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		ret.Memory.HierarchicalData.Pgmajfault = v
 	}
 
+	inactiveAnonKeyName := "total_inactive_anon"
+	activeAnonKeyName := "total_active_anon"
+	if cgroups.IsCgroup2UnifiedMode() {
+		inactiveAnonKeyName = "inactive_anon"
+		activeAnonKeyName = "active_anon"
+	}
+
+	if v, ok := s.MemoryStats.Stats[activeAnonKeyName]; ok {
+		ret.Memory.TotalActiveAnon = v
+	}
+	if v, ok := s.MemoryStats.Stats[inactiveAnonKeyName]; ok {
+		ret.Memory.TotalInactiveAnon = v
+	}
+
 	inactiveFileKeyName := "total_inactive_file"
 	if cgroups.IsCgroup2UnifiedMode() {
 		inactiveFileKeyName = "inactive_file"
