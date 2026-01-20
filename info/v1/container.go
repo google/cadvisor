@@ -527,7 +527,7 @@ type TcpStat struct {
 
 type TcpAdvancedStat struct {
 	// The algorithm used to determine the timeout value used for
-	// retransmitting unacknowledged octets, ref: RFC2698, default 1
+	// retransmitting unacknowledged octets, ref: RFC2012, default 1
 	RtoAlgorithm uint64
 	// The minimum value permitted by a TCP implementation for the
 	// retransmission timeout, measured in milliseconds, default 200ms
