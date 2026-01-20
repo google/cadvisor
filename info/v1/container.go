@@ -630,7 +630,7 @@ type TcpAdvancedStat struct {
 	DelayedACKs uint64
 	// The number of delayed acks further delayed because of locked socket
 	DelayedACKLocked uint64
-	// The number of quick ack mode was activated times
+	// The number of times quick ack mode was activated
 	DelayedACKLost uint64
 	// The number of times the listen queue of a socket overflowed
 	ListenOverflows uint64
