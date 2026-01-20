@@ -90,6 +90,8 @@ type ContainerSpec struct {
 
 	HasHugetlb bool `json:"has_hugetlb"`
 
+	HasMisc bool `json:"has_misc"`
+
 	HasCustomMetrics bool            `json:"has_custom_metrics"`
 	CustomMetrics    []v1.MetricSpec `json:"custom_metrics,omitempty"`
 
@@ -163,6 +165,8 @@ type ContainerStats struct {
 	Memory *v1.MemoryStats `json:"memory,omitempty"`
 	// Hugepage statistics
 	Hugetlb *map[string]v1.HugetlbStats `json:"hugetlb,omitempty"`
+	// Misc statistics
+	Misc *map[string]v1.MiscStats `json:"misc,omitempty"`
 	// Network statistics
 	Network *NetworkStats `json:"network,omitempty"`
 	// Processes statistics

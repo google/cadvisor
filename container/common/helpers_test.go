@@ -138,6 +138,7 @@ func TestGetSpecCgroupV1(t *testing.T) {
 	assert.EqualValues(t, spec.Processes.Limit, 1027)
 
 	assert.False(t, spec.HasHugetlb)
+	assert.False(t, spec.HasMisc)
 	assert.False(t, spec.HasDiskIo)
 }
 
@@ -170,6 +171,7 @@ func TestGetSpecCgroupV2(t *testing.T) {
 	assert.EqualValues(t, spec.Processes.Limit, 1027)
 
 	assert.False(t, spec.HasHugetlb)
+	assert.False(t, spec.HasMisc)
 	assert.True(t, spec.HasDiskIo)
 }
 
