@@ -27,11 +27,19 @@ import (
 // demonstrates how to run oomparser.OomParser to get OomInstance information
 func main() {
 	klog.InitFlags(nil)
+	ignoreOldOOMs := flag.Bool("ignore_old", false, "Read only new OOM events, ignoring old. ")
 	flag.Parse()
 	// out is a user-provided channel from which the user can read incoming
 	// OomInstance objects
 	outStream := make(chan *oomparser.OomInstance)
-	oomLog, err := oomparser.New()
+
+	var oomLog *oomparser.OomParser
+	var err error
+	if *ignoreOldOOMs {
+		oomLog, err = oomparser.NewFromNow()
+	} else {
+		oomLog, err = oomparser.New()
+	}
 	if err != nil {
 		klog.Infof("Couldn't make a new oomparser. %v", err)
 	} else {
