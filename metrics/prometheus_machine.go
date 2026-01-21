@@ -217,6 +217,15 @@ func NewPrometheusMachineCollector(i infoProvider, includedMetrics container.Met
 				},
 			},
 			{
+				name:        "machine_node_hugepages_free",
+				help:        "Number of free hugepages on NUMA node.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{prometheusNodeLabelName, prometheusPageSizeLabelName},
+				getValues: func(machineInfo *info.MachineInfo) metricValues {
+					return getHugePagesFree(machineInfo)
+				},
+			},
+			{
 				name:        "machine_node_distance",
 				help:        "Distance between NUMA node and target NUMA node.",
 				valueType:   prometheus.GaugeValue,
@@ -348,6 +357,25 @@ func getHugePagesCount(machineInfo *info.MachineInfo) metricValues {
 					labels:    []string{nodeID, strconv.FormatUint(hugePage.PageSize, 10)},
 					timestamp: machineInfo.Timestamp,
 				})
+		}
+	}
+	return mValues
+}
+
+func getHugePagesFree(machineInfo *info.MachineInfo) metricValues {
+	mValues := make(metricValues, 0)
+	for _, node := range machineInfo.Topology {
+		nodeID := strconv.Itoa(node.Id)
+
+		for _, hugePage := range node.HugePages {
+			if hugePage.FreePages != nil {
+				mValues = append(mValues,
+					metricValue{
+						value:     float64(*hugePage.FreePages),
+						labels:    []string{nodeID, strconv.FormatUint(hugePage.PageSize, 10)},
+						timestamp: machineInfo.Timestamp,
+					})
+			}
 		}
 	}
 	return mValues
