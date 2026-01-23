@@ -67,7 +67,7 @@ This is not a detailed spec on transition to Otel Collector. The intent of this 
 
 cAdvisor is a specialized software for containers metrics collection. It is easier to configure and likely more lightweight. Otel collector will need to be compiled with the right set of receivers and exporters and configured appropriately.
 
-The benefit of using Otel collector for these scenarios is it's flexibility in collecting telemetry for more scenarios and a well-knowns config as oppose to a custom cAdvisor configuration.
+The benefit of using Otel Collector for these scenarios is its flexibility in collecting telemetry for more scenarios and a well-known config as oppose to a custom cAdvisor configuration.
 
 The believe of this roadmap is that benefits of cAdvisor's distribution model will not be significant enough to prefer it over the Otel collector.
 
