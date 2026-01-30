@@ -124,6 +124,23 @@ func TestGetHugePagesNrWhenFileIsMissing(t *testing.T) {
 	assert.Equal(t, "", rawHugePageNr)
 }
 
+func TestGetHugePagesFree(t *testing.T) {
+	sysFs := NewRealSysFs()
+	rawHugePageFree, err := sysFs.GetHugePagesFree("./testdata/node0/hugepages/", "hugepages-1048576kB")
+	assert.Nil(t, err)
+
+	hugePageFree, err := strconv.Atoi(rawHugePageFree)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, hugePageFree)
+}
+
+func TestGetHugePagesFreeWhenFileIsMissing(t *testing.T) {
+	sysFs := NewRealSysFs()
+	rawHugePageFree, err := sysFs.GetHugePagesFree("./testdata/node1/hugepages/", "hugepages-1048576kB")
+	assert.NotNil(t, err)
+	assert.Equal(t, "", rawHugePageFree)
+}
+
 func TestIsCPUOnline(t *testing.T) {
 	sysFs := &realSysFs{
 		cpuPath: "./testdata_epyc7402_nohyperthreading",
