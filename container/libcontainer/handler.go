@@ -859,6 +859,12 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 			workingSet -= v
 		}
 	}
+
+	// Exclude "slab_reclaimable" from workingSet
+	if v, ok := s.MemoryStats.Stats["slab_reclaimable"]; ok {
+		workingSet -= v
+	}
+
 	ret.Memory.WorkingSet = workingSet
 }
 
