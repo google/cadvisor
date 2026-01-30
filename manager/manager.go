@@ -154,7 +154,7 @@ type HousekeepingConfig = struct {
 }
 
 // New takes a memory storage and returns a new manager.
-func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfig HousekeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
+func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfig HousekeepingConfig, includedMetricsSet container.MetricSet, collectorHTTPClient *http.Client, whiteLists map[string][]string, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
@@ -193,21 +193,21 @@ func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfi
 	eventsChannel := make(chan watcher.ContainerEvent, 16)
 
 	newManager := &manager{
-		quitChannels:                          make([]chan error, 0, 2),
-		memoryCache:                           memoryCache,
-		fsInfo:                                fsInfo,
-		sysFs:                                 sysfs,
-		cadvisorContainer:                     selfContainer,
-		inHostNamespace:                       inHostNamespace,
-		startupTime:                           time.Now(),
-		maxHousekeepingInterval:               *HousekeepingConfig.Interval,
-		allowDynamicHousekeeping:              *HousekeepingConfig.AllowDynamic,
-		includedMetrics:                       includedMetricsSet,
-		containerWatchers:                     []watcher.ContainerWatcher{},
-		eventsChannel:                         eventsChannel,
-		collectorHTTPClient:                   collectorHTTPClient,
-		rawContainerCgroupPathPrefixWhiteList: rawContainerCgroupPathPrefixWhiteList,
-		containerEnvMetadataWhiteList:         containerEnvMetadataWhiteList,
+		quitChannels:                  make([]chan error, 0, 2),
+		memoryCache:                   memoryCache,
+		fsInfo:                        fsInfo,
+		sysFs:                         sysfs,
+		cadvisorContainer:             selfContainer,
+		inHostNamespace:               inHostNamespace,
+		startupTime:                   time.Now(),
+		maxHousekeepingInterval:       *HousekeepingConfig.Interval,
+		allowDynamicHousekeeping:      *HousekeepingConfig.AllowDynamic,
+		includedMetrics:               includedMetricsSet,
+		containerWatchers:             []watcher.ContainerWatcher{},
+		eventsChannel:                 eventsChannel,
+		collectorHTTPClient:           collectorHTTPClient,
+		whiteLists:                    whiteLists,
+		containerEnvMetadataWhiteList: containerEnvMetadataWhiteList,
 	}
 
 	machineInfo, err := machine.Info(sysfs, fsInfo, inHostNamespace)
@@ -298,8 +298,7 @@ type manager struct {
 	collectorHTTPClient      *http.Client
 	perfManager              stats.Manager
 	resctrlManager           resctrl.ResControlManager
-	// List of raw container cgroup path prefix whitelist.
-	rawContainerCgroupPathPrefixWhiteList []string
+	whiteLists               map[string][]string
 	// List of container env prefix whitelist, the matched container envs would be collected into metrics as extra labels.
 	containerEnvMetadataWhiteList []string
 }
@@ -319,9 +318,9 @@ func (m *manager) PodmanContainer(containerName string, query *info.ContainerInf
 
 // Start the container manager.
 func (m *manager) Start() error {
-	m.containerWatchers = container.InitializePlugins(m, m.fsInfo, m.includedMetrics)
+	m.containerWatchers = container.InitializePlugins(m, m.fsInfo, m.includedMetrics, m.whiteLists)
 
-	err := raw.Register(m, m.fsInfo, m.includedMetrics, m.rawContainerCgroupPathPrefixWhiteList)
+	err := raw.Register(m, m.fsInfo, m.includedMetrics, m.whiteLists["raw"])
 	if err != nil {
 		klog.Errorf("Registration of the raw container factory failed: %v", err)
 	}

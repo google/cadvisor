@@ -183,7 +183,7 @@ type Plugin interface {
 
 	// Register is invoked when starting a manager. It can optionally return a container watcher.
 	// A returned error is logged, but is not fatal.
-	Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) (watcher.ContainerWatcher, error)
+	Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet, whiteList []string) (watcher.ContainerWatcher, error)
 }
 
 func RegisterPlugin(name string, plugin Plugin) error {
@@ -209,13 +209,13 @@ func InitializeFSContext(context *fs.Context) error {
 	return nil
 }
 
-func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) []watcher.ContainerWatcher {
+func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet, whiteLists map[string][]string) []watcher.ContainerWatcher {
 	pluginsLock.Lock()
 	defer pluginsLock.Unlock()
 
 	containerWatchers := []watcher.ContainerWatcher{}
 	for name, plugin := range plugins {
-		watcher, err := plugin.Register(factory, fsInfo, includedMetrics)
+		watcher, err := plugin.Register(factory, fsInfo, includedMetrics, whiteLists[name])
 		if err != nil {
 			klog.Infof("Registration of the %s container factory failed: %v", name, err)
 		} else {

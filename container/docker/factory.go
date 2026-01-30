@@ -130,6 +130,9 @@ type dockerFactory struct {
 	thinPoolWatcher *devicemapper.ThinPoolWatcher
 
 	zfsWatcher *zfs.ZfsWatcher
+
+	// List of docker container ID prefix whitelist.
+	whiteList []string
 }
 
 func (f *dockerFactory) String() string {
@@ -183,6 +186,16 @@ func (f *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	res, err := f.client.ContainerInspect(context.Background(), id, dclient.ContainerInspectOptions{})
 	if err != nil || !res.Container.State.Running {
 		return false, true, fmt.Errorf("error inspecting container: %v", err)
+	}
+
+	// Filter using whitelist if defined
+	if f.whiteList[0] != "" {
+		for _, prefix := range f.whiteList {
+			if strings.Contains(name, prefix) {
+				return true, true, nil
+			}
+		}
+		return true, false, nil
 	}
 
 	return true, true, nil
@@ -308,7 +321,7 @@ func ensureThinLsKernelVersion(kernelVersion string) error {
 }
 
 // Register root container before running this function!
-func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) error {
+func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet, whiteList []string) error {
 	client, err := Client()
 	if err != nil {
 		return fmt.Errorf("unable to communicate with docker daemon: %v", err)
@@ -377,6 +390,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		thinPoolName:       thinPoolName,
 		thinPoolWatcher:    thinPoolWatcher,
 		zfsWatcher:         zfsWatcher,
+		whiteList:          whiteList,
 	}
 
 	container.RegisterContainerHandlerFactory(f, []watcher.ContainerWatchSource{watcher.Raw})
