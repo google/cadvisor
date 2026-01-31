@@ -71,6 +71,9 @@ type containerHandler struct {
 	// Time at which this container was created.
 	creationTime time.Time
 
+	// Time at which this container was started.
+	startTime time.Time
+
 	// Metadata associated with the container.
 	envs   map[string]string
 	labels map[string]string
@@ -247,6 +250,13 @@ func newContainerHandler(
 		return nil, fmt.Errorf("failed to parse the create timestamp %q for container %q: %v", ctnr.Created, id, err)
 	}
 
+	// StartedAt may be unset for containers that never started.
+	if startedAt := ctnr.State.StartedAt; startedAt != "" {
+		if t, err := time.Parse(time.RFC3339Nano, startedAt); err == nil && !t.Before(time.Unix(0, 0)) {
+			handler.startTime = t
+		}
+	}
+
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
 	}
@@ -326,6 +336,7 @@ func (h *containerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec.Envs = h.envs
 	spec.Image = h.image
 	spec.CreationTime = h.creationTime
+	spec.StartTime = h.startTime
 
 	return spec, nil
 }
