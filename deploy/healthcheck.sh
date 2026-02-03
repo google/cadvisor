@@ -16,6 +16,7 @@
 
 # Default port
 PORT=8080
+BASE_URL=""
 
 # Extract port from the cadvisor process command line
 if [ -f /proc/1/cmdline ]; then
@@ -30,8 +31,14 @@ if [ -f /proc/1/cmdline ]; then
             --port=*)
                 PORT="${arg#--port=}"
                 ;;
+            -url_base_prefix=*)
+                BASE_URL="${arg#-url_base_prefix=}"
+                ;;
+            --url_base_prefix=*)
+                BASE_URL="${arg#--url_base_prefix=}"
+                ;;
         esac
     done
 fi
 
-wget --quiet --tries=1 --spider "http://localhost:${PORT}/healthz" || exit 1
+wget --quiet --tries=1 --spider "http://localhost:${PORT}${BASE_URL}/healthz" || exit 1
