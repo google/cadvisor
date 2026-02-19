@@ -14,12 +14,69 @@
 
 package collector
 
-import "github.com/google/cadvisor/container"
+import (
+	"fmt"
+	"net"
+	"net/url"
+	"strings"
 
-func (ec *EndpointConfig) configure(containerHandler container.ContainerHandler) {
+	"github.com/google/cadvisor/container"
+)
+
+func (ec *EndpointConfig) configure(containerHandler container.ContainerHandler) error {
+	containerIPAddress := containerHandler.GetContainerIPAddress()
+
 	// If the exact URL was not specified, generate it based on the ip address of the container.
 	if ec.URL == "" {
-		ipAddress := containerHandler.GetContainerIPAddress()
-		ec.URL = ec.URLConfig.Protocol + "://" + ipAddress + ":" + ec.URLConfig.Port.String() + ec.URLConfig.Path
+		protocol := strings.ToLower(ec.URLConfig.Protocol)
+		if protocol != "http" && protocol != "https" {
+			return fmt.Errorf("unsupported endpoint protocol %q", ec.URLConfig.Protocol)
+		}
+		if containerIPAddress == "" {
+			return fmt.Errorf("container ip address is empty")
+		}
+		ec.URL = protocol + "://" + net.JoinHostPort(containerIPAddress, ec.URLConfig.Port.String()) + ec.URLConfig.Path
+		return nil
 	}
+
+	parsed, err := url.Parse(ec.URL)
+	if err != nil {
+		return fmt.Errorf("invalid endpoint url %q: %w", ec.URL, err)
+	}
+
+	scheme := strings.ToLower(parsed.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return fmt.Errorf("unsupported endpoint url scheme %q", parsed.Scheme)
+	}
+
+	host := strings.ToLower(parsed.Hostname())
+	if host == "" {
+		return fmt.Errorf("endpoint url must include a host: %q", ec.URL)
+	}
+	if containerIPAddress == "" {
+		return fmt.Errorf("container ip address is empty")
+	}
+
+	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+		if port := parsed.Port(); port != "" {
+			parsed.Host = net.JoinHostPort(containerIPAddress, port)
+		} else {
+			parsed.Host = containerIPAddress
+		}
+		ec.URL = parsed.String()
+		return nil
+	}
+
+	// Only allow explicit container ip address as a destination, otherwise an
+	// attacker-controlled config can turn cAdvisor into a cross-network fetcher.
+	if host == containerIPAddress {
+		return nil
+	}
+	hostIP := net.ParseIP(host)
+	containerIP := net.ParseIP(containerIPAddress)
+	if hostIP != nil && containerIP != nil && hostIP.Equal(containerIP) {
+		return nil
+	}
+
+	return fmt.Errorf("endpoint url host %q is not allowed; only localhost or the container ip address is supported", parsed.Hostname())
 }

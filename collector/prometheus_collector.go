@@ -60,7 +60,9 @@ func NewPrometheusCollector(collectorName string, configFile []byte, metricCount
 		return nil, err
 	}
 
-	configInJSON.Endpoint.configure(containerHandler)
+	if err := configInJSON.Endpoint.configure(containerHandler); err != nil {
+		return nil, err
+	}
 
 	minPollingFrequency := configInJSON.PollingFrequency
 

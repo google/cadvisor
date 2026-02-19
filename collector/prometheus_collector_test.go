@@ -35,10 +35,13 @@ func TestPrometheus(t *testing.T) {
 	configFile, err := os.ReadFile("config/sample_config_prometheus.json")
 	assert.NoError(err)
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"222.222.222.222",
+	)
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 	assert.Equal("Prometheus", collector.name)
-	assert.Equal("http://localhost:8080/metrics", collector.configFile.Endpoint.URL)
+	assert.Equal("http://222.222.222.222:8080/metrics", collector.configFile.Endpoint.URL)
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -129,6 +132,24 @@ func TestPrometheusEndpointConfig(t *testing.T) {
 	assert.Equal(collector.configFile.Endpoint.URL, "http://222.222.222.222:8081/METRICS")
 }
 
+func TestPrometheusEndpointURLRejectsRemoteHost(t *testing.T) {
+	assert := assert.New(t)
+
+	config := `
+	{
+		"endpoint" : "http://example.com:9100/metrics"
+	}
+	`
+
+	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"222.222.222.222",
+	)
+
+	_, err := NewPrometheusCollector("Prometheus", []byte(config), 100, containerHandler, http.DefaultClient)
+	assert.Error(err)
+}
+
 func TestPrometheusShortResponse(t *testing.T) {
 	assert := assert.New(t)
 
@@ -136,10 +157,13 @@ func TestPrometheusShortResponse(t *testing.T) {
 	configFile, err := os.ReadFile("config/sample_config_prometheus.json")
 	assert.NoError(err)
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"222.222.222.222",
+	)
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 	assert.Equal(collector.name, "Prometheus")
-	assert.Equal(collector.configFile.Endpoint.URL, "http://localhost:8080/metrics")
+	assert.Equal(collector.configFile.Endpoint.URL, "http://222.222.222.222:8080/metrics")
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		text := "# HELP empty_metric A metric without any values"
@@ -160,10 +184,13 @@ func TestPrometheusMetricCountLimit(t *testing.T) {
 	configFile, err := os.ReadFile("config/sample_config_prometheus.json")
 	assert.NoError(err)
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"222.222.222.222",
+	)
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 10, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 	assert.Equal(collector.name, "Prometheus")
-	assert.Equal(collector.configFile.Endpoint.URL, "http://localhost:8080/metrics")
+	assert.Equal(collector.configFile.Endpoint.URL, "http://222.222.222.222:8080/metrics")
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < 30; i++ {
@@ -190,10 +217,13 @@ func TestPrometheusFiltersMetrics(t *testing.T) {
 	configFile, err := os.ReadFile("config/sample_config_prometheus_filtered.json")
 	assert.NoError(err)
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"222.222.222.222",
+	)
 	collector, err := NewPrometheusCollector("Prometheus", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 	assert.Equal(collector.name, "Prometheus")
-	assert.Equal(collector.configFile.Endpoint.URL, "http://localhost:8080/metrics")
+	assert.Equal(collector.configFile.Endpoint.URL, "http://222.222.222.222:8080/metrics")
 
 	tempServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -230,6 +260,9 @@ func TestPrometheusFiltersMetricsCountLimit(t *testing.T) {
 	configFile, err := os.ReadFile("config/sample_config_prometheus_filtered.json")
 	assert.NoError(err)
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"222.222.222.222",
+	)
 	_, err = NewPrometheusCollector("Prometheus", configFile, 1, containerHandler, http.DefaultClient)
 	assert.Error(err)
 }
