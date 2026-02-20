@@ -45,6 +45,9 @@ func TestEmptyConfig(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"111.111.111.111",
+	)
 	_, err = NewCollector("tempCollector", configFile, 100, containerHandler, http.DefaultClient)
 	assert.Error(err)
 
@@ -76,6 +79,9 @@ func TestConfigWithErrors(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"111.111.111.111",
+	)
 	_, err = NewCollector("tempCollector", configFile, 100, containerHandler, http.DefaultClient)
 	assert.Error(err)
 
@@ -115,6 +121,9 @@ func TestConfigWithRegexErrors(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"111.111.111.111",
+	)
 	_, err = NewCollector("tempCollector", configFile, 100, containerHandler, http.DefaultClient)
 	assert.Error(err)
 
@@ -129,10 +138,13 @@ func TestConfig(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"111.111.111.111",
+	)
 	collector, err := NewCollector("nginx", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 	assert.Equal(collector.name, "nginx")
-	assert.Equal(collector.configFile.Endpoint.URL, "http://localhost:8000/nginx_status")
+	assert.Equal(collector.configFile.Endpoint.URL, "http://111.111.111.111:8000/nginx_status")
 	assert.Equal(collector.configFile.MetricsConfig[0].Name, "activeConnections")
 }
 
@@ -153,6 +165,33 @@ func TestEndpointConfig(t *testing.T) {
 	assert.Equal(collector.configFile.MetricsConfig[0].Name, "activeConnections")
 }
 
+func TestEndpointURLRejectsRemoteHost(t *testing.T) {
+	assert := assert.New(t)
+
+	config := `
+	{
+		"endpoint" : "http://example.com:8000/nginx_status",
+		"metrics_config" : [
+			{
+				"name" : "activeConnections",
+				"metric_type" : "gauge",
+				"data_type" : "int",
+				"polling_frequency" : 10,
+				"regex" : "Active connections: ([0-9]+)"
+			}
+		]
+	}
+	`
+
+	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"111.111.111.111",
+	)
+
+	_, err := NewCollector("nginx", []byte(config), 100, containerHandler, http.DefaultClient)
+	assert.Error(err)
+}
+
 func TestMetricCollection(t *testing.T) {
 	assert := assert.New(t)
 
@@ -161,6 +200,9 @@ func TestMetricCollection(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"111.111.111.111",
+	)
 	fakeCollector, err := NewCollector("nginx", configFile, 100, containerHandler, http.DefaultClient)
 	assert.NoError(err)
 
@@ -197,6 +239,9 @@ func TestMetricCollectionLimit(t *testing.T) {
 	assert.NoError(err)
 
 	containerHandler := containertest.NewMockContainerHandler("mockContainer")
+	containerHandler.On("GetContainerIPAddress").Return(
+		"111.111.111.111",
+	)
 	_, err = NewCollector("nginx", configFile, 1, containerHandler, http.DefaultClient)
 	assert.Error(err)
 }

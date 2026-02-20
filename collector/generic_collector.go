@@ -62,7 +62,9 @@ func NewCollector(collectorName string, configFile []byte, metricCountLimit int,
 		return nil, err
 	}
 
-	configInJSON.Endpoint.configure(containerHandler)
+	if err := configInJSON.Endpoint.configure(containerHandler); err != nil {
+		return nil, err
+	}
 
 	// TODO : Add checks for validity of config file (eg : Accurate JSON fields)
 
