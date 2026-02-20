@@ -18,10 +18,12 @@
 package crio
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/opencontainers/cgroups"
 
@@ -30,6 +32,7 @@ import (
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/utils/backoff"
 )
 
 type crioContainerHandler struct {
@@ -108,10 +111,22 @@ func newCrioContainerHandler(
 	id := ContainerNameToCrioId(name)
 	pidKnown := true
 
-	cInfo, err := client.ContainerInfo(id)
-	if err != nil {
+	var cInfo *ContainerInfo
+	if err := backoff.RetryWithBackoff(5, 100*time.Millisecond, 2, func(int) (bool, error) {
+		var err error
+		cInfo, err = client.ContainerInfo(id)
+		if cInfo != nil {
+			return true, err
+		}
+		if err != nil && !errors.Is(err, errNotFound) {
+			return true, err
+		}
+
+		return false, err
+	}); err != nil {
 		return nil, err
 	}
+
 	if cInfo.Pid == 0 {
 		// If pid is not known yet, network related stats can not be retrieved by the
 		// libcontainer handler GetStats().  In this case, the crio handler GetStats()
