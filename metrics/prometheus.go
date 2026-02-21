@@ -80,15 +80,12 @@ func ioValues(ioStats []info.PerDiskStats, ioType string, ioValueFn func(uint64)
 
 type volumePath struct {
 	volumeName string
+	volumeType string
 }
 
-// kubeletVolumePathRE matches the standard kubelet volume mount path format:
-//
-//	/var/lib/kubelet/pods/<pod-uid>/volumes/<plugin>/<volume-name>[/…]
-//
-// Capture group 1 is the volume name, which for CSI volumes corresponds to the
-// PersistentVolumeClaim name.
-var kubeletVolumePathRE = regexp.MustCompile(`/pods/[^/]+/volumes/[^/]+/([^/]+)`)
+type matchTypes struct {
+	regex *regexp.Regexp
+}
 
 // parseMountPointIntoVolumePath extracts the volume name from a kubelet volume mount
 // path. For CSI volumes this is the PersistentVolumeClaim name. Returns an
@@ -98,14 +95,29 @@ var kubeletVolumePathRE = regexp.MustCompile(`/pods/[^/]+/volumes/[^/]+/([^/]+)`
 //
 //	/var/lib/kubelet/pods/abc123/volumes/kubernetes.io~csi/my-pvc/mount → "my-pvc"
 func parseMountPointIntoVolumePath(path string) volumePath {
-	m := kubeletVolumePathRE.FindStringSubmatch(path)
-	if m == nil {
-		return volumePath{}
+	volumeMatchTypes := []matchTypes{
+		//	/var/lib/kubelet/pods/<pod-uid>/volumes/<plugin>/<volume-name>[/…]
+		//
+		// Capture group 1 is the volume name, which for CSI volumes corresponds to the
+		// PersistentVolumeClaim name.
+		{
+			regex: regexp.MustCompile(`/pods/[^/]+/volumes/([^/]+)/([^/]+)`),
+		},
 	}
 
-	return volumePath{
-		volumeName: m[1],
+	for _, matchType := range volumeMatchTypes {
+		m := matchType.regex.FindStringSubmatch(path)
+		if m == nil {
+			continue
+		}
+
+		return volumePath{
+			volumeName: m[2],
+			volumeType: m[1],
+		}
 	}
+
+	return volumePath{}
 }
 
 // containerMetric describes a multi-dimensional metric used for exposing a
@@ -634,7 +646,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_fs_device_info",
 				help:        "Filesystem device and mount information for containers. Value is always 1; join on (id, device) with other container_fs_* metrics to associate devices with PVCs or container mount paths.",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
 					values := make(metricValues, 0, len(s.Filesystem))
 					for _, fs := range s.Filesystem {
@@ -644,7 +656,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 						volumeMountInfo := parseMountPointIntoVolumePath(fs.Mountpoint)
 						values = append(values, metricValue{
 							value:     1.0,
-							labels:    []string{fs.Device, fs.Mountpoint, fs.ContainerPath, volumeMountInfo.volumeName},
+							labels:    []string{fs.Device, fs.Mountpoint, fs.ContainerPath, volumeMountInfo.volumeName, volumeMountInfo.volumeType},
 							timestamp: s.Timestamp,
 						})
 					}
