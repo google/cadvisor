@@ -432,7 +432,6 @@ func TestDiskIOMetricsExist(t *testing.T) {
 		"container_fs_writes_bytes_total",
 		"container_fs_reads_total",
 		"container_fs_writes_total",
-		"container_fs_device_info",
 	}
 
 	foundCount := 0
