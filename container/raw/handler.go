@@ -173,6 +173,7 @@ func fsToFsStats(fs *fs.Fs) info.FsStats {
 		Inodes:          inodes,
 		InodesFree:      inodesFree,
 		Available:       fs.Available,
+		Mountpoint:      fs.Mountpoint,
 		ReadsCompleted:  fs.DiskStats.ReadsCompleted,
 		ReadsMerged:     fs.DiskStats.ReadsMerged,
 		SectorsRead:     fs.DiskStats.SectorsRead,
@@ -215,9 +216,22 @@ func (h *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 	}
 
 	if h.includedMetrics.Has(container.DiskUsageMetrics) {
+		// Build a map from host-side mount directory to container-side path
+		// from the external mounts (container hints) configuration.
+		hostToContainerPath := make(map[string]string, len(h.externalMounts))
+		for _, m := range h.externalMounts {
+			if m.HostDir != "" && m.ContainerDir != "" {
+				hostToContainerPath[m.HostDir] = m.ContainerDir
+			}
+		}
+
 		for i := range filesystems {
-			fs := filesystems[i]
-			stats.Filesystem = append(stats.Filesystem, fsToFsStats(&fs))
+			fsCopy := filesystems[i]
+			fsstat := fsToFsStats(&fsCopy)
+			if containerPath, ok := hostToContainerPath[fsstat.Mountpoint]; ok {
+				fsstat.ContainerPath = containerPath
+			}
+			stats.Filesystem = append(stats.Filesystem, fsstat)
 		}
 	}
 

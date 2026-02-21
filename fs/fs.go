@@ -429,6 +429,7 @@ func (i *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error
 							Major:  uint(partition.major),
 							Minor:  uint(partition.minor),
 						}
+						fs.Mountpoint = partition.mountpoint
 						if val, ok := diskStatsMap[device]; ok {
 							fs.DiskStats = val
 						} else {
@@ -483,6 +484,7 @@ func (i *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error
 				Major:  uint(partition.major),
 				Minor:  uint(partition.minor),
 			}
+			fs.Mountpoint = partition.mountpoint
 
 			if val, ok := diskStatsMap[device]; ok {
 				fs.DiskStats = val

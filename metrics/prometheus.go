@@ -78,6 +78,36 @@ func ioValues(ioStats []info.PerDiskStats, ioType string, ioValueFn func(uint64)
 	return values
 }
 
+type volumePath struct {
+	volumeName string
+}
+
+// kubeletVolumePathRE matches the standard kubelet volume mount path format:
+//
+//	/var/lib/kubelet/pods/<pod-uid>/volumes/<plugin>/<volume-name>[/…]
+//
+// Capture group 1 is the volume name, which for CSI volumes corresponds to the
+// PersistentVolumeClaim name.
+var kubeletVolumePathRE = regexp.MustCompile(`/pods/[^/]+/volumes/[^/]+/([^/]+)`)
+
+// parseMountPointIntoVolumePath extracts the volume name from a kubelet volume mount
+// path. For CSI volumes this is the PersistentVolumeClaim name. Returns an
+// empty string for paths that do not match the standard kubelet volume path.
+//
+// Example:
+//
+//	/var/lib/kubelet/pods/abc123/volumes/kubernetes.io~csi/my-pvc/mount → "my-pvc"
+func parseMountPointIntoVolumePath(path string) volumePath {
+	m := kubeletVolumePathRE.FindStringSubmatch(path)
+	if m == nil {
+		return volumePath{}
+	}
+
+	return volumePath{
+		volumeName: m[1],
+	}
+}
+
 // containerMetric describes a multi-dimensional metric used for exposing a
 // certain type of container statistic.
 type containerMetric struct {
@@ -599,6 +629,26 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return fsValues(s.Filesystem, func(fs *info.FsStats) float64 {
 						return float64(fs.Usage)
 					}, s.Timestamp)
+				},
+			}, {
+				name:        "container_fs_device_info",
+				help:        "Filesystem device and mount information for containers. Value is always 1; join on (id, device) with other container_fs_* metrics to associate devices with PVCs or container mount paths.",
+				valueType:   prometheus.GaugeValue,
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name"},
+				getValues: func(s *info.ContainerStats) metricValues {
+					values := make(metricValues, 0, len(s.Filesystem))
+					for _, fs := range s.Filesystem {
+						if fs.Device == "" {
+							continue
+						}
+						volumeMountInfo := parseMountPointIntoVolumePath(fs.Mountpoint)
+						values = append(values, metricValue{
+							value:     1.0,
+							labels:    []string{fs.Device, fs.Mountpoint, fs.ContainerPath, volumeMountInfo.volumeName},
+							timestamp: s.Timestamp,
+						})
+					}
+					return values
 				},
 			},
 		}...)

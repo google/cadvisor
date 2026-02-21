@@ -860,6 +860,13 @@ type FsStats struct {
 	// last update of this field.  This can provide an easy measure of both
 	// I/O completion time and the backlog that may be accumulating.
 	WeightedIoTime uint64 `json:"weighted_io_time"`
+
+	// Mountpoint is the host-side path where this filesystem device is mounted.
+	Mountpoint string `json:"mountpoint,omitempty"`
+
+	// ContainerPath is the path inside the container corresponding to this
+	// filesystem mount (populated from external mounts / container hints config).
+	ContainerPath string `json:"container_path,omitempty"`
 }
 
 type AcceleratorStats struct {
