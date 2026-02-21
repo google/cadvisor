@@ -64,6 +64,10 @@ container_custom_app_metric_3{app_test_label="test_value",container_env_foo_env=
 # HELP container_file_descriptors Number of open file descriptors for the container.
 # TYPE container_file_descriptors gauge
 container_file_descriptors{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5 1395066363000
+# HELP container_fs_device_info Filesystem device and mount information for containers. Value is always 1; join on (id, device) with other container_fs_* metrics to associate devices with PVCs or container mount paths.
+# TYPE container_fs_device_info gauge
+container_fs_device_info{container_env_foo_env="prod",container_mountpath="",device="sda1",host_mountpoint="",id="testcontainer",image="test",name="testcontaineralias",volume_name="",volume_type="",zone_name="hello"} 1 1395066363000
+container_fs_device_info{container_env_foo_env="prod",container_mountpath="",device="sda2",host_mountpoint="",id="testcontainer",image="test",name="testcontaineralias",volume_name="",volume_type="",zone_name="hello"} 1 1395066363000
 # HELP container_fs_inodes_free Number of available Inodes
 # TYPE container_fs_inodes_free gauge
 container_fs_inodes_free{container_env_foo_env="prod",device="sda1",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 524288 1395066363000
