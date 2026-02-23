@@ -22,27 +22,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// mockSystemd allows overriding systemd detection in tests
-func mockSystemd(isSystemd bool) func() {
-	original := systemdCheck
-	systemdCheck = func() bool { return isSystemd }
-	return func() { systemdCheck = original }
-}
-
 func TestCanHandleAndAccept(t *testing.T) {
-	f := &crioFactory{
-		client:             nil,
-		cgroupSubsystems:   nil,
-		fsInfo:             nil,
-		machineInfoFactory: nil,
-		storageDriver:      "",
-		storageDir:         "",
-		includedMetrics:    nil,
-	}
-
 	tests := []struct {
 		name          string
-		isSystemd     bool
+		cgroupDriver  string
 		path          string
 		wantCanHandle bool
 		wantCanAccept bool
@@ -50,14 +33,14 @@ func TestCanHandleAndAccept(t *testing.T) {
 		// Systemd behavior - sandbox containers (without .scope) are filtered
 		{
 			name:          "systemd: sandbox container without .scope",
-			isSystemd:     true,
+			cgroupDriver:  "systemd",
 			path:          "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f",
 			wantCanHandle: true,
 			wantCanAccept: false,
 		},
 		{
 			name:          "systemd: regular container with .scope",
-			isSystemd:     true,
+			cgroupDriver:  "systemd",
 			path:          "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f.scope",
 			wantCanHandle: true,
 			wantCanAccept: true,
@@ -65,14 +48,14 @@ func TestCanHandleAndAccept(t *testing.T) {
 		// Non-systemd (cgroupfs) behavior - all valid containers accepted
 		{
 			name:          "cgroupfs: container without .scope",
-			isSystemd:     false,
+			cgroupDriver:  "cgroupfs",
 			path:          "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f",
 			wantCanHandle: true,
 			wantCanAccept: true,
 		},
 		{
 			name:          "cgroupfs: container with .scope",
-			isSystemd:     false,
+			cgroupDriver:  "cgroupfs",
 			path:          "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f.scope",
 			wantCanHandle: true,
 			wantCanAccept: true,
@@ -80,28 +63,28 @@ func TestCanHandleAndAccept(t *testing.T) {
 		// Common cases (same behavior for both systemd and cgroupfs)
 		{
 			name:          "system-systemd component",
-			isSystemd:     true,
-			path:          "/system.slice/system-systemd\\\\x2dcoredump.slice",
+			cgroupDriver:  "systemd",
+			path:          "/system.slice/system-systemd\\x2dcoredump.slice",
 			wantCanHandle: true,
 			wantCanAccept: false,
 		},
 		{
 			name:          "mount cgroup",
-			isSystemd:     true,
+			cgroupDriver:  "systemd",
 			path:          "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f.mount",
 			wantCanHandle: false,
 			wantCanAccept: false,
 		},
 		{
 			name:          "crio-conmon container",
-			isSystemd:     true,
+			cgroupDriver:  "systemd",
 			path:          "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-conmon-81e5c2990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75d5f",
 			wantCanHandle: false,
 			wantCanAccept: false,
 		},
 		{
 			name:          "invalid container ID",
-			isSystemd:     true,
+			cgroupDriver:  "systemd",
 			path:          "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/crio-990803c383229c9680ce964738d5e566d97f5bd436ac34808d2ec75",
 			wantCanHandle: false,
 			wantCanAccept: false,
@@ -110,9 +93,9 @@ func TestCanHandleAndAccept(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Mock systemd detection
-			restore := mockSystemd(tt.isSystemd)
-			defer restore()
+			f := &crioFactory{
+				cgroupDriver: tt.cgroupDriver,
+			}
 
 			canHandle, canAccept, err := f.CanHandleAndAccept(tt.path)
 			assert.NoError(t, err)
