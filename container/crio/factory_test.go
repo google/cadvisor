@@ -22,11 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type canHandleAndAccept struct {
-	canHandle bool
-	canAccept bool
-}
-
 // mockSystemd allows overriding systemd detection in tests
 func mockSystemd(isSystemd bool) func() {
 	original := systemdCheck
