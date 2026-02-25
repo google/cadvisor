@@ -460,3 +460,28 @@ func TestMetricsResponseContainsComments(t *testing.T) {
 	assert.True(t, strings.Contains(text, "# TYPE"),
 		"Metrics response should contain # TYPE comments")
 }
+
+// TestProtoCreatedTimestamps verifies that counter metrics have CreatedTimestamp
+// set when fetched via protobuf content negotiation.
+func TestProtoCreatedTimestamps(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	client := framework.NewMetricsClient(fm.Hostname())
+	families, err := client.FetchAndParseProtobuf()
+	require.NoError(t, err, "Failed to fetch protobuf format")
+	require.NotEmpty(t, families, "Protobuf response should contain metric families")
+
+	// Counter metrics should have CreatedTimestamp
+	cpuUsage, ok := framework.GetMetricFamily(families, "container_cpu_usage_seconds_total")
+	require.True(t, ok, "container_cpu_usage_seconds_total should exist")
+	require.NotEmpty(t, cpuUsage.GetMetric(), "Should have at least one CPU usage metric")
+
+	for _, metric := range cpuUsage.GetMetric() {
+		ct := metric.GetCounter().GetCreatedTimestamp()
+		assert.NotNil(t, ct, "Counter should have CreatedTimestamp")
+		if ct != nil {
+			assert.Greater(t, ct.AsTime().Unix(), int64(0), "CreatedTimestamp should be positive")
+		}
+	}
+}
