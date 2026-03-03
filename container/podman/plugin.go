@@ -49,7 +49,7 @@ func (p *plugin) InitializeFSContext(context *fs.Context) error {
 	return nil
 }
 
-func (p *plugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
+func (p *plugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet, whiteList []string) (watcher.ContainerWatcher, error) {
 	return Register(factory, fsInfo, includedMetrics)
 }
 
