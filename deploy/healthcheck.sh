@@ -16,12 +16,13 @@
 
 # Default port
 PORT=8080
+URL_PREFIX=""
 
 # Extract port from the cadvisor process command line
 if [ -f /proc/1/cmdline ]; then
     CMDLINE=$(tr '\0' ' ' < /proc/1/cmdline)
 
-    # Look for -port=XXXX or --port=XXXX
+    # Look for -port=XXXX, --port=XXXX, -url_base_prefix=XXXX, --url_base_prefix=XXXX
     for arg in $CMDLINE; do
         case "$arg" in
             -port=*)
@@ -30,8 +31,14 @@ if [ -f /proc/1/cmdline ]; then
             --port=*)
                 PORT="${arg#--port=}"
                 ;;
+            -url_base_prefix=*)
+                URL_PREFIX="${arg#-url_base_prefix=}"
+                ;;
+            --url_base_prefix=*)
+                URL_PREFIX="${arg#--url_base_prefix=}"
+                ;;
         esac
     done
 fi
 
-wget --quiet --tries=1 --spider "http://localhost:${PORT}/healthz" || exit 1
+wget --quiet --tries=1 --spider "http://localhost:${PORT}${URL_PREFIX}/healthz" || exit 1
