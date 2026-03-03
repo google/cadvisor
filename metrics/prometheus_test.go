@@ -26,6 +26,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	clock "k8s.io/utils/clock/testing"
 )
@@ -462,5 +463,60 @@ func TestCPUBurstMetrics(t *testing.T) {
 			result := tc.getValue()
 			assert.Equal(t, tc.expectedValue, result)
 		})
+	}
+}
+
+func TestPrometheusCollectorCreatedTimestamp(t *testing.T) {
+	c := NewPrometheusCollector(testSubcontainersInfoProvider{}, func(container *info.ContainerInfo) map[string]string {
+		s := DefaultContainerLabels(container)
+		s["zone.name"] = "hello"
+		return s
+	}, container.AllMetrics, now, v2.RequestOptions{})
+
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(c)
+
+	metricFamilies, err := reg.Gather()
+	if err != nil {
+		t.Fatalf("Failed to gather metrics: %v", err)
+	}
+
+	// The container creation time from the fake provider (prometheus_fake.go)
+	expectedCT := time.Unix(1257894000, 0)
+
+	// Counter metrics should have CreatedTimestamp set
+	counterMetrics := []string{
+		"container_cpu_user_seconds_total",
+		"container_cpu_system_seconds_total",
+		"container_cpu_usage_seconds_total",
+		"container_cpu_cfs_periods_total",
+		"container_cpu_cfs_throttled_periods_total",
+		"container_cpu_cfs_throttled_seconds_total",
+		"container_memory_failcnt",
+		"container_memory_failures_total",
+		"container_network_receive_bytes_total",
+		"container_network_transmit_bytes_total",
+	}
+
+	familyByName := make(map[string]*dto.MetricFamily, len(metricFamilies))
+	for _, mf := range metricFamilies {
+		familyByName[mf.GetName()] = mf
+	}
+
+	for _, name := range counterMetrics {
+		mf, ok := familyByName[name]
+		if !ok {
+			t.Errorf("Expected counter metric %s not found", name)
+			continue
+		}
+		for _, m := range mf.GetMetric() {
+			ct := m.GetCounter().GetCreatedTimestamp()
+			if ct == nil {
+				t.Errorf("Counter metric %s should have CreatedTimestamp set", name)
+			} else if ct.AsTime().Unix() != expectedCT.Unix() {
+				t.Errorf("Counter metric %s has wrong CreatedTimestamp: got %v, want %v",
+					name, ct.AsTime(), expectedCT)
+			}
+		}
 	}
 }

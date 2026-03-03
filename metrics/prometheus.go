@@ -2040,10 +2040,16 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			}
 			desc := cm.desc(labels)
 			for _, metricValue := range cm.getValues(stats) {
-				ch <- prometheus.NewMetricWithTimestamp(
-					metricValue.timestamp,
-					prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append(values, metricValue.labels...)...),
-				)
+				labelValues := append(values, metricValue.labels...)
+				var m prometheus.Metric
+				if cm.valueType == prometheus.CounterValue && !cont.Spec.CreationTime.IsZero() {
+					m = prometheus.MustNewConstMetricWithCreatedTimestamp(
+						desc, cm.valueType, float64(metricValue.value), cont.Spec.CreationTime, labelValues...,
+					)
+				} else {
+					m = prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), labelValues...)
+				}
+				ch <- prometheus.NewMetricWithTimestamp(metricValue.timestamp, m)
 			}
 		}
 		if c.includedMetrics.Has(container.AppMetrics) {
