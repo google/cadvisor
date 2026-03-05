@@ -58,12 +58,14 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 				Memory: 33604804608,
 				HugePages: []info.HugePagesInfo{
 					{
-						PageSize: uint64(1048576),
-						NumPages: uint64(0),
+						PageSize:  uint64(1048576),
+						NumPages:  uint64(0),
+						FreePages: ptrUint64(0),
 					},
 					{
-						PageSize: uint64(2048),
-						NumPages: uint64(0),
+						PageSize:  uint64(2048),
+						NumPages:  uint64(0),
+						FreePages: ptrUint64(0),
 					},
 				},
 				Cores: []info.Core{
@@ -163,12 +165,14 @@ func (p testSubcontainersInfoProvider) GetMachineInfo() (*info.MachineInfo, erro
 				Memory: 33604804606,
 				HugePages: []info.HugePagesInfo{
 					{
-						PageSize: uint64(1048576),
-						NumPages: uint64(2),
+						PageSize:  uint64(1048576),
+						NumPages:  uint64(2),
+						FreePages: ptrUint64(1),
 					},
 					{
-						PageSize: uint64(2048),
-						NumPages: uint64(4),
+						PageSize:  uint64(2048),
+						NumPages:  uint64(4),
+						FreePages: ptrUint64(3),
 					},
 				},
 				Cores: []info.Core{
@@ -809,6 +813,10 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 			},
 		},
 	}, nil
+}
+
+func ptrUint64(v uint64) *uint64 {
+	return &v
 }
 
 type erroringSubcontainersInfoProvider struct {
