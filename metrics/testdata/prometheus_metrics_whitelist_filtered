@@ -441,9 +441,12 @@ container_spec_cpu_quota{container_env_foo_env="prod",id="testcontainer",image="
 # HELP container_spec_cpu_shares CPU share of the container.
 # TYPE container_spec_cpu_shares gauge
 container_spec_cpu_shares{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1000
+# HELP container_creation_time_seconds Container creation time since unix epoch in seconds.
+# TYPE container_creation_time_seconds gauge
+container_creation_time_seconds{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.257894e+09
 # HELP container_start_time_seconds Start time of the container since unix epoch in seconds.
 # TYPE container_start_time_seconds gauge
-container_start_time_seconds{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.257894e+09
+container_start_time_seconds{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 1.257895e+09
 # HELP container_tasks_state Number of tasks in given state
 # TYPE container_tasks_state gauge
 container_tasks_state{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",state="iowaiting",zone_name="hello"} 54 1395066363000
