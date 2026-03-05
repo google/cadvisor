@@ -464,3 +464,47 @@ func TestCPUBurstMetrics(t *testing.T) {
 		})
 	}
 }
+
+func TestParseMountPointIntoVolumePath(t *testing.T) {
+	testCases := []struct {
+		name     string
+		path     string
+		expected string
+	}{
+		{
+			name:     "standard CSI volume path",
+			path:     "/var/lib/kubelet/pods/abc123-def456/volumes/kubernetes.io~csi/my-database-pvc/mount",
+			expected: "my-database-pvc",
+		},
+		{
+			name:     "NFS volume path",
+			path:     "/var/lib/kubelet/pods/abc/volumes/kubernetes.io~nfs/nfs-vol/mount",
+			expected: "nfs-vol",
+		},
+		{
+			name:     "non-standard kubelet root dir",
+			path:     "/data/kubelet/pods/abc/volumes/kubernetes.io~csi/my-pvc/mount",
+			expected: "my-pvc",
+		},
+		{
+			name:     "no match - plain host path",
+			path:     "/mnt/data",
+			expected: "",
+		},
+		{
+			name:     "empty string",
+			path:     "",
+			expected: "",
+		},
+		{
+			name:     "root cgroup path",
+			path:     "/",
+			expected: "",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, parseMountPointIntoVolumePath(tc.path).volumeName)
+		})
+	}
+}

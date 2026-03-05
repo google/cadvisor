@@ -71,6 +71,8 @@ type Fs struct {
 	Inodes     *uint64
 	InodesFree *uint64
 	DiskStats  DiskStats
+	// Mountpoint is the host-side path where this device is mounted.
+	Mountpoint string
 }
 
 type DiskStats struct {
