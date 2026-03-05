@@ -31,8 +31,10 @@ var (
 )
 
 func TestContainerSpecFromV1(t *testing.T) {
+	startTime := timestamp.Add(1 * time.Hour)
 	v1Spec := v1.ContainerSpec{
 		CreationTime: timestamp,
+		StartTime:    startTime,
 		Labels:       labels,
 		Envs:         envs,
 		HasCpu:       true,
@@ -67,6 +69,7 @@ func TestContainerSpecFromV1(t *testing.T) {
 
 	expectedV2Spec := ContainerSpec{
 		CreationTime: timestamp,
+		StartTime:    startTime,
 		Labels:       labels,
 		Envs:         envs,
 		HasCpu:       true,
