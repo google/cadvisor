@@ -864,6 +864,11 @@ type FsStats struct {
 	// Mountpoint is the host-side path where this filesystem device is mounted.
 	Mountpoint string `json:"mountpoint,omitempty"`
 
+	// AllMountpoints lists every host-side path where this device is mounted,
+	// including bind mounts (e.g. both the CSI plugin globalmount path and the
+	// per-pod kubelet volume path). Mountpoint is always present in this slice.
+	AllMountpoints []string `json:"all_mountpoints,omitempty"`
+
 	// ContainerPath is the path inside the container corresponding to this
 	// filesystem mount (populated from external mounts / container hints config).
 	ContainerPath string `json:"container_path,omitempty"`

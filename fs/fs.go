@@ -89,6 +89,9 @@ type RealFsInfo struct {
 	dmsetup devicemapper.DmsetupClient
 	// fsUUIDToDeviceName is a map from the filesystem UUID to its device name.
 	fsUUIDToDeviceName map[string]string
+	// deviceToMountpoints maps each block device to all of its host-side mount
+	// paths, including bind mounts that processMounts de-duplicates away.
+	deviceToMountpoints map[string][]string
 }
 
 func NewFsInfo(context Context) (FsInfo, error) {
@@ -110,12 +113,26 @@ func NewFsInfo(context Context) (FsInfo, error) {
 
 	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
 	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
+
+	// Build device → all-mountpoints map before processMounts de-duplicates.
+	// We record every mountpoint for devices whose FSType has a plugin, so that
+	// container_fs_device_info can emit metrics for bind-mount paths (e.g. the
+	// per-pod kubelet volume path alongside the CSI plugin globalmount path).
+	deviceToMountpoints := make(map[string][]string)
+	for _, mnt := range mounts {
+		if GetPluginForFsType(mnt.FSType) == nil {
+			continue
+		}
+		deviceToMountpoints[mnt.Source] = append(deviceToMountpoints[mnt.Source], mnt.Mountpoint)
+	}
+
 	fsInfo := &RealFsInfo{
-		partitions:         processMounts(mounts, excluded),
-		labels:             make(map[string]string),
-		mounts:             make(map[string]mount.Info),
-		dmsetup:            devicemapper.NewDmsetupClient(),
-		fsUUIDToDeviceName: fsUUIDToDeviceName,
+		partitions:          processMounts(mounts, excluded),
+		labels:              make(map[string]string),
+		mounts:              make(map[string]mount.Info),
+		dmsetup:             devicemapper.NewDmsetupClient(),
+		fsUUIDToDeviceName:  fsUUIDToDeviceName,
+		deviceToMountpoints: deviceToMountpoints,
 	}
 
 	for _, mnt := range mounts {
@@ -430,6 +447,7 @@ func (i *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error
 							Minor:  uint(partition.minor),
 						}
 						fs.Mountpoint = partition.mountpoint
+						fs.AllMountpoints = i.deviceToMountpoints[device]
 						if val, ok := diskStatsMap[device]; ok {
 							fs.DiskStats = val
 						} else {
@@ -485,6 +503,7 @@ func (i *RealFsInfo) GetFsInfoForPath(mountSet map[string]struct{}) ([]Fs, error
 				Minor:  uint(partition.minor),
 			}
 			fs.Mountpoint = partition.mountpoint
+			fs.AllMountpoints = i.deviceToMountpoints[device]
 
 			if val, ok := diskStatsMap[device]; ok {
 				fs.DiskStats = val

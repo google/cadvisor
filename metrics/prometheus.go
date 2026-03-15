@@ -653,12 +653,22 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 						if fs.Device == "" {
 							continue
 						}
-						volumeMountInfo := parseMountPointIntoVolumePath(fs.Mountpoint)
-						values = append(values, metricValue{
-							value:     1.0,
-							labels:    []string{fs.Device, fs.Mountpoint, fs.ContainerPath, volumeMountInfo.volumeName, volumeMountInfo.volumeType},
-							timestamp: s.Timestamp,
-						})
+						// Emit one metric per host mountpoint so that both the CSI
+						// plugin globalmount path and the per-pod kubelet volume path
+						// are visible. Fall back to the primary Mountpoint when
+						// AllMountpoints is unpopulated (e.g. non-root containers).
+						mountpoints := fs.AllMountpoints
+						if len(mountpoints) == 0 {
+							mountpoints = []string{fs.Mountpoint}
+						}
+						for _, mp := range mountpoints {
+							volumeMountInfo := parseMountPointIntoVolumePath(mp)
+							values = append(values, metricValue{
+								value:     1.0,
+								labels:    []string{fs.Device, mp, fs.ContainerPath, volumeMountInfo.volumeName, volumeMountInfo.volumeType},
+								timestamp: s.Timestamp,
+							})
+						}
 					}
 					return values
 				},

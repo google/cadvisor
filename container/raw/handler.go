@@ -174,6 +174,7 @@ func fsToFsStats(fs *fs.Fs) info.FsStats {
 		InodesFree:      inodesFree,
 		Available:       fs.Available,
 		Mountpoint:      fs.Mountpoint,
+		AllMountpoints:  fs.AllMountpoints,
 		ReadsCompleted:  fs.DiskStats.ReadsCompleted,
 		ReadsMerged:     fs.DiskStats.ReadsMerged,
 		SectorsRead:     fs.DiskStats.SectorsRead,
