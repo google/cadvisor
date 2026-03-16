@@ -16,6 +16,7 @@ package metrics
 
 import (
 	"errors"
+	"flag"
 	"os"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
 	clock "k8s.io/utils/clock/testing"
 )
@@ -75,7 +77,28 @@ func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
 	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_perf_aggregated")
 }
 
+var update = flag.Bool("update", false, "update golden fixture files")
+
 func testPrometheusCollector(t *testing.T, gatherer prometheus.Gatherer, metricsFile string) {
+	if *update {
+		f, err := os.Create(metricsFile)
+		if err != nil {
+			t.Fatalf("failed to create fixture %s: %s", metricsFile, err)
+		}
+		defer f.Close()
+		mfs, err := gatherer.Gather()
+		if err != nil {
+			t.Fatalf("failed to gather metrics: %s", err)
+		}
+		enc := expfmt.NewEncoder(f, expfmt.NewFormat(expfmt.TypeTextPlain))
+		for _, mf := range mfs {
+			if err := enc.Encode(mf); err != nil {
+				t.Fatalf("failed to encode metric family: %s", err)
+			}
+		}
+		return
+	}
+
 	wantMetrics, err := os.Open(metricsFile)
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", metricsFile)
