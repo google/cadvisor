@@ -1149,6 +1149,9 @@ type OomKillEventData struct {
 
 	// The name of the killed process
 	ProcessName string `json:"process_name"`
+
+	// the constraint that triggered the OOM
+	Constraint string `json:"constraint"`
 }
 
 // Information related to a container deletion event
