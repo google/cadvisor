@@ -66,6 +66,58 @@ func TestStreamingEventInformationIsReturned(t *testing.T) {
 	waitForStaticEvent(containerID, "?creation_events=true&subcontainers=true", t, fm, info.EventContainerCreation)
 }
 
+func TestOomKillEventConstraint(t *testing.T) {
+	tests := []struct {
+		name           string
+		memLimit       string
+		wantConstraint string
+	}{
+		{
+			name:           "memory cgroup constraint",
+			memLimit:       "8M",
+			wantConstraint: "CONSTRAINT_MEMCG",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fm := framework.New(t)
+			defer fm.Cleanup()
+
+			containerID := fm.Docker().Run(
+				framework.DockerRunArgs{
+					Image: "registry.k8s.io/busybox:1.27",
+					Args:  []string{"-m=" + tt.memLimit},
+				},
+				"sh", "-c", "a=1; while true; do a=\"${a}${a}\"; done",
+			)
+
+			err := framework.RetryForDuration(func() error {
+				events, err := fm.Cadvisor().Client().EventStaticInfo("?oom_kill_events=true&subcontainers=true")
+				if err != nil {
+					return err
+				}
+				for _, ev := range events {
+					if ev.EventType == info.EventOomKill &&
+						strings.Contains(ev.ContainerName, containerID) {
+						if ev.EventData.OomKill == nil {
+							return fmt.Errorf("OOM kill event data is nil")
+						}
+						if ev.EventData.OomKill.Constraint != tt.wantConstraint {
+							t.Errorf("expected constraint %q, got %q",
+								tt.wantConstraint, ev.EventData.OomKill.Constraint)
+						}
+						return nil
+					}
+				}
+				return fmt.Errorf("OOM kill event not found for container %s", containerID)
+			}, 30*time.Second)
+
+			require.NoError(t, err)
+		})
+	}
+}
+
 func waitForStaticEvent(containerID string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {
 	einfo, err := fm.Cadvisor().Client().EventStaticInfo(urlRequest)
 	require.NoError(t, err)
