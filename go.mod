@@ -17,8 +17,8 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
-	github.com/moby/moby/api v1.52.0
-	github.com/moby/moby/client v0.2.1
+	github.com/moby/moby/api v1.54.1
+	github.com/moby/moby/client v0.4.0
 	github.com/moby/sys/mountinfo v0.7.2
 	github.com/opencontainers/cgroups v0.0.6
 	github.com/opencontainers/runc v1.4.0
