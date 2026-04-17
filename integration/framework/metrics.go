@@ -89,6 +89,41 @@ func (m *MetricsClient) FetchAndParse() (map[string]*dto.MetricFamily, error) {
 	return m.Parse(text)
 }
 
+// FetchAndParseProtobuf fetches metrics using PrometheusProtobuf exposition format
+func (m *MetricsClient) FetchAndParseProtobuf() (map[string]*dto.MetricFamily, error) {
+	url := m.baseURL + "metrics"
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/vnd.google.protobuf;proto=io.prometheus.client.MetricFamily;encoding=delimited")
+
+	resp, err := m.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch metrics: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("metrics endpoint returned %d: %s", resp.StatusCode, string(body))
+	}
+
+	families := make(map[string]*dto.MetricFamily)
+	decoder := expfmt.NewDecoder(resp.Body, expfmt.NewFormat(expfmt.TypeProtoDelim))
+	for {
+		mf := &dto.MetricFamily{}
+		if err := decoder.Decode(mf); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("failed to decode protobuf: %w", err)
+		}
+		families[mf.GetName()] = mf
+	}
+	return families, nil
+}
+
 // HasMetric checks if a metric family exists by name.
 func HasMetric(families map[string]*dto.MetricFamily, name string) bool {
 	_, ok := families[name]
