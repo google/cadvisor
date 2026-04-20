@@ -268,6 +268,10 @@ func (cd *containerData) ReadFile(filepath string, inHostNamespace bool) ([]byte
 	}
 	for _, pid := range pids {
 		filePath := path.Join(rootfs, "/proc", pid, "/root", filepath)
+		expectedPrefix := path.Join(rootfs, "/proc", pid, "/root") + "/"
+		if !strings.HasPrefix(filePath, expectedPrefix) {
+			return nil, fmt.Errorf("invalid file path %q: resolves outside container root", filepath)
+		}
 		klog.V(3).Infof("Trying path %q", filePath)
 		data, err := os.ReadFile(filePath)
 		if err == nil {
