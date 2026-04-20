@@ -33,16 +33,18 @@ function run_tests() {
   # Add safe.directory as workaround for https://github.com/actions/runner/issues/2033
   BUILD_CMD="git config --global safe.directory /go/src/github.com/google/cadvisor && env GOOS=linux GOARCH=amd64 GO_FLAGS='$GO_FLAGS' ./build/build.sh && \
     env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/api && \
-    env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/common"
+    env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/common && \
+    env GOOS=linux GOFLAGS='$GO_FLAGS' go test -c github.com/google/cadvisor/integration/tests/metrics"
 
   if [ "$BUILD_PACKAGES" != "" ]; then
     BUILD_CMD="apt update && apt install -y $BUILD_PACKAGES && \
     $BUILD_CMD"
   fi
   docker run --rm \
+    --platform linux/amd64 \
     -w /go/src/github.com/google/cadvisor \
     -v ${PWD}:/go/src/github.com/google/cadvisor \
-    golang:"$GOLANG_VERSION-bookworm" \
+    golang:"$GOLANG_VERSION-$DEBIAN_VERSION" \
     bash -c "$BUILD_CMD"
 
   EXTRA_DOCKER_OPTS="-e DOCKER_IN_DOCKER_ENABLED=true"
@@ -52,13 +54,14 @@ function run_tests() {
 
   mkdir ${TMPDIR}/docker-graph
   docker run --rm \
+    --platform linux/amd64 \
     -w /go/src/github.com/google/cadvisor \
     -v ${ROOT}:/go/src/github.com/google/cadvisor \
     ${EXTRA_DOCKER_OPTS} \
     --privileged \
     --cap-add="sys_admin" \
     --entrypoint="" \
-    gcr.io/k8s-staging-test-infra/bootstrap:v20250702-52f5173c3a \
+    gcr.io/k8s-staging-test-infra/bootstrap:v20251209-855adc2699 \
     bash -c "export DEBIAN_FRONTEND=noninteractive && \
     apt update && \
     apt install -y $PACKAGES && \
@@ -70,4 +73,5 @@ PACKAGES=${PACKAGES:-"sudo"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
 CADVISOR_ARGS=${CADVISOR_ARGS:-}
 GOLANG_VERSION=${GOLANG_VERSION:-"1.25"}
+DEBIAN_VERSION=${DEBIAN_VERSION:-"trixie"}
 run_tests

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package podman
 
 import (
@@ -94,7 +96,7 @@ func (f *podmanFactory) CanHandleAndAccept(name string) (handle bool, accept boo
 	if err != nil {
 		return false, true, fmt.Errorf("error inspecting container: %v", err)
 	}
-	if ctnr.ContainerJSONBase == nil || ctnr.State == nil || !ctnr.State.Running {
+	if ctnr.State == nil || !ctnr.State.Running {
 		return false, true, fmt.Errorf("container not running")
 	}
 	return true, true, nil

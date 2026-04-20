@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package libcontainer
 
 import (
@@ -771,6 +773,8 @@ func setCPUStats(s *cgroups.Stats, ret *info.ContainerStats, withPerCPU bool) {
 	ret.Cpu.CFS.Periods = s.CpuStats.ThrottlingData.Periods
 	ret.Cpu.CFS.ThrottledPeriods = s.CpuStats.ThrottlingData.ThrottledPeriods
 	ret.Cpu.CFS.ThrottledTime = s.CpuStats.ThrottlingData.ThrottledTime
+	ret.Cpu.CFS.BurstsPeriods = s.CpuStats.BurstData.BurstsPeriods
+	ret.Cpu.CFS.BurstTime = s.CpuStats.BurstData.BurstTime
 	setPSIStats(s.CpuStats.PSI, &ret.Cpu.PSI)
 
 	if !withPerCPU {
@@ -793,6 +797,10 @@ func setDiskIoStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	ret.DiskIo.IoWaitTime = diskStatsCopy(s.BlkioStats.IoWaitTimeRecursive)
 	ret.DiskIo.IoMerged = diskStatsCopy(s.BlkioStats.IoMergedRecursive)
 	ret.DiskIo.IoTime = diskStatsCopy(s.BlkioStats.IoTimeRecursive)
+	ret.DiskIo.IoCostUsage = diskStatsCopy(s.BlkioStats.IoCostUsage)
+	ret.DiskIo.IoCostWait = diskStatsCopy(s.BlkioStats.IoCostWait)
+	ret.DiskIo.IoCostIndebt = diskStatsCopy(s.BlkioStats.IoCostIndebt)
+	ret.DiskIo.IoCostIndelay = diskStatsCopy(s.BlkioStats.IoCostIndelay)
 	setPSIStats(s.BlkioStats.PSI, &ret.DiskIo.PSI)
 }
 

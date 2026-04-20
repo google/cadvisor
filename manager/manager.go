@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 // Manager of cAdvisor-monitored containers.
 package manager
 
@@ -1236,6 +1238,7 @@ func (m *manager) watchForNewOoms() error {
 					OomKill: &info.OomKillEventData{
 						Pid:         oomInstance.Pid,
 						ProcessName: oomInstance.ProcessName,
+						Constraint:  oomInstance.Constraint,
 					},
 				},
 			}

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 // Package docker implements a handler for Docker containers.
 package docker
 
@@ -25,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	dclient "github.com/docker/docker/client"
+	dclient "github.com/moby/moby/client"
 	"github.com/opencontainers/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
 
@@ -39,6 +41,8 @@ import (
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
 	"github.com/google/cadvisor/zfs"
+
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -66,6 +70,9 @@ type containerHandler struct {
 
 	// Time at which this container was created.
 	creationTime time.Time
+
+	// Time at which this container was started.
+	startTime time.Time
 
 	// Metadata associated with the container.
 	envs   map[string]string
@@ -183,9 +190,31 @@ func newContainerHandler(
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	ctnr, err := client.ContainerInspect(context.Background(), id)
+	res, err := client.ContainerInspect(context.Background(), id, dclient.ContainerInspectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
+	}
+	ctnr := res.Container
+
+	// Obtain the IP address for the container.
+	var ipAddress string
+	if ctnr.NetworkSettings != nil && ctnr.HostConfig != nil {
+		c := ctnr
+		if ctnr.HostConfig.NetworkMode.IsContainer() {
+			// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
+			// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
+			containerID := ctnr.HostConfig.NetworkMode.ConnectedContainer()
+			res, err := client.ContainerInspect(context.Background(), containerID, dclient.ContainerInspectOptions{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
+			}
+			c = res.Container
+		}
+		if nw, ok := c.NetworkSettings.Networks[c.HostConfig.NetworkMode.NetworkName()]; ok {
+			if nw.IPAddress.IsValid() {
+				ipAddress = nw.IPAddress.String()
+			}
+		}
 	}
 
 	// Do not report network metrics for containers that share netns with another container.
@@ -197,6 +226,7 @@ func newContainerHandler(
 		storageDriver:      storageDriver,
 		fsInfo:             fsInfo,
 		rootfsStorageDir:   rootfsStorageDir,
+		ipAddress:          ipAddress,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
 		image:              ctnr.Config.Image,
@@ -220,31 +250,29 @@ func newContainerHandler(
 		return nil, fmt.Errorf("failed to parse the create timestamp %q for container %q: %v", ctnr.Created, id, err)
 	}
 
+	// StartedAt may be unset for containers that never started.
+	if startedAt := ctnr.State.StartedAt; startedAt != "" {
+		if t, err := time.Parse(time.RFC3339Nano, startedAt); err == nil && !t.Before(time.Unix(0, 0)) {
+			handler.startTime = t
+		}
+	}
+
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
 	}
 
-	// Obtain the IP address for the container.
-	// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
-	// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
-	ipAddress := ctnr.NetworkSettings.IPAddress
-	networkMode := string(ctnr.HostConfig.NetworkMode)
-	if ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
-		containerID := strings.TrimPrefix(networkMode, "container:")
-		c, err := client.ContainerInspect(context.Background(), containerID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
-		}
-		ipAddress = c.NetworkSettings.IPAddress
-	}
-	handler.ipAddress = ipAddress
-
 	if includedMetrics.Has(container.DiskUsageMetrics) {
+		var deviceID string
+		if ctnr.GraphDriver != nil {
+			deviceID = ctnr.GraphDriver.Data["DeviceId"]
+		} else {
+			klog.V(4).Infof("GraphDriver not found for container %q", id)
+		}
 		handler.fsHandler = &FsHandler{
 			FsHandler:       common.NewFsHandler(common.DefaultPeriod, rootfsStorageDir, otherStorageDir, fsInfo),
 			ThinPoolWatcher: thinPoolWatcher,
 			ZfsWatcher:      zfsWatcher,
-			DeviceID:        ctnr.GraphDriver.Data["DeviceId"],
+			DeviceID:        deviceID,
 			ZfsFilesystem:   zfsFilesystem,
 		}
 	}
@@ -308,6 +336,7 @@ func (h *containerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec.Envs = h.envs
 	spec.Image = h.image
 	spec.CreationTime = h.creationTime
+	spec.StartTime = h.startTime
 
 	return spec, nil
 }
@@ -320,13 +349,14 @@ func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	ctnr, err := h.client.ContainerInspect(context.Background(), h.reference.Id)
+	res, err := h.client.ContainerInspect(context.Background(), h.reference.Id, dclient.ContainerInspectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %q: %v", h.reference.Id, err)
 	}
+	ctnr := res.Container
 
 	if ctnr.State.Health != nil {
-		stats.Health.Status = ctnr.State.Health.Status
+		stats.Health.Status = string(ctnr.State.Health.Status)
 	}
 
 	// Get filesystem stats.
@@ -388,10 +418,11 @@ func (h *containerHandler) Type() container.ContainerType {
 }
 
 func (h *containerHandler) GetExitCode() (int, error) {
-	ctnr, err := h.client.ContainerInspect(context.Background(), h.reference.Id)
+	res, err := h.client.ContainerInspect(context.Background(), h.reference.Id, dclient.ContainerInspectOptions{})
 	if err != nil {
 		return -1, fmt.Errorf("failed to inspect container %s: %w", h.reference.Id, err)
 	}
+	ctnr := res.Container
 
 	if ctnr.State.Running {
 		return -1, fmt.Errorf("container %s is still running", h.reference.Id)

@@ -54,12 +54,27 @@ echo "=== Kernel version ==="
 uname -r
 echo "=== End diagnostic information ==="
 
+# Install ctr (containerd CLI) if not available - needed for containerd integration tests
+if ! command -v ctr &> /dev/null; then
+  CTR_VERSION="1.7.24"
+  CTR_ARCH="amd64"
+  [ "$(uname -m)" = "aarch64" ] && CTR_ARCH="arm64"
+  curl -sL "https://github.com/containerd/containerd/releases/download/v${CTR_VERSION}/containerd-${CTR_VERSION}-linux-${CTR_ARCH}.tar.gz" | sudo tar -xz -C /usr/local
+fi
+
 # Detect containerd socket path - Docker-in-Docker uses a different path
-CONTAINERD_SOCK="/run/containerd/containerd.sock"
+export CONTAINERD_SOCK="/run/containerd/containerd.sock"
 if [ -S "/run/docker/containerd/containerd.sock" ]; then
-  CONTAINERD_SOCK="/run/docker/containerd/containerd.sock"
+  export CONTAINERD_SOCK="/run/docker/containerd/containerd.sock"
   echo ">> Using Docker-embedded containerd socket: $CONTAINERD_SOCK"
 fi
+
+# Set up cgroup delegation for containerd k8s.io namespace (cgroups v2)
+sudo mkdir -p /sys/fs/cgroup/init
+xargs -rn1 < /sys/fs/cgroup/cgroup.procs 2>/dev/null | sudo tee /sys/fs/cgroup/init/cgroup.procs > /dev/null 2>&1 || true
+sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers | sudo tee /sys/fs/cgroup/cgroup.subtree_control > /dev/null 2>&1 || true
+sudo mkdir -p /sys/fs/cgroup/k8s.io
+sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers | sudo tee /sys/fs/cgroup/k8s.io/cgroup.subtree_control > /dev/null 2>&1 || true
 
 function start {
   set +e  # We want to handle errors if cAdvisor crashes.
@@ -117,10 +132,11 @@ if [[ "${DOCKER_IN_DOCKER_ENABLED:-}" == "true" ]]; then
 fi
 
 echo ">> running integration tests against local cAdvisor"
-if ! [ -f ./api.test ] || ! [ -f ./common.test ]; then
-  echo You must compile the ./api.test binary and ./common.test binary before
-  echo running the integration tests.
+if ! [ -f ./api.test ] || ! [ -f ./common.test ] || ! [ -f ./metrics.test ]; then
+  echo You must compile the ./api.test, ./common.test, and ./metrics.test binaries
+  echo before running the integration tests.
   exit 1
 fi
 ./api.test --vmodule=*=2 -test.v
 ./common.test -test.v
+./metrics.test -test.v

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 package api
 
 import (
@@ -213,14 +215,14 @@ func TestDockerContainerSpec(t *testing.T) {
 
 	assert.True(containerInfo.Spec.HasCpu, "CPU should be isolated")
 	if cgroups.IsCgroup2UnifiedMode() {
-		// cpu shares are rounded slightly on cgroupv2 due to conversion between cgroupv1 (cpu.shares) and cgroupv2 (cpu.weight)
-		// When container is created via docker, runc will convert cpu shares to cpu.weight https://github.com/opencontainers/runc/blob/d11f4d756e85ece5cdba8bb69f8bd4db3cdcbeab/libcontainer/cgroups/utils.go#L423-L428
+		// cpu shares are converted on cgroupv2 due to conversion between cgroupv1 (cpu.shares) and cgroupv2 (cpu.weight)
+		// When container is created via docker, runc will convert cpu shares to cpu.weight using a log2-based quadratic formula https://github.com/opencontainers/cgroups/blob/v0.0.6/utils.go#L405-L427
 		// And cAdvisor will convert cpu.weight back to cpu shares in https://github.com/google/cadvisor/blob/24e7a9883d12f944fd4403861707f4bafcaf4f3d/container/common/helpers.go#L249-L260
 		// Worked example:
 		// cpuShares = 2048 (input to docker --cpu-shares)
-		// cpuWeight = int((1 + ((cpuShares-2)*9999)/262142))=79 (conversion done by runc)
-		// cpuWeight back to cpuShares = int(2 + ((cpuWeight-1)*262142)/9999)= 2046
-		var cgroupV2Shares uint64 = 2046
+		// l = log2(2048) = 11; exponent = (l*l + 125*l)/612 - 7/34 = 2.2386; cpuWeight = ceil(10^exponent) = 174 (conversion done by runc)
+		// cpuWeight back to cpuShares = int(2 + ((cpuWeight-1)*262142)/9999)= 4537
+		var cgroupV2Shares uint64 = 4537
 		assert.Equal(cgroupV2Shares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cgroupV2Shares, containerInfo.Spec.Cpu.Limit)
 	} else {
 		assert.Equal(cpuShares, containerInfo.Spec.Cpu.Limit, "Container should have %d shares, has %d", cpuShares, containerInfo.Spec.Cpu.Limit)
@@ -428,4 +430,214 @@ func TestDockerHealthState(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return getHealth() == "healthy"
 	}, 10*time.Second, 100*time.Millisecond)
+}
+
+// Check that restart count is captured in labels.
+func TestDockerContainerRestartCount(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	containerName := fmt.Sprintf("test-restart-count-%d", os.Getpid())
+	// Run a container that runs briefly then exits with failure, with restart policy
+	// The sleep gives cAdvisor time to detect the container between restarts
+	fm.Docker().Run(framework.DockerRunArgs{
+		Image: "registry.k8s.io/busybox:1.27",
+		Args: []string{
+			"--name", containerName,
+			"--restart", "on-failure:5",
+		},
+	}, "sh", "-c", "sleep 3 && exit 1")
+
+	// Wait for container to show up initially
+	waitForContainer(containerName, fm)
+
+	// Wait for at least one restart to occur
+	time.Sleep(5 * time.Second)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+
+	// Query the container - it should still be running or restarting
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerName, request)
+	require.NoError(t, err, "Container should still be available during restart cycle")
+	sanityCheck(containerName, containerInfo, t)
+
+	// Check that restart count label is present and greater than 0
+	restartCount, ok := containerInfo.Spec.Labels["restartcount"]
+	require.True(t, ok, "restartcount label should be present")
+	count, err := strconv.Atoi(restartCount)
+	require.NoError(t, err)
+	assert.GreaterOrEqual(t, count, 1, "Restart count should be at least 1")
+}
+
+// Check the DiskIo ContainerStats.
+func TestDockerContainerDiskIoStats(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	// Run a container that does disk I/O and stays running
+	containerID := fm.Docker().RunBusybox("sh", "-c", "dd if=/dev/zero of=/tmp/testfile bs=1024 count=1000 && sync && sleep 30")
+
+	// Wait for the container to show up and do some I/O
+	waitForContainer(containerID, fm)
+	time.Sleep(3 * time.Second)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
+	require.NoError(t, err)
+	sanityCheck(containerID, containerInfo, t)
+
+	// Check that DiskIo stats are present
+	assert.True(t, containerInfo.Spec.HasDiskIo, "Container should have DiskIo isolation")
+}
+
+// Check container with --network none.
+func TestDockerContainerNetworkNone(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	containerName := fmt.Sprintf("test-network-none-%d", os.Getpid())
+	containerID := fm.Docker().Run(framework.DockerRunArgs{
+		Image: "registry.k8s.io/pause",
+		Args: []string{
+			"--name", containerName,
+			"--network", "none",
+		},
+	})
+
+	// Wait for the container to show up
+	waitForContainer(containerID, fm)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
+	require.NoError(t, err)
+	sanityCheck(containerID, containerInfo, t)
+
+	// Container with network none should still be monitored
+	assert.NotEmpty(t, containerInfo.Stats, "Container should have stats even with --network none")
+}
+
+// Check container with --network host.
+func TestDockerContainerNetworkHost(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	containerName := fmt.Sprintf("test-network-host-%d", os.Getpid())
+	containerID := fm.Docker().Run(framework.DockerRunArgs{
+		Image: "registry.k8s.io/pause",
+		Args: []string{
+			"--name", containerName,
+			"--network", "host",
+		},
+	})
+
+	// Wait for the container to show up
+	waitForContainer(containerID, fm)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
+	require.NoError(t, err)
+	sanityCheck(containerID, containerInfo, t)
+
+	// Container with host network should be monitored
+	assert.NotEmpty(t, containerInfo.Stats, "Container should have stats with --network host")
+}
+
+// Check container with shared network namespace (--network container:X).
+// This exercises the code path where we need to inspect another container for IP address.
+func TestDockerContainerSharedNetwork(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	// First, create a container that will share its network namespace
+	networkContainerName := fmt.Sprintf("test-network-provider-%d", os.Getpid())
+	networkContainerID := fm.Docker().Run(framework.DockerRunArgs{
+		Image: "registry.k8s.io/pause",
+		Args: []string{
+			"--name", networkContainerName,
+		},
+	})
+	waitForContainer(networkContainerID, fm)
+
+	// Now create a container that shares the network namespace of the first container
+	sharedNetworkContainerName := fmt.Sprintf("test-network-consumer-%d", os.Getpid())
+	sharedNetworkContainerID := fm.Docker().Run(framework.DockerRunArgs{
+		Image: "registry.k8s.io/pause",
+		Args: []string{
+			"--name", sharedNetworkContainerName,
+			"--network", fmt.Sprintf("container:%s", networkContainerName),
+		},
+	})
+	waitForContainer(sharedNetworkContainerID, fm)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+
+	// Both containers should be accessible
+	containerInfo1, err := fm.Cadvisor().Client().DockerContainer(networkContainerID, request)
+	require.NoError(t, err)
+	sanityCheck(networkContainerID, containerInfo1, t)
+
+	containerInfo2, err := fm.Cadvisor().Client().DockerContainer(sharedNetworkContainerID, request)
+	require.NoError(t, err)
+	sanityCheck(sharedNetworkContainerID, containerInfo2, t)
+
+	// The container with shared network should have stats
+	assert.NotEmpty(t, containerInfo2.Stats, "Container with shared network should have stats")
+}
+
+// Check that container image information is captured.
+func TestDockerContainerImageInfo(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	expectedImage := "registry.k8s.io/pause"
+	containerID := fm.Docker().Run(framework.DockerRunArgs{
+		Image: expectedImage,
+	})
+
+	waitForContainer(containerID, fm)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
+	require.NoError(t, err)
+	sanityCheck(containerID, containerInfo, t)
+
+	// Check image name is captured
+	assert.Contains(t, containerInfo.Spec.Image, "pause", "Container image should contain 'pause'")
+}
+
+// Check that container creation time is valid.
+func TestDockerContainerCreationTime(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	beforeCreation := time.Now().Add(-1 * time.Second)
+
+	containerID := fm.Docker().RunPause()
+	waitForContainer(containerID, fm)
+
+	afterCreation := time.Now().Add(1 * time.Second)
+
+	request := &info.ContainerInfoRequest{
+		NumStats: 1,
+	}
+	containerInfo, err := fm.Cadvisor().Client().DockerContainer(containerID, request)
+	require.NoError(t, err)
+	sanityCheck(containerID, containerInfo, t)
+
+	// Check creation time is within expected range
+	creationTime := containerInfo.Spec.CreationTime
+	assert.True(t, creationTime.After(beforeCreation), "Creation time %v should be after %v", creationTime, beforeCreation)
+	assert.True(t, creationTime.Before(afterCreation), "Creation time %v should be before %v", creationTime, afterCreation)
 }

@@ -19,7 +19,7 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           fetch-depth: 0  # Fetch all history for proper versioning
@@ -35,10 +35,12 @@ jobs:
       - name: Set VERSION environment variable
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "VERSION=${{ inputs.tag }}" >> $GITHUB_ENV
+            echo "VERSION=${INPUTS_TAG}" >> $GITHUB_ENV
           else
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           fi
+        env:
+          INPUTS_TAG: ${{ inputs.tag }}
 
       - name: Build Linux ${{ matrix.arch }} binary
         env:
@@ -50,7 +52,7 @@ jobs:
           docker run --rm -v ${PWD}:/go/src/github.com/google/cadvisor \
             --platform linux/${{ matrix.arch }} \
             golang:1.25 \
-            /bin/bash -c "cd /go/src/github.com/google/cadvisor && GOARCH=${{ matrix.arch }} OUTPUT_NAME_WITH_ARCH=true VERSION=${{ env.VERSION }} GO_FLAGS='-buildvcs=false -tags=netgo' GO_CGO_ENABLED=0 ./build/build.sh"
+            /bin/bash -c "cd /go/src/github.com/google/cadvisor && GOARCH=${{ matrix.arch }} OUTPUT_NAME_WITH_ARCH=true VERSION=${VERSION} GO_FLAGS='-buildvcs=false -tags=netgo' GO_CGO_ENABLED=0 ./build/build.sh"
 
       - name: Generate SHA256 checksums
         run: |
@@ -61,7 +63,7 @@ jobs:
           find . -name "cadvisor*" -type f -not -name "*.sha256" -exec sh -c 'sha256sum "$1" > "$1.sha256"' _ {} \;
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: cadvisor-linux-${{ matrix.arch }}
           path: |
@@ -75,20 +77,22 @@ jobs:
       contents: write  # Needed for creating GitHub releases
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Set VERSION environment variable
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "VERSION=${{ inputs.tag }}" >> $GITHUB_ENV
+            echo "VERSION=${INPUTS_TAG}" >> $GITHUB_ENV
           else
             echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           fi
+        env:
+          INPUTS_TAG: ${{ inputs.tag }}
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: artifacts
 

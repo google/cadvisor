@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 // Per-container manager.
 
 package manager
@@ -533,6 +535,59 @@ func TestGetCgroupPath(t *testing.T) {
 			cd := &containerData{}
 			path := cd.getCgroupPath(cgroup.cgroups)
 			assert.Equal(t, cgroup.path, path)
+		})
+	}
+}
+
+func TestNextHousekeepingInterval(t *testing.T) {
+	base := 1 * time.Second
+	tests := []struct {
+		name              string
+		splayFactor       float64
+		jitterFactor      float64
+		firstHousekeeping bool
+		expectedMin       time.Duration
+		expectedMax       time.Duration
+	}{
+		{
+			name:              "first housekeeping uses splay factor",
+			splayFactor:       2.0,
+			jitterFactor:      1.0,
+			firstHousekeeping: true,
+			expectedMin:       base,
+			expectedMax:       base + time.Duration(2.0*float64(base)),
+		},
+		{
+			name:              "subsequent housekeeping uses jitter factor",
+			splayFactor:       1.0,
+			jitterFactor:      0.5,
+			firstHousekeeping: false,
+			expectedMin:       base,
+			expectedMax:       base + time.Duration(0.5*float64(base)),
+		},
+		{
+			name:              "zero jitter factor results in no jitter",
+			splayFactor:       1.0,
+			jitterFactor:      0.0,
+			firstHousekeeping: false,
+			expectedMin:       base,
+			expectedMax:       base,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			cd, _, _, _ := newTestContainerData(t)
+			cd.allowDynamicHousekeeping = false
+			cd.housekeepingInterval = base
+			cd.firstHousekeeping = tc.firstHousekeeping
+			cd.initialSplayFactor = tc.splayFactor
+			cd.jitterFactor = tc.jitterFactor
+
+			got := cd.nextHousekeepingInterval()
+			assert.GreaterOrEqual(t, got, tc.expectedMin)
+			assert.LessOrEqual(t, got, tc.expectedMax)
+			assert.False(t, cd.firstHousekeeping)
 		})
 	}
 }

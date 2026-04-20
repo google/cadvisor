@@ -299,6 +299,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 					Limit: 100,
 				},
 				CreationTime: time.Unix(1257894000, 0),
+				StartTime:    time.Unix(1257895000, 0),
 				Labels: map[string]string{
 					"foo.label": "bar",
 				},
@@ -320,6 +321,8 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							Periods:          723,
 							ThrottledPeriods: 18,
 							ThrottledTime:    1724314000,
+							BurstsPeriods:    25,
+							BurstTime:        500000000,
 						},
 						Schedstat: info.CpuSchedstat{
 							RunTime:      53643567,
@@ -577,6 +580,30 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								"Total":   5,
 								"Write":   6,
 							},
+						}},
+						IoCostUsage: []info.PerDiskStats{{
+							Device: "sda1",
+							Major:  8,
+							Minor:  1,
+							Stats:  map[string]uint64{"Count": 1500000},
+						}},
+						IoCostWait: []info.PerDiskStats{{
+							Device: "sda1",
+							Major:  8,
+							Minor:  1,
+							Stats:  map[string]uint64{"Count": 2500000},
+						}},
+						IoCostIndebt: []info.PerDiskStats{{
+							Device: "sda1",
+							Major:  8,
+							Minor:  1,
+							Stats:  map[string]uint64{"Count": 500000},
+						}},
+						IoCostIndelay: []info.PerDiskStats{{
+							Device: "sda1",
+							Major:  8,
+							Minor:  1,
+							Stats:  map[string]uint64{"Count": 750000},
 						}},
 						PSI: info.PSIStats{
 							Full: info.PSIData{

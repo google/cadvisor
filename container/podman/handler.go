@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build linux
+
 // Package podman implements a handler for Podman containers.
 package podman
 
@@ -23,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	dockercontainer "github.com/docker/docker/api/types/container"
+	dockercontainer "github.com/moby/moby/api/types/container"
 	"github.com/opencontainers/cgroups"
 
 	"github.com/google/cadvisor/container"
@@ -52,6 +54,9 @@ type containerHandler struct {
 
 	// Time at which this container was created.
 	creationTime time.Time
+
+	// Time at which this container was started.
+	startTime time.Time
 
 	// Metadata associated with the container.
 	envs   map[string]string
@@ -124,6 +129,26 @@ func newContainerHandler(
 		return nil, err
 	}
 
+	// Obtain the IP address for the container.
+	var ipAddress string
+	if ctnr.NetworkSettings != nil && ctnr.HostConfig != nil {
+		c := ctnr
+		if ctnr.HostConfig.NetworkMode.IsContainer() {
+			// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
+			// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
+			containerID := ctnr.HostConfig.NetworkMode.ConnectedContainer()
+			c, err = InspectContainer(containerID)
+			if err != nil {
+				return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
+			}
+		}
+		if nw, ok := c.NetworkSettings.Networks[c.HostConfig.NetworkMode.NetworkName()]; ok {
+			if nw.IPAddress.IsValid() {
+				ipAddress = nw.IPAddress.String()
+			}
+		}
+	}
+
 	layerID, err := rwLayerID(storageDriver, storageDir, id)
 	if err != nil {
 		return nil, err
@@ -144,6 +169,7 @@ func newContainerHandler(
 		storageDriver:      storageDriver,
 		fsInfo:             fsInfo,
 		rootfsStorageDir:   rootfsStorageDir,
+		ipAddress:          ipAddress,
 		envs:               make(map[string]string),
 		labels:             ctnr.Config.Labels,
 		image:              ctnr.Config.Image,
@@ -167,24 +193,18 @@ func newContainerHandler(
 		return nil, fmt.Errorf("failed to parse the create timestamp %q for container %q: %v", ctnr.Created, id, err)
 	}
 
+	// StartedAt may be unset for containers that never started.
+	if startedAt := ctnr.State.StartedAt; startedAt != "" {
+		if t, err := time.Parse(time.RFC3339Nano, startedAt); err == nil && !t.Before(time.Unix(0, 0)) {
+			handler.startTime = t
+		} else if t, err := time.Parse(time.RFC3339, startedAt); err == nil && !t.Before(time.Unix(0, 0)) {
+			handler.startTime = t
+		}
+	}
+
 	if ctnr.RestartCount > 0 {
 		handler.labels["restartcount"] = strconv.Itoa(ctnr.RestartCount)
 	}
-
-	// Obtain the IP address for the container.
-	// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
-	// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
-	ipAddress := ctnr.NetworkSettings.IPAddress
-	networkMode := string(ctnr.HostConfig.NetworkMode)
-	if ipAddress == "" && strings.HasPrefix(networkMode, "container:") {
-		containerID := strings.TrimPrefix(networkMode, "container:")
-		c, err := InspectContainer(containerID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
-		}
-		ipAddress = c.NetworkSettings.IPAddress
-	}
-	handler.ipAddress = ipAddress
 
 	if metrics.Has(container.DiskUsageMetrics) {
 		handler.fsHandler = &docker.FsHandler{
@@ -251,6 +271,7 @@ func (h *containerHandler) GetSpec() (info.ContainerSpec, error) {
 	spec.Envs = h.envs
 	spec.Image = h.image
 	spec.CreationTime = h.creationTime
+	spec.StartTime = h.startTime
 
 	return spec, nil
 }

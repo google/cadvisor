@@ -14,7 +14,7 @@ sudo docker run \
   --publish=8080:8080 \
   --detach=true \
   --name=cadvisor \
-  gcr.io/cadvisor/cadvisor:$VERSION
+  ghcr.io/google/cadvisor:$VERSION # for versions prior to v0.53.0, use gcr.io/cadvisor/cadvisor instead
 ```
 
 cAdvisor is now running (in the background) on `http://localhost:8080/`. The setup includes directories with Docker state cAdvisor needs to observe.
@@ -44,7 +44,7 @@ otherwise cAdvisor can not connect to docker daemon.
   --device=/dev/kmsg \
   --security-opt seccomp=default.json \
   --name=cadvisor \
-  gcr.io/cadvisor/cadvisor:<tag> -perf_events_config=/etc/configs/perf/perf.json
+  ghcr.io/google/cadvisor:<tag> -perf_events_config=/etc/configs/perf/perf.json
   ```
 
 ## With Boot2Docker
