@@ -76,6 +76,8 @@ Prometheus metrics endpoint.
 
 The configuration file can either be part of the container image or can be added on at runtime with a volume. This makes sure that there is no connection between the host where the container is running and the application metrics configuration. A container is self-contained for its metric information.
 
+Security note: cAdvisor treats application metrics endpoints as container-local. If the config uses `localhost` / `127.0.0.1` / `::1`, cAdvisor rewrites the host to the container IP before scraping. To avoid turning cAdvisor into a cross-network fetcher via workload-controlled config, endpoints with any other host are rejected.
+
 So a sample configuration for redis would look like:
 
 Dockerfile (or runtime):
