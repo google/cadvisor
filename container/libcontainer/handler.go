@@ -814,7 +814,8 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	if cgroups.IsCgroup2UnifiedMode() {
 		ret.Memory.Cache = s.MemoryStats.Stats["file"]
 		ret.Memory.RSS = s.MemoryStats.Stats["anon"]
-		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage - s.MemoryStats.Usage.Usage
+		// In v2, SwapUsage is already exclusively swap. No subtraction needed.
+		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage
 		ret.Memory.MappedFile = s.MemoryStats.Stats["file_mapped"]
 	} else if s.MemoryStats.UseHierarchy {
 		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]
