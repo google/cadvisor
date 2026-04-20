@@ -224,7 +224,7 @@ func GetNodesInfo(sysFs sysfs.SysFs) ([]info.Node, int, error) {
 
 		cpuDirs, err := sysFs.GetCPUsPaths(nodeDir)
 		if len(cpuDirs) == 0 {
-			klog.Warningf("Found node without any CPU, nodeDir: %s, number of cpuDirs %d, err: %v", nodeDir, len(cpuDirs), err)
+			klog.V(4).Infof("Found node without any CPU, nodeDir: %s, number of cpuDirs %d, err: %v", nodeDir, len(cpuDirs), err)
 		} else {
 			cores, err := getCoresInfo(sysFs, cpuDirs)
 			if err != nil {
