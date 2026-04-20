@@ -34,6 +34,7 @@ import (
 	containerlibcontainer "github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/utils/backoff"
 )
 
 type containerdContainerHandler struct {
@@ -99,23 +100,19 @@ func newContainerdContainerHandler(
 	// instead. cri-containerd has some internal synchronization to make sure
 	// `ContainerStatus` only returns result after `StartContainer` finishes.
 	var taskPid uint32
-	backoff := 100 * time.Millisecond
-	retry := 5
-	for {
+	if err := backoff.RetryWithBackoff(5, 100*time.Millisecond, 2, func(retry int) (bool, error) {
 		taskPid, err = client.TaskPid(ctx, id)
 		if err == nil {
-			break
+			return true, nil
 		}
-
 		// Retry when task is not created yet or task is in unknown state (likely in process of initializing)
 		isRetriableError := errdefs.IsNotFound(err) || errors.Is(err, ErrTaskIsInUnknownState)
 		if !isRetriableError || retry == 0 {
-			return nil, err
+			return true, err
 		}
-
-		retry--
-		time.Sleep(backoff)
-		backoff *= 2
+		return false, err
+	}); err != nil {
+		return nil, err
 	}
 
 	rootfs := "/"

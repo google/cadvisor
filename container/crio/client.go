@@ -28,6 +28,7 @@ import (
 )
 
 var crioClientTimeout = flag.Duration("crio_client_timeout", time.Duration(0), "CRI-O client timeout. Default is no timeout.")
+var errNotFound = fmt.Errorf("not found")
 
 const (
 	CrioSocket            = "/var/run/crio/crio.sock"
@@ -152,7 +153,10 @@ func (c *crioClientImpl) ContainerInfo(id string) (*ContainerInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("error finding container %s: status %d", id, resp.StatusCode)
 		}
-		return nil, fmt.Errorf("error finding container %s: status %d returned error %s", id, resp.StatusCode, string(respBody))
+		if resp.StatusCode == 404 {
+			return nil, fmt.Errorf("Error finding container %s: %s: %w", string(respBody), errNotFound)
+		}
+		return nil, fmt.Errorf("Error finding container %s: status %d returned error %s", id, resp.StatusCode, string(respBody))
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&cInfo); err != nil {
