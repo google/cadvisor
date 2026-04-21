@@ -74,6 +74,8 @@ var urlBasePrefix = flag.String("url_base_prefix", "", "prefix path that will be
 
 var rawCgroupPrefixWhiteList = flag.String("raw_cgroup_prefix_whitelist", "", "A comma-separated list of cgroup path prefix that needs to be collected even when -docker_only is specified")
 
+var dockerIDPrefixWhiteList = flag.String("docker_id_prefix_whitelist", "", "A comma-separated list of docker container ID prefixes to filter for")
+
 var perfEvents = flag.String("perf_events_config", "", "Path to a JSON file containing configuration of perf events to measure. Empty value disabled perf events measuring.")
 
 var resctrlInterval = flag.Duration("resctrl_interval", 0, "Resctrl mon groups updating interval. Zero value disables updating mon groups.")
@@ -135,7 +137,17 @@ func main() {
 
 	collectorHTTPClient := createCollectorHTTPClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHTTPClient, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval)
+	// Parse whitelists
+	whiteLists := map[string][]string{
+		"raw":        strings.Split(*rawCgroupPrefixWhiteList, ","), // List of raw container cgroup path prefix whitelist.
+		"docker":     strings.Split(*dockerIDPrefixWhiteList, ","),  // List of docker container ID prefix whitelist.
+		"containerd": make([]string, 0),
+		"crio":       make([]string, 0),
+		"podman":     make([]string, 0),
+		"systemd":    make([]string, 0),
+	}
+
+	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHTTPClient, whiteLists, strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval)
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
