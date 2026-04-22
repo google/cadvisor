@@ -19,7 +19,7 @@ require (
 	github.com/prometheus/common v0.64.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/sys v0.39.0
-	k8s.io/klog/v2 v2.130.1
+	k8s.io/klog/v2 v2.140.0
 )
 
 require (
