@@ -1,7 +1,8 @@
-bases:
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
 - ../../base
 patches:
-- stackdriver-sidecar.yaml
-- critical-priority.yaml
-- cadvisor-args.yaml
-- gpu-privilages.yaml
+- path: stackdriver-sidecar.yaml
+- path: critical-priority.yaml
+- path: cadvisor-args.yaml

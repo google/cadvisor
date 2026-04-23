@@ -1,6 +1,7 @@
-bases:
-- ../../base
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
 resources:
+- ../../base
 - configmap.yaml
 patches:
-- cadvisor-perf.yaml
+- path: cadvisor-perf.yaml
