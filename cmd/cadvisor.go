@@ -166,7 +166,7 @@ func main() {
 	}
 
 	// Register Prometheus collector to gather information about containers, Go runtime, processes, and machine
-	cadvisorhttp.RegisterPrometheusHandler(mux, resourceManager, *prometheusEndpoint, containerLabelFunc, includedMetrics)
+	cadvisorhttp.RegisterPrometheusHandler(mux, resourceManager, *prometheusEndpoint, containerLabelFunc, includedMetrics, *httpAuthFile, *httpAuthRealm, *httpDigestFile, *httpDigestRealm)
 
 	// Start the manager.
 	if err := resourceManager.Start(); err != nil {
