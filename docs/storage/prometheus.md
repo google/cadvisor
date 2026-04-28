@@ -30,6 +30,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_cpu_usage_seconds_total` | Counter | Cumulative cpu time consumed | seconds | cpu |
 `container_cpu_user_seconds_total` | Counter | Cumulative user cpu time consumed | seconds | cpu |
 `container_file_descriptors` | Gauge | Number of open file descriptors for the container | | process |
+`container_fs_device_info` | Gauge | Device information for the filesystem used by the container, with `device` label identifying the device and `major` and `minor` labels identifying the major and minor device numbers | | disk |
 `container_fs_inodes_free` | Gauge | Number of available Inodes | | disk |
 `container_fs_inodes_total` | Gauge | Total number of Inodes | | disk |
 `container_fs_io_current` | Gauge | Number of I/Os currently in progress | | diskIO |

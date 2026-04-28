@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/cadvisor/container"
@@ -72,6 +73,140 @@ func ioValues(ioStats []info.PerDiskStats, ioType string, ioValueFn func(uint64)
 		values = append(values, metricValue{
 			value:     valueFn(&stat),
 			labels:    []string{stat.Device},
+			timestamp: timestamp,
+		})
+	}
+	return values
+}
+
+type volumePath struct {
+	volumeName string
+	volumeType string
+}
+
+type matchTypes struct {
+	regex *regexp.Regexp
+}
+
+// parseMountPointIntoVolumePath extracts the volume name from a kubelet volume mount
+// path. For CSI volumes this is the PersistentVolumeClaim name. Returns an
+// empty string for paths that do not match the standard kubelet volume path.
+//
+// Example:
+//
+//	/var/lib/kubelet/pods/abc123/volumes/kubernetes.io~csi/my-pvc/mount → "my-pvc"
+func parseMountPointIntoVolumePath(path string) volumePath {
+	volumeMatchTypes := []matchTypes{
+		//	/var/lib/kubelet/pods/<pod-uid>/volumes/<plugin>/<volume-name>[/…]
+		//
+		// Capture group 1 is the volume name, which for CSI volumes corresponds to the
+		// PersistentVolumeClaim name.
+		{
+			regex: regexp.MustCompile(`/pods/[^/]+/volumes/([^/]+)/([^/]+)`),
+		},
+	}
+
+	for _, matchType := range volumeMatchTypes {
+		m := matchType.regex.FindStringSubmatch(path)
+		if m == nil {
+			continue
+		}
+
+		return volumePath{
+			volumeName: m[2],
+			volumeType: m[1],
+		}
+	}
+
+	return volumePath{}
+}
+
+// deviceFsInfo holds the filesystem identity labels for a block device.
+type deviceFsInfo struct {
+	hostMountpoint     string
+	containerMountpath string
+	volumeName         string
+	volumeType         string
+}
+
+// bestMountpoint selects the most informative host-side mountpoint from fs.AllMountpoints.
+// It prefers paths containing "/pods/" (the kubelet per-pod volume path) since those
+// can be decoded into a PVC name via parseMountPointIntoVolumePath.
+func bestMountpoint(fs *info.FsStats) string {
+	for _, mp := range fs.AllMountpoints {
+		if strings.Contains(mp, "/pods/") {
+			return mp
+		}
+	}
+	if len(fs.AllMountpoints) > 0 {
+		return fs.AllMountpoints[0]
+	}
+	return fs.Mountpoint
+}
+
+// buildDeviceFsMap builds a map from device name to filesystem identity labels
+// by inspecting the container's filesystem stats. For the aggregator to correlate
+// disk IO with PVCs, the kubelet per-pod volume path is preferred over globalmount.
+func buildDeviceFsMap(fsStats []info.FsStats) map[string]deviceFsInfo {
+	m := make(map[string]deviceFsInfo, len(fsStats))
+	for i := range fsStats {
+		fs := &fsStats[i]
+		if fs.Device == "" {
+			continue
+		}
+		mp := bestMountpoint(fs)
+		vp := parseMountPointIntoVolumePath(mp)
+		m[fs.Device] = deviceFsInfo{
+			hostMountpoint:     mp,
+			containerMountpath: fs.ContainerPath,
+			volumeName:         vp.volumeName,
+			volumeType:         vp.volumeType,
+		}
+	}
+	return m
+}
+
+// fsValuesEnriched is like fsValues but appends host_mountpoint, container_mountpath,
+// volume_name, and volume_type labels derived from the filesystem info.
+func fsValuesEnriched(fsStats []info.FsStats, valueFn func(*info.FsStats) float64, timestamp time.Time) metricValues {
+	values := make(metricValues, 0, len(fsStats))
+	for i := range fsStats {
+		fs := &fsStats[i]
+		mp := bestMountpoint(fs)
+		vp := parseMountPointIntoVolumePath(mp)
+		values = append(values, metricValue{
+			value:     valueFn(fs),
+			labels:    []string{fs.Device, mp, fs.ContainerPath, vp.volumeName, vp.volumeType},
+			timestamp: timestamp,
+		})
+	}
+	return values
+}
+
+// ioValuesEnriched is like ioValues but appends host_mountpoint, container_mountpath,
+// volume_name, and volume_type labels. For ioStats entries the device is looked up
+// in fsMap; for fsStats entries the info is read directly.
+func ioValuesEnriched(
+	ioStats []info.PerDiskStats, ioType string, ioValueFn func(uint64) float64,
+	fsStats []info.FsStats, valueFn func(*info.FsStats) float64,
+	fsMap map[string]deviceFsInfo, timestamp time.Time,
+) metricValues {
+	values := make(metricValues, 0, len(ioStats)+len(fsStats))
+	for _, stat := range ioStats {
+		fi := fsMap[stat.Device]
+		values = append(values, metricValue{
+			value:     ioValueFn(stat.Stats[ioType]),
+			labels:    []string{stat.Device, fi.hostMountpoint, fi.containerMountpath, fi.volumeName, fi.volumeType},
+			timestamp: timestamp,
+		})
+	}
+	for i := range fsStats {
+		fs := &fsStats[i]
+		mp := bestMountpoint(fs)
+		vp := parseMountPointIntoVolumePath(mp)
+		values = append(values, metricValue{
+			value:     valueFn(fs),
+			labels:    []string{fs.Device, mp, fs.ContainerPath, vp.volumeName, vp.volumeType},
 			timestamp: timestamp,
 		})
 	}
@@ -564,9 +699,9 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_fs_inodes_free",
 				help:        "Number of available Inodes",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return fsValues(s.Filesystem, func(fs *info.FsStats) float64 {
+					return fsValuesEnriched(s.Filesystem, func(fs *info.FsStats) float64 {
 						return float64(fs.InodesFree)
 					}, s.Timestamp)
 				},
@@ -574,9 +709,9 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_fs_inodes_total",
 				help:        "Number of Inodes",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return fsValues(s.Filesystem, func(fs *info.FsStats) float64 {
+					return fsValuesEnriched(s.Filesystem, func(fs *info.FsStats) float64 {
 						return float64(fs.Inodes)
 					}, s.Timestamp)
 				},
@@ -584,9 +719,9 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_fs_limit_bytes",
 				help:        "Number of bytes that can be consumed by the container on this filesystem.",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return fsValues(s.Filesystem, func(fs *info.FsStats) float64 {
+					return fsValuesEnriched(s.Filesystem, func(fs *info.FsStats) float64 {
 						return float64(fs.Limit)
 					}, s.Timestamp)
 				},
@@ -594,9 +729,9 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_fs_usage_bytes",
 				help:        "Number of bytes that are consumed by the container on this filesystem.",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return fsValues(s.Filesystem, func(fs *info.FsStats) float64 {
+					return fsValuesEnriched(s.Filesystem, func(fs *info.FsStats) float64 {
 						return float64(fs.Usage)
 					}, s.Timestamp)
 				},
@@ -609,173 +744,185 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_fs_reads_bytes_total",
 				help:        "Cumulative count of bytes read",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoServiceBytes, "Read", asFloat64,
 						nil, nil,
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_reads_total",
 				help:        "Cumulative count of reads completed",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoServiced, "Read", asFloat64,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.ReadsCompleted)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_sector_reads_total",
 				help:        "Cumulative count of sector reads completed",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.Sectors, "Read", asFloat64,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.SectorsRead)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_reads_merged_total",
 				help:        "Cumulative count of reads merged",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoMerged, "Read", asFloat64,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.ReadsMerged)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_read_seconds_total",
 				help:        "Cumulative count of seconds spent reading",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoServiceTime, "Read", asNanosecondsToSeconds,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.ReadTime) / float64(time.Second)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_writes_bytes_total",
 				help:        "Cumulative count of bytes written",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoServiceBytes, "Write", asFloat64,
 						nil, nil,
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_writes_total",
 				help:        "Cumulative count of writes completed",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoServiced, "Write", asFloat64,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.WritesCompleted)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_sector_writes_total",
 				help:        "Cumulative count of sector writes completed",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.Sectors, "Write", asFloat64,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.SectorsWritten)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_writes_merged_total",
 				help:        "Cumulative count of writes merged",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoMerged, "Write", asFloat64,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.WritesMerged)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_write_seconds_total",
 				help:        "Cumulative count of seconds spent writing",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoServiceTime, "Write", asNanosecondsToSeconds,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.WriteTime) / float64(time.Second)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_io_current",
 				help:        "Number of I/Os currently in progress",
 				valueType:   prometheus.GaugeValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoQueued, "Total", asFloat64,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(fs.IoInProgress)
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_io_time_seconds_total",
 				help:        "Cumulative count of seconds spent doing I/Os",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoServiceTime, "Total", asNanosecondsToSeconds,
 						s.Filesystem, func(fs *info.FsStats) float64 {
 							return float64(float64(fs.IoTime) / float64(time.Second))
 						},
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_io_time_weighted_seconds_total",
 				help:        "Cumulative weighted I/O time in seconds",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return fsValues(s.Filesystem, func(fs *info.FsStats) float64 {
+					return fsValuesEnriched(s.Filesystem, func(fs *info.FsStats) float64 {
 						return float64(fs.WeightedIoTime) / float64(time.Second)
 					}, s.Timestamp)
 				},
@@ -783,48 +930,52 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_fs_io_cost_usage_seconds_total",
 				help:        "Cumulative IOCost usage in seconds",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoCostUsage, "Count", asMicrosecondsToSeconds,
 						[]info.FsStats{}, nil,
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_io_cost_wait_seconds_total",
 				help:        "Cumulative IOCost wait in seconds",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoCostWait, "Count", asMicrosecondsToSeconds,
 						[]info.FsStats{}, nil,
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_io_cost_indebt_seconds_total",
 				help:        "Cumulative IOCost debt in seconds",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoCostIndebt, "Count", asMicrosecondsToSeconds,
 						[]info.FsStats{}, nil,
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			}, {
 				name:        "container_fs_io_cost_indelay_seconds_total",
 				help:        "Cumulative IOCost delay in seconds",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device"},
+				extraLabels: []string{"device", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
-					return ioValues(
+					fsMap := buildDeviceFsMap(s.Filesystem)
+					return ioValuesEnriched(
 						s.DiskIo.IoCostIndelay, "Count", asMicrosecondsToSeconds,
 						[]info.FsStats{}, nil,
-						s.Timestamp,
+						fsMap, s.Timestamp,
 					)
 				},
 			},
@@ -832,17 +983,25 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				name:        "container_blkio_device_usage_total",
 				help:        "Blkio Device bytes usage",
 				valueType:   prometheus.CounterValue,
-				extraLabels: []string{"device", "major", "minor", "operation"},
+				extraLabels: []string{"device", "major", "minor", "operation", "host_mountpoint", "container_mountpath", "volume_name", "volume_type"},
 				getValues: func(s *info.ContainerStats) metricValues {
+					fsMap := buildDeviceFsMap(s.Filesystem)
 					var values metricValues
 					for _, diskStat := range s.DiskIo.IoServiceBytes {
+						fi := fsMap[diskStat.Device]
 						for operation, value := range diskStat.Stats {
 							values = append(values, metricValue{
 								value: float64(value),
-								labels: []string{diskStat.Device,
+								labels: []string{
+									diskStat.Device,
 									strconv.Itoa(int(diskStat.Major)),
 									strconv.Itoa(int(diskStat.Minor)),
-									operation},
+									operation,
+									fi.hostMountpoint,
+									fi.containerMountpath,
+									fi.volumeName,
+									fi.volumeType,
+								},
 								timestamp: s.Timestamp,
 							})
 						}

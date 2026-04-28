@@ -16,6 +16,7 @@ package metrics
 
 import (
 	"errors"
+	"flag"
 	"os"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
 	clock "k8s.io/utils/clock/testing"
 )
@@ -75,7 +77,28 @@ func TestPrometheusCollectorWithPerfAggregated(t *testing.T) {
 	testPrometheusCollector(t, reg, "testdata/prometheus_metrics_perf_aggregated")
 }
 
+var update = flag.Bool("update", false, "update golden fixture files")
+
 func testPrometheusCollector(t *testing.T, gatherer prometheus.Gatherer, metricsFile string) {
+	if *update {
+		f, err := os.Create(metricsFile)
+		if err != nil {
+			t.Fatalf("failed to create fixture %s: %s", metricsFile, err)
+		}
+		defer f.Close()
+		mfs, err := gatherer.Gather()
+		if err != nil {
+			t.Fatalf("failed to gather metrics: %s", err)
+		}
+		enc := expfmt.NewEncoder(f, expfmt.NewFormat(expfmt.TypeTextPlain))
+		for _, mf := range mfs {
+			if err := enc.Encode(mf); err != nil {
+				t.Fatalf("failed to encode metric family: %s", err)
+			}
+		}
+		return
+	}
+
 	wantMetrics, err := os.Open(metricsFile)
 	if err != nil {
 		t.Fatalf("unable to read input test file %s", metricsFile)
@@ -461,6 +484,50 @@ func TestCPUBurstMetrics(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			result := tc.getValue()
 			assert.Equal(t, tc.expectedValue, result)
+		})
+	}
+}
+
+func TestParseMountPointIntoVolumePath(t *testing.T) {
+	testCases := []struct {
+		name     string
+		path     string
+		expected string
+	}{
+		{
+			name:     "standard CSI volume path",
+			path:     "/var/lib/kubelet/pods/abc123-def456/volumes/kubernetes.io~csi/my-database-pvc/mount",
+			expected: "my-database-pvc",
+		},
+		{
+			name:     "NFS volume path",
+			path:     "/var/lib/kubelet/pods/abc/volumes/kubernetes.io~nfs/nfs-vol/mount",
+			expected: "nfs-vol",
+		},
+		{
+			name:     "non-standard kubelet root dir",
+			path:     "/data/kubelet/pods/abc/volumes/kubernetes.io~csi/my-pvc/mount",
+			expected: "my-pvc",
+		},
+		{
+			name:     "no match - plain host path",
+			path:     "/mnt/data",
+			expected: "",
+		},
+		{
+			name:     "empty string",
+			path:     "",
+			expected: "",
+		},
+		{
+			name:     "root cgroup path",
+			path:     "/",
+			expected: "",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, parseMountPointIntoVolumePath(tc.path).volumeName)
 		})
 	}
 }

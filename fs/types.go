@@ -71,6 +71,11 @@ type Fs struct {
 	Inodes     *uint64
 	InodesFree *uint64
 	DiskStats  DiskStats
+	// Mountpoint is the primary host-side path where this device is mounted.
+	Mountpoint string
+	// AllMountpoints lists every host-side path where this device is mounted,
+	// including bind mounts (e.g. CSI plugin globalmount + per-pod kubelet path).
+	AllMountpoints []string
 }
 
 type DiskStats struct {
