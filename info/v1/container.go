@@ -456,6 +456,13 @@ type MemoryStats struct {
 	HierarchicalData MemoryStatsMemoryData `json:"hierarchical_data,omitempty"`
 
 	PSI PSIStats `json:"psi"`
+
+	Events MemoryEvents `json:"events,omitempty"`
+}
+
+type MemoryEvents struct {
+	High uint64 `json:"high"`
+	Max  uint64 `json:"max"`
 }
 
 type CPUSetStats struct {

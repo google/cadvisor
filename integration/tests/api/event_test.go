@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/opencontainers/cgroups"
 	"github.com/stretchr/testify/require"
 
 	info "github.com/google/cadvisor/info/v1"
@@ -116,6 +117,47 @@ func TestOomKillEventConstraint(t *testing.T) {
 			require.NoError(t, err)
 		})
 	}
+}
+
+func TestMemoryEventsMaxMetricAfterOom(t *testing.T) {
+	if !cgroups.IsCgroup2UnifiedMode() {
+		t.Skip("memory.events requires cgroup v2")
+	}
+
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	containerID := fm.Docker().Run(
+		framework.DockerRunArgs{
+			Image: "registry.k8s.io/busybox:1.27",
+			Args:  []string{"-m=8M", "--memory-swap=8M"},
+		},
+		"sh", "-c", "dd if=/dev/zero of=/tmp/data bs=1M count=100; sleep 60",
+	)
+
+	client := framework.NewMetricsClient(fm.Hostname())
+
+	err := framework.RetryForDuration(func() error {
+		families, err := client.FetchAndParse()
+		if err != nil {
+			return err
+		}
+		mf, ok := framework.GetMetricFamily(families, "container_memory_events_max_total")
+		if !ok {
+			return fmt.Errorf("container_memory_events_max_total metric not found")
+		}
+		metrics := framework.FindMetricsWithLabelSubstring(mf, "id", containerID)
+		if len(metrics) == 0 {
+			return fmt.Errorf("no container_memory_events_max_total for container %s", containerID)
+		}
+		val := framework.GetCounterValue(metrics[0])
+		if val <= 0 {
+			return fmt.Errorf("container_memory_events_max_total is %v, want > 0", val)
+		}
+		return nil
+	}, 30*time.Second)
+
+	require.NoError(t, err)
 }
 
 func waitForStaticEvent(containerID string, urlRequest string, t *testing.T, fm framework.Framework, typeEvent info.EventType) {

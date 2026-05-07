@@ -163,6 +163,12 @@ container_last_seen{container_env_foo_env="prod",container_label_foo_label="bar"
 # HELP container_memory_cache Number of bytes of page cache memory.
 # TYPE container_memory_cache gauge
 container_memory_cache{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 14 1395066363000
+# HELP container_memory_events_high_total Cumulative count of memory.high throttle events for the container
+# TYPE container_memory_events_high_total counter
+container_memory_events_high_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 42 1395066363000
+# HELP container_memory_events_max_total Cumulative count of memory.max limit hit events for the container
+# TYPE container_memory_events_max_total counter
+container_memory_events_max_total{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 5 1395066363000
 # HELP container_memory_failcnt Number of memory usage hits limits
 # TYPE container_memory_failcnt counter
 container_memory_failcnt{container_env_foo_env="prod",container_label_foo_label="bar",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 0 1395066363000

@@ -518,6 +518,20 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 						},
 					}
 				},
+			}, {
+				name:      "container_memory_events_high_total",
+				help:      "Cumulative count of memory.high throttle events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Events.High), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_events_max_total",
+				help:      "Cumulative count of memory.max limit hit events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Events.Max), timestamp: s.Timestamp}}
+				},
 			},
 		}...)
 	}

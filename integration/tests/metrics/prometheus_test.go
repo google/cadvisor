@@ -117,6 +117,8 @@ func TestCoreMemoryMetricsExist(t *testing.T) {
 		"container_memory_working_set_bytes",
 		"container_memory_cache",
 		"container_memory_rss",
+		"container_memory_events_high_total",
+		"container_memory_events_max_total",
 	}
 
 	for _, name := range memoryMetrics {
@@ -248,6 +250,8 @@ func TestMetricsHaveCorrectTypes(t *testing.T) {
 		"container_cpu_system_seconds_total",
 		"container_network_receive_bytes_total",
 		"container_network_transmit_bytes_total",
+		"container_memory_events_high_total",
+		"container_memory_events_max_total",
 	}
 	for _, name := range counterMetrics {
 		if mf, ok := families[name]; ok {

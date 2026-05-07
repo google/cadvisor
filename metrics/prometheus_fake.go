@@ -389,6 +389,10 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 								Total:  2000,
 							},
 						},
+						Events: info.MemoryEvents{
+							High: 42,
+							Max:  5,
+						},
 					},
 					Hugetlb: map[string]info.HugetlbStats{
 						"2Mi": {
