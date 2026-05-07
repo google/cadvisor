@@ -18,6 +18,7 @@ package libcontainer
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -350,4 +351,59 @@ func TestProcessMaxOpenFileLimitLine(t *testing.T) {
 	assert.Equal(t, "max_open_files", ulimit.Name)
 	assert.Equal(t, int64(1073741816), ulimit.SoftLimit)
 	assert.Equal(t, int64(1073741816), ulimit.HardLimit)
+}
+
+func TestSetMemoryEvents(t *testing.T) {
+	cgroups.TestMode = true
+	defer func() { cgroups.TestMode = false }()
+
+	testData := []struct {
+		name    string
+		content string
+		high    uint64
+		max     uint64
+	}{
+		{
+			"all counters",
+			"low 0\nhigh 42\nmax 5\noom 1\noom_kill 0\noom_group_kill 0\n",
+			42, 5,
+		},
+		{
+			"zeros",
+			"low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+			0, 0,
+		},
+		{
+			"high only",
+			"low 0\nhigh 238\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+			238, 0,
+		},
+		{
+			"empty file",
+			"",
+			0, 0,
+		},
+	}
+
+	for _, testItem := range testData {
+		t.Run(testItem.name, func(t *testing.T) {
+			dir := t.TempDir()
+			err := os.WriteFile(filepath.Join(dir, "memory.events"), []byte(testItem.content), 0o644)
+			assert.Nil(t, err)
+
+			var ret info.ContainerStats
+			setMemoryEvents(dir, &ret)
+
+			assert.Equal(t, testItem.high, ret.Memory.Events.High)
+			assert.Equal(t, testItem.max, ret.Memory.Events.Max)
+		})
+	}
+}
+
+func TestSetMemoryEventsFileNotFound(t *testing.T) {
+	var ret info.ContainerStats
+	setMemoryEvents("/nonexistent/path", &ret)
+
+	assert.Equal(t, uint64(0), ret.Memory.Events.High)
+	assert.Equal(t, uint64(0), ret.Memory.Events.Max)
 }
