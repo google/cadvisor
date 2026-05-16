@@ -1,9 +1,9 @@
-module github.com/google/cadvisor
+module github.com/baselinehq/cadvisor
 
 go 1.24.0
 
 require (
-	cloud.google.com/go/compute/metadata v0.7.0
+	cloud.google.com/go/compute/metadata v0.9.0
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30
@@ -11,14 +11,15 @@ require (
 	github.com/containerd/containerd/api v1.10.0
 	github.com/containerd/errdefs v1.0.0
 	github.com/containerd/errdefs/pkg v0.3.0
-	github.com/containerd/ttrpc v1.2.7
+	github.com/containerd/ttrpc v1.2.8
 	github.com/containerd/typeurl/v2 v2.2.3
 	github.com/docker/go-connections v0.6.0
 	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
+	github.com/google/cadvisor v0.57.0
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
-	github.com/moby/moby/api v1.52.0
-	github.com/moby/moby/client v0.2.1
+	github.com/moby/moby/api v1.54.1
+	github.com/moby/moby/client v0.4.0
 	github.com/moby/sys/mountinfo v0.7.2
 	github.com/opencontainers/cgroups v0.0.6
 	github.com/opencontainers/runc v1.4.0
@@ -27,9 +28,9 @@ require (
 	github.com/prometheus/client_model v0.6.2
 	github.com/prometheus/common v0.64.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/sys v0.37.0
-	google.golang.org/grpc v1.72.2
-	google.golang.org/protobuf v1.36.8
+	golang.org/x/sys v0.39.0
+	google.golang.org/grpc v1.79.3
+	google.golang.org/protobuf v1.36.10
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979
 )
@@ -68,13 +69,13 @@ require (
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
-	go.opentelemetry.io/otel v1.36.0 // indirect
-	go.opentelemetry.io/otel/metric v1.36.0 // indirect
-	go.opentelemetry.io/otel/trace v1.36.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
+	go.opentelemetry.io/otel v1.39.0 // indirect
+	go.opentelemetry.io/otel/metric v1.39.0 // indirect
+	go.opentelemetry.io/otel/trace v1.39.0 // indirect
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
