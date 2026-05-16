@@ -1,8 +1,6 @@
-module github.com/baselinehq/cadvisor
+module github.com/google/cadvisor
 
 go 1.24.0
-
-replace github.com/google/cadvisor => .
 
 require (
 	cloud.google.com/go/compute/metadata v0.9.0
@@ -18,7 +16,6 @@ require (
 	github.com/docker/go-connections v0.6.0
 	github.com/docker/go-units v0.5.0
 	github.com/euank/go-kmsg-parser v2.0.0+incompatible
-	github.com/google/cadvisor v0.57.0
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
 	github.com/moby/moby/api v1.54.1
 	github.com/moby/moby/client v0.4.0
