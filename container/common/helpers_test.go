@@ -250,6 +250,67 @@ func TestRemoveNetMetrics(t *testing.T) {
 	}
 }
 
+type deviceNamerFunc func(major, minor uint64) (string, bool)
+
+func (f deviceNamerFunc) DeviceName(major, minor uint64) (string, bool) {
+	return f(major, minor)
+}
+
+func TestDeviceIdentifierMapFindFallsBackToMajorMinor(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		namer    DeviceNamer
+		expected string
+	}{
+		{
+			name: "unrecognized device",
+			namer: deviceNamerFunc(func(_, _ uint64) (string, bool) {
+				return "", false
+			}),
+			expected: "8:0",
+		},
+		{
+			name: "recognized empty device",
+			namer: deviceNamerFunc(func(_, _ uint64) (string, bool) {
+				return "", true
+			}),
+			expected: "8:0",
+		},
+		{
+			name: "recognized device",
+			namer: deviceNamerFunc(func(_, _ uint64) (string, bool) {
+				return "/dev/sda", true
+			}),
+			expected: "/dev/sda",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			devices := make(deviceIdentifierMap)
+			assert.Equal(t, tc.expected, devices.Find(8, 0, tc.namer))
+		})
+	}
+}
+
+func TestAssignDeviceNamesToDiskStatsKeepsUnresolvedDevicesUnique(t *testing.T) {
+	stats := &info.DiskIoStats{
+		IoServiceBytes: []info.PerDiskStats{
+			{Major: 8, Minor: 0},
+			{Major: 259, Minor: 1},
+		},
+		IoServiced: []info.PerDiskStats{
+			{Major: 8, Minor: 0},
+		},
+	}
+
+	AssignDeviceNamesToDiskStats(deviceNamerFunc(func(_, _ uint64) (string, bool) {
+		return "", false
+	}), stats)
+
+	assert.Equal(t, "8:0", stats.IoServiceBytes[0].Device)
+	assert.Equal(t, "259:1", stats.IoServiceBytes[1].Device)
+	assert.Equal(t, "8:0", stats.IoServiced[0].Device)
+}
+
 func BenchmarkGetSpecCgroupV2(b *testing.B) {
 	root, err := os.Getwd()
 	if err != nil {
