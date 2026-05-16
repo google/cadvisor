@@ -2,6 +2,8 @@ module github.com/baselinehq/cadvisor
 
 go 1.24.0
 
+replace github.com/google/cadvisor => .
+
 require (
 	cloud.google.com/go/compute/metadata v0.9.0
 	github.com/Microsoft/go-winio v0.6.2

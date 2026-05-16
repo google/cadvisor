@@ -231,6 +231,13 @@ func (h *rawContainerHandler) getFsStats(stats *info.ContainerStats) error {
 			fsstat := fsToFsStats(&fsCopy)
 			if containerPath, ok := hostToContainerPath[fsstat.Mountpoint]; ok {
 				fsstat.ContainerPath = containerPath
+			} else {
+				for _, mountpoint := range fsstat.AllMountpoints {
+					if containerPath, ok := hostToContainerPath[mountpoint]; ok {
+						fsstat.ContainerPath = containerPath
+						break
+					}
+				}
 			}
 			stats.Filesystem = append(stats.Filesystem, fsstat)
 		}

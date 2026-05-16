@@ -44,6 +44,8 @@ func asNanosecondsToSeconds(v uint64) float64 {
 	return float64(v) / 1e9
 }
 
+var kubeletVolumePathRegexp = regexp.MustCompile(`/pods/[^/]+/volumes/([^/]+)/([^/]+)`)
+
 // ioValues is a helper method for assembling per-disk and per-filesystem stats.
 func ioValues(ioStats []info.PerDiskStats, ioType string, ioValueFn func(uint64) float64,
 	fsStats []info.FsStats, valueFn func(*info.FsStats) float64, timestamp time.Time) metricValues {
@@ -71,10 +73,6 @@ type volumePath struct {
 	volumeType string
 }
 
-type matchTypes struct {
-	regex *regexp.Regexp
-}
-
 // parseMountPointIntoVolumePath extracts the volume name from a kubelet volume mount
 // path. For CSI volumes this is the PersistentVolumeClaim name. Returns an
 // empty string for paths that do not match the standard kubelet volume path.
@@ -83,22 +81,12 @@ type matchTypes struct {
 //
 //	/var/lib/kubelet/pods/abc123/volumes/kubernetes.io~csi/my-pvc/mount → "my-pvc"
 func parseMountPointIntoVolumePath(path string) volumePath {
-	volumeMatchTypes := []matchTypes{
-		//	/var/lib/kubelet/pods/<pod-uid>/volumes/<plugin>/<volume-name>[/…]
-		//
-		// Capture group 1 is the volume name, which for CSI volumes corresponds to the
-		// PersistentVolumeClaim name.
-		{
-			regex: regexp.MustCompile(`/pods/[^/]+/volumes/([^/]+)/([^/]+)`),
-		},
-	}
-
-	for _, matchType := range volumeMatchTypes {
-		m := matchType.regex.FindStringSubmatch(path)
-		if m == nil {
-			continue
-		}
-
+	//	/var/lib/kubelet/pods/<pod-uid>/volumes/<plugin>/<volume-name>[/…]
+	//
+	// Capture group 1 is the volume type, and capture group 2 is the volume name,
+	// which for CSI volumes corresponds to the PersistentVolumeClaim name.
+	m := kubeletVolumePathRegexp.FindStringSubmatch(path)
+	if m != nil {
 		return volumePath{
 			volumeName: m[2],
 			volumeType: m[1],

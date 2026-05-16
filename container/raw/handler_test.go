@@ -433,6 +433,48 @@ func TestGetFsStats(t *testing.T) {
 				InodesFree:    1000,
 			}},
 		},
+		"random container with all mountpoints container path": {
+			name:            "/random/container",
+			includedMetrics: container.MetricSet{container.DiskUsageMetrics: struct{}{}},
+			externalMounts: []common.Mount{
+				{
+					HostDir:      "/var/lib/kubelet/pods/abc123/volumes/kubernetes.io~csi/my-pvc/mount",
+					ContainerDir: "/data",
+				},
+			},
+			getFsInfoForPath: func(mountSet map[string]struct{}) ([]fs.Fs, error) {
+				return []fs.Fs{{
+					DeviceInfo: fs.DeviceInfo{Device: "/dev/sdb", Major: 8, Minor: 0},
+					Mountpoint: "/var/lib/kubelet/plugins/kubernetes.io/csi/pv/pvc/globalmount",
+					AllMountpoints: []string{
+						"/var/lib/kubelet/plugins/kubernetes.io/csi/pv/pvc/globalmount",
+						"/var/lib/kubelet/pods/abc123/volumes/kubernetes.io~csi/my-pvc/mount",
+					},
+					Type:       "ext4",
+					Capacity:   1000,
+					Free:       500,
+					Available:  450,
+					Inodes:     &inodes,
+					InodesFree: &inodesFree,
+				}}, nil
+			},
+			expectedFilesystems: []info.FsStats{{
+				Device:     "/dev/sdb",
+				Mountpoint: "/var/lib/kubelet/plugins/kubernetes.io/csi/pv/pvc/globalmount",
+				AllMountpoints: []string{
+					"/var/lib/kubelet/plugins/kubernetes.io/csi/pv/pvc/globalmount",
+					"/var/lib/kubelet/pods/abc123/volumes/kubernetes.io~csi/my-pvc/mount",
+				},
+				ContainerPath: "/data",
+				Type:          "ext4",
+				Limit:         1000,
+				Usage:         500,
+				Available:     450,
+				HasInodes:     true,
+				Inodes:        2000,
+				InodesFree:    1000,
+			}},
+		},
 		"random container with disk metrics enabled": {
 			name:            "/random/container",
 			includedMetrics: container.MetricSet{container.DiskUsageMetrics: struct{}{}, container.DiskIOMetrics: struct{}{}},

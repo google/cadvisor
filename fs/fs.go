@@ -114,20 +114,11 @@ func NewFsInfo(context Context) (FsInfo, error) {
 	// Avoid devicemapper container mounts - these are tracked by the ThinPoolWatcher
 	excluded := []string{fmt.Sprintf("%s/devicemapper/mnt", context.Docker.Root)}
 
-	// Build device → all-mountpoints map before processMounts de-duplicates.
-	// We record every mountpoint for devices whose FSType has a plugin, so that
-	// container_fs_device_info can emit metrics for bind-mount paths (e.g. the
-	// per-pod kubelet volume path alongside the CSI plugin globalmount path).
-	deviceToMountpoints := make(map[string][]string)
-	for _, mnt := range mounts {
-		if GetPluginForFsType(mnt.FSType) == nil {
-			continue
-		}
-		deviceToMountpoints[mnt.Source] = append(deviceToMountpoints[mnt.Source], mnt.Mountpoint)
-	}
+	partitions := processMounts(mounts, excluded)
+	deviceToMountpoints := buildDeviceToMountpoints(mounts, excluded, partitions)
 
 	fsInfo := &RealFsInfo{
-		partitions:          processMounts(mounts, excluded),
+		partitions:          partitions,
 		labels:              make(map[string]string),
 		mounts:              make(map[string]mount.Info),
 		dmsetup:             devicemapper.NewDmsetupClient(),
@@ -186,12 +177,6 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 	partitions := make(map[string]partition)
 
 	for _, mnt := range mounts {
-		// Use plugin system to determine if filesystem is supported
-		plugin := GetPluginForFsType(mnt.FSType)
-		if plugin == nil {
-			continue
-		}
-
 		// Avoid bind mounts, but allow tmpfs duplicates (handled by plugin's ProcessMount)
 		if _, ok := partitions[mnt.Source]; ok {
 			if mnt.FSType != "tmpfs" {
@@ -199,20 +184,7 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 			}
 		}
 
-		// Check for excluded mountpoint prefixes
-		hasPrefix := false
-		for _, prefix := range excludedMountpointPrefixes {
-			if strings.HasPrefix(mnt.Mountpoint, prefix) {
-				hasPrefix = true
-				break
-			}
-		}
-		if hasPrefix {
-			continue
-		}
-
-		// Let plugin process the mount (handles filesystem-specific modifications)
-		include, processedMnt, err := plugin.ProcessMount(mnt)
+		include, processedMnt, err := processMountInfo(mnt, excludedMountpointPrefixes)
 		if err != nil {
 			klog.Warningf("error processing mount for %s: %v", mnt.FSType, err)
 			continue
@@ -230,6 +202,73 @@ func processMounts(mounts []*mount.Info, excludedMountpointPrefixes []string) ma
 	}
 
 	return partitions
+}
+
+func buildDeviceToMountpoints(
+	mounts []*mount.Info,
+	excludedMountpointPrefixes []string,
+	partitions map[string]partition,
+) map[string][]string {
+	deviceToMountpoints := make(map[string][]string, len(partitions))
+	for device, partition := range partitions {
+		deviceToMountpoints[device] = []string{partition.mountpoint}
+	}
+
+	for _, mnt := range mounts {
+		include, processedMnt, err := processMountInfo(mnt, excludedMountpointPrefixes)
+		if err != nil {
+			klog.Warningf("error processing mount for %s: %v", mnt.FSType, err)
+			continue
+		}
+		if !include {
+			continue
+		}
+		if _, ok := partitions[processedMnt.Source]; !ok {
+			continue
+		}
+		appendUniqueMountpoint(deviceToMountpoints, processedMnt.Source, processedMnt.Mountpoint)
+	}
+
+	return deviceToMountpoints
+}
+
+func processMountInfo(
+	mnt *mount.Info,
+	excludedMountpointPrefixes []string,
+) (bool, *mount.Info, error) {
+	plugin := GetPluginForFsType(mnt.FSType)
+	if plugin == nil {
+		return false, nil, nil
+	}
+	if isExcludedMountpoint(mnt.Mountpoint, excludedMountpointPrefixes) {
+		return false, nil, nil
+	}
+	include, processedMnt, err := plugin.ProcessMount(mnt)
+	if err != nil {
+		return false, nil, err
+	}
+	if !include {
+		return false, nil, nil
+	}
+	return true, processedMnt, nil
+}
+
+func isExcludedMountpoint(mountpoint string, excludedMountpointPrefixes []string) bool {
+	for _, prefix := range excludedMountpointPrefixes {
+		if strings.HasPrefix(mountpoint, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func appendUniqueMountpoint(deviceToMountpoints map[string][]string, device, mountpoint string) {
+	for _, existing := range deviceToMountpoints[device] {
+		if existing == mountpoint {
+			return
+		}
+	}
+	deviceToMountpoints[device] = append(deviceToMountpoints[device], mountpoint)
 }
 
 // getDockerDeviceMapperInfo returns information about the devicemapper device and "partition" if
