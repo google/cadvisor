@@ -1,4 +1,4 @@
-FROM registry.hub.docker.com/library/golang:1.25-alpine3.23 AS build
+FROM registry.hub.docker.com/library/golang:1.25-alpine3.23@sha256:8d22e29d960bc50cd025d93d5b7c7d220b1ee9aa7a239b3c8f55a57e987e8d45 AS build
 
 # Install build depdencies for all supported arches
 RUN apk --no-cache add bash build-base cmake device-mapper findutils git \
@@ -49,7 +49,7 @@ RUN export GO_TAGS="libpfm,netgo"; \
     fi; \
     GO_FLAGS="-tags=$GO_TAGS" ./build/build.sh
 
-FROM mirror.gcr.io/library/alpine:3.23
+FROM mirror.gcr.io/library/alpine:3.23@sha256:5b10f432ef3da1b8d4c7eb6c487f2f5a8f096bc91145e68878dd4a5019afde11
 MAINTAINER dengnan@google.com vmarmol@google.com vishnuk@google.com jimmidyson@gmail.com stclair@google.com
 
 RUN apk --no-cache add libc6-compat device-mapper findutils ndctl thin-provisioning-tools zfs && \
@@ -77,4 +77,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
 
 # Use entrypoint wrapper
 ENTRYPOINT ["/usr/bin/entrypoint.sh"]
-
