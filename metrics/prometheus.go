@@ -44,19 +44,6 @@ func asNanosecondsToSeconds(v uint64) float64 {
 	return float64(v) / 1e9
 }
 
-// fsValues is a helper method for assembling per-filesystem stats.
-func fsValues(fsStats []info.FsStats, valueFn func(*info.FsStats) float64, timestamp time.Time) metricValues {
-	values := make(metricValues, 0, len(fsStats))
-	for _, stat := range fsStats {
-		values = append(values, metricValue{
-			value:     valueFn(&stat),
-			labels:    []string{stat.Device},
-			timestamp: timestamp,
-		})
-	}
-	return values
-}
-
 // ioValues is a helper method for assembling per-disk and per-filesystem stats.
 func ioValues(ioStats []info.PerDiskStats, ioType string, ioValueFn func(uint64) float64,
 	fsStats []info.FsStats, valueFn func(*info.FsStats) float64, timestamp time.Time) metricValues {
