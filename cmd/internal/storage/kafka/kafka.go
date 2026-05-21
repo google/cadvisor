@@ -117,9 +117,17 @@ func generateTLSConfig() (*tls.Config, error) {
 		caCertPool.AppendCertsFromPEM(caCert)
 
 		return &tls.Config{
-			Certificates:       []tls.Certificate{cert},
-			RootCAs:            caCertPool,
-			InsecureSkipVerify: *verifySSL,
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      caCertPool,
+			// `--storage_driver_kafka_ssl_verify` (default true) controls
+			// whether the broker's certificate chain is verified. The
+			// crypto/tls field with the opposite sense is
+			// `InsecureSkipVerify`, so the value must be negated. Prior to
+			// this fix `*verifySSL` was assigned directly, which disabled
+			// verification by default and allowed any MITM presenting a
+			// self-signed cert to read and inject the entire container
+			// metric stream the daemon publishes to Kafka.
+			InsecureSkipVerify: !*verifySSL,
 		}, nil
 	}
 
