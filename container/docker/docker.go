@@ -184,7 +184,7 @@ func APIVersionString() (string, error) {
 
 func ParseVersion(versionString string, regex *regexp.Regexp, length int) ([]int, error) {
 	matches := regex.FindAllStringSubmatch(versionString, -1)
-	if len(matches) != 1 {
+	if len(matches) == 0 {
 		return nil, fmt.Errorf("version string \"%v\" doesn't match expected regular expression: \"%v\"", versionString, regex.String())
 	}
 	versionStringArray := matches[0][1:]
