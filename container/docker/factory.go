@@ -193,10 +193,12 @@ func (f *dockerFactory) DebugInfo() map[string][]string {
 }
 
 var (
-	versionRegexpString    = `(\d+)\.(\d+)\.(\d+)`
-	VersionRe              = regexp.MustCompile(versionRegexpString)
-	apiVersionRegexpString = `(\d+)\.(\d+)`
-	apiVersionRe           = regexp.MustCompile(apiVersionRegexpString)
+	versionRegexpString       = `(\d+)\.(\d+)\.(\d+)`
+	VersionRe                 = regexp.MustCompile(versionRegexpString)
+	dockerVersionRegexpString = `^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$`
+	dockerVersionRe           = regexp.MustCompile(dockerVersionRegexpString)
+	apiVersionRegexpString    = `(\d+)\.(\d+)`
+	apiVersionRe              = regexp.MustCompile(apiVersionRegexpString)
 )
 
 func StartThinPoolWatcher(dockerInfo *dockersystem.Info) (*devicemapper.ThinPoolWatcher, error) {
@@ -320,7 +322,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 	}
 
 	// Version already validated above, assume no error here.
-	dockerVersion, _ := ParseVersion(dockerInfo.ServerVersion, VersionRe, 3)
+	dockerVersion, _ := ParseVersion(dockerInfo.ServerVersion, dockerVersionRe, 3)
 
 	dockerAPIVersion, _ := APIVersion()
 
