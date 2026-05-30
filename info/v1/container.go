@@ -372,7 +372,7 @@ type CpuStats struct {
 	LoadAverage int32 `json:"load_average"`
 	// from LoadStats.NrUninterruptible
 	LoadDAverage int32    `json:"load_d_average"`
-	PSI          PSIStats `json:"psi"`
+	PSI            *PSIStats      `json:"psi,omitempty"`
 }
 
 type PerDiskStats struct {
@@ -395,7 +395,7 @@ type DiskIoStats struct {
 	IoCostWait     []PerDiskStats `json:"io_cost_wait,omitempty"`
 	IoCostIndebt   []PerDiskStats `json:"io_cost_indebt,omitempty"`
 	IoCostIndelay  []PerDiskStats `json:"io_cost_indelay,omitempty"`
-	PSI            PSIStats       `json:"psi"`
+	PSI            *PSIStats      `json:"psi,omitempty"`
 }
 
 type HugetlbStats struct {
@@ -455,7 +455,7 @@ type MemoryStats struct {
 	ContainerData    MemoryStatsMemoryData `json:"container_data,omitempty"`
 	HierarchicalData MemoryStatsMemoryData `json:"hierarchical_data,omitempty"`
 
-	PSI PSIStats `json:"psi"`
+	PSI            *PSIStats      `json:"psi,omitempty"`
 
 	Events MemoryEvents `json:"events,omitempty"`
 }

@@ -1850,42 +1850,42 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				help:      "Total time duration no tasks in the container could make progress due to CPU congestion.",
 				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: asMicrosecondsToSeconds(s.Cpu.PSI.Full.Total), timestamp: s.Timestamp}}
+					if s.Cpu.PSI == nil { return nil }; return metricValues{{value: asMicrosecondsToSeconds(s.Cpu.PSI.Full.Total), timestamp: s.Timestamp}}
 				},
 			}, {
 				name:      "container_pressure_cpu_waiting_seconds_total",
 				help:      "Total time duration tasks in the container have waited due to CPU congestion.",
 				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: asMicrosecondsToSeconds(s.Cpu.PSI.Some.Total), timestamp: s.Timestamp}}
+					if s.Cpu.PSI == nil { return nil }; return metricValues{{value: asMicrosecondsToSeconds(s.Cpu.PSI.Some.Total), timestamp: s.Timestamp}}
 				},
 			}, {
 				name:      "container_pressure_memory_stalled_seconds_total",
 				help:      "Total time duration no tasks in the container could make progress due to memory congestion.",
 				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: asMicrosecondsToSeconds(s.Memory.PSI.Full.Total), timestamp: s.Timestamp}}
+					if s.Memory.PSI == nil { return nil }; return metricValues{{value: asMicrosecondsToSeconds(s.Memory.PSI.Full.Total), timestamp: s.Timestamp}}
 				},
 			}, {
 				name:      "container_pressure_memory_waiting_seconds_total",
 				help:      "Total time duration tasks in the container have waited due to memory congestion.",
 				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: asMicrosecondsToSeconds(s.Memory.PSI.Some.Total), timestamp: s.Timestamp}}
+					if s.Memory.PSI == nil { return nil }; return metricValues{{value: asMicrosecondsToSeconds(s.Memory.PSI.Some.Total), timestamp: s.Timestamp}}
 				},
 			}, {
 				name:      "container_pressure_io_stalled_seconds_total",
 				help:      "Total time duration no tasks in the container could make progress due to IO congestion.",
 				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: asMicrosecondsToSeconds(s.DiskIo.PSI.Full.Total), timestamp: s.Timestamp}}
+					if s.DiskIo.PSI == nil { return nil }; return metricValues{{value: asMicrosecondsToSeconds(s.DiskIo.PSI.Full.Total), timestamp: s.Timestamp}}
 				},
 			}, {
 				name:      "container_pressure_io_waiting_seconds_total",
 				help:      "Total time duration tasks in the container have waited due to IO congestion.",
 				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
-					return metricValues{{value: asMicrosecondsToSeconds(s.DiskIo.PSI.Some.Total), timestamp: s.Timestamp}}
+					if s.DiskIo.PSI == nil { return nil }; return metricValues{{value: asMicrosecondsToSeconds(s.DiskIo.PSI.Some.Total), timestamp: s.Timestamp}}
 				},
 			},
 		}...)
@@ -2207,3 +2207,4 @@ func getContainerHealthState(s *info.ContainerStats) metricValues {
 		timestamp: s.Timestamp,
 	}}
 }
+

@@ -331,7 +331,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 						},
 						LoadAverage:  2,
 						LoadDAverage: 2,
-						PSI: info.PSIStats{
+						PSI: &info.PSIStats{
 							Full: info.PSIData{
 								Avg10:  0.3,
 								Avg60:  0.2,
@@ -375,7 +375,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 						MappedFile:  16,
 						KernelUsage: 17,
 						Swap:        8192,
-						PSI: info.PSIStats{
+						PSI: &info.PSIStats{
 							Full: info.PSIData{
 								Avg10:  0.3,
 								Avg60:  0.2,
@@ -609,7 +609,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							Minor:  1,
 							Stats:  map[string]uint64{"Count": 750000},
 						}},
-						PSI: info.PSIStats{
+						PSI: &info.PSIStats{
 							Full: info.PSIData{
 								Avg10:  0.3,
 								Avg60:  0.2,
@@ -842,3 +842,4 @@ func (p *erroringSubcontainersInfoProvider) GetRequestedContainersInfo(
 	}
 	return p.successfulProvider.GetRequestedContainersInfo(a, opt)
 }
+

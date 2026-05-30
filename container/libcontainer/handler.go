@@ -918,11 +918,13 @@ func setPSIData(d *cgroups.PSIData, ret *info.PSIData) {
 	}
 }
 
-func setPSIStats(s *cgroups.PSIStats, ret *info.PSIStats) {
-	if s != nil {
-		setPSIData(&s.Full, &ret.Full)
-		setPSIData(&s.Some, &ret.Some)
-	}
+func setPSIStats(s *cgroups.PSIStats, ret **info.PSIStats) {
+    if s == nil {
+        return
+    }
+    *ret = &info.PSIStats{}
+    setPSIData(&s.Full, &(*ret).Full)
+    setPSIData(&s.Some, &(*ret).Some)
 }
 
 // read from pids path not cpu
@@ -956,3 +958,5 @@ func newContainerStats(cgroupStats *cgroups.Stats, includedMetrics container.Met
 	}
 	return ret
 }
+
+
