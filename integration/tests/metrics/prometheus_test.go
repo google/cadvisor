@@ -133,6 +133,43 @@ func TestCoreMemoryMetricsExist(t *testing.T) {
 		"container_memory_usage_bytes should be a gauge")
 }
 
+// TestAdditionalMemoryStatMetricsExist verifies the additional cgroup v2
+// memory.stat metrics (dirty/writeback and page reclaim activity) are present
+// and have the expected metric type. These metrics are only emitted on
+// cgroup v2 hosts.
+func TestAdditionalMemoryStatMetricsExist(t *testing.T) {
+	fm := framework.New(t)
+	defer fm.Cleanup()
+
+	client := framework.NewMetricsClient(fm.Hostname())
+	families, err := client.FetchAndParse()
+	require.NoError(t, err)
+
+	gauges := []string{
+		"container_memory_file_dirty_bytes",
+		"container_memory_file_writeback_bytes",
+	}
+	counters := []string{
+		"container_memory_pgscan_total",
+		"container_memory_pgsteal_total",
+		"container_memory_workingset_refault_file_total",
+		"container_memory_workingset_refault_anon_total",
+	}
+
+	for _, name := range gauges {
+		mf, ok := framework.GetMetricFamily(families, name)
+		require.True(t, ok, "memory metric %q should exist", name)
+		require.Equal(t, "GAUGE", framework.GetMetricType(mf),
+			"%q should be a gauge", name)
+	}
+	for _, name := range counters {
+		mf, ok := framework.GetMetricFamily(families, name)
+		require.True(t, ok, "memory metric %q should exist", name)
+		require.Equal(t, "COUNTER", framework.GetMetricType(mf),
+			"%q should be a counter", name)
+	}
+}
+
 // TestCoreNetworkMetricsExist verifies essential network metrics are present.
 func TestCoreNetworkMetricsExist(t *testing.T) {
 	fm := framework.New(t)

@@ -841,6 +841,27 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		ret.Memory.HierarchicalData.Pgmajfault = v
 	}
 
+	// Additional memory.stat fields (cgroup v2 only).
+	//  On cgroup v1 these keys are absent, so the values are left at zero.
+	if v, ok := s.MemoryStats.Stats["file_dirty"]; ok {
+		ret.Memory.FileDirty = v
+	}
+	if v, ok := s.MemoryStats.Stats["file_writeback"]; ok {
+		ret.Memory.FileWriteback = v
+	}
+	if v, ok := s.MemoryStats.Stats["pgscan"]; ok {
+		ret.Memory.Pgscan = v
+	}
+	if v, ok := s.MemoryStats.Stats["pgsteal"]; ok {
+		ret.Memory.Pgsteal = v
+	}
+	if v, ok := s.MemoryStats.Stats["workingset_refault_file"]; ok {
+		ret.Memory.WorkingsetRefaultFile = v
+	}
+	if v, ok := s.MemoryStats.Stats["workingset_refault_anon"]; ok {
+		ret.Memory.WorkingsetRefaultAnon = v
+	}
+
 	inactiveFileKeyName := "total_inactive_file"
 	if cgroups.IsCgroup2UnifiedMode() {
 		inactiveFileKeyName = "inactive_file"

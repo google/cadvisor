@@ -162,6 +162,42 @@ func TestSetCPUStats(t *testing.T) {
 	}
 }
 
+func TestSetMemoryStats(t *testing.T) {
+	s := &cgroups.Stats{
+		MemoryStats: cgroups.MemoryStats{
+			Stats: map[string]uint64{
+				"file_dirty":              19,
+				"file_writeback":          20,
+				"pgscan":                  21,
+				"pgsteal":                 22,
+				"workingset_refault_file": 23,
+				"workingset_refault_anon": 24,
+			},
+		},
+	}
+	var ret info.ContainerStats
+	setMemoryStats(s, &ret)
+
+	if ret.Memory.FileDirty != 19 {
+		t.Errorf("expected FileDirty 19, got %d", ret.Memory.FileDirty)
+	}
+	if ret.Memory.FileWriteback != 20 {
+		t.Errorf("expected FileWriteback 20, got %d", ret.Memory.FileWriteback)
+	}
+	if ret.Memory.Pgscan != 21 {
+		t.Errorf("expected Pgscan 21, got %d", ret.Memory.Pgscan)
+	}
+	if ret.Memory.Pgsteal != 22 {
+		t.Errorf("expected Pgsteal 22, got %d", ret.Memory.Pgsteal)
+	}
+	if ret.Memory.WorkingsetRefaultFile != 23 {
+		t.Errorf("expected WorkingsetRefaultFile 23, got %d", ret.Memory.WorkingsetRefaultFile)
+	}
+	if ret.Memory.WorkingsetRefaultAnon != 24 {
+		t.Errorf("expected WorkingsetRefaultAnon 24, got %d", ret.Memory.WorkingsetRefaultAnon)
+	}
+}
+
 func TestSetProcessesStats(t *testing.T) {
 	ret := info.ContainerStats{
 		Processes: info.ProcessStats{
