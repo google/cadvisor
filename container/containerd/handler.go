@@ -55,6 +55,10 @@ type containerdContainerHandler struct {
 
 	libcontainerHandler *containerlibcontainer.Handler
 	client              ContainerdClient
+	// isGVisor is true when this container is managed by the runsc (gVisor)
+	// shim. Its processes run inside the sandbox, so the host cgroup is empty
+	// and stats are instead overlaid from `runsc events --stats`.
+	isGVisor bool
 }
 
 var _ container.ContainerHandler = &containerdContainerHandler{}
@@ -149,6 +153,7 @@ func newContainerdContainerHandler(
 		reference:           containerReference,
 		libcontainerHandler: libcontainerHandler,
 		client:              client,
+		isGVisor:            isGVisorRuntime(cntr.Runtime.Name),
 	}
 	if !cntr.CreatedAt.IsZero() && !cntr.CreatedAt.Before(time.Unix(0, 0)) {
 		handler.creationTime = cntr.CreatedAt
@@ -215,6 +220,13 @@ func (h *containerdContainerHandler) GetStats() (*info.ContainerStats, error) {
 	stats, err := h.libcontainerHandler.GetStats()
 	if err != nil {
 		return stats, err
+	}
+
+	// gVisor containers run inside the sandbox, so the host cgroup is empty
+	// and the stats above are zero. Overlay the real per-container values
+	// reported by the sandbox via `runsc events --stats`.
+	if h.isGVisor {
+		h.overlayGVisorStats(stats)
 	}
 
 	// Get filesystem stats.
