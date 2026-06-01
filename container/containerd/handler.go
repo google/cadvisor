@@ -28,6 +28,7 @@ import (
 	"github.com/containerd/errdefs"
 	"github.com/opencontainers/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"
 	"github.com/google/cadvisor/container/common"
@@ -55,10 +56,10 @@ type containerdContainerHandler struct {
 
 	libcontainerHandler *containerlibcontainer.Handler
 	client              ContainerdClient
-	// isGVisor is true when this container is managed by the runsc (gVisor)
-	// shim. Its processes run inside the sandbox, so the host cgroup is empty
-	// and stats are instead overlaid from `runsc events --stats`.
-	isGVisor bool
+	// sandbox is non-nil when this container is managed by a sandboxed runtime
+	// (e.g. gVisor/runsc) whose processes run outside the host cgroup, so the
+	// host cgroup is empty and stats are instead overlaid from the runtime.
+	sandbox sandboxStatsProvider
 }
 
 var _ container.ContainerHandler = &containerdContainerHandler{}
@@ -153,7 +154,7 @@ func newContainerdContainerHandler(
 		reference:           containerReference,
 		libcontainerHandler: libcontainerHandler,
 		client:              client,
-		isGVisor:            isGVisorRuntime(cntr.Runtime.Name),
+		sandbox:             sandboxProviderFor(cntr.Runtime.Name),
 	}
 	if !cntr.CreatedAt.IsZero() && !cntr.CreatedAt.Before(time.Unix(0, 0)) {
 		handler.creationTime = cntr.CreatedAt
@@ -222,11 +223,14 @@ func (h *containerdContainerHandler) GetStats() (*info.ContainerStats, error) {
 		return stats, err
 	}
 
-	// gVisor containers run inside the sandbox, so the host cgroup is empty
-	// and the stats above are zero. Overlay the real per-container values
-	// reported by the sandbox via `runsc events --stats`.
-	if h.isGVisor {
-		h.overlayGVisorStats(stats)
+	// Sandboxed runtimes (e.g. gVisor) run the workload outside the host
+	// cgroup, so the stats above are zero. Overlay the real per-container
+	// values reported by the runtime. Best-effort: any failure leaves the
+	// base stats untouched so a transient error never fails a scrape.
+	if h.sandbox != nil {
+		if err := h.sandbox.overlay(context.Background(), h.reference.Id, stats, h.includedMetrics); err != nil {
+			klog.V(4).Infof("containerd: %s stats unavailable for %q, keeping cgroup-derived values: %v", h.sandbox.name(), h.reference.Name, err)
+		}
 	}
 
 	// Get filesystem stats.

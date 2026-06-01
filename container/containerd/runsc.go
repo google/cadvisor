@@ -14,18 +14,12 @@
 
 //go:build linux
 
-// gVisor (runsc) stats overlay for the containerd handler.
-//
-// A gVisor container's processes run inside the sandbox (a single host
-// process), so the per-container host cgroup that cAdvisor reads is empty and
-// libcontainer reports zero CPU/memory/network/pids. gVisor's sentry holds the
-// real per-container accounting and exposes it via `runsc events --stats`,
-// which is the same source containerd's CRI stats path consumes for the
-// kubelet `/stats/summary` endpoint.
-//
-// When the containerd handler detects a runsc-managed container, it overlays
-// the values from `runsc events --stats` on top of the (zero) libcontainer
-// stats so that /metrics/cadvisor reports real numbers, matching runc.
+// runscStatsProvider is the sandboxStatsProvider for gVisor (runsc). It sources
+// per-container stats from `runsc events --stats <id>`, the same interface
+// containerd's CRI stats path uses for the kubelet /stats/summary endpoint.
+// Unlike the generic cgroup metrics proto, runsc events also reports
+// per-interface network counters from the sandbox's netstack (which never
+// appear in the host /proc or cgroup), so runsc gets a dedicated provider.
 //
 // See gVisor google/gvisor#13067 (problem) and #13070 (host-side compat dirs
 // that make these containers discoverable by cAdvisor in the first place).
@@ -37,10 +31,7 @@ import (
 	"flag"
 	"fmt"
 	"os/exec"
-	"strings"
 	"time"
-
-	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/container"
 	info "github.com/google/cadvisor/info/v1"
@@ -51,60 +42,63 @@ var (
 	argRunscRoot   = flag.String("runsc_root", "/run/containerd/runsc/k8s.io", "runsc root directory (containerd's runsc state dir for the configured namespace), used to collect per-container stats for gVisor containers")
 )
 
-// gvisorRuntimePrefix matches the containerd runtime names used by the runsc
-// shim, e.g. "io.containerd.runsc.v1".
-const gvisorRuntimePrefix = "io.containerd.runsc"
+// runscStatsTimeout bounds a single `runsc events --stats` invocation.
+const runscStatsTimeout = 5 * time.Second
 
-// gvisorStatsTimeout bounds a single `runsc events --stats` invocation.
-const gvisorStatsTimeout = 5 * time.Second
+type runscStatsProvider struct{}
 
-// isGVisorRuntime reports whether the containerd runtime name belongs to the
-// runsc (gVisor) shim.
-func isGVisorRuntime(runtimeName string) bool {
-	return strings.HasPrefix(runtimeName, gvisorRuntimePrefix)
+func (runscStatsProvider) name() string { return "runsc" }
+
+func (runscStatsProvider) overlay(ctx context.Context, id string, stats *info.ContainerStats, includedMetrics container.MetricSet) error {
+	ev, err := runscContainerStats(ctx, id)
+	if err != nil {
+		return err
+	}
+	applyRunscStats(stats, ev, includedMetrics)
+	return nil
 }
 
-// gvisorEvent mirrors the JSON emitted by `runsc events --stats <id>` (gVisor's
+// runscEvent mirrors the JSON emitted by `runsc events --stats <id>` (gVisor's
 // runsc/boot.Event). Only the fields consumed here are declared.
-type gvisorEvent struct {
-	Data gvisorEventData `json:"data"`
+type runscEvent struct {
+	Data runscEventData `json:"data"`
 }
 
-type gvisorEventData struct {
-	CPU               gvisorCPU                `json:"cpu"`
-	Memory            gvisorMemory             `json:"memory"`
-	Pids              gvisorPids               `json:"pids"`
-	NetworkInterfaces []gvisorNetworkInterface `json:"network_interfaces"`
+type runscEventData struct {
+	CPU               runscCPU                `json:"cpu"`
+	Memory            runscMemory             `json:"memory"`
+	Pids              runscPids               `json:"pids"`
+	NetworkInterfaces []runscNetworkInterface `json:"network_interfaces"`
 }
 
-type gvisorCPU struct {
-	Usage gvisorCPUUsage `json:"usage"`
+type runscCPU struct {
+	Usage runscCPUUsage `json:"usage"`
 }
 
-type gvisorCPUUsage struct {
+type runscCPUUsage struct {
 	// Nanoseconds.
 	Kernel uint64 `json:"kernel"`
 	User   uint64 `json:"user"`
 	Total  uint64 `json:"total"`
 }
 
-type gvisorMemory struct {
-	Cache uint64            `json:"cache"`
-	Usage gvisorMemoryEntry `json:"usage"`
+type runscMemory struct {
+	Cache uint64           `json:"cache"`
+	Usage runscMemoryEntry `json:"usage"`
 }
 
-type gvisorMemoryEntry struct {
+type runscMemoryEntry struct {
 	Usage uint64 `json:"usage"`
 	Max   uint64 `json:"max"`
 }
 
-type gvisorPids struct {
+type runscPids struct {
 	Current uint64 `json:"current"`
 }
 
-// gvisorNetworkInterface mirrors runsc/boot.NetworkInterface, which has no JSON
+// runscNetworkInterface mirrors runsc/boot.NetworkInterface, which has no JSON
 // tags -- so the wire keys are the exported Go field names.
-type gvisorNetworkInterface struct {
+type runscNetworkInterface struct {
 	Name      string
 	RxBytes   uint64
 	RxPackets uint64
@@ -116,10 +110,10 @@ type gvisorNetworkInterface struct {
 	TxDropped uint64
 }
 
-// gvisorContainerStats runs `runsc --root <root> events --stats <id>` once and
+// runscContainerStats runs `runsc --root <root> events --stats <id>` once and
 // parses its JSON output.
-func gvisorContainerStats(ctx context.Context, id string) (*gvisorEvent, error) {
-	ctx, cancel := context.WithTimeout(ctx, gvisorStatsTimeout)
+func runscContainerStats(ctx context.Context, id string) (*runscEvent, error) {
+	ctx, cancel := context.WithTimeout(ctx, runscStatsTimeout)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, *argRunscBinary, "--root", *argRunscRoot, "events", "--stats", id)
@@ -127,18 +121,18 @@ func gvisorContainerStats(ctx context.Context, id string) (*gvisorEvent, error) 
 	if err != nil {
 		return nil, fmt.Errorf("running %q events --stats %s (root %q): %w", *argRunscBinary, id, *argRunscRoot, err)
 	}
-	var ev gvisorEvent
+	var ev runscEvent
 	if err := json.Unmarshal(out, &ev); err != nil {
 		return nil, fmt.Errorf("parsing runsc events output for %s: %w", id, err)
 	}
 	return &ev, nil
 }
 
-// applyGVisorStats overwrites the cgroup-derived (zero) values in stats with
-// the per-container values gVisor reports, honoring includedMetrics. Only the
+// applyRunscStats overwrites the cgroup-derived (zero) values in stats with the
+// per-container values gVisor reports, honoring includedMetrics. Only the
 // metrics gVisor reliably provides are overlaid; the rest are left as the
 // libcontainer base so consumers that read them degrade gracefully.
-func applyGVisorStats(stats *info.ContainerStats, ev *gvisorEvent, includedMetrics container.MetricSet) {
+func applyRunscStats(stats *info.ContainerStats, ev *runscEvent, includedMetrics container.MetricSet) {
 	d := ev.Data
 
 	if includedMetrics.Has(container.CpuUsageMetrics) {
@@ -190,16 +184,4 @@ func applyGVisorStats(stats *info.ContainerStats, ev *gvisorEvent, includedMetri
 			}
 		}
 	}
-}
-
-// overlayGVisorStats fetches gVisor's per-container stats and overlays them on
-// the libcontainer base. It is best-effort: on any error the base (zeroed)
-// stats are left untouched so a transient runsc failure never fails a scrape.
-func (h *containerdContainerHandler) overlayGVisorStats(stats *info.ContainerStats) {
-	ev, err := gvisorContainerStats(context.Background(), h.reference.Id)
-	if err != nil {
-		klog.V(4).Infof("containerd: could not get gVisor stats for %q, leaving cgroup-derived values: %v", h.reference.Name, err)
-		return
-	}
-	applyGVisorStats(stats, ev, h.includedMetrics)
 }
