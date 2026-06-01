@@ -58,14 +58,20 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_cache` | Gauge | Total page cache memory | bytes | memory |
 `container_memory_failcnt` | Counter | Number of memory usage hits limits | | memory |
 `container_memory_failures_total` | Counter | Cumulative count of memory allocation failures | | memory |
+`container_memory_file_dirty_bytes` | Gauge | File cache that has been modified but not yet written back to disk (cgroup v2) | bytes | memory |
+`container_memory_file_writeback_bytes` | Gauge | File cache that is currently being written back to disk (cgroup v2) | bytes | memory |
 `container_memory_mapped_file` | Gauge | Size of memory mapped files | bytes | memory |
 `container_memory_max_usage_bytes` | Gauge | Maximum memory usage recorded | bytes | memory |
 `container_memory_migrate` | Gauge | Memory migrate status | | cpuset |
 `container_memory_numa_pages` | Gauge | Number of used pages per NUMA node | | memory_numa |
+`container_memory_pgscan_total` | Counter | Cumulative number of pages scanned by the page reclaim algorithm (cgroup v2) | | memory |
+`container_memory_pgsteal_total` | Counter | Cumulative number of pages reclaimed by the page reclaim algorithm (cgroup v2) | | memory |
 `container_memory_rss` | Gauge | Size of RSS | bytes | memory |
 `container_memory_swap` | Gauge | Container swap usage | bytes | memory |
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | memory |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | memory |
+`container_memory_workingset_refault_anon_total` | Counter | Cumulative number of refaults of previously evicted anonymous pages (cgroup v2) | | memory |
+`container_memory_workingset_refault_file_total` | Counter | Cumulative number of refaults of previously evicted file pages (cgroup v2) | | memory |
 `container_network_advance_tcp_stats_total` | Gauge | advanced tcp connections statistic for container | | advtcp |
 `container_network_receive_bytes_total` | Counter | Cumulative count of bytes received | bytes | network |
 `container_network_receive_errors_total` | Counter | Cumulative count of errors encountered while receiving | | network |

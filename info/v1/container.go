@@ -446,6 +446,36 @@ type MemoryStats struct {
 	// Units: Bytes.
 	TotalInactiveFile uint64 `json:"total_inactive_file"`
 
+	// The amount of file cache that has been modified but not yet written back
+	// to disk. Read from memory.stat (cgroup v2 only).
+	// Units: Bytes.
+	FileDirty uint64 `json:"file_dirty"`
+
+	// The amount of file cache that is currently being written back to disk.
+	// Read from memory.stat (cgroup v2 only).
+	// Units: Bytes.
+	FileWriteback uint64 `json:"file_writeback"`
+
+	// Cumulative number of pages scanned by the page reclaim algorithm.
+	// Read from memory.stat (cgroup v2 only).
+	// Units: Counter.
+	Pgscan uint64 `json:"pgscan"`
+
+	// Cumulative number of pages reclaimed by the page reclaim algorithm.
+	// Read from memory.stat (cgroup v2 only).
+	// Units: Countaer.
+	Pgsteal uint64 `json:"pgsteal"`
+
+	// Cumulative number of refaults of previously evicted file pages.
+	// Read from memory.stat (cgroup v2 only).
+	// Units: Counter.
+	WorkingsetRefaultFile uint64 `json:"workingset_refault_file"`
+
+	// Cumulative number of refaults of previously evicted anonymous pages.
+	// Read from memory.stat (cgroup v2 only).
+	// Units: Counter.
+	WorkingsetRefaultAnon uint64 `json:"workingset_refault_anon"`
+
 	Failcnt uint64 `json:"failcnt"`
 
 	// Size of kernel memory allocated in bytes.

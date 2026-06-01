@@ -532,6 +532,48 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.Events.Max), timestamp: s.Timestamp}}
 				},
+			}, {
+				name:      "container_memory_file_dirty_bytes",
+				help:      "Number of bytes of file cache that has been modified but not yet written back to disk.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.FileDirty), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_file_writeback_bytes",
+				help:      "Number of bytes of file cache that is currently being written back to disk.",
+				valueType: prometheus.GaugeValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.FileWriteback), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_pgscan_total",
+				help:      "Cumulative number of pages scanned by the page reclaim algorithm.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Pgscan), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_pgsteal_total",
+				help:      "Cumulative number of pages reclaimed by the page reclaim algorithm.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Pgsteal), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_workingset_refault_file_total",
+				help:      "Cumulative number of refaults of previously evicted file pages.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.WorkingsetRefaultFile), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_workingset_refault_anon_total",
+				help:      "Cumulative number of refaults of previously evicted anonymous pages.",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.WorkingsetRefaultAnon), timestamp: s.Timestamp}}
+				},
 			},
 		}...)
 	}
