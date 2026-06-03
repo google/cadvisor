@@ -54,9 +54,21 @@ var (
 	ErrTaskIsInUnknownState = errors.New("containerd task is in unknown state") // used when process reported in containerd task is in Unknown State
 )
 
-var once sync.Once
-var ctrdClient ContainerdClient = nil
-var ctrdClientErr error = nil
+type clientCacheKey struct {
+	address   string
+	namespace string
+}
+
+type cachedClient struct {
+	once   sync.Once
+	client ContainerdClient
+	err    error
+}
+
+var (
+	ctrdClientsMu sync.Mutex
+	ctrdClients   = map[clientCacheKey]*cachedClient{}
+)
 
 const (
 	maxBackoffDelay   = 3 * time.Second
@@ -67,48 +79,63 @@ const (
 
 // Client creates a containerd client
 func Client(address, namespace string) (ContainerdClient, error) {
-	once.Do(func() {
-		tryConn, err := net.DialTimeout("unix", address, connectionTimeout)
-		if err != nil {
-			ctrdClientErr = fmt.Errorf("containerd: cannot unix dial containerd api service: %v", err)
-			return
-		}
-		tryConn.Close()
+	key := clientCacheKey{
+		address:   address,
+		namespace: namespace,
+	}
 
-		connParams := grpc.ConnectParams{
-			Backoff: backoff.DefaultConfig,
-		}
-		connParams.Backoff.BaseDelay = baseBackoffDelay
-		connParams.Backoff.MaxDelay = maxBackoffDelay
-		//nolint:staticcheck // SA1019
-		gopts := []grpc.DialOption{
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithContextDialer(dialer.ContextDialer),
-			grpc.WithBlock(),
-			grpc.WithConnectParams(connParams),
-			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
-		}
-		unary, stream := newNSInterceptors(namespace)
-		gopts = append(gopts,
-			grpc.WithUnaryInterceptor(unary),
-			grpc.WithStreamInterceptor(stream),
-		)
+	ctrdClientsMu.Lock()
+	cached := ctrdClients[key]
+	if cached == nil {
+		cached = &cachedClient{}
+		ctrdClients[key] = cached
+	}
+	ctrdClientsMu.Unlock()
 
-		ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
-		defer cancel()
-		//nolint:staticcheck // SA1019
-		conn, err := grpc.DialContext(ctx, dialer.DialAddress(address), gopts...)
-		if err != nil {
-			ctrdClientErr = err
-			return
-		}
-		ctrdClient = &client{
-			containerService: containersapi.NewContainersClient(conn),
-			taskService:      tasksapi.NewTasksClient(conn),
-			versionService:   versionapi.NewVersionClient(conn),
-		}
+	cached.once.Do(func() {
+		cached.client, cached.err = newClient(address, namespace)
 	})
-	return ctrdClient, ctrdClientErr
+	return cached.client, cached.err
+}
+
+func newClient(address, namespace string) (ContainerdClient, error) {
+	tryConn, err := net.DialTimeout("unix", address, connectionTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("containerd: cannot unix dial containerd api service: %v", err)
+	}
+	tryConn.Close()
+
+	connParams := grpc.ConnectParams{
+		Backoff: backoff.DefaultConfig,
+	}
+	connParams.Backoff.BaseDelay = baseBackoffDelay
+	connParams.Backoff.MaxDelay = maxBackoffDelay
+	//nolint:staticcheck // SA1019
+	gopts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(dialer.ContextDialer),
+		grpc.WithBlock(),
+		grpc.WithConnectParams(connParams),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
+	}
+	unary, stream := newNSInterceptors(namespace)
+	gopts = append(gopts,
+		grpc.WithUnaryInterceptor(unary),
+		grpc.WithStreamInterceptor(stream),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+	defer cancel()
+	//nolint:staticcheck // SA1019
+	conn, err := grpc.DialContext(ctx, dialer.DialAddress(address), gopts...)
+	if err != nil {
+		return nil, err
+	}
+	return &client{
+		containerService: containersapi.NewContainersClient(conn),
+		taskService:      tasksapi.NewTasksClient(conn),
+		versionService:   versionapi.NewVersionClient(conn),
+	}, nil
 }
 
 func (c *client) LoadContainer(ctx context.Context, id string) (*containers.Container, error) {
