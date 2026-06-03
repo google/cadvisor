@@ -106,6 +106,43 @@ func (m *mockInfoProvider) GetMachineInfo() (*info.MachineInfo, error) {
 	}, nil
 }
 
+type mockDeviceNamer map[deviceIdentifier]string
+
+func (m mockDeviceNamer) DeviceName(major, minor uint64) (string, bool) {
+	name, ok := m[deviceIdentifier{major: major, minor: minor}]
+	return name, ok
+}
+
+func TestAssignDeviceNamesToDiskStatsFallsBackToMajorMinor(t *testing.T) {
+	diskIo := info.DiskIoStats{
+		IoServiced: []info.PerDiskStats{
+			{Major: 8, Minor: 1},
+			{Major: 253, Minor: 0},
+			{Major: 253, Minor: 1},
+			{Major: 1, Minor: 2},
+		},
+	}
+	namer := mockDeviceNamer{
+		{major: 8, minor: 1}: "sda1",
+		{major: 1, minor: 2}: "",
+	}
+
+	AssignDeviceNamesToDiskStats(namer, &diskIo)
+
+	if got, want := diskIo.IoServiced[0].Device, "sda1"; got != want {
+		t.Errorf("resolved device = %q, want %q", got, want)
+	}
+	if got, want := diskIo.IoServiced[1].Device, "253:0"; got != want {
+		t.Errorf("unresolved device = %q, want %q", got, want)
+	}
+	if got, want := diskIo.IoServiced[2].Device, "253:1"; got != want {
+		t.Errorf("unresolved device = %q, want %q", got, want)
+	}
+	if got, want := diskIo.IoServiced[3].Device, "1:2"; got != want {
+		t.Errorf("empty resolved device = %q, want %q", got, want)
+	}
+}
+
 func TestGetSpecCgroupV1(t *testing.T) {
 	root, err := os.Getwd()
 	if err != nil {
