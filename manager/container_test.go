@@ -573,6 +573,22 @@ func TestNextHousekeepingInterval(t *testing.T) {
 			expectedMin:       base,
 			expectedMax:       base,
 		},
+		{
+			name:              "negative splay factor resets to default",
+			splayFactor:       -1.0,
+			jitterFactor:      0.5,
+			firstHousekeeping: true,
+			expectedMin:       base,
+			expectedMax:       base + time.Duration(jitterDefault*float64(base)),
+		},
+		{
+			name:              "negative jitter factor resets to default",
+			splayFactor:       1.0,
+			jitterFactor:      -0.5,
+			firstHousekeeping: false,
+			expectedMin:       base,
+			expectedMax:       base + time.Duration(jitterDefault*float64(base)),
+		},
 	}
 
 	for _, tc := range tests {

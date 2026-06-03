@@ -730,3 +730,28 @@ func TestProcessMounts(t *testing.T) {
 		}
 	}
 }
+
+func TestBuildDeviceToMountpoints(t *testing.T) {
+	mounts := []*mount.Info{
+		{Root: "/", Mountpoint: "/var/lib/containers/storage/overlay", Source: "overlay", FSType: "overlay", Major: 253, Minor: 5},
+		{Root: "/", Mountpoint: "/var/lib/kubelet/pods/abc/volumes/kubernetes.io~csi/pvc/mount", Source: "overlay", FSType: "overlay", Major: 253, Minor: 5},
+		{Root: "/", Mountpoint: "/tmpfs-primary", Source: "tmpfs", FSType: "tmpfs", Major: 253, Minor: 4},
+		{Root: "/", Mountpoint: "/tmpfs-secondary", Source: "tmpfs", FSType: "tmpfs", Major: 253, Minor: 4},
+		{Root: "/", Mountpoint: "/exclude/me", Source: "/dev/sda1", FSType: "xfs", Major: 253, Minor: 1},
+	}
+	excludedPrefixes := []string{"/exclude"}
+
+	partitions := processMounts(mounts, excludedPrefixes)
+	actual := buildDeviceToMountpoints(mounts, excludedPrefixes, partitions)
+
+	expected := map[string][]string{
+		"overlay_253-5": {
+			"/var/lib/kubelet/pods/abc/volumes/kubernetes.io~csi/pvc/mount",
+			"/var/lib/containers/storage/overlay",
+		},
+		"/tmpfs-primary":   {"/tmpfs-primary"},
+		"/tmpfs-secondary": {"/tmpfs-secondary"},
+	}
+
+	assert.Equal(t, expected, actual)
+}

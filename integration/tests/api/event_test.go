@@ -88,7 +88,7 @@ func TestOomKillEventConstraint(t *testing.T) {
 			containerID := fm.Docker().Run(
 				framework.DockerRunArgs{
 					Image: "registry.k8s.io/busybox:1.27",
-					Args:  []string{"-m=" + tt.memLimit},
+					Args:  []string{"-m=" + tt.memLimit, "--memory-swap=" + tt.memLimit},
 				},
 				"sh", "-c", "a=1; while true; do a=\"${a}${a}\"; done",
 			)

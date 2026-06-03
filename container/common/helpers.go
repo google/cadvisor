@@ -437,6 +437,10 @@ func (m deviceIdentifierMap) Find(major, minor uint64, namer DeviceNamer) string
 		return s
 	}
 	s, _ := namer.DeviceName(major, minor)
+	if s == "" {
+		s = fmt.Sprintf("%d:%d", major, minor)
+	}
+
 	m[d] = s
 	return s
 }

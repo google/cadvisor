@@ -76,7 +76,7 @@ function run_tests() {
     --cgroupns=host \
     --pid=host \
     --entrypoint="" \
-    gcr.io/k8s-staging-test-infra/bootstrap:v20251209-855adc2699 \
+    gcr.io/k8s-staging-test-infra/bootstrap@sha256:2e537f9aea810021ecd022bf085e99099a25fc4bb95de96eeb510e92a524b471 \
     bash -c "export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
     apt-get install -y $PACKAGES curl conntrack iptables dbus && \
