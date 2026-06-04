@@ -23,7 +23,6 @@ import (
 	"github.com/google/cadvisor/utils/cloudinfo"
 
 	"cloud.google.com/go/compute/metadata"
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -42,7 +41,6 @@ var _ cloudinfo.CloudProvider = provider{}
 func (provider) IsActiveProvider() bool {
 	data, err := os.ReadFile(gceProductName)
 	if err != nil {
-		klog.V(2).Infof("Error while reading product_name: %v", err)
 		return false
 	}
 	return strings.Contains(string(data), google)

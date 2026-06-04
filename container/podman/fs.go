@@ -25,9 +25,10 @@ import (
 	"github.com/google/cadvisor/container/docker"
 )
 
-const (
-	containersJSONFilename = "containers.json"
-)
+var containersJsonFilnames = []string{
+	"containers.json",
+	"volatile-containers.json",
+}
 
 type containersJSON struct {
 	ID    string `json:"id"`
@@ -36,14 +37,28 @@ type containersJSON struct {
 }
 
 func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerID string) (string, error) {
-	data, err := os.ReadFile(filepath.Join(storageDir, string(storageDriver)+"-containers", containersJSONFilename))
-	if err != nil {
-		return "", err
-	}
 	var containers []containersJSON
-	err = json.Unmarshal(data, &containers)
-	if err != nil {
-		return "", err
+	fileExists := false
+
+	for _, filename := range containersJsonFilnames {
+		data, err := os.ReadFile(filepath.Join(storageDir, string(storageDriver)+"-containers", filename))
+		if err != nil && !os.IsNotExist(err) {
+			return "", err
+		}
+
+		if data != nil {
+			fileExists = true
+			var buffer []containersJSON
+			err = json.Unmarshal(data, &buffer)
+			if err != nil {
+				return "", err
+			}
+			containers = append(containers, buffer...)
+		}
+	}
+
+	if !fileExists {
+		return "", os.ErrNotExist
 	}
 
 	for _, c := range containers {

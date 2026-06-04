@@ -21,8 +21,8 @@ import (
 	"regexp"
 	"strings"
 
-	dockerimage "github.com/docker/docker/api/types/image"
-	dockersystem "github.com/docker/docker/api/types/system"
+	dockerimage "github.com/moby/moby/api/types/image"
+	dockersystem "github.com/moby/moby/api/types/system"
 
 	v1 "github.com/google/cadvisor/info/v1"
 )
@@ -105,7 +105,7 @@ func SummariesToImages(summaries []dockerimage.Summary) ([]v1.DockerImage, error
 	return out, nil
 }
 
-// Returns the ID from the full container name.
+// ContainerNameToId returns the ID from the full container name.
 func ContainerNameToId(name string) string {
 	id := path.Base(name)
 

@@ -96,7 +96,7 @@ func (f *podmanFactory) CanHandleAndAccept(name string) (handle bool, accept boo
 	if err != nil {
 		return false, true, fmt.Errorf("error inspecting container: %v", err)
 	}
-	if ctnr.ContainerJSONBase == nil || ctnr.State == nil || !ctnr.State.Running {
+	if ctnr.State == nil || !ctnr.State.Running {
 		return false, true, fmt.Errorf("container not running")
 	}
 	return true, true, nil

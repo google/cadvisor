@@ -23,8 +23,8 @@ import (
 	"net/http"
 	"sync"
 
-	dclient "github.com/docker/docker/client"
 	"github.com/docker/go-connections/tlsconfig"
+	dclient "github.com/moby/moby/client"
 )
 
 var (
@@ -54,10 +54,10 @@ func Client() (*dclient.Client, error) {
 				TLSClientConfig: tlsc,
 			}
 		}
-		dockerClient, dockerClientErr = dclient.NewClientWithOpts(
+		dockerClient, dockerClientErr = dclient.New(
 			dclient.WithHost(*ArgDockerEndpoint),
 			dclient.WithHTTPClient(client),
-			dclient.WithAPIVersionNegotiation())
+		)
 	})
 	return dockerClient, dockerClientErr
 }
