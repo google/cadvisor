@@ -1,0 +1,53 @@
+name: PR smoke (make docker + run)
+
+on:
+  pull_request:
+  push:
+    branches:
+      - auto/update-go-toolchain
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build docker image (make docker)
+        run: |
+          set -euo pipefail
+          docker build -f deploy/Dockerfile -t cadvisor-pr:${GITHUB_SHA} .
+
+      - name: Run container + scrape /metrics
+        run: |
+          set -euo pipefail
+          # If anything fails, print logs before exiting.
+          cleanup() {
+            docker logs cadvisor-smoke 2>/dev/null || true
+            docker stop cadvisor-smoke 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          docker run -d --rm --name cadvisor-smoke -p 18080:8080 \
+            --privileged \
+            -v /:/rootfs:ro \
+            -v /var/run:/var/run:ro \
+            -v /sys:/sys:ro \
+            -v /var/lib/docker/:/var/lib/docker:ro \
+            "docker.io/library/cadvisor-pr:${GITHUB_SHA}"
+
+          sleep 20
+          curl -f http://127.0.0.1:18080/metrics
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.35.0
+        with:
+          image-ref: cadvisor-pr:${{ github.sha }}
+          format: "table"
+          scanners: "vuln"
+          exit-code: '0'

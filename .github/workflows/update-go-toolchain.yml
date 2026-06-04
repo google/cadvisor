@@ -1,0 +1,108 @@
+name: Update Go toolchain
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Every Monday at 09:00 UTC
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-toolchain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect current toolchain version
+        id: current
+        run: |
+          set -euo pipefail
+          # Read the toolchain directive from the root go.mod
+          CURRENT=$(grep '^toolchain ' go.mod | awk '{print $2}' | sed 's/^go//')
+          if [ -z "${CURRENT}" ]; then
+            echo "::error::No toolchain directive found in go.mod"
+            exit 1
+          fi
+          echo "version=${CURRENT}" >> "$GITHUB_OUTPUT"
+          # Extract major.minor (e.g. 1.25 from 1.25.7)
+          MINOR=$(echo "${CURRENT}" | grep -oP '^\d+\.\d+')
+          if [ -z "${MINOR}" ]; then
+            echo "::error::Could not parse major.minor from toolchain version '${CURRENT}'"
+            exit 1
+          fi
+          echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
+          echo "Current toolchain: go${CURRENT} (series ${MINOR})"
+
+      - name: Fetch latest Go patch version
+        id: latest
+        run: |
+          set -euo pipefail
+          MINOR="${{ steps.current.outputs.minor }}"
+          # Query go.dev for stable releases only, find latest in our minor series
+          LATEST=$(curl -sS 'https://go.dev/dl/?mode=json' \
+            | jq -r '.[] | select(.stable == true) | .version' \
+            | grep "^go${MINOR}\." \
+            | head -1 \
+            | sed 's/^go//')
+          if [ -z "${LATEST}" ]; then
+            echo "No release found for series ${MINOR}"
+            exit 1
+          fi
+          echo "version=${LATEST}" >> "$GITHUB_OUTPUT"
+          echo "Latest in ${MINOR}.x series: go${LATEST}"
+
+      - name: Check if update is needed
+        id: check
+        run: |
+          set -euo pipefail
+          CURRENT="${{ steps.current.outputs.version }}"
+          LATEST="${{ steps.latest.outputs.version }}"
+          if [ "${CURRENT}" = "${LATEST}" ]; then
+            echo "Already on latest (go${LATEST}), nothing to do."
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Update available: go${CURRENT} -> go${LATEST}"
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update go.mod files
+        if: steps.check.outputs.needed == 'true'
+        run: |
+          set -euo pipefail
+          LATEST="${{ steps.latest.outputs.version }}"
+          echo "Updating all go.mod toolchain directives to go${LATEST}"
+
+          # Find every go.mod in the repo that has a toolchain directive
+          find . -name 'go.mod' -type f | while read -r modfile; do
+            if grep -q '^toolchain ' "${modfile}"; then
+              echo "  Updating ${modfile}"
+              sed -i "s/^toolchain go.*/toolchain go${LATEST}/" "${modfile}"
+            fi
+          done
+
+      - name: Create pull request
+        if: steps.check.outputs.needed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: custom-master
+          branch: auto/update-go-toolchain
+          delete-branch: true
+          commit-message: "build: bump Go toolchain to go${{ steps.latest.outputs.version }}"
+          title: "build: bump Go toolchain to go${{ steps.latest.outputs.version }}"
+          body: |
+            Automated Go toolchain update.
+
+            **Current:** `go${{ steps.current.outputs.version }}`
+            **Latest:**  `go${{ steps.latest.outputs.version }}`
+
+            Updated files:
+            ```
+            find . -name 'go.mod' -exec grep -l '^toolchain ' {} \;
+            ```
+
+            Release notes: https://go.dev/doc/devel/release#go${{ steps.latest.outputs.version }}
+          labels: dependencies,go
