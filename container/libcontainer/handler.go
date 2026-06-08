@@ -705,6 +705,8 @@ func udpStatsFromProc(rootFs string, pid int, file string) (info.UdpStat, error)
 		return udpStats, fmt.Errorf("failure opening %s: %v", udpStatsFile, err)
 	}
 
+	defer r.Close()
+
 	udpStats, err = scanUDPStats(r)
 	if err != nil {
 		return udpStats, fmt.Errorf("couldn't read udp stats: %v", err)
