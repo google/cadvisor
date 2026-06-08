@@ -43,6 +43,9 @@ type rawContainerWatcher struct {
 
 	// Signal for watcher thread to stop.
 	stopWatcher chan error
+
+	// List of raw container cgroup path prefix whitelist.
+	rawPrefixWhiteList []string
 }
 
 func NewRawContainerWatcher(includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
@@ -122,6 +125,18 @@ func (w *rawContainerWatcher) watchDirectory(events chan watcher.ContainerEvent,
 	// can have many .mount cgroups associated with it which can quickly exhaust the inotify watches on a node.
 	if strings.HasSuffix(containerName, ".mount") {
 		return false, nil
+	}
+	if len(w.rawPrefixWhiteList) > 0 && containerName != "/" {
+		inWhiteList := false
+		for _, prefix := range w.rawPrefixWhiteList {
+			if strings.HasPrefix(containerName, prefix) || strings.HasPrefix(prefix, containerName) {
+				inWhiteList = true
+				break
+			}
+		}
+		if !inWhiteList {
+			return false, nil
+		}
 	}
 	alreadyWatching, err := w.watcher.AddWatch(containerName, dir)
 	if err != nil {

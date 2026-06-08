@@ -45,13 +45,16 @@ type rawContainerHandler struct {
 	includedMetrics container.MetricSet
 
 	libcontainerHandler *libcontainer.Handler
+
+	// List of raw container cgroup path prefix whitelist.
+	rawPrefixWhiteList []string
 }
 
 func isRootCgroup(name string) bool {
 	return name == "/"
 }
 
-func newRawContainerHandler(name string, cgroupSubsystems map[string]string, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet) (container.ContainerHandler, error) {
+func newRawContainerHandler(name string, cgroupSubsystems map[string]string, machineInfoFactory info.MachineInfoFactory, fsInfo fs.FsInfo, watcher *common.InotifyWatcher, rootFs string, includedMetrics container.MetricSet, rawPrefixWhiteList []string) (container.ContainerHandler, error) {
 	cHints, err := common.GetContainerHintsFromFile(*common.ArgContainerHints)
 	if err != nil {
 		return nil, err
@@ -90,6 +93,7 @@ func newRawContainerHandler(name string, cgroupSubsystems map[string]string, mac
 		externalMounts:      externalMounts,
 		includedMetrics:     includedMetrics,
 		libcontainerHandler: handler,
+		rawPrefixWhiteList:  rawPrefixWhiteList,
 	}, nil
 }
 
@@ -268,7 +272,7 @@ func (h *rawContainerHandler) GetContainerIPAddress() string {
 }
 
 func (h *rawContainerHandler) ListContainers(listType container.ListType) ([]info.ContainerReference, error) {
-	return common.ListContainers(h.name, h.cgroupPaths, listType)
+	return common.ListContainers(h.name, h.cgroupPaths, listType, h.rawPrefixWhiteList)
 }
 
 func (h *rawContainerHandler) ListProcesses(listType container.ListType) ([]int, error) {

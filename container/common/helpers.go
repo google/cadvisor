@@ -301,7 +301,19 @@ func readUInt64(dirpath string, file string) uint64 {
 }
 
 // Lists all directories under "path" and outputs the results as children of "parent".
-func ListDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}) error {
+func ListDirectories(dirpath string, parent string, recursive bool, output map[string]struct{}, rawPrefixWhiteList []string) error {
+	if len(rawPrefixWhiteList) > 0 && parent != "/" {
+		inWhiteList := false
+		for _, prefix := range rawPrefixWhiteList {
+			if strings.HasPrefix(parent, prefix) || strings.HasPrefix(prefix, parent) {
+				inWhiteList = true
+				break
+			}
+		}
+		if !inWhiteList {
+			return nil
+		}
+	}
 	dirents, err := os.ReadDir(dirpath)
 	if err != nil {
 		// Ignore if this hierarchy does not exist.
@@ -322,7 +334,7 @@ func ListDirectories(dirpath string, parent string, recursive bool, output map[s
 
 		// List subcontainers if asked to.
 		if recursive {
-			if err := ListDirectories(path.Join(dirpath, dirname), name, true, output); err != nil {
+			if err := ListDirectories(path.Join(dirpath, dirname), name, true, output, rawPrefixWhiteList); err != nil {
 				return err
 			}
 		}
@@ -349,10 +361,10 @@ func CgroupExists(cgroupPaths map[string]string) bool {
 	return false
 }
 
-func ListContainers(name string, cgroupPaths map[string]string, listType container.ListType) ([]info.ContainerReference, error) {
+func ListContainers(name string, cgroupPaths map[string]string, listType container.ListType, rawPrefixWhiteList []string) ([]info.ContainerReference, error) {
 	containers := make(map[string]struct{})
 	for _, cgroupPath := range cgroupPaths {
-		err := ListDirectories(cgroupPath, name, listType == container.ListRecursive, containers)
+		err := ListDirectories(cgroupPath, name, listType == container.ListRecursive, containers, rawPrefixWhiteList)
 		if err != nil {
 			return nil, err
 		}
