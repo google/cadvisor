@@ -67,6 +67,8 @@ const (
 
 	//HugePagesNrFile name of nr_hugepages file in sysfs
 	HugePagesNrFile = "nr_hugepages"
+	//HugePagesFreeFile name of free_hugepages file in sysfs
+	HugePagesFreeFile = "free_hugepages"
 )
 
 var (
@@ -106,6 +108,8 @@ type SysFs interface {
 	GetHugePagesInfo(hugePagesDirectory string) ([]os.FileInfo, error)
 	// Get hugepage_nr from specified directory
 	GetHugePagesNr(hugePagesDirectory string, hugePageName string) (string, error)
+	// Get free_hugepages from specified directory
+	GetHugePagesFree(hugePagesDirectory string, hugePageName string) (string, error)
 	// Get directory information for available block devices.
 	GetBlockDevices() ([]os.FileInfo, error)
 	// Get Size of a given block device.
@@ -223,6 +227,15 @@ func (fs *realSysFs) GetHugePagesInfo(hugePagesDirectory string) ([]os.FileInfo,
 
 func (fs *realSysFs) GetHugePagesNr(hugepagesDirectory string, hugePageName string) (string, error) {
 	hugePageFilePath := fmt.Sprintf("%s%s/%s", hugepagesDirectory, hugePageName, HugePagesNrFile)
+	hugePageFile, err := os.ReadFile(hugePageFilePath)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(hugePageFile)), err
+}
+
+func (fs *realSysFs) GetHugePagesFree(hugepagesDirectory string, hugePageName string) (string, error) {
+	hugePageFilePath := fmt.Sprintf("%s%s/%s", hugepagesDirectory, hugePageName, HugePagesFreeFile)
 	hugePageFile, err := os.ReadFile(hugePageFilePath)
 	if err != nil {
 		return "", err

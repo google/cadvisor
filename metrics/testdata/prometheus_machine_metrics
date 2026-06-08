@@ -63,6 +63,12 @@ machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test"
 machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",page_size="2048",system_uuid="system-uuid-test"} 0 1395066363000
 machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",page_size="1048576",system_uuid="system-uuid-test"} 2 1395066363000
 machine_node_hugepages_count{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",page_size="2048",system_uuid="system-uuid-test"} 4 1395066363000
+# HELP machine_node_hugepages_free Number of free hugepages on NUMA node.
+# TYPE machine_node_hugepages_free gauge
+machine_node_hugepages_free{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",page_size="1048576",system_uuid="system-uuid-test"} 0 1395066363000
+machine_node_hugepages_free{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",page_size="2048",system_uuid="system-uuid-test"} 0 1395066363000
+machine_node_hugepages_free{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",page_size="1048576",system_uuid="system-uuid-test"} 1 1395066363000
+machine_node_hugepages_free{boot_id="boot-id-test",machine_id="machine-id-test",node_id="1",page_size="2048",system_uuid="system-uuid-test"} 3 1395066363000
 # HELP machine_node_memory_capacity_bytes Amount of memory assigned to NUMA node.
 # TYPE machine_node_memory_capacity_bytes gauge
 machine_node_memory_capacity_bytes{boot_id="boot-id-test",machine_id="machine-id-test",node_id="0",system_uuid="system-uuid-test"} 3.3604804608e+10 1395066363000
