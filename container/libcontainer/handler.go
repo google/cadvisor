@@ -895,6 +895,15 @@ func setMemoryEvents(cgroupPath string, ret *info.ContainerStats) {
 	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "max"); err == nil {
 		ret.Memory.Events.Max = val
 	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "oom"); err == nil {
+		ret.Memory.Events.Oom = val
+	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "oom_kill"); err == nil {
+		ret.Memory.Events.OomKill = val
+	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "oom_group_kill"); err == nil {
+		ret.Memory.Events.OomGroupKill = val
+	}
 }
 
 func setCPUSetStats(s *cgroups.Stats, ret *info.ContainerStats) {
