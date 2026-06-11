@@ -396,6 +396,7 @@ func TestSetMemoryEvents(t *testing.T) {
 	testData := []struct {
 		name         string
 		content      string
+		low          uint64
 		high         uint64
 		max          uint64
 		oom          uint64
@@ -404,23 +405,23 @@ func TestSetMemoryEvents(t *testing.T) {
 	}{
 		{
 			"all counters",
-			"low 0\nhigh 42\nmax 5\noom 3\noom_kill 2\noom_group_kill 1\n",
-			42, 5, 3, 2, 1,
+			"low 7\nhigh 42\nmax 5\noom 3\noom_kill 2\noom_group_kill 1\n",
+			7, 42, 5, 3, 2, 1,
 		},
 		{
 			"zeros",
 			"low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
-			0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0,
 		},
 		{
 			"high only",
 			"low 0\nhigh 238\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
-			238, 0, 0, 0, 0,
+			0, 238, 0, 0, 0, 0,
 		},
 		{
 			"empty file",
 			"",
-			0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0,
 		},
 	}
 
@@ -433,6 +434,7 @@ func TestSetMemoryEvents(t *testing.T) {
 			var ret info.ContainerStats
 			setMemoryEvents(dir, &ret)
 
+			assert.Equal(t, testItem.low, ret.Memory.Events.Low)
 			assert.Equal(t, testItem.high, ret.Memory.Events.High)
 			assert.Equal(t, testItem.max, ret.Memory.Events.Max)
 			assert.Equal(t, testItem.oom, ret.Memory.Events.Oom)
@@ -446,6 +448,7 @@ func TestSetMemoryEventsFileNotFound(t *testing.T) {
 	var ret info.ContainerStats
 	setMemoryEvents("/nonexistent/path", &ret)
 
+	assert.Equal(t, uint64(0), ret.Memory.Events.Low)
 	assert.Equal(t, uint64(0), ret.Memory.Events.High)
 	assert.Equal(t, uint64(0), ret.Memory.Events.Max)
 	assert.Equal(t, uint64(0), ret.Memory.Events.Oom)

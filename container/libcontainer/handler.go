@@ -889,6 +889,9 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 }
 
 func setMemoryEvents(cgroupPath string, ret *info.ContainerStats) {
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "low"); err == nil {
+		ret.Memory.Events.Low = val
+	}
 	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "high"); err == nil {
 		ret.Memory.Events.High = val
 	}

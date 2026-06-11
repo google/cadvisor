@@ -56,6 +56,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_bandwidth_bytes` | Gauge | Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_bandwidth_local_bytes` | Gauge | Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_cache` | Gauge | Total page cache memory | bytes | memory |
+`container_memory_events_low_total` | Counter | Cumulative count of memory.low breach events for the container | | memory |
 `container_memory_events_oom_group_kill_total` | Counter | Cumulative count of memory OOM group kill events for the container | | memory |
 `container_memory_events_oom_kill_total` | Counter | Cumulative count of memory OOM kill events for the container | | memory |
 `container_memory_events_oom_total` | Counter | Cumulative count of memory allocation failure events for the container | | memory |

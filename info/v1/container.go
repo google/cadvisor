@@ -491,6 +491,7 @@ type MemoryStats struct {
 }
 
 type MemoryEvents struct {
+	Low          uint64 `json:"low"`
 	High         uint64 `json:"high"`
 	Max          uint64 `json:"max"`
 	Oom          uint64 `json:"oom"`

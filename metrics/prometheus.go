@@ -519,6 +519,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					}
 				},
 			}, {
+				name:      "container_memory_events_low_total",
+				help:      "Cumulative count of memory.low breach events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Events.Low), timestamp: s.Timestamp}}
+				},
+			}, {
 				name:      "container_memory_events_high_total",
 				help:      "Cumulative count of memory.high throttle events for the container",
 				valueType: prometheus.CounterValue,

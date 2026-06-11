@@ -396,6 +396,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							},
 						},
 						Events: info.MemoryEvents{
+							Low:          4,
 							High:         42,
 							Max:          5,
 							Oom:          3,
