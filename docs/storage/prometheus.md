@@ -56,6 +56,8 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_bandwidth_bytes` | Gauge | Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_bandwidth_local_bytes` | Gauge | Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_cache` | Gauge | Total page cache memory | bytes | memory |
+`container_memory_events_high_total` | Counter | Cumulative count of memory.high throttle events (cgroup v2) | | memory |
+`container_memory_events_max_total` | Counter | Cumulative count of memory.max limit hit events (cgroup v2) | | memory |
 `container_memory_failcnt` | Counter | Number of memory usage hits limits | | memory |
 `container_memory_failures_total` | Counter | Cumulative count of memory allocation failures | | memory |
 `container_memory_file_dirty_bytes` | Gauge | File cache that has been modified but not yet written back to disk (cgroup v2) | bytes | memory |
@@ -68,6 +70,9 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_pgsteal_total` | Counter | Cumulative number of pages reclaimed by the page reclaim algorithm (cgroup v2) | | memory |
 `container_memory_rss` | Gauge | Size of RSS | bytes | memory |
 `container_memory_swap` | Gauge | Container swap usage | bytes | memory |
+`container_memory_swap_events_fail_total` | Counter | Cumulative count of swap allocation failures (cgroup v2) | | memory |
+`container_memory_swap_events_high_total` | Counter | Cumulative count of memory.swap.high throttle events (cgroup v2) | | memory |
+`container_memory_swap_events_max_total` | Counter | Cumulative count of memory.swap.max limit hit events (cgroup v2) | | memory |
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | memory |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | memory |
 `container_memory_workingset_refault_anon_total` | Counter | Cumulative number of refaults of previously evicted anonymous pages (cgroup v2) | | memory |

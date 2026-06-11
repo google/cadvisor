@@ -95,6 +95,7 @@ func (h *Handler) GetStats() (*info.ContainerStats, error) {
 
 	if cgroups.IsCgroup2UnifiedMode() {
 		setMemoryEvents(h.cgroupManager.Path(""), stats)
+		setSwapEvents(h.cgroupManager.Path(""), stats)
 	}
 
 	if h.includedMetrics.Has(container.ProcessSchedulerMetrics) {
@@ -894,6 +895,18 @@ func setMemoryEvents(cgroupPath string, ret *info.ContainerStats) {
 	}
 	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "max"); err == nil {
 		ret.Memory.Events.Max = val
+	}
+}
+
+func setSwapEvents(cgroupPath string, ret *info.ContainerStats) {
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.swap.events", "high"); err == nil {
+		ret.Memory.SwapEvents.High = val
+	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.swap.events", "max"); err == nil {
+		ret.Memory.SwapEvents.Max = val
+	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.swap.events", "fail"); err == nil {
+		ret.Memory.SwapEvents.Fail = val
 	}
 }
 

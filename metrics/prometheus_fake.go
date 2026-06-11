@@ -399,6 +399,11 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							High: 42,
 							Max:  5,
 						},
+						SwapEvents: info.SwapEvents{
+							High: 8,
+							Max:  6,
+							Fail: 7,
+						},
 					},
 					Hugetlb: map[string]info.HugetlbStats{
 						"2Mi": {
