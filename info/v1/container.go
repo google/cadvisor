@@ -491,8 +491,11 @@ type MemoryStats struct {
 }
 
 type MemoryEvents struct {
-	High uint64 `json:"high"`
-	Max  uint64 `json:"max"`
+	High         uint64 `json:"high"`
+	Max          uint64 `json:"max"`
+	Oom          uint64 `json:"oom"`
+	OomKill      uint64 `json:"oom_kill"`
+	OomGroupKill uint64 `json:"oom_group_kill"`
 }
 
 type CPUSetStats struct {
