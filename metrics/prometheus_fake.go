@@ -396,8 +396,12 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, v2.Req
 							},
 						},
 						Events: info.MemoryEvents{
-							High: 42,
-							Max:  5,
+							Low:          4,
+							High:         42,
+							Max:          5,
+							Oom:          3,
+							OomKill:      2,
+							OomGroupKill: 1,
 						},
 					},
 					Hugetlb: map[string]info.HugetlbStats{
