@@ -533,6 +533,27 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					return metricValues{{value: float64(s.Memory.Events.Max), timestamp: s.Timestamp}}
 				},
 			}, {
+				name:      "container_memory_swap_events_high_total",
+				help:      "Cumulative count of memory.swap.high throttle events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.SwapEvents.High), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_swap_events_max_total",
+				help:      "Cumulative count of memory.swap.max limit hit events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.SwapEvents.Max), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_swap_events_fail_total",
+				help:      "Cumulative count of swap allocation failures for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.SwapEvents.Fail), timestamp: s.Timestamp}}
+				},
+			}, {
 				name:      "container_memory_file_dirty_bytes",
 				help:      "Number of bytes of file cache that has been modified but not yet written back to disk.",
 				valueType: prometheus.GaugeValue,

@@ -443,3 +443,61 @@ func TestSetMemoryEventsFileNotFound(t *testing.T) {
 	assert.Equal(t, uint64(0), ret.Memory.Events.High)
 	assert.Equal(t, uint64(0), ret.Memory.Events.Max)
 }
+
+func TestSetSwapEvents(t *testing.T) {
+	cgroups.TestMode = true
+	defer func() { cgroups.TestMode = false }()
+
+	testData := []struct {
+		name    string
+		content string
+		high    uint64
+		max     uint64
+		fail    uint64
+	}{
+		{
+			"all counters",
+			"high 2\nmax 9\nfail 4\n",
+			2, 9, 4,
+		},
+		{
+			"zeros",
+			"high 0\nmax 0\nfail 0\n",
+			0, 0, 0,
+		},
+		{
+			"fail only",
+			"high 0\nmax 0\nfail 17\n",
+			0, 0, 17,
+		},
+		{
+			"empty file",
+			"",
+			0, 0, 0,
+		},
+	}
+
+	for _, testItem := range testData {
+		t.Run(testItem.name, func(t *testing.T) {
+			dir := t.TempDir()
+			err := os.WriteFile(filepath.Join(dir, "memory.swap.events"), []byte(testItem.content), 0o644)
+			assert.Nil(t, err)
+
+			var ret info.ContainerStats
+			setSwapEvents(dir, &ret)
+
+			assert.Equal(t, testItem.high, ret.Memory.SwapEvents.High)
+			assert.Equal(t, testItem.max, ret.Memory.SwapEvents.Max)
+			assert.Equal(t, testItem.fail, ret.Memory.SwapEvents.Fail)
+		})
+	}
+}
+
+func TestSetSwapEventsFileNotFound(t *testing.T) {
+	var ret info.ContainerStats
+	setSwapEvents("/nonexistent/path", &ret)
+
+	assert.Equal(t, uint64(0), ret.Memory.SwapEvents.High)
+	assert.Equal(t, uint64(0), ret.Memory.SwapEvents.Max)
+	assert.Equal(t, uint64(0), ret.Memory.SwapEvents.Fail)
+}

@@ -488,11 +488,19 @@ type MemoryStats struct {
 	PSI PSIStats `json:"psi"`
 
 	Events MemoryEvents `json:"events,omitempty"`
+
+	SwapEvents SwapEvents `json:"swap_events,omitempty"`
 }
 
 type MemoryEvents struct {
 	High uint64 `json:"high"`
 	Max  uint64 `json:"max"`
+}
+
+type SwapEvents struct {
+	High uint64 `json:"high"`
+	Max  uint64 `json:"max"`
+	Fail uint64 `json:"fail"`
 }
 
 type CPUSetStats struct {
