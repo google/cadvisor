@@ -520,7 +520,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			}, {
 				name:      "container_memory_events_low_total",
-				help:      "Cumulative count of memory.low breach events for the container",
+				help:      "Cumulative count of memory.low reclaim events for the container",
 				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.Events.Low), timestamp: s.Timestamp}}
@@ -541,7 +541,7 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 				},
 			}, {
 				name:      "container_memory_events_oom_total",
-				help:      "Cumulative count of memory allocation failure events for the container",
+				help:      "Cumulative count of memory OOM events for the container",
 				valueType: prometheus.CounterValue,
 				getValues: func(s *info.ContainerStats) metricValues {
 					return metricValues{{value: float64(s.Memory.Events.Oom), timestamp: s.Timestamp}}
