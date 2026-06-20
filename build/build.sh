@@ -39,13 +39,14 @@ if [ "${go_version:0:3}" = "1.4" ]; then
 	ldseparator=" "
 fi
 
+# The version package now lives in the lib submodule (github.com/google/cadvisor/lib).
 ldflags="
-  -X ${repo_path}/version.Version${ldseparator}${version}
-  -X ${repo_path}/version.Revision${ldseparator}${revision}
-  -X ${repo_path}/version.Branch${ldseparator}${branch}
-  -X ${repo_path}/version.BuildUser${ldseparator}${BUILD_USER}
-  -X ${repo_path}/version.BuildDate${ldseparator}${BUILD_DATE}
-  -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
+  -X ${repo_path}/lib/version.Version${ldseparator}${version}
+  -X ${repo_path}/lib/version.Revision${ldseparator}${revision}
+  -X ${repo_path}/lib/version.Branch${ldseparator}${branch}
+  -X ${repo_path}/lib/version.BuildUser${ldseparator}${BUILD_USER}
+  -X ${repo_path}/lib/version.BuildDate${ldseparator}${BUILD_DATE}
+  -X ${repo_path}/lib/version.GoVersion${ldseparator}${go_version}"
 
 echo ">> building cadvisor"
 

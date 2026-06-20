@@ -53,6 +53,9 @@ function lint_gotidy() {
     popd > /dev/null
 }
 
+# Check if go mod tidy changes needed on lib module
+lint_gotidy "lib"
+
 # Check if go mod tidy changes needed on main module
 lint_gotidy "."
 
