@@ -14,12 +14,10 @@
 
 package v1
 
-import (
-	"time"
-)
+import "github.com/google/cadvisor/lib/model"
 
 // Type of metric being exported.
-type MetricType string
+type MetricType = model.MetricType
 
 const (
 	// Instantaneous value. May increase or decrease.
@@ -30,7 +28,7 @@ const (
 )
 
 // DataType for metric being exported.
-type DataType string
+type DataType = model.DataType
 
 const (
 	IntType   DataType = "int"
@@ -38,40 +36,10 @@ const (
 )
 
 // Spec for custom metric.
-type MetricSpec struct {
-	// The name of the metric.
-	Name string `json:"name"`
-
-	// Type of the metric.
-	Type MetricType `json:"type"`
-
-	// Data Type for the stats.
-	Format DataType `json:"format"`
-
-	// Display Units for the stats.
-	Units string `json:"units"`
-}
+type MetricSpec = model.MetricSpec
 
 // An exported metric.
-type MetricValBasic struct {
-	// Time at which the metric was queried
-	Timestamp time.Time `json:"timestamp"`
-
-	// The value of the metric at this point.
-	IntValue   int64   `json:"int_value,omitempty"`
-	FloatValue float64 `json:"float_value,omitempty"`
-}
+type MetricValBasic = model.MetricValBasic
 
 // An exported metric.
-type MetricVal struct {
-	// Label associated with a metric
-	Label  string            `json:"label,omitempty"`
-	Labels map[string]string `json:"labels,omitempty"`
-
-	// Time at which the metric was queried
-	Timestamp time.Time `json:"timestamp"`
-
-	// The value of the metric at this point.
-	IntValue   int64   `json:"int_value,omitempty"`
-	FloatValue float64 `json:"float_value,omitempty"`
-}
+type MetricVal = model.MetricVal
