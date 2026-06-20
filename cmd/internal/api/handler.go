@@ -31,7 +31,7 @@ import (
 	httpmux "github.com/google/cadvisor/cmd/internal/http/mux"
 	"github.com/google/cadvisor/events"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/manager"
+	"github.com/google/cadvisor/lib/manager"
 
 	"k8s.io/klog/v2"
 )
@@ -40,7 +40,18 @@ const (
 	apiResource = "/api/"
 )
 
+// eventManager serves the /events API. It is created and wired to the manager
+// in RegisterHandlers; the lean library manager has no event-storage machinery,
+// so the binary owns it and feeds it from the manager via an event sink.
+//
+// ponytail: cadvisor runs one manager per process, so a package-level value is
+// enough — no need to thread an *events.EventManager through every handler.
+var eventManager events.EventManager
+
 func RegisterHandlers(mux httpmux.Mux, m manager.Manager) error {
+	eventManager = events.NewEventManager(parseEventsStoragePolicy())
+	m.SetEventSink(eventManager)
+
 	apiVersions := getAPIVersions()
 	supportedAPIVersions := make(map[string]ApiVersion, len(apiVersions))
 	for _, v := range apiVersions {
@@ -54,6 +65,56 @@ func RegisterHandlers(mux httpmux.Mux, m manager.Manager) error {
 		}
 	})
 	return nil
+}
+
+// parseEventsStoragePolicy builds the events storage policy from the
+// event_storage_* flag values, which the library manager registers (for kubelet
+// flag-compatibility) and exposes. Defining it here, reading the exposed
+// values, avoids re-registering — and double-registering — the same flags.
+func parseEventsStoragePolicy() events.StoragePolicy {
+	policy := events.DefaultStoragePolicy()
+
+	// Parse max age.
+	parts := strings.Split(manager.EventStorageAgeLimit(), ",")
+	for _, part := range parts {
+		items := strings.Split(part, "=")
+		if len(items) != 2 {
+			klog.Warningf("Unknown event storage policy %q when parsing max age", part)
+			continue
+		}
+		dur, err := time.ParseDuration(items[1])
+		if err != nil {
+			klog.Warningf("Unable to parse event max age duration %q: %v", items[1], err)
+			continue
+		}
+		if items[0] == "default" {
+			policy.DefaultMaxAge = dur
+			continue
+		}
+		policy.PerTypeMaxAge[info.EventType(items[0])] = dur
+	}
+
+	// Parse max number.
+	parts = strings.Split(manager.EventStorageEventLimit(), ",")
+	for _, part := range parts {
+		items := strings.Split(part, "=")
+		if len(items) != 2 {
+			klog.Warningf("Unknown event storage policy %q when parsing max event limit", part)
+			continue
+		}
+		val, err := strconv.Atoi(items[1])
+		if err != nil {
+			klog.Warningf("Unable to parse integer from %q: %v", items[1], err)
+			continue
+		}
+		if items[0] == "default" {
+			policy.DefaultMaxNumEvents = val
+			continue
+		}
+		policy.PerTypeMaxNumEvents[info.EventType(items[0])] = val
+	}
+
+	return policy
 }
 
 // Captures the API version, requestType [optional], and remaining request [optional].
@@ -148,7 +209,7 @@ func streamResults(eventChannel *events.EventChannel, w http.ResponseWriter, r *
 	for {
 		select {
 		case <-r.Context().Done():
-			m.CloseEventChannel(eventChannel.GetWatchId())
+			eventManager.StopWatch(eventChannel.GetWatchId())
 			return nil
 		case ev := <-eventChannel.GetChannel():
 			err := enc.Encode(ev)

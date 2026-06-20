@@ -19,7 +19,7 @@ import (
 
 	client "github.com/google/cadvisor/cmd/internal/storage/statsd/client"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/lib/storage"
 )
 
 func init() {

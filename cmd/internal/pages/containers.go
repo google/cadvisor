@@ -26,7 +26,7 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/manager"
+	"github.com/google/cadvisor/lib/manager"
 
 	"k8s.io/klog/v2"
 )

@@ -23,7 +23,7 @@ import (
 
 	info "github.com/google/cadvisor/info/v1"
 	v2 "github.com/google/cadvisor/info/v2"
-	"github.com/google/cadvisor/manager"
+	"github.com/google/cadvisor/lib/manager"
 
 	"k8s.io/klog/v2"
 )
@@ -282,13 +282,13 @@ func handleEventRequest(request []string, m manager.Manager, w http.ResponseWrit
 	query.ContainerName = path.Join("/", getContainerName(request))
 	klog.V(4).Infof("Api - Events(%v)", query)
 	if !stream {
-		pastEvents, err := m.GetPastEvents(query)
+		pastEvents, err := eventManager.GetEvents(query)
 		if err != nil {
 			return err
 		}
 		return writeResult(pastEvents, w)
 	}
-	eventChannel, err := m.WatchForEvents(query)
+	eventChannel, err := eventManager.WatchEvents(query)
 	if err != nil {
 		return err
 	}
@@ -415,9 +415,16 @@ func (api *version2_0) HandleRequest(requestType string, request []string, m man
 	case specAPI:
 		containerName := getContainerName(request)
 		klog.V(4).Infof("Api - Spec for container %q, options %+v", containerName, opt)
-		specs, err := m.GetContainerSpec(containerName, opt)
+		// The library manager returns model specs; convert each to the v2 shape
+		// (adding aliases/namespace from the container reference) so /api/v2.0/spec
+		// serves byte-exact v2.ContainerSpec.
+		infos, err := m.GetContainerInfoV2(containerName, opt)
 		if err != nil {
 			return err
+		}
+		specs := make(map[string]v2.ContainerSpec, len(infos))
+		for name, cinfo := range infos {
+			specs[name] = v2.ContainerSpecFromV1(&cinfo.Spec, cinfo.Aliases, cinfo.Namespace)
 		}
 		return writeResult(specs, w)
 	case storageAPI:

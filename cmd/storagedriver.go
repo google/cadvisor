@@ -20,7 +20,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/cadvisor/cache/memory"
 	_ "github.com/google/cadvisor/cmd/internal/storage/bigquery"
 	_ "github.com/google/cadvisor/cmd/internal/storage/elasticsearch"
 	_ "github.com/google/cadvisor/cmd/internal/storage/influxdb"
@@ -28,7 +27,8 @@ import (
 	_ "github.com/google/cadvisor/cmd/internal/storage/redis"
 	_ "github.com/google/cadvisor/cmd/internal/storage/statsd"
 	_ "github.com/google/cadvisor/cmd/internal/storage/stdout"
-	"github.com/google/cadvisor/storage"
+	"github.com/google/cadvisor/lib/cache/memory"
+	"github.com/google/cadvisor/lib/storage"
 
 	"k8s.io/klog/v2"
 )
