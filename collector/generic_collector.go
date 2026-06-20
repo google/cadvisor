@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/cadvisor/container"
 	v1 "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/lib/container"
 )
 
 type GenericCollector struct {

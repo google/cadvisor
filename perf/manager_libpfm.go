@@ -22,8 +22,8 @@ import (
 	"os"
 
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/stats"
-	"github.com/google/cadvisor/utils/sysinfo"
+	"github.com/google/cadvisor/lib/stats"
+	"github.com/google/cadvisor/lib/utils/sysinfo"
 )
 
 type manager struct {

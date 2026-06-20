@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/cadvisor/stats"
+	"github.com/google/cadvisor/lib/stats"
 
 	"k8s.io/klog/v2"
 )
