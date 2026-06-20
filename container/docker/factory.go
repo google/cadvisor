@@ -31,15 +31,15 @@ import (
 	dclient "github.com/moby/moby/client"
 	"k8s.io/klog/v2"
 
-	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/containerd"
 	dockerutil "github.com/google/cadvisor/container/docker/utils"
-	"github.com/google/cadvisor/container/libcontainer"
 	"github.com/google/cadvisor/devicemapper"
-	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/machine"
-	"github.com/google/cadvisor/watcher"
+	"github.com/google/cadvisor/lib/container"
+	"github.com/google/cadvisor/lib/container/containerd"
+	"github.com/google/cadvisor/lib/container/libcontainer"
+	"github.com/google/cadvisor/lib/fs"
+	"github.com/google/cadvisor/lib/machine"
+	"github.com/google/cadvisor/lib/watcher"
 	"github.com/google/cadvisor/zfs"
 )
 

@@ -15,8 +15,8 @@
 package install
 
 import (
-	"github.com/google/cadvisor/fs"
 	"github.com/google/cadvisor/fs/devicemapper"
+	"github.com/google/cadvisor/lib/fs"
 
 	"k8s.io/klog/v2"
 )

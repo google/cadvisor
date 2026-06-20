@@ -21,11 +21,11 @@ import (
 
 	"k8s.io/klog/v2"
 
-	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/container/common"
 	"github.com/google/cadvisor/devicemapper"
-	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/lib/container"
+	"github.com/google/cadvisor/lib/container/common"
+	"github.com/google/cadvisor/lib/fs"
 	"github.com/google/cadvisor/zfs"
 )
 
