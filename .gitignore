@@ -13,3 +13,6 @@ _output/
 .idea/
 *.iml
 *.swp
+
+# stray binary from `go build .` in the cmd module
+/cmd/cmd
