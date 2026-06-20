@@ -23,8 +23,8 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/storage"
-	"github.com/google/cadvisor/version"
+	"github.com/google/cadvisor/lib/storage"
+	"github.com/google/cadvisor/lib/version"
 
 	influxdb "github.com/influxdb/influxdb/client"
 )
