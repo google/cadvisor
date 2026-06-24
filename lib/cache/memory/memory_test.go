@@ -37,7 +37,7 @@ var (
 func makeStat(i int) *info.ContainerStats {
 	return &info.ContainerStats{
 		Timestamp: zero.Add(time.Duration(i) * time.Second),
-		Cpu: info.CpuStats{
+		Cpu: &info.CpuStats{
 			LoadAverage: int32(i),
 		},
 	}

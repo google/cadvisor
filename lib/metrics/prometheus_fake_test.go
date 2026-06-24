@@ -309,7 +309,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, info.R
 			Stats: []*info.ContainerStats{
 				{
 					Timestamp: time.Unix(1395066363, 0),
-					Cpu: info.CpuStats{
+					Cpu: &info.CpuStats{
 						Usage: info.CpuUsage{
 							Total:  1,
 							PerCpu: []uint64{2, 3, 4, 5},
@@ -345,7 +345,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, info.R
 							},
 						},
 					},
-					Memory: info.MemoryStats{
+					Memory: &info.MemoryStats{
 						Usage:                 8,
 						MaxUsage:              8,
 						WorkingSet:            9,
@@ -411,7 +411,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, info.R
 							Failcnt:  0,
 						},
 					},
-					Network: info.NetworkStats{
+					Network: &info.NetworkStats{
 						InterfaceStats: info.InterfaceStats{
 							Name:      "eth0",
 							RxBytes:   14,
@@ -576,7 +576,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, info.R
 							TxQueued: 0,
 						},
 					},
-					DiskIo: info.DiskIoStats{
+					DiskIo: &info.DiskIoStats{
 						IoServiceBytes: []info.PerDiskStats{{
 							Device: "/dev/sdb",
 							Major:  8,
@@ -685,7 +685,7 @@ func (p testSubcontainersInfoProvider) GetRequestedContainersInfo(string, info.R
 							DutyCycle:   6,
 						},
 					},
-					Processes: info.ProcessStats{
+					Processes: &info.ProcessStats{
 						ProcessCount:   1,
 						FdCount:        5,
 						SocketCount:    3,

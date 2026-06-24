@@ -46,7 +46,7 @@ func FsStats(
 	}
 
 	if metrics.Has(container.DiskIOMetrics) {
-		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), &stats.DiskIo)
+		common.AssignDeviceNamesToDiskStats((*common.MachineInfoNamer)(mi), stats.DiskIo)
 	}
 
 	if metrics.Has(container.DiskUsageMetrics) {

@@ -283,7 +283,7 @@ func (h *containerHandler) GetStats() (*info.ContainerStats, error) {
 	}
 
 	if !h.needNet() {
-		stats.Network = info.NetworkStats{}
+		stats.Network = nil
 	}
 
 	// Get filesystem stats.
