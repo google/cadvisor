@@ -133,7 +133,7 @@ func TestSetCPUStats(t *testing.T) {
 	setCPUStats(s, &ret, true)
 
 	expected := info.ContainerStats{
-		Cpu: info.CpuStats{
+		Cpu: &info.CpuStats{
 			Usage: info.CpuUsage{
 				PerCpu: perCPUUsage,
 				User:   s.CpuStats.CpuUsage.UsageInUsermode,
@@ -200,7 +200,7 @@ func TestSetMemoryStats(t *testing.T) {
 
 func TestSetProcessesStats(t *testing.T) {
 	ret := info.ContainerStats{
-		Processes: info.ProcessStats{
+		Processes: &info.ProcessStats{
 			ProcessCount: 1,
 			FdCount:      2,
 		},
@@ -215,7 +215,7 @@ func TestSetProcessesStats(t *testing.T) {
 
 	expected := info.ContainerStats{
 
-		Processes: info.ProcessStats{
+		Processes: &info.ProcessStats{
 			ProcessCount:   1,
 			FdCount:        2,
 			ThreadsCurrent: s.PidsStats.Current,

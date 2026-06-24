@@ -359,7 +359,7 @@ func TestGetContainerHealthState(t *testing.T) {
 func TestIOCostMetrics(t *testing.T) {
 	containerStats := &info.ContainerStats{
 		Timestamp: time.Unix(1395066363, 0),
-		DiskIo: info.DiskIoStats{
+		DiskIo: &info.DiskIoStats{
 			IoCostUsage: []info.PerDiskStats{{
 				Device: "sda1",
 				Major:  8,
@@ -431,7 +431,7 @@ func TestIOCostMetrics(t *testing.T) {
 func TestCPUBurstMetrics(t *testing.T) {
 	containerStats := &info.ContainerStats{
 		Timestamp: time.Unix(1395066363, 0),
-		Cpu: info.CpuStats{
+		Cpu: &info.CpuStats{
 			CFS: info.CpuCFS{
 				BurstsPeriods: 25,
 				BurstTime:     500000000,

@@ -534,13 +534,13 @@ func TestGetFsStats(t *testing.T) {
 				externalMounts:     c.externalMounts,
 				machineInfoFactory: machineInfo{},
 			}
-			stats := &info.ContainerStats{DiskIo: c.diskIO}
+			stats := &info.ContainerStats{DiskIo: &c.diskIO}
 			err := handler.getFsStats(stats)
 
 			assert.NoError(t, err)
 			assert.Len(t, stats.Filesystem, len(c.expectedFilesystems))
 			assert.Equal(t, c.expectedFilesystems, stats.Filesystem)
-			assert.Equal(t, c.expectedDiskIO, stats.DiskIo)
+			assert.Equal(t, c.expectedDiskIO, *stats.DiskIo)
 		})
 	}
 }
