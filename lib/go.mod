@@ -6,7 +6,6 @@ require (
 	github.com/containerd/containerd/api v1.10.0
 	github.com/containerd/ttrpc v1.2.8
 	github.com/containerd/typeurl/v2 v2.2.3
-	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/moby/sys/mountinfo v0.7.2
 	github.com/opencontainers/cgroups v0.0.6
 	github.com/opencontainers/runtime-spec v1.3.0
