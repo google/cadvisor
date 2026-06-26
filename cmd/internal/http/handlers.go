@@ -113,7 +113,7 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 
 		r := prometheus.NewRegistry()
 		r.MustRegister(
-			metrics.NewPrometheusCollector(resourceManager, f, includedMetrics, clock.RealClock{}, opts),
+			metrics.NewPrometheusCollector(api.WrapManagerForOOM(resourceManager), f, includedMetrics, clock.RealClock{}, opts),
 			machineCollector,
 			goCollector,
 			processCollector,

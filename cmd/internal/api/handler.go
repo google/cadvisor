@@ -51,6 +51,7 @@ var eventManager events.EventManager
 func RegisterHandlers(mux httpmux.Mux, m manager.Manager) error {
 	eventManager = events.NewEventManager(parseEventsStoragePolicy())
 	m.SetEventSink(eventManager)
+	startOOMWatcher(eventManager)
 
 	apiVersions := getAPIVersions()
 	supportedAPIVersions := make(map[string]ApiVersion, len(apiVersions))

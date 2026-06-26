@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30
 	github.com/blang/semver/v4 v4.0.0
 	github.com/docker/go-connections v0.6.0
+	github.com/euank/go-kmsg-parser v2.0.0+incompatible
 	github.com/mistifyio/go-zfs v2.1.1+incompatible
 	github.com/moby/moby/api v1.54.1
 	github.com/moby/moby/client v0.4.0
@@ -29,7 +30,6 @@ require (
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/ttrpc v1.2.8 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/euank/go-kmsg-parser v2.0.0+incompatible // indirect
 	google.golang.org/grpc v1.79.3 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979 // indirect
