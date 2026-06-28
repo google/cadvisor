@@ -30,8 +30,10 @@ func TestParseDockerAPIVersion(t *testing.T) {
 		expected      []int
 		expectedError string
 	}{
-		{"17.03.0", VersionRe, 3, []int{17, 03, 0}, ""},
-		{"17.a3.0", VersionRe, 3, []int{}, `version string "17.a3.0" doesn't match expected regular expression: "(\d+)\.(\d+)\.(\d+)"`},
+		{"17.03.0", dockerVersionRe, 3, []int{17, 03, 0}, ""},
+		{"v20.10.12-v1.0.2", dockerVersionRe, 3, []int{20, 10, 12}, ""},
+		{"17.a3.0", dockerVersionRe, 3, []int{}, `version string "17.a3.0" doesn't match expected regular expression: "^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$"`},
+		{"random text 1.2.3 and also 9.9.9 build", dockerVersionRe, 3, []int{}, `version string "random text 1.2.3 and also 9.9.9 build" doesn't match expected regular expression: "^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$"`},
 		{"1.20", apiVersionRe, 2, []int{1, 20}, ""},
 		{"1.a", apiVersionRe, 2, []int{}, `version string "1.a" doesn't match expected regular expression: "(\d+)\.(\d+)"`},
 	}
