@@ -1013,19 +1013,25 @@ function startCustomMetrics(elementId, containerInfo) {
     window.cadvisor.maxCustomMetrics = metricSpec.length;
     for (i = 0; i < window.cadvisor.maxCustomMetrics; i++) {
       metricName = metricSpec[i].name;
-      var divText =
-          '<div class=\'dropdown\'> <button class=\'btn btn-default' +
-          ' dropdown-toggle\' type=\'button\' id=\'button-' + metricName;
-      divText +=
-          '\' data-toggle=\'dropdown\' aria-haspopup=\'true\'' +
-          ' aria-expanded=\'false\'>';
-      divText += '<span id=\'' + metricName +
-          '-selection-text\'></span> <span class=\'caret\'></span> </button>';
-      divText += '<ul id=\'' + metricName +
-          '_labels\' class=\'dropdown-menu\' role=\'menu\'' +
-          ' aria-labelledby=\'button-' + metricName + '\'> </ul> </div>';
-      divText += '<div id=\'' + elementId + '-' + metricName + '\'> </div>';
-      el.append($(divText));
+      var dropdown = $('<div>').addClass('dropdown');
+      var button = $('<button>')
+          .addClass('btn btn-default dropdown-toggle')
+          .attr('type', 'button')
+          .attr('id', 'button-' + metricName)
+          .attr('data-toggle', 'dropdown')
+          .attr('aria-haspopup', 'true')
+          .attr('aria-expanded', 'false');
+      button.append($('<span>').attr('id', metricName + '-selection-text'));
+      button.append(' ');
+      button.append($('<span>').addClass('caret'));
+      dropdown.append(button);
+      dropdown.append($('<ul>')
+                          .attr('id', metricName + '_labels')
+                          .addClass('dropdown-menu')
+                          .attr('role', 'menu')
+                          .attr('aria-labelledby', 'button-' + metricName));
+      el.append(dropdown);
+      el.append($('<div>').attr('id', elementId + '-' + metricName));
     }
   }
   el.append($('</div>'));
