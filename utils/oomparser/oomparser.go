@@ -154,16 +154,21 @@ func (p *OomParser) StreamOoms(outStream chan<- *OomInstance) {
 // NewFromNow initializes an OomParser object that returns current OOM events only. In this mode the OomParser object
 // will not send OOM events that occurred before the OomParser object was constructed.
 func NewFromNow() (*OomParser, error) {
-	parser, err := New()
+	parser, err := kmsgparser.NewParser()
 	if err != nil {
 		return nil, err
 	}
+	parser.SetLogger(glogAdapter{})
 
+	return newFromNow(parser)
+}
+
+func newFromNow(parser kmsgparser.Parser) (*OomParser, error) {
 	// seek to and set the offset at the end of /dev/kmsg to avoid reporting old OOM events
-	if err := parser.parser.SeekEnd(); err != nil {
+	if err := parser.SeekEnd(); err != nil {
 		return nil, err
 	}
-	return parser, nil
+	return &OomParser{parser: parser}, nil
 }
 
 // initializes an OomParser object. Returns an OomParser object and an error.

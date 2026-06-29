@@ -473,11 +473,14 @@ func TestStreamOOMs(t *testing.T) {
 }
 
 type mockKmsgParser struct {
-	messages chan kmsgparser.Message
+	messages      chan kmsgparser.Message
+	seekEndCalled bool
+	seekEndErr    error
 }
 
 func (m *mockKmsgParser) SeekEnd() error {
-	return nil
+	m.seekEndCalled = true
+	return m.seekEndErr
 }
 
 func (m *mockKmsgParser) Parse() <-chan kmsgparser.Message {
@@ -488,4 +491,29 @@ func (m *mockKmsgParser) SetLogger(kmsgparser.Logger) {}
 func (m *mockKmsgParser) Close() error {
 	close(m.messages)
 	return nil
+}
+
+func TestNewFromNow(t *testing.T) {
+	mockParser := &mockKmsgParser{
+		messages: make(chan kmsgparser.Message),
+	}
+
+	p, err := newFromNow(mockParser)
+	assert.NoError(t, err)
+	assert.NotNil(t, p)
+	assert.Equal(t, mockParser, p.parser)
+	assert.True(t, mockParser.seekEndCalled, "SeekEnd should have been called")
+}
+
+func TestNewFromNow_SeekEndError(t *testing.T) {
+	expectedErr := fmt.Errorf("seek error")
+	mockParser := &mockKmsgParser{
+		messages:   make(chan kmsgparser.Message),
+		seekEndErr: expectedErr,
+	}
+
+	p, err := newFromNow(mockParser)
+	assert.ErrorIs(t, err, expectedErr)
+	assert.Nil(t, p)
+	assert.True(t, mockParser.seekEndCalled)
 }
