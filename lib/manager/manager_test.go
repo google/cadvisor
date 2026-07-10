@@ -28,6 +28,7 @@ import (
 	itest "github.com/google/cadvisor/lib/model/test"
 	"github.com/google/cadvisor/lib/stats"
 	"github.com/google/cadvisor/lib/utils/sysfs/fakesysfs"
+	"github.com/google/cadvisor/lib/watcher"
 
 	"github.com/stretchr/testify/assert"
 
@@ -749,6 +750,84 @@ func (m *threadSafeEventHandler) AddEvent(e *info.Event) error {
 	defer m.mu.Unlock()
 	m.events = append(m.events, e)
 	return nil
+}
+
+// mockContainerHandlerFactory is a minimal ContainerHandlerFactory for testing
+// on-demand container creation without requiring real cgroup access.
+type mockContainerHandlerFactory struct {
+	canHandle bool
+	canAccept bool
+}
+
+func (f *mockContainerHandlerFactory) String() string { return "mock" }
+
+func (f *mockContainerHandlerFactory) DebugInfo() map[string][]string {
+	return map[string][]string{}
+}
+
+func (f *mockContainerHandlerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+	return f.canHandle, f.canAccept, nil
+}
+
+func (f *mockContainerHandlerFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (container.ContainerHandler, error) {
+	return &mockHandler{
+		ref:  info.ContainerReference{Name: name},
+		spec: info.ContainerSpec{HasCpu: true},
+	}, nil
+}
+
+func TestGetContainerDiscoveryDisabled(t *testing.T) {
+	container.ClearContainerHandlerFactories()
+	defer container.ClearContainerHandlerFactories()
+
+	container.RegisterContainerHandlerFactory(
+		&mockContainerHandlerFactory{canHandle: true, canAccept: true},
+		[]watcher.ContainerWatchSource{watcher.Raw},
+	)
+
+	m := newTestManager()
+	m.disableContainerDiscovery = true
+
+	// First call: container doesn't exist, should be lazily created.
+	cont, err := m.getContainer("/system.slice/kubelet.service")
+	if err != nil {
+		t.Fatalf("getContainer() returned unexpected error: %v", err)
+	}
+	if cont == nil {
+		t.Fatal("getContainer() returned nil container")
+	}
+	if cont.info.Name != "/system.slice/kubelet.service" {
+		t.Errorf("container name = %q, want /system.slice/kubelet.service", cont.info.Name)
+	}
+
+	// Second call: should return cached container without re-creating.
+	cont2, err := m.getContainer("/system.slice/kubelet.service")
+	if err != nil {
+		t.Fatalf("second getContainer() returned unexpected error: %v", err)
+	}
+	if cont2 != cont {
+		t.Error("second getContainer() returned a different container instance, expected cached")
+	}
+}
+
+func TestGetContainerDiscoveryEnabled(t *testing.T) {
+	container.ClearContainerHandlerFactories()
+	defer container.ClearContainerHandlerFactories()
+
+	container.RegisterContainerHandlerFactory(
+		&mockContainerHandlerFactory{canHandle: true, canAccept: true},
+		[]watcher.ContainerWatchSource{watcher.Raw},
+	)
+
+	m := newTestManager()
+
+	_, err := m.getContainer("/system.slice/kubelet.service")
+	if err == nil {
+		t.Fatal("getContainer() should return error when container discovery is not disabled")
+	}
+	if !strings.Contains(err.Error(), "unknown container") {
+		t.Errorf("error = %q, want it to contain 'unknown container'", err)
+	}
 }
 
 // TestContainerDataStopConcurrent verifies that concurrent calls to Stop()
