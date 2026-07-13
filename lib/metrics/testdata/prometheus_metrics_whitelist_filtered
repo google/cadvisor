@@ -222,6 +222,15 @@ container_memory_rss{container_env_foo_env="prod",id="testcontainer",image="test
 # HELP container_memory_swap Container swap usage in bytes.
 # TYPE container_memory_swap gauge
 container_memory_swap{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 8192 1395066363000
+# HELP container_memory_anon_hugepages_bytes Amount of memory backed by transparent hugepages in bytes.
+# TYPE container_memory_anon_hugepages_bytes gauge
+container_memory_anon_hugepages_bytes{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 2 1395066363000
+# HELP container_memory_total_active_anon_bytes Current total active anonymous in bytes.
+# TYPE container_memory_total_active_anon_bytes gauge
+container_memory_total_active_anon_bytes{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 4 1395066363000
+# HELP container_memory_total_inactive_anon_bytes Current total inactive anonymous in bytes.
+# TYPE container_memory_total_inactive_anon_bytes gauge
+container_memory_total_inactive_anon_bytes{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 3 1395066363000
 # HELP container_memory_total_active_file_bytes Current total active file in bytes.
 # TYPE container_memory_total_active_file_bytes gauge
 container_memory_total_active_file_bytes{container_env_foo_env="prod",id="testcontainer",image="test",name="testcontaineralias",zone_name="hello"} 7 1395066363000

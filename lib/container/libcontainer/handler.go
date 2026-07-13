@@ -872,6 +872,15 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 	if v, ok := s.MemoryStats.Stats["workingset_refault_anon"]; ok {
 		ret.Memory.WorkingsetRefaultAnon = v
 	}
+	if v, ok := s.MemoryStats.Stats["active_anon"]; ok {
+		ret.Memory.TotalActiveAnon = v
+	}
+	if v, ok := s.MemoryStats.Stats["inactive_anon"]; ok {
+		ret.Memory.TotalInactiveAnon = v
+	}
+	if v, ok := s.MemoryStats.Stats["anon_thp"]; ok {
+		ret.Memory.AnonHugePages = v
+	}
 
 	inactiveFileKeyName := "total_inactive_file"
 	if cgroups.IsCgroup2UnifiedMode() {

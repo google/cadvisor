@@ -53,6 +53,7 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_hugetlb_usage_bytes` | Gauge | Current hugepage usage | bytes | hugetlb |
 `container_last_seen` | Gauge | Last time a container was seen by the exporter | timestamp | - |
 `container_llc_occupancy_bytes` | Gauge | Last level cache usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
+`container_memory_anon_hugepages_bytes` | Gauge | Amount of memory backed by transparent hugepages (cgroup v2) | bytes | memory |
 `container_memory_bandwidth_bytes` | Gauge | Total memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_bandwidth_local_bytes` | Gauge | Local memory bandwidth usage statistics for container counted with RDT Memory Bandwidth Monitoring (MBM). | bytes | resctrl |
 `container_memory_cache` | Gauge | Total page cache memory | bytes | memory |
@@ -68,6 +69,8 @@ Metric name | Type | Description | Unit (where applicable) | option parameter | 
 `container_memory_pgsteal_total` | Counter | Cumulative number of pages reclaimed by the page reclaim algorithm (cgroup v2) | | memory |
 `container_memory_rss` | Gauge | Size of RSS | bytes | memory |
 `container_memory_swap` | Gauge | Container swap usage | bytes | memory |
+`container_memory_total_active_anon_bytes` | Gauge | Current total active anonymous memory (cgroup v2) | bytes | memory |
+`container_memory_total_inactive_anon_bytes` | Gauge | Current total inactive anonymous memory (cgroup v2) | bytes | memory |
 `container_memory_usage_bytes` | Gauge | Current memory usage, including all memory regardless of when it was accessed | bytes | memory |
 `container_memory_working_set_bytes` | Gauge | Current working set | bytes | memory |
 `container_memory_workingset_refault_anon_total` | Counter | Cumulative number of refaults of previously evicted anonymous pages (cgroup v2) | | memory |

@@ -440,6 +440,21 @@ type MemoryStats struct {
 	// Units: Bytes.
 	WorkingSet uint64 `json:"working_set"`
 
+	// The total amount of active anonymous memory.
+	// Read from memory.stat (cgroup v2 only).
+	// Units: Bytes.
+	TotalActiveAnon uint64 `json:"total_active_anon"`
+
+	// The total amount of inactive anonymous memory.
+	// Read from memory.stat (cgroup v2 only).
+	// Units: Bytes.
+	TotalInactiveAnon uint64 `json:"total_inactive_anon"`
+
+	// The amount of memory backed by transparent hugepages.
+	// Read from memory.stat (cgroup v2 only).
+	// Units: Bytes.
+	AnonHugePages uint64 `json:"anon_huge_pages"`
+
 	// The total amount of active file memory.
 	// Units: Bytes.
 	TotalActiveFile uint64 `json:"total_active_file"`

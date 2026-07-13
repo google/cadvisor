@@ -172,6 +172,9 @@ func TestSetMemoryStats(t *testing.T) {
 				"pgsteal":                 22,
 				"workingset_refault_file": 23,
 				"workingset_refault_anon": 24,
+				"active_anon":             25,
+				"inactive_anon":           26,
+				"anon_thp":                27,
 			},
 		},
 	}
@@ -195,6 +198,15 @@ func TestSetMemoryStats(t *testing.T) {
 	}
 	if ret.Memory.WorkingsetRefaultAnon != 24 {
 		t.Errorf("expected WorkingsetRefaultAnon 24, got %d", ret.Memory.WorkingsetRefaultAnon)
+	}
+	if ret.Memory.TotalActiveAnon != 25 {
+		t.Errorf("expected TotalActiveAnon 25, got %d", ret.Memory.TotalActiveAnon)
+	}
+	if ret.Memory.TotalInactiveAnon != 26 {
+		t.Errorf("expected TotalInactiveAnon 26, got %d", ret.Memory.TotalInactiveAnon)
+	}
+	if ret.Memory.AnonHugePages != 27 {
+		t.Errorf("expected AnonHugePages 27, got %d", ret.Memory.AnonHugePages)
 	}
 }
 
