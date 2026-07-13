@@ -45,7 +45,7 @@ func inDelta(t *testing.T, expected, actual, delta uint64, description string) {
 }
 
 // Checks that CPU stats are valid.
-func checkCPUStats(t *testing.T, stat info.CpuStats) {
+func checkCPUStats(t *testing.T, stat *info.CpuStats) {
 	assert := assert.New(t)
 
 	assert.NotEqual(0, stat.Usage.Total, "Total CPU usage should not be zero")
@@ -66,7 +66,7 @@ func checkCPUStats(t *testing.T, stat info.CpuStats) {
 	// TODO(rjnagal): Add verification for cpu load.
 }
 
-func checkMemoryStats(t *testing.T, stat info.MemoryStats) {
+func checkMemoryStats(t *testing.T, stat *info.MemoryStats) {
 	assert := assert.New(t)
 
 	assert.NotEqual(0, stat.Usage, "Memory usage should not be zero")

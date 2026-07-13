@@ -24,6 +24,7 @@ test:
 	@# Filter out integration.
 	$(GO) list ./... | grep -vw integration | xargs $(GO_TEST)
 	cd cmd && $(GO_TEST) ./...
+	cd lib && $(GO_TEST) ./...
 
 test-with-libpfm: GO_FLAGS=-race -tags libpfm
 test-with-libpfm: test
@@ -58,6 +59,7 @@ test-runner:
 	@$(GO) build github.com/google/cadvisor/integration/runner
 
 tidy:
+	@cd lib && $(GO) mod tidy
 	@$(GO) mod tidy
 	@cd cmd && $(GO) mod tidy
 
@@ -105,6 +107,7 @@ lint:
 	@echo ">> running golangci-lint using configuration at .golangci.yml"
 	@golangci-lint run
 	@cd cmd && golangci-lint run
+	@cd lib && golangci-lint run
 
 clean:
 	@rm -f *.test cadvisor

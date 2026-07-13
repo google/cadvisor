@@ -21,6 +21,7 @@ import (
 	"os"
 
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/opencontainers/cgroups"
 
 	"k8s.io/klog/v2"
 )
@@ -31,6 +32,14 @@ type NetlinkReader struct {
 }
 
 func New() (*NetlinkReader, error) {
+	if cgroups.IsCgroup2UnifiedMode() {
+		// CGROUPSTATS_CMD_GET (cgroupstats) is only implemented for cgroup v1:
+		// the kernel's cgroupstats_build() rejects a cgroup v2 dentry with EINVAL,
+		// and there is no v2 equivalent. Fail clearly here so the manager skips the
+		// reader instead of aborting every container's stats update per housekeeping.
+		return nil, fmt.Errorf("cgroupstats is only supported on cgroup v1; cannot read cpu load on the cgroup v2 unified hierarchy")
+	}
+
 	conn, err := newConnection()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a new connection: %s", err)

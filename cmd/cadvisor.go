@@ -15,7 +15,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"net/http"
@@ -26,12 +25,13 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/google/cadvisor/cmd/internal/appmetrics"
 	cadvisorhttp "github.com/google/cadvisor/cmd/internal/http"
-	"github.com/google/cadvisor/container"
-	"github.com/google/cadvisor/manager"
-	"github.com/google/cadvisor/metrics"
-	"github.com/google/cadvisor/utils/sysfs"
-	"github.com/google/cadvisor/version"
+	"github.com/google/cadvisor/lib/container"
+	"github.com/google/cadvisor/lib/manager"
+	"github.com/google/cadvisor/lib/metrics"
+	"github.com/google/cadvisor/lib/utils/sysfs"
+	"github.com/google/cadvisor/lib/version"
 
 	// Register container providers
 	_ "github.com/google/cadvisor/cmd/internal/container/install"
@@ -133,9 +133,12 @@ func main() {
 
 	sysFs := sysfs.NewRealSysFs()
 
-	collectorHTTPClient := createCollectorHTTPClient(*collectorCert, *collectorKey)
+	// Configure the application-metrics collector HTTP client (mutual TLS when
+	// collector_cert/collector_key are set) before the manager starts creating
+	// containers, which build collectors via the injected factory.
+	appmetrics.SetHTTPClient(*collectorCert, *collectorKey)
 
-	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, &collectorHTTPClient, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval)
+	resourceManager, err := manager.New(memoryStorage, sysFs, manager.HousekeepingConfigFlags, includedMetrics, strings.Split(*rawCgroupPrefixWhiteList, ","), strings.Split(*envMetadataWhiteList, ","), *perfEvents, *resctrlInterval)
 	if err != nil {
 		klog.Fatalf("Failed to create a manager: %s", err)
 	}
@@ -216,30 +219,4 @@ func installSignalHandler(containerManager manager.Manager) {
 		klog.Infof("Exiting given signal: %v", sig)
 		os.Exit(0)
 	}()
-}
-
-func createCollectorHTTPClient(collectorCert, collectorKey string) http.Client {
-	//Enable accessing insecure endpoints. We should be able to access metrics from any endpoint
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
-	}
-
-	if collectorCert != "" {
-		if collectorKey == "" {
-			klog.Fatal("The collector_key value must be specified if the collector_cert value is set.")
-		}
-		cert, err := tls.LoadX509KeyPair(collectorCert, collectorKey)
-		if err != nil {
-			klog.Fatalf("Failed to use the collector certificate and key: %s", err)
-		}
-
-		tlsConfig.Certificates = []tls.Certificate{cert}
-		tlsConfig.BuildNameToCertificate() //nolint: staticcheck
-	}
-
-	transport := &http.Transport{
-		TLSClientConfig: tlsConfig,
-	}
-
-	return http.Client{Transport: transport}
 }

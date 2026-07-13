@@ -28,8 +28,8 @@ import (
 	dclient "github.com/moby/moby/client"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/google/cadvisor/fs"
 	info "github.com/google/cadvisor/info/v1"
+	"github.com/google/cadvisor/lib/fs"
 )
 
 type mockDockerClientForExitCode struct {

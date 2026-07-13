@@ -20,6 +20,7 @@ import (
 	// TODO(rjnagal): Remove dependency after moving all stats structs from v1.
 	// using v1 now for easy conversion.
 	v1 "github.com/google/cadvisor/info/v1"
+	model "github.com/google/cadvisor/lib/model"
 )
 
 const (
@@ -190,115 +191,28 @@ type ContainerStats struct {
 	Resctrl v1.ResctrlStats `json:"resctrl,omitempty"`
 }
 
-type Percentiles struct {
-	// Indicates whether the stats are present or not.
-	// If true, values below do not have any data.
-	Present bool `json:"present"`
-	// Average over the collected sample.
-	Mean uint64 `json:"mean"`
-	// Standard deviation of the collected sample.
-	Std uint64 `json:"std"`
-	// Max seen over the collected sample.
-	Max uint64 `json:"max"`
-	// 50th percentile over the collected sample.
-	Fifty uint64 `json:"fifty"`
-	// 90th percentile over the collected sample.
-	Ninety uint64 `json:"ninety"`
-	// 95th percentile over the collected sample.
-	NinetyFive uint64 `json:"ninetyfive"`
-	// Number of samples used to calculate these percentiles.
-	Count uint64 `json:"count"`
-}
+// Percentiles, Usage, InstantUsage and DerivedStats are summary/derived-stats
+// types defined in the library so the manager can return them; identical shape.
+type Percentiles = model.Percentiles
 
-type Usage struct {
-	// Indicates amount of data available [0-100].
-	// If we have data for half a day, we'll still process DayUsage,
-	// but set PercentComplete to 50.
-	PercentComplete int32 `json:"percent_complete"`
-	// Mean, Max, and 90p cpu rate value in milliCpus/seconds. Converted to milliCpus to avoid floats.
-	Cpu Percentiles `json:"cpu"`
-	// Mean, Max, and 90p memory size in bytes.
-	Memory Percentiles `json:"memory"`
-}
+type Usage = model.Usage
 
-// latest sample collected for a container.
-type InstantUsage struct {
-	// cpu rate in cpu milliseconds/second.
-	Cpu uint64 `json:"cpu"`
-	// Memory usage in bytes.
-	Memory uint64 `json:"memory"`
-}
+type InstantUsage = model.InstantUsage
 
-type DerivedStats struct {
-	// Time of generation of these stats.
-	Timestamp time.Time `json:"timestamp"`
-	// Latest instantaneous sample.
-	LatestUsage InstantUsage `json:"latest_usage"`
-	// Percentiles in last observed minute.
-	MinuteUsage Usage `json:"minute_usage"`
-	// Percentile in last hour.
-	HourUsage Usage `json:"hour_usage"`
-	// Percentile in last day.
-	DayUsage Usage `json:"day_usage"`
-}
+type DerivedStats = model.DerivedStats
 
-type FsInfo struct {
-	// Time of generation of these stats.
-	Timestamp time.Time `json:"timestamp"`
+// FsInfo (runtime filesystem stats) is identical to the lean library's
+// model.FsInfo; alias it so manager methods can return the library
+// type and REST handlers consume it as v2.FsInfo with no conversion.
+type FsInfo = model.FsInfo
 
-	// The block device name associated with the filesystem.
-	Device string `json:"device"`
+// RequestOptions is identical to the library's model.RequestOptions; alias it
+// so the library manager's query methods accept the same value the REST
+// handlers build.
+type RequestOptions = model.RequestOptions
 
-	// Path where the filesystem is mounted.
-	Mountpoint string `json:"mountpoint"`
-
-	// Filesystem usage in bytes.
-	Capacity uint64 `json:"capacity"`
-
-	// Bytes available for non-root use.
-	Available uint64 `json:"available"`
-
-	// Number of bytes used on this filesystem.
-	Usage uint64 `json:"usage"`
-
-	// Labels associated with this filesystem.
-	Labels []string `json:"labels"`
-
-	// Number of Inodes.
-	Inodes *uint64 `json:"inodes,omitempty"`
-
-	// Number of available Inodes (if known)
-	InodesFree *uint64 `json:"inodes_free,omitempty"`
-}
-
-type RequestOptions struct {
-	// Type of container identifier specified - TypeName (default) or TypeDocker
-	IdType string `json:"type"`
-	// Number of stats to return, -1 means no limit.
-	Count int `json:"count"`
-	// Whether to include stats for child subcontainers.
-	Recursive bool `json:"recursive"`
-	// Update stats if they are older than MaxAge
-	// nil indicates no update, and 0 will always trigger an update.
-	MaxAge *time.Duration `json:"max_age"`
-}
-
-type ProcessInfo struct {
-	User          string  `json:"user"`
-	Pid           int     `json:"pid"`
-	Ppid          int     `json:"parent_pid"`
-	StartTime     string  `json:"start_time"`
-	PercentCpu    float32 `json:"percent_cpu"`
-	PercentMemory float32 `json:"percent_mem"`
-	RSS           uint64  `json:"rss"`
-	VirtualSize   uint64  `json:"virtual_size"`
-	Status        string  `json:"status"`
-	RunningTime   string  `json:"running_time"`
-	CgroupPath    string  `json:"cgroup_path"`
-	Cmd           string  `json:"cmd"`
-	FdCount       int     `json:"fd_count"`
-	Psr           int     `json:"psr"`
-}
+// ProcessInfo is defined in the library (model) so the manager can return it.
+type ProcessInfo = model.ProcessInfo
 
 type TcpStat struct {
 	Established uint64

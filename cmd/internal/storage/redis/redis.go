@@ -21,7 +21,7 @@ import (
 	"time"
 
 	info "github.com/google/cadvisor/info/v1"
-	storage "github.com/google/cadvisor/storage"
+	storage "github.com/google/cadvisor/lib/storage"
 
 	redis "github.com/gomodule/redigo/redis"
 )

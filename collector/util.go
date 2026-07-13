@@ -14,7 +14,7 @@
 
 package collector
 
-import "github.com/google/cadvisor/container"
+import "github.com/google/cadvisor/lib/container"
 
 func (ec *EndpointConfig) configure(containerHandler container.ContainerHandler) {
 	// If the exact URL was not specified, generate it based on the ip address of the container.

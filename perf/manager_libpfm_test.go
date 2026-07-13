@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	info "github.com/google/cadvisor/info/v1"
-	"github.com/google/cadvisor/stats"
+	"github.com/google/cadvisor/lib/stats"
 )
 
 func TestEmptyConfigPassed(t *testing.T) {
