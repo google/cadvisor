@@ -1,0 +1,44 @@
+name: Tag lib module
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing v* tag to mirror as lib/<tag>'
+        required: true
+        type: string
+
+jobs:
+  tag-lib:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed for pushing the lib/<tag> tag
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Set TAG environment variable
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "TAG=${INPUTS_TAG}" >> "$GITHUB_ENV"
+          else
+            echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+          fi
+        env:
+          INPUTS_TAG: ${{ inputs.tag }}
+
+      - name: Create and push lib/${{ env.TAG }} tag
+        run: |
+          # Release tags cut from branches that predate the lib module have nothing to mirror
+          if [ ! -f lib/go.mod ]; then
+            echo "No lib/go.mod at ${TAG}; skipping"
+            exit 0
+          fi
+          git tag "lib/${TAG}"
+          # Pushing an identical existing tag is a no-op; a conflicting one fails the job
+          git push origin "lib/${TAG}"
