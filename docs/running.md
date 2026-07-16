@@ -26,11 +26,11 @@ otherwise cAdvisor can not connect to docker daemon.
 - If cadvisor scrapes `process` metrics due to `--disable_metrics` or `--enable_metrics` options, you need to add `--pid=host` and `--privileged` for `docker run` to get `/proc/pid/fd` path in host.
 - If cAdvisor needs to be run in Docker container without `--privileged` option it is possible to add host devices to container using `--dev` and
   specify security options using `--security-opt` with secure computing mode (seccomp).
-  For details related to seccomp please [see](https://docs.docker.com/engine/security/seccomp/), the default Docker profile can be found [here](https://github.com/moby/moby/blob/master/profiles/seccomp/default.json).
+  For details related to seccomp please [see](https://docs.docker.com/engine/security/seccomp/), the default Docker profile can be found [here](https://github.com/moby/profiles/blob/main/seccomp/default.json).
 
   For example to run cAdvisor with perf support in Docker container without `--privileged` option it is required to:
   - Set perf_event_paranoid using `sudo sysctl kernel.perf_event_paranoid=-1`, see [documentation](https://www.kernel.org/doc/Documentation/sysctl/kernel.txt)
-  - Add "perf_event_open" syscall into syscalls array with the action: "SCMP_ACT_ALLOW" in [default Docker profile](https://github.com/moby/moby/blob/master/profiles/seccomp/default.json)
+  - Add "perf_event_open" syscall into syscalls array with the action: "SCMP_ACT_ALLOW" in [default Docker profile](https://github.com/moby/profiles/blob/main/seccomp/default.json)
   - Run Docker container with following options:
   ```
   docker run \
