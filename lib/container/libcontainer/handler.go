@@ -903,11 +903,23 @@ func setMemoryEvents(cgroupPath string, ret *info.ContainerStats) {
 	if ret.Memory == nil {
 		ret.Memory = &info.MemoryStats{}
 	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "low"); err == nil {
+		ret.Memory.Events.Low = val
+	}
 	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "high"); err == nil {
 		ret.Memory.Events.High = val
 	}
 	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "max"); err == nil {
 		ret.Memory.Events.Max = val
+	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "oom"); err == nil {
+		ret.Memory.Events.Oom = val
+	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "oom_kill"); err == nil {
+		ret.Memory.Events.OomKill = val
+	}
+	if val, err := fscommon.GetValueByKey(cgroupPath, "memory.events", "oom_group_kill"); err == nil {
+		ret.Memory.Events.OomGroupKill = val
 	}
 }
 
