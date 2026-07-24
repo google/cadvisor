@@ -114,7 +114,7 @@ func ValidateInfo(GetInfo func() (*dockersystem.Info, error), ServerVersion func
 		}
 	}
 
-	version, err := ParseVersion(info.ServerVersion, VersionRe, 3)
+	version, err := ParseVersion(info.ServerVersion, dockerVersionRe, 3)
 	if err != nil {
 		return nil, err
 	}
