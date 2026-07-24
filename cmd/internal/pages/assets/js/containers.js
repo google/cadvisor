@@ -14,6 +14,12 @@
 
 google.charts.load('current', {packages: ['corechart', 'gauge', 'default', 'format', 'ui', 'table']});
 
+// Escape HTML special characters to prevent XSS when rendering in tables with allowHtml.
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 function humanize(num, size, units) {
   var unit;
   for (unit = units.pop(); units.length && num >= size; unit = units.pop()) {
@@ -622,10 +628,10 @@ function drawProcesses(isRoot, rootDir, processInfo) {
   var data = [];
   for (var i = 0; i < processInfo.length; i++) {
     var elements = [];
-    elements.push(processInfo[i].user);
+    elements.push(escapeHtml(processInfo[i].user));
     elements.push(processInfo[i].pid);
     elements.push(processInfo[i].parent_pid);
-    elements.push(processInfo[i].start_time);
+    elements.push(escapeHtml(processInfo[i].start_time));
     elements.push({
       v: processInfo[i].percent_cpu,
       f: processInfo[i].percent_cpu.toFixed(2)
@@ -639,15 +645,16 @@ function drawProcesses(isRoot, rootDir, processInfo) {
       v: processInfo[i].virtual_size,
       f: humanizeIEC(processInfo[i].virtual_size)
     });
-    elements.push(processInfo[i].status);
-    elements.push(processInfo[i].running_time);
-    elements.push(processInfo[i].cmd);
+    elements.push(escapeHtml(processInfo[i].status));
+    elements.push(escapeHtml(processInfo[i].running_time));
+    elements.push(escapeHtml(processInfo[i].cmd));
     elements.push(processInfo[i].psr);
     if (isRoot) {
       var cgroup = processInfo[i].cgroup_path;
       // Use the raw cgroup link as it works for all containers.
-      var cgroupLink = '<a href="' + rootDir + 'containers/' + cgroup + '">' +
-          cgroup.substr(0, 30) + ' </a>';
+      var escapedCgroup = escapeHtml(cgroup);
+      var cgroupLink = '<a href="' + encodeURI(rootDir + 'containers/' + cgroup) + '">' +
+          escapedCgroup.substr(0, 30) + ' </a>';
       elements.push({v: cgroup, f: cgroupLink});
     }
     data.push(elements);

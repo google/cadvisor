@@ -25,6 +25,7 @@ import (
 	"path"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -411,6 +412,10 @@ func (cd *containerData) ReadFile(filepath string, inHostNamespace bool) ([]byte
 	}
 	for _, pid := range pids {
 		fp := path.Join(rootfs, "/proc", strconv.Itoa(pid), "/root", filepath)
+		expectedPrefix := path.Join(rootfs, "/proc", strconv.Itoa(pid), "/root") + "/"
+		if !strings.HasPrefix(fp, expectedPrefix) {
+			return nil, fmt.Errorf("invalid file path %q: resolves outside container root", filepath)
+		}
 		if data, rerr := os.ReadFile(fp); rerr == nil {
 			return data, nil
 		}
