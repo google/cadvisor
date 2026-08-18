@@ -23,6 +23,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"runtime"
 	"sort"
 	"strconv"
 	"sync"
@@ -39,6 +40,26 @@ import (
 )
 
 const jitterDefault = 1.0
+
+// updateStatsSem limits the number of concurrent cd.handler.GetStats() calls
+// (cgroupfs reads) to GOMAXPROCS to avoid kernel lock contention on
+// cgroup_rstat_lock when thousands of housekeeping goroutines flush
+// cgroup stats simultaneously.
+//
+// Initialized lazily via initUpdateStatsSem() (called from manager.New)
+// so that it picks up the --max_procs flag value: setMaxProcs() calls
+// runtime.GOMAXPROCS(numProcs) before New(), so runtime.GOMAXPROCS(0)
+// here returns the flag-adjusted value.
+var updateStatsSem chan struct{}
+var updateStatsSemOnce sync.Once
+
+func initUpdateStatsSem() {
+	updateStatsSemOnce.Do(func() {
+		if updateStatsSem == nil {
+			updateStatsSem = make(chan struct{}, runtime.GOMAXPROCS(0))
+		}
+	})
+}
 
 // Housekeeping interval.
 // The netlink cpu-load reader lives in the root binary's utils/cpuload and is
@@ -438,7 +459,9 @@ func (cd *containerData) updateLoadD(newLoad uint64) {
 }
 
 func (cd *containerData) updateStats() error {
+	updateStatsSem <- struct{}{}
 	stats, statsErr := cd.handler.GetStats()
+	<-updateStatsSem
 	if statsErr != nil {
 		// Ignore errors if the container is dead.
 		if !cd.handler.Exists() {
