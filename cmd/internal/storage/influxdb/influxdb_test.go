@@ -126,6 +126,9 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 		retentionPolicy,
 		username,
 		password,
+		"",
+		"",
+		"",
 		hostname,
 		false,
 		time.Duration(bufferCount))
@@ -147,6 +150,9 @@ func runStorageTest(f func(test.TestStorageDriver, *testing.T), t *testing.T, bu
 		retentionPolicy,
 		username,
 		password,
+		"",
+		"",
+		"",
 		hostname,
 		false,
 		time.Duration(bufferCount))
@@ -204,6 +210,9 @@ func TestContainerFileSystemStatsToPoints(t *testing.T) {
 		retentionPolicy,
 		username,
 		password,
+		"",
+		"",
+		"",
 		influxdbHost,
 		false, 2*time.Minute)
 	assert.Nil(err)
@@ -240,15 +249,15 @@ func TestContainerStatsToPoints(t *testing.T) {
 
 	// Then
 	assert.NotEmpty(t, points)
-	assert.Len(t, points, 34+len(stats.Cpu.Usage.PerCpu))
+	assert.Len(t, points, 36+len(stats.Cpu.Usage.PerCpu))
 
 	// CPU stats
-	assertContainsPointWithValue(t, points, serCpuUsageTotal, stats.Cpu.Usage.Total)
-	assertContainsPointWithValue(t, points, serCpuUsageSystem, stats.Cpu.Usage.System)
-	assertContainsPointWithValue(t, points, serCpuUsageUser, stats.Cpu.Usage.User)
+	assertContainsPointWithValue(t, points, serCPUUsageTotal, stats.Cpu.Usage.Total)
+	assertContainsPointWithValue(t, points, serCPUUsageSystem, stats.Cpu.Usage.System)
+	assertContainsPointWithValue(t, points, serCPUUsageUser, stats.Cpu.Usage.User)
 	assertContainsPointWithValue(t, points, serLoadAverage, stats.Cpu.LoadAverage)
 	for _, cpu_usage := range stats.Cpu.Usage.PerCpu {
-		assertContainsPointWithValue(t, points, serCpuUsagePerCpu, cpu_usage)
+		assertContainsPointWithValue(t, points, serCPUUsagePerCPU, cpu_usage)
 	}
 
 	// Memory stats
@@ -279,7 +288,7 @@ func TestContainerStatsToPoints(t *testing.T) {
 	assertContainsPointWithValue(t, points, serRxBytes, stats.Network.RxBytes)
 	assertContainsPointWithValue(t, points, serRxErrors, stats.Network.RxErrors)
 	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxBytes)
-	assertContainsPointWithValue(t, points, serTxBytes, stats.Network.TxErrors)
+	assertContainsPointWithValue(t, points, serTxErrors, stats.Network.TxErrors)
 
 	// Perf stats
 	for _, perfStat := range stats.PerfStats {
@@ -327,6 +336,9 @@ func createTestStorage() (*influxdbStorage, error) {
 		retentionPolicy,
 		username,
 		password,
+		"",
+		"",
+		"",
 		influxdbHost,
 		false, 2*time.Minute)
 
@@ -350,11 +362,11 @@ func createTestStats() (*info.ContainerInfo, *info.ContainerStats) {
 
 	stats := &info.ContainerStats{
 		Timestamp: time.Now(),
-		Cpu: info.CpuStats{
+		Cpu: &info.CpuStats{
 			Usage:       cpuUsage,
 			LoadAverage: int32(rand.Intn(1000)),
 		},
-		Memory: info.MemoryStats{
+		Memory: &info.MemoryStats{
 			Usage:             26767396864,
 			MaxUsage:          30429605888,
 			Cache:             7837376512,
@@ -371,6 +383,14 @@ func createTestStats() (*info.ContainerInfo, *info.ContainerStats) {
 		Hugetlb: map[string]info.HugetlbStats{
 			"1GB": {Usage: 1234, MaxUsage: 5678, Failcnt: 9},
 			"2GB": {Usage: 9876, MaxUsage: 5432, Failcnt: 1},
+		},
+		Network: &info.NetworkStats{
+			InterfaceStats: info.InterfaceStats{
+				RxBytes:  123,
+				RxErrors: 4,
+				TxBytes:  456,
+				TxErrors: 7,
+			},
 		},
 		ReferencedMemory: 12345,
 		PerfStats:        []info.PerfStat{{Cpu: 1, PerfValue: info.PerfValue{Name: "cycles", ScalingRatio: 1.5, Value: 4589}}},
