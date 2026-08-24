@@ -58,6 +58,11 @@ func RootDir() string {
 				time.Sleep(rootDirRetryPeriod)
 			}
 		}
+		// Fallback: Podman's default storage root when the API is
+		// temporarily unavailable during startup.
+		if rootDir == "" {
+			rootDir = "/var/lib/containers/storage"
+		}
 	})
 	return rootDir
 }

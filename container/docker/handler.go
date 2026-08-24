@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -118,9 +119,43 @@ func getRwLayerID(containerID, storageDir string, sd StorageDriver, dockerVersio
 
 	bytes, err := os.ReadFile(path.Join(storageDir, "image", string(sd), "layerdb", "mounts", containerID, rwLayerIDFile))
 	if err != nil {
+		// Docker layerdb not found; try Podman's containers.json / volatile-containers.json.
+		// This happens when cadvisor connects via the podman-docker compat socket
+		// (DockerRootDir=/var/lib/containers/storage, Driver=overlay) — Podman has no
+		// image/<driver>/layerdb/ tree, but stores layer IDs in overlay-containers/.
+		if layerID, perr := podmanRwLayerID(storageDir, string(sd), containerID); perr == nil {
+			return layerID, nil
+		}
 		return "", fmt.Errorf("failed to identify the read-write layer ID for container %q. - %v", containerID, err)
 	}
 	return string(bytes), err
+}
+
+// podmanRwLayerID reads the container's read-write layer ID from Podman's
+// <storageDir>/<driver>-containers/{containers,volatile-containers}.json.
+func podmanRwLayerID(storageDir, storageDriver, containerID string) (string, error) {
+	for _, filename := range []string{"containers.json", "volatile-containers.json"} {
+		data, err := os.ReadFile(filepath.Join(storageDir, storageDriver+"-containers", filename))
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return "", err
+		}
+		var containers []struct {
+			ID    string `json:"id"`
+			Layer string `json:"layer"`
+		}
+		if err := json.Unmarshal(data, &containers); err != nil {
+			return "", err
+		}
+		for _, c := range containers {
+			if c.ID == containerID {
+				return c.Layer, nil
+			}
+		}
+	}
+	return "", os.ErrNotExist
 }
 
 // newContainerHandler returns a new container.ContainerHandler
