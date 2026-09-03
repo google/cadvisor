@@ -104,31 +104,36 @@ func new() (storage.StorageDriver, error) {
 func (s *statsdStorage) containerStatsToValues(stats *info.ContainerStats) (series map[string]uint64) {
 	series = make(map[string]uint64)
 
-	// Total usage in nanoseconds
-	series[serCPUUsageTotal] = stats.Cpu.Usage.Total
+	// Cpu/Network became pointers; some containers omit one or both.
+	if stats.Cpu != nil {
+		// Total usage in nanoseconds
+		series[serCPUUsageTotal] = stats.Cpu.Usage.Total
 
-	// To be deprecated in 0.39
-	series[colCPUCumulativeUsage] = series[serCPUUsageTotal]
+		// To be deprecated in 0.39
+		series[colCPUCumulativeUsage] = series[serCPUUsageTotal]
 
-	// CPU usage: Time spend in system space (in nanoseconds)
-	series[serCPUUsageSystem] = stats.Cpu.Usage.System
+		// CPU usage: Time spend in system space (in nanoseconds)
+		series[serCPUUsageSystem] = stats.Cpu.Usage.System
 
-	// CPU usage: Time spent in user space (in nanoseconds)
-	series[serCPUUsageUser] = stats.Cpu.Usage.User
+		// CPU usage: Time spent in user space (in nanoseconds)
+		series[serCPUUsageUser] = stats.Cpu.Usage.User
 
-	// CPU usage per CPU
-	for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
-		series[serCPUUsagePerCPU+"."+strconv.Itoa(i)] = stats.Cpu.Usage.PerCpu[i]
+		// CPU usage per CPU
+		for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
+			series[serCPUUsagePerCPU+"."+strconv.Itoa(i)] = stats.Cpu.Usage.PerCpu[i]
+		}
+
+		// Load Average
+		series[serLoadAverage] = uint64(stats.Cpu.LoadAverage)
 	}
 
-	// Load Average
-	series[serLoadAverage] = uint64(stats.Cpu.LoadAverage)
-
-	// Network stats.
-	series[serRxBytes] = stats.Network.RxBytes
-	series[serRxErrors] = stats.Network.RxErrors
-	series[serTxBytes] = stats.Network.TxBytes
-	series[serTxErrors] = stats.Network.TxErrors
+	if stats.Network != nil {
+		// Network stats.
+		series[serRxBytes] = stats.Network.RxBytes
+		series[serRxErrors] = stats.Network.RxErrors
+		series[serTxBytes] = stats.Network.TxBytes
+		series[serTxErrors] = stats.Network.TxErrors
+	}
 
 	// Referenced Memory
 	series[serReferencedMemory] = stats.ReferencedMemory
@@ -149,6 +154,9 @@ func (s *statsdStorage) containerFsStatsToValues(series *map[string]uint64, stat
 }
 
 func (s *statsdStorage) memoryStatsToValues(series *map[string]uint64, stats *info.ContainerStats) {
+	if stats.Memory == nil {
+		return
+	}
 	// Memory Usage
 	(*series)[serMemoryUsage] = stats.Memory.Usage
 	// Maximum memory usage recorded
