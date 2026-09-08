@@ -16,6 +16,7 @@ package sysinfo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -369,6 +370,58 @@ func TestGetNodesInfo(t *testing.T) {
 		nodesJSON, err := json.Marshal(nodes)
 		assert.Nil(t, err)
 		assert.JSONEq(t, test.expectedNodes, string(nodesJSON))
+	}
+}
+
+func TestGetNodesInfoWithMemoryOnlyNode(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	nodePath := "/fakeSysfs/devices/system/node/node1"
+	fakeSys.SetNodesPaths([]string{nodePath}, nil)
+	fakeSys.SetCPUsPaths(map[string][]string{nodePath: {}}, nil)
+	fakeSys.SetMemory("MemTotal: 1048576 kB", nil)
+	fakeSys.SetHugePages(nil, nil)
+	fakeSys.SetDistances(nodePath, "10", nil)
+	wantMemory := uint64(1024 * 1024 * 1024)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+
+	if err != nil {
+		t.Fatalf("GetNodesInfo() returned unexpected error: %v", err)
+	}
+	if cores != 0 {
+		t.Errorf("GetNodesInfo() cores = %d, want 0", cores)
+	}
+	if len(nodes) != 1 {
+		t.Fatalf("GetNodesInfo() returned %d nodes, want 1", len(nodes))
+	}
+	if nodes[0].Id != 1 {
+		t.Errorf("GetNodesInfo() node ID = %d, want 1", nodes[0].Id)
+	}
+	if len(nodes[0].Cores) != 0 {
+		t.Errorf("GetNodesInfo() memory-only node cores = %v, want none", nodes[0].Cores)
+	}
+	if nodes[0].Memory != wantMemory {
+		t.Errorf("GetNodesInfo() memory = %d, want %d", nodes[0].Memory, wantMemory)
+	}
+}
+
+func TestGetNodesInfoReturnsCPUPathError(t *testing.T) {
+	fakeSys := &fakesysfs.FakeSysFs{}
+	nodePath := "/fakeSysfs/devices/system/node/node0"
+	wantErr := errors.New("cannot read CPU paths")
+	fakeSys.SetNodesPaths([]string{nodePath}, nil)
+	fakeSys.SetCPUsPaths(nil, wantErr)
+
+	nodes, cores, err := GetNodesInfo(fakeSys)
+
+	if !errors.Is(err, wantErr) {
+		t.Errorf("GetNodesInfo() error = %v, want wrapped %v", err, wantErr)
+	}
+	if nodes != nil {
+		t.Errorf("GetNodesInfo() nodes on error = %v, want nil", nodes)
+	}
+	if cores != 0 {
+		t.Errorf("GetNodesInfo() cores on error = %d, want 0", cores)
 	}
 }
 
