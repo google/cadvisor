@@ -27,8 +27,10 @@ import (
 	"github.com/moby/moby/api/types/container"
 	dclient "github.com/moby/moby/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	info "github.com/google/cadvisor/info/v1"
+	cadvisorcontainer "github.com/google/cadvisor/lib/container"
 	"github.com/google/cadvisor/lib/fs"
 )
 
@@ -158,6 +160,56 @@ func TestDockerEnvWhitelist(t *testing.T) {
 	as.Equal(newEnvsMatchWithEmptyPrefix, emptyExpected)
 	as.Equal(rawEnvsMatchWithEmptyWhitelist, emptyExpected)
 
+}
+
+func TestNewContainerHandlerAllowsContainerdSnapshotterWithoutDiskMetrics(t *testing.T) {
+	as := assert.New(t)
+
+	containerID := "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+	created := "2026-07-09T15:47:24.000000000Z"
+	client := &mockDockerClientForExitCode{
+		inspectResp: dclient.ContainerInspectResult{
+			Container: container.InspectResponse{
+				ID:   containerID,
+				Name: "/test-container",
+				Config: &container.Config{
+					Image:  "redis:7-alpine",
+					Labels: map[string]string{"com.docker.compose.service": "redis"},
+				},
+				HostConfig:      &container.HostConfig{},
+				NetworkSettings: &container.NetworkSettings{},
+				State: &container.State{
+					Pid: 1,
+				},
+				Created: created,
+			},
+		},
+	}
+
+	handler, err := newContainerHandler(
+		client,
+		nil,
+		"/docker/"+containerID,
+		nil,
+		nil,
+		ContainerdSnapshotterStorageDriver,
+		"/var/lib/docker",
+		map[string]string{},
+		true,
+		nil,
+		[]int{28, 5, 1},
+		cadvisorcontainer.MetricSet{cadvisorcontainer.CpuUsageMetrics: struct{}{}},
+		"",
+		nil,
+		nil,
+	)
+	require.NoError(t, err)
+
+	ref, err := handler.ContainerReference()
+	as.NoError(err)
+	as.Equal("test-container", ref.Aliases[0])
+
+	as.Equal("redis", handler.GetContainerLabels()["com.docker.compose.service"])
 }
 
 func TestAddDiskStatsCheck(t *testing.T) {
