@@ -76,6 +76,7 @@ func TestScanUDPStats(t *testing.T) {
 	if err != nil {
 		t.Errorf("failure opening %s: %v", udpStatsFile, err)
 	}
+	defer r.Close()
 
 	stats, err := scanUDPStats(r)
 	if err != nil {
