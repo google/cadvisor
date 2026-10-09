@@ -63,6 +63,27 @@ func TestValidateResponse(t *testing.T) {
 			err:      nil,
 			expected: "",
 		},
+		{
+			response: &http.Response{
+				StatusCode: http.StatusInternalServerError,
+			},
+			err:      nil,
+			expected: "unexpected status code 500",
+		},
+		{
+			response: &http.Response{
+				StatusCode: http.StatusInternalServerError,
+			},
+			err:      errors.New("internal server error"),
+			expected: "unexpected status code 500: internal server error",
+		},
+		{
+			response: &http.Response{
+				StatusCode: http.StatusBadRequest,
+			},
+			err:      nil,
+			expected: "unexpected status code 400",
+		},
 	} {
 		err := validateResponse(tc.err, tc.response)
 		if tc.expected != "" {
