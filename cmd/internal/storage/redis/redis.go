@@ -16,6 +16,7 @@ package redis
 
 import (
 	"encoding/json"
+	"flag"
 	"os"
 	"sync"
 	"time"
@@ -56,8 +57,21 @@ func new() (storage.StorageDriver, error) {
 		hostname,
 		*storage.ArgDbName,
 		*storage.ArgDbHost,
+		configuredRedisPassword(),
 		*storage.ArgDbBufferDuration,
 	)
+}
+
+func configuredRedisPassword() string {
+	password := ""
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "storage_driver_password" {
+			// The shared storage password flag defaults to "root" for other
+			// backends. Redis should authenticate only when the flag is set.
+			password = *storage.ArgDbPassword
+		}
+	})
+	return password
 }
 
 func (s *redisStorage) defaultReadyToFlush() bool {
@@ -105,7 +119,8 @@ func (s *redisStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Container
 		return nil
 	}
 	// We use redis's "LPUSH" to push the data to the redis
-	return s.conn.Send("LPUSH", s.redisKey, seriesToFlush)
+	_, err := s.conn.Do("LPUSH", s.redisKey, seriesToFlush)
+	return err
 }
 
 func (s *redisStorage) Close() error {
@@ -120,10 +135,15 @@ func (s *redisStorage) Close() error {
 func newStorage(
 	machineName,
 	redisKey,
-	redisHost string,
+	redisHost,
+	redisPassword string,
 	bufferDuration time.Duration,
 ) (storage.StorageDriver, error) {
-	conn, err := redis.Dial("tcp", redisHost)
+	var dialOptions []redis.DialOption
+	if redisPassword != "" {
+		dialOptions = append(dialOptions, redis.DialPassword(redisPassword))
+	}
+	conn, err := redis.Dial("tcp", redisHost, dialOptions...)
 	if err != nil {
 		return nil, err
 	}
