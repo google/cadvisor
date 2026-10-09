@@ -18,17 +18,29 @@
 PORT=8080
 
 # Extract port from the cadvisor process command line
-if [ -f /proc/1/cmdline ]; then
-    CMDLINE=$(tr '\0' ' ' < /proc/1/cmdline)
+# Allow tests to supply a fake cmdline file.
+CMDLINE_FILE="${CADVISOR_HEALTHCHECK_CMDLINE_FILE:-/proc/1/cmdline}"
+if [ -f "${CMDLINE_FILE}" ]; then
+    CMDLINE=$(tr '\0' ' ' < "${CMDLINE_FILE}")
 
-    # Look for -port=XXXX or --port=XXXX
+    # Look for -port=XXXX, --port=XXXX, -port XXXX, or --port XXXX.
+    next_arg_is_port=false
     for arg in $CMDLINE; do
+        if [ "${next_arg_is_port}" = true ]; then
+            PORT="${arg}"
+            next_arg_is_port=false
+            continue
+        fi
+
         case "$arg" in
             -port=*)
                 PORT="${arg#-port=}"
                 ;;
             --port=*)
                 PORT="${arg#--port=}"
+                ;;
+            -port|--port)
+                next_arg_is_port=true
                 ;;
         esac
     done

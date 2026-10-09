@@ -25,6 +25,7 @@ test:
 	$(GO) list ./... | grep -vw integration | xargs $(GO_TEST)
 	cd cmd && $(GO_TEST) ./...
 	cd lib && $(GO_TEST) ./...
+	sh deploy/healthcheck_test.sh
 
 test-with-libpfm: GO_FLAGS=-race -tags libpfm
 test-with-libpfm: test
