@@ -20,8 +20,10 @@ package manager
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -32,10 +34,16 @@ import (
 	itest "github.com/google/cadvisor/lib/model/test"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	clock "k8s.io/utils/clock/testing"
 )
+
+func TestMain(m *testing.M) {
+	initUpdateStatsSem()
+	os.Exit(m.Run())
+}
 
 const (
 	containerName        = "/container"
@@ -330,6 +338,54 @@ func TestOnDemandHousekeepingRace(t *testing.T) {
 		wg.Done()
 	}()
 	wg.Wait()
+}
+
+func TestUpdateStatsSemaphore(t *testing.T) {
+	// Save and restore the original semaphore.
+	origSem := updateStatsSem
+	defer func() { updateStatsSem = origSem }()
+
+	const semSize = 1
+	updateStatsSem = make(chan struct{}, semSize)
+
+	const numContainers = 10
+	var maxConcurrent atomic.Int32
+	var curConcurrent atomic.Int32
+
+	statsList := itest.GenerateRandomStats(1, 4, 1*time.Second)
+	stats := statsList[0]
+
+	// Create multiple containers whose GetStats tracks concurrency.
+	var wg sync.WaitGroup
+	for i := 0; i < numContainers; i++ {
+		cd, mockHandler, _, fakeClock := newTestContainerData(t)
+		mockHandler.On("GetStats").Return(stats, nil).Run(func(_ mock.Arguments) {
+			c := curConcurrent.Add(1)
+			for {
+				old := maxConcurrent.Load()
+				if c <= old || maxConcurrent.CompareAndSwap(old, c) {
+					break
+				}
+			}
+			time.Sleep(5 * time.Millisecond)
+			curConcurrent.Add(-1)
+		})
+
+		// Trigger via onDemandChan so housekeepingTick proceeds without
+		// needing the fake clock to be advanced.
+		go func() { cd.OnDemandHousekeeping(0) }()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			cd.housekeepingTick(fakeClock.NewTimer(time.Minute).C(), testLongHousekeeping)
+		}()
+	}
+
+	wg.Wait()
+
+	assert.LessOrEqual(t, maxConcurrent.Load(), int32(semSize),
+		"concurrent updateStats() calls should not exceed semaphore capacity")
 }
 
 func TestNextHousekeepingInterval(t *testing.T) {

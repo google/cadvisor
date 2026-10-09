@@ -23,6 +23,7 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"runtime"
 	"sort"
 	"strconv"
 	"sync"
@@ -39,6 +40,26 @@ import (
 )
 
 const jitterDefault = 1.0
+
+// updateStatsSem limits the number of concurrent updateStats() calls
+// (cgroupfs reads) to GOMAXPROCS to avoid kernel lock contention on
+// cgroup_rstat_lock when thousands of housekeeping goroutines flush
+// cgroup stats simultaneously.
+//
+// Initialized lazily via initUpdateStatsSem() (called from manager.New)
+// so that it picks up the --max_procs flag value: setMaxProcs() calls
+// runtime.GOMAXPROCS(numProcs) before New(), so runtime.GOMAXPROCS(0)
+// here returns the flag-adjusted value.
+var updateStatsSem chan struct{}
+var updateStatsSemOnce sync.Once
+
+func initUpdateStatsSem() {
+	updateStatsSemOnce.Do(func() {
+		if updateStatsSem == nil {
+			updateStatsSem = make(chan struct{}, runtime.GOMAXPROCS(0))
+		}
+	})
+}
 
 // Housekeeping interval.
 // The netlink cpu-load reader lives in the root binary's utils/cpuload and is
@@ -351,6 +372,8 @@ func (cd *containerData) housekeepingTick(timer <-chan time.Time, longHousekeepi
 		defer close(finishedChan)
 	case <-timer:
 	}
+	updateStatsSem <- struct{}{}
+	defer func() { <-updateStatsSem }()
 	start := cd.clock.Now()
 	err := cd.updateStats()
 	if err != nil {
