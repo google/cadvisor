@@ -557,3 +557,16 @@ func TestProcessMounts(t *testing.T) {
 		}
 	}
 }
+
+func TestDiskStatsMapShortLine(t *testing.T) {
+	f, err := os.CreateTemp(t.TempDir(), "diskstats")
+	require.NoError(t, err)
+	_, err = f.WriteString("   8       0 sda 1 2 3 4 5 6 7 8 9 10 11\n\n   8  16\n")
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+
+	stats, err := getDiskStatsMap(f.Name())
+	require.NoError(t, err)
+	assert.Contains(t, stats, "/dev/sda")
+	assert.Len(t, stats, 1)
+}
