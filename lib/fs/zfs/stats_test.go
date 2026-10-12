@@ -22,7 +22,7 @@ func TestParseZfsListUsage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if want := uint64(123456 + 789012 + 654321); capacity != want {
+	if want := uint64(123456 + 789012); capacity != want {
 		t.Errorf("capacity = %d, want %d", capacity, want)
 	}
 	if free != 789012 || avail != 789012 {
@@ -34,8 +34,8 @@ func TestParseZfsListUsage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("dash value: unexpected error: %v", err)
 	}
-	if capacity != 150 {
-		t.Errorf("capacity with dash = %d, want 150", capacity)
+	if capacity != 100 {
+		t.Errorf("capacity with dash = %d, want 100", capacity)
 	}
 
 	// Wrong field count must error rather than silently misparse.

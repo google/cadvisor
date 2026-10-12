@@ -37,7 +37,8 @@ func GetZfsStats(poolName string) (uint64, uint64, uint64, error) {
 // parseZfsListUsage parses one line of
 // `zfs list -Hp -o used,available,usedbydataset` output (tab-separated). A "-"
 // value is treated as 0 (matching go-zfs's setUint). It returns
-// (capacity, free, available) preserving cAdvisor's original arithmetic.
+// (capacity, free, available). The usedbydataset value is parsed for validation
+// but not added to capacity because it is already included in used.
 func parseZfsListUsage(out []byte) (uint64, uint64, uint64, error) {
 	fields := strings.Fields(string(out))
 	if len(fields) != 3 {
@@ -51,11 +52,10 @@ func parseZfsListUsage(out []byte) (uint64, uint64, uint64, error) {
 	if err != nil {
 		return 0, 0, 0, err
 	}
-	usedByDataset, err := parseZfsUint(fields[2])
-	if err != nil {
+	if _, err := parseZfsUint(fields[2]); err != nil {
 		return 0, 0, 0, err
 	}
-	return used + avail + usedByDataset, avail, avail, nil
+	return used + avail, avail, avail, nil
 }
 
 func parseZfsUint(s string) (uint64, error) {
