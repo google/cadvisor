@@ -17,6 +17,7 @@
 package containerd
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/containerd/typeurl/v2"
@@ -45,6 +46,28 @@ func TestIsContainerName(t *testing.T) {
 			t.Errorf("%s: expected: %v, actual: %v", test.name, test.expected, actual)
 		}
 	}
+}
+
+func TestContainerdCgroupPattern(t *testing.T) {
+	as := assert.New(t)
+	orig := containerdCgroupRegexp
+	defer func() { containerdCgroupRegexp = orig }()
+
+	// On ECS Managed Instances, containerd names cgroups
+	// "<32 hex task id>-<container id>", which the default
+	// 64-hex-character pattern does not match.
+	const ecsCgroup = "/ecs/0a5094e2e49648f7917fdb417ca220ef/0a5094e2e49648f7917fdb417ca220ef-0484428261"
+	as.False(isContainerName(ecsCgroup))
+
+	containerdCgroupRegexp = regexp.MustCompile(`^[a-f0-9]{32}-\d+$`)
+	as.True(isContainerName(ecsCgroup))
+	// A pattern without a capturing group falls back to the base name.
+	as.Equal("0a5094e2e49648f7917fdb417ca220ef-0484428261", ContainerNameToContainerdID(ecsCgroup))
+	as.False(isContainerName("/ecs/0a5094e2e49648f7917fdb417ca220ef"))
+	as.False(isContainerName(ecsCgroup + "-rootfs.mount"))
+
+	containerdCgroupRegexp = regexp.MustCompile(`^([a-f0-9]{32})-\d+$`)
+	as.Equal("0a5094e2e49648f7917fdb417ca220ef", ContainerNameToContainerdID(ecsCgroup))
 }
 
 func TestCanHandleAndAccept(t *testing.T) {
