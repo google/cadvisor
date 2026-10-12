@@ -307,12 +307,14 @@ func readStatFrom(path string, vendorID string) (uint64, error) {
 	contextString := string(bytes.TrimSpace(context))
 
 	if contextString == unavailable {
-		err := fmt.Errorf("\"Unavailable\" value from file %q", path)
 		if vendorID == "AuthenticAMD" {
-			kernelBugzillaLink := "https://bugzilla.kernel.org/show_bug.cgi?id=213311"
-			err = fmt.Errorf("%v, possible bug: %q", err, kernelBugzillaLink)
+			// AMD can return Unavailable when it does not have any data (i.e. no tasks ran on the group)
+			// It's better to return 0 and let user have metrics/deal with it rather
+			// than return errors and failing the collection
+			// See https://bugzilla.kernel.org/show_bug.cgi?id=213311
+			return 0, nil
 		}
-		return 0, err
+		return 0, fmt.Errorf("\"Unavailable\" value from file %q", path)
 	}
 
 	stat, err := strconv.ParseUint(contextString, 10, 64)
