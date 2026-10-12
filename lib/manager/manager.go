@@ -166,6 +166,10 @@ type HousekeepingConfig = struct {
 
 // New takes a memory storage and returns a new manager.
 func New(memoryCache *memory.InMemoryCache, sysfs sysfs.SysFs, HousekeepingConfig HousekeepingConfig, includedMetricsSet container.MetricSet, rawContainerCgroupPathPrefixWhiteList, containerEnvMetadataWhiteList []string, perfEventsFile string, resctrlInterval time.Duration) (Manager, error) {
+	// Initialize the housekeeping semaphore now that GOMAXPROCS reflects
+	// the --max_procs flag (setMaxProcs runs before New is called).
+	initUpdateStatsSem()
+
 	if memoryCache == nil {
 		return nil, fmt.Errorf("manager requires memory storage")
 	}
