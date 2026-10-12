@@ -48,6 +48,8 @@ func validateResponse(gotError error, response *http.Response) error {
 		err = fmt.Errorf("item not found")
 	case response.StatusCode == http.StatusNotImplemented:
 		err = fmt.Errorf("query not implemented")
+	case response.StatusCode < 200 || response.StatusCode >= 300:
+		err = fmt.Errorf("unexpected status code %d", response.StatusCode)
 	default:
 		return gotError
 	}
