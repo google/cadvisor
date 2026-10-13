@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -827,6 +828,74 @@ func TestGetContainerDiscoveryEnabled(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "unknown container") {
 		t.Errorf("error = %q, want it to contain 'unknown container'", err)
+	}
+}
+
+// countingHandler records how many times housekeeping calls Start.
+type countingHandler struct {
+	mockHandler
+	starts *atomic.Int32
+}
+
+func (h *countingHandler) Start() { h.starts.Add(1) }
+
+type countingFactory struct {
+	starts *atomic.Int32
+}
+
+func (f *countingFactory) String() string { return "counting" }
+
+func (f *countingFactory) DebugInfo() map[string][]string { return map[string][]string{} }
+
+func (f *countingFactory) CanHandleAndAccept(string) (bool, bool, error) {
+	return true, true, nil
+}
+
+func (f *countingFactory) NewContainerHandler(name string, _ []string, _ bool) (container.ContainerHandler, error) {
+	return &countingHandler{
+		mockHandler: mockHandler{
+			ref:  info.ContainerReference{Name: name},
+			spec: info.ContainerSpec{HasCpu: true},
+		},
+		starts: f.starts,
+	}, nil
+}
+
+// TestCreateContainerConcurrentStartsOnce is a regression test for two callers
+// (watcher and housekeeping) both creating the same container. Only the
+// containerData stored in the map may start housekeeping.
+func TestCreateContainerConcurrentStartsOnce(t *testing.T) {
+	container.ClearContainerHandlerFactories()
+	t.Cleanup(container.ClearContainerHandlerFactories)
+
+	var starts atomic.Int32
+	container.RegisterContainerHandlerFactory(&countingFactory{starts: &starts}, []watcher.ContainerWatchSource{watcher.Raw})
+
+	m := newTestManager()
+	const n = 8
+	var wg sync.WaitGroup
+	wg.Add(n)
+	start := make(chan struct{})
+	for i := 0; i < n; i++ {
+		go func() {
+			defer wg.Done()
+			<-start
+			if err := m.createContainer("/race", watcher.Raw); err != nil {
+				t.Errorf("createContainer: %v", err)
+			}
+		}()
+	}
+	close(start)
+	wg.Wait()
+
+	if got := starts.Load(); got != 1 {
+		t.Fatalf("housekeeping starts = %d, want 1", got)
+	}
+	if _, ok := m.containers.Load(namespacedContainerName{Name: "/race"}); !ok {
+		t.Fatal("container was not stored")
+	}
+	if err := m.destroyContainer("/race"); err != nil {
+		t.Fatalf("destroyContainer: %v", err)
 	}
 }
 
