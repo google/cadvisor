@@ -284,6 +284,13 @@ func (c *containerMap) Store(name namespacedContainerName, data *containerData) 
 	c.m.Store(name, data)
 }
 
+// LoadOrStore stores data if name is not already present.
+// The loaded result is false when data was stored.
+func (c *containerMap) LoadOrStore(name namespacedContainerName, data *containerData) (*containerData, bool) {
+	v, loaded := c.m.LoadOrStore(name, data)
+	return v.(*containerData), loaded
+}
+
 // Delete removes the containerData for the given name.
 func (c *containerMap) Delete(name namespacedContainerName) {
 	c.m.Delete(name)
@@ -893,8 +900,15 @@ func (m *manager) createContainer(containerName string, watchSource watcher.Cont
 		}
 	}
 
+	// Watcher and housekeeping can both pass the check above. Keep the first
+	// containerData and do not Start the loser: destroyContainer only stops
+	// the one still in the map.
+	if _, loaded := m.containers.LoadOrStore(namespacedName, cont); loaded {
+		klog.V(4).Infof("container %q was already added", containerName)
+		return nil
+	}
+
 	// Add the container name and all its aliases. The aliases must be within the namespace of the factory.
-	m.containers.Store(namespacedName, cont)
 	for _, alias := range cont.info.Aliases {
 		m.containers.Store(namespacedContainerName{
 			Namespace: cont.info.Namespace,
