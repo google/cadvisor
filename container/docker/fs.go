@@ -54,7 +54,7 @@ func FsStats(
 		switch storageDriver {
 		case DevicemapperStorageDriver:
 			device = poolName
-		case AufsStorageDriver, OverlayStorageDriver, Overlay2StorageDriver, VfsStorageDriver:
+		case AufsStorageDriver, OverlayStorageDriver, Overlay2StorageDriver, ContainerdSnapshotterStorageDriver, VfsStorageDriver:
 			deviceInfo, err := globalFsInfo.GetDirFsDevice(rootfsStorageDir)
 			if err != nil {
 				return fmt.Errorf("unable to determine device info for dir: %v: %v", rootfsStorageDir, err)
