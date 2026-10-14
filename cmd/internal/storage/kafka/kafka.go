@@ -119,7 +119,7 @@ func generateTLSConfig() (*tls.Config, error) {
 		return &tls.Config{
 			Certificates:       []tls.Certificate{cert},
 			RootCAs:            caCertPool,
-			InsecureSkipVerify: *verifySSL,
+			InsecureSkipVerify: !*verifySSL,
 		}, nil
 	}
 
