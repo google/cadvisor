@@ -225,44 +225,51 @@ func (s *bigqueryStorage) containerStatsToRows(
 	}
 	row[colContainerName] = name
 
-	// Cumulative Cpu Usage
-	row[colCPUCumulativeUsage] = stats.Cpu.Usage.Total
+	// Cpu/Network became pointers; some containers omit one or both.
+	if stats.Cpu != nil {
+		// Cumulative Cpu Usage
+		row[colCPUCumulativeUsage] = stats.Cpu.Usage.Total
 
-	// Cumulative Cpu Usage in system mode
-	row[colCPUCumulativeUsageSystem] = stats.Cpu.Usage.System
+		// Cumulative Cpu Usage in system mode
+		row[colCPUCumulativeUsageSystem] = stats.Cpu.Usage.System
 
-	// Cumulative Cpu Usage in user mode
-	row[colCPUCumulativeUsageUser] = stats.Cpu.Usage.User
+		// Cumulative Cpu Usage in user mode
+		row[colCPUCumulativeUsageUser] = stats.Cpu.Usage.User
+	}
 
-	// Memory Usage
-	row[colMemoryUsage] = stats.Memory.Usage
+	if stats.Memory != nil {
+		// Memory Usage
+		row[colMemoryUsage] = stats.Memory.Usage
 
-	// Working set size
-	row[colMemoryWorkingSet] = stats.Memory.WorkingSet
+		// Working set size
+		row[colMemoryWorkingSet] = stats.Memory.WorkingSet
 
-	// Total active file size
-	row[colMemoryTotalActiveFile] = stats.Memory.TotalActiveFile
+		// Total active file size
+		row[colMemoryTotalActiveFile] = stats.Memory.TotalActiveFile
 
-	// Total inactive file size
-	row[colMemoryTotalInactiveFile] = stats.Memory.TotalInactiveFile
+		// Total inactive file size
+		row[colMemoryTotalInactiveFile] = stats.Memory.TotalInactiveFile
 
-	// container page fault
-	row[colMemoryContainerPgfault] = stats.Memory.ContainerData.Pgfault
+		// container page fault
+		row[colMemoryContainerPgfault] = stats.Memory.ContainerData.Pgfault
 
-	// container major page fault
-	row[colMemoryContainerPgmajfault] = stats.Memory.ContainerData.Pgmajfault
+		// container major page fault
+		row[colMemoryContainerPgmajfault] = stats.Memory.ContainerData.Pgmajfault
 
-	// hierarchical page fault
-	row[colMemoryHierarchicalPgfault] = stats.Memory.HierarchicalData.Pgfault
+		// hierarchical page fault
+		row[colMemoryHierarchicalPgfault] = stats.Memory.HierarchicalData.Pgfault
 
-	// hierarchical major page fault
-	row[colMemoryHierarchicalPgmajfault] = stats.Memory.HierarchicalData.Pgmajfault
+		// hierarchical major page fault
+		row[colMemoryHierarchicalPgmajfault] = stats.Memory.HierarchicalData.Pgmajfault
+	}
 
-	// Network stats.
-	row[colRxBytes] = stats.Network.RxBytes
-	row[colRxErrors] = stats.Network.RxErrors
-	row[colTxBytes] = stats.Network.TxBytes
-	row[colTxErrors] = stats.Network.TxErrors
+	if stats.Network != nil {
+		// Network stats.
+		row[colRxBytes] = stats.Network.RxBytes
+		row[colRxErrors] = stats.Network.RxErrors
+		row[colTxBytes] = stats.Network.TxBytes
+		row[colTxErrors] = stats.Network.TxErrors
+	}
 
 	// TODO(jnagal): Handle per-cpu stats.
 
