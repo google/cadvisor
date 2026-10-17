@@ -15,6 +15,7 @@
 package influxdb
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/url"
@@ -26,6 +27,9 @@ import (
 	"github.com/google/cadvisor/lib/storage"
 	"github.com/google/cadvisor/lib/version"
 
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	api "github.com/influxdata/influxdb-client-go/v2/api"
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	influxdb "github.com/influxdb/influxdb/client"
 )
 
@@ -33,12 +37,20 @@ func init() {
 	storage.RegisterStorageDriver("influxdb", new)
 }
 
-var argDbRetentionPolicy = flag.String("storage_driver_influxdb_retention_policy", "", "retention policy")
+var (
+	argDbRetentionPolicy = flag.String("storage_driver_influxdb_retention_policy", "", "retention policy")
+	argDbAuthToken       = flag.String("storage_driver_influxdb_auth_token", "", "InfluxDB API token. When set, stats are written through the InfluxDB 2.x API, which is also implemented by InfluxDB 3 Core and InfluxDB Cloud, using token authentication instead of the InfluxDB 1.x username/password API")
+	argDbOrg             = flag.String("storage_driver_influxdb_org", "", "InfluxDB organization to write to. Required by InfluxDB 2.x, ignored by InfluxDB 3 Core")
+	argDbBucket          = flag.String("storage_driver_influxdb_bucket", "", "InfluxDB 2.x bucket or InfluxDB 3 Core database to write to. Defaults to the -storage_driver_db value")
+)
 
 type influxdbStorage struct {
 	client          *influxdb.Client
+	v2Client        influxdb2.Client
+	writeAPI        api.WriteAPIBlocking
 	machineName     string
 	database        string
+	bucket          string
 	retentionPolicy string
 	bufferDuration  time.Duration
 	lastWrite       time.Time
@@ -120,6 +132,9 @@ func new() (storage.StorageDriver, error) {
 		*argDbRetentionPolicy,
 		*storage.ArgDbUsername,
 		*storage.ArgDbPassword,
+		*argDbAuthToken,
+		*argDbOrg,
+		*argDbBucket,
 		*storage.ArgDbHost,
 		*storage.ArgDbIsSecure,
 		*storage.ArgDbBufferDuration,
@@ -208,31 +223,35 @@ func (s *influxdbStorage) containerStatsToPoints(
 	stats *info.ContainerStats,
 ) (points []*influxdb.Point) {
 	// CPU usage: Total usage in nanoseconds
-	points = append(points, makePoint(serCPUUsageTotal, stats.Cpu.Usage.Total))
+	if stats.Cpu != nil {
+		points = append(points, makePoint(serCPUUsageTotal, stats.Cpu.Usage.Total))
 
-	// CPU usage: Time spend in system space (in nanoseconds)
-	points = append(points, makePoint(serCPUUsageSystem, stats.Cpu.Usage.System))
+		// CPU usage: Time spend in system space (in nanoseconds)
+		points = append(points, makePoint(serCPUUsageSystem, stats.Cpu.Usage.System))
 
-	// CPU usage: Time spent in user space (in nanoseconds)
-	points = append(points, makePoint(serCPUUsageUser, stats.Cpu.Usage.User))
+		// CPU usage: Time spent in user space (in nanoseconds)
+		points = append(points, makePoint(serCPUUsageUser, stats.Cpu.Usage.User))
 
-	// CPU usage per CPU
-	for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
-		point := makePoint(serCPUUsagePerCPU, stats.Cpu.Usage.PerCpu[i])
-		tags := map[string]string{"instance": fmt.Sprintf("%v", i)}
-		addTagsToPoint(point, tags)
+		// CPU usage per CPU
+		for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
+			point := makePoint(serCPUUsagePerCPU, stats.Cpu.Usage.PerCpu[i])
+			tags := map[string]string{"instance": fmt.Sprintf("%v", i)}
+			addTagsToPoint(point, tags)
 
-		points = append(points, point)
+			points = append(points, point)
+		}
+
+		// Load Average
+		points = append(points, makePoint(serLoadAverage, stats.Cpu.LoadAverage))
 	}
 
-	// Load Average
-	points = append(points, makePoint(serLoadAverage, stats.Cpu.LoadAverage))
-
 	// Network Stats
-	points = append(points, makePoint(serRxBytes, stats.Network.RxBytes))
-	points = append(points, makePoint(serRxErrors, stats.Network.RxErrors))
-	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
-	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
+	if stats.Network != nil {
+		points = append(points, makePoint(serRxBytes, stats.Network.RxBytes))
+		points = append(points, makePoint(serRxErrors, stats.Network.RxErrors))
+		points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
+		points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
+	}
 
 	// Referenced Memory
 	points = append(points, makePoint(serReferencedMemory, stats.ReferencedMemory))
@@ -246,6 +265,9 @@ func (s *influxdbStorage) memoryStatsToPoints(
 	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (points []*influxdb.Point) {
+	if stats.Memory == nil {
+		return points
+	}
 	// Memory Usage
 	points = append(points, makePoint(serMemoryUsage, stats.Memory.Usage))
 	// Maximum memory usage recorded
@@ -414,35 +436,63 @@ func (s *influxdbStorage) AddStats(cInfo *info.ContainerInfo, stats *info.Contai
 		}
 	}()
 	if len(pointsToFlush) > 0 {
-		points := make([]influxdb.Point, len(pointsToFlush))
-		for i, p := range pointsToFlush {
-			points[i] = *p
-		}
-
-		batchTags := map[string]string{tagMachineName: s.machineName}
-		bp := influxdb.BatchPoints{
-			Points:          points,
-			Database:        s.database,
-			RetentionPolicy: s.retentionPolicy,
-			Tags:            batchTags,
-			Time:            stats.Timestamp,
-		}
-		response, err := s.client.Write(bp)
-		if err != nil || checkResponseForErrors(response) != nil {
-			return fmt.Errorf("failed to write stats to influxDb - %s", err)
+		if err := s.flush(pointsToFlush, stats.Timestamp); err != nil {
+			return err
 		}
 	}
 	return nil
 }
 
+func (s *influxdbStorage) flush(pointsToFlush []*influxdb.Point, timestamp time.Time) error {
+	if s.writeAPI != nil {
+		// Token-authenticated mode: write through the InfluxDB 2.x API,
+		// which is also implemented by InfluxDB 3 Core.
+		points := make([]*write.Point, len(pointsToFlush))
+		for i, p := range pointsToFlush {
+			points[i] = influxdb2.NewPoint(p.Measurement, p.Tags, p.Fields, p.Time)
+		}
+		if err := s.writeAPI.WritePoint(context.Background(), points...); err != nil {
+			return fmt.Errorf("failed to write stats to influxDb - %s", err)
+		}
+		return nil
+	}
+
+	points := make([]influxdb.Point, len(pointsToFlush))
+	for i, p := range pointsToFlush {
+		points[i] = *p
+	}
+
+	batchTags := map[string]string{tagMachineName: s.machineName}
+	bp := influxdb.BatchPoints{
+		Points:          points,
+		Database:        s.database,
+		RetentionPolicy: s.retentionPolicy,
+		Tags:            batchTags,
+		Time:            timestamp,
+	}
+	response, err := s.client.Write(bp)
+	if err != nil || checkResponseForErrors(response) != nil {
+		return fmt.Errorf("failed to write stats to influxDb - %s", err)
+	}
+	return nil
+}
+
 func (s *influxdbStorage) Close() error {
+	if s.v2Client != nil {
+		s.v2Client.Close()
+	}
 	s.client = nil
+	s.v2Client = nil
+	s.writeAPI = nil
 	return nil
 }
 
 // machineName: A unique identifier to identify the host that current cAdvisor
 // instance is running on.
 // influxdbHost: The host which runs influxdb (host:port)
+// authToken: When non-empty, stats are written with token authentication
+// through the InfluxDB 2.x API (also implemented by InfluxDB 3 Core) and
+// username/password are ignored. The bucket falls back to database when empty.
 func newStorage(
 	machineName,
 	tablename,
@@ -450,6 +500,9 @@ func newStorage(
 	retentionPolicy,
 	username,
 	password,
+	authToken,
+	org,
+	bucket,
 	influxdbHost string,
 	isSecure bool,
 	bufferDuration time.Duration,
@@ -462,25 +515,33 @@ func newStorage(
 		url.Scheme = "https"
 	}
 
-	config := &influxdb.Config{
-		URL:       *url,
-		Username:  username,
-		Password:  password,
-		UserAgent: fmt.Sprintf("%v/%v", "cAdvisor", version.Info["version"]),
-	}
-	client, err := influxdb.NewClient(*config)
-	if err != nil {
-		return nil, err
-	}
-
 	ret := &influxdbStorage{
-		client:          client,
 		machineName:     machineName,
 		database:        database,
 		retentionPolicy: retentionPolicy,
 		bufferDuration:  bufferDuration,
 		lastWrite:       time.Now(),
 		points:          make([]*influxdb.Point, 0),
+	}
+	if authToken != "" {
+		if bucket == "" {
+			bucket = database
+		}
+		ret.bucket = bucket
+		ret.v2Client = influxdb2.NewClient(url.String(), authToken)
+		ret.writeAPI = ret.v2Client.WriteAPIBlocking(org, bucket)
+	} else {
+		config := &influxdb.Config{
+			URL:       *url,
+			Username:  username,
+			Password:  password,
+			UserAgent: fmt.Sprintf("%v/%v", "cAdvisor", version.Info["version"]),
+		}
+		client, err := influxdb.NewClient(*config)
+		if err != nil {
+			return nil, err
+		}
+		ret.client = client
 	}
 	ret.readyToFlush = ret.defaultReadyToFlush
 	return ret, nil
