@@ -17,6 +17,7 @@
 package podman
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/opencontainers/cgroups"
@@ -38,6 +39,13 @@ func NewPlugin() container.Plugin {
 }
 
 type plugin struct{}
+
+var _ container.RetryablePlugin = &plugin{}
+
+// CanRetryRegister reports that Register may be called again after it fails.
+func (p *plugin) CanRetryRegister() bool {
+	return true
+}
 
 func (p *plugin) InitializeFSContext(context *fs.Context) error {
 	context.Podman = fs.PodmanContext{
@@ -62,6 +70,14 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, metrics contain
 	validatedInfo, err := docker.ValidateInfo(GetInfo, VersionString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate Podman info: %v", err)
+	}
+
+	// Take the storage root from the validated info. RootDir() makes its own
+	// request and caches "" if that fails, which a retry couldn't repair. Check
+	// it before any watcher starts, so a failed Register leaves nothing running.
+	storageDir := validatedInfo.DockerRootDir
+	if storageDir == "" {
+		return nil, errors.New("podman info has no storage root")
 	}
 
 	var (
@@ -92,7 +108,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, metrics contain
 	f := &podmanFactory{
 		machineInfoFactory: factory,
 		storageDriver:      docker.StorageDriver(validatedInfo.Driver),
-		storageDir:         RootDir(),
+		storageDir:         storageDir,
 		cgroupSubsystem:    cgroupSubsystem,
 		fsInfo:             fsInfo,
 		metrics:            metrics,

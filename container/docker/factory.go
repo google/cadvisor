@@ -48,6 +48,7 @@ var ArgDockerTLS = flag.Bool("docker-tls", false, "use TLS to connect to docker"
 var ArgDockerCert = flag.String("docker-tls-cert", "cert.pem", "path to client certificate")
 var ArgDockerKey = flag.String("docker-tls-key", "key.pem", "path to private key")
 var ArgDockerCA = flag.String("docker-tls-ca", "ca.pem", "path to trusted CA")
+var dockerClientTimeout = flag.Duration("docker_client_timeout", 10*time.Second, "timeout for docker API calls")
 
 var dockerEnvMetadataWhiteList = flag.String("docker_env_metadata_whitelist", "", "DEPRECATED: this flag will be removed, please use `env_metadata_whitelist`. A comma-separated list of environment variable keys matched with specified prefix that needs to be collected for docker containers")
 
@@ -180,7 +181,9 @@ func (f *dockerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
 	id := dockerutil.ContainerNameToId(name)
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	res, err := f.client.ContainerInspect(context.Background(), id, dclient.ContainerInspectOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), *dockerClientTimeout)
+	defer cancel()
+	res, err := f.client.ContainerInspect(ctx, id, dclient.ContainerInspectOptions{})
 	if err != nil || !res.Container.State.Running {
 		return false, true, fmt.Errorf("error inspecting container: %v", err)
 	}
@@ -362,6 +365,14 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		}
 	}
 
+	// Take the storage root from the info validated above. RootDir() caches its
+	// first answer, which is the --docker_root fallback if docker was down when
+	// the FS context was built.
+	storageDir := dockerInfo.DockerRootDir
+	if storageDir == "" {
+		storageDir = *dockerRootDirFlag
+	}
+
 	klog.V(1).Infof("Registering Docker factory")
 	f := &dockerFactory{
 		cgroupSubsystems:   cgroupSubsystems,
@@ -372,7 +383,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		fsInfo:             fsInfo,
 		machineInfoFactory: factory,
 		storageDriver:      StorageDriver(dockerInfo.Driver),
-		storageDir:         RootDir(),
+		storageDir:         storageDir,
 		includedMetrics:    includedMetrics,
 		thinPoolName:       thinPoolName,
 		thinPoolWatcher:    thinPoolWatcher,

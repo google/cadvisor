@@ -135,7 +135,9 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		return fmt.Errorf("unable to create containerd client: %v", err)
 	}
 
-	containerdVersion, err := client.Version(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+	containerdVersion, err := client.Version(ctx)
+	cancel()
 	if err != nil {
 		return fmt.Errorf("failed to fetch containerd client version: %v", err)
 	}

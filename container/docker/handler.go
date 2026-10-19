@@ -164,8 +164,9 @@ func newContainerHandler(
 
 	var rootfsStorageDir, zfsFilesystem, zfsParent string
 	if storageDriver == ContainerdSnapshotterStorageDriver {
-		ctx := namespaces.WithNamespace(context.Background(), "moby")
+		ctx, cancel := context.WithTimeout(namespaces.WithNamespace(context.Background(), "moby"), *dockerClientTimeout)
 		cntr, err := containerdClient.LoadContainer(ctx, id)
+		cancel()
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +191,9 @@ func newContainerHandler(
 	}
 
 	// We assume that if Inspect fails then the container is not known to docker.
-	res, err := client.ContainerInspect(context.Background(), id, dclient.ContainerInspectOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), *dockerClientTimeout)
+	res, err := client.ContainerInspect(ctx, id, dclient.ContainerInspectOptions{})
+	cancel()
 	if err != nil {
 		return nil, fmt.Errorf("failed to inspect container %q: %v", id, err)
 	}
@@ -204,7 +207,9 @@ func newContainerHandler(
 			// If the NetworkMode starts with 'container:' then we need to use the IP address of the container specified.
 			// This happens in cases such as kubernetes where the containers doesn't have an IP address itself and we need to use the pod's address
 			containerID := ctnr.HostConfig.NetworkMode.ConnectedContainer()
-			res, err := client.ContainerInspect(context.Background(), containerID, dclient.ContainerInspectOptions{})
+			ctx, cancel := context.WithTimeout(context.Background(), *dockerClientTimeout)
+			res, err := client.ContainerInspect(ctx, containerID, dclient.ContainerInspectOptions{})
+			cancel()
 			if err != nil {
 				return nil, fmt.Errorf("failed to inspect container %q: %v", containerID, err)
 			}

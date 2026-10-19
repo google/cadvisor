@@ -253,6 +253,7 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 
 	err = cont.updateSpec()
 	if err != nil {
+		cont.stopLoadReader()
 		return nil, err
 	}
 
@@ -267,6 +268,14 @@ func newContainerData(containerName string, memoryCache *memory.InMemoryCache, h
 		}
 	}
 	return cont, nil
+}
+
+// stopLoadReader closes the load reader of a containerData that is discarded
+// without being started. A started one closes it when housekeeping exits.
+func (cd *containerData) stopLoadReader() {
+	if cd.loadReader != nil {
+		cd.loadReader.Stop()
+	}
 }
 
 // Determine when the next housekeeping should occur.

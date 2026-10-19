@@ -24,6 +24,7 @@ import (
 	"github.com/google/cadvisor/lib/cache/memory"
 	"github.com/google/cadvisor/lib/container"
 	containertest "github.com/google/cadvisor/lib/container/testing"
+	"github.com/google/cadvisor/lib/fs"
 	info "github.com/google/cadvisor/lib/model"
 	itest "github.com/google/cadvisor/lib/model/test"
 	"github.com/google/cadvisor/lib/stats"
@@ -39,11 +40,13 @@ import (
 // mockHandler is a minimal container.ContainerHandler for exercising the
 // manager's query/seam surface without the full (pruned) mock packages.
 type mockHandler struct {
-	ref  info.ContainerReference
-	spec info.ContainerSpec
+	ref    info.ContainerReference
+	refErr error
+	spec   info.ContainerSpec
+	typ    container.ContainerType
 }
 
-func (h *mockHandler) ContainerReference() (info.ContainerReference, error) { return h.ref, nil }
+func (h *mockHandler) ContainerReference() (info.ContainerReference, error) { return h.ref, h.refErr }
 func (h *mockHandler) GetSpec() (info.ContainerSpec, error)                 { return h.spec, nil }
 func (h *mockHandler) GetStats() (*info.ContainerStats, error) {
 	return &info.ContainerStats{Timestamp: time.Now()}, nil
@@ -59,7 +62,7 @@ func (h *mockHandler) GetExitCode() (int, error)                       { return 
 func (h *mockHandler) Exists() bool                                    { return true }
 func (h *mockHandler) Cleanup()                                        {}
 func (h *mockHandler) Start()                                          {}
-func (h *mockHandler) Type() container.ContainerType                   { return container.ContainerTypeRaw }
+func (h *mockHandler) Type() container.ContainerType                   { return h.typ }
 
 func newTestManager() *manager {
 	return &manager{memoryCache: memory.New(time.Minute, nil)}
@@ -757,6 +760,14 @@ func (m *threadSafeEventHandler) AddEvent(e *info.Event) error {
 type mockContainerHandlerFactory struct {
 	canHandle bool
 	canAccept bool
+	// canHandleAndAccept, if set, answers CanHandleAndAccept instead.
+	canHandleAndAccept func(name string) (bool, bool, error)
+
+	// The handlers it builds have this type, aliases and reference error.
+	handlerType container.ContainerType
+	aliases     []string
+	namespace   string
+	refErr      error
 }
 
 func (f *mockContainerHandlerFactory) String() string { return "mock" }
@@ -766,13 +777,18 @@ func (f *mockContainerHandlerFactory) DebugInfo() map[string][]string {
 }
 
 func (f *mockContainerHandlerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+	if f.canHandleAndAccept != nil {
+		return f.canHandleAndAccept(name)
+	}
 	return f.canHandle, f.canAccept, nil
 }
 
 func (f *mockContainerHandlerFactory) NewContainerHandler(name string, metadataEnvAllowList []string, inHostNamespace bool) (container.ContainerHandler, error) {
 	return &mockHandler{
-		ref:  info.ContainerReference{Name: name},
-		spec: info.ContainerSpec{HasCpu: true},
+		ref:    info.ContainerReference{Name: name, Aliases: f.aliases, Namespace: f.namespace},
+		refErr: f.refErr,
+		spec:   info.ContainerSpec{HasCpu: true},
+		typ:    f.handlerType,
 	}, nil
 }
 
@@ -934,4 +950,286 @@ func TestDestroyContainerConcurrent(t *testing.T) {
 	// that no panic occurred (test would fail otherwise).
 	// At least one event should be recorded.
 	assert.GreaterOrEqual(t, len(mockEventHandler.events), 1, "at least one destruction event should be recorded")
+}
+
+// listingHandler is a mockHandler whose ListContainers returns children.
+type listingHandler struct {
+	mockHandler
+	children []info.ContainerReference
+}
+
+func (h *listingHandler) ListContainers(container.ListType) ([]info.ContainerReference, error) {
+	return h.children, nil
+}
+
+// newDiscoveryTestManager returns a manager tracking "/", whose handler lists
+// the given children.
+func newDiscoveryTestManager(t *testing.T, children ...string) *manager {
+	t.Helper()
+	container.ClearContainerHandlerFactories()
+	t.Cleanup(container.ClearContainerHandlerFactories)
+
+	m := newTestManager()
+	root := &listingHandler{mockHandler: mockHandler{ref: info.ContainerReference{Name: "/"}}}
+	for _, c := range children {
+		root.children = append(root.children, info.ContainerReference{Name: c})
+	}
+	cont, err := newContainerData("/", m.memoryCache, root, time.Minute, false, clock.RealClock{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.containers.Store(namespacedContainerName{Name: "/"}, cont)
+	t.Cleanup(func() {
+		m.containers.Range(func(_ namespacedContainerName, cont *containerData) bool {
+			_ = cont.Stop()
+			return true
+		})
+	})
+	return m
+}
+
+type stopTrackingWatcher struct {
+	stopped bool
+}
+
+func (w *stopTrackingWatcher) Start(chan watcher.ContainerEvent) error { return nil }
+func (w *stopTrackingWatcher) Stop() error {
+	w.stopped = true
+	return nil
+}
+
+func TestHousekeepingPassRegistersPlugins(t *testing.T) {
+	m := newDiscoveryTestManager(t, "/docker/abc")
+
+	// The runtime is down for the first pass and up for the second. Its
+	// plugin also returns a watcher, which can't be started after Start.
+	calls := 0
+	lateWatcher := &stopTrackingWatcher{}
+	m.initializePlugins = func(info.MachineInfoFactory, fs.FsInfo, container.MetricSet) []watcher.ContainerWatcher {
+		calls++
+		if calls == 2 {
+			container.RegisterContainerHandlerFactory(&mockContainerHandlerFactory{canHandle: true, canAccept: true, handlerType: container.ContainerTypeDocker}, []watcher.ContainerWatchSource{watcher.Raw})
+			return []watcher.ContainerWatcher{lateWatcher}
+		}
+		return nil
+	}
+
+	m.housekeepingPass()
+	assert.Equal(t, 1, calls)
+	assert.False(t, m.Exists("/docker/abc"), "no factory could create the container yet")
+
+	m.housekeepingPass()
+	assert.Equal(t, 2, calls)
+	assert.True(t, m.Exists("/docker/abc"), "the factory registered in this pass should claim the container")
+	assert.False(t, lateWatcher.stopped, "a watcher that was never started must not be stopped")
+	assert.Empty(t, m.containerWatchers)
+
+	m.housekeepingPass()
+	assert.Equal(t, 3, calls, "every pass retries registration")
+}
+
+// collectorLog records collector creation and destruction, in order.
+type collectorLog struct {
+	mu      sync.Mutex
+	entries []string
+}
+
+func (l *collectorLog) add(entry string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.entries = append(l.entries, entry)
+}
+
+func (l *collectorLog) get() []string {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return append([]string(nil), l.entries...)
+}
+
+type loggingCollector struct {
+	stats.NoopCollector
+	log  *collectorLog
+	name string
+}
+
+func (c *loggingCollector) Destroy() { c.log.add("destroy " + c.name) }
+
+type loggingPerfManager struct {
+	stats.NoopDestroy
+	log *collectorLog
+}
+
+func (m *loggingPerfManager) GetCollector(string) (stats.Collector, error) {
+	m.log.add("create")
+	return &loggingCollector{log: m.log, name: "new"}, nil
+}
+
+func eventCounts(h *threadSafeEventHandler) (created, deleted int) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for _, e := range h.events {
+		switch e.EventType {
+		case info.EventContainerCreation:
+			created++
+		case info.EventContainerDeletion:
+			deleted++
+		}
+	}
+	return created, deleted
+}
+
+func trackedType(m *manager, name string) (container.ContainerType, bool) {
+	cont, ok := m.containers.Load(namespacedContainerName{Name: name})
+	if !ok {
+		return 0, false
+	}
+	return cont.handler.Type(), true
+}
+
+func TestRecheckRawContainersHandsOverClaimedContainer(t *testing.T) {
+	m := newDiscoveryTestManager(t)
+	events := &threadSafeEventHandler{}
+	m.eventSink = events
+	log := &collectorLog{}
+	m.includedMetrics = container.MetricSet{container.PerfMetrics: struct{}{}}
+	m.perfManager = &loggingPerfManager{log: log}
+	m.resctrlManager = &stats.NoopResctrlManager{}
+
+	raw := m.addContainer(t, "/docker/abc", "")
+	raw.perfCollector = &loggingCollector{log: log, name: "old"}
+	container.RegisterContainerHandlerFactory(&mockContainerHandlerFactory{
+		canHandle: true, canAccept: true,
+		handlerType: container.ContainerTypeDocker, aliases: []string{"abc"}, namespace: "docker",
+	}, []watcher.ContainerWatchSource{watcher.Raw})
+
+	m.recheckRawContainers(time.Minute)
+
+	typ, ok := trackedType(m, "/docker/abc")
+	assert.True(t, ok)
+	assert.Equal(t, container.ContainerTypeDocker, typ)
+	alias, ok := m.containers.Load(namespacedContainerName{Namespace: "docker", Name: "abc"})
+	assert.True(t, ok, "the alias should be stored")
+	canonical, _ := m.containers.Load(namespacedContainerName{Name: "/docker/abc"})
+	assert.Same(t, canonical, alias)
+	assert.Equal(t, []string{"destroy old", "create"}, log.get())
+	created, deleted := eventCounts(events)
+	assert.Equal(t, 1, created)
+	assert.Equal(t, 0, deleted)
+
+	// The new entry isn't raw, so it's never re-checked.
+	m.recheckRawContainers(time.Minute)
+	again, _ := m.containers.Load(namespacedContainerName{Name: "/docker/abc"})
+	assert.Same(t, canonical, again)
+}
+
+func TestRecheckRawContainersKeepsRawEntry(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		factory *mockContainerHandlerFactory
+	}{
+		{name: "not claimed", factory: &mockContainerHandlerFactory{}},
+		{name: "build fails", factory: &mockContainerHandlerFactory{
+			canHandle: true, canAccept: true,
+			handlerType: container.ContainerTypeDocker, refErr: fmt.Errorf("gone"),
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := newDiscoveryTestManager(t)
+			events := &threadSafeEventHandler{}
+			m.eventSink = events
+			raw := m.addContainer(t, "/docker/abc", "")
+			container.RegisterContainerHandlerFactory(tc.factory, []watcher.ContainerWatchSource{watcher.Raw})
+
+			m.recheckRawContainers(time.Minute)
+
+			cont, ok := m.containers.Load(namespacedContainerName{Name: "/docker/abc"})
+			assert.True(t, ok)
+			assert.Same(t, raw, cont)
+			assert.Empty(t, events.events)
+		})
+	}
+}
+
+func TestRecheckRawContainersDestroysIgnoredContainer(t *testing.T) {
+	m := newDiscoveryTestManager(t)
+	events := &threadSafeEventHandler{}
+	m.eventSink = events
+	m.addContainer(t, "/docker/abc", "")
+	container.RegisterContainerHandlerFactory(&mockContainerHandlerFactory{canHandle: true}, []watcher.ContainerWatchSource{watcher.Raw})
+
+	m.recheckRawContainers(time.Minute)
+
+	_, ok := m.containers.Load(namespacedContainerName{Name: "/docker/abc"})
+	assert.False(t, ok)
+	created, deleted := eventCounts(events)
+	assert.Equal(t, 0, created)
+	assert.Equal(t, 1, deleted)
+}
+
+func TestRecheckRawContainersAfterRuntimeReturns(t *testing.T) {
+	m := newDiscoveryTestManager(t)
+	m.addContainer(t, "/docker/abc", "")
+	factory := &mockContainerHandlerFactory{handlerType: container.ContainerTypeDocker}
+	container.RegisterContainerHandlerFactory(factory, []watcher.ContainerWatchSource{watcher.Raw})
+
+	// The factory is registered, but the runtime can't answer yet.
+	m.recheckRawContainers(time.Minute)
+	typ, _ := trackedType(m, "/docker/abc")
+	assert.Equal(t, container.ContainerTypeRaw, typ)
+
+	factory.canHandle, factory.canAccept = true, true
+	m.recheckRawContainers(time.Minute)
+	typ, _ = trackedType(m, "/docker/abc")
+	assert.Equal(t, container.ContainerTypeDocker, typ)
+}
+
+func TestRecheckRawContainersSkipsRootAndClaimedContainers(t *testing.T) {
+	m := newDiscoveryTestManager(t)
+	claimed := m.addContainer(t, "/docker/abc", "")
+	claimed.handler.(*mockHandler).typ = container.ContainerTypeDocker
+	var asked []string
+	container.RegisterContainerHandlerFactory(&mockContainerHandlerFactory{
+		handlerType: container.ContainerTypeDocker,
+		canHandleAndAccept: func(name string) (bool, bool, error) {
+			asked = append(asked, name)
+			return true, true, nil
+		},
+	}, []watcher.ContainerWatchSource{watcher.Raw})
+
+	m.recheckRawContainers(time.Minute)
+
+	assert.Empty(t, asked)
+	typ, _ := trackedType(m, "/")
+	assert.Equal(t, container.ContainerTypeRaw, typ)
+}
+
+func TestRecheckRawContainersBudget(t *testing.T) {
+	m := newDiscoveryTestManager(t)
+	for _, name := range []string{"/a", "/b", "/c"} {
+		m.addContainer(t, name, "")
+	}
+	const delay = 50 * time.Millisecond
+	// /a and /b take a while to answer; /c is claimed.
+	container.RegisterContainerHandlerFactory(&mockContainerHandlerFactory{
+		handlerType: container.ContainerTypeDocker,
+		canHandleAndAccept: func(name string) (bool, bool, error) {
+			if name != "/c" {
+				time.Sleep(delay)
+				return false, false, fmt.Errorf("timed out")
+			}
+			return true, true, nil
+		},
+	}, []watcher.ContainerWatchSource{watcher.Raw})
+
+	// The slow containers sort first and use up the first pass's budget.
+	m.recheckRawContainers(delay + delay/5)
+	typ, _ := trackedType(m, "/c")
+	assert.Equal(t, container.ContainerTypeRaw, typ, "the first pass should stop before /c")
+
+	// Later passes resume after the cursor instead of starting over.
+	for i := 0; i < 2; i++ {
+		m.recheckRawContainers(delay + delay/5)
+	}
+	typ, _ = trackedType(m, "/c")
+	assert.Equal(t, container.ContainerTypeDocker, typ)
 }
