@@ -391,3 +391,39 @@ func TestDebugInfoListsPlugins(t *testing.T) {
 		"c: not registered (attempts: 1): gone",
 	}, container.DebugInfo()["Container plugins"])
 }
+
+func TestNewNonRawContainerHandler(t *testing.T) {
+	for _, tc := range []struct {
+		name                 string
+		canHandle, canAccept bool
+		wantHandler          bool
+		wantAccept           bool
+		wantErr              bool
+	}{
+		{name: "accept", canHandle: true, canAccept: true, wantHandler: true, wantAccept: true},
+		{name: "ignore", canHandle: true, canAccept: false},
+		{name: "none", wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			container.ClearContainerHandlerFactories()
+			t.Cleanup(container.ClearContainerHandlerFactories)
+
+			// The raw factory claims everything, and must never be asked.
+			raw := &mockContainerHandlerFactory{Name: "raw", CanHandleValue: true, CanAcceptValue: true}
+			runtime := &mockContainerHandlerFactory{Name: "runtime", CanHandleValue: tc.canHandle, CanAcceptValue: tc.canAccept}
+			container.RegisterContainerHandlerFactory(raw, []watcher.ContainerWatchSource{watcher.Raw})
+			container.RegisterContainerHandlerFactory(runtime, []watcher.ContainerWatchSource{watcher.Raw})
+			mockContainer, err := mockFactory.NewContainerHandler(testContainerName, testMetadataEnvAllowList, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			runtime.On("NewContainerHandler", testContainerName).Return(mockContainer, nil)
+
+			handler, accept, err := container.NewNonRawContainerHandler(testContainerName, watcher.Raw, testMetadataEnvAllowList, true)
+			assert.Equal(t, tc.wantErr, err != nil, "error: %v", err)
+			assert.Equal(t, tc.wantAccept, accept)
+			assert.Equal(t, tc.wantHandler, handler != nil)
+			raw.AssertNotCalled(t, "NewContainerHandler", testContainerName)
+		})
+	}
+}

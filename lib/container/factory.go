@@ -348,11 +348,25 @@ func HasFactories() bool {
 
 // Create a new ContainerHandler for the specified container.
 func NewContainerHandler(name string, watchType watcher.ContainerWatchSource, metadataEnvAllowList []string, inHostNamespace bool) (ContainerHandler, bool, error) {
+	return newContainerHandler(name, watchType, metadataEnvAllowList, inHostNamespace, false)
+}
+
+// NewNonRawContainerHandler is NewContainerHandler without the raw factory. It
+// is used to ask whether a container that the raw factory adopted is now
+// claimed by a runtime factory, without building a raw handler when it isn't.
+func NewNonRawContainerHandler(name string, watchType watcher.ContainerWatchSource, metadataEnvAllowList []string, inHostNamespace bool) (ContainerHandler, bool, error) {
+	return newContainerHandler(name, watchType, metadataEnvAllowList, inHostNamespace, true)
+}
+
+func newContainerHandler(name string, watchType watcher.ContainerWatchSource, metadataEnvAllowList []string, inHostNamespace bool, skipRaw bool) (ContainerHandler, bool, error) {
 	// Factories make runtime API calls, so call them on a snapshot rather than
 	// holding the lock, which would block registration behind a slow runtime.
 	factoriesLock.RLock()
 	factoryList := GetReorderedFactoryList(watchType)
 	factoriesLock.RUnlock()
+	if skipRaw && len(factoryList) > 0 && factoryList[len(factoryList)-1].String() == "raw" {
+		factoryList = factoryList[:len(factoryList)-1]
+	}
 
 	// Create the ContainerHandler with the first factory that supports it.
 	// Note that since RawContainerHandler can support a wide range of paths,
