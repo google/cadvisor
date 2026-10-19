@@ -24,6 +24,7 @@ import (
 	"github.com/google/cadvisor/lib/cache/memory"
 	"github.com/google/cadvisor/lib/container"
 	containertest "github.com/google/cadvisor/lib/container/testing"
+	"github.com/google/cadvisor/lib/fs"
 	info "github.com/google/cadvisor/lib/model"
 	itest "github.com/google/cadvisor/lib/model/test"
 	"github.com/google/cadvisor/lib/stats"
@@ -934,4 +935,80 @@ func TestDestroyContainerConcurrent(t *testing.T) {
 	// that no panic occurred (test would fail otherwise).
 	// At least one event should be recorded.
 	assert.GreaterOrEqual(t, len(mockEventHandler.events), 1, "at least one destruction event should be recorded")
+}
+
+// listingHandler is a mockHandler whose ListContainers returns children.
+type listingHandler struct {
+	mockHandler
+	children []info.ContainerReference
+}
+
+func (h *listingHandler) ListContainers(container.ListType) ([]info.ContainerReference, error) {
+	return h.children, nil
+}
+
+// newDiscoveryTestManager returns a manager tracking "/", whose handler lists
+// the given children.
+func newDiscoveryTestManager(t *testing.T, children ...string) *manager {
+	t.Helper()
+	container.ClearContainerHandlerFactories()
+	t.Cleanup(container.ClearContainerHandlerFactories)
+
+	m := newTestManager()
+	root := &listingHandler{mockHandler: mockHandler{ref: info.ContainerReference{Name: "/"}}}
+	for _, c := range children {
+		root.children = append(root.children, info.ContainerReference{Name: c})
+	}
+	cont, err := newContainerData("/", m.memoryCache, root, time.Minute, false, clock.RealClock{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.containers.Store(namespacedContainerName{Name: "/"}, cont)
+	t.Cleanup(func() {
+		m.containers.Range(func(_ namespacedContainerName, cont *containerData) bool {
+			_ = cont.Stop()
+			return true
+		})
+	})
+	return m
+}
+
+type stopTrackingWatcher struct {
+	stopped bool
+}
+
+func (w *stopTrackingWatcher) Start(chan watcher.ContainerEvent) error { return nil }
+func (w *stopTrackingWatcher) Stop() error {
+	w.stopped = true
+	return nil
+}
+
+func TestHousekeepingPassRegistersPlugins(t *testing.T) {
+	m := newDiscoveryTestManager(t, "/docker/abc")
+
+	// The runtime is down for the first pass and up for the second. Its
+	// plugin also returns a watcher, which can't be started after Start.
+	calls := 0
+	lateWatcher := &stopTrackingWatcher{}
+	m.initializePlugins = func(info.MachineInfoFactory, fs.FsInfo, container.MetricSet) []watcher.ContainerWatcher {
+		calls++
+		if calls == 2 {
+			container.RegisterContainerHandlerFactory(&mockContainerHandlerFactory{canHandle: true, canAccept: true}, []watcher.ContainerWatchSource{watcher.Raw})
+			return []watcher.ContainerWatcher{lateWatcher}
+		}
+		return nil
+	}
+
+	m.housekeepingPass()
+	assert.Equal(t, 1, calls)
+	assert.False(t, m.Exists("/docker/abc"), "no factory could create the container yet")
+
+	m.housekeepingPass()
+	assert.Equal(t, 2, calls)
+	assert.True(t, m.Exists("/docker/abc"), "the factory registered in this pass should claim the container")
+	assert.False(t, lateWatcher.stopped, "a watcher that was never started must not be stopped")
+	assert.Empty(t, m.containerWatchers)
+
+	m.housekeepingPass()
+	assert.Equal(t, 3, calls, "every pass retries registration")
 }

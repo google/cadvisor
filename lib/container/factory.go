@@ -195,6 +195,10 @@ type RetryablePlugin interface {
 
 	// CanRetryRegister reports whether Register may be called again after it
 	// returned an error.
+	//
+	// The manager retries during global housekeeping, after it has started its
+	// container watchers, so a watcher returned by a retried Register is not
+	// started.
 	CanRetryRegister() bool
 }
 
@@ -295,9 +299,18 @@ func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includ
 		}
 		watcher, err := plugin.Register(factory, fsInfo, includedMetrics)
 		recordRegisterAttempt(name, err, retryable)
-		if err != nil {
+		// Plugins for runtimes that aren't installed fail on every call, so only
+		// the first failure is logged at the default level.
+		switch {
+		case err != nil && status.Attempts > 0:
+			klog.V(4).Infof("Registration of the %s container factory failed: %v", name, err)
+		case err != nil && retryable:
+			klog.Infof("Registration of the %s container factory failed: %v; will retry", name, err)
+		case err != nil:
 			klog.Infof("Registration of the %s container factory failed: %v", name, err)
-		} else {
+		case status.Attempts > 0:
+			klog.Infof("Registered the %s container factory after %d attempts", name, status.Attempts+1)
+		default:
 			klog.Infof("Registration of the %s container factory successfully", name)
 		}
 		if watcher != nil {

@@ -327,12 +327,16 @@ type manager struct {
 	// lifecycle and OOM events. nil for the kubelet (no event machinery). See
 	// events.go.
 	eventSink EventSink
+
+	// initializePlugins registers container plugins. nil means
+	// container.InitializePlugins; tests replace it.
+	initializePlugins func(info.MachineInfoFactory, fs.FsInfo, container.MetricSet) []watcher.ContainerWatcher
 }
 
 // Start the container manager.
 func (m *manager) Start() error {
 	if !m.disableContainerDiscovery {
-		m.containerWatchers = container.InitializePlugins(m, m.fsInfo, m.includedMetrics)
+		m.containerWatchers = m.registerPlugins()
 	}
 
 	err := raw.Register(m, m.fsInfo, m.includedMetrics, m.rawContainerCgroupPathPrefixWhiteList)
@@ -388,6 +392,16 @@ func (m *manager) Start() error {
 	go m.updateMachineInfo(quitUpdateMachineInfo)
 
 	return nil
+}
+
+// registerPlugins calls Register on the container plugins that are pending, and
+// returns the watchers they return.
+func (m *manager) registerPlugins() []watcher.ContainerWatcher {
+	initialize := m.initializePlugins
+	if initialize == nil {
+		initialize = container.InitializePlugins
+	}
+	return initialize(m, m.fsInfo, m.includedMetrics)
 }
 
 func (m *manager) Stop() error {
@@ -452,12 +466,7 @@ func (m *manager) globalHousekeeping(quit chan error) {
 		select {
 		case t := <-ticker.C:
 			start := time.Now()
-
-			// Check for new containers.
-			err := m.detectSubcontainers("/")
-			if err != nil {
-				klog.Errorf("Failed to detect containers: %s", err)
-			}
+			m.housekeepingPass()
 
 			// Log if housekeeping took too long.
 			duration := time.Since(start)
@@ -470,6 +479,23 @@ func (m *manager) globalHousekeeping(quit chan error) {
 			klog.Infof("Exiting global housekeeping thread")
 			return
 		}
+	}
+}
+
+// housekeepingPass runs one pass of global housekeeping.
+func (m *manager) housekeepingPass() {
+	// Retry plugins that failed to register, and register plugins added since
+	// Start. Doing this first lets a factory that registers now claim new
+	// containers in the same pass. Watchers are only started by Start, so any
+	// returned now are dropped. They were never started, so they aren't stopped.
+	for _, w := range m.registerPlugins() {
+		klog.Errorf("Ignoring container watcher %T: watchers from plugins registered after start are not supported", w)
+	}
+
+	// Check for new containers.
+	err := m.detectSubcontainers("/")
+	if err != nil {
+		klog.Errorf("Failed to detect containers: %s", err)
 	}
 }
 
