@@ -18,7 +18,9 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	versionapi "github.com/containerd/containerd/api/services/version/v1"
@@ -26,8 +28,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/google/cadvisor/lib/container/containerd/containers"
+	"github.com/google/cadvisor/lib/container/containerd/namespaces"
 )
 
 type containerdClientMock struct {
@@ -88,13 +93,16 @@ func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr erro
 	}
 }
 
-// resetClientCache drops the cached client before and after the test.
+// resetClientCache drops the cached connections before and after the test.
 func resetClientCache(t *testing.T) {
 	t.Helper()
 	reset := func() {
-		ctrdClientMu.Lock()
-		ctrdClient = nil
-		ctrdClientMu.Unlock()
+		connsMu.Lock()
+		for _, conn := range conns {
+			conn.Close()
+		}
+		conns = map[string]*grpc.ClientConn{}
+		connsMu.Unlock()
 	}
 	reset()
 	t.Cleanup(reset)
@@ -119,11 +127,58 @@ func TestClientRetriesFailedDial(t *testing.T) {
 	require.Error(t, err)
 
 	serveContainerd(t, socket, &versionapi.UnimplementedVersionServer{})
-	c, err := Client(socket, "k8s.io")
+	_, err = Client(socket, "k8s.io")
 	require.NoError(t, err)
-	require.NotNil(t, c)
+}
 
-	again, err := Client(socket, "k8s.io")
+func TestClientReusesConnection(t *testing.T) {
+	resetClientCache(t)
+	socket := filepath.Join(t.TempDir(), "containerd.sock")
+	serveContainerd(t, socket, &versionapi.UnimplementedVersionServer{})
+	_, err := Client(socket, "k8s.io")
 	require.NoError(t, err)
-	assert.Same(t, c, again)
+
+	// A new dial would fail now, so a second client, even for another
+	// namespace, must come from the cached connection.
+	require.NoError(t, os.Remove(socket))
+	_, err = Client(socket, "moby")
+	require.NoError(t, err)
+}
+
+// namespaceVersionServer answers Version with the namespace the request
+// carried.
+type namespaceVersionServer struct {
+	versionapi.UnimplementedVersionServer
+}
+
+func (namespaceVersionServer) Version(ctx context.Context, _ *emptypb.Empty) (*versionapi.VersionResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	return &versionapi.VersionResponse{Version: strings.Join(md.Get(namespaces.GRPCHeader), ",")}, nil
+}
+
+func TestClientNamespaces(t *testing.T) {
+	resetClientCache(t)
+	socket := filepath.Join(t.TempDir(), "containerd.sock")
+	serveContainerd(t, socket, namespaceVersionServer{})
+
+	// The first client to dial used to fix the namespace for every client.
+	moby, err := Client(socket, "moby")
+	require.NoError(t, err)
+	k8s, err := Client(socket, "k8s.io")
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	for _, tc := range []struct {
+		client ContainerdClient
+		ctx    context.Context
+		want   string
+	}{
+		{k8s, ctx, "k8s.io"},
+		{moby, ctx, "moby"},
+		{k8s, namespaces.WithNamespace(ctx, "other"), "other"},
+	} {
+		got, err := tc.client.Version(tc.ctx)
+		require.NoError(t, err)
+		assert.Equal(t, tc.want, got)
+	}
 }
