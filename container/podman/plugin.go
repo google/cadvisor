@@ -17,6 +17,7 @@
 package podman
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/opencontainers/cgroups"
@@ -64,6 +65,14 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, metrics contain
 		return nil, fmt.Errorf("failed to validate Podman info: %v", err)
 	}
 
+	// Take the storage root from the validated info. RootDir() makes its own
+	// request and caches "" if that fails, which a retry couldn't repair. Check
+	// it before any watcher starts, so a failed Register leaves nothing running.
+	storageDir := validatedInfo.DockerRootDir
+	if storageDir == "" {
+		return nil, errors.New("podman info has no storage root")
+	}
+
 	var (
 		thinPoolName    string
 		thinPoolWatcher *devicemapper.ThinPoolWatcher
@@ -92,7 +101,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, metrics contain
 	f := &podmanFactory{
 		machineInfoFactory: factory,
 		storageDriver:      docker.StorageDriver(validatedInfo.Driver),
-		storageDir:         RootDir(),
+		storageDir:         storageDir,
 		cgroupSubsystem:    cgroupSubsystem,
 		fsInfo:             fsInfo,
 		metrics:            metrics,

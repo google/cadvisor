@@ -364,6 +364,14 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		}
 	}
 
+	// Take the storage root from the info validated above. RootDir() caches its
+	// first answer, which is the --docker_root fallback if docker was down when
+	// the FS context was built.
+	storageDir := dockerInfo.DockerRootDir
+	if storageDir == "" {
+		storageDir = *dockerRootDirFlag
+	}
+
 	klog.V(1).Infof("Registering Docker factory")
 	f := &dockerFactory{
 		cgroupSubsystems:   cgroupSubsystems,
@@ -374,7 +382,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		fsInfo:             fsInfo,
 		machineInfoFactory: factory,
 		storageDriver:      StorageDriver(dockerInfo.Driver),
-		storageDir:         RootDir(),
+		storageDir:         storageDir,
 		includedMetrics:    includedMetrics,
 		thinPoolName:       thinPoolName,
 		thinPoolWatcher:    thinPoolWatcher,

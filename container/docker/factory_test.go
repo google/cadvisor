@@ -17,8 +17,19 @@
 package docker
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/google/cadvisor/lib/container"
+	"github.com/google/cadvisor/lib/watcher"
 )
 
 func TestEnsureThinLsKernelVersion(t *testing.T) {
@@ -74,5 +85,57 @@ func TestCanHandleAndAcceptBoundsInspect(t *testing.T) {
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("CanHandleAndAccept did not time out the inspect call")
+	}
+}
+
+func TestRegisterStorageRoot(t *testing.T) {
+	// Client() caches its client, so drop it before and after the test to make
+	// it connect to the fake daemon. The subtests share the daemon and switch
+	// the info it returns.
+	resetClient := func() {
+		dockerClientOnce = sync.Once{}
+		dockerClient, dockerClientErr = nil, nil
+	}
+	resetClient()
+	t.Cleanup(resetClient)
+	var info atomic.Value
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/info") {
+			_, _ = w.Write([]byte(info.Load().(string)))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(srv.Close)
+	oldEndpoint := *ArgDockerEndpoint
+	*ArgDockerEndpoint = "tcp://" + srv.Listener.Addr().String()
+	t.Cleanup(func() { *ArgDockerEndpoint = oldEndpoint })
+
+	for _, tc := range []struct {
+		name    string
+		info    string
+		wantDir string
+	}{
+		{
+			name:    "from validated info",
+			info:    `{"ServerVersion":"28.5.1","Driver":"overlay2","DockerRootDir":"/srv/docker"}`,
+			wantDir: "/srv/docker",
+		},
+		{
+			name:    "falls back to --docker_root",
+			info:    `{"ServerVersion":"28.5.1","Driver":"overlay2"}`,
+			wantDir: *dockerRootDirFlag,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			container.ClearContainerHandlerFactories()
+			t.Cleanup(container.ClearContainerHandlerFactories)
+			info.Store(tc.info)
+
+			require.NoError(t, Register(nil, nil, container.MetricSet{}))
+			factories := container.GetReorderedFactoryList(watcher.Raw)
+			require.Len(t, factories, 1)
+			assert.Equal(t, tc.wantDir, factories[0].(*dockerFactory).storageDir)
+		})
 	}
 }
