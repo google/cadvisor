@@ -186,6 +186,74 @@ type Plugin interface {
 	Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) (watcher.ContainerWatcher, error)
 }
 
+// RetryablePlugin is a Plugin whose Register may be called again after it
+// returns an error. A failed Register must leave no factory registered and
+// nothing that accumulates across calls, such as goroutines or watchers. Shared,
+// cached clients may persist. Every call must return in bounded time.
+type RetryablePlugin interface {
+	Plugin
+
+	// CanRetryRegister reports whether Register may be called again after it
+	// returned an error.
+	CanRetryRegister() bool
+}
+
+func canRetryRegister(plugin Plugin) bool {
+	p, ok := plugin.(RetryablePlugin)
+	return ok && p.CanRetryRegister()
+}
+
+// PluginStatus is the registration state of a plugin added with RegisterPlugin.
+type PluginStatus struct {
+	// Registered is true once Register has succeeded.
+	Registered bool
+	// Attempts is the number of times Register has been called.
+	Attempts int
+	// LastError is the error from the latest Register call, or nil.
+	LastError error
+}
+
+type pluginStatus struct {
+	PluginStatus
+	retryable bool
+}
+
+// pluginStatuses has its own lock, so readers don't wait for a Register call,
+// which InitializePlugins makes while holding pluginsLock.
+var (
+	pluginStatusesLock sync.Mutex
+	pluginStatuses     = map[string]pluginStatus{}
+)
+
+// PluginStatuses returns the registration state of every plugin that
+// InitializePlugins has called, keyed by plugin name.
+func PluginStatuses() map[string]PluginStatus {
+	pluginStatusesLock.Lock()
+	defer pluginStatusesLock.Unlock()
+	out := make(map[string]PluginStatus, len(pluginStatuses))
+	for name, s := range pluginStatuses {
+		out[name] = s.PluginStatus
+	}
+	return out
+}
+
+func getPluginStatus(name string) pluginStatus {
+	pluginStatusesLock.Lock()
+	defer pluginStatusesLock.Unlock()
+	return pluginStatuses[name]
+}
+
+func recordRegisterAttempt(name string, err error, retryable bool) {
+	pluginStatusesLock.Lock()
+	defer pluginStatusesLock.Unlock()
+	s := pluginStatuses[name]
+	s.Attempts++
+	s.Registered = err == nil
+	s.LastError = err
+	s.retryable = retryable
+	pluginStatuses[name] = s
+}
+
 func RegisterPlugin(name string, plugin Plugin) error {
 	pluginsLock.Lock()
 	defer pluginsLock.Unlock()
@@ -209,13 +277,24 @@ func InitializeFSContext(context *fs.Context) error {
 	return nil
 }
 
+// InitializePlugins calls Register on each plugin that hasn't been called yet,
+// and again on each plugin whose Register failed and that implements
+// RetryablePlugin. Plugins that have registered, or that failed and can't be
+// retried, are skipped, so it is safe to call repeatedly. It returns the
+// watchers returned by the Register calls it made.
 func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) []watcher.ContainerWatcher {
 	pluginsLock.Lock()
 	defer pluginsLock.Unlock()
 
 	containerWatchers := []watcher.ContainerWatcher{}
 	for name, plugin := range plugins {
+		status := getPluginStatus(name)
+		retryable := canRetryRegister(plugin)
+		if status.Registered || (status.Attempts > 0 && !retryable) {
+			continue
+		}
 		watcher, err := plugin.Register(factory, fsInfo, includedMetrics)
+		recordRegisterAttempt(name, err, retryable)
 		if err != nil {
 			klog.Infof("Registration of the %s container factory failed: %v", name, err)
 		} else {
@@ -307,7 +386,28 @@ func DebugInfo() map[string][]string {
 			}
 		}
 	}
+	if lines := pluginStatusLines(); len(lines) > 0 {
+		out["Container plugins"] = lines
+	}
 	return out
+}
+
+func pluginStatusLines() []string {
+	pluginStatusesLock.Lock()
+	defer pluginStatusesLock.Unlock()
+	lines := make([]string, 0, len(pluginStatuses))
+	for name, s := range pluginStatuses {
+		switch {
+		case s.Registered:
+			lines = append(lines, fmt.Sprintf("%s: registered", name))
+		case s.retryable:
+			lines = append(lines, fmt.Sprintf("%s: not registered, will retry (attempts: %d): %v", name, s.Attempts, s.LastError))
+		default:
+			lines = append(lines, fmt.Sprintf("%s: not registered (attempts: %d): %v", name, s.Attempts, s.LastError))
+		}
+	}
+	sort.Strings(lines)
+	return lines
 }
 
 // GetReorderedFactoryList returns the list of ContainerHandlerFactory where the
