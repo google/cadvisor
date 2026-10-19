@@ -16,6 +16,7 @@ package container_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/cadvisor/lib/container"
 	containertest "github.com/google/cadvisor/lib/container/testing"
@@ -183,4 +184,50 @@ func TestRawContainerHandler_Last(t *testing.T) {
 	if list[len(list)-1].String() != "raw" {
 		t.Error("Expected raw container handler to be last in the list.")
 	}
+}
+
+type blockingContainerHandlerFactory struct {
+	mockContainerHandlerFactory
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (f *blockingContainerHandlerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+	close(f.entered)
+	<-f.release
+	return false, false, nil
+}
+
+func TestNewContainerHandler_DoesNotBlockRegistration(t *testing.T) {
+	container.ClearContainerHandlerFactories()
+
+	slow := &blockingContainerHandlerFactory{
+		mockContainerHandlerFactory: mockContainerHandlerFactory{Name: "slow"},
+		entered:                     make(chan struct{}),
+		release:                     make(chan struct{}),
+	}
+	container.RegisterContainerHandlerFactory(slow, []watcher.ContainerWatchSource{watcher.Raw})
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _, _ = container.NewContainerHandler(testContainerName, watcher.Raw, testMetadataEnvAllowList, true)
+	}()
+	<-slow.entered
+
+	// Registering a factory takes the write lock. It must not wait for the
+	// slow factory's call to finish.
+	registered := make(chan struct{})
+	go func() {
+		container.RegisterContainerHandlerFactory(&mockContainerHandlerFactory{Name: "late"}, []watcher.ContainerWatchSource{watcher.Raw})
+		close(registered)
+	}()
+	select {
+	case <-registered:
+	case <-time.After(5 * time.Second):
+		t.Error("RegisterContainerHandlerFactory blocked behind CanHandleAndAccept")
+	}
+
+	close(slow.release)
+	<-done
 }

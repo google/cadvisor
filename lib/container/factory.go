@@ -256,14 +256,17 @@ func HasFactories() bool {
 
 // Create a new ContainerHandler for the specified container.
 func NewContainerHandler(name string, watchType watcher.ContainerWatchSource, metadataEnvAllowList []string, inHostNamespace bool) (ContainerHandler, bool, error) {
+	// Factories make runtime API calls, so call them on a snapshot rather than
+	// holding the lock, which would block registration behind a slow runtime.
 	factoriesLock.RLock()
-	defer factoriesLock.RUnlock()
+	factoryList := GetReorderedFactoryList(watchType)
+	factoriesLock.RUnlock()
 
 	// Create the ContainerHandler with the first factory that supports it.
 	// Note that since RawContainerHandler can support a wide range of paths,
 	// it's evaluated last just to make sure if any other ContainerHandler
 	// can support it.
-	for _, factory := range GetReorderedFactoryList(watchType) {
+	for _, factory := range factoryList {
 		canHandle, canAccept, err := factory.CanHandleAndAccept(name)
 		if err != nil {
 			klog.V(4).Infof("Error trying to work out if we can handle %s: %v", name, err)
