@@ -19,16 +19,24 @@ package docker
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/moby/moby/api/types/container"
 	dclient "github.com/moby/moby/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	info "github.com/google/cadvisor/info/v1"
+	cadvisorcontainer "github.com/google/cadvisor/lib/container"
+	"github.com/google/cadvisor/lib/container/containerd"
+	"github.com/google/cadvisor/lib/container/containerd/containers"
 	"github.com/google/cadvisor/lib/fs"
 )
 
@@ -315,5 +323,93 @@ func TestGetExitCode(t *testing.T) {
 				as.Equal(tt.expectedCode, code)
 			}
 		})
+	}
+}
+
+const testDockerContainerID = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+
+// newHangingDockerClient returns a client for a docker API that accepts
+// requests but never answers them, and lowers dockerTimeout for the test.
+func newHangingDockerClient(t *testing.T) *dclient.Client {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-r.Context().Done()
+	}))
+	t.Cleanup(func() {
+		srv.CloseClientConnections()
+		srv.Close()
+	})
+
+	client, err := dclient.New(dclient.WithHost("tcp://" + srv.Listener.Addr().String()))
+	require.NoError(t, err)
+	t.Cleanup(func() { client.Close() })
+
+	oldTimeout := dockerTimeout
+	dockerTimeout = 100 * time.Millisecond
+	t.Cleanup(func() { dockerTimeout = oldTimeout })
+	return client
+}
+
+type hangingContainerdClient struct {
+	containerd.ContainerdClient
+}
+
+func (c *hangingContainerdClient) LoadContainer(ctx context.Context, id string) (*containers.Container, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+type fakeContainerdClient struct {
+	containerd.ContainerdClient
+}
+
+func (c *fakeContainerdClient) LoadContainer(ctx context.Context, id string) (*containers.Container, error) {
+	return &containers.Container{ID: id, Spec: &anypb.Any{Value: []byte(`{"root":{"path":"/rootfs"}}`)}}, nil
+}
+
+func newTestContainerHandler(client *dclient.Client, containerdClient containerd.ContainerdClient) error {
+	_, err := newContainerHandler(
+		client,
+		containerdClient,
+		"/docker/"+testDockerContainerID,
+		nil,
+		nil,
+		ContainerdSnapshotterStorageDriver,
+		"/var/lib/docker",
+		map[string]string{},
+		true,
+		nil,
+		[]int{28, 5, 1},
+		cadvisorcontainer.MetricSet{},
+		"",
+		nil,
+		nil,
+	)
+	return err
+}
+
+func TestNewContainerHandlerBoundsContainerdLookup(t *testing.T) {
+	client := newHangingDockerClient(t)
+
+	done := make(chan error, 1)
+	go func() { done <- newTestContainerHandler(client, &hangingContainerdClient{}) }()
+	select {
+	case err := <-done:
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+	case <-time.After(5 * time.Second):
+		t.Fatal("newContainerHandler did not time out the containerd lookup")
+	}
+}
+
+func TestNewContainerHandlerBoundsInspect(t *testing.T) {
+	client := newHangingDockerClient(t)
+
+	done := make(chan error, 1)
+	go func() { done <- newTestContainerHandler(client, &fakeContainerdClient{}) }()
+	select {
+	case err := <-done:
+		assert.ErrorContains(t, err, "failed to inspect container")
+	case <-time.After(5 * time.Second):
+		t.Fatal("newContainerHandler did not time out the inspect call")
 	}
 }

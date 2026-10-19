@@ -16,7 +16,10 @@
 
 package docker
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestEnsureThinLsKernelVersion(t *testing.T) {
 	tests := []struct {
@@ -49,5 +52,27 @@ func TestEnsureThinLsKernelVersion(t *testing.T) {
 		} else if err == nil && len(test.expectedError) > 0 {
 			t.Errorf("%s: expected error %v", test.version, test.expectedError)
 		}
+	}
+}
+
+func TestCanHandleAndAcceptBoundsInspect(t *testing.T) {
+	f := &dockerFactory{client: newHangingDockerClient(t)}
+
+	type result struct {
+		handle, accept bool
+		err            error
+	}
+	done := make(chan result, 1)
+	go func() {
+		handle, accept, err := f.CanHandleAndAccept("/docker/" + testDockerContainerID)
+		done <- result{handle, accept, err}
+	}()
+	select {
+	case r := <-done:
+		if r.handle || r.err == nil {
+			t.Errorf("CanHandleAndAccept() = %v, %v, %v; want false and an error", r.handle, r.accept, r.err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("CanHandleAndAccept did not time out the inspect call")
 	}
 }
