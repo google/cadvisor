@@ -17,11 +17,19 @@
 package containerd
 
 import (
+	"context"
+	"net"
+	"path/filepath"
 	"testing"
+	"time"
 
+	versionapi "github.com/containerd/containerd/api/services/version/v1"
 	"github.com/containerd/typeurl/v2"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/google/cadvisor/lib/container/containerd/containers"
 )
@@ -73,5 +81,38 @@ func TestCanHandleAndAccept(t *testing.T) {
 		as.Nil(err)
 		as.Equal(b1, v)
 		as.Equal(b2, v)
+	}
+}
+
+// hangingVersionServer accepts Version calls and never answers them.
+type hangingVersionServer struct {
+	versionapi.UnimplementedVersionServer
+}
+
+func (hangingVersionServer) Version(ctx context.Context, _ *emptypb.Empty) (*versionapi.VersionResponse, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestRegisterBoundsVersion(t *testing.T) {
+	socket := filepath.Join(t.TempDir(), "containerd.sock")
+	lis, err := net.Listen("unix", socket)
+	require.NoError(t, err)
+	srv := grpc.NewServer()
+	versionapi.RegisterVersionServer(srv, hangingVersionServer{})
+	go func() { _ = srv.Serve(lis) }()
+	t.Cleanup(srv.Stop)
+
+	oldEndpoint := *ArgContainerdEndpoint
+	*ArgContainerdEndpoint = socket
+	t.Cleanup(func() { *ArgContainerdEndpoint = oldEndpoint })
+
+	done := make(chan error, 1)
+	go func() { done <- Register(nil, nil, nil) }()
+	select {
+	case err := <-done:
+		assert.ErrorContains(t, err, "failed to fetch containerd client version")
+	case <-time.After(3*connectionTimeout + 5*time.Second):
+		t.Fatal("Register did not time out the Version call")
 	}
 }

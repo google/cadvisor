@@ -158,7 +158,7 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		return err
 	}
 
-	info, err := client.Info()
+	info, err := boundedInfo(client)
 	if err != nil {
 		return err
 	}
