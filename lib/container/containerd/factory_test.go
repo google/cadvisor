@@ -18,7 +18,6 @@ package containerd
 
 import (
 	"context"
-	"net"
 	"path/filepath"
 	"testing"
 	"time"
@@ -27,8 +26,6 @@ import (
 	"github.com/containerd/typeurl/v2"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/google/cadvisor/lib/container/containerd/containers"
@@ -95,13 +92,9 @@ func (hangingVersionServer) Version(ctx context.Context, _ *emptypb.Empty) (*ver
 }
 
 func TestRegisterBoundsVersion(t *testing.T) {
+	resetClientCache(t)
 	socket := filepath.Join(t.TempDir(), "containerd.sock")
-	lis, err := net.Listen("unix", socket)
-	require.NoError(t, err)
-	srv := grpc.NewServer()
-	versionapi.RegisterVersionServer(srv, hangingVersionServer{})
-	go func() { _ = srv.Serve(lis) }()
-	t.Cleanup(srv.Stop)
+	serveContainerd(t, socket, hangingVersionServer{})
 
 	oldEndpoint := *ArgContainerdEndpoint
 	*ArgContainerdEndpoint = socket

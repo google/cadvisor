@@ -17,8 +17,15 @@ package containerd
 import (
 	"context"
 	"fmt"
+	"net"
+	"path/filepath"
+	"testing"
 
+	versionapi "github.com/containerd/containerd/api/services/version/v1"
 	"github.com/containerd/containerd/api/types/task"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/google/cadvisor/lib/container/containerd/containers"
 )
@@ -79,4 +86,44 @@ func mockcontainerdClient(cntrs map[string]*containers.Container, returnErr erro
 		returnErr: returnErr,
 		tasks:     tasks,
 	}
+}
+
+// resetClientCache drops the cached client before and after the test.
+func resetClientCache(t *testing.T) {
+	t.Helper()
+	reset := func() {
+		ctrdClientMu.Lock()
+		ctrdClient = nil
+		ctrdClientMu.Unlock()
+	}
+	reset()
+	t.Cleanup(reset)
+}
+
+// serveContainerd serves the given version service on a unix socket.
+func serveContainerd(t *testing.T, socket string, version versionapi.VersionServer) {
+	t.Helper()
+	lis, err := net.Listen("unix", socket)
+	require.NoError(t, err)
+	srv := grpc.NewServer()
+	versionapi.RegisterVersionServer(srv, version)
+	go func() { _ = srv.Serve(lis) }()
+	t.Cleanup(srv.Stop)
+}
+
+func TestClientRetriesFailedDial(t *testing.T) {
+	resetClientCache(t)
+	socket := filepath.Join(t.TempDir(), "containerd.sock")
+
+	_, err := Client(socket, "k8s.io")
+	require.Error(t, err)
+
+	serveContainerd(t, socket, &versionapi.UnimplementedVersionServer{})
+	c, err := Client(socket, "k8s.io")
+	require.NoError(t, err)
+	require.NotNil(t, c)
+
+	again, err := Client(socket, "k8s.io")
+	require.NoError(t, err)
+	assert.Same(t, c, again)
 }
