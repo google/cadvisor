@@ -17,6 +17,7 @@
 package podman
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -24,6 +25,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -140,5 +142,26 @@ func TestRegisterStorageRoot(t *testing.T) {
 			require.Len(t, factories, 1)
 			assert.Equal(t, tc.wantDir, factories[0].(*podmanFactory).storageDir)
 		})
+	}
+}
+
+func TestClientTimeoutBoundsRequests(t *testing.T) {
+	servePodman(t, func(w http.ResponseWriter, r *http.Request) {
+		<-r.Context().Done()
+	})
+	oldTimeout := *podmanClientTimeout
+	*podmanClientTimeout = 100 * time.Millisecond
+	t.Cleanup(func() { *podmanClientTimeout = oldTimeout })
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := GetInfo()
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+	case <-time.After(5 * time.Second):
+		t.Fatal("GetInfo did not time out")
 	}
 }

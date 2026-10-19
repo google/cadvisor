@@ -32,14 +32,13 @@ import (
 	"github.com/google/cadvisor/lib/machine"
 )
 
-var dockerTimeout = 10 * time.Second
-
+// SetTimeout overrides --docker_client_timeout.
 func SetTimeout(timeout time.Duration) {
-	dockerTimeout = timeout
+	*dockerClientTimeout = timeout
 }
 
 func Status() (v1.DockerStatus, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), *dockerClientTimeout)
 	defer cancel()
 	return StatusWithContext(ctx)
 }
@@ -88,7 +87,7 @@ func Images() ([]v1.DockerImage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), *dockerClientTimeout)
 	defer cancel()
 	summaries, err := client.ImageList(ctx, dclient.ImageListOptions{All: false})
 	if err != nil {
@@ -136,7 +135,7 @@ func Info() (*dockersystem.Info, error) {
 		return nil, fmt.Errorf("unable to communicate with docker daemon: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), *dockerClientTimeout)
 	defer cancel()
 	res, err := client.Info(ctx, dclient.InfoOptions{})
 	if err != nil {
@@ -158,7 +157,7 @@ func VersionString() (string, error) {
 	dockerVersion := "Unknown"
 	client, err := Client()
 	if err == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), *dockerClientTimeout)
 		defer cancel()
 		version, err := client.ServerVersion(ctx, dclient.ServerVersionOptions{})
 		if err == nil {
@@ -172,7 +171,7 @@ func APIVersionString() (string, error) {
 	apiVersion := "Unknown"
 	client, err := Client()
 	if err == nil {
-		ctx, cancel := context.WithTimeout(context.Background(), dockerTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), *dockerClientTimeout)
 		defer cancel()
 		version, err := client.Ping(ctx, dclient.PingOptions{NegotiateAPIVersion: true})
 		if err == nil {

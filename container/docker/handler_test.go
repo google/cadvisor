@@ -329,7 +329,7 @@ func TestGetExitCode(t *testing.T) {
 const testDockerContainerID = "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
 
 // newHangingDockerClient returns a client for a docker API that accepts
-// requests but never answers them, and lowers dockerTimeout for the test.
+// requests but never answers them, and lowers *dockerClientTimeout for the test.
 func newHangingDockerClient(t *testing.T) *dclient.Client {
 	t.Helper()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -344,9 +344,9 @@ func newHangingDockerClient(t *testing.T) *dclient.Client {
 	require.NoError(t, err)
 	t.Cleanup(func() { client.Close() })
 
-	oldTimeout := dockerTimeout
-	dockerTimeout = 100 * time.Millisecond
-	t.Cleanup(func() { dockerTimeout = oldTimeout })
+	oldTimeout := *dockerClientTimeout
+	*dockerClientTimeout = 100 * time.Millisecond
+	t.Cleanup(func() { *dockerClientTimeout = oldTimeout })
 	return client
 }
 
