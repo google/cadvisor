@@ -356,7 +356,9 @@ func addCacheInfo(sysFs sysfs.SysFs, node *info.Node) error {
 				Level: cache.Level,
 				Type:  cache.Type,
 			}
-			if cache.Level > cacheLevel2 {
+			// Caches above L2, and L2 caches shared by more than one core, are not
+			// private to a core: they are either node level or uncore caches.
+			if cache.Level > cacheLevel2 || cache.Cpus > numThreadsPerCore {
 				if cache.Cpus == numThreadsPerNode {
 					// Add a node level cache.
 					cacheFound := false
@@ -369,7 +371,8 @@ func addCacheInfo(sysFs sysfs.SysFs, node *info.Node) error {
 						node.Caches = append(node.Caches, c)
 					}
 				} else {
-					// Add uncore cache, for architecture in which l3 cache only shared among some cores.
+					// Add uncore cache, for architecture in which l3 cache (or an l2 cache
+					// shared by a cluster of cores) is only shared among some cores.
 					uncoreCacheFound := false
 					for _, uncoreCache := range node.Cores[coreID].UncoreCaches {
 						if uncoreCache == c {
