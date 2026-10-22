@@ -1606,10 +1606,10 @@ func TestAddCacheInfoSharedL2(t *testing.T) {
 	}
 }
 
-// TestAddCacheInfoHybridCores uses the layout of a Core i7-12700K: 8 SMT cores
-// with a private L2, and 4 cores without SMT that share one L2, all behind one
-// L3. Only the cores that share the L2 may list it in UncoreCaches.
-func TestAddCacheInfoHybridCores(t *testing.T) {
+// newHybridTopology returns the layout of a Core i7-12700K: 8 SMT cores with a
+// private L2, and 4 cores without SMT that share one L2, all behind one L3 that
+// covers the 20 threads of the node.
+func newHybridTopology() (*perCPUCacheSysFs, *info.Node) {
 	fs := &perCPUCacheSysFs{FakeSysFs: &fakesysfs.FakeSysFs{}, caches: map[int][]sysfs.CacheInfo{}}
 	node := &info.Node{}
 	l3 := sysfs.CacheInfo{Id: 0, Size: 25600 << 10, Type: "Unified", Level: 3, Cpus: 20}
@@ -1637,6 +1637,13 @@ func TestAddCacheInfoHybridCores(t *testing.T) {
 			l3,
 		}
 	}
+	return fs, node
+}
+
+// TestAddCacheInfoHybridCores checks the L2 of a hybrid part. Only the cores
+// that share the L2 may list it in UncoreCaches.
+func TestAddCacheInfoHybridCores(t *testing.T) {
+	fs, node := newHybridTopology()
 
 	require.NoError(t, addCacheInfo(fs, node))
 
@@ -1920,4 +1927,19 @@ func TestGetDistancesMissingDistances(t *testing.T) {
 	distances, err := getDistances(fakeSys, node)
 	assert.Nil(t, err)
 	assert.Len(t, distances, 0)
+}
+
+// The L3 of a hybrid part covers every thread of the node, so it is a node level
+// cache even though the SMT cores and the other cores have different thread counts.
+func TestAddCacheInfoHybridCoresNodeWideL3(t *testing.T) {
+	fs, node := newHybridTopology()
+
+	require.NoError(t, addCacheInfo(fs, node))
+
+	assert.Equal(t, []info.Cache{cacheOf(0, 25600<<10, "Unified", 3)}, node.Caches, "node caches")
+	for i, core := range node.Cores {
+		for _, c := range core.UncoreCaches {
+			assert.NotEqual(t, 3, c.Level, "core %d must not list the node wide L3 as an uncore cache", i)
+		}
+	}
 }
