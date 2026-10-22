@@ -339,6 +339,12 @@ func getCpusByPhysicalPackageID(sysFs sysfs.SysFs, cpusPaths []string) (map[int]
 
 // addCacheInfo adds information about cache for NUMA node
 func addCacheInfo(sysFs sysfs.SysFs, node *info.Node) error {
+	// Cores can have a different number of threads (hybrid CPUs), so count them all.
+	numThreadsPerNode := 0
+	for _, core := range node.Cores {
+		numThreadsPerNode += len(core.Threads)
+	}
+
 	for coreID, core := range node.Cores {
 		threadID := core.Threads[0] //get any thread for core
 		caches, err := GetCacheInfo(sysFs, threadID)
@@ -347,7 +353,6 @@ func addCacheInfo(sysFs sysfs.SysFs, node *info.Node) error {
 		}
 
 		numThreadsPerCore := len(core.Threads)
-		numThreadsPerNode := len(node.Cores) * numThreadsPerCore
 
 		for _, cache := range caches {
 			c := info.Cache{
