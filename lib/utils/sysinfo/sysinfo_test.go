@@ -20,9 +20,12 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	info "github.com/google/cadvisor/lib/model"
 	"github.com/google/cadvisor/lib/utils/sysfs"
@@ -1475,6 +1478,186 @@ func TestGetCacheInfo(t *testing.T) {
 	}
 }
 
+// perCPUCacheSysFs serves a distinct list of caches for every CPU, in sysfs
+// "indexN" order, which the stock FakeSysFs (one cache for all CPUs) cannot.
+type perCPUCacheSysFs struct {
+	*fakesysfs.FakeSysFs
+	caches map[int][]sysfs.CacheInfo
+}
+
+func (f *perCPUCacheSysFs) GetCaches(cpu int) ([]os.FileInfo, error) {
+	var entries []os.FileInfo
+	for i := range f.caches[cpu] {
+		entries = append(entries, &fakesysfs.FileInfo{EntryName: fmt.Sprintf("index%d", i)})
+	}
+	return entries, nil
+}
+
+func (f *perCPUCacheSysFs) GetCacheInfo(cpu int, name string) (sysfs.CacheInfo, error) {
+	idx, err := strconv.Atoi(strings.TrimPrefix(name, "index"))
+	if err != nil {
+		return sysfs.CacheInfo{}, err
+	}
+	return f.caches[cpu][idx], nil
+}
+
+// cacheTopology describes a node of identical cores: threadsPerCore threads
+// per core, an L2 shared by coresPerL2 cores and an L3 shared by coresPerL3
+// cores. It mirrors the sysfs index order: L1d, L1i, L2, L3.
+type cacheTopology struct {
+	cores          int
+	threadsPerCore int
+	coresPerL2     int
+	coresPerL3     int
+}
+
+func (c cacheTopology) build() (*perCPUCacheSysFs, *info.Node) {
+	fs := &perCPUCacheSysFs{FakeSysFs: &fakesysfs.FakeSysFs{}, caches: map[int][]sysfs.CacheInfo{}}
+	node := &info.Node{}
+	for core := 0; core < c.cores; core++ {
+		var threads []int
+		for t := 0; t < c.threadsPerCore; t++ {
+			threads = append(threads, core*c.threadsPerCore+t)
+		}
+		node.Cores = append(node.Cores, info.Core{Id: core, Threads: threads})
+		l2Group, l3Group := core/c.coresPerL2, core/c.coresPerL3
+		// ids are deliberately not contiguous or equal to the group number
+		perCore := []sysfs.CacheInfo{
+			{Id: core * 2, Size: 32 << 10, Type: "Data", Level: 1, Cpus: c.threadsPerCore},
+			{Id: core * 2, Size: 64 << 10, Type: "Instruction", Level: 1, Cpus: c.threadsPerCore},
+			{Id: 100 + l2Group*3, Size: 4 << 20, Type: "Unified", Level: 2, Cpus: c.coresPerL2 * c.threadsPerCore},
+			{Id: 200 + l3Group, Size: 240 << 20, Type: "Unified", Level: 3, Cpus: c.coresPerL3 * c.threadsPerCore},
+		}
+		for _, thread := range threads {
+			fs.caches[thread] = perCore
+		}
+	}
+	return fs, node
+}
+
+func cacheOf(id int, size uint64, typ string, level int) info.Cache {
+	return info.Cache{Id: id, Size: size, Type: typ, Level: level}
+}
+
+func TestAddCacheInfoSharedL2(t *testing.T) {
+	l1 := func(core int) []info.Cache {
+		return []info.Cache{
+			cacheOf(core*2, 32<<10, "Data", 1),
+			cacheOf(core*2, 64<<10, "Instruction", 1),
+		}
+	}
+	l2 := func(group int) info.Cache { return cacheOf(100+group*3, 4<<20, "Unified", 2) }
+	l3 := func(group int) info.Cache { return cacheOf(200+group, 240<<20, "Unified", 3) }
+
+	testCases := []struct {
+		name string
+		topo cacheTopology
+		// expectations per core index (core -> caches); node caches for the whole node
+		wantCaches  func(core int) []info.Cache
+		wantUncore  func(core int) []info.Cache
+		wantNodeCch []info.Cache
+	}{
+		{
+			// non-SMT cores in pairs sharing an L2, L3 shared by part of the node
+			name:       "non-SMT cores sharing a 2-core L2 below a partial L3",
+			topo:       cacheTopology{cores: 8, threadsPerCore: 1, coresPerL2: 2, coresPerL3: 4},
+			wantCaches: l1,
+			wantUncore: func(core int) []info.Cache { return []info.Cache{l2(core / 2), l3(core / 4)} },
+		},
+		{
+			// Xeon 6 with E-cores: 4-core L2 clusters, L3 spans the whole node
+			name:        "non-SMT cores sharing a 4-core L2 below a node-wide L3",
+			topo:        cacheTopology{cores: 8, threadsPerCore: 1, coresPerL2: 4, coresPerL3: 8},
+			wantCaches:  l1,
+			wantUncore:  func(core int) []info.Cache { return []info.Cache{l2(core / 4)} },
+			wantNodeCch: []info.Cache{l3(0)},
+		},
+		{
+			// L2 shared by every core of the node behaves like a node-wide L3
+			name:        "L2 shared by the whole node",
+			topo:        cacheTopology{cores: 4, threadsPerCore: 1, coresPerL2: 4, coresPerL3: 4},
+			wantCaches:  l1,
+			wantUncore:  func(core int) []info.Cache { return nil },
+			wantNodeCch: []info.Cache{l2(0), l3(0)},
+		},
+		{
+			// regression: L2 private to an SMT core stays a core cache
+			name: "L2 private to an SMT core",
+			topo: cacheTopology{cores: 4, threadsPerCore: 2, coresPerL2: 1, coresPerL3: 2},
+			wantCaches: func(core int) []info.Cache {
+				// threads of one core share the caches, so ids follow the core
+				return append(l1(core), l2(core))
+			},
+			wantUncore: func(core int) []info.Cache { return []info.Cache{l3(core / 2)} },
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			fs, node := tc.topo.build()
+			require.NoError(t, addCacheInfo(fs, node))
+
+			for core := range node.Cores {
+				assert.Equal(t, tc.wantCaches(core), node.Cores[core].Caches, "Caches of core %d", core)
+				assert.Equal(t, tc.wantUncore(core), node.Cores[core].UncoreCaches, "UncoreCaches of core %d", core)
+			}
+			assert.Equal(t, tc.wantNodeCch, node.Caches, "node caches")
+		})
+	}
+}
+
+// TestAddCacheInfoHybridCores uses the layout of a Core i7-12700K: 8 SMT cores
+// with a private L2, and 4 cores without SMT that share one L2, all behind one
+// L3. Only the cores that share the L2 may list it in UncoreCaches.
+func TestAddCacheInfoHybridCores(t *testing.T) {
+	fs := &perCPUCacheSysFs{FakeSysFs: &fakesysfs.FakeSysFs{}, caches: map[int][]sysfs.CacheInfo{}}
+	node := &info.Node{}
+	l3 := sysfs.CacheInfo{Id: 0, Size: 25600 << 10, Type: "Unified", Level: 3, Cpus: 20}
+
+	for core := 0; core < 8; core++ { // threads 2*core and 2*core+1
+		threads := []int{2 * core, 2*core + 1}
+		node.Cores = append(node.Cores, info.Core{Id: core * 4, Threads: threads})
+		perCore := []sysfs.CacheInfo{
+			{Id: core * 4, Size: 48 << 10, Type: "Data", Level: 1, Cpus: 2},
+			{Id: core * 4, Size: 64 << 10, Type: "Instruction", Level: 1, Cpus: 2},
+			{Id: core, Size: 1280 << 10, Type: "Unified", Level: 2, Cpus: 2},
+			l3,
+		}
+		for _, thread := range threads {
+			fs.caches[thread] = perCore
+		}
+	}
+	for core := 0; core < 4; core++ { // threads 16 to 19, one per core
+		thread := 16 + core
+		node.Cores = append(node.Cores, info.Core{Id: 36 + core, Threads: []int{thread}})
+		fs.caches[thread] = []sysfs.CacheInfo{
+			{Id: 36 + core, Size: 32 << 10, Type: "Data", Level: 1, Cpus: 1},
+			{Id: 36 + core, Size: 64 << 10, Type: "Instruction", Level: 1, Cpus: 1},
+			{Id: 9, Size: 2048 << 10, Type: "Unified", Level: 2, Cpus: 4},
+			l3,
+		}
+	}
+
+	require.NoError(t, addCacheInfo(fs, node))
+
+	level2 := func(caches []info.Cache) []info.Cache {
+		var out []info.Cache
+		for _, c := range caches {
+			if c.Level == 2 {
+				out = append(out, c)
+			}
+		}
+		return out
+	}
+	for core := 0; core < 8; core++ {
+		assert.Equal(t, []info.Cache{cacheOf(core, 1280<<10, "Unified", 2)}, level2(node.Cores[core].Caches), "private L2 of SMT core %d", core)
+		assert.Empty(t, level2(node.Cores[core].UncoreCaches), "SMT core %d must not list an uncore L2", core)
+	}
+	for core := 8; core < 12; core++ {
+		assert.Empty(t, level2(node.Cores[core].Caches), "core %d shares its L2", core)
+		assert.Equal(t, []info.Cache{cacheOf(9, 2048<<10, "Unified", 2)}, level2(node.Cores[core].UncoreCaches), "shared L2 of core %d", core)
+	}
+}
 func TestGetNetworkStats(t *testing.T) {
 	expectedStats := info.InterfaceStats{
 		Name:      "eth0",
