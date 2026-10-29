@@ -172,6 +172,7 @@ func TestSetMemoryStats(t *testing.T) {
 				"pgsteal":                 22,
 				"workingset_refault_file": 23,
 				"workingset_refault_anon": 24,
+				"kernel":                  25,
 			},
 		},
 	}
@@ -195,6 +196,63 @@ func TestSetMemoryStats(t *testing.T) {
 	}
 	if ret.Memory.WorkingsetRefaultAnon != 24 {
 		t.Errorf("expected WorkingsetRefaultAnon 24, got %d", ret.Memory.WorkingsetRefaultAnon)
+	}
+	if ret.Memory.KernelUsage != 25 {
+		t.Errorf("expected KernelUsage 25, got %d", ret.Memory.KernelUsage)
+	}
+}
+
+func TestSetMemoryStatsKernelUsage(t *testing.T) {
+	testCases := []struct {
+		name          string
+		kernelUsage   uint64
+		stats         map[string]uint64
+		expectedUsage uint64
+	}{
+		{
+			name:        "cgroup v2 kernel memory stat present",
+			kernelUsage: 0,
+			stats: map[string]uint64{
+				"kernel": 962486272,
+			},
+			expectedUsage: 962486272,
+		},
+		{
+			name:          "cgroup v1 kernel memory usage with no kernel stat",
+			kernelUsage:   52428800,
+			stats:         map[string]uint64{},
+			expectedUsage: 52428800,
+		},
+		{
+			name:          "neither cgroup v1 nor v2 stat present",
+			kernelUsage:   0,
+			stats:         map[string]uint64{},
+			expectedUsage: 0,
+		},
+		{
+			name:        "cgroup v2 kernel stat overrides zero kernel usage",
+			kernelUsage: 0,
+			stats: map[string]uint64{
+				"kernel": 1048576,
+			},
+			expectedUsage: 1048576,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := &cgroups.Stats{
+				MemoryStats: cgroups.MemoryStats{
+					KernelUsage: cgroups.MemoryData{
+						Usage: tc.kernelUsage,
+					},
+					Stats: tc.stats,
+				},
+			}
+			var ret info.ContainerStats
+			setMemoryStats(s, &ret)
+			assert.Equal(t, tc.expectedUsage, ret.Memory.KernelUsage)
+		})
 	}
 }
 
