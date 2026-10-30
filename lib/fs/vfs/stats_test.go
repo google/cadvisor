@@ -19,6 +19,8 @@ package vfs
 import (
 	"context"
 	"errors"
+	"sync"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"testing/synctest"
@@ -89,5 +91,61 @@ func TestGetVfsStatsTimeout(t *testing.T) {
 		// Let the worker's statfs return and the worker exit before the bubble ends.
 		time.Sleep(100 * time.Millisecond)
 		synctest.Wait()
+	})
+}
+
+// TestGetVfsStatsHungKeepsOneCallPerPath runs with fake time. The stub does not
+// return until the test releases it, as statfs does on a dead hard NFS mount.
+// Repeated calls for a path must time out without starting another statfs, since
+// each one would hold an OS thread for as long as the filesystem stays hung.
+func TestGetVfsStatsHungKeepsOneCallPerPath(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		release := make(chan struct{})
+		var started atomic.Int32
+		stubStatfs(t, func(_ string, s *syscall.Statfs_t) error {
+			started.Add(1)
+			<-release
+			*s = sampleStatfs
+			return nil
+		}, 10*time.Millisecond)
+
+		timesOut := func(path string) {
+			t.Helper()
+			if _, _, _, _, _, err := GetVfsStats(path); !errors.Is(err, context.DeadlineExceeded) {
+				t.Errorf("got error %v, want context.DeadlineExceeded", err)
+			}
+		}
+
+		for range 3 {
+			timesOut("/mnt")
+		}
+		var wg sync.WaitGroup
+		for range 3 {
+			wg.Go(func() { timesOut("/mnt") })
+		}
+		wg.Wait()
+		if got := started.Load(); got != 1 {
+			t.Errorf("started statfs %d times for one hung path, want 1", got)
+		}
+
+		// Another path is not held up by the hung one.
+		timesOut("/other")
+		if got := started.Load(); got != 2 {
+			t.Errorf("started statfs %d times for two hung paths, want 2", got)
+		}
+
+		// Once the hung calls return, the next call starts a new statfs and succeeds.
+		close(release)
+		synctest.Wait()
+		total, _, _, _, _, err := GetVfsStats("/mnt")
+		if err != nil {
+			t.Fatalf("unexpected error after release: %v", err)
+		}
+		if total != 409600 {
+			t.Errorf("got total %d, want 409600", total)
+		}
+		if got := started.Load(); got != 3 {
+			t.Errorf("started statfs %d times in total, want 3", got)
+		}
 	})
 }
