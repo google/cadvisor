@@ -65,6 +65,7 @@ func (c *collector) setup() error {
 				time.Sleep(c.interval)
 				c.mu.Lock()
 				if c.destroyed {
+					c.mu.Unlock()
 					break
 				}
 				klog.V(5).Infof("Trying to check %q containers control group.", c.id)
