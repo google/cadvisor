@@ -15,4 +15,7 @@
 export GO_FLAGS="-tags=libipmctl,cgo -race"
 export PACKAGES="sudo libipmctl5"
 export BUILD_PACKAGES="libipmctl5 libipmctl-dev"
+# The bootstrap image follows the newest tag and is now Debian trixie, which
+# dropped ipmctl; take libipmctl5 (and libipmctl-common) from bookworm.
+export BOOTSTRAP_APT_SOURCE="deb http://deb.debian.org/debian bookworm main"
 export CADVISOR_ARGS="-perf_events_config=perf/testing/perf-non-hardware.json"
