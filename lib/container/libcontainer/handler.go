@@ -285,12 +285,38 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 		pids = pids[:len(pids)-1]
 	}
 
+	// Processes that share a file descriptor table (CLONE_FILES without
+	// CLONE_THREAD) are counted once: walking each of their fd directories
+	// would count the same descriptors once per process, and on sandboxes
+	// with many such processes the walk itself is very expensive.
+	dedupe := canDedupeFdTables(rootFs)
+	var tables fdTableSet
+
 	for _, pid := range pids {
+		var (
+			pidNum  int
+			idx     int
+			tracked bool
+		)
+		if dedupe {
+			if n, err := strconv.Atoi(pid); err == nil {
+				var shared bool
+				shared, idx, tracked = tables.find(n)
+				if shared {
+					continue
+				}
+				pidNum = n
+			}
+		}
+
 		dirPath := path.Join(rootFs, "/proc", pid, "fd")
 		fds, err := os.ReadDir(dirPath)
 		if err != nil {
 			klog.V(4).Infof("error while listing directory %q to measure fd count: %v", dirPath, err)
 			continue
+		}
+		if tracked {
+			tables.insert(idx, pidNum)
 		}
 		fdCount += uint64(len(fds))
 		for _, fd := range fds {
