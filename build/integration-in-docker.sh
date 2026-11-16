@@ -63,6 +63,7 @@ function run_tests() {
     --entrypoint="" \
     "${BOOTSTRAP_IMAGE}" \
     bash -c "export DEBIAN_FRONTEND=noninteractive && \
+    ${BOOTSTRAP_APT_SOURCE:+echo '$BOOTSTRAP_APT_SOURCE' > /etc/apt/sources.list.d/extra.list && } \
     apt update && \
     apt install -y $PACKAGES && \
     CADVISOR_ARGS=$CADVISOR_ARGS /usr/local/bin/runner.sh build/integration.sh"
@@ -72,6 +73,9 @@ GO_FLAGS=${GO_FLAGS:-"-tags=netgo -race"}
 PACKAGES=${PACKAGES:-"sudo"}
 BUILD_PACKAGES=${BUILD_PACKAGES:-}
 CADVISOR_ARGS=${CADVISOR_ARGS:-}
+# Extra apt source line added to the bootstrap image before PACKAGES are
+# installed, for packages its Debian release no longer ships.
+BOOTSTRAP_APT_SOURCE=${BOOTSTRAP_APT_SOURCE:-}
 GOLANG_VERSION=${GOLANG_VERSION:-"1.25"}
 DEBIAN_VERSION=${DEBIAN_VERSION:-"trixie"}
 
