@@ -281,10 +281,12 @@ func (cd *containerData) nextHousekeepingInterval() time.Duration {
 		} else if len(stats) == 2 {
 			// TODO(vishnuk): Use no processes as a signal.
 			// Raise the interval if usage hasn't changed in the last housekeeping.
-			if stats[0].StatsEq(stats[1]) && (cd.housekeepingInterval < cd.maxHousekeepingInterval) {
-				cd.housekeepingInterval *= 2
-				if cd.housekeepingInterval > cd.maxHousekeepingInterval {
-					cd.housekeepingInterval = cd.maxHousekeepingInterval
+			if stats[0].StatsEq(stats[1]) {
+				if cd.housekeepingInterval < cd.maxHousekeepingInterval {
+					cd.housekeepingInterval *= 2
+					if cd.housekeepingInterval > cd.maxHousekeepingInterval {
+						cd.housekeepingInterval = cd.maxHousekeepingInterval
+					}
 				}
 			} else if cd.housekeepingInterval != *HousekeepingInterval {
 				// Lower interval back to the baseline.
