@@ -22,12 +22,16 @@ import (
 	"time"
 )
 
+// statfs and statfsTimeout are variables so that tests can simulate a hung filesystem.
+var (
+	statfs        = syscall.Statfs
+	statfsTimeout = 2 * time.Second
+)
+
 // GetVfsStats returns filesystem statistics using the statfs syscall.
 // It has a timeout to prevent hanging on unresponsive filesystems.
 func GetVfsStats(path string) (total uint64, free uint64, avail uint64, inodes uint64, inodesFree uint64, err error) {
-	// timeout the context with, default is 2sec
-	timeout := 2
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), statfsTimeout)
 	defer cancel()
 
 	type result struct {
@@ -41,17 +45,18 @@ func GetVfsStats(path string) (total uint64, free uint64, avail uint64, inodes u
 
 	resultChan := make(chan result, 1)
 
+	// The goroutine may outlive the timeout below, so it must not touch the named return values.
 	go func() {
 		var s syscall.Statfs_t
-		if err = syscall.Statfs(path, &s); err != nil {
-			total, free, avail, inodes, inodesFree = 0, 0, 0, 0, 0
+		var res result
+		if res.err = statfs(path, &s); res.err == nil {
+			res.total = uint64(s.Frsize) * s.Blocks
+			res.free = uint64(s.Frsize) * s.Bfree
+			res.avail = uint64(s.Frsize) * s.Bavail
+			res.inodes = uint64(s.Files)
+			res.inodesFree = uint64(s.Ffree)
 		}
-		total = uint64(s.Frsize) * s.Blocks
-		free = uint64(s.Frsize) * s.Bfree
-		avail = uint64(s.Frsize) * s.Bavail
-		inodes = uint64(s.Files)
-		inodesFree = uint64(s.Ffree)
-		resultChan <- result{total: total, free: free, avail: avail, inodes: inodes, inodesFree: inodesFree, err: err}
+		resultChan <- res
 	}()
 
 	select {
