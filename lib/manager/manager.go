@@ -894,13 +894,14 @@ func (m *manager) createContainer(containerName string, watchSource watcher.Cont
 	}
 
 	// Add the container name and all its aliases. The aliases must be within the namespace of the factory.
-	m.containers.Store(namespacedName, cont)
 	for _, alias := range cont.info.Aliases {
 		m.containers.Store(namespacedContainerName{
 			Namespace: cont.info.Namespace,
 			Name:      alias,
 		}, cont)
 	}
+	// Store the namespacedName after all aliases. Thus the namespacedName/alias can be detected if leaks.
+	m.containers.Store(namespacedName, cont)
 
 	klog.V(3).Infof("Added container: %q (aliases: %v, namespace: %q)", containerName, cont.info.Aliases, cont.info.Namespace)
 
