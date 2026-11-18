@@ -190,19 +190,17 @@ func main() {
 
 func setMaxProcs() {
 	// TODO(vmarmol): Consider limiting if we have a CPU mask in effect.
-	// Allow as many threads as we have cores unless the user specified a value.
-	var numProcs int
-	if *maxProcs < 1 {
-		numProcs = runtime.NumCPU()
-	} else {
-		numProcs = *maxProcs
-	}
-	runtime.GOMAXPROCS(numProcs)
+	// Only override GOMAXPROCS when --max_procs is explicitly set.
+	// Otherwise, honour the Go runtime default which respects the
+	// GOMAXPROCS env var (or falls back to NumCPU).
+	if *maxProcs >= 1 {
+		runtime.GOMAXPROCS(*maxProcs)
 
-	// Check if the setting was successful.
-	actualNumProcs := runtime.GOMAXPROCS(0)
-	if actualNumProcs != numProcs {
-		klog.Warningf("Specified max procs of %v but using %v", numProcs, actualNumProcs)
+		// Check if the setting was successful.
+		actualNumProcs := runtime.GOMAXPROCS(0)
+		if actualNumProcs != *maxProcs {
+			klog.Warningf("Specified max procs of %v but using %v", *maxProcs, actualNumProcs)
+		}
 	}
 }
 
