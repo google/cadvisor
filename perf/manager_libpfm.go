@@ -64,11 +64,37 @@ func NewManager(configFile string, topology []info.Node) (stats.Manager, error) 
 }
 
 func (m *manager) GetCollector(cgroupPath string) (stats.Collector, error) {
-	collector := newCollector(cgroupPath, m.events, m.onlineCPUs, m.cpuToSocket)
-	err := collector.setup()
-	if err != nil {
+	return newRefreshingCollector(cgroupPath, m.createCollector)
+}
+
+func (m *manager) createCollector(cgroupPath string) (stats.Collector, cgroupIdentity, error) {
+	// A cgroup can be replaced while setup opens one perf FD per event and CPU.
+	// Accept the collector only when the path identity is stable across setup.
+	for attempt := 0; attempt < 3; attempt++ {
+		identity, err := getCgroupIdentity(cgroupPath)
+		if err != nil {
+			return &stats.NoopCollector{}, cgroupIdentity{}, err
+		}
+
+		collector := newCollector(cgroupPath, m.events, m.onlineCPUs, m.cpuToSocket)
+		if err := collector.setup(); err != nil {
+			collector.Destroy()
+			return &stats.NoopCollector{}, cgroupIdentity{}, err
+		}
+
+		currentIdentity, err := getCgroupIdentity(cgroupPath)
+		if err != nil {
+			collector.Destroy()
+			return &stats.NoopCollector{}, cgroupIdentity{}, err
+		}
+		if currentIdentity == identity {
+			return collector, identity, nil
+		}
+
+		// Setup raced with cgroup recreation. Close every descriptor and retry
+		// against the cgroup that currently occupies the path.
 		collector.Destroy()
-		return &stats.NoopCollector{}, err
 	}
-	return collector, nil
+
+	return &stats.NoopCollector{}, cgroupIdentity{}, fmt.Errorf("cgroup %q identity changed repeatedly while creating perf collector", cgroupPath)
 }
