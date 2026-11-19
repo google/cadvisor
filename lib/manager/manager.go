@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -327,12 +328,20 @@ type manager struct {
 	// lifecycle and OOM events. nil for the kubelet (no event machinery). See
 	// events.go.
 	eventSink EventSink
+
+	// initializePlugins registers container plugins. nil means
+	// container.InitializePlugins; tests replace it.
+	initializePlugins func(info.MachineInfoFactory, fs.FsInfo, container.MetricSet) []watcher.ContainerWatcher
+
+	// recheckCursor is the last container recheckRawContainers visited. Only
+	// the global housekeeping goroutine uses it.
+	recheckCursor string
 }
 
 // Start the container manager.
 func (m *manager) Start() error {
 	if !m.disableContainerDiscovery {
-		m.containerWatchers = container.InitializePlugins(m, m.fsInfo, m.includedMetrics)
+		m.containerWatchers = m.registerPlugins()
 	}
 
 	err := raw.Register(m, m.fsInfo, m.includedMetrics, m.rawContainerCgroupPathPrefixWhiteList)
@@ -388,6 +397,16 @@ func (m *manager) Start() error {
 	go m.updateMachineInfo(quitUpdateMachineInfo)
 
 	return nil
+}
+
+// registerPlugins calls Register on the container plugins that are pending, and
+// returns the watchers they return.
+func (m *manager) registerPlugins() []watcher.ContainerWatcher {
+	initialize := m.initializePlugins
+	if initialize == nil {
+		initialize = container.InitializePlugins
+	}
+	return initialize(m, m.fsInfo, m.includedMetrics)
 }
 
 func (m *manager) Stop() error {
@@ -452,12 +471,7 @@ func (m *manager) globalHousekeeping(quit chan error) {
 		select {
 		case t := <-ticker.C:
 			start := time.Now()
-
-			// Check for new containers.
-			err := m.detectSubcontainers("/")
-			if err != nil {
-				klog.Errorf("Failed to detect containers: %s", err)
-			}
+			m.housekeepingPass()
 
 			// Log if housekeeping took too long.
 			duration := time.Since(start)
@@ -471,6 +485,28 @@ func (m *manager) globalHousekeeping(quit chan error) {
 			return
 		}
 	}
+}
+
+// housekeepingPass runs one pass of global housekeeping.
+func (m *manager) housekeepingPass() {
+	// Retry plugins that failed to register, and register plugins added since
+	// Start. Doing this first lets a factory that registers now claim new
+	// containers in the same pass. Watchers are only started by Start, so any
+	// returned now are dropped. They were never started, so they aren't stopped.
+	for _, w := range m.registerPlugins() {
+		klog.Errorf("Ignoring container watcher %T: watchers from plugins registered after start are not supported", w)
+	}
+
+	// Check for new containers.
+	err := m.detectSubcontainers("/")
+	if err != nil {
+		klog.Errorf("Failed to detect containers: %s", err)
+	}
+
+	// Hand containers that raw adopted to factories that now claim them. The
+	// re-check stops after half the interval, so a registered but slow runtime
+	// can't hold up the next pass.
+	m.recheckRawContainers(*globalHousekeepingInterval / 2)
 }
 
 func (m *manager) getAdjustedSpec(cinfo *containerInfo) info.ContainerSpec {
@@ -843,6 +879,15 @@ func (m *manager) createContainer(containerName string, watchSource watcher.Cont
 	if err != nil {
 		return err
 	}
+	return m.startContainer(containerName, cont)
+}
+
+// startContainer attaches collectors to cont, stores it under containerName and
+// its aliases, and starts its housekeeping.
+func (m *manager) startContainer(containerName string, cont *containerData) error {
+	handler := cont.handler
+	namespacedName := namespacedContainerName{Name: containerName}
+	var err error
 
 	if m.includedMetrics.Has(container.PerfMetrics) {
 		perfCgroupPath, err := handler.GetCgroupPath("perf_event")
@@ -922,6 +967,13 @@ func (m *manager) createContainer(containerName string, watchSource watcher.Cont
 }
 
 func (m *manager) destroyContainer(containerName string) error {
+	return m.destroyContainerData(containerName, true)
+}
+
+// destroyContainerData stops the container tracked under containerName and
+// removes it and its aliases. deletionEvent is false when the container hasn't
+// exited, but is about to be tracked again by another handler.
+func (m *manager) destroyContainerData(containerName string, deletionEvent bool) error {
 	namespacedName := namespacedContainerName{
 		Name: containerName,
 	}
@@ -931,14 +983,17 @@ func (m *manager) destroyContainer(containerName string) error {
 		return nil
 	}
 
-	exitCode, err := cont.handler.GetExitCode()
-	if err != nil {
-		klog.V(4).Infof("Could not retrieve exit code for container %q: %v (using -1)", containerName, err)
-		exitCode = -1
+	exitCode := -1
+	if deletionEvent {
+		var err error
+		exitCode, err = cont.handler.GetExitCode()
+		if err != nil {
+			klog.V(4).Infof("Could not retrieve exit code for container %q: %v (using -1)", containerName, err)
+			exitCode = -1
+		}
 	}
 
-	err = cont.Stop()
-	if err != nil {
+	if err := cont.Stop(); err != nil {
 		return err
 	}
 
@@ -951,6 +1006,9 @@ func (m *manager) destroyContainer(containerName string) error {
 		})
 	}
 	klog.V(3).Infof("Destroyed container: %q (aliases: %v, namespace: %q, exit_code: %d)", containerName, cont.info.Aliases, cont.info.Namespace, exitCode)
+	if !deletionEvent {
+		return nil
+	}
 
 	// Surface the container-deletion event to the sink (no-op if unset),
 	// carrying the exit code (the /events API and its tests rely on it).
@@ -1036,6 +1094,81 @@ func (m *manager) detectSubcontainers(containerName string) error {
 	}
 
 	return nil
+}
+
+// recheckRawContainers offers the containers that the raw factory tracks to
+// the other factories. A runtime container that raw adopted, because its
+// runtime's factory wasn't registered yet or couldn't answer, is handed to
+// that factory once it claims it. The pass stops once budget has elapsed, and
+// the next pass resumes after the last container this one visited.
+func (m *manager) recheckRawContainers(budget time.Duration) {
+	start := time.Now()
+
+	var names []string
+	m.containers.Range(func(key namespacedContainerName, cont *containerData) bool {
+		// Visit canonical entries only; raw containers have no aliases.
+		if cont != nil && key.Namespace == "" && key.Name == cont.info.Name && key.Name != "/" &&
+			cont.handler.Type() == container.ContainerTypeRaw {
+			names = append(names, key.Name)
+		}
+		return true
+	})
+	sort.Strings(names)
+
+	// Resume after the cursor, wrapping around, so that slow containers
+	// don't use up the budget of every pass.
+	i := sort.SearchStrings(names, m.recheckCursor)
+	if i < len(names) && names[i] == m.recheckCursor {
+		i++
+	}
+	names = append(names[i:], names[:i]...)
+
+	for _, name := range names {
+		if time.Since(start) >= budget {
+			klog.V(4).Infof("Stopping the raw container re-check after %v; it resumes after %q", budget, m.recheckCursor)
+			return
+		}
+		m.recheckCursor = name
+		m.recheckRawContainer(name)
+	}
+}
+
+func (m *manager) recheckRawContainer(name string) {
+	handler, accept, err := container.NewNonRawContainerHandler(name, watcher.Raw, m.containerEnvMetadataWhiteList, m.inHostNamespace)
+	if err != nil {
+		// No other factory claims it, or the runtime couldn't answer. Ask
+		// again on the next pass.
+		klog.V(5).Infof("Keeping raw container %q: %v", name, err)
+		return
+	}
+	if !accept {
+		// A fresh discovery would ignore this container, so stop tracking it.
+		klog.V(3).Infof("Raw container %q is claimed but ignored by a factory; destroying it", name)
+		if err := m.destroyContainer(name); err != nil {
+			klog.Errorf("Failed to destroy container %q: %v", name, err)
+		}
+		return
+	}
+
+	// Build the new containerData before touching the raw one, so a failure
+	// leaves the raw entry in place for the next pass.
+	cont, err := newContainerData(name, m.memoryCache, handler, m.maxHousekeepingInterval, m.allowDynamicHousekeeping, clock.RealClock{})
+	if err != nil {
+		klog.V(4).Infof("Keeping raw container %q: %v", name, err)
+		return
+	}
+	// The container hasn't exited, so there is no deletion event. The old
+	// collectors are destroyed before the new ones are created, as when a
+	// container is deleted and created again.
+	if err := m.destroyContainerData(name, false); err != nil {
+		cont.stopLoadReader()
+		klog.Errorf("Failed to replace raw container %q: %v", name, err)
+		return
+	}
+	klog.V(2).Infof("Container %q is no longer tracked as a raw container", name)
+	if err := m.startContainer(name, cont); err != nil {
+		klog.Errorf("Failed to start container %q: %v", name, err)
+	}
 }
 
 // Watches for new containers started in the system. Runs forever unless there is a setup error.

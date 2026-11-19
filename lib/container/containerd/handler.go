@@ -80,8 +80,9 @@ func newContainerdContainerHandler(
 
 	id := ContainerNameToContainerdID(name)
 	// We assume that if load fails then the container is not known to containerd.
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
 	cntr, err := client.LoadContainer(ctx, id)
+	cancel()
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,11 @@ func newContainerdContainerHandler(
 	backoff := 100 * time.Millisecond
 	retry := 5
 	for {
+		// Each attempt gets its own deadline, so the backoff sleeps don't use up
+		// the time of later attempts.
+		ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
 		taskPid, err = client.TaskPid(ctx, id)
+		cancel()
 		if err == nil {
 			break
 		}

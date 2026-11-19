@@ -186,6 +186,78 @@ type Plugin interface {
 	Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) (watcher.ContainerWatcher, error)
 }
 
+// RetryablePlugin is a Plugin whose Register may be called again after it
+// returns an error. A failed Register must leave no factory registered and
+// nothing that accumulates across calls, such as goroutines or watchers. Shared,
+// cached clients may persist. Every call must return in bounded time.
+type RetryablePlugin interface {
+	Plugin
+
+	// CanRetryRegister reports whether Register may be called again after it
+	// returned an error.
+	//
+	// The manager retries during global housekeeping, after it has started its
+	// container watchers, so a watcher returned by a retried Register is not
+	// started.
+	CanRetryRegister() bool
+}
+
+func canRetryRegister(plugin Plugin) bool {
+	p, ok := plugin.(RetryablePlugin)
+	return ok && p.CanRetryRegister()
+}
+
+// PluginStatus is the registration state of a plugin added with RegisterPlugin.
+type PluginStatus struct {
+	// Registered is true once Register has succeeded.
+	Registered bool
+	// Attempts is the number of times Register has been called.
+	Attempts int
+	// LastError is the error from the latest Register call, or nil.
+	LastError error
+}
+
+type pluginStatus struct {
+	PluginStatus
+	retryable bool
+}
+
+// pluginStatuses has its own lock, so readers don't wait for a Register call,
+// which InitializePlugins makes while holding pluginsLock.
+var (
+	pluginStatusesLock sync.Mutex
+	pluginStatuses     = map[string]pluginStatus{}
+)
+
+// PluginStatuses returns the registration state of every plugin that
+// InitializePlugins has called, keyed by plugin name.
+func PluginStatuses() map[string]PluginStatus {
+	pluginStatusesLock.Lock()
+	defer pluginStatusesLock.Unlock()
+	out := make(map[string]PluginStatus, len(pluginStatuses))
+	for name, s := range pluginStatuses {
+		out[name] = s.PluginStatus
+	}
+	return out
+}
+
+func getPluginStatus(name string) pluginStatus {
+	pluginStatusesLock.Lock()
+	defer pluginStatusesLock.Unlock()
+	return pluginStatuses[name]
+}
+
+func recordRegisterAttempt(name string, err error, retryable bool) {
+	pluginStatusesLock.Lock()
+	defer pluginStatusesLock.Unlock()
+	s := pluginStatuses[name]
+	s.Attempts++
+	s.Registered = err == nil
+	s.LastError = err
+	s.retryable = retryable
+	pluginStatuses[name] = s
+}
+
 func RegisterPlugin(name string, plugin Plugin) error {
 	pluginsLock.Lock()
 	defer pluginsLock.Unlock()
@@ -209,16 +281,36 @@ func InitializeFSContext(context *fs.Context) error {
 	return nil
 }
 
+// InitializePlugins calls Register on each plugin that hasn't been called yet,
+// and again on each plugin whose Register failed and that implements
+// RetryablePlugin. Plugins that have registered, or that failed and can't be
+// retried, are skipped, so it is safe to call repeatedly. It returns the
+// watchers returned by the Register calls it made.
 func InitializePlugins(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics MetricSet) []watcher.ContainerWatcher {
 	pluginsLock.Lock()
 	defer pluginsLock.Unlock()
 
 	containerWatchers := []watcher.ContainerWatcher{}
 	for name, plugin := range plugins {
+		status := getPluginStatus(name)
+		retryable := canRetryRegister(plugin)
+		if status.Registered || (status.Attempts > 0 && !retryable) {
+			continue
+		}
 		watcher, err := plugin.Register(factory, fsInfo, includedMetrics)
-		if err != nil {
+		recordRegisterAttempt(name, err, retryable)
+		// Plugins for runtimes that aren't installed fail on every call, so only
+		// the first failure is logged at the default level.
+		switch {
+		case err != nil && status.Attempts > 0:
+			klog.V(4).Infof("Registration of the %s container factory failed: %v", name, err)
+		case err != nil && retryable:
+			klog.Infof("Registration of the %s container factory failed: %v; will retry", name, err)
+		case err != nil:
 			klog.Infof("Registration of the %s container factory failed: %v", name, err)
-		} else {
+		case status.Attempts > 0:
+			klog.Infof("Registered the %s container factory after %d attempts", name, status.Attempts+1)
+		default:
 			klog.Infof("Registration of the %s container factory successfully", name)
 		}
 		if watcher != nil {
@@ -256,14 +348,31 @@ func HasFactories() bool {
 
 // Create a new ContainerHandler for the specified container.
 func NewContainerHandler(name string, watchType watcher.ContainerWatchSource, metadataEnvAllowList []string, inHostNamespace bool) (ContainerHandler, bool, error) {
+	return newContainerHandler(name, watchType, metadataEnvAllowList, inHostNamespace, false)
+}
+
+// NewNonRawContainerHandler is NewContainerHandler without the raw factory. It
+// is used to ask whether a container that the raw factory adopted is now
+// claimed by a runtime factory, without building a raw handler when it isn't.
+func NewNonRawContainerHandler(name string, watchType watcher.ContainerWatchSource, metadataEnvAllowList []string, inHostNamespace bool) (ContainerHandler, bool, error) {
+	return newContainerHandler(name, watchType, metadataEnvAllowList, inHostNamespace, true)
+}
+
+func newContainerHandler(name string, watchType watcher.ContainerWatchSource, metadataEnvAllowList []string, inHostNamespace bool, skipRaw bool) (ContainerHandler, bool, error) {
+	// Factories make runtime API calls, so call them on a snapshot rather than
+	// holding the lock, which would block registration behind a slow runtime.
 	factoriesLock.RLock()
-	defer factoriesLock.RUnlock()
+	factoryList := GetReorderedFactoryList(watchType)
+	factoriesLock.RUnlock()
+	if skipRaw && len(factoryList) > 0 && factoryList[len(factoryList)-1].String() == "raw" {
+		factoryList = factoryList[:len(factoryList)-1]
+	}
 
 	// Create the ContainerHandler with the first factory that supports it.
 	// Note that since RawContainerHandler can support a wide range of paths,
 	// it's evaluated last just to make sure if any other ContainerHandler
 	// can support it.
-	for _, factory := range GetReorderedFactoryList(watchType) {
+	for _, factory := range factoryList {
 		canHandle, canAccept, err := factory.CanHandleAndAccept(name)
 		if err != nil {
 			klog.V(4).Infof("Error trying to work out if we can handle %s: %v", name, err)
@@ -304,7 +413,28 @@ func DebugInfo() map[string][]string {
 			}
 		}
 	}
+	if lines := pluginStatusLines(); len(lines) > 0 {
+		out["Container plugins"] = lines
+	}
 	return out
+}
+
+func pluginStatusLines() []string {
+	pluginStatusesLock.Lock()
+	defer pluginStatusesLock.Unlock()
+	lines := make([]string, 0, len(pluginStatuses))
+	for name, s := range pluginStatuses {
+		switch {
+		case s.Registered:
+			lines = append(lines, fmt.Sprintf("%s: registered", name))
+		case s.retryable:
+			lines = append(lines, fmt.Sprintf("%s: not registered, will retry (attempts: %d): %v", name, s.Attempts, s.LastError))
+		default:
+			lines = append(lines, fmt.Sprintf("%s: not registered (attempts: %d): %v", name, s.Attempts, s.LastError))
+		}
+	}
+	sort.Strings(lines)
+	return lines
 }
 
 // GetReorderedFactoryList returns the list of ContainerHandlerFactory where the

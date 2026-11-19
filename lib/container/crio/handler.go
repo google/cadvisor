@@ -120,7 +120,7 @@ func newCrioContainerHandler(
 	backoff := 100 * time.Millisecond
 	retry := 5
 	for {
-		cInfo, err = client.ContainerInfo(id)
+		cInfo, err = boundedContainerInfo(client, id)
 		if err == nil && cInfo != nil {
 			break
 		}

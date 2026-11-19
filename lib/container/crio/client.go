@@ -77,6 +77,43 @@ type crioClientImpl struct {
 	client *http.Client
 }
 
+// crioRegistrationTimeout bounds the CRI-O calls made while registering the
+// factory and building container handlers. Those run during housekeeping, so
+// they need a deadline even when --crio_client_timeout is 0. It is a variable
+// so tests can lower it.
+var crioRegistrationTimeout = 10 * time.Second
+
+// contextClient is implemented by crioClientImpl. CrioClient has no context
+// parameters, and other implementations (such as test mocks) fall back to its
+// methods.
+type contextClient interface {
+	infoContext(ctx context.Context) (Info, error)
+	containerInfoContext(ctx context.Context, id string) (*ContainerInfo, error)
+}
+
+// boundedInfo calls Info with a crioRegistrationTimeout deadline.
+func boundedInfo(c CrioClient) (Info, error) {
+	cc, ok := c.(contextClient)
+	if !ok {
+		return c.Info()
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), crioRegistrationTimeout)
+	defer cancel()
+	return cc.infoContext(ctx)
+}
+
+// boundedContainerInfo calls ContainerInfo with a crioRegistrationTimeout
+// deadline.
+func boundedContainerInfo(c CrioClient, id string) (*ContainerInfo, error) {
+	cc, ok := c.(contextClient)
+	if !ok {
+		return c.ContainerInfo(id)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), crioRegistrationTimeout)
+	defer cancel()
+	return cc.containerInfoContext(ctx, id)
+}
+
 func configureUnixTransport(tr *http.Transport, proto, addr string) error {
 	if len(addr) > maxUnixSocketPathSize {
 		return fmt.Errorf("unix socket path %q is too long", addr)
@@ -107,8 +144,8 @@ func Client() (CrioClient, error) {
 	return theClient, clientErr
 }
 
-func getRequest(path string) (*http.Request, error) {
-	req, err := http.NewRequest("GET", path, nil)
+func getRequest(ctx context.Context, path string) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +159,12 @@ func getRequest(path string) (*http.Request, error) {
 
 // Info returns generic info from the CRI-O server
 func (c *crioClientImpl) Info() (Info, error) {
+	return c.infoContext(context.Background())
+}
+
+func (c *crioClientImpl) infoContext(ctx context.Context) (Info, error) {
 	info := Info{}
-	req, err := getRequest("/info")
+	req, err := getRequest(ctx, "/info")
 	if err != nil {
 		return info, err
 	}
@@ -140,7 +181,11 @@ func (c *crioClientImpl) Info() (Info, error) {
 
 // ContainerInfo returns information about a given container
 func (c *crioClientImpl) ContainerInfo(id string) (*ContainerInfo, error) {
-	req, err := getRequest("/containers/" + id)
+	return c.containerInfoContext(context.Background(), id)
+}
+
+func (c *crioClientImpl) containerInfoContext(ctx context.Context, id string) (*ContainerInfo, error) {
+	req, err := getRequest(ctx, "/containers/"+id)
 	if err != nil {
 		return nil, err
 	}

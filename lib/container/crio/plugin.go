@@ -32,6 +32,13 @@ func NewPlugin() container.Plugin {
 
 type plugin struct{}
 
+var _ container.RetryablePlugin = &plugin{}
+
+// CanRetryRegister reports that Register may be called again after it fails.
+func (p *plugin) CanRetryRegister() bool {
+	return true
+}
+
 func (p *plugin) InitializeFSContext(context *fs.Context) error {
 	crioClient, err := Client()
 	if err != nil {

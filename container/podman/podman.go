@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	dockercontainer "github.com/moby/moby/api/types/container"
 	dockerimage "github.com/moby/moby/api/types/image"
@@ -36,8 +35,6 @@ import (
 const (
 	Namespace = "podman"
 )
-
-var timeout = 10 * time.Second
 
 func validateResponse(gotError error, response *http.Response) error {
 	var err error
@@ -60,7 +57,7 @@ func validateResponse(gotError error, response *http.Response) error {
 }
 
 func apiGetRequest(url string, item interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), *podmanClientTimeout)
 	defer cancel()
 
 	conn, err := client(&ctx)

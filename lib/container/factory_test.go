@@ -15,12 +15,18 @@
 package container_test
 
 import (
+	"errors"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/google/cadvisor/lib/container"
 	containertest "github.com/google/cadvisor/lib/container/testing"
+	"github.com/google/cadvisor/lib/fs"
+	info "github.com/google/cadvisor/lib/model"
 	"github.com/google/cadvisor/lib/watcher"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -182,5 +188,242 @@ func TestRawContainerHandler_Last(t *testing.T) {
 
 	if list[len(list)-1].String() != "raw" {
 		t.Error("Expected raw container handler to be last in the list.")
+	}
+}
+
+type blockingContainerHandlerFactory struct {
+	mockContainerHandlerFactory
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (f *blockingContainerHandlerFactory) CanHandleAndAccept(name string) (bool, bool, error) {
+	close(f.entered)
+	<-f.release
+	return false, false, nil
+}
+
+func TestNewContainerHandler_DoesNotBlockRegistration(t *testing.T) {
+	container.ClearContainerHandlerFactories()
+
+	slow := &blockingContainerHandlerFactory{
+		mockContainerHandlerFactory: mockContainerHandlerFactory{Name: "slow"},
+		entered:                     make(chan struct{}),
+		release:                     make(chan struct{}),
+	}
+	container.RegisterContainerHandlerFactory(slow, []watcher.ContainerWatchSource{watcher.Raw})
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _, _ = container.NewContainerHandler(testContainerName, watcher.Raw, testMetadataEnvAllowList, true)
+	}()
+	<-slow.entered
+
+	// Registering a factory takes the write lock. It must not wait for the
+	// slow factory's call to finish.
+	registered := make(chan struct{})
+	go func() {
+		container.RegisterContainerHandlerFactory(&mockContainerHandlerFactory{Name: "late"}, []watcher.ContainerWatchSource{watcher.Raw})
+		close(registered)
+	}()
+	select {
+	case <-registered:
+	case <-time.After(5 * time.Second):
+		t.Error("RegisterContainerHandlerFactory blocked behind CanHandleAndAccept")
+	}
+
+	close(slow.release)
+	<-done
+}
+
+type fakePlugin struct {
+	mu      sync.Mutex
+	calls   int
+	errs    []error // the error for each call; nil once they run out
+	watcher watcher.ContainerWatcher
+	block   chan struct{}
+}
+
+func (p *fakePlugin) InitializeFSContext(context *fs.Context) error {
+	return nil
+}
+
+func (p *fakePlugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics container.MetricSet) (watcher.ContainerWatcher, error) {
+	if p.block != nil {
+		<-p.block
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.calls++
+	if p.calls <= len(p.errs) {
+		return p.watcher, p.errs[p.calls-1]
+	}
+	return p.watcher, nil
+}
+
+func (p *fakePlugin) Calls() int {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.calls
+}
+
+type retryableFakePlugin struct {
+	*fakePlugin
+	retry bool
+}
+
+func (p *retryableFakePlugin) CanRetryRegister() bool {
+	return p.retry
+}
+
+type fakeWatcher struct{}
+
+func (fakeWatcher) Start(events chan watcher.ContainerEvent) error { return nil }
+func (fakeWatcher) Stop() error                                    { return nil }
+
+func registerTestPlugin(t *testing.T, name string, plugin container.Plugin) {
+	t.Helper()
+	if err := container.RegisterPlugin(name, plugin); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestInitializePluginsRetriesOnlyRetryablePlugins(t *testing.T) {
+	container.ResetPluginsForTest()
+	t.Cleanup(container.ResetPluginsForTest)
+	container.ClearContainerHandlerFactories()
+
+	errDown := errors.New("down")
+	ok := &fakePlugin{}
+	once := &fakePlugin{errs: []error{errDown}}
+	optOut := &retryableFakePlugin{fakePlugin: &fakePlugin{errs: []error{errDown}}, retry: false}
+	retry := &retryableFakePlugin{fakePlugin: &fakePlugin{errs: []error{errDown, errDown}}, retry: true}
+	registerTestPlugin(t, "ok", ok)
+	registerTestPlugin(t, "once", once)
+	registerTestPlugin(t, "optout", optOut)
+	registerTestPlugin(t, "retry", retry)
+
+	for i := 0; i < 3; i++ {
+		container.InitializePlugins(nil, nil, nil)
+	}
+
+	assert.Equal(t, 1, ok.Calls())
+	assert.Equal(t, 1, once.Calls())
+	assert.Equal(t, 1, optOut.Calls())
+	assert.Equal(t, 3, retry.Calls())
+	assert.Equal(t, map[string]container.PluginStatus{
+		"ok":     {Registered: true, Attempts: 1},
+		"once":   {Attempts: 1, LastError: errDown},
+		"optout": {Attempts: 1, LastError: errDown},
+		"retry":  {Registered: true, Attempts: 3},
+	}, container.PluginStatuses())
+}
+
+func TestInitializePluginsReturnsWatchers(t *testing.T) {
+	container.ResetPluginsForTest()
+	t.Cleanup(container.ResetPluginsForTest)
+
+	// As before RetryablePlugin, a watcher returned together with an error
+	// is still returned.
+	registerTestPlugin(t, "failed", &fakePlugin{errs: []error{errors.New("down")}, watcher: fakeWatcher{}})
+	registerTestPlugin(t, "ok", &fakePlugin{watcher: fakeWatcher{}})
+	assert.Len(t, container.InitializePlugins(nil, nil, nil), 2)
+
+	// Nothing is called again, so nothing is returned.
+	assert.Empty(t, container.InitializePlugins(nil, nil, nil))
+}
+
+func TestInitializePluginsPicksUpLatePlugins(t *testing.T) {
+	container.ResetPluginsForTest()
+	t.Cleanup(container.ResetPluginsForTest)
+
+	registerTestPlugin(t, "early", &fakePlugin{})
+	container.InitializePlugins(nil, nil, nil)
+
+	late := &fakePlugin{}
+	registerTestPlugin(t, "late", late)
+	container.InitializePlugins(nil, nil, nil)
+	assert.Equal(t, 1, late.Calls())
+	assert.True(t, container.PluginStatuses()["late"].Registered)
+}
+
+func TestPluginStatusesDoesNotWaitForRegister(t *testing.T) {
+	container.ResetPluginsForTest()
+	t.Cleanup(container.ResetPluginsForTest)
+
+	registerTestPlugin(t, "done", &fakePlugin{})
+	container.InitializePlugins(nil, nil, nil)
+
+	slow := &fakePlugin{block: make(chan struct{})}
+	registerTestPlugin(t, "slow", slow)
+	initialized := make(chan struct{})
+	go func() {
+		container.InitializePlugins(nil, nil, nil)
+		close(initialized)
+	}()
+
+	statuses := make(chan map[string]container.PluginStatus)
+	go func() { statuses <- container.PluginStatuses() }()
+	select {
+	case s := <-statuses:
+		assert.True(t, s["done"].Registered)
+	case <-time.After(5 * time.Second):
+		t.Error("PluginStatuses waited for a Register call")
+	}
+	close(slow.block)
+	<-initialized
+}
+
+func TestDebugInfoListsPlugins(t *testing.T) {
+	container.ResetPluginsForTest()
+	t.Cleanup(container.ResetPluginsForTest)
+	container.ClearContainerHandlerFactories()
+
+	registerTestPlugin(t, "a", &fakePlugin{})
+	registerTestPlugin(t, "b", &retryableFakePlugin{fakePlugin: &fakePlugin{errs: []error{errors.New("down")}}, retry: true})
+	registerTestPlugin(t, "c", &fakePlugin{errs: []error{errors.New("gone")}})
+	container.InitializePlugins(nil, nil, nil)
+
+	assert.Equal(t, []string{
+		"a: registered",
+		"b: not registered, will retry (attempts: 1): down",
+		"c: not registered (attempts: 1): gone",
+	}, container.DebugInfo()["Container plugins"])
+}
+
+func TestNewNonRawContainerHandler(t *testing.T) {
+	for _, tc := range []struct {
+		name                 string
+		canHandle, canAccept bool
+		wantHandler          bool
+		wantAccept           bool
+		wantErr              bool
+	}{
+		{name: "accept", canHandle: true, canAccept: true, wantHandler: true, wantAccept: true},
+		{name: "ignore", canHandle: true, canAccept: false},
+		{name: "none", wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			container.ClearContainerHandlerFactories()
+			t.Cleanup(container.ClearContainerHandlerFactories)
+
+			// The raw factory claims everything, and must never be asked.
+			raw := &mockContainerHandlerFactory{Name: "raw", CanHandleValue: true, CanAcceptValue: true}
+			runtime := &mockContainerHandlerFactory{Name: "runtime", CanHandleValue: tc.canHandle, CanAcceptValue: tc.canAccept}
+			container.RegisterContainerHandlerFactory(raw, []watcher.ContainerWatchSource{watcher.Raw})
+			container.RegisterContainerHandlerFactory(runtime, []watcher.ContainerWatchSource{watcher.Raw})
+			mockContainer, err := mockFactory.NewContainerHandler(testContainerName, testMetadataEnvAllowList, true)
+			if err != nil {
+				t.Fatal(err)
+			}
+			runtime.On("NewContainerHandler", testContainerName).Return(mockContainer, nil)
+
+			handler, accept, err := container.NewNonRawContainerHandler(testContainerName, watcher.Raw, testMetadataEnvAllowList, true)
+			assert.Equal(t, tc.wantErr, err != nil, "error: %v", err)
+			assert.Equal(t, tc.wantAccept, accept)
+			assert.Equal(t, tc.wantHandler, handler != nil)
+			raw.AssertNotCalled(t, "NewContainerHandler", testContainerName)
+		})
 	}
 }

@@ -34,10 +34,13 @@ import (
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/google/cadvisor/lib/container/containerd/containers"
+	"github.com/google/cadvisor/lib/container/containerd/namespaces"
 	"github.com/google/cadvisor/lib/container/containerd/pkg/dialer"
 )
 
 type client struct {
+	// namespace is set on each call's context, unless the caller set one.
+	namespace        string
 	containerService containersapi.ContainersClient
 	taskService      tasksapi.TasksClient
 	versionService   versionapi.VersionClient
@@ -69,9 +72,13 @@ func toNative(err error) error {
 	return err
 }
 
-var once sync.Once
-var ctrdClient ContainerdClient = nil
-var ctrdClientErr error = nil
+// conns holds one connection per containerd address, shared by the clients of
+// every namespace. A failed dial isn't cached, so a containerd that starts
+// later is picked up when registration is retried.
+var (
+	connsMu sync.Mutex
+	conns   = map[string]*grpc.ClientConn{}
+)
 
 const (
 	maxBackoffDelay   = 3 * time.Second
@@ -80,54 +87,72 @@ const (
 	maxMsgSize        = 16 * 1024 * 1024 // 16MB
 )
 
-// Client creates a containerd client
+// Client returns a containerd client whose calls use the given namespace,
+// dialing containerd if no connection to address has succeeded yet.
 func Client(address, namespace string) (ContainerdClient, error) {
-	once.Do(func() {
-		tryConn, err := net.DialTimeout("unix", address, connectionTimeout)
-		if err != nil {
-			ctrdClientErr = fmt.Errorf("containerd: cannot unix dial containerd api service: %v", err)
-			return
-		}
-		tryConn.Close()
+	conn, err := connection(address)
+	if err != nil {
+		return nil, err
+	}
+	return &client{
+		namespace:        namespace,
+		containerService: containersapi.NewContainersClient(conn),
+		taskService:      tasksapi.NewTasksClient(conn),
+		versionService:   versionapi.NewVersionClient(conn),
+	}, nil
+}
 
-		connParams := grpc.ConnectParams{
-			Backoff: backoff.DefaultConfig,
-		}
-		connParams.Backoff.BaseDelay = baseBackoffDelay
-		connParams.Backoff.MaxDelay = maxBackoffDelay
-		//nolint:staticcheck // SA1019
-		gopts := []grpc.DialOption{
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithContextDialer(dialer.ContextDialer),
-			grpc.WithBlock(),
-			grpc.WithConnectParams(connParams),
-			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
-		}
-		unary, stream := newNSInterceptors(namespace)
-		gopts = append(gopts,
-			grpc.WithUnaryInterceptor(unary),
-			grpc.WithStreamInterceptor(stream),
-		)
+func connection(address string) (*grpc.ClientConn, error) {
+	connsMu.Lock()
+	defer connsMu.Unlock()
+	if conn, ok := conns[address]; ok {
+		return conn, nil
+	}
+	conn, err := dial(address)
+	if err != nil {
+		return nil, err
+	}
+	conns[address] = conn
+	return conn, nil
+}
 
-		ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
-		defer cancel()
-		//nolint:staticcheck // SA1019
-		conn, err := grpc.DialContext(ctx, dialer.DialAddress(address), gopts...)
-		if err != nil {
-			ctrdClientErr = err
-			return
-		}
-		ctrdClient = &client{
-			containerService: containersapi.NewContainersClient(conn),
-			taskService:      tasksapi.NewTasksClient(conn),
-			versionService:   versionapi.NewVersionClient(conn),
-		}
-	})
-	return ctrdClient, ctrdClientErr
+func dial(address string) (*grpc.ClientConn, error) {
+	tryConn, err := net.DialTimeout("unix", address, connectionTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("containerd: cannot unix dial containerd api service: %v", err)
+	}
+	tryConn.Close()
+
+	connParams := grpc.ConnectParams{
+		Backoff: backoff.DefaultConfig,
+	}
+	connParams.Backoff.BaseDelay = baseBackoffDelay
+	connParams.Backoff.MaxDelay = maxBackoffDelay
+	//nolint:staticcheck // SA1019
+	gopts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithContextDialer(dialer.ContextDialer),
+		grpc.WithBlock(),
+		grpc.WithConnectParams(connParams),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), connectionTimeout)
+	defer cancel()
+	//nolint:staticcheck // SA1019
+	return grpc.DialContext(ctx, dialer.DialAddress(address), gopts...)
+}
+
+// withNamespace sets the client's namespace on ctx, unless the caller already
+// set one.
+func (c *client) withNamespace(ctx context.Context) context.Context {
+	if _, ok := namespaces.Namespace(ctx); ok {
+		return ctx
+	}
+	return namespaces.WithNamespace(ctx, c.namespace)
 }
 
 func (c *client) LoadContainer(ctx context.Context, id string) (*containers.Container, error) {
-	r, err := c.containerService.Get(ctx, &containersapi.GetContainerRequest{
+	r, err := c.containerService.Get(c.withNamespace(ctx), &containersapi.GetContainerRequest{
 		ID: id,
 	})
 	if err != nil {
@@ -137,7 +162,7 @@ func (c *client) LoadContainer(ctx context.Context, id string) (*containers.Cont
 }
 
 func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
-	response, err := c.taskService.Get(ctx, &tasksapi.GetRequest{
+	response, err := c.taskService.Get(c.withNamespace(ctx), &tasksapi.GetRequest{
 		ContainerID: id,
 	})
 	if err != nil {
@@ -150,7 +175,7 @@ func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
 }
 
 func (c *client) LoadTaskProcess(ctx context.Context, id string) (*tasktypes.Process, error) {
-	response, err := c.taskService.Get(ctx, &tasksapi.GetRequest{
+	response, err := c.taskService.Get(c.withNamespace(ctx), &tasksapi.GetRequest{
 		ContainerID: id,
 	})
 	if err != nil {
@@ -161,7 +186,7 @@ func (c *client) LoadTaskProcess(ctx context.Context, id string) (*tasktypes.Pro
 }
 
 func (c *client) TaskExitStatus(ctx context.Context, id string) (uint32, error) {
-	response, err := c.taskService.Get(ctx, &tasksapi.GetRequest{
+	response, err := c.taskService.Get(c.withNamespace(ctx), &tasksapi.GetRequest{
 		ContainerID: id,
 	})
 	if err != nil {
@@ -174,7 +199,7 @@ func (c *client) TaskExitStatus(ctx context.Context, id string) (uint32, error) 
 }
 
 func (c *client) Version(ctx context.Context) (string, error) {
-	response, err := c.versionService.Version(ctx, &emptypb.Empty{})
+	response, err := c.versionService.Version(c.withNamespace(ctx), &emptypb.Empty{})
 	if err != nil {
 		return "", toNative(err)
 	}
