@@ -125,7 +125,7 @@ func getRwLayerID(containerID, storageDir string, sd StorageDriver, dockerVersio
 
 // newContainerHandler returns a new container.ContainerHandler
 func newContainerHandler(
-	client *dclient.Client,
+	client dclient.APIClient,
 	containerdClient containerd.ContainerdClient,
 	name string,
 	machineInfoFactory info.MachineInfoFactory,
@@ -163,29 +163,34 @@ func newContainerHandler(
 	otherStorageDir := path.Join(storageDir, pathToContainersDir, id)
 
 	var rootfsStorageDir, zfsFilesystem, zfsParent string
-	if storageDriver == ContainerdSnapshotterStorageDriver {
-		ctx := namespaces.WithNamespace(context.Background(), "moby")
-		cntr, err := containerdClient.LoadContainer(ctx, id)
-		if err != nil {
-			return nil, err
-		}
+	if metrics.Has(container.DiskUsageMetrics) {
+		if storageDriver == ContainerdSnapshotterStorageDriver {
+			if containerdClient == nil {
+				return nil, fmt.Errorf("containerd client is required for Docker filesystem stats with %q storage driver", storageDriver)
+			}
+			ctx := namespaces.WithNamespace(context.Background(), "moby")
+			cntr, err := containerdClient.LoadContainer(ctx, id)
+			if err != nil {
+				return nil, err
+			}
 
-		var spec specs.Spec
-		if err := json.Unmarshal(cntr.Spec.Value, &spec); err != nil {
-			return nil, err
-		}
-		rootfsStorageDir = spec.Root.Path
-	} else {
-		rwLayerID, err := getRwLayerID(id, storageDir, storageDriver, dockerVersion)
-		if err != nil {
-			return nil, err
-		}
+			var spec specs.Spec
+			if err := json.Unmarshal(cntr.Spec.Value, &spec); err != nil {
+				return nil, err
+			}
+			rootfsStorageDir = spec.Root.Path
+		} else {
+			rwLayerID, err := getRwLayerID(id, storageDir, storageDriver, dockerVersion)
+			if err != nil {
+				return nil, err
+			}
 
-		// Determine the rootfs storage dir OR the pool name to determine the device.
-		// For devicemapper, we only need the thin pool name, and that is passed in to this call
-		rootfsStorageDir, zfsFilesystem, zfsParent, err = DetermineDeviceStorage(storageDriver, storageDir, rwLayerID)
-		if err != nil {
-			return nil, fmt.Errorf("unable to determine device storage: %v", err)
+			// Determine the rootfs storage dir OR the pool name to determine the device.
+			// For devicemapper, we only need the thin pool name, and that is passed in to this call
+			rootfsStorageDir, zfsFilesystem, zfsParent, err = DetermineDeviceStorage(storageDriver, storageDir, rwLayerID)
+			if err != nil {
+				return nil, fmt.Errorf("unable to determine device storage: %v", err)
+			}
 		}
 	}
 
