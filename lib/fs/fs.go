@@ -472,7 +472,7 @@ func getDiskStatsMap(diskStatsFile string) (map[string]DiskStats, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		words := strings.Fields(line)
-		if !partitionRegex.MatchString(words[2]) {
+		if len(words) < 3 || !partitionRegex.MatchString(words[2]) {
 			continue
 		}
 		// 8      50 sdd2 40 0 280 223 7 0 22 108 0 330 330
