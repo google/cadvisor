@@ -27,6 +27,7 @@ import (
 	info "github.com/google/cadvisor/lib/model"
 	itest "github.com/google/cadvisor/lib/model/test"
 	"github.com/google/cadvisor/lib/stats"
+	"github.com/google/cadvisor/lib/storage"
 	"github.com/google/cadvisor/lib/utils/sysfs/fakesysfs"
 	"github.com/google/cadvisor/lib/watcher"
 
@@ -82,6 +83,33 @@ func (m *manager) addContainer(t *testing.T, name, namespace string) *containerD
 	}
 	m.containers.Store(namespacedContainerName{Namespace: namespace, Name: name}, cont)
 	return cont
+}
+
+// duringAddStats is a storage driver that calls itself from AddStats.
+// InMemoryCache.AddStats calls the drivers after it has stored the container
+// and before it has stored the stats.
+type duringAddStats func()
+
+func (f duringAddStats) AddStats(*info.ContainerInfo, *info.ContainerStats) error {
+	f()
+	return nil
+}
+
+func (f duringAddStats) Close() error { return nil }
+
+func TestGetFsInfoBeforeFirstStats(t *testing.T) {
+	var m *manager
+	var err error
+	called := false
+	m = &manager{memoryCache: memory.New(time.Minute, []storage.StorageDriver{duringAddStats(func() {
+		called = true
+		_, err = m.GetFsInfo("")
+	})})}
+
+	root := &info.ContainerInfo{ContainerReference: info.ContainerReference{Name: "/"}}
+	assert.NoError(t, m.memoryCache.AddStats(root, &info.ContainerStats{Timestamp: time.Now()}))
+	assert.True(t, called)
+	assert.Equal(t, memory.ErrDataNotFound, err)
 }
 
 func TestExists(t *testing.T) {

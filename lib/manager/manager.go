@@ -733,6 +733,10 @@ func (m *manager) GetFsInfo(label string) ([]info.FsInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(stats) == 0 {
+		// The cache holds the root container before it holds its first stats.
+		return nil, memory.ErrDataNotFound
+	}
 	dev := ""
 	if len(label) != 0 {
 		dev, err = m.fsInfo.GetDeviceForLabel(label)
