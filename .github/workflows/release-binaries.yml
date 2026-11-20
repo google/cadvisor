@@ -99,6 +99,25 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
+      # softprops/action-gh-release appends freshly generated notes to any
+      # existing release body. Maintainers often create the GitHub Release
+      # (with auto-generated notes) before this workflow uploads binaries,
+      # which produced duplicated "What's Changed" sections. Only generate
+      # notes when the release does not already have a body.
+      - name: Decide whether to generate release notes
+        id: release_notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${VERSION}" >/dev/null 2>&1; then
+            body="$(gh release view "${VERSION}" --json body -q .body 2>/dev/null || true)"
+            if [ -n "${body}" ]; then
+              echo "generate=false" >> "${GITHUB_OUTPUT}"
+              exit 0
+            fi
+          fi
+          echo "generate=true" >> "${GITHUB_OUTPUT}"
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
@@ -107,6 +126,6 @@ jobs:
           name: cAdvisor ${{ env.VERSION }}
           draft: false
           prerelease: ${{ contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta') || contains(env.VERSION, 'rc') }}
-          generate_release_notes: true
+          generate_release_notes: ${{ steps.release_notes.outputs.generate }}
           files: |
             artifacts/**/*
