@@ -832,6 +832,9 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		ret.Memory.RSS = s.MemoryStats.Stats["anon"]
 		ret.Memory.Swap = s.MemoryStats.SwapUsage.Usage - s.MemoryStats.Usage.Usage
 		ret.Memory.MappedFile = s.MemoryStats.Stats["file_mapped"]
+		if v, ok := s.MemoryStats.Stats["kernel"]; ok {
+			ret.Memory.KernelUsage = v
+		}
 	} else if s.MemoryStats.UseHierarchy {
 		ret.Memory.Cache = s.MemoryStats.Stats["total_cache"]
 		ret.Memory.RSS = s.MemoryStats.Stats["total_rss"]
@@ -842,6 +845,11 @@ func setMemoryStats(s *cgroups.Stats, ret *info.ContainerStats) {
 		ret.Memory.RSS = s.MemoryStats.Stats["rss"]
 		ret.Memory.Swap = s.MemoryStats.Stats["swap"]
 		ret.Memory.MappedFile = s.MemoryStats.Stats["mapped_file"]
+	}
+	if ret.Memory.KernelUsage == 0 {
+		if v, ok := s.MemoryStats.Stats["kernel"]; ok {
+			ret.Memory.KernelUsage = v
+		}
 	}
 	if v, ok := s.MemoryStats.Stats["pgfault"]; ok {
 		ret.Memory.ContainerData.Pgfault = v
