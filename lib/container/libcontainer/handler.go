@@ -739,8 +739,9 @@ func scanUDPStats(r io.Reader) (info.UdpStat, error) {
 			continue
 		}
 
+		// The column is "tx_queue:rx_queue": transmit queue first.
 		var rx, tx uint64
-		_, err := fmt.Sscanf(fs[4], "%X:%X", &rx, &tx)
+		_, err := fmt.Sscanf(fs[4], "%X:%X", &tx, &rx)
 		if err != nil {
 			continue
 		}

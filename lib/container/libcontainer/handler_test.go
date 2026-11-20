@@ -82,11 +82,12 @@ func TestScanUDPStats(t *testing.T) {
 		t.Error(err)
 	}
 
+	// The second socket in testdata/procnetudp has tx_queue:rx_queue = 0000000A:0000000B.
 	udpstats := info.UdpStat{
 		Listen:   2,
 		Dropped:  4,
-		RxQueued: 10,
-		TxQueued: 11,
+		RxQueued: 11,
+		TxQueued: 10,
 	}
 
 	if stats != udpstats {
