@@ -22,11 +22,11 @@ All the necessary packages will be installed, build flags will be applied and ad
 
 ## VM-base tests (legacy)
 
-The cAdvisor integration tests are run per-pr using the [kubernetes node-e2e testing framework](https://github.com/kubernetes/community/blob/master/contributors/devel/e2e-node-tests.md) on GCE instances.  To make use of this framework, complete the setup of GCP described in the node-e2e testing framework, clone `k8s.io/kubernetes`, and from that repository run:
+The cAdvisor integration tests are run per-pr using the [kubernetes node-e2e testing framework](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-node/e2e-node-tests.md) on GCE instances.  To make use of this framework, complete the setup of GCP described in the node-e2e testing framework, clone `k8s.io/kubernetes`, and from that repository run:
 ```
 $ make test-e2e-node TEST_SUITE=cadvisor REMOTE=true
 ```
-This will create a VM, build cadvisor, run integration tests on that VM, retrieve logs, and will clean up the test afterwards.  See the [node-e2e testing documentation](https://github.com/kubernetes/community/blob/master/contributors/devel/e2e-node-tests.md) for more running options.
+This will create a VM, build cadvisor, run integration tests on that VM, retrieve logs, and will clean up the test afterwards.  See the [node-e2e testing documentation](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-node/e2e-node-tests.md) for more running options.
 
 To simply run the tests against an existing cAdvisor:
 
