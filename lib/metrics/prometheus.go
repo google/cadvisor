@@ -593,6 +593,13 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 					}
 				},
 			}, {
+				name:      "container_memory_events_low_total",
+				help:      "Cumulative count of memory.low reclaim events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Events.Low), timestamp: s.Timestamp}}
+				},
+			}, {
 				name:      "container_memory_events_high_total",
 				help:      "Cumulative count of memory.high throttle events for the container",
 				valueType: prometheus.CounterValue,
@@ -611,6 +618,27 @@ func NewPrometheusCollector(i infoProvider, f ContainerLabelsFunc, includedMetri
 						return nil
 					}
 					return metricValues{{value: float64(s.Memory.Events.Max), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_events_oom_total",
+				help:      "Cumulative count of memory OOM events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Events.Oom), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_events_oom_kill_total",
+				help:      "Cumulative count of memory OOM kill events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Events.OomKill), timestamp: s.Timestamp}}
+				},
+			}, {
+				name:      "container_memory_events_oom_group_kill_total",
+				help:      "Cumulative count of memory OOM group kill events for the container",
+				valueType: prometheus.CounterValue,
+				getValues: func(s *info.ContainerStats) metricValues {
+					return metricValues{{value: float64(s.Memory.Events.OomGroupKill), timestamp: s.Timestamp}}
 				},
 			}, {
 				name:      "container_memory_file_dirty_bytes",
