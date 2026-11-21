@@ -33,6 +33,7 @@ import (
 	"github.com/opencontainers/cgroups"
 	"github.com/opencontainers/cgroups/fs2"
 	"github.com/opencontainers/cgroups/fscommon"
+	"golang.org/x/sys/unix"
 	"k8s.io/klog/v2"
 
 	"github.com/google/cadvisor/lib/container"
@@ -268,6 +269,9 @@ func processRootProcUlimits(rootFs string, rootPid int) []info.UlimitSpec {
 	return processLimitsFile(string(out))
 }
 
+// socketLinkPrefix is the readlink target prefix of a socket fd in /proc/<pid>/fd.
+const socketLinkPrefix = "socket"
+
 func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.ProcessStats, error) {
 	var fdCount, socketCount uint64
 	filePath := path.Join(cgroupPath, "cgroup.procs")
@@ -285,25 +289,17 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 		pids = pids[:len(pids)-1]
 	}
 
+	linkBuf := make([]byte, 64)
+	procDir := path.Join(rootFs, "/proc")
 	for _, pid := range pids {
-		dirPath := path.Join(rootFs, "/proc", pid, "fd")
-		fds, err := os.ReadDir(dirPath)
+		dirPath := procDir + "/" + pid + "/fd"
+		fds, sockets, err := countFds(dirPath, linkBuf)
 		if err != nil {
 			klog.V(4).Infof("error while listing directory %q to measure fd count: %v", dirPath, err)
 			continue
 		}
-		fdCount += uint64(len(fds))
-		for _, fd := range fds {
-			fdPath := path.Join(dirPath, fd.Name())
-			linkName, err := os.Readlink(fdPath)
-			if err != nil {
-				klog.V(4).Infof("error while reading %q link: %v", fdPath, err)
-				continue
-			}
-			if strings.HasPrefix(linkName, "socket") {
-				socketCount++
-			}
-		}
+		fdCount += fds
+		socketCount += sockets
 	}
 
 	processStats := info.ProcessStats{
@@ -317,6 +313,34 @@ func processStatsFromProcs(rootFs string, cgroupPath string, rootPid int) (info.
 	}
 
 	return processStats, nil
+}
+
+// countFds returns the number of entries in a /proc/<pid>/fd directory and how
+// many of them are sockets. It reads the directory unsorted and resolves each
+// link with readlinkat into a reusable buffer, so the per-fd cost is the two
+// syscalls and nothing else: no path joins, no sorting, no per-link strings.
+func countFds(dirPath string, linkBuf []byte) (fds, sockets uint64, err error) {
+	dir, err := os.Open(dirPath)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer dir.Close()
+	names, err := dir.Readdirnames(-1)
+	if err != nil {
+		return 0, 0, err
+	}
+	dirfd := int(dir.Fd())
+	for _, name := range names {
+		n, err := unix.Readlinkat(dirfd, name, linkBuf)
+		if err != nil {
+			klog.V(4).Infof("error while reading %q link: %v", dirPath+"/"+name, err)
+			continue
+		}
+		if n >= len(socketLinkPrefix) && string(linkBuf[:len(socketLinkPrefix)]) == socketLinkPrefix {
+			sockets++
+		}
+	}
+	return uint64(len(names)), sockets, nil
 }
 
 func (h *Handler) schedulerStatsFromProcs() (info.CpuSchedstat, error) {
