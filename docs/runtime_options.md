@@ -17,7 +17,7 @@ This document describes a set of runtime flags available in cAdvisor.
 
 ## Container Hints
 
-Container hints are a way to pass extra information about a container to cAdvisor. In this way cAdvisor can augment the stats it gathers. For more information on the container hints format see its [definition](../container/common/container_hints.go). Note that container hints are only used by the raw container driver today.
+Container hints are a way to pass extra information about a container to cAdvisor. In this way cAdvisor can augment the stats it gathers. For more information on the container hints format see its [definition](../lib/container/common/container_hints.go). Note that container hints are only used by the raw container driver today.
 
 ```
 --container_hints="/etc/cadvisor/container_hints.json": location of the container hints file
