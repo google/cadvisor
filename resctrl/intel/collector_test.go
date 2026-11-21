@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -113,5 +114,32 @@ func TestDestroy(t *testing.T) {
 
 	if stat, err := os.Stat(path); stat != nil && err == nil {
 		t.Fail()
+	}
+}
+
+func TestDestroyReleasesLock(t *testing.T) {
+	rootResctrl = mockResctrl()
+	defer os.RemoveAll(rootResctrl)
+
+	pidsPath = mockContainersPids()
+	defer os.RemoveAll(pidsPath)
+
+	processPath = mockProcFs()
+	defer os.RemoveAll(processPath)
+
+	collector := newCollector("container", mockGetContainerPids, 10*time.Millisecond, 2, "", true)
+	assert.NoError(t, collector.setup())
+	collector.Destroy()
+
+	// Let the background goroutine see the destroyed flag and exit.
+	time.Sleep(100 * time.Millisecond)
+
+	done := make(chan error, 1)
+	go func() { done <- collector.UpdateStats(&info.ContainerStats{}) }()
+	select {
+	case err := <-done:
+		assert.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("UpdateStats blocked: collector mutex was not released")
 	}
 }
