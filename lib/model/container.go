@@ -1008,10 +1008,11 @@ type ProcessStats struct {
 	// Number of processes
 	ProcessCount uint64 `json:"process_count"`
 
-	// Number of open file descriptors
+	// Number of open file descriptors. Processes that share a file
+	// descriptor table (created with CLONE_FILES) are counted once.
 	FdCount uint64 `json:"fd_count"`
 
-	// Number of sockets
+	// Number of sockets, counted the same way as FdCount.
 	SocketCount uint64 `json:"socket_count"`
 
 	// Number of threads currently in container
