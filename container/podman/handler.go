@@ -149,7 +149,7 @@ func newContainerHandler(
 		}
 	}
 
-	layerID, err := rwLayerID(storageDriver, storageDir, id)
+	layerID, err := rwLayerID(storageDriver, storageDir, id, ctnr.GraphDriver)
 	if err != nil {
 		return nil, err
 	}
