@@ -22,6 +22,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/moby/moby/api/types/storage"
+
 	"github.com/google/cadvisor/container/docker"
 )
 
@@ -36,7 +38,7 @@ type containersJSON struct {
 	// rest in unnecessary
 }
 
-func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerID string) (string, error) {
+func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerID string, graphDriver *storage.DriverData) (string, error) {
 	var containers []containersJSON
 	fileExists := false
 
@@ -57,14 +59,24 @@ func rwLayerID(storageDriver docker.StorageDriver, storageDir string, containerI
 		}
 	}
 
-	if !fileExists {
-		return "", os.ErrNotExist
-	}
-
 	for _, c := range containers {
 		if c.ID == containerID {
 			return c.Layer, nil
 		}
+	}
+
+	// With transient_store the containers file is in the runroot, not storageDir.
+	// Take id from UpperDir (".../<id>/diff"), not the path: UpperDir is a host path.
+	if graphDriver != nil {
+		upperDir := filepath.Clean(graphDriver.Data["UpperDir"])
+		layerID := filepath.Base(filepath.Dir(upperDir))
+		if filepath.Base(upperDir) == "diff" && layerID != "." && layerID != string(filepath.Separator) {
+			return layerID, nil
+		}
+	}
+
+	if !fileExists {
+		return "", os.ErrNotExist
 	}
 
 	return "", fmt.Errorf("unable to determine %v rw layer id", containerID)
