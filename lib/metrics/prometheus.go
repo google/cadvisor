@@ -17,7 +17,10 @@ package metrics
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
+	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/cadvisor/lib/container"
@@ -89,7 +92,14 @@ type containerMetric struct {
 }
 
 func (cm *containerMetric) desc(baseLabels []string) *prometheus.Desc {
-	return prometheus.NewDesc(cm.name, cm.help, append(baseLabels, cm.extraLabels...), nil)
+	// prometheus.NewDesc keeps the label-name slice it is given, so build a
+	// fresh one instead of appending into baseLabels' spare capacity: with
+	// cached descs, appending there would make every desc built from the same
+	// baseLabels share one backing array and overwrite each other's names.
+	names := make([]string, 0, len(baseLabels)+len(cm.extraLabels))
+	names = append(names, baseLabels...)
+	names = append(names, cm.extraLabels...)
+	return prometheus.NewDesc(cm.name, cm.help, names, nil)
 }
 
 // ContainerLabelsFunc defines all base labels and their values attached to
@@ -104,6 +114,9 @@ type PrometheusCollector struct {
 	containerLabelsFunc ContainerLabelsFunc
 	includedMetrics     container.MetricSet
 	opts                info.RequestOptions
+	// descCache holds the prebuilt descs for the most recent base-label
+	// layout; see descsFor.
+	descCache atomic.Pointer[scrapeDescs]
 }
 
 // NewPrometheusCollector returns a new PrometheusCollector. The passed
@@ -2257,6 +2270,57 @@ func BaseContainerLabels(whiteList []string) func(container *info.ContainerInfo)
 	}
 }
 
+// scrapeDescs holds the *prometheus.Desc set for one base-label layout. Descs
+// depend only on the metric and on the label names, which are the same for
+// every container in a scrape and stable across scrapes, so building them
+// per container per scrape (as upstream cadvisor does) is pure waste.
+type scrapeDescs struct {
+	// key identifies the base-label layout the descs were built for.
+	key            string
+	creationTime   *prometheus.Desc
+	startTime      *prometheus.Desc
+	cpuPeriod      *prometheus.Desc
+	cpuQuota       *prometheus.Desc
+	cpuShares      *prometheus.Desc
+	memLimit       *prometheus.Desc
+	memSwapLimit   *prometheus.Desc
+	memReservation *prometheus.Desc
+	// metrics[i] is the desc for c.containerMetrics[i].
+	metrics []*prometheus.Desc
+}
+
+// descsFor returns the descs for the given base-label layout. Only the most
+// recently used layout is kept: every container in a scrape shares one layout
+// and it is the same from scrape to scrape, so a single entry gives all the
+// reuse there is, while keeping memory bounded no matter how label keys churn
+// over the life of the process (a layout change costs one rebuild).
+func (c *PrometheusCollector) descsFor(labels []string) *scrapeDescs {
+	key := strings.Join(labels, "\x00")
+	if d := c.descCache.Load(); d != nil && d.key == key {
+		return d
+	}
+	// The cached descs hold on to this slice; give them a private copy with
+	// no spare capacity so nothing can append into it in place.
+	labels = append(make([]string, 0, len(labels)), labels...)
+	d := &scrapeDescs{
+		key:            key,
+		creationTime:   prometheus.NewDesc("container_creation_time_seconds", "Container creation time since unix epoch in seconds.", labels, nil),
+		startTime:      prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil),
+		cpuPeriod:      prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil),
+		cpuQuota:       prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", labels, nil),
+		cpuShares:      prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", labels, nil),
+		memLimit:       prometheus.NewDesc("container_spec_memory_limit_bytes", "Memory limit for the container.", labels, nil),
+		memSwapLimit:   prometheus.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil),
+		memReservation: prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil),
+		metrics:        make([]*prometheus.Desc, len(c.containerMetrics)),
+	}
+	for i, cm := range c.containerMetrics {
+		d.metrics[i] = cm.desc(labels)
+	}
+	c.descCache.Store(d)
+	return d
+}
+
 func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric) {
 	containers, err := c.infoProvider.GetRequestedContainersInfo("/", c.opts)
 	if err != nil {
@@ -2271,54 +2335,58 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 		}
 	}
 
+	// The label layout is shared by every container in this scrape: compute
+	// it once, in a deterministic order, so descs can be cached by layout.
+	rawKeys := make([]string, 0, len(rawLabels))
+	for l := range rawLabels {
+		rawKeys = append(rawKeys, l)
+	}
+	sort.Strings(rawKeys)
+	labels := make([]string, 0, len(rawKeys))
+	labelKeys := make([]string, 0, len(rawKeys)) // raw key feeding labels[i]
+	for _, l := range rawKeys {
+		sl := sanitizeLabelName(l)
+		duplicate := false
+		for _, x := range labels {
+			if sl == x {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			labels = append(labels, sl)
+			labelKeys = append(labelKeys, l)
+		}
+	}
+	descs := c.descsFor(labels)
+
 	for _, cont := range containers {
-		values := make([]string, 0, len(rawLabels))
-		labels := make([]string, 0, len(rawLabels))
 		containerLabels := c.containerLabelsFunc(cont)
-		for l := range rawLabels {
-			duplicate := false
-			sl := sanitizeLabelName(l)
-			for _, x := range labels {
-				if sl == x {
-					duplicate = true
-					break
-				}
-			}
-			if !duplicate {
-				labels = append(labels, sl)
-				values = append(values, containerLabels[l])
-			}
+		values := make([]string, len(labelKeys))
+		for i, l := range labelKeys {
+			values[i] = containerLabels[l]
 		}
 
 		// Container spec
-		desc := prometheus.NewDesc("container_creation_time_seconds", "Container creation time since unix epoch in seconds.", labels, nil)
-		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), values...)
+		ch <- prometheus.MustNewConstMetric(descs.creationTime, prometheus.GaugeValue, float64(cont.Spec.CreationTime.Unix()), values...)
 
-		desc = prometheus.NewDesc("container_start_time_seconds", "Start time of the container since unix epoch in seconds.", labels, nil)
 		startTime := cont.Spec.CreationTime
 		if !cont.Spec.StartTime.IsZero() {
 			startTime = cont.Spec.StartTime
 		}
-		ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(startTime.Unix()), values...)
+		ch <- prometheus.MustNewConstMetric(descs.startTime, prometheus.GaugeValue, float64(startTime.Unix()), values...)
 
 		if cont.Spec.HasCpu {
-			desc = prometheus.NewDesc("container_spec_cpu_period", "CPU period of the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Period), values...)
+			ch <- prometheus.MustNewConstMetric(descs.cpuPeriod, prometheus.GaugeValue, float64(cont.Spec.Cpu.Period), values...)
 			if cont.Spec.Cpu.Quota != 0 {
-				desc = prometheus.NewDesc("container_spec_cpu_quota", "CPU quota of the container.", labels, nil)
-				ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Quota), values...)
+				ch <- prometheus.MustNewConstMetric(descs.cpuQuota, prometheus.GaugeValue, float64(cont.Spec.Cpu.Quota), values...)
 			}
-			desc := prometheus.NewDesc("container_spec_cpu_shares", "CPU share of the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, float64(cont.Spec.Cpu.Limit), values...)
-
+			ch <- prometheus.MustNewConstMetric(descs.cpuShares, prometheus.GaugeValue, float64(cont.Spec.Cpu.Limit), values...)
 		}
 		if cont.Spec.HasMemory {
-			desc := prometheus.NewDesc("container_spec_memory_limit_bytes", "Memory limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Limit), values...)
-			desc = prometheus.NewDesc("container_spec_memory_swap_limit_bytes", "Memory swap limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), values...)
-			desc = prometheus.NewDesc("container_spec_memory_reservation_limit_bytes", "Memory reservation limit for the container.", labels, nil)
-			ch <- prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Reservation), values...)
+			ch <- prometheus.MustNewConstMetric(descs.memLimit, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Limit), values...)
+			ch <- prometheus.MustNewConstMetric(descs.memSwapLimit, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.SwapLimit), values...)
+			ch <- prometheus.MustNewConstMetric(descs.memReservation, prometheus.GaugeValue, specMemoryValue(cont.Spec.Memory.Reservation), values...)
 		}
 
 		// Now for the actual metrics
@@ -2326,23 +2394,23 @@ func (c *PrometheusCollector) collectContainersInfo(ch chan<- prometheus.Metric)
 			continue
 		}
 		stats := cont.Stats[0]
-		for _, cm := range c.containerMetrics {
+		for i, cm := range c.containerMetrics {
 			if cm.condition != nil && !cm.condition(cont.Spec) {
 				continue
 			}
-			desc := cm.desc(labels)
+			desc := descs.metrics[i]
 			for _, metricValue := range cm.getValues(stats) {
 				ch <- prometheus.NewMetricWithTimestamp(
 					metricValue.timestamp,
-					prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append(values, metricValue.labels...)...),
+					prometheus.MustNewConstMetric(desc, cm.valueType, float64(metricValue.value), append(values[:len(values):len(values)], metricValue.labels...)...),
 				)
 			}
 		}
 		if c.includedMetrics.Has(container.AppMetrics) {
 			for metricLabel, v := range stats.CustomMetrics {
 				for _, metric := range v {
-					clabels := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
-					cvalues := make([]string, len(rawLabels), len(rawLabels)+len(metric.Labels))
+					clabels := make([]string, len(labels), len(labels)+len(metric.Labels))
+					cvalues := make([]string, len(values), len(values)+len(metric.Labels))
 					copy(clabels, labels)
 					copy(cvalues, values)
 					for label, value := range metric.Labels {
