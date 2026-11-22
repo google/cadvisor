@@ -212,6 +212,10 @@ func (w *rawContainerWatcher) processEvent(event *inotify.Event, events chan wat
 		// New container was created, watch it.
 		alreadyWatched, err := w.watchDirectory(events, event.Name, containerName)
 		if err != nil {
+			if os.IsNotExist(err) {
+				// The cgroup may have been removed before its create event was processed.
+				return nil
+			}
 			return err
 		}
 
