@@ -384,3 +384,39 @@ func TestNextHousekeepingInterval(t *testing.T) {
 		})
 	}
 }
+
+func TestNextHousekeepingIntervalDynamic(t *testing.T) {
+	origInterval := *HousekeepingInterval
+	*HousekeepingInterval = time.Second
+	defer func() { *HousekeepingInterval = origInterval }()
+
+	cd, _, _, _ := newTestContainerData(t)
+	// The default test cache evicts the previous sample, so keep both around.
+	cd.memoryCache = memory.New(time.Hour, nil)
+	cd.housekeepingInterval = *HousekeepingInterval
+	cd.maxHousekeepingInterval = 4 * time.Second
+	cd.firstHousekeeping = false
+	cd.jitterFactor = 0
+
+	cInfo := &info.ContainerInfo{ContainerReference: info.ContainerReference{Name: containerName}}
+	now := time.Unix(0, 0)
+	steps := []struct {
+		usage    uint64
+		expected time.Duration
+	}{
+		{usage: 100, expected: 1 * time.Second}, // single sample, nothing to compare
+		{usage: 100, expected: 2 * time.Second},
+		{usage: 100, expected: 4 * time.Second},
+		{usage: 100, expected: 4 * time.Second}, // stays at max while stats are unchanged
+		{usage: 100, expected: 4 * time.Second},
+		{usage: 200, expected: 1 * time.Second}, // stats changed, back to baseline
+		{usage: 200, expected: 2 * time.Second},
+	}
+	for i, step := range steps {
+		stats := &info.ContainerStats{Timestamp: now, Memory: &info.MemoryStats{Usage: step.usage}}
+		require.NoError(t, cd.memoryCache.AddStats(cInfo, stats))
+		got := cd.nextHousekeepingInterval()
+		assert.Equal(t, step.expected, got, "step %d", i)
+		now = now.Add(got)
+	}
+}
