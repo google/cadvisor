@@ -92,7 +92,11 @@ func (w *rawContainerWatcher) Start(events chan watcher.ContainerEvent) error {
 			case event := <-w.watcher.Event():
 				err := w.processEvent(event, events)
 				if err != nil {
-					klog.Warningf("Error while processing event (%+v): %v", event, err)
+					if os.IsNotExist(err) {
+						klog.V(4).Infof("Error while processing event (%+v): %v", event, err)
+					} else {
+						klog.Warningf("Error while processing event (%+v): %v", event, err)
+					}
 				}
 			case err := <-w.watcher.Error():
 				klog.Warningf("Error while watching %q: %v", "/", err)
