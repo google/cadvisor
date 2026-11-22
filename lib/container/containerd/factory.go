@@ -41,9 +41,13 @@ var containerdEnvMetadataWhiteList = flag.String("containerd_env_metadata_whitel
 // The namespace under which containerd aliases are unique.
 const k8sContainerdNamespace = "containerd"
 
+const defaultContainerdCgroupPattern = `([a-z0-9]{64})`
+
+var ArgContainerdCgroupPattern = flag.String("containerd_cgroup_pattern", defaultContainerdCgroupPattern, "regexp identifying the cgroups of containerd containers. If the regexp has a capturing group, the first submatch of the cgroup's base name is used as the containerd container ID, otherwise the base name itself is used")
+
 // Regexp that identifies containerd cgroups, containers started with
 // --cgroup-parent have another prefix than 'containerd'
-var containerdCgroupRegexp = regexp.MustCompile(`([a-z0-9]{64})`)
+var containerdCgroupRegexp = regexp.MustCompile(defaultContainerdCgroupPattern)
 
 type containerdFactory struct {
 	machineInfoFactory info.MachineInfoFactory
@@ -88,7 +92,7 @@ func (f *containerdFactory) NewContainerHandler(name string, metadataEnvAllowLis
 // Returns the containerd ID from the full container name.
 func ContainerNameToContainerdID(name string) string {
 	id := path.Base(name)
-	if matches := containerdCgroupRegexp.FindStringSubmatch(id); matches != nil {
+	if matches := containerdCgroupRegexp.FindStringSubmatch(id); len(matches) > 1 {
 		return matches[1]
 	}
 	return id
@@ -143,6 +147,14 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 	cgroupSubsystems, err := libcontainer.GetCgroupSubsystems(includedMetrics)
 	if err != nil {
 		return fmt.Errorf("failed to get cgroup subsystems: %v", err)
+	}
+
+	if *ArgContainerdCgroupPattern != defaultContainerdCgroupPattern {
+		re, err := regexp.Compile(*ArgContainerdCgroupPattern)
+		if err != nil {
+			return fmt.Errorf("invalid containerd_cgroup_pattern %q: %v", *ArgContainerdCgroupPattern, err)
+		}
+		containerdCgroupRegexp = re
 	}
 
 	klog.V(1).Infof("Registering containerd factory")
