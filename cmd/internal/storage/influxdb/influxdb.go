@@ -207,32 +207,37 @@ func (s *influxdbStorage) containerStatsToPoints(
 	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (points []*influxdb.Point) {
-	// CPU usage: Total usage in nanoseconds
-	points = append(points, makePoint(serCPUUsageTotal, stats.Cpu.Usage.Total))
+	// Cpu/Network became pointers; some containers omit one or both.
+	if stats.Cpu != nil {
+		// CPU usage: Total usage in nanoseconds
+		points = append(points, makePoint(serCPUUsageTotal, stats.Cpu.Usage.Total))
 
-	// CPU usage: Time spend in system space (in nanoseconds)
-	points = append(points, makePoint(serCPUUsageSystem, stats.Cpu.Usage.System))
+		// CPU usage: Time spend in system space (in nanoseconds)
+		points = append(points, makePoint(serCPUUsageSystem, stats.Cpu.Usage.System))
 
-	// CPU usage: Time spent in user space (in nanoseconds)
-	points = append(points, makePoint(serCPUUsageUser, stats.Cpu.Usage.User))
+		// CPU usage: Time spent in user space (in nanoseconds)
+		points = append(points, makePoint(serCPUUsageUser, stats.Cpu.Usage.User))
 
-	// CPU usage per CPU
-	for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
-		point := makePoint(serCPUUsagePerCPU, stats.Cpu.Usage.PerCpu[i])
-		tags := map[string]string{"instance": fmt.Sprintf("%v", i)}
-		addTagsToPoint(point, tags)
+		// CPU usage per CPU
+		for i := 0; i < len(stats.Cpu.Usage.PerCpu); i++ {
+			point := makePoint(serCPUUsagePerCPU, stats.Cpu.Usage.PerCpu[i])
+			tags := map[string]string{"instance": fmt.Sprintf("%v", i)}
+			addTagsToPoint(point, tags)
 
-		points = append(points, point)
+			points = append(points, point)
+		}
+
+		// Load Average
+		points = append(points, makePoint(serLoadAverage, stats.Cpu.LoadAverage))
 	}
 
-	// Load Average
-	points = append(points, makePoint(serLoadAverage, stats.Cpu.LoadAverage))
-
-	// Network Stats
-	points = append(points, makePoint(serRxBytes, stats.Network.RxBytes))
-	points = append(points, makePoint(serRxErrors, stats.Network.RxErrors))
-	points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
-	points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
+	if stats.Network != nil {
+		// Network Stats
+		points = append(points, makePoint(serRxBytes, stats.Network.RxBytes))
+		points = append(points, makePoint(serRxErrors, stats.Network.RxErrors))
+		points = append(points, makePoint(serTxBytes, stats.Network.TxBytes))
+		points = append(points, makePoint(serTxErrors, stats.Network.TxErrors))
+	}
 
 	// Referenced Memory
 	points = append(points, makePoint(serReferencedMemory, stats.ReferencedMemory))
@@ -246,6 +251,9 @@ func (s *influxdbStorage) memoryStatsToPoints(
 	cInfo *info.ContainerInfo,
 	stats *info.ContainerStats,
 ) (points []*influxdb.Point) {
+	if stats.Memory == nil {
+		return points
+	}
 	// Memory Usage
 	points = append(points, makePoint(serMemoryUsage, stats.Memory.Usage))
 	// Maximum memory usage recorded
