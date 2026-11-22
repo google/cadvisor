@@ -18,7 +18,9 @@
 package containerd
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/containerd/typeurl/v2"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -201,5 +203,67 @@ func TestGetExitCode(t *testing.T) {
 				as.Equal(tt.expectedCode, code)
 			}
 		})
+	}
+}
+
+const testContainerdContainerName = "/kubepods/pod068e8fa0-9213-11e7-a01f-507b9d4141fa/40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"
+
+type hangingLoadContainerClient struct {
+	containerdClientMock
+}
+
+func (c *hangingLoadContainerClient) LoadContainer(ctx context.Context, id string) (*containers.Container, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestHandlerBoundsLoadContainer(t *testing.T) {
+	done := make(chan error, 1)
+	go func() {
+		_, err := newContainerdContainerHandler(&hangingLoadContainerClient{}, testContainerdContainerName, &mockedMachineInfo{}, nil, nil, false, nil, nil)
+		done <- err
+	}()
+	select {
+	case err := <-done:
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+	case <-time.After(connectionTimeout + 5*time.Second):
+		t.Fatal("newContainerdContainerHandler did not time out LoadContainer")
+	}
+}
+
+// slowTaskClient reports the task as not found a few times, and records how
+// much time each TaskPid call had left on its context.
+type slowTaskClient struct {
+	containerdClientMock
+	notFound  int
+	remaining []time.Duration
+}
+
+func (c *slowTaskClient) TaskPid(ctx context.Context, id string) (uint32, error) {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		deadline = time.Now().Add(time.Hour)
+	}
+	c.remaining = append(c.remaining, time.Until(deadline))
+	if len(c.remaining) <= c.notFound {
+		return 0, ErrNotFound
+	}
+	return 2389, nil
+}
+
+func TestHandlerTaskPidRetryGetsFreshDeadlines(t *testing.T) {
+	testContainer := &containers.Container{ID: "40af7cdcbe507acad47a5a62025743ad3ddc6ab93b77b21363aa1c1d641047c9"}
+	testContainer.Spec, _ = typeurl.MarshalAnyToProto(&specs.Spec{Root: &specs.Root{Path: "/test/"}, Process: &specs.Process{}})
+	mock := mockcontainerdClient(map[string]*containers.Container{testContainer.ID: testContainer}, nil).(*containerdClientMock)
+
+	// The backoff sleeps 100+200+400+800ms before the fifth attempt, more than
+	// connectionTimeout, so a deadline shared across attempts would expire.
+	client := &slowTaskClient{containerdClientMock: *mock, notFound: 4}
+	_, err := newContainerdContainerHandler(client, testContainerdContainerName, &mockedMachineInfo{}, nil, nil, false, nil, nil)
+	assert.NoError(t, err)
+	assert.Len(t, client.remaining, 5)
+	for i, remaining := range client.remaining {
+		assert.Greater(t, remaining, connectionTimeout/2, "attempt %d", i+1)
+		assert.LessOrEqual(t, remaining, connectionTimeout, "attempt %d", i+1)
 	}
 }

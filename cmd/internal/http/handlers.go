@@ -101,6 +101,7 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 	goCollector := collectors.NewGoCollector()
 	processCollector := collectors.NewProcessCollector(collectors.ProcessCollectorOpts{})
 	machineCollector := metrics.NewPrometheusMachineCollector(resourceManager, includedMetrics)
+	pluginCollector := metrics.NewPrometheusPluginCollector()
 
 	mux.Handle(prometheusEndpoint, http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		opts, err := api.GetRequestOptions(req)
@@ -115,6 +116,7 @@ func RegisterPrometheusHandler(mux httpmux.Mux, resourceManager manager.Manager,
 		r.MustRegister(
 			metrics.NewPrometheusCollector(api.WrapManagerForOOM(resourceManager), f, includedMetrics, clock.RealClock{}, opts),
 			machineCollector,
+			pluginCollector,
 			goCollector,
 			processCollector,
 		)

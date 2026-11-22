@@ -39,7 +39,8 @@ const (
 )
 
 var (
-	endpointFlag = flag.String("podman", "unix:///var/run/podman/podman.sock", "podman endpoint")
+	endpointFlag        = flag.String("podman", "unix:///var/run/podman/podman.sock", "podman endpoint")
+	podmanClientTimeout = flag.Duration("podman_client_timeout", 10*time.Second, "timeout for podman API calls")
 )
 
 var (

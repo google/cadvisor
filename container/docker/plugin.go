@@ -18,7 +18,6 @@ package docker
 
 import (
 	"context"
-	"time"
 
 	"k8s.io/klog/v2"
 
@@ -28,8 +27,6 @@ import (
 	"github.com/google/cadvisor/lib/watcher"
 )
 
-const dockerClientTimeout = 10 * time.Second
-
 // NewPlugin returns an implementation of container.Plugin suitable for passing to container.RegisterPlugin()
 func NewPlugin() container.Plugin {
 	return &plugin{}
@@ -37,8 +34,14 @@ func NewPlugin() container.Plugin {
 
 type plugin struct{}
 
+var _ container.RetryablePlugin = &plugin{}
+
+// CanRetryRegister reports that Register may be called again after it fails.
+func (p *plugin) CanRetryRegister() bool {
+	return true
+}
+
 func (p *plugin) InitializeFSContext(context *fs.Context) error {
-	SetTimeout(dockerClientTimeout)
 	// Try to connect to docker indefinitely on startup.
 	dockerStatus := retryDockerStatus()
 	context.Docker = fs.DockerContext{
@@ -55,7 +58,7 @@ func (p *plugin) Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, inc
 }
 
 func retryDockerStatus() info.DockerStatus {
-	startupTimeout := dockerClientTimeout
+	startupTimeout := *dockerClientTimeout
 	maxTimeout := 4 * startupTimeout
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), startupTimeout)

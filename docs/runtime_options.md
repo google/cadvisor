@@ -56,6 +56,7 @@ From [glog](https://github.com/golang/glog) here are some flags we find useful:
 
 ```
 --docker="unix:///var/run/docker.sock": docker endpoint (default "unix:///var/run/docker.sock")
+--docker_client_timeout=10s: timeout for docker API calls (default 10s)
 --docker_root="/var/lib/docker": DEPRECATED: docker root is read from docker info (this is a fallback, default: /var/lib/docker) (default "/var/lib/docker")
 --docker-tls: use TLS to connect to docker
 --docker-tls-cert="cert.pem": client certificate for TLS-connection with docker
@@ -67,6 +68,7 @@ From [glog](https://github.com/golang/glog) here are some flags we find useful:
 
 ```bash
 --podman="unix:///var/run/podman/podman.sock": podman endpoint (default "unix:///var/run/podman/podman.sock")
+--podman_client_timeout=10s: timeout for podman API calls (default 10s)
 ```
 
 ## Housekeeping

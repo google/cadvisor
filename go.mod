@@ -20,6 +20,7 @@ require (
 	github.com/prometheus/common v0.64.0
 	github.com/stretchr/testify v1.12.1
 	golang.org/x/sys v0.47.0
+	google.golang.org/protobuf v1.36.11
 	k8s.io/klog/v2 v2.130.1
 )
 
@@ -32,7 +33,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	google.golang.org/grpc v1.83.1 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 	k8s.io/utils v0.0.0-20250502105355-0f33e8f1c979 // indirect
 )
 
