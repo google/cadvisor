@@ -86,16 +86,16 @@ of cAdvisor.
 
 #### Housekeeping Intervals
 
-Intervals for housekeeping. cAdvisor has two housekeepings: global and per-container.
+cAdvisor has two housekeeping checks: global and per-container.
 
-Global housekeeping batches all housekeeping at once. This typically does detection of new containers. Today, cAdvisor discovers new containers with kernel events so this global housekeeping is mostly used as backup in the case that there are any missed events.
+Global housekeeping batches all housekeeping at once. This typically does detection of new containers. cAdvisor discovers new containers with kernel events so this is mostly used as a backup in case there are any missed.
 
-Per-container housekeeping is run once on each container cAdvisor tracks. This typically gets container stats.
+Per-container housekeeping is run once on each container cAdvisor tracks. This typically gets container stats, and queries individual containers less frequently if their stats are stable.
 
 ```
 --global_housekeeping_interval=1m0s: Interval between global housekeepings
 --housekeeping_interval=1s: Interval between container housekeepings
---max_housekeeping_interval=1m0s: Largest interval to allow between container housekeepings
+--max_housekeeping_interval=1m0s: Largest interval to allow between per-container housekeepings
 ```
 
 ## HTTP
