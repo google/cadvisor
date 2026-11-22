@@ -355,10 +355,11 @@ func Register(factory info.MachineInfoFactory, fsInfo fs.FsInfo, includedMetrics
 		}
 	}
 
-	if StorageDriver(dockerInfo.Driver) == ContainerdSnapshotterStorageDriver {
+	if StorageDriver(dockerInfo.Driver) == ContainerdSnapshotterStorageDriver && includedMetrics.Has(container.DiskUsageMetrics) {
 		containerdClient, err = containerd.Client(*containerd.ArgContainerdEndpoint, "moby")
 		if err != nil {
-			return fmt.Errorf("unable to create containerd client: %v", err)
+			klog.Warningf("Docker filesystem stats will not be reported: unable to create containerd client: %v", err)
+			includedMetrics = includedMetrics.Difference(container.MetricSet{container.DiskUsageMetrics: struct{}{}})
 		}
 	}
 
