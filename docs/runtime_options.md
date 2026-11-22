@@ -1,6 +1,6 @@
 # cAdvisor Runtime Options
 
-This document describes a set of runtime flags available in cAdvisor.
+This document describes a set of runtime flags available in cAdvisor. Example values are also default values.
 
 ## Container labels
 * `--store_container_labels=false` - do not convert container labels and environment variables into labels on prometheus metrics for each container.
@@ -88,14 +88,14 @@ of cAdvisor.
 
 Intervals for housekeeping. cAdvisor has two housekeepings: global and per-container.
 
-Global housekeeping is a singular housekeeping done once in cAdvisor. This typically does detection of new containers. Today, cAdvisor discovers new containers with kernel events so this global housekeeping is mostly used as backup in the case that there are any missed events.
+Global housekeeping batches all housekeeping at once. This typically does detection of new containers. Today, cAdvisor discovers new containers with kernel events so this global housekeeping is mostly used as backup in the case that there are any missed events.
 
 Per-container housekeeping is run once on each container cAdvisor tracks. This typically gets container stats.
 
 ```
 --global_housekeeping_interval=1m0s: Interval between global housekeepings
 --housekeeping_interval=1s: Interval between container housekeepings
---max_housekeeping_interval=1m0s: Largest interval to allow between container housekeepings (default 1m0s)
+--max_housekeeping_interval=1m0s: Largest interval to allow between container housekeepings
 ```
 
 ## HTTP
@@ -104,12 +104,12 @@ Specify where cAdvisor listens.
 
 ```
 --http_auth_file="": HTTP auth file for the web UI
---http_auth_realm="localhost": HTTP auth realm for the web UI (default "localhost")
+--http_auth_realm="localhost": HTTP auth realm for the web UI
 --http_digest_file="": HTTP digest file for the web UI
---http_digest_realm="localhost": HTTP digest file for the web UI (default "localhost")
+--http_digest_realm="localhost": HTTP digest file for the web UI
 --listen_ip="": IP to listen on, defaults to all IPs
---port=8080: port to listen (default 8080)
---url_base_prefix=/: optional path prefix aded to all resource URLs; useful when running cAdvisor behind a proxy. (default /)
+--port=8080: port to listen
+--url_base_prefix=/: optional path prefix aded to all resource URLs; useful when running cAdvisor behind a proxy.
 ```
 
 ## Local Storage Duration
@@ -124,8 +124,8 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 
 ```
 --boot_id_file="/proc/sys/kernel/random/boot_id": Comma-separated list of files to check for boot-id. Use the first one that exists. (default "/proc/sys/kernel/random/boot_id")
---machine_id_file="/etc/machine-id,/var/lib/dbus/machine-id": Comma-separated list of files to check for machine-id. Use the first one that exists. (default "/etc/machine-id,/var/lib/dbus/machine-id")
---update_machine_info_interval=5m: Interval between machine info updates. (default 5m)
+--machine_id_file="/etc/machine-id,/var/lib/dbus/machine-id": Comma-separated list of files to check for machine-id. Use the first one that exists.
+--update_machine_info_interval=5m: Interval between machine info updates.
 ```
 
 ## Metrics
@@ -134,8 +134,8 @@ cAdvisor stores the latest historical data in memory. How long of a history it s
 --application_metrics_count_limit=100: Max number of application metrics to store (per container) (default 100)
 --collector_cert="": Collector's certificate, exposed to endpoints for certificate based authentication.
 --collector_key="": Key for the collector's certificate
---disable_metrics=<metrics>: comma-separated list of metrics to be disabled. Options are advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp. (default advtcp,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,tcp,udp)
---enable_metrics=<metrics>: comma-separated list of metrics to be enabled. If set, overrides 'disable_metrics'. Options are advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp.
+--disable_metrics=(advtcp,cpu_topology,cpuset,hugetlb,memory_numa,process,referenced_memory,resctrl,sched,tcp,udp): comma-separated list of metrics to be disabled. Additional options are app,cpu,cpuLoad,disk,diskIO,hugetlb,memory,oom_event,percpu,perf_event,.
+--enable_metrics=<metrics>: comma-separated list of metrics to be enabled. If set, overrides 'disable_metrics' and disables metrics not listed. Options are advtcp,app,cpu,cpuLoad,cpu_topology,cpuset,disk,diskIO,hugetlb,memory,memory_numa,network,oom_event,percpu,perf_event,process,referenced_memory,resctrl,sched,tcp,udp.
 --prometheus_endpoint="/metrics": Endpoint to expose Prometheus metrics on (default "/metrics")
 --disable_root_cgroup_stats=false: Disable collecting root Cgroup stats
 ```
