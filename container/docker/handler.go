@@ -53,6 +53,9 @@ const (
 
 	// Path to the directory where docker stores log files if the json logging driver is enabled.
 	pathToContainersDir = "containers"
+
+	// Exit code lookups are best-effort and should leave time for shutdown.
+	dockerExitCodeTimeout = 3 * time.Second
 )
 
 type containerHandler struct {
@@ -418,7 +421,9 @@ func (h *containerHandler) Type() container.ContainerType {
 }
 
 func (h *containerHandler) GetExitCode() (int, error) {
-	res, err := h.client.ContainerInspect(context.Background(), h.reference.Id, dclient.ContainerInspectOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), min(dockerTimeout, dockerExitCodeTimeout))
+	defer cancel()
+	res, err := h.client.ContainerInspect(ctx, h.reference.Id, dclient.ContainerInspectOptions{})
 	if err != nil {
 		return -1, fmt.Errorf("failed to inspect container %s: %w", h.reference.Id, err)
 	}
