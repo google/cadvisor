@@ -49,7 +49,9 @@ type statfsCall struct {
 // holds an OS thread until it does. Callers give up after statfsTimeout, so
 // starting one per call would leave another thread behind every time, until the
 // process reaches the runtime's thread limit. A caller that finds one in flight
-// waits on it instead.
+// waits on it instead. Each distinct path may still retain one blocked call.
+// Replacing a lazily unmounted filesystem at the same path cannot provide fresh
+// stats until the old syscall returns; a caller timeout must not discard it.
 var (
 	inflightMu sync.Mutex
 	inflight   = map[string]*statfsCall{}

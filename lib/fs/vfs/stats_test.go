@@ -149,3 +149,149 @@ func TestGetVfsStatsHungKeepsOneCallPerPath(t *testing.T) {
 		}
 	})
 }
+
+func TestGetVfsStatsConcurrentCallersShareResult(t *testing.T) {
+	for _, testCase := range []struct {
+		name string
+		err  error
+	}{{"success", nil}, {"error", syscall.EIO}} {
+		t.Run(testCase.name, func(t *testing.T) {
+			statErr := testCase.err
+			synctest.Test(t, func(t *testing.T) {
+				release := make(chan struct{})
+				unblock := sync.OnceFunc(func() { close(release) })
+				defer func() {
+					unblock()
+					synctest.Wait()
+				}()
+				var started atomic.Int32
+				stubStatfs(t, func(_ string, s *syscall.Statfs_t) error {
+					started.Add(1)
+					<-release
+					*s = sampleStatfs
+					return statErr
+				}, 10*time.Millisecond)
+
+				const callers = 8
+				results := make(chan statfsResult, callers)
+				for range callers {
+					go func() { results <- getVfsStatsResult("/mnt") }()
+				}
+				synctest.Wait()
+				if got := started.Load(); got != 1 {
+					t.Errorf("started %d syscalls for concurrent callers, want 1", got)
+				}
+
+				// Complete before any caller times out and broadcast the same result to all.
+				unblock()
+				for range callers {
+					got := <-results
+					want := statfsResult{err: statErr}
+					if statErr == nil {
+						want = statfsResult{409600, 163840, 122880, 1000, 900, nil}
+					}
+					if got != want {
+						t.Errorf("got %+v, want %+v", got, want)
+					}
+				}
+			})
+		})
+	}
+}
+
+func TestGetVfsStatsCallersHaveIndependentDeadlines(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		release := make(chan struct{})
+		unblock := sync.OnceFunc(func() { close(release) })
+		defer func() {
+			unblock()
+			synctest.Wait()
+		}()
+		var started atomic.Int32
+		stubStatfs(t, func(_ string, s *syscall.Statfs_t) error {
+			started.Add(1)
+			<-release
+			*s = sampleStatfs
+			return nil
+		}, 10*time.Millisecond)
+
+		first := make(chan statfsResult, 1)
+		go func() { first <- getVfsStatsResult("/mnt") }()
+		synctest.Wait()
+		time.Sleep(5 * time.Millisecond)
+		second := make(chan statfsResult, 1)
+		go func() { second <- getVfsStatsResult("/mnt") }()
+		synctest.Wait()
+
+		// The first deadline must not cancel the shared syscall or the later caller.
+		if got := <-first; got != (statfsResult{err: context.DeadlineExceeded}) {
+			t.Errorf("first caller got %+v, want a timeout and zero values", got)
+		}
+		select {
+		case got := <-second:
+			t.Fatalf("second caller returned before its deadline or completion: %+v", got)
+		default:
+		}
+		unblock()
+		if got := <-second; got != (statfsResult{409600, 163840, 122880, 1000, 900, nil}) {
+			t.Errorf("second caller got %+v, want successful filesystem stats", got)
+		}
+		if got := started.Load(); got != 1 {
+			t.Errorf("started %d syscalls for one path, want 1", got)
+		}
+	})
+}
+
+func TestGetVfsStatsHungPathDoesNotBlockHealthyPath(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		release := make(chan struct{})
+		unblock := sync.OnceFunc(func() { close(release) })
+		defer func() {
+			unblock()
+			synctest.Wait()
+		}()
+		stubStatfs(t, func(path string, s *syscall.Statfs_t) error {
+			if path == "/hung" {
+				<-release
+			}
+			*s = sampleStatfs
+			return nil
+		}, 10*time.Millisecond)
+
+		if got := getVfsStatsResult("/hung"); got.err != context.DeadlineExceeded {
+			t.Fatalf("hung path got %+v, want a timeout", got)
+		}
+		want := statfsResult{409600, 163840, 122880, 1000, 900, nil}
+		if got := getVfsStatsResult("/healthy"); got != want {
+			t.Errorf("healthy path got %+v while another path was hung, want %+v", got, want)
+		}
+	})
+}
+
+func TestGetVfsStatsCompletedCallsAreNotCached(t *testing.T) {
+	var started int
+	stubStatfs(t, func(_ string, s *syscall.Statfs_t) error {
+		started++
+		*s = sampleStatfs
+		if started == 1 {
+			return syscall.EIO
+		}
+		s.Blocks = uint64(started)
+		return nil
+	}, 2*time.Second)
+
+	if got := getVfsStatsResult("/mnt"); got != (statfsResult{err: syscall.EIO}) {
+		t.Errorf("first call got %+v, want EIO and zero values", got)
+	}
+	for _, blocks := range []uint64{2, 3} {
+		want := statfsResult{4096 * blocks, 163840, 122880, 1000, 900, nil}
+		if got := getVfsStatsResult("/mnt"); got != want {
+			t.Errorf("call after completion got %+v, want fresh stats %+v", got, want)
+		}
+	}
+}
+
+func getVfsStatsResult(path string) statfsResult {
+	total, free, avail, inodes, inodesFree, err := GetVfsStats(path)
+	return statfsResult{total, free, avail, inodes, inodesFree, err}
+}
