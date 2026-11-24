@@ -23,6 +23,7 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/moby/moby/api/types/container"
 	dclient "github.com/moby/moby/client"
@@ -36,9 +37,13 @@ type mockDockerClientForExitCode struct {
 	dclient.APIClient
 	inspectResp dclient.ContainerInspectResult
 	inspectErr  error
+	onInspect   func(context.Context) error
 }
 
 func (m *mockDockerClientForExitCode) ContainerInspect(ctx context.Context, containerID string, options dclient.ContainerInspectOptions) (dclient.ContainerInspectResult, error) {
+	if m.onInspect != nil {
+		return m.inspectResp, m.onInspect(ctx)
+	}
 	return m.inspectResp, m.inspectErr
 }
 
@@ -314,6 +319,44 @@ func TestGetExitCode(t *testing.T) {
 				as.NoError(err)
 				as.Equal(tt.expectedCode, code)
 			}
+		})
+	}
+}
+
+func TestGetExitCodeInspectDeadline(t *testing.T) {
+	previousTimeout := dockerTimeout
+	t.Cleanup(func() { SetTimeout(previousTimeout) })
+
+	tests := []struct {
+		name        string
+		apiTimeout  time.Duration
+		wantTimeout time.Duration
+	}{
+		{"shorter Docker API timeout", 10 * time.Millisecond, 10 * time.Millisecond},
+		{"bounded during shutdown", 10 * time.Second, 3 * time.Second},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SetTimeout(tt.apiTimeout)
+			start := time.Now()
+			h := &containerHandler{
+				client: &mockDockerClientForExitCode{
+					onInspect: func(ctx context.Context) error {
+						deadline, ok := ctx.Deadline()
+						if !ok {
+							t.Fatal("Docker inspect context has no deadline")
+						}
+						assert.False(t, deadline.Before(start.Add(tt.wantTimeout)))
+						assert.False(t, deadline.After(time.Now().Add(tt.wantTimeout)))
+						return context.DeadlineExceeded
+					},
+				},
+				reference: info.ContainerReference{Id: "test-container-id"},
+			}
+
+			code, err := h.GetExitCode()
+			assert.Equal(t, -1, code)
+			assert.ErrorIs(t, err, context.DeadlineExceeded)
 		})
 	}
 }
