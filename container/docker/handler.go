@@ -174,7 +174,8 @@ func newContainerHandler(
 		if err := json.Unmarshal(cntr.Spec.Value, &spec); err != nil {
 			return nil, err
 		}
-		rootfsStorageDir = spec.Root.Path
+		// spec.Root.Path is a host path; prefix it like storageDir above when not in the host namespace.
+		rootfsStorageDir = path.Join(rootFs, spec.Root.Path)
 	} else {
 		rwLayerID, err := getRwLayerID(id, storageDir, storageDriver, dockerVersion)
 		if err != nil {
