@@ -490,6 +490,9 @@ func TestTopologyOnSystemZ(t *testing.T) {
 		sysFs.SetDrawerIDs(drawerIDs, nil)
 
 		topology, numCores, err := GetTopology(sysFs)
+		sort.SliceStable(topology, func(i, j int) bool {
+			return topology[i].Id < topology[j].Id
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, 2, len(topology))
 		assert.Equal(t, 4, numCores)
